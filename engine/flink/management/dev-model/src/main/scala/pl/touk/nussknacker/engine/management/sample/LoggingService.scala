@@ -21,17 +21,11 @@ object LoggingService extends EagerService {
 
   @MethodToInvoke(returnType = classOf[Void])
   def prepare(
-      @ParamName("logger1") @Nullable loggerName1: String,
       @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
       @ParamName("logger") @Nullable loggerName: String,
       @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
-      @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String],
-      // TODO: revert
-      @ParamName("testJsonTemplate")
-      @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR)
-      @Editor(`type` = EditorType.SPEL_EDITOR)
-      testJsonTemplate: LazyParameter[String],
+      @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker with WithActionParametersSupport {
       private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"
@@ -45,8 +39,7 @@ object LoggingService extends EagerService {
           componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         if (isLoggingAllowed(componentUseContext)) {
-          val json = testJsonTemplate.evaluate(context)
-          val msg  = s"message:${message.evaluate(context)} and rendered json: $json"
+          val msg = message.evaluate(context)
           level match {
             case Level.TRACE => logger.trace(msg)
             case Level.DEBUG => logger.debug(msg)
