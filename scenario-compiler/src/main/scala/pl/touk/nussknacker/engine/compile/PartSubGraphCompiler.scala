@@ -210,19 +210,23 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           (ref, next) => compiledgraph.node.Processor(id, ref, next, isDisabled.contains(true))
         )
 
-      case enricher @ Enricher(id, _, output, _, mockExpression) =>
+      case enricher @ Enricher(id, _, output, _, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, validatedServiceRef, _) =
           nodeCompiler.compileEnricher(enricher, ctx, outputVar = OutputVar.enricher(output))
-        //tddo: compile expression
 
-        //todo: type expression here and check if it match output variable type
-
-        CompilationResult.map4(
+        CompilationResult.map3(
           toCompilationResult(validatedServiceRef, typingInfo, parameters),
           CompilationResult(newCtx),
-          compile(next, newCtx.getOrElse(ctx)),
-
-        )((ref, _, next) => compiledgraph.node.Enricher(id, ref, output, next, ))
+          compile(next, newCtx.getOrElse(ctx))
+        )((serviceCompilationResult, _, next) =>
+          compiledgraph.node.Enricher(
+            id,
+            serviceCompilationResult.serviceRef,
+            output,
+            next,
+            serviceCompilationResult.mockOutputExpression
+          )
+        )
 
       // here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
       case CustomNode(id, _, nodeType, _, _) =>
