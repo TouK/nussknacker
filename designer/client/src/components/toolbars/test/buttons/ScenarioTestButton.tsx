@@ -1,8 +1,8 @@
-import loadable from "@loadable/component";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, getTestResultsLoading, getTestType, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
@@ -13,7 +13,6 @@ import type { TestingData, TestingViewParams } from "../../../modals/Testing/Tes
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
-import type { Preset } from "../../types";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -23,9 +22,13 @@ export type ScenarioTestButtonProps = {
     markdownContent?: TestingViewParams["markdownContent"];
 };
 
-const TestingIcon = loadable(() => import("../../../../assets/img/toolbarButtons/test.svg"));
-
 const RERUN_PREVIOUS = "rerunPrevious";
+
+type Preset = {
+    value: string;
+    label: string;
+    isDisabled?: boolean;
+};
 
 function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type }: PropsOfButton<CustomButtonTypes.scenarioTest>) {
     const { t } = useTranslation();
@@ -72,6 +75,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         (preset?: Preset) => {
             if (preset?.value === RERUN_PREVIOUS) {
                 testingState.action();
+                setPreset(preset);
             } else {
                 if (preset?.value) {
                     dispatch({

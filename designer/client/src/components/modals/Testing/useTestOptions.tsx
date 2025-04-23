@@ -1,8 +1,9 @@
-import loadable from "@loadable/component";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import DryRunTestingIcon from "../../../assets/img/icons/test-dry-run.svg";
+import GenerateAndTestIcon from "../../../assets/img/icons/test-using-generated-data.svg";
 import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
 import type { CustomRadioProps } from "../../customRadio/CustomRadio";
@@ -16,9 +17,6 @@ export type TestingOption = CustomRadioProps & {
     disableReason: string;
     menuLabel: string;
 };
-
-const DryRunTestingIcon = loadable(() => import("../../../assets/img/icons/test-dry-run.svg"));
-const GenerateAndTestIcon = loadable(() => import("../../../assets/img/icons/test-using-generated-data.svg"));
 
 export const useTestOptions = (): {
     options: TestingOption[];
