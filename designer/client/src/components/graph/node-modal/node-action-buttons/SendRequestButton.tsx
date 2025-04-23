@@ -8,13 +8,16 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import type { NodeType } from "../../../../types";
 import { LoadingButton } from "../../../../windowManager/LoadingButton";
-import { ExpressionLang } from "../editors/expression/types";
+import { useSourceParameters } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 
 const StyledLoadingButton = styled(LoadingButton)(({ theme }) => ({
     fontSize: "12px",
     textTransform: "inherit",
     padding: theme.spacing(0.5, 1),
     margin: 0,
+    ":not(:last-child)": {
+        marginRight: 0,
+    },
 }));
 
 interface Props {
@@ -23,6 +26,7 @@ interface Props {
     expression: string;
 }
 export const SendRequestButton = ({ disabled, node, expression }: Props) => {
+    const { sourceId, sourceParameters } = useSourceParameters();
     const [showInfoAfterSendData, setShowInfoAfterSendData] = useState<boolean>(false);
     const scenarioName = useSelector(getProcessName);
     const dispatch = useDispatch();
@@ -31,17 +35,23 @@ export const SendRequestButton = ({ disabled, node, expression }: Props) => {
     const handleSendHttpRequest = useCallback(async () => {
         try {
             await HttpService.nodeActions(scenarioName, "send-sample-request", node);
-            dispatch(
-                setTestData({
-                    sourceId: node.id,
-                    parameterExpressions: { expression: { expression, language: ExpressionLang.JSON } },
-                }),
-            );
+
+            // We assume that the source has only a single Data sample parameter
+            const sourceParameter = sourceParameters?.[node.id]?.parameters?.[0];
+            if (sourceParameter) {
+                dispatch(
+                    setTestData({
+                        sourceId,
+                        parameterExpressions: { [sourceParameter.name]: { expression, language: sourceParameter.defaultValue.language } },
+                    }),
+                );
+            }
+
             setShowInfoAfterSendData(true);
         } catch (error) {
             console.error("Error sending request:", error);
         }
-    }, [dispatch, expression, node, scenarioName]);
+    }, [dispatch, expression, node, scenarioName, sourceId, sourceParameters]);
 
     return (
         <Box display={"flex"} alignItems={"flex-end"} flexDirection={"column"} width={"100%"}>
