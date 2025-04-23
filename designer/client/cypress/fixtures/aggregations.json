@@ -63,7 +63,7 @@
                                 "name": "groupBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{ #input.floatValue }.toString"
+                                    "expression": "#input.floatValue"
                                 }
                             },
                             {
@@ -139,7 +139,7 @@
                                 "name": "groupBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{ #input.longValue }.toString"
+                                    "expression": "#input.longValue"
                                 }
                             },
                             {
@@ -208,7 +208,7 @@
                                 "name": "groupBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{ #input.longValue }.toString"
+                                    "expression": "#input.longValue"
                                 }
                             },
                             {

@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test._
@@ -92,7 +92,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
         UsedNodes.empty,
         getClass.getClassLoader
       )
-      .compileProcessOrFail(scenarioWithMultipleSources)
+      .compileProcessOrFail(scenarioWithMultipleSources)(EngineScenarioCompilationDependencies.empty)
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
@@ -168,7 +168,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
         UsedNodes.empty,
         getClass.getClassLoader
       )
-      .compileProcessOrFail(scenario)
+      .compileProcessOrFail(scenario)(EngineScenarioCompilationDependencies.empty)
   }
 
   object SampleTestSupportParametersSource

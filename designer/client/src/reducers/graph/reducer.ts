@@ -14,6 +14,7 @@ import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
+import { appendHistorySquashLogic } from "./historySquash";
 import type { NestedKeyOf } from "./nestedKeyOf";
 import { selectionState } from "./selectionState";
 import type { GraphState } from "./types";
@@ -156,6 +157,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
             return {
                 ...state,
+                selectionState: state.selectionState.map((current) => (current === action.before.id ? action.after.id : current)),
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
@@ -369,7 +371,9 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     selectionState,
 });
 
-export type GraphStateWithHistory = StateWithHistory<GraphState>;
+export type GraphStateWithHistory = StateWithHistory<GraphState> & {
+    snapshots: number[];
+};
 
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
@@ -390,7 +394,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
 });
 
 // apply only undoable changes for undo actions
-function fixUndoableHistory(state: GraphStateWithHistory, action: Action): GraphStateWithHistory {
+const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action) => {
     const nextState = undoableReducer(state, action);
 
     if (Object.values(UndoActionTypes).includes(action.type)) {
@@ -399,10 +403,9 @@ function fixUndoableHistory(state: GraphStateWithHistory, action: Action): Graph
     }
 
     return nextState;
-}
+};
 
 export const reducerWithUndo: Reducer<GraphStateWithHistory> = (state, action) => {
     const history = fixUndoableHistory(state, action);
-
-    return history;
+    return appendHistorySquashLogic({ ...history, snapshots: state?.snapshots }, action);
 };

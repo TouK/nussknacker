@@ -7,7 +7,7 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
@@ -1739,8 +1739,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       definitions: ModelDefinition,
       isFragment: Boolean = false
   ): CompilationResult[Unit] = {
-    implicit val jobData: JobData =
-      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val jobData: JobData = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     ProcessValidator
       .default(
         ModelDefinitionWithClasses(definitions),

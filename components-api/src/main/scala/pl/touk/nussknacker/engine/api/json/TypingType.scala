@@ -23,7 +23,7 @@ private[json] object TypingType extends Enumeration {
     case _: TypedTaggedValue        => TypedTaggedValue
     case _: TypedObjectWithValue    => TypedObjectWithValue
     case typing.TypedNull           => TypedNull
-    case typing.Unknown             => Unknown
+    case typing.Unknown(_)          => Unknown
   }
 
 }

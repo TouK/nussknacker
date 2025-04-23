@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.api.deployment.cache
 
+import cats.effect.{Resource, SyncIO}
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
@@ -49,6 +51,9 @@ class CachingProcessStateDeploymentManager(
     delegate.processCommand(command)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    delegate.scenarioCompilationDependenciesResource
 
   override def close(): Unit = delegate.close()
 

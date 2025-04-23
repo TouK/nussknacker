@@ -14,11 +14,8 @@ function printFragment(text: string, el: { start: number; end: number }): string
 }
 
 function mapToList(input: string, ast?: Ast): string[] | null {
-    if (ast?.type !== "CompoundExpression") return null;
-    if (ast.expressionComponents[0].type !== "InlineList") return null;
-    if (ast.expressionComponents[1].type !== "PropertyReference") return null;
-    if (ast.expressionComponents[1].propertyName !== "toString") return null;
-    return ast.expressionComponents[0].elements.map((el) => printFragment(input, el));
+    if (ast.type !== "InlineList" || ast.__unclosed) return null;
+    return ast.elements.map((el) => printFragment(input, el));
 }
 
 function mapToObject(input: string, ast?: Ast): Record<string, string> | null {

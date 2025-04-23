@@ -5,6 +5,7 @@ import io.circe._
 import pl.touk.nussknacker.engine.api.json.TypingType
 import pl.touk.nussknacker.engine.api.json.TypingType.{typeField, TypingType}
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
@@ -18,7 +19,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].flatMap {
-      case TypingType.Unknown                 => Right(Unknown)
+      case TypingType.Unknown                 => unknown(hcursor)
       case TypingType.TypedNull               => Right(TypedNull)
       case TypingType.TypedUnion              => typedUnion(hcursor)
       case TypingType.TypedDict               => typedDict(hcursor)
@@ -42,6 +43,10 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     case e                     => Left(s"$e is not SingleTypingResult")
   }
 
+  private implicit val displayStrategyDecoder: Decoder[DisplayStrategy] = Decoder.decodeString.emap { displayStr =>
+    DisplayStrategy.valueOfDisplay(displayStr).toRight(s"Unrecognized display value: '$displayStr'")
+  }
+
   private def typedTaggedValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
     tag        <- obj.downField("tag").as[String]
@@ -60,6 +65,17 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       .as[Option[Map[String, AdditionalDataValue]]]
       .map(_.getOrElse(Map.empty))
   } yield Typed.record(fields, valueClass, additional)
+
+  private def unknown(obj: HCursor): Decoder.Result[TypingResult] = {
+    obj.downField("display") match {
+      case displayAttribute if displayAttribute.succeeded =>
+        displayAttribute.as[DisplayStrategy].map {
+          case JsonDisplayStrategy    => Typed.json
+          case DefaultDisplayStrategy => Unknown
+        }
+      case _ => Right(Unknown) // In case of no display attribute, return Unknown
+    }
+  }
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
     val dict = obj.downField("dict")

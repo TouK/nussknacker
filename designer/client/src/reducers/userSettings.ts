@@ -12,6 +12,7 @@ type SettingsNames =
     | "node.shortCounts"
     | "node.showInputsAndOutputs"
     | "node.showFragmentCreator"
+    | "node.autoApply"
     | "cloud.showIntegrationsCreators"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
@@ -25,6 +26,7 @@ const reducer: Reducer<UserSettings> = (
         "node.shortCounts": false,
         "node.showInputsAndOutputs": false,
         "node.showFragmentCreator": false,
+        "node.autoApply": false,
         "cloud.showIntegrationsCreators": false,
         "debug.nodesAsJson": false,
         "debug.forceDisableModals": false,

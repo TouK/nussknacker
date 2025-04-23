@@ -1,5 +1,5 @@
 import * as dagre from "dagre";
-import type { dia} from "jointjs";
+import type { dia } from "jointjs";
 import { layout, util } from "jointjs";
 
 import { isCellSelected, isModelElement, isModelOrStickyNote } from "./cellUtils";

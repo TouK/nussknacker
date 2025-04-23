@@ -1,7 +1,13 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ModelData, RuntimeMode}
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.{
+  CustomProcessValidatorLoader,
+  ModelData,
+  RuntimeMode,
+  ScenarioCompilationDependencies
+}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{
@@ -9,6 +15,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   NodesDeploymentData
 }
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.compile._

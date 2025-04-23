@@ -248,7 +248,7 @@ export class Graph extends React.Component<Props> {
                 .on(RangeSelectEvents.SELECTED, ({ elements, mode }: RangeSelectedEventData) => {
                     const nodes = elements.filter((el) => isModelOrStickyNote(el)).map(({ id }) => id.toString());
                     if (mode === SelectionMode.toggle) {
-                        toggleSelection(...nodes);
+                        toggleSelection(nodes);
                     } else {
                         resetSelection(...nodes);
                     }

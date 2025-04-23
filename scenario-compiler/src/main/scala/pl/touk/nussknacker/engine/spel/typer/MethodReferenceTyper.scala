@@ -20,10 +20,10 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
         typeFromClazzDefinitions(extractClazzDefinitions(union.possibleTypes))
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
-      case Unknown =>
+      case Unknown(_) =>
         typeFromClazzDefinitions(classDefinitionSet.unknown.toList) match {
-          case Right(Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(Unknown))
-          case result @ _                                          => result
+          case Right(u: Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(u))
+          case result @ _                                             => result
         }
     }
   }

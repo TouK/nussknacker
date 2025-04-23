@@ -7,8 +7,8 @@ import type { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, Typin
 import type { ThunkAction } from "../reduxTypes";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
-type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string };
-type NodeDetailsClosed = { type: "NODE_DETAILS_CLOSED"; nodeId: string };
+type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string; windowId: string };
+type NodeDetailsClosed = { type: "NODE_DETAILS_CLOSED"; nodeId: string; windowId: string };
 
 export type NodeDetailsActions = NodeValidationUpdated | NodeDetailsOpened | NodeDetailsClosed;
 
@@ -35,17 +35,19 @@ export function nodeValidationDataUpdated(nodeId: string, validationData: Valida
     };
 }
 
-export function nodeDetailsOpened(nodeId: string): NodeDetailsOpened {
+export function nodeDetailsOpened(nodeId: string, windowId: string): NodeDetailsOpened {
     return {
         type: "NODE_DETAILS_OPENED",
         nodeId,
+        windowId,
     };
 }
 
-export function nodeDetailsClosed(nodeId: string): NodeDetailsClosed {
+export function nodeDetailsClosed(nodeId: string, windowId: string): NodeDetailsClosed {
     return {
         type: "NODE_DETAILS_CLOSED",
         nodeId,
+        windowId,
     };
 }
 

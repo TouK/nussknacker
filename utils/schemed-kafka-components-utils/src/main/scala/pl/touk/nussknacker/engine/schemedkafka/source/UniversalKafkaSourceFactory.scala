@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
@@ -26,8 +26,8 @@ import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  schemaVersionParamName,
-  sinkValueParamName
+  inputParamName,
+  schemaVersionParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
@@ -90,7 +90,7 @@ class UniversalKafkaSourceFactory(
           (
             Some(runtimeDataForJsonSchema),
             // This is the type after it leaves source
-            Unknown
+            Typed.json
           )
         )
       } else {
@@ -231,7 +231,7 @@ class UniversalKafkaSourceFactory(
       if (params.isPresent(dataSampleParamName)) {
         params
           .extract[Json](dataSampleParamName)
-          .map { dataSample => sinkValueParamName -> Expression.json(dataSample.spaces2) }
+          .map { dataSample => inputParamName -> Expression.json(dataSample.spaces2) }
           .toMap
       } else {
         Map.empty
@@ -333,6 +333,7 @@ class UniversalKafkaSourceFactory(
       .optional[Any](dataSampleParamName)
       .withCreator(
         modify = _.copy(
+          typ = Typed.json,
           editors = List(JsonParameterEditor),
           defaultValue = Some(Expression.json("{}")),
           hintText = Some(

@@ -3,10 +3,12 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
+import enumeratum._
 import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.json.encoders.{ToJsonEncoderWithFallback, TypeEncoders}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
+import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
@@ -167,14 +169,35 @@ object typing {
     override val display = "Null"
   }
 
-  // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult {
-    override def withoutValue: Unknown.type = Unknown
-
-    override val valueOpt: None.type = None
-
-    override val display = "Unknown"
+  sealed trait DisplayStrategy extends EnumEntry {
+    val display: String
   }
+
+  object DisplayStrategy extends Enum[DisplayStrategy] {
+    override def values = findValues
+
+    case object DefaultDisplayStrategy extends DisplayStrategy {
+      override val display: String = "Unknown"
+    }
+
+    case object JsonDisplayStrategy extends DisplayStrategy {
+      override val display: String = "Json"
+    }
+
+    def valueOfDisplay(display: String): Option[DisplayStrategy] = {
+      values.find(_.display == display)
+    }
+
+  }
+
+  // Unknown is representation of TypedUnion of all possible types
+  case class Unknown(displayStrategy: DisplayStrategy) extends TypingResult {
+    override def withoutValue: TypingResult = this
+    override val valueOpt: None.type        = None
+    override val display: String            = displayStrategy.display
+  }
+
+  object Unknown extends Unknown(DefaultDisplayStrategy)
 
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
@@ -265,6 +288,8 @@ object typing {
     def apply(klass: Class[_]): TypingResult = {
       if (klass == classOf[Any]) Unknown else typedClass(klass, None)
     }
+
+    val json: Unknown = new Unknown(JsonDisplayStrategy)
 
     // TODO: how to assert in compile time that T != Any, AnyRef, Object?
     // TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.
@@ -409,7 +434,7 @@ object typing {
       //       computing the output type of SPeL's ternary operator - see CommonSupertypeFinder.commonSupertype(nel, nel)
       //       which can generate a long unions of types
       def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
-        case Unknown                    => None
+        case Unknown(_)                 => None
         case TypedNull                  => Some(Set.empty)
         case single: SingleTypingResult => Some(Set(single))
         case union: TypedUnion          => Some(union.possibleTypes.toList.toSet)
@@ -417,6 +442,7 @@ object typing {
 
       val flattenedTypes = possibleTypes.toList.map(flattenType).sequence.map(_.flatten.distinct)
       flattenedTypes match {
+        case None if possibleTypes.toList.contains(json)           => json
         case None                                                  => Unknown
         case Some(Nil) if possibleTypes.toList.contains(TypedNull) => TypedNull
         case Some(Nil)                                             =>

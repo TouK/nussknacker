@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
+import cats.effect.SyncIO
+import cats.effect.kernel.Resource
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestingCapabilitiesError.SourceCompilationError
@@ -28,7 +31,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
       MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
-  private def withFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
+  private def withFailingLoader[T] = ThreadUtils.withContextClassLoader[T](new FailingContextClassloader) _
 
   private val scenario = ScenarioBuilder
     .streaming("test")
@@ -46,7 +49,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
     val processVersion = ProcessVersion.empty.copy(processName = scenario.metaData.name)
     // we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
     withFailingLoader {
-      new ModelDataTestInfoProvider(modelData)
+      new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
         .getTestingCapabilities(processVersion, scenario) shouldBe Left(SourceCompilationError)
     }
   }

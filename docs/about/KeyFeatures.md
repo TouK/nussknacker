@@ -8,7 +8,7 @@ Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer
 
 A scenario is a sequence of different nodes:
 - flow control functions: filter, switch, split etc.
-- data enrichments from external sources (JDBC, OpenAPI)
+- data enrichments from external sources (JDBC, OpenAPI, ML)
 - aggregates in different types of time windows (available with Flink-based [engine](./GLOSSARY.md#engine))
 - custom, tailor-made components, which extend default functionality
 - and more
@@ -35,9 +35,11 @@ object at runtime. It is used by Nussknacker to access processed data. Some exam
 - provide helper functions like date and time, access to system variables, etc.
 - and many more
 
+Check [SpEL overview](../scenarios_authoring/Intro.md/#spel) to learn more.
+
 ![SpEL expression in filter](img/spel.png)
 
-*Example of SpEL expression used in a filter; the .size operator returns number of elements in a list*
+*Example of SpEL expression used in a filter; the .size method returns number of elements in a list*
 
 ## Smart code suggestions and validation
 

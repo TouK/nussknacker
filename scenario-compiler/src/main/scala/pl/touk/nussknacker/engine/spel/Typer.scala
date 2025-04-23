@@ -245,8 +245,8 @@ private[spel] class Typer(
         case TypedNull =>
           invalidNodeResult(IllegalIndexingOperation)
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
-        case Unknown =>
-          withTypedChildren(_ => valid(Unknown))
+        case u: Unknown =>
+          withTypedChildren(_ => valid(u))
         case _: TypedClass =>
           val w = withTypedChildren(_ => valid(Unknown))
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
@@ -622,15 +622,15 @@ private[spel] class Typer(
   }
 
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
-    case Unknown =>
-      val w = Writer.value[List[ExpressionParseError], TypingResult](Unknown)
+    case u: Unknown =>
+      val w = Writer.value[List[ExpressionParseError], TypingResult](u)
       if (anyMethodExecutionForUnknownAllowed) {
         w
       } else {
         // we allow some methods to be used on unknown
-        unknownPropertyTypeBasedOnMethod(e)
+        unknownPropertyTypeBasedOnMethod(e, u)
           .map(valid)
-          .getOrElse(w.tell(List(IllegalPropertyAccessError(Unknown))))
+          .getOrElse(w.tell(List(IllegalPropertyAccessError(u))))
       }
     case TypedNull =>
       invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)
@@ -702,8 +702,8 @@ private[spel] class Typer(
     classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
   }
 
-  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference): Option[TypingResult] =
-    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(Unknown, e.getName))
+  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference, u: Unknown): Option[TypingResult] =
+    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(u, e.getName))
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult
