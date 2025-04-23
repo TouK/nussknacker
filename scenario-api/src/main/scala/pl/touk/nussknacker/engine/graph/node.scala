@@ -199,7 +199,8 @@ object node {
       id: String,
       service: ServiceRef,
       output: String,
-      additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+      additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
+      mockExpression: Option[Expression] = None
   ) extends OneOutputSubsequentNodeData
       with WithComponent
       with WithParameters {
