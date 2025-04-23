@@ -63,10 +63,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const testCapabilities = useSelector(getTestCapabilities);
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
     const testFromGeneratedDataIsAvailable =
-        !disabled &&
-        processIsLatestVersion &&
-        testCapabilities &&
-        testCapabilities.testWithGeneratedData.status == TestCapabilityStatus.AVAILABLE;
+        !disabled && processIsLatestVersion && testCapabilities?.testWithGeneratedData.status === TestCapabilityStatus.AVAILABLE;
 
     const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromGeneratedDataIsAvailable;
 

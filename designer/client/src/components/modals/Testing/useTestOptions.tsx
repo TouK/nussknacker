@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
 import type { CustomRadioProps } from "../../customRadio/CustomRadio";
 
@@ -34,7 +35,7 @@ export const useTestOptions = (): {
                 menuLabel: t("testingForm.withParameters.menu.label", "Test with form"),
                 value: TestType.withParameters,
                 Icon: DryRunTestingIcon,
-                disabled: !testCapabilities.canTestWithForm,
+                disabled: testCapabilities?.testWithParameters.status !== TestCapabilityStatus.AVAILABLE,
                 disableReason: t(
                     "testingForm.withParameters.disableReason",
                     "Currently configured scenario sources do not support testing with form",
@@ -45,14 +46,14 @@ export const useTestOptions = (): {
                 menuLabel: t("testingForm.withGeneratedData.menu.label", "Test with live data"),
                 value: TestType.withGeneratedData,
                 Icon: GenerateAndTestIcon,
-                disabled: !testCapabilities.canGenerateTestData || !testCapabilities.canBeTested,
+                disabled: testCapabilities?.testWithGeneratedData.status !== TestCapabilityStatus.AVAILABLE,
                 disableReason: t(
                     "testingForm.withGeneratedData.disableReason",
                     "Currently configured scenario sources do not support testing with live samples",
                 ),
             },
         ],
-        [t, testCapabilities.canBeTested, testCapabilities.canGenerateTestData, testCapabilities.canTestWithForm],
+        [t, testCapabilities?.testWithGeneratedData.status, testCapabilities?.testWithParameters.status],
     );
 
     const testType = useMemo(() => {
