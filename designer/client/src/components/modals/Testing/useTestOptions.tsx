@@ -34,7 +34,7 @@ export const useTestOptions = (): {
                 menuLabel: t("testingForm.withParameters.menu.label", "Test with form"),
                 value: TestType.withParameters,
                 Icon: DryRunTestingIcon,
-                disabled: !testCapabilities.canTestWithForm,
+                disabled: !testCapabilities?.canTestWithForm,
                 disableReason: t(
                     "testingForm.withParameters.disableReason",
                     "Currently configured scenario sources do not support testing with form",
@@ -45,14 +45,14 @@ export const useTestOptions = (): {
                 menuLabel: t("testingForm.withGeneratedData.menu.label", "Test with live data"),
                 value: TestType.withGeneratedData,
                 Icon: GenerateAndTestIcon,
-                disabled: !testCapabilities.canGenerateTestData || !testCapabilities.canBeTested,
+                disabled: !(testCapabilities?.canGenerateTestData && testCapabilities?.canBeTested),
                 disableReason: t(
                     "testingForm.withGeneratedData.disableReason",
                     "Currently configured scenario sources do not support testing with live samples",
                 ),
             },
         ],
-        [t, testCapabilities.canBeTested, testCapabilities.canGenerateTestData, testCapabilities.canTestWithForm],
+        [t, testCapabilities?.canBeTested, testCapabilities?.canGenerateTestData, testCapabilities?.canTestWithForm],
     );
 
     const testType = useMemo(() => {
