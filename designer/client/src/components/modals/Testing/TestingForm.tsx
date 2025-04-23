@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
 import type { WindowKind } from "../../../windowManager";
 import { CustomRadio } from "../../customRadio/CustomRadio";
@@ -35,9 +36,12 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
     const dispatch = useDispatch();
 
     const testCapabilities = useSelector(getTestCapabilities);
-    const testWithParametersIsAvailable = useMemo(() => testCapabilities.canTestWithForm, [testCapabilities]);
+    const testWithParametersIsAvailable = useMemo(
+        () => testCapabilities.testWithParameters.status == TestCapabilityStatus.AVAILABLE,
+        [testCapabilities],
+    );
     const testWithGeneratedDataIsAvailable = useMemo(
-        () => testCapabilities.canGenerateTestData && testCapabilities.canBeTested,
+        () => testCapabilities.testWithGeneratedData.status == TestCapabilityStatus.AVAILABLE,
         [testCapabilities],
     );
 

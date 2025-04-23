@@ -14,11 +14,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
-  ScenarioTestDataGenerationError,
-  SourceTestDataGenerationError,
-  TestDataPreparationError
-}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider._
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
@@ -33,22 +29,38 @@ class ModelDataTestInfoProvider(
   override def getTestingCapabilities(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): TestingCapabilities = {
+  ): Either[TestingCapabilitiesError, TestingCapabilities] = {
     val jobData = JobData(scenario.metaData, processVersion)
+    val sources = commonModelDataInfoProvider.collectAllSources(scenario)
+
     withScenarioCompilationDependencies(jobData) { scenarioCompilationDependencies =>
-      commonModelDataInfoProvider
-        .collectAllSources(scenario)
-        .map(getTestingCapabilities(_, scenarioCompilationDependencies)) match {
-        case Nil => TestingCapabilities.Disabled
-        case s =>
-          s.reduce((tc1, tc2) =>
-            TestingCapabilities(
-              canBeTested = tc1.canBeTested || tc2.canBeTested,
-              canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
-              canTestWithForm =
-                tc1.canTestWithForm && tc2.canTestWithForm, // TODO change to "or" after adding support for multiple sources
+      if (sources.isEmpty) {
+        Left(TestingCapabilitiesError.NoSourcesError)
+      } else {
+        val capabilities = sources.map(getTestingCapabilities(_, scenarioCompilationDependencies))
+        val (_, rights) = capabilities.foldLeft(
+          (List.empty[TestingCapabilitiesError], List.empty[TestingCapabilities])
+        ) {
+          case ((ls, rs), Left(l))  => (l :: ls, rs)
+          case ((ls, rs), Right(r)) => (ls, r :: rs)
+        }
+        val successes = rights.reverse
+        successes match {
+          case Nil =>
+            if (sources.isEmpty) Left(TestingCapabilitiesError.NoSourcesError)
+            else Left(TestingCapabilitiesError.SourceCompilationError)
+          case list =>
+            Right(
+              list.reduce((tc1, tc2) =>
+                TestingCapabilities(
+                  canBeTested = tc1.canBeTested || tc2.canBeTested,
+                  canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
+                  canTestWithForm =
+                    tc1.canTestWithForm && tc2.canTestWithForm // TODO change to "or" after adding support for multiple sources
+                )
+              )
             )
-          )
+        }
       }
     }
   }
@@ -56,8 +68,8 @@ class ModelDataTestInfoProvider(
   private def getTestingCapabilities(
       source: SourceNodeData,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): TestingCapabilities = {
-    val testingCapabilities = for {
+  ): Either[TestingCapabilitiesError, TestingCapabilities] = {
+    (for {
       sourceObj <- commonModelDataInfoProvider.compileSourceNode(source)(
         scenarioCompilationDependencies,
         NodeId(source.id)
@@ -69,31 +81,33 @@ class ModelDataTestInfoProvider(
       canBeTested = canTest,
       canGenerateTestData = canGenerateData,
       canTestWithForm = canTestWithForm
-    )
-    testingCapabilities.getOrElse(TestingCapabilities.Disabled)
+    )).toEither.left.map(_ => TestingCapabilitiesError.SourceCompilationError)
   }
 
   override def getTestParameters(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess
-  ): Map[String, List[Parameter]] = {
+  ): Either[ParametersDefinitionError, Map[String, List[Parameter]]] = {
     val jobData = JobData(scenario.metaData, processVersion)
+    val sources = commonModelDataInfoProvider.collectAllSources(scenario)
     withScenarioCompilationDependencies(jobData) { scenarioCompilationDependencies =>
-      commonModelDataInfoProvider
-        .collectAllSources(scenario)
-        .map(source => source.id -> getTestParametersWithDefaults(source, scenarioCompilationDependencies))
-        .toMap
+      val result = sources.foldLeft[Either[ParametersDefinitionError, List[(String, List[Parameter])]]](Right(Nil)) {
+        case (accEither, source) =>
+          for {
+            acc    <- accEither
+            params <- getTestParametersWithDefaults(source, scenarioCompilationDependencies)
+          } yield (source.id -> params) :: acc
+      }
+      result.map(_.toMap)
     }
   }
 
   private def getTestParametersWithDefaults(
       source: SourceNodeData,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): List[Parameter] = {
-    val testParameters = getTestParameters(source, scenarioCompilationDependencies)
-    val testParametersEnrichedWithDefaults =
-      StandardParameterEnrichment.enrichParameterDefinitions(testParameters, Map.empty)
-    testParametersEnrichedWithDefaults
+  ): Either[ParametersDefinitionError, List[Parameter]] = {
+    getTestParameters(source, scenarioCompilationDependencies)
+      .map(StandardParameterEnrichment.enrichParameterDefinitions(_, Map.empty))
   }
 
   // Currently we rely on the assumption that client always call scenarioTesting / {scenarioName} / parameters endpoint
@@ -105,18 +119,21 @@ class ModelDataTestInfoProvider(
   private def getTestParameters(
       source: SourceNodeData,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): List[Parameter] = {
+  ): Either[ParametersDefinitionError, List[Parameter]] = {
     commonModelDataInfoProvider.compileSourceNode(source)(scenarioCompilationDependencies, NodeId(source.id)) match {
-      case Valid(s: TestWithParametersSupport[_]) => s.testParametersDefinition
+      case Valid(s: TestWithParametersSupport[_]) => Right(s.testParametersDefinition)
       case Valid(sourceWithoutTestWithParametersSupport) =>
-        throw new UnsupportedOperationException(
-          s"Requested test parameters from source [${source.id}] of [${sourceWithoutTestWithParametersSupport.getClass.getName}] class that does not implement TestWithParametersSupport."
+        Left(
+          ParametersDefinitionError.NotSupportedBySource(
+            s"Requested test parameters from source [${source.id}] of [${sourceWithoutTestWithParametersSupport.getClass.getName}] class that does not implement TestWithParametersSupport."
+          )
         )
       case Invalid(errors) =>
-        throw new UnsupportedOperationException(
-          s"Requested test parameters from source [${source.id}] that is not valid. Errors: ${errors.toList.mkString(", ")}"
+        Left(
+          ParametersDefinitionError.SourceValidationError(
+            s"Requested test parameters from source [${source.id}] that is not valid. Errors: ${errors.toList.mkString(", ")}"
+          )
         )
-
     }
   }
 

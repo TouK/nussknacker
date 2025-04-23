@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
 
-trait TestingApiHttpServiceSpec
+trait ScenarioTestingApiHttpServiceSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithTestHttpClient
@@ -94,9 +94,13 @@ trait TestingApiHttpServiceSpec
         .statusCode(200)
         .equalsJsonBody(
           s"""{
-             |    "canBeTested": true,
-             |    "canGenerateTestData": true,
-             |    "canTestWithForm": true
+             |    "testWithParameters": {
+             |      "status": "AVAILABLE",
+             |      "sourceParameters": $expectedTestParametersJson
+             |    },
+             |    "testWithGeneratedData": {
+             |      "status": "AVAILABLE"
+             |    }
              |}""".stripMargin
         )
     }
@@ -124,8 +128,8 @@ trait TestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generate/3")
+        .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, 3))
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(200)
         .equalsPlainBody(expectedTestDataJson)
@@ -137,8 +141,8 @@ trait TestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generate/100")
+        .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, 100))
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
         .equalsPlainBody(
@@ -156,33 +160,25 @@ trait TestingApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/parameters")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
-          s"""[
+          responseWithParameters(
+            s"""[
              |    {
              |        "sourceId": "$exampleScenarioSourceId",
              |        "parameters": [$expectedSourceTestingParametersJson]
              |    }
              |]
              |""".stripMargin
+          )
         )
     }
     "generate parameters for fragment with fixed list parameter" in {
       val fragment = exampleFragment(fragmentFixedParameter)
-      given()
-        .applicationState {
-          createSavedScenario(fragment)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(canonicalGraphStr(fragment))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/parameters")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""[
+      val expectedTestParameters =
+        s"""[
              |    {
              |        "sourceId": "fragment",
              |        "parameters": [
@@ -233,10 +229,6 @@ trait TestingApiHttpServiceSpec
              |    }
              |]
              |""".stripMargin
-        )
-    }
-    "Generate parameters with simplified (single) editor for fragment with raw string parameter" in {
-      val fragment = exampleFragment(fragmentRawStringParameter)
       given()
         .applicationState {
           createSavedScenario(fragment)
@@ -244,52 +236,88 @@ trait TestingApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(canonicalGraphStr(fragment))
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/parameters")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/capabilities")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
-          s"""[
-             |    {
-             |        "sourceId": "fragment",
-             |        "parameters": [
-             |            {
-             |                "name": "paramRawString",
-             |                "typ": {
-             |                    "display": "String",
-             |                    "type": "TypedClass",
-             |                    "refClazzName": "java.lang.String",
-             |                    "params": [
-             |
-             |                    ]
-             |                },
-             |                "editors": [
-             |                    {
-             |                        "type": "SpelTemplateParameterEditor"
-             |                    },
-             |                    {
-             |                        "type": "SpelParameterEditor"
-             |                    }
-             |                ],
-             |                "defaultValue": {
-             |                    "language": "spelTemplate",
-             |                    "expression": ""
-             |                },
-             |                "additionalVariables": {
-             |
-             |                },
-             |                "variablesToHide": [
-             |
-             |                ],
-             |                "branchParam": false,
-             |                "hintText": null,
-             |                "label": "paramRawString",
-             |                "requiredParam": false,
-             |                "category": "Standard"
-             |            }
-             |        ]
+          s"""{
+             |    "testWithParameters": {
+             |      "status": "AVAILABLE",
+             |      "sourceParameters": $expectedTestParameters
+             |    },
+             |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
              |    }
-             |]
-             |""".stripMargin
+             |}""".stripMargin
+        )
+    }
+    "Generate parameters with simplified (single) editor for fragment with raw string parameter" in {
+      val fragment = exampleFragment(fragmentRawStringParameter)
+      val expectedTestParameters =
+        s"""[
+           |    {
+           |        "sourceId": "fragment",
+           |        "parameters": [
+           |            {
+           |                "name": "paramRawString",
+           |                "typ": {
+           |                    "display": "String",
+           |                    "type": "TypedClass",
+           |                    "refClazzName": "java.lang.String",
+           |                    "params": [
+           |
+           |                    ]
+           |                },
+           |                "editors": [
+           |                    {
+           |                        "type": "SpelTemplateParameterEditor"
+           |                    },
+           |                    {
+           |                        "type": "SpelParameterEditor"
+           |                    }
+           |                ],
+           |                "defaultValue": {
+           |                    "language": "spelTemplate",
+           |                    "expression": ""
+           |                },
+           |                "additionalVariables": {
+           |
+           |                },
+           |                "variablesToHide": [
+           |
+           |                ],
+           |                "branchParam": false,
+           |                "hintText": null,
+           |                "label": "paramRawString",
+           |                "requiredParam": false,
+           |                "category": "Standard"
+           |            }
+           |        ]
+           |    }
+           |]
+           |""".stripMargin
+      given()
+        .applicationState {
+          createSavedScenario(fragment)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(canonicalGraphStr(fragment))
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/capabilities")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |    "testWithParameters": {
+             |      "status": "AVAILABLE",
+             |      "sourceParameters": $expectedTestParameters
+             |    },
+             |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
+             |    }
+             |}""".stripMargin
         )
     }
     "return error if scenario does not exists" in {
@@ -300,8 +328,11 @@ trait TestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/$notExistingScenarioName/generate/100")
+        .jsonBody(s"""{
+              |  "scenarioGraph": $exampleScenarioGraphStr,
+              |  "numberOfSamples": 100
+              |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/$notExistingScenarioName/generatedTestData")
         .Then()
         .statusCode(StatusCodes.NotFound.intValue)
         .equalsPlainBody(s"No scenario $notExistingScenarioName found")
@@ -351,6 +382,24 @@ trait TestingApiHttpServiceSpec
   }
 
   private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
+
+  private def testDataGenerationRequest(
+      scenarioGraphStr: String,
+      numberOfSamples: Int,
+  ) =
+    s"""{
+       |  "scenarioGraph": $scenarioGraphStr,
+       |  "numberOfSamples": $numberOfSamples
+       |}""".stripMargin
+
+  private def capabilitiesResponse(
+      scenarioGraphStr: String,
+      numberOfSamples: Int,
+  ) =
+    s"""{
+       |  "scenarioGraph": $scenarioGraphStr,
+       |  "numberOfSamples": $numberOfSamples
+       |}""".stripMargin
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =
     Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(canonical)).toString()
