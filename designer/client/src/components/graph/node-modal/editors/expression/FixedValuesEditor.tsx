@@ -1,17 +1,19 @@
+import { cx } from "@emotion/css";
+import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
+import i18next from "i18next";
+import { isEmpty } from "lodash";
 import React from "react";
 import Creatable from "react-select/creatable";
-import ValidationLabels from "../../../../modals/ValidationLabels";
-import { EditorType, ExpressionObj } from "./types";
-import { isEmpty } from "lodash";
-import { cx } from "@emotion/css";
+
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
-import { FormControlLabel, Radio, RadioGroup, Stack, styled, useTheme } from "@mui/material";
-import { ExtendedEditor, OnValueChange } from "./Editor";
-import { FieldError } from "../Validators";
-import { FixedValuesOption } from "../../fragment-input-definition/item";
+import ValidationLabels from "../../../../modals/ValidationLabels";
 import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
+import type { FixedValuesOption } from "../../fragment-input-definition/item";
+import type { FieldError } from "../Validators";
+import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
-import i18next from "i18next";
+import { EditorType } from "./types";
+import type { ExpressionObj } from "./types";
 
 type Props = {
     editorConfig: $TodoType;
@@ -38,6 +40,21 @@ function getOptions(values: FixedValuesOption[]): Option[] {
     }));
 }
 
+const NodeIcon = styled(PreloadedIcon)({
+    minWidth: "1.5em",
+    maxWidth: "1.5em",
+    minHeight: "1.5em",
+    maxHeight: "1.5em",
+});
+
+const StyledOptionLabel = styled("div")({
+    width: "100%",
+    lineHeight: "18px",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-all",
+    overflowWrap: "break-word",
+});
+
 export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
@@ -51,12 +68,6 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const options = getOptions(editorConfig.possibleValues);
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
-    const NodeIcon = styled(PreloadedIcon)({
-        minWidth: "1.5em",
-        maxWidth: "1.5em",
-        minHeight: "1.5em",
-        maxHeight: "1.5em",
-    });
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
         selectStyled(theme);
@@ -90,10 +101,10 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                     option.icon ? (
                         <Stack direction={"row"} alignItems={"center"} spacing={1}>
                             <NodeIcon src={option.icon} />
-                            <div>{option.label}</div>
+                            <StyledOptionLabel>{option.label}</StyledOptionLabel>
                         </Stack>
                     ) : (
-                        option.label
+                        <StyledOptionLabel>{option.label}</StyledOptionLabel>
                     )
                 }
                 isDisabled={readOnly}
