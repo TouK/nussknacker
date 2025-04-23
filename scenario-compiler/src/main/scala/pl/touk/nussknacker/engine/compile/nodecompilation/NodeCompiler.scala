@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.{NonEmptyList, ValidatedNel, Writer}
+import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
@@ -18,7 +18,10 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonize.MissingSinkHandler
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{
+  EnricherCompilationResult,
+  NodeCompilationResult
+}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
@@ -56,6 +59,11 @@ object NodeCompiler {
     def map[R](f: T => R): NodeCompilationResult[R] = copy(compiledObject = compiledObject.map(f))
 
   }
+
+  final case class EnricherCompilationResult(
+      serviceRef: compiledgraph.service.ServiceRef,
+      mockOutputExpression: Option[CompiledExpression]
+  )
 
 }
 
@@ -381,8 +389,29 @@ class NodeCompiler(
   def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: OutputVar)(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    compileService(n.service, ctx, Some(outputVar))
+  ): NodeCompilationResult[EnricherCompilationResult] = {
+    val serviceCompilationResult = compileService(n.service, ctx, Some(outputVar))
+
+    val expressionCompilationResult = n.mockExpression match {
+      case Some(expression) =>
+        compileEnricherMockExpression(expression, serviceCompilationResult.expressionType.getOrElse(Unknown), ctx)
+          .map(Some(_))
+      case None => Validated.validNel(None)
+    }
+    serviceCompilationResult.copy(
+      compiledObject = serviceCompilationResult.compiledObject.product(expressionCompilationResult).map {
+        case (service, mockedExpression) =>
+          EnricherCompilationResult(service, mockedExpression)
+      }
+    )
+  }
+
+  private def compileEnricherMockExpression(expression: Expression, expectedType: TypingResult, ctx: ValidationContext)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
+    expressionCompiler
+      .compile(expression, None, ctx, expectedType)
+      .map(_.expression)
   }
 
   private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
