@@ -144,12 +144,10 @@ private class InterpreterInternal[F[_]: Monad](
               interpretationResult(node, FragmentEndReference(id, fields), newCtx)
             }
           )
-      case Enricher(_, ref, outName, next, mockedOutput) =>
-        if (runtimeMode == Test && mockedOutput.isDefined) {
-          //todo: refactor
-          val valueWithModifiedContext = expressionEvaluator.evaluate[Any](mockedOutput.get, outName, node.id, ctx)
-          interpretNext(next, ctx.withVariable(outName, valueWithModifiedContext.value))
-        }
+      case Enricher(_, _, outName, next, Some(mockedOutput)) if runtimeMode == Test =>
+        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](mockedOutput, outName, node.id, ctx)
+        interpretNext(next, ctx.withVariable(outName, valueWithModifiedContext.value))
+      case Enricher(_, ref, outName, next, _) =>
         invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) =>
             interpretOptionalNext(node, next, newCtx.withVariable(outName, out))
