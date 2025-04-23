@@ -208,7 +208,7 @@ object PdfExporter extends LazyLogging {
       case Source(_, SourceRef(typ, params), _) =>
         ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
       case Filter(_, expression, _, _) => List(("Expression", expression.expression))
-      case Enricher(_, ServiceRef(typ, params), output, _) =>
+      case Enricher(_, ServiceRef(typ, params), output, _, _) =>
         ("Type", typ) :: ("Output", output) :: params.map(p => (p.name.value, p.expression.expression))
       // TODO: what about Swtich??
       case Switch(_, expression, exprVal, _) => expression.map(e => ("Expression", e.expression)).toList

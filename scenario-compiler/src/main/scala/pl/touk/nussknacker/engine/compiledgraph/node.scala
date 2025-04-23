@@ -26,7 +26,7 @@ object node {
 
   case class EndingProcessor(id: String, service: ServiceRef, isDisabled: Boolean) extends Node
 
-  case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends Node
+  case class Enricher(id: String, service: ServiceRef, output: String, next: Next, mockedOutput: Option[CompiledExpression]) extends Node
 
   case class Filter(
       id: String,
