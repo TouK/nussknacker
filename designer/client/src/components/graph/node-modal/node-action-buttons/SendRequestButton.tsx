@@ -7,18 +7,8 @@ import { setTestData } from "../../../../actions/nk/displayTestResults";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import type { NodeType } from "../../../../types";
-import { LoadingButton } from "../../../../windowManager/LoadingButton";
 import { useSourceParameters } from "../../../modals/AdhocTesting/useAdhocTestingAction";
-
-const StyledLoadingButton = styled(LoadingButton)(({ theme }) => ({
-    fontSize: "12px",
-    textTransform: "inherit",
-    padding: theme.spacing(0.5, 1),
-    margin: 0,
-    ":not(:last-child)": {
-        marginRight: 0,
-    },
-}));
+import { StyledLoadingButton } from "./StyledLoadingButton";
 
 interface Props {
     disabled: boolean;
