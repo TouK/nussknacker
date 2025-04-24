@@ -2,11 +2,10 @@ package pl.touk.nussknacker.engine.definition.fragment
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 class FragmentParameterTypingParserSpec extends AnyFunSuite with Matchers {
   private val classLoader = getClass.getClassLoader
