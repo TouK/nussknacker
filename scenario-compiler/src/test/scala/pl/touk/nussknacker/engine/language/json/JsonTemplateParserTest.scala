@@ -59,13 +59,14 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       "name"       -> "John",
       "age"        -> 50,
       "hasConsent" -> true,
-      "amount"     -> 100.0,
+      "amount"     -> 100.5,
     )
   )
 
   test("should parse json templates") {
     forAll(
       Table(
+        "Data sample",
         "{}",
         "123",
         "[]",
@@ -111,16 +112,26 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
          |  "amount": #{#amount}
          |}""".stripMargin
 
-    val result = parse[String](dataSample, ctxWithVariables).validValue.expression
+    val stringResult = parse[String](dataSample, ctxWithVariables).validValue.expression
       .evaluate[String](evaluationContext, Map.empty)
 
-    result shouldBe
+    stringResult shouldBe
       """{
         |  "name": "John",
         |  "age": 50,
         |  "hasConsent": true,
-        |  "amount": 100.0
+        |  "amount": 100.5
         |}""".stripMargin
+
+    val mapResult = parse[Any](dataSample, ctxWithVariables).validValue.expression
+      .evaluate[Any](evaluationContext, Map.empty)
+
+    mapResult shouldBe Map(
+      "name"       -> "John",
+      "age"        -> 50,
+      "hasConsent" -> true,
+      "amount"     -> new java.math.BigDecimal("100.5"),
+    ).asJava
   }
 
   test("should treat complex variables as strings") {
@@ -173,21 +184,26 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
   }
 
   test("should return error when complex variable type is not in quotes") {
-    val invalidJson = """|{
-                         |  "products": #{#products}
-                         |}""".stripMargin
-
-    val parsingErrors = parse[String](
-      invalidJson,
-      ValidationContext(
-        Map(
-          "products" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[String])),
-        )
+    forAll(
+      Table(
+        ("Invalid json", "Error message"),
+        ("""{ "products": #{#products} }""", "expected json value got 'unquot...' (line 1, column 15)"),
+        ("""{"random text"}""", "expected : got '}' (line 1, column 15)"),
+        ("""{#{#products}}""", "expected \" got 'unquot...' (line 1, column 2)"),
       )
-    ).invalidValue
+    ) { (invalidJson: String, errorMessage) =>
+      val parsingErrors = parse[String](
+        invalidJson,
+        ValidationContext(
+          Map(
+            "products" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[String])),
+          )
+        )
+      ).invalidValue
 
-    // This error message could be better but it requires to analyze how string ends before template variable
-    parsingErrors shouldBe NonEmptyList.of(JsonParsingError("expected json value got '}' (line 3, column 1)"))
+      // This error message could be better but it requires to analyze how string ends before template variable
+      parsingErrors shouldBe NonEmptyList.of(JsonParsingError(errorMessage))
+    }
   }
 
   private def parse[T: TypeTag](

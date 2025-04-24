@@ -2,38 +2,41 @@ package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
 object TypeValueDeterminer {
 
-  private val likeIntegerNumbersClassNames = Set(
-    "long",
-    "short",
-    "int",
-    "java.lang.Number",
-    "java.lang.Long",
-    "java.lang.Short",
-    "java.lang.Integer",
-    "java.math.BigInteger",
+  private val numbersClasses: Set[AnyRef] = Set(
+    classOf[Int],
+    classOf[Short],
+    classOf[Long],
+    classOf[java.lang.Number],
+    classOf[java.lang.Long],
+    classOf[java.lang.Short],
+    classOf[java.lang.Integer],
+    classOf[java.math.BigInteger],
   )
 
-  private val likeFloatingPointNumbersClassNames = Set(
-    "float",
-    "double",
-    "java.math.BigDecimal",
-    "java.lang.Float",
-    "java.lang.Double"
+  private val floatingPointNumbersClasses: Set[AnyRef] = Set(
+    classOf[Float],
+    classOf[Double],
+    classOf[java.math.BigDecimal],
+    classOf[java.lang.Float],
+    classOf[java.lang.Double],
   )
 
-  private val stringClass = "java.lang.String"
-  private val listClass   = "java.util.List"
-  private val mapClass    = "java.util.Map"
+  private val stringClass = classOf[String]
 
-  def isLikeIntegerNumber(className: String): Boolean       = likeIntegerNumbersClassNames.contains(className)
-  def isLikeFloatingPointNumber(className: String): Boolean = likeFloatingPointNumbersClassNames.contains(className)
+  private val booleanClasses: Set[AnyRef] = Set(
+    classOf[java.lang.Boolean],
+    classOf[Boolean],
+  )
 
-  def isBoolean(className: String): Boolean = className match {
-    case "boolean" | "java.lang.Boolean" => true
-    case _                               => false
-  }
+  private val listClass = classOf[java.util.List[_]]
+  private val mapClass  = classOf[java.util.Map[_, _]]
 
-  def isString(className: String): Boolean = stringClass.equals(className)
-  def isList(className: String): Boolean   = listClass.equals(className)
-  def isMap(className: String): Boolean    = mapClass.equals(className)
+  def isIntegerNumberClass(clazz: Class[_]): Boolean      = numbersClasses.contains(clazz)
+  def isLikeFloatingPointNumber(clazz: Class[_]): Boolean = floatingPointNumbersClasses.contains(clazz)
+
+  def isBoolean(clazz: Class[_]): Boolean = booleanClasses.contains(clazz)
+
+  def isString(clazz: Class[_]): Boolean = stringClass.equals(clazz)
+  def isList(clazz: Class[_]): Boolean   = listClass.equals(clazz)
+  def isMap(clazz: Class[_]): Boolean    = mapClass.equals(clazz)
 }

@@ -204,6 +204,7 @@ export default forwardRef(function AceWrapper(
                     ...DEFAULT_OPTIONS,
                     enableLiveAutocompletion,
                     showLineNumbers,
+                    // We don't want to check syntax correctness with ace
                     useWorker: useAceWorker,
                 }}
                 enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}

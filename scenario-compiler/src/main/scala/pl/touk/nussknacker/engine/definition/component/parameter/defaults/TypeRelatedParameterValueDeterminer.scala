@@ -22,8 +22,8 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
       className: Class[_]
   ): Option[Expression] = {
     // TODO: use classes instead of class names
-    Option(className).map(_.getName).collect {
-      case className if TypeValueDeterminer.isLikeIntegerNumber(className)       => Expression.spel("0")
+    Option(className).collect {
+      case className if TypeValueDeterminer.isIntegerNumberClass(className)      => Expression.spel("0")
       case className if TypeValueDeterminer.isLikeFloatingPointNumber(className) => Expression.spel("0.0")
       case className if TypeValueDeterminer.isBoolean(className)                 => Expression.spel("true")
       case className if TypeValueDeterminer.isString(className)                  => defaultStringExpression(editor)

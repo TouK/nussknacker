@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.TypeValueDeterminer
@@ -39,15 +40,19 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
       .parse(original, ctx, stringTypingResult)
       .andThen(parsedSpelTemplateExpression =>
         extractJsonStringFromParsedExpression(parsedSpelTemplateExpression, ctx)
-          .andThen(jsonString => JsonParser.parse(jsonString, ctx, expectedType))
-          .map(_ => parsedSpelTemplateExpression)
+          .andThen { jsonString =>
+            JsonParser.parse(jsonString, ctx, expectedType)
+          }
+          .map { jsonTypeExpression =>
+            parsedSpelTemplateExpression -> jsonTypeExpression
+          }
       )
-      .map(templateTypeExpression =>
+      .map { case (templateTypeExpression, jsonTypeExpression) =>
         TypedExpression(
           CompiledJsonTemplateExpression(languageId, original, templateTypeExpression.expression, expectedType),
-          JsonTemplateExpressionTypingInfo(templateTypeExpression.typingInfo),
+          JsonTemplateExpressionTypingInfo(jsonTypeExpression.typingInfo, expectedType),
         )
-      )
+      }
 
   override def parseWithoutContextValidation(
       original: String,
@@ -101,16 +106,16 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
 
   private def typingResultToDefaultJsonValue(typingResult: TypingResult): String = typingResult match {
     case TypedClass(k, _) =>
-      k.getName match {
-        case className if TypeValueDeterminer.isLikeIntegerNumber(className)       => "0"
+      k match {
+        case className if TypeValueDeterminer.isIntegerNumberClass(className)      => "0"
         case className if TypeValueDeterminer.isLikeFloatingPointNumber(className) => "0.0"
         case className if TypeValueDeterminer.isBoolean(className)                 => "true"
-        case className if TypeValueDeterminer.isString(className)                  => ""
+        case className if TypeValueDeterminer.isString(className)                  => "unquoted string"
         // For now, complex types are treated as String
-        case _ => ""
+        case _ => "unquoted string"
       }
     // For now, complex types are treated as String
-    case _ => ""
+    case _ => "unquoted string"
   }
 
   private def extractJsonStringFromCompiledExpression(
@@ -153,18 +158,23 @@ object JsonTemplateParser {
         templateCompiledExpression.evaluate[T](ctx, globals)
       } else {
         val jsonString = templateCompiledExpression.evaluate[String](ctx, globals)
-        // For now, it only return JSON, but Map, List and other types is albo possible
         parser.parse(jsonString) match {
           case Left(error)  => throw new IllegalStateException("Parsing JSON failed with error", error)
-          case Right(value) => value.asInstanceOf[T]
+          case Right(value) => FromJsonSimpleDecoder.jsonToAny(value).asInstanceOf[T]
         }
       }
 
   }
 
-  case class JsonTemplateExpressionTypingInfo(typingInfo: ExpressionTypingInfo) extends ExpressionTypingInfo {
+  case class JsonTemplateExpressionTypingInfo(typingInfo: ExpressionTypingInfo, expectedType: typing.TypingResult)
+      extends ExpressionTypingInfo {
 
-    override val typingResult: TypingResult = typingInfo.typingResult.withoutValue
+    override val typingResult: TypingResult =
+      if (expectedType == stringTypingResult) {
+        stringTypingResult
+      } else {
+        typingInfo.typingResult.withoutValue
+      }
 
   }
 

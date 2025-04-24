@@ -65,7 +65,6 @@ ace.define("ace/mode/jsonTemplate", ["require", "exports", "ace/mode/jsonTemplat
     let JsonMode = acequire("ace/mode/json").Mode;
     let JsonTemplateHighlightRules = acequire("ace/mode/jsonTemplate_highlight_rules").JsonTemplateHighlightRules;
 
-    // TODO: lbg disalbe json workes - syntax checking, or add it whether it's easy
     var Mode = function () {
         // initialize all of JSON mode's internals (behaviors, foldingRules, etc.)
         JsonMode.call(this);
