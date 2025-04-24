@@ -6,7 +6,7 @@ import org.springframework.core.convert.converter.{ConditionalConverter, Convert
 import org.springframework.core.convert.support.GenericConversionService
 import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
-import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{StringConversion, stringConversions}
+import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{stringConversions, StringConversion}
 
 import scala.jdk.CollectionConverters._
 
@@ -34,13 +34,9 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     service.addConverter(new ObjectToArrayConverter(service))
     // For purpose of concise usage of numbers in spel templates
     service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
-    service.addConverter(
-      classOf[IndexedRecord],
-      classOf[java.util.Map[_, _]],
-      (r: IndexedRecord) => {
-        r.getSchema.getFields.asScala.map(n => n.name() -> r.get(n.pos())).toMap.asJava
-      }
-    )
+    // TODO_PAWEL somehow we need it to not depend on this module, which is strange to say the least
+    // ale tutaj sie podaje  ten typ kurcze, mam podac object?
+    service.addConverter(new IndexedRecordToMapConverter(service))
     service.addConverter(new ConversionHandler.ArrayToListConverter(service))
     service
   }

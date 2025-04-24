@@ -118,7 +118,7 @@ public class Projection extends SpelNodeImpl {
         }
 
         // we have IndexedRecord to map conversion
-        // declared in DefaultSpelConversionsProvider
+        // declared in IndexedRecordToMapConverter class
         Map<?, ?> convertedMap = null;
         try {
             convertedMap = ExpressionUtils.convertTypedValue(state.getEvaluationContext(), op, Map.class);
