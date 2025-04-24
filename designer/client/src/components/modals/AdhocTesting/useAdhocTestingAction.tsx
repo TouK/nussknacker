@@ -1,13 +1,13 @@
 import { head } from "lodash";
-import { useCallback, useContext, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
 import { getProcessingType, getProcessName, getScenarioGraph, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
-import { UIParameter } from "../../../types";
-import { NodeContext } from "../../graph/node-modal/node/NodeDetails";
+import type { UIParameter } from "../../../types";
 import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
-import { AdhocTestingParameters } from "./AdhocTestingDialog";
-import { ActionValues } from "./AdhocTestingFormContext";
+import type { AdhocTestingParameters } from "./AdhocTestingDialog";
+import type { ActionValues } from "./AdhocTestingFormContext";
 
 export type SourceParameters = {
     [key: string]: { parameters: UIParameter[] };
@@ -70,23 +70,21 @@ export function useAdhocTestingAction(): AdhocTestingParameters {
     const dispatch = useDispatch();
     const scenarioName = useSelector(getProcessName);
     const scenarioGraph = useSelector(getScenarioGraph);
-    const nodeContext = useContext(NodeContext);
 
     const onConfirmAction = useCallback(
         (parameterExpressions: ActionValues) => {
-            const nodes = scenarioGraph.nodes.map((n) => (nodeContext?.id === n.id ? nodeContext : n));
             dispatch(
                 testProcessWithParameters(
-                    scenarioName,
                     {
                         sourceId,
                         parameterExpressions,
                     },
-                    { ...scenarioGraph, nodes },
+                    scenarioName,
+                    scenarioGraph,
                 ),
             );
         },
-        [dispatch, scenarioName, sourceId, scenarioGraph, nodeContext],
+        [dispatch, scenarioName, sourceId, scenarioGraph],
     );
 
     return useMemo<AdhocTestingParameters>(

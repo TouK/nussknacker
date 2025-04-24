@@ -26,7 +26,7 @@ function FromFileButton(props: ToolbarButtonProps) {
             title={t("panels.actions.test-from-file.button.title", "run test on data from file")}
             icon={<Icon />}
             disabled={!available}
-            onDrop={(files) => files.forEach((file) => dispatch(testProcessFromFile(processName, file, scenarioGraph)))}
+            onDrop={(files) => files.forEach((file) => dispatch(testProcessFromFile(file, processName, scenarioGraph)))}
             type={type}
         />
     );
