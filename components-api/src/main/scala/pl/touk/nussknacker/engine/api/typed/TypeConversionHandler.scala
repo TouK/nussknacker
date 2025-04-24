@@ -110,8 +110,7 @@ private[engine] object TypeConversionHandler {
             "org.apache.avro.generic.IndexedRecord"
           ) && ClassUtils.isAssignable(to.klass, classOf[java.util.Map[_, _]])) {
 
-          val indexedRecordKeyParam = Typed.genericTypeClass(classOf[String], List())
-          val indexedRecordValueParam = from match {
+          val indexedRecordValueType = from match {
             case TypedObjectTypingResult(fromFields, _, _) =>
               superTypeOfTypes(fromFields.values)
             case _ => Unknown
@@ -123,9 +122,9 @@ private[engine] object TypeConversionHandler {
             case _ => (Unknown, Unknown)
           }
 
-          AssignabilityDeterminer.isAssignable(indexedRecordKeyParam, mapKeyParam).isValid &&
+          AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
           AssignabilityDeterminer
-            .isAssignable(indexedRecordValueParam, mapValueParam)
+            .isAssignable(indexedRecordValueType, mapValueParam)
             .isValid
         } else {
           false
