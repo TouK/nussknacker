@@ -158,7 +158,7 @@ public class Selection extends SpelNodeImpl {
             throw new SpelEvaluationException(getStartPosition(), SpelMessage.INVALID_TYPE_FOR_SELECTION, "null");
         }
 
-        // we have GenericRecord to map conversion
+        // we have IndexedRecord to map conversion
         // declared in DefaultSpelConversionsProvider
         Map<?, ?> convertedMap = null;
         try {

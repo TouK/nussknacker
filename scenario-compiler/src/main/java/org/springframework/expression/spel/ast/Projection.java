@@ -117,7 +117,7 @@ public class Projection extends SpelNodeImpl {
             throw new SpelEvaluationException(getStartPosition(), SpelMessage.PROJECTION_NOT_SUPPORTED_ON_TYPE, "null");
         }
 
-        // we have GenericRecord to map conversion
+        // we have IndexedRecord to map conversion
         // declared in DefaultSpelConversionsProvider
         Map<?, ?> convertedMap = null;
         try {

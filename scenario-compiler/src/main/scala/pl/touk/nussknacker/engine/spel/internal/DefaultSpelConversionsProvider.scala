@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import org.apache.avro.generic.GenericRecord
+import org.apache.avro.generic.{GenericRecord, IndexedRecord}
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.{ConditionalConverter, Converter, ConverterFactory}
 import org.springframework.core.convert.support.GenericConversionService
 import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
-import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{stringConversions, StringConversion}
+import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{StringConversion, stringConversions}
 
 import scala.jdk.CollectionConverters._
 
@@ -35,9 +35,9 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     // For purpose of concise usage of numbers in spel templates
     service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
     service.addConverter(
-      classOf[GenericRecord],
+      classOf[IndexedRecord],
       classOf[java.util.Map[_, _]],
-      (r: GenericRecord) => {
+      (r: IndexedRecord) => {
         r.getSchema.getFields.asScala.map(n => n.name() -> r.get(n.pos())).toMap.asJava
       }
     )
