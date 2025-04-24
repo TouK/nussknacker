@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.spel.internal;
 
-import org.apache.avro.generic.IndexedRecord
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.{ConditionalGenericConverter, GenericConverter}
@@ -29,11 +28,31 @@ class IndexedRecordToMapConverter(val conversionService: ConversionService) exte
       null
     } else {
       // TODO_PAWEL avoid using the static link
-      val r = source.asInstanceOf[IndexedRecord];
-      r.getSchema.getFields.asScala.map(n => n.name() -> r.get(n.pos())).toMap.asJava
+      // this is how it would look if we could import IndexedRecord class
+//      val r = source.asInstanceOf[IndexedRecord];
+//      r.getSchema.getFields.asScala.map(n => n.name() -> r.get(n.pos())).toMap.asJava
 
+      // source is of type org.apache.avro.generic.IndexedRecord
+
+      // schema is of type org.apache.avro.Schema
+      val schema = invokeReflectiveMethodWithNoParameters(source, "getSchema")
+      // fields is of type List[org.apache.avro.Schema.Field]
+      val fields = invokeReflectiveMethodWithNoParameters(schema, "getFields").asInstanceOf[util.List[_]]
+      fields.asScala.map(n => {
+        val name = invokeReflectiveMethodWithNoParameters(n, "name").asInstanceOf[String]
+        val pos = invokeReflectiveMethodWithNoParameters(n, "pos").asInstanceOf[Int]
+
+        val getMethod = source.getClass.getDeclaredMethod("get", classOf[Int])
+        getMethod.setAccessible(true)
+        val value = getMethod.invoke(source, pos)
+        name -> value
+      }).toMap.asJava
     }
-
   }
 
+  private def invokeReflectiveMethodWithNoParameters(target: Any, methodName: String): Any = {
+    val method = target.getClass.getMethod(methodName)
+    method.setAccessible(true)
+    method.invoke(target)
+  }
 }

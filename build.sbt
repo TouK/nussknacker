@@ -852,8 +852,7 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
       Seq(
         "org.typelevel"          %% "cats-effect"                   % catsEffectV,
         "org.scala-lang.modules" %% "scala-java8-compat"            % scalaCompatV,
-        // TODO_PAWEL needs to be removed
-        "org.apache.avro"         % "avro"                          % avroV,
+        "org.apache.avro"         % "avro"                          % avroV          % Test,
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,
         "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test

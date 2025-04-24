@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import org.apache.avro.generic.{GenericRecord, IndexedRecord}
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.{ConditionalConverter, Converter, ConverterFactory}
 import org.springframework.core.convert.support.GenericConversionService
