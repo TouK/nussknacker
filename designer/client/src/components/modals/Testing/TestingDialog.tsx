@@ -1,6 +1,6 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import type { ElementType, ReactElement } from "react";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { WindowKind } from "../../../windowManager";
@@ -65,8 +65,8 @@ const TestingDialogWithProvider = (props: WindowContentProps<WindowKind, Testing
     const { storeAction } = props.data.meta;
     const { handleSetAction: _handleSetAction, ...context } = useTestingState();
 
-    const handleSetAction = useMemo(
-        () => (action) => {
+    const handleSetAction = useCallback<typeof _handleSetAction>(
+        (action) => {
             const nextAction = () => {
                 storeAction(nextAction);
                 action();

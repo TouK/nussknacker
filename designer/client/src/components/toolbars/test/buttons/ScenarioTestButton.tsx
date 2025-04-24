@@ -77,24 +77,24 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             if (preset?.value === RERUN_PREVIOUS) {
                 testingState.action();
                 setPreset(preset);
-            } else {
-                dispatch(updateTestType(preset?.value));
-                open<TestingData>({
-                    id: "scenarioTest",
-                    title: t("dialog.title.scenarioTest", "Scenario test"),
-                    isResizable: true,
-                    isModal: true,
-                    kind: WindowKind.scenarioTest,
-                    meta: {
-                        storeAction: testingState.handleSetAction,
-                        viewParams: {
-                            Icon: TestingIcon,
-                            docs,
-                            markdownContent,
-                        },
-                    },
-                });
+                return;
             }
+            dispatch(updateTestType(preset?.value));
+            open<TestingData>({
+                id: "scenarioTest",
+                title: t("dialog.title.scenarioTest", "Scenario test"),
+                isResizable: true,
+                isModal: true,
+                kind: WindowKind.scenarioTest,
+                meta: {
+                    storeAction: testingState.handleSetAction,
+                    viewParams: {
+                        Icon: TestingIcon,
+                        docs,
+                        markdownContent,
+                    },
+                },
+            });
         },
         [dispatch, docs, markdownContent, open, t, testingState],
     );
