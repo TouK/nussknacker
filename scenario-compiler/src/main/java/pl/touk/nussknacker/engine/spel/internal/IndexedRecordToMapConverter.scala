@@ -27,7 +27,6 @@ class IndexedRecordToMapConverter(val conversionService: ConversionService) exte
     if (source == null) {
       null
     } else {
-      // TODO_PAWEL avoid using the static link
       // this is how it would look if we could import IndexedRecord class
 //      val r = source.asInstanceOf[IndexedRecord];
 //      r.getSchema.getFields.asScala.map(n => n.name() -> r.get(n.pos())).toMap.asJava
