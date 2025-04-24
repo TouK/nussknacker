@@ -8,7 +8,7 @@ import type { ScenarioGraph } from "../../types";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
 
-export function testProcessFromFile(testDataFile: File, processName: ProcessName, scenarioGraph: ScenarioGraph): ThunkAction {
+export function testProcessFromFile(testDataFile: File): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
         HttpService.testProcess(processName, testDataFile, scenarioGraph).then(({ data }) => ({
             testResults: data,
@@ -16,11 +16,7 @@ export function testProcessFromFile(testDataFile: File, processName: ProcessName
     );
 }
 
-export function testProcessWithParameters(
-    testData: SourceWithParametersTest,
-    processName: ProcessName,
-    scenarioGraph: ScenarioGraph,
-): ThunkAction {
+export function testProcessWithParameters(testData: SourceWithParametersTest): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
         HttpService.testProcessWithParameters(processName, testData, scenarioGraph).then(({ data }) => ({
             testResults: data,
@@ -29,7 +25,7 @@ export function testProcessWithParameters(
     );
 }
 
-export function testScenarioWithGeneratedData(testSampleSize: string, processName: ProcessName, scenarioGraph: ScenarioGraph): ThunkAction {
+export function testScenarioWithGeneratedData(testSampleSize: string): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
         HttpService.testScenarioWithGeneratedData(processName, parseInt(testSampleSize), scenarioGraph).then(({ data }) => ({
             testResults: data,
@@ -58,7 +54,7 @@ function wrapWithTestAction(
         testResults: TestProcessResponse;
         testData?: SourceWithParametersTest;
     }>,
-) {
+): ThunkAction {
     return (dispatch, getState) => {
         dispatch({ type: "TEST_RESULTS_LOADING" });
         const state = getState();

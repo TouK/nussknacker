@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
-import { getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
@@ -22,14 +21,11 @@ import {
 } from "../graph/node-modal/editors/Validators";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import ValidationLabels from "./ValidationLabels";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const processName = useSelector(getProcessName);
-    const scenarioGraph = useSelector(getScenarioGraph);
     const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ testSampleSize }, setState] = useState({
@@ -37,9 +33,9 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     });
 
     const confirmAction = useCallback(async () => {
-        await dispatch(testScenarioWithGeneratedData(testSampleSize, processName, scenarioGraph));
+        await dispatch(testScenarioWithGeneratedData(testSampleSize));
         props.close();
-    }, [dispatch, processName, scenarioGraph, props, testSampleSize]);
+    }, [dispatch, props, testSampleSize]);
 
     const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator];
     const errors = extendErrors([], testSampleSize, "testData", validators);

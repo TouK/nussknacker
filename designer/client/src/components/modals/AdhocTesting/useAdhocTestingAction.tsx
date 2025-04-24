@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
-import { getProcessingType, getProcessName, getScenarioGraph, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
+import { getProcessingType, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
 import type { UIParameter } from "../../../types";
 import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
 import type { AdhocTestingParameters } from "./AdhocTestingDialog";
@@ -68,23 +68,17 @@ export function useAdhocTestingAction(): AdhocTestingParameters {
     const initialValues = useMemo(() => storedValues || paramsListToRecord(parameters), [parameters, storedValues]);
 
     const dispatch = useDispatch();
-    const scenarioName = useSelector(getProcessName);
-    const scenarioGraph = useSelector(getScenarioGraph);
 
     const onConfirmAction = useCallback(
         (parameterExpressions: ActionValues) => {
             dispatch(
-                testProcessWithParameters(
-                    {
-                        sourceId,
-                        parameterExpressions,
-                    },
-                    scenarioName,
-                    scenarioGraph,
-                ),
+                testProcessWithParameters({
+                    sourceId,
+                    parameterExpressions,
+                }),
             );
         },
-        [dispatch, scenarioName, sourceId, scenarioGraph],
+        [dispatch, sourceId],
     );
 
     return useMemo<AdhocTestingParameters>(
@@ -92,13 +86,11 @@ export function useAdhocTestingAction(): AdhocTestingParameters {
             parameters,
             variableTypes,
             processingType,
-            scenarioName,
             initialValues,
             onConfirmAction,
             sourceId,
-            scenarioGraph,
             previousTestData: storedValues,
         }),
-        [parameters, variableTypes, processingType, scenarioName, initialValues, onConfirmAction, sourceId, scenarioGraph, storedValues],
+        [parameters, variableTypes, processingType, initialValues, onConfirmAction, sourceId, storedValues],
     );
 }

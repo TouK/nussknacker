@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { testScenarioWithGeneratedData } from "../../../actions/nk/displayTestResults";
-import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import { NodeInput } from "../../FormElements";
 import {
@@ -17,7 +16,6 @@ import {
     minimalNumberValidator,
 } from "../../graph/node-modal/editors/Validators";
 import { nodeInput, nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { getProcessName } from "../../graph/node-modal/NodeDetailsContent/selectors";
 import ValidationLabels from "../../modals/ValidationLabels";
 import { useTestingContext } from "./TestingContext";
 
@@ -31,17 +29,15 @@ export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedData
 
     const { handleSetAction, handleIsValid } = useTestingContext();
 
-    const processName = useSelector(getProcessName);
-    const scenarioGraph = useSelector(getScenarioGraph);
     const generatedDataMaxSamples = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ generatedDataTestSampleSize }, setState] = useState({
         generatedDataTestSampleSize: "10",
     });
     const generatedDataTestingConfirm = useCallback(async () => {
-        dispatch(testScenarioWithGeneratedData(generatedDataTestSampleSize, processName, scenarioGraph));
+        dispatch(testScenarioWithGeneratedData(generatedDataTestSampleSize));
         closeDialog();
-    }, [dispatch, processName, scenarioGraph, generatedDataTestSampleSize, closeDialog]);
+    }, [dispatch, generatedDataTestSampleSize, closeDialog]);
     const generatedDataNumberOfSamplesValidators = [
         literalIntegerValueValidator,
         minimalNumberValidator(0),
