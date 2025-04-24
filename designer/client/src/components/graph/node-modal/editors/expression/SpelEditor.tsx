@@ -1,15 +1,15 @@
-import type { ForwardedRef, ReactNode} from "react";
+import type { ForwardedRef, ReactNode } from "react";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
 
 import type { VariableTypes } from "../../../../../types";
+import { InfoTooltip } from "../InfoTooltip";
 import type { FieldError } from "../Validators";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionSuggestProps } from "./ExpressionSuggest";
 import { ExpressionSuggest } from "./ExpressionSuggest";
-import { InfoTooltip } from "./InfoTooltip";
 import type { ExpressionObj } from "./types";
 import { EditorMode, ExpressionLang } from "./types";
 

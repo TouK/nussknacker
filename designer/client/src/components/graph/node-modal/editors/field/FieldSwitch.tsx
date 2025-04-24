@@ -1,14 +1,17 @@
-import React, { useState, ReactNode, useMemo, useCallback } from "react";
-import { EditorType, ExpressionObj } from "../expression/types";
-import { Option } from "../../fragment-input-definition/TypeSelect";
-import { Box, Tabs, Tab, styled } from "@mui/material";
 import { css } from "@emotion/css";
-import { Editor, ParamType } from "../types";
-import { editorsParameters } from "../expression/editorsParameters";
-import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
-import { editors, isExtendedEditor } from "../expression/Editor";
+import { Box, Tabs, Tab, styled } from "@mui/material";
+import type { ReactNode } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { InfoTooltip } from "../expression/InfoTooltip";
+
+import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
+import type { Option } from "../../fragment-input-definition/TypeSelect";
+import { editors, isExtendedEditor } from "../expression/Editor";
+import { editorsParameters } from "../expression/editorsParameters";
+import type { ExpressionObj } from "../expression/types";
+import { EditorType } from "../expression/types";
+import { InfoTooltip } from "../InfoTooltip";
+import type { Editor, ParamType } from "../types";
 
 const StyledTab = styled(Tab)(({ theme }) => ({
     fontSize: "0.65rem",

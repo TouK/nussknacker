@@ -1,4 +1,4 @@
-import { Alert, Box, styled } from "@mui/material";
+import { Alert, Box } from "@mui/material";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,6 +8,7 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import type { NodeType } from "../../../../types";
 import { useSourceParameters } from "../../../modals/AdhocTesting/useAdhocTestingAction";
+import { InfoTooltip } from "../editors/InfoTooltip";
 import { StyledLoadingButton } from "./StyledLoadingButton";
 
 interface Props {
@@ -45,7 +46,15 @@ export const SendRequestButton = ({ disabled, node, expression }: Props) => {
 
     return (
         <Box display={"flex"} alignItems={"flex-end"} flexDirection={"column"} width={"100%"}>
-            <StyledLoadingButton disabled={disabled} title={t("node.actions.sendRequest", "Send Request")} action={handleSendHttpRequest} />
+            <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={0.5}>
+                <StyledLoadingButton
+                    disabled={disabled}
+                    title={t("node.actions.sendRequest", "Send Request")}
+                    action={handleSendHttpRequest}
+                />
+                <InfoTooltip text={"works"} variant={"hover"} />
+            </Box>
+
             {showInfoAfterSendData && (
                 <Alert
                     icon={false}

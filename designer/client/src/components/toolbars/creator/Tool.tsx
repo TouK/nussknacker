@@ -5,7 +5,7 @@ import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
 import type { NodeType } from "../../../types";
-import { InfoTooltip } from "../../graph/node-modal/editors/expression/InfoTooltip";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
 import { ComponentIcon } from "./ComponentIcon";
 import { SearchHighlighter } from "./SearchHighlighter";
 
