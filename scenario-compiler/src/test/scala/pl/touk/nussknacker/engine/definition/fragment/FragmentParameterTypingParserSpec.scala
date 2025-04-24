@@ -27,8 +27,8 @@ class FragmentParameterTypingParserSpec extends AnyFunSuite with Matchers {
 
     triedTypingResult match {
       case Failure(ex) => fail(s"Unexpected failure: $ex")
-      case Success(tr: TypedClass) =>
-        tr.display shouldBe "Map[List[Integer],Map[String,List[Integer]]]"
+      case Success(tc: TypedClass) =>
+        tc.display shouldBe "Map[List[Integer],Map[String,List[Integer]]]"
       case Success(tr) =>
         fail(s"Expected a result type which is TypedClass but got instead: ${tr.getClass.getSimpleName}")
     }
