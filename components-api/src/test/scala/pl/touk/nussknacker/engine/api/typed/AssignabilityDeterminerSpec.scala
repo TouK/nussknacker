@@ -79,14 +79,14 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
   test("isAssignable with Strict ConversionStrategy should fail for implicit conversions") {
     forAll(implicitConversionCases) { (sourceType, targetType) =>
       val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Strict)
-      result shouldBe 'invalid
+      result shouldBe Symbol("invalid")
     }
   }
 
   test("isAssignable with Loose ConversionStrategy should pass for implicit conversions") {
     forAll(implicitConversionCases) { (sourceType, targetType) =>
       val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Loose)
-      result shouldBe 'valid
+      result shouldBe Symbol("valid")
     }
   }
 
