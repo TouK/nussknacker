@@ -1158,7 +1158,12 @@ lazy val mathUtils = (project in utils("math-utils"))
 lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-default-helpers"
+    name := "nussknacker-default-helpers",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-core"  % flinkV % Test,
+      )
+    }
   )
   .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
