@@ -44,7 +44,7 @@ class IndexedRecordToMapConverter(val conversionService: ConversionService) exte
 
         val getMethod = source.getClass.getDeclaredMethod("get", classOf[Int])
         getMethod.setAccessible(true)
-        val value = getMethod.invoke(source, pos)
+        val value = getMethod.invoke(source, pos.asInstanceOf[AnyRef])
         name -> value
       }).toMap.asJava
     }
