@@ -1,45 +1,54 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
+import fastparse._
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 import scala.util.Try
 
+import SingleLineWhitespace._
+
 class FragmentParameterTypingParser(classLoader: ClassLoader, classDefinitions: ClassDefinitionSet) {
 
-  private val mapPattern             = "Map\\[(.+),\\s*(.+)\\]".r
-  private val listPattern            = "List\\[(.+)\\]".r
-  private val setPattern             = "Set\\[(.+)\\]".r
+  private def identifier[_: P]: P[String] =
+    P(CharIn("a-zA-Z_") ~ CharsWhileIn("a-zA-Z0-9_.", 0)).!
+
+  private def typParser[_: P]: P[TypingResult] =
+    P(mapType | listType | setType | simpleType)
+
+  private def simpleType[_: P]: P[TypingResult] =
+    identifier.map(resolveInnerClass)
+
+  private def mapType[_: P]: P[TypingResult] =
+    P("Map[" ~/ typParser ~ "," ~ typParser ~ "]")
+      .map { case (tr1, tr2) => Typed.genericTypeClass[java.util.Map[_, _]](List(tr1, tr2)) }
+
+  private def listType[_: P]: P[TypingResult] =
+    P("List[" ~/ typParser ~ "]")
+      .map(tr => Typed.genericTypeClass[java.util.List[_]](List(tr)))
+
+  private def setType[_: P]: P[TypingResult] =
+    P("Set[" ~/ typParser ~ "]")
+      .map(tr => Typed.genericTypeClass[java.util.Set[_]](List(tr)))
+
   private val classDefinitionsByName = classDefinitions.byName
 
-  def parseClassNameToTypingResult(className: String): Try[TypingResult] = {
-    /*
-   TODO: Write this parser in a way that handles arbitrary depth expressions
-         One should not use regexes for doing so and rather build AST
-     */
-    def resolveInnerClass(simpleClassName: String): TypingResult =
-      classDefinitionsByName.get(simpleClassName) match {
-        case Some(resolvedClassDefinition) =>
-          resolvedClassDefinition.clazzName
-        case None =>
-          // This is fallback - it may be removed and `ClassNotFound` exception may be thrown here after cleaning up the mess with `FragmentClazzRef` class
-          Typed(ClassUtils.getClass(classLoader, simpleClassName))
-      }
+  private def resolveInnerClass(simpleClassName: String): TypingResult =
+    classDefinitionsByName.get(simpleClassName) match {
+      case Some(resolvedClassDefinition) =>
+        resolvedClassDefinition.clazzName
+      case None =>
+        // This is fallback - it may be removed and `ClassNotFound` exception may be thrown here after cleaning up the mess with `FragmentClazzRef` class
+        Typed(ClassUtils.getClass(classLoader, simpleClassName))
+    }
 
-    Try(className match {
-      case mapPattern(x, y) =>
-        val resolvedFirstTypeParam  = resolveInnerClass(x)
-        val resolvedSecondTypeParam = resolveInnerClass(y)
-        Typed.genericTypeClass[java.util.Map[_, _]](List(resolvedFirstTypeParam, resolvedSecondTypeParam))
-      case listPattern(x) =>
-        val resolvedTypeParam = resolveInnerClass(x)
-        Typed.genericTypeClass[java.util.List[_]](List(resolvedTypeParam))
-      case setPattern(x) =>
-        val resolvedTypeParam = resolveInnerClass(x)
-        Typed.genericTypeClass[java.util.Set[_]](List(resolvedTypeParam))
-      case simpleClassName =>
-        resolveInnerClass(simpleClassName)
+  def parseClassNameToTypingResult(className: String): Try[TypingResult] = {
+
+    Try(parse(className, typParser(_)) match {
+      case Parsed.Success(typingResult, _) => typingResult
+      case Parsed.Failure(label, index, extra) =>
+        throw new IllegalArgumentException(s"Parsing failed at $index: $label\n${extra.trace().longMsg}")
     })
   }
 
