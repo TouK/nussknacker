@@ -5,6 +5,20 @@ import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  superTypeOfTypes,
+  SingleTypingResult,
+  Typed,
+  TypedClass,
+  TypedObjectTypingResult,
+  TypedObjectWithValue,
+  Unknown
+}
+import pl.touk.nussknacker.engine.util.AssignabilityUtil
+>>>>>>> d0d8fa0983 (squashed changes 1948)
 
 import java.nio.charset.Charset
 import java.time._
@@ -71,7 +85,8 @@ private[engine] object TypeConversionHandler {
       implicit conversionStrategy: NonEmptyConversionStrategy
   ): Boolean = {
     handleImplicitConversion(from, to) ||
-    handleNumberConversion(from.runtimeObjType, to)
+    handleNumberConversion(from.runtimeObjType, to) ||
+    handleIndexedRecordToMapConversion(from.runtimeObjType, to, strict)
   }
 
   private def handleImplicitConversion(from: SingleTypingResult, to: TypedClass)(
@@ -92,6 +107,36 @@ private[engine] object TypeConversionHandler {
     conversionStrategy match {
       case Strict => handleStrictNumberConversions(from.runtimeObjType.klass, to.klass)
       case Loose  => handleLooseNumberConversion(from.runtimeObjType.klass, to.klass)
+    }
+  }
+
+  private def handleIndexedRecordToMapConversion(
+      from: SingleTypingResult,
+      to: TypedClass
+  )(implicit conversionStrategy: NonEmptyConversionStrategy)
+  : Boolean = {
+    if (!AssignabilityUtil.isAssignableToLoadableClass(
+        from.runtimeObjType.klass,
+        "org.apache.avro.generic.IndexedRecord"
+      ) ||
+      !ClassUtils.isAssignable(to.runtimeObjType.klass, classOf[java.util.Map[_, _]])) {
+      false
+    } else {
+      val indexedRecordKeyParam = Typed.genericTypeClass(classOf[String], List())
+      val indexedRecordValueParam = from match {
+        case fromCasted: TypedObjectTypingResult =>
+          superTypeOfTypes(fromCasted.fields.values)
+        case _ => Unknown
+      }
+      // TODO_PAWEL fix
+      val isAssignable =
+        if (strict)
+          AssignabilityDeterminer.isAssignableStrict _
+        else
+          AssignabilityDeterminer.isAssignableLoose _
+
+      isAssignable(indexedRecordKeyParam, to.params.headOption.getOrElse(Unknown)).isValid &&
+      isAssignable(indexedRecordValueParam, to.params.drop(1).headOption.getOrElse(Unknown)).isValid
     }
   }
 
