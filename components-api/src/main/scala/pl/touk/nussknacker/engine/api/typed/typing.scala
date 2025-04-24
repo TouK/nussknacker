@@ -33,7 +33,7 @@ object typing {
 
     /**
      * Checks if given type is a target type or given type can be converted to target type without loss of precision
-     * e.g. int to long
+     * e.g. int to long conversion is acceptable but long to int is not
      */
     final def canBeStrictlyAssignedTo(typingResult: TypingResult): Boolean =
       AssignabilityDeterminer.isAssignable(this, typingResult)(Strict).isValid
@@ -44,7 +44,8 @@ object typing {
     //       canBeStrictlyAssignedTo was probly the better choice
     /**
      * Checks if given type is a target type or there exists a conversion to target type, with possible
-     * loss of precision, e.g. long to int. If you need to retain conversion precision, use canBeStrictlyAssignedTo
+     * loss of precision, e.g. both int to long and long to int conversions are acceptable.
+     * If you need to retain conversion precision, use canBeStrictlyAssignedTo
      */
     final def canBeLooselyAssignedTo(typingResult: TypingResult): Boolean =
       AssignabilityDeterminer.isAssignable(this, typingResult)(Loose).isValid
