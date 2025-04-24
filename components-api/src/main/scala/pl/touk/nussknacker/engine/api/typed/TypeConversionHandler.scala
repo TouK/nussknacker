@@ -102,31 +102,36 @@ private[engine] object TypeConversionHandler {
       from: SingleTypingResult,
       to: TypedClass
   )(implicit conversionStrategy: NonEmptyConversionStrategy): Boolean = {
-    if (AssignabilityUtil.isAssignableToLoadableClass(
-        from.runtimeObjType.klass,
-        "org.apache.avro.generic.IndexedRecord"
-      ) && ClassUtils.isAssignable(to.klass, classOf[java.util.Map[_, _]])) {
+    conversionStrategy match {
+      case Strict => false
+      case Loose =>
+        if (AssignabilityUtil.isAssignableToLoadableClass(
+            from.runtimeObjType.klass,
+            "org.apache.avro.generic.IndexedRecord"
+          ) && ClassUtils.isAssignable(to.klass, classOf[java.util.Map[_, _]])) {
 
-      val indexedRecordKeyParam = Typed.genericTypeClass(classOf[String], List())
-      val indexedRecordValueParam = from match {
-        case TypedObjectTypingResult(fromFields, _, _) =>
-          superTypeOfTypes(fromFields.values)
-        case _ => Unknown
-      }
+          val indexedRecordKeyParam = Typed.genericTypeClass(classOf[String], List())
+          val indexedRecordValueParam = from match {
+            case TypedObjectTypingResult(fromFields, _, _) =>
+              superTypeOfTypes(fromFields.values)
+            case _ => Unknown
+          }
 
-      val (mapKeyParam, mapValueParam) = to match {
-        case TypedClass(_, key :: value :: Nil) =>
-          (key, value)
-        case _ => (Unknown, Unknown)
-      }
+          val (mapKeyParam, mapValueParam) = to match {
+            case TypedClass(_, key :: value :: Nil) =>
+              (key, value)
+            case _ => (Unknown, Unknown)
+          }
 
-      AssignabilityDeterminer.isAssignable(indexedRecordKeyParam, mapKeyParam).isValid &&
-      AssignabilityDeterminer
-        .isAssignable(indexedRecordValueParam, mapValueParam)
-        .isValid
-    } else {
-      false
+          AssignabilityDeterminer.isAssignable(indexedRecordKeyParam, mapKeyParam).isValid &&
+          AssignabilityDeterminer
+            .isAssignable(indexedRecordValueParam, mapValueParam)
+            .isValid
+        } else {
+          false
+        }
     }
+
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
