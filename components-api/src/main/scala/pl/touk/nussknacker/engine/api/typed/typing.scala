@@ -56,7 +56,7 @@ object typing {
     private[engine] final def canBeAssignedTo(typingResult: TypingResult)(
         implicit conversionStrategy: ConversionStrategy
     ): Boolean =
-      AssignabilityDeterminer.isAssignable(this, typingResult)(conversionStrategy).isValid
+      AssignabilityDeterminer.isAssignable(this, typingResult).isValid
 
     def valueOpt: Option[Any]
 
