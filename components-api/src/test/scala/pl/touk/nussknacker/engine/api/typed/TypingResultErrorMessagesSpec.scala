@@ -16,7 +16,7 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
 
   import AssignabilityDeterminer.isAssignable
 
-  test("determine if can be subclass for simple typed objects") {
+  test("determine if can be assigned for simple typed objects") {
 
     isAssignable(
       typeMap(
@@ -40,23 +40,23 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
       .invalid
   }
 
-  test("determine if can be subclass for map of typed objects") {
+  test("determine if can be assigned for map of typed objects") {
     isAssignable(
       typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))),
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
     )(Loose) shouldBe NonEmptyList
       .of(
-        "Map[String,List[Record{field2a: String, field3: Integer}]] cannot be converted to Map[String,List[Record{field2: String}]]"
+        "Field 'field2' is lacking"
       )
       .invalid
   }
 
-  test("determine if can be subclass for class") {
+  test("determine if can be assigned for class") {
     isAssignable(Typed.fromDetailedType[Set[BigDecimal]], Typed.fromDetailedType[Set[String]])(Loose) shouldBe
-      "Set[BigDecimal] cannot be converted to Set[String]".invalidNel
+      "Generic type parameters (BigDecimal) don't match expected parameters: String".invalidNel
   }
 
-  test("determine if can be subclass for tagged value") {
+  test("determine if can be assigned for tagged value") {
     isAssignable(
       Typed.tagged(Typed.typedClass[String], "tag1"),
       Typed.tagged(Typed.typedClass[String], "tag2")
@@ -64,19 +64,19 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
       "Tagged values have unequal tags: tag1 and tag2".invalidNel
 
     isAssignable(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1"))(Loose) shouldBe
-      "The type is not a tagged value".invalidNel
+      "Given type is not a tagged value but target type is".invalidNel
   }
 
-  test("determine if can be subclass for object with value") {
+  test("determine if can be assigned for object with value") {
     isAssignable(Typed.fromInstance(2), Typed.fromInstance(3))(Loose) shouldBe
       "Types with value have different values: 2 and 3".invalidNel
   }
 
-  test("determine if can be subclass for null") {
+  test("determine if can be assigned for null") {
     isAssignable(Typed[String], TypedNull)(Loose) shouldBe
-      "No type can be subclass of Null".invalidNel
+      "String cannot be assigned to Null".invalidNel
     isAssignable(TypedNull, Typed.fromInstance(1))(Loose) shouldBe
-      "Null cannot be subclass of type with value".invalidNel
+      "Null cannot be assigned to type with value".invalidNel
   }
 
 }

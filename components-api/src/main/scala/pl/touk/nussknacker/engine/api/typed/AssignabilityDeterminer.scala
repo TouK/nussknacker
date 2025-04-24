@@ -30,7 +30,7 @@ private[typed] object AssignabilityDeterminer {
       case (_, Unknown(_))    => ().validNel
       case (Unknown(_), _)    => ().validNel
       case (TypedNull, other) => isNullAssignableTo(other)
-      case (_, TypedNull)     => s"No type can be assigned to ${TypedNull.display}".invalidNel
+      case (_, TypedNull)     => s"${from.display} cannot be assigned to ${TypedNull.display}".invalidNel
       case (given: SingleTypingResult, target: TypedUnion) =>
         isAnyOfAssignableToAnyOf(NonEmptyList.one(given), target.possibleTypes)
       case (given: TypedUnion, targe: SingleTypingResult) =>
@@ -83,10 +83,10 @@ private[typed] object AssignabilityDeterminer {
           condNel(
             given.dictId == target.dictId,
             (),
-            "The type and target type are Dicts with unequal IDs"
+            "Given type and target type are Dicts with unequal IDs"
           )
         case (_: TypedDict, _) =>
-          "The type is a Dict but the target type not".invalidNel
+          "Given type is a Dict but the target type not".invalidNel
         case (_, _: TypedDict) =>
           "The target type is a Dict but given type not".invalidNel
         case _ =>
@@ -103,7 +103,7 @@ private[typed] object AssignabilityDeterminer {
           )
         case (_: TypedTaggedValue, _) => ().validNel
         case (_, _: TypedTaggedValue) =>
-          s"The type is not a tagged value".invalidNel
+          s"Given type is not a tagged value but target type is".invalidNel
         case _ => ().validNel
       }
     }
@@ -159,7 +159,8 @@ private[typed] object AssignabilityDeterminer {
               canBeAssignedToOrAssignedFrom(givenClassParam, targetParam).isValid
             },
             (),
-            s"Wrong type parameters"
+            s"Generic type parameters (${givenClass.params.map(_.display).mkString(", ")}) don't match " +
+              s"expected parameters: ${targetCandidate.params.map(_.display).mkString(", ")}"
           )
       }
     }
@@ -169,7 +170,7 @@ private[typed] object AssignabilityDeterminer {
       condNel(
         givenClass == to,
         (),
-        f"${givenClass.display} and ${to.display} are not the same"
+        f"${givenClass.display} cannot be assigned to ${to.display}"
       ) orElse
         isAssignable(givenClass.klass, to.klass)
 
