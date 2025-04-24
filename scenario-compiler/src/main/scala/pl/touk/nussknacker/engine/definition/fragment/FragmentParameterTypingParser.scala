@@ -45,7 +45,7 @@ class FragmentParameterTypingParser(classLoader: ClassLoader, classDefinitions: 
 
   def parseClassNameToTypingResult(className: String): Try[TypingResult] = {
 
-    Try(parse(className, typParser(_)) match {
+    Try(parse(className, implicit ctx => typParser(ctx) ~ End) match {
       case Parsed.Success(typingResult, _) => typingResult
       case Parsed.Failure(label, index, extra) =>
         throw new IllegalArgumentException(s"Parsing failed at $index: $label\n${extra.trace().longMsg}")
