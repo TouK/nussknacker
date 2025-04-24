@@ -102,13 +102,10 @@ private[engine] object TypeConversionHandler {
       from: SingleTypingResult,
       to: TypedClass
   )(implicit conversionStrategy: NonEmptyConversionStrategy): Boolean = {
-    if (!AssignabilityUtil.isAssignableToLoadableClass(
+    if (AssignabilityUtil.isAssignableToLoadableClass(
         from.runtimeObjType.klass,
         "org.apache.avro.generic.IndexedRecord"
-      ) ||
-      !ClassUtils.isAssignable(to.runtimeObjType.klass, classOf[java.util.Map[_, _]])) {
-      false
-    } else {
+      ) && ClassUtils.isAssignable(to.klass, classOf[java.util.Map[_, _]])) {
       val indexedRecordKeyParam = Typed.genericTypeClass(classOf[String], List())
       val indexedRecordValueParam = from match {
         case fromCasted: TypedObjectTypingResult =>
@@ -120,6 +117,8 @@ private[engine] object TypeConversionHandler {
       AssignabilityDeterminer
         .isAssignable(indexedRecordValueParam, to.params.drop(1).headOption.getOrElse(Unknown))
         .isValid
+    } else {
+      false
     }
   }
 
