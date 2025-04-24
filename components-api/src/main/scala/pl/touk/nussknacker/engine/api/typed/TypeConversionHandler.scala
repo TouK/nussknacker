@@ -70,9 +70,20 @@ private[engine] object TypeConversionHandler {
   def canBeConverted(from: SingleTypingResult, to: TypedClass)(
       implicit conversionStrategy: NonEmptyConversionStrategy
   ): Boolean = {
-    handleStringToValueClassConversions(from, to) ||
-    handleArrayToListConversions(from.runtimeObjType, to) ||
+    handleImplicitConversion(from, to) ||
     handleNumberConversion(from.runtimeObjType, to)
+  }
+
+  private def handleImplicitConversion(from: SingleTypingResult, to: TypedClass)(
+      implicit conversionStrategy: NonEmptyConversionStrategy
+  ) = {
+    conversionStrategy match {
+      // Implicit conversions are not allowed in strict conversion strategy. We want to behave as plain java, without magical tricks.
+      case Strict => false
+      case Loose =>
+        handleStringToValueClassConversions(from, to) ||
+        handleArrayToListConversions(from.runtimeObjType, to)
+    }
   }
 
   private def handleNumberConversion(from: SingleTypingResult, to: TypedClass)(
@@ -110,20 +121,18 @@ private[engine] object TypeConversionHandler {
   private def handleStringToValueClassConversions(
       from: SingleTypingResult,
       to: TypedClass
-  )(implicit conversionStrategy: NonEmptyConversionStrategy): Boolean =
+  ): Boolean =
     from match {
-      case TypedObjectWithValue(_, str: String) if conversionStrategy == ConversionStrategy.Loose =>
+      case TypedObjectWithValue(_, str: String) =>
         stringConversions.exists(_.canConvert(str, to))
       case _ => false
     }
 
   // See pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
-  private def handleArrayToListConversions(from: TypedClass, to: TypedClass)(
-      implicit conversionStrategy: NonEmptyConversionStrategy
-  ): Boolean = {
+  private def handleArrayToListConversions(from: TypedClass, to: TypedClass): Boolean = {
     (from, to) match {
-      case (TypedClass(`arrayOfAnyRefClass`, _), TypedClass(`javaListClass`, _))
-          if conversionStrategy == ConversionStrategy.Loose =>
+      // Generic type parameters are checked in AssignabilityDeterminer
+      case (TypedClass(`arrayOfAnyRefClass`, _), TypedClass(`javaListClass`, _)) =>
         true
       case _ =>
         false
