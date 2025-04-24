@@ -107,10 +107,10 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
   private def typingResultToDefaultJsonValue(typingResult: TypingResult): String = typingResult match {
     case TypedClass(k, _) =>
       k match {
-        case className if TypeValueDeterminer.isIntegerNumberClass(className)      => "0"
-        case className if TypeValueDeterminer.isLikeFloatingPointNumber(className) => "0.0"
-        case className if TypeValueDeterminer.isBoolean(className)                 => "true"
-        case className if TypeValueDeterminer.isString(className)                  => "unquoted string"
+        case className if TypeValueDeterminer.isIntegerNumber(className)       => "0"
+        case className if TypeValueDeterminer.isFloatingPointNumber(className) => "0.5"
+        case className if TypeValueDeterminer.isBoolean(className)             => "true"
+        case className if TypeValueDeterminer.isString(className)              => "unquoted string"
         // For now, complex types are treated as String
         case _ => "unquoted string"
       }

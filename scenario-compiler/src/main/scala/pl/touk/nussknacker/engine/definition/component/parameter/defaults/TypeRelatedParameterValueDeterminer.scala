@@ -23,12 +23,12 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   ): Option[Expression] = {
     // TODO: use classes instead of class names
     Option(className).collect {
-      case className if TypeValueDeterminer.isIntegerNumberClass(className)      => Expression.spel("0")
-      case className if TypeValueDeterminer.isLikeFloatingPointNumber(className) => Expression.spel("0.0")
-      case className if TypeValueDeterminer.isBoolean(className)                 => Expression.spel("true")
-      case className if TypeValueDeterminer.isString(className)                  => defaultStringExpression(editor)
-      case className if TypeValueDeterminer.isList(className)                    => Expression.spel("{}")
-      case className if TypeValueDeterminer.isMap(className)                     => Expression.spel("{:}")
+      case className if TypeValueDeterminer.isIntegerNumber(className)       => Expression.spel("0")
+      case className if TypeValueDeterminer.isFloatingPointNumber(className) => Expression.spel("0.0")
+      case className if TypeValueDeterminer.isBoolean(className)             => Expression.spel("true")
+      case className if TypeValueDeterminer.isString(className)              => defaultStringExpression(editor)
+      case className if TypeValueDeterminer.isList(className)                => Expression.spel("{}")
+      case className if TypeValueDeterminer.isMap(className)                 => Expression.spel("{:}")
     }
   }
 

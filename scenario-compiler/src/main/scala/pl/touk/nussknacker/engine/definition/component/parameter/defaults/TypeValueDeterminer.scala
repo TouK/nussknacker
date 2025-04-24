@@ -31,8 +31,8 @@ object TypeValueDeterminer {
   private val listClass = classOf[java.util.List[_]]
   private val mapClass  = classOf[java.util.Map[_, _]]
 
-  def isIntegerNumberClass(clazz: Class[_]): Boolean      = numbersClasses.contains(clazz)
-  def isLikeFloatingPointNumber(clazz: Class[_]): Boolean = floatingPointNumbersClasses.contains(clazz)
+  def isIntegerNumber(clazz: Class[_]): Boolean       = numbersClasses.contains(clazz)
+  def isFloatingPointNumber(clazz: Class[_]): Boolean = floatingPointNumbersClasses.contains(clazz)
 
   def isBoolean(clazz: Class[_]): Boolean = booleanClasses.contains(clazz)
 

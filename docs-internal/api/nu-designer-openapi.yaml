@@ -7238,6 +7238,7 @@ components:
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/JsonTemplateParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/StaticStringParameterEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
