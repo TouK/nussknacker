@@ -60,20 +60,20 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
   }
 
   test("should type empty list") {
-    Typed.fromInstance(Nil).canBeConvertedTo(Typed(classOf[List[_]])) shouldBe true
-    Typed.fromInstance(Nil.asJava).canBeConvertedTo(Typed(classOf[java.util.List[_]])) shouldBe true
+    Typed.fromInstance(Nil).canBeLooselyAssignedTo(Typed(classOf[List[_]])) shouldBe true
+    Typed.fromInstance(Nil.asJava).canBeLooselyAssignedTo(Typed(classOf[java.util.List[_]])) shouldBe true
   }
 
   test("should type lists and return union of types coming from all elements") {
     def checkTypingResult(obj: Any, klass: Class[_], paramTypingResult: TypingResult): Unit = {
       val typingResult = Typed.fromInstance(obj)
 
-      typingResult.canBeConvertedTo(Typed(klass)) shouldBe true
+      typingResult.canBeLooselyAssignedTo(Typed(klass)) shouldBe true
       typingResult.withoutValue
         .asInstanceOf[TypedClass]
         .params
         .loneElement
-        .canBeConvertedTo(paramTypingResult) shouldBe true
+        .canBeLooselyAssignedTo(paramTypingResult) shouldBe true
     }
 
     def checkNotASubclassOfOtherParamTypingResult(obj: Any, otherParamTypingResult: TypingResult): Unit = {
@@ -82,7 +82,7 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
         .asInstanceOf[TypedClass]
         .params
         .loneElement
-        .canBeConvertedTo(otherParamTypingResult) shouldBe false
+        .canBeLooselyAssignedTo(otherParamTypingResult) shouldBe false
     }
 
     val listOfSimpleObjects = List[Any](1.1, 2)

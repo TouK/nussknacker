@@ -85,7 +85,7 @@ object NumberTypesPromotionStrategy {
     classOf[java.lang.Byte]
   )
 
-  val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
+  private val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
 
   def isDecimalNumber(clazz: Class[_]): Boolean = DecimalNumbers.contains(clazz)
 

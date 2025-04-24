@@ -1511,7 +1511,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should convert array to list when passing arg which type should be list") {
-    evaluate[Any]("T(java.lang.String).join(',', #array)") shouldBe "a,b"
+    evaluate[Any]("#processHelper.stringList(#array)", ctxWithGlobal) shouldBe 2
   }
 
   test("should calculate correct type of list after projection on list") {
@@ -2231,7 +2231,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       val parsedRoundTripExpression = parse[Any](mapExpression + ".toList.toMap", customCtx).validValue
       parsedRoundTripExpression.evaluateSync[Any](customCtx) shouldBe givenMap
       val roundTripTypeIsAGeneralizationOfGivenType =
-        givenMapExpression.returnType canBeConvertedTo parsedRoundTripExpression.returnType
+        givenMapExpression.returnType canBeLooselyAssignedTo parsedRoundTripExpression.returnType
       roundTripTypeIsAGeneralizationOfGivenType shouldBe true
     }
 
