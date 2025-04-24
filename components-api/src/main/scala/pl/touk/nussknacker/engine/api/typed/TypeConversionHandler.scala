@@ -104,32 +104,28 @@ private[engine] object TypeConversionHandler {
       to: TypedClass
   )(implicit conversionStrategy: NonEmptyConversionStrategy): Boolean = {
     conversionStrategy match {
-      case Strict => false
-      case Loose =>
-        if (AssignabilityUtil.isAssignableToLoadableClass(
+      case Loose
+          if AssignabilityUtil.isAssignableToLoadableClass(
             from.runtimeObjType.klass,
             "org.apache.avro.generic.IndexedRecord"
-          ) && ClassUtils.isAssignable(to.klass, classOf[java.util.Map[_, _]])) {
-
-          val indexedRecordValueType = from match {
-            case TypedObjectTypingResult(fromFields, _, _) =>
-              superTypeOfTypes(fromFields.values)
-            case _ => Unknown
-          }
-
-          val (mapKeyParam, mapValueParam) = to match {
-            case TypedClass(_, key :: value :: Nil) =>
-              (key, value)
-            case _ => (Unknown, Unknown)
-          }
-
-          AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
-          AssignabilityDeterminer
-            .isAssignable(indexedRecordValueType, mapValueParam)
-            .isValid
-        } else {
-          false
+          ) && ClassUtils.isAssignable(to.klass, classOf[java.util.Map[_, _]]) =>
+        val indexedRecordValueType = from match {
+          case TypedObjectTypingResult(fromFields, _, _) =>
+            superTypeOfTypes(fromFields.values)
+          case _ => Unknown
         }
+
+        val (mapKeyParam, mapValueParam) = to match {
+          case TypedClass(_, key :: value :: Nil) =>
+            (key, value)
+          case _ => (Unknown, Unknown)
+        }
+
+        AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
+        AssignabilityDeterminer
+          .isAssignable(indexedRecordValueType, mapValueParam)
+          .isValid
+      case _ => false
     }
 
   }
