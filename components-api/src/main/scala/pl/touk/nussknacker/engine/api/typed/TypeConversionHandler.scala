@@ -5,20 +5,8 @@ import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  superTypeOfTypes,
-  SingleTypingResult,
-  Typed,
-  TypedClass,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.typed.typing.{superTypeOfTypes, Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.util.AssignabilityUtil
->>>>>>> d0d8fa0983 (squashed changes 1948)
 
 import java.nio.charset.Charset
 import java.time._
@@ -86,7 +74,7 @@ private[engine] object TypeConversionHandler {
   ): Boolean = {
     handleImplicitConversion(from, to) ||
     handleNumberConversion(from.runtimeObjType, to) ||
-    handleIndexedRecordToMapConversion(from.runtimeObjType, to, strict)
+    handleIndexedRecordToMapConversion(from.runtimeObjType, to)
   }
 
   private def handleImplicitConversion(from: SingleTypingResult, to: TypedClass)(
@@ -113,8 +101,7 @@ private[engine] object TypeConversionHandler {
   private def handleIndexedRecordToMapConversion(
       from: SingleTypingResult,
       to: TypedClass
-  )(implicit conversionStrategy: NonEmptyConversionStrategy)
-  : Boolean = {
+  )(implicit conversionStrategy: NonEmptyConversionStrategy): Boolean = {
     if (!AssignabilityUtil.isAssignableToLoadableClass(
         from.runtimeObjType.klass,
         "org.apache.avro.generic.IndexedRecord"
@@ -128,15 +115,11 @@ private[engine] object TypeConversionHandler {
           superTypeOfTypes(fromCasted.fields.values)
         case _ => Unknown
       }
-      // TODO_PAWEL fix
-      val isAssignable =
-        if (strict)
-          AssignabilityDeterminer.isAssignableStrict _
-        else
-          AssignabilityDeterminer.isAssignableLoose _
 
-      isAssignable(indexedRecordKeyParam, to.params.headOption.getOrElse(Unknown)).isValid &&
-      isAssignable(indexedRecordValueParam, to.params.drop(1).headOption.getOrElse(Unknown)).isValid
+      AssignabilityDeterminer.isAssignable(indexedRecordKeyParam, to.params.headOption.getOrElse(Unknown)).isValid &&
+      AssignabilityDeterminer
+        .isAssignable(indexedRecordValueParam, to.params.drop(1).headOption.getOrElse(Unknown))
+        .isValid
     }
   }
 

@@ -165,7 +165,6 @@ private[typed] object AssignabilityDeterminer {
           )
       }
     }
-
     val givenClass = from.runtimeObjType
 
     val equalClassesOrCanAssign =
