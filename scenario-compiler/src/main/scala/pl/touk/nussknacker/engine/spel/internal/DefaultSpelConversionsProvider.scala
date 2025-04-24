@@ -7,8 +7,6 @@ import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{stringConversions, StringConversion}
 
-import scala.jdk.CollectionConverters._
-
 /**
   * This class creates SpEL's ConversionService. We don't use DefaultConversionService because it has some conversions
   * (mainly between similar types) that would cause ambiguity e.g. ObjectToObjectConverter. Also this default service

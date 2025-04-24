@@ -6,7 +6,6 @@ import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.util.AssignabilityUtil
 
 /**
  * This class determine whether we can assign one type to another type - that is if its the same class, a subclass or can be converted to another type.
