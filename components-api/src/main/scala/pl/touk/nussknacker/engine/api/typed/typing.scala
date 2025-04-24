@@ -9,6 +9,7 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.json.encoders.{ToJsonEncoderWithFallback, TypeEncoders}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
@@ -482,12 +483,6 @@ object typing {
 
   private def supertypeOfElementTypes(list: List[_]): TypingResult = {
     superTypeOfTypes(list.map(fromInstance))
-  }
-
-  private[typed] def superTypeOfTypes(list: Iterable[TypingResult]) = {
-    list
-      .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
-      .getOrElse(Unknown)
   }
 
   object AdditionalDataValue {

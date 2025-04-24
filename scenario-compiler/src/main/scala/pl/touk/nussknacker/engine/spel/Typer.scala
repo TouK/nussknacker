@@ -9,7 +9,7 @@ import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.{EvaluationContext, Expression}
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.{SpelNode, standard}
+import org.springframework.expression.spel.{standard, SpelNode}
 import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -25,11 +26,29 @@ import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{ConstructionOfUnknown, NoPropertyError, NoPropertyTypeError, NonReferenceError, UnresolvedReferenceError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
+  ConstructionOfUnknown,
+  NonReferenceError,
+  NoPropertyError,
+  NoPropertyTypeError,
+  UnresolvedReferenceError
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{IllegalProjectionError, IllegalSelectionError, IllegalSelectionTypeError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorError.{InvalidTernaryOperator, TernaryOperatorNotBooleanError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.{ArrayConstructorError, BeanReferenceError, MapWithExpressionKeysError, ModificationError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{
+  IllegalProjectionError,
+  IllegalSelectionError,
+  IllegalSelectionTypeError
+}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorError.{
+  InvalidTernaryOperator,
+  TernaryOperatorNotBooleanError
+}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.{
+  ArrayConstructorError,
+  BeanReferenceError,
+  MapWithExpressionKeysError,
+  ModificationError
+}
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
@@ -699,7 +718,11 @@ private[spel] class Typer(
       valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
     // it would have been caught by the next case, but since IndexedRecord does not have type parameters we
     // extract iterative type in different way
-    case tc: TypedObjectTypingResult if AssignabilityUtil.isAssignableToLoadableClass(tc.runtimeObjType.klass, "org.apache.avro.generic.IndexedRecord") =>
+    case tc: TypedObjectTypingResult
+        if AssignabilityUtil.isAssignableToLoadableClass(
+          tc.runtimeObjType.klass,
+          "org.apache.avro.generic.IndexedRecord"
+        ) =>
       valid(
         Typed.record(
           Map(

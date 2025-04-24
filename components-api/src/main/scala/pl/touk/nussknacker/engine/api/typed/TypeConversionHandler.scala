@@ -3,9 +3,10 @@ package pl.touk.nussknacker.engine.api.typed
 import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
 import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
-import pl.touk.nussknacker.engine.api.typed.typing.{superTypeOfTypes, Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.util.AssignabilityUtil
 
 import java.nio.charset.Charset
