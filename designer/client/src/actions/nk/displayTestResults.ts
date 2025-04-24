@@ -4,7 +4,7 @@ import type { TestResults } from "../../common/TestResultUtils";
 import type { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
 import type { ScenarioGraph } from "../../types";
-import type { ThunkAction } from "../reduxTypes";
+import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
 
 export function testProcessFromFile(processName: ProcessName, testDataFile: File, scenarioGraph: ScenarioGraph): ThunkAction {
@@ -51,13 +51,20 @@ export function testScenarioWithGeneratedData(testSampleSize: string, processNam
     };
 }
 
-export interface DisplayTestResultsDetailsAction {
+type DisplayTestResultsDetailsAction = {
     type: "DISPLAY_TEST_RESULTS_DETAILS";
     testResults: TestResults;
     testData?: SourceWithParametersTest;
-}
+};
 
-function displayTestResultsDetails(testResults: TestProcessResponse, testData?: SourceWithParametersTest): DisplayTestResultsDetailsAction {
+type UpdateTestTypeAction = {
+    type: "UPDATE_TEST_TYPE";
+    testType: string;
+};
+
+export type TestsActions = DisplayTestResultsDetailsAction | UpdateTestTypeAction;
+
+function displayTestResultsDetails(testResults: TestProcessResponse, testData?: SourceWithParametersTest): Action {
     return {
         type: "DISPLAY_TEST_RESULTS_DETAILS",
         testResults: testResults.results,
@@ -65,7 +72,14 @@ function displayTestResultsDetails(testResults: TestProcessResponse, testData?: 
     };
 }
 
-function displayTestResults(testResults: TestProcessResponse, testData?: SourceWithParametersTest) {
+export function updateTestType(testType: string): Action {
+    return {
+        type: "UPDATE_TEST_TYPE",
+        testType,
+    };
+}
+
+function displayTestResults(testResults: TestProcessResponse, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
         dispatch(displayTestResultsDetails(testResults, testData));
         dispatch(displayProcessCounts(testResults.counts));

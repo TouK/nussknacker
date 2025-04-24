@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
+import { updateTestType } from "../../../actions/nk/displayTestResults";
 import type { WindowKind } from "../../../windowManager";
 import { CustomRadio } from "../../customRadio/CustomRadio";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
@@ -39,10 +40,7 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
     });
     const onChange = useCallback(
         (value: FormValue) => {
-            dispatch({
-                type: "UPDATE_TEST_TYPE",
-                testType: value.testType,
-            });
+            dispatch(updateTestType(value.testType));
         },
         [dispatch],
     );

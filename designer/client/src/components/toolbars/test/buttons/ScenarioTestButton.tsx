@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from "re
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { updateTestType } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, getTestResultsLoading, getTestType, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
@@ -77,12 +78,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                 testingState.action();
                 setPreset(preset);
             } else {
-                if (preset?.value) {
-                    dispatch({
-                        type: "UPDATE_TEST_TYPE",
-                        testType: preset.value,
-                    });
-                }
+                dispatch(updateTestType(preset?.value));
                 open<TestingData>({
                     id: "scenarioTest",
                     title: t("dialog.title.scenarioTest", "Scenario test"),
