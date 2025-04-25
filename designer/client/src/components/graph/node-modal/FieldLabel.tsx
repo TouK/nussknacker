@@ -1,4 +1,3 @@
-import InfoIcon from "@mui/icons-material/Info";
 import { Box, FormLabel, styled, Typography } from "@mui/material";
 import React from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -6,16 +5,11 @@ import { ErrorBoundary } from "react-error-boundary";
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { UIParameter } from "../../../types";
 import { PlaceholderIconFallbackComponent } from "../../common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
-import NodeTip from "./NodeTip";
+import { InfoTooltip } from "./editors/InfoTooltip";
 import { findParamDefinitionByName } from "./parameterHelpers";
 
-export const StyledNodeTip = styled(NodeTip)({
+export const StyledNodeTip = styled(InfoTooltip)({
     margin: "0 8px",
-    flex: 1,
-    "& svg": {
-        width: 16,
-        height: 16,
-    },
 });
 
 type FieldLabelProps = {
@@ -49,7 +43,7 @@ export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): J
                         </Typography>
                     ) : null}
                 </Box>
-                {hintText ? <StyledNodeTip title={hintText} icon={<InfoIcon />} /> : null}
+                {hintText ? <StyledNodeTip variant={"hover"} text={hintText} /> : null}
             </FormLabel>
         </>
     );

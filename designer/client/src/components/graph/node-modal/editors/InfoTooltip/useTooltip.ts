@@ -31,7 +31,9 @@ export const useTooltip = () => {
         setTooltipOpen(false);
     }, []);
 
-    const handleToggleTooltip = useCallback(() => {
+    const handleToggleTooltip = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
         setTooltipOpen((prev) => !prev);
     }, []);
 

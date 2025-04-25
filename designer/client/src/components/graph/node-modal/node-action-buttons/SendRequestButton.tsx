@@ -15,8 +15,9 @@ interface Props {
     disabled: boolean;
     node: NodeType;
     expression: string;
+    infoTooltip?: string | undefined;
 }
-export const SendRequestButton = ({ disabled, node, expression }: Props) => {
+export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: Props) => {
     const { sourceId, sourceParameters } = useSourceParameters();
     const [showInfoAfterSendData, setShowInfoAfterSendData] = useState<boolean>(false);
     const scenarioName = useSelector(getProcessName);
@@ -49,10 +50,10 @@ export const SendRequestButton = ({ disabled, node, expression }: Props) => {
             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={0.5}>
                 <StyledLoadingButton
                     disabled={disabled}
-                    title={t("node.actions.sendRequest", "Send Request")}
+                    title={t("node.actions.sendRequest.button.title", "Send Request")}
                     action={handleSendHttpRequest}
                 />
-                <InfoTooltip text={"works"} variant={"hover"} />
+                {infoTooltip && <InfoTooltip text={infoTooltip} variant={"hover"} />}
             </Box>
 
             {showInfoAfterSendData && (

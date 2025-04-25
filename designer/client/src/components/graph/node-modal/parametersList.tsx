@@ -1,5 +1,6 @@
 import { Box } from "@mui/material";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
@@ -25,6 +26,7 @@ export type ParametersListProps = ParametersListItemProps & {
 export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: ParametersListProps) => {
     const { node } = props;
     const scenarioState = useSelector(getProcessState);
+    const { t } = useTranslation();
 
     return (
         <>
@@ -46,6 +48,10 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                                 disabled={
                                     getValidationErrorsForField(props.errors, paramWithIndex.param.name).length > 0 ||
                                     scenarioState.status.name !== "RUNNING"
+                                }
+                                infoTooltip={
+                                    scenarioState.status.name !== "RUNNING" &&
+                                    t("node.actions.sendRequest.tooltip.deployScenarioFirst", "Deploy your scenario first")
                                 }
                                 expression={paramWithIndex.param.expression.expression}
                                 node={node}

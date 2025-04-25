@@ -1,22 +1,23 @@
 import { Tooltip } from "@mui/material";
+import type { PropsWithChildren } from "react";
 import React from "react";
 
-import { MarkdownStyled } from "../../MarkdownStyled";
-import { StyledInfoIcon } from "./StyledInfoIcon";
+import { StyledInfoChildrenWrapper, StyledInfoMarkdown } from "./StyledInfo";
 import { useTooltip } from "./useTooltip";
 
-interface HoverProps {
+interface Props {
     text: string;
+    className?: string;
 }
 
-export const InfoTooltipHover = ({ text }: HoverProps) => {
+export const InfoTooltipHover = ({ text, className, children }: PropsWithChildren<Props>) => {
     const { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip();
 
     return (
         <Tooltip
             title={
                 <div ref={tooltipRef}>
-                    <MarkdownStyled sx={{ fontSize: "0.75rem" }}>{text}</MarkdownStyled>
+                    <StyledInfoMarkdown>{text}</StyledInfoMarkdown>
                 </div>
             }
             placement="bottom-start"
@@ -24,10 +25,14 @@ export const InfoTooltipHover = ({ text }: HoverProps) => {
             open={tooltipOpen}
             onClose={handleSetTooltipClose}
             disableFocusListener
+            disableHoverListener
             disableTouchListener
             componentsProps={componentsProps}
+            className={className}
         >
-            <StyledInfoIcon onMouseEnter={handleToggleTooltip} onMouseLeave={handleToggleTooltip} />
+            <StyledInfoChildrenWrapper onMouseEnter={handleToggleTooltip} onMouseLeave={handleToggleTooltip}>
+                {children}
+            </StyledInfoChildrenWrapper>
         </Tooltip>
     );
 };
