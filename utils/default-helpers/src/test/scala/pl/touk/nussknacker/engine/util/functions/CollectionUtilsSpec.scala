@@ -117,9 +117,9 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       .withVariable(
         "genericRecord",
         Typed.record(
-          Map(
+          List(
             "foo" -> Typed[Int],
-            "bar" -> Typed[Int],
+            "bar" -> Typed[Int]
           ),
           Typed.genericTypeClass(classOf[GenericRecord], List())
         ),

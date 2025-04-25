@@ -88,7 +88,7 @@ private[engine] object TypeConversionHandler {
       case Loose =>
         handleStringToValueClassConversions(from, to) ||
         handleArrayToListConversions(from.runtimeObjType, to) ||
-        handleIndexedRecordToMapConversion(from.runtimeObjType, to)
+        handleIndexedRecordToMapConversion(from, to)
     }
   }
 
