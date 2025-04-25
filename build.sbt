@@ -856,8 +856,7 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,
         "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
-        // TODO_PAWEL nowy remvoe
-        "org.apache.flink"        % "flink-core"                    % flinkV,
+        "org.apache.flink"        % "flink-core"                    % flinkV         % Test,
       )
     }
   )
