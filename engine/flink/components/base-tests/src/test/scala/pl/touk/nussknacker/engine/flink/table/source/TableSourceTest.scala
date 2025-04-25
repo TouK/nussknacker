@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.table.source.TableSource.SQL_EXPRESSION_
 import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
 class TableSourceTest
@@ -66,8 +66,6 @@ class TableSourceTest
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
-      // TODO_PAWEL this is only to test in debug
-//      .buildSimpleVariable("sth", "someVariable", "#input.![#this]".spel)
       .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
 
     val result = runner
@@ -80,12 +78,11 @@ class TableSourceTest
     result.successes.loneElement
   }
 
-  test("be possible to use merge") {
-    import scala.jdk.CollectionConverters._
+  private def evaluateExpression(expression: String) = {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
-      .buildSimpleVariable("sth", "someVariable", "#COLLECTION.merge(#input, #input).get('quantity')".spel)
+      .buildSimpleVariable("sth", "someVariable", expression.spel)
       .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#someVariable".spel)
 
     val result = runner
@@ -94,46 +91,24 @@ class TableSourceTest
         nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
       )
       .validValue
+    result
+  }
+
+  test("be possible to use merge") {
+    val result = evaluateExpression("#COLLECTION.merge(#input, #input).get('quantity')")
     result.errors shouldBe empty
     result.successes(0) shouldBe a[Int]
   }
 
   test("be possible to use selection") {
-    import scala.jdk.CollectionConverters._
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
-      .buildSimpleVariable(
-        "sth",
-        "someVariable",
-        "#input.?[(#this.value / 10 + 42 - #this.value / 10) == 42].quantity".spel
-      )
-      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#someVariable".spel)
-
-    val result = runner
-      .runWithoutData[Row](
-        scenario,
-        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
-      )
-      .validValue
+    val result = evaluateExpression("#input.?[(#this.value / 10 + 42 - #this.value / 10) == 42].quantity")
     result.errors shouldBe empty
     result.successes(0) shouldBe a[Int]
   }
 
   test("be possible to use projection") {
     import scala.jdk.CollectionConverters._
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
-      .buildSimpleVariable("sth", "someVariable", "#input.![#this.value / 10 + 42 - #this.value / 10]".spel)
-      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#someVariable".spel)
-
-    val result = runner
-      .runWithoutData[Row](
-        scenario,
-        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
-      )
-      .validValue
+    val result = evaluateExpression("#input.![#this.value / 10 + 42 - #this.value / 10]")
     result.errors shouldBe empty
     result.successes(0) shouldBe List(42).asJava
   }
