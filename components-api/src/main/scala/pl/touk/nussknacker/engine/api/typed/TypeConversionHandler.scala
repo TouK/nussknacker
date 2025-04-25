@@ -22,11 +22,10 @@ import scala.util.Try
   */
 private[engine] object TypeConversionHandler {
 
-  private val javaListClass              = classOf[java.util.List[_]]
-  private val javaMapClass               = classOf[java.util.Map[_, _]]
-  private val arrayOfAnyRefClass         = classOf[Array[AnyRef]]
-  private val avroIndexedRecordClassName = "org.apache.avro.generic.IndexedRecord"
-  private val flinkRowClassName          = "org.apache.flink.types.Row"
+  private val javaListClass            = classOf[java.util.List[_]]
+  private val javaMapClass             = classOf[java.util.Map[_, _]]
+  private val arrayOfAnyRefClass       = classOf[Array[AnyRef]]
+  private val mapConvertableClassNames = List("org.apache.avro.generic.IndexedRecord", "org.apache.flink.types.Row")
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -89,8 +88,7 @@ private[engine] object TypeConversionHandler {
       case Loose =>
         handleStringToValueClassConversions(from, to) ||
         handleArrayToListConversions(from.runtimeObjType, to) ||
-        handleIndexedRecordToMapConversion(from, to) ||
-        handleFlinkRowToMapConversion(from, to)
+        handleMapConversions(from, to)
     }
   }
 
@@ -147,7 +145,7 @@ private[engine] object TypeConversionHandler {
     }
   }
 
-  private def handleIndexedRecordToMapConversion(
+  private def handleMapConversions(
       from: SingleTypingResult,
       to: TypedClass
   )(
@@ -160,28 +158,11 @@ private[engine] object TypeConversionHandler {
           ) =>
         lazy val indexedRecordValueType = superTypeOfTypes(fromFields.values)
 
-        AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, avroIndexedRecordClassName) &&
+        mapConvertableClassNames.exists(className =>
+          AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, className)
+        ) &&
         AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
         AssignabilityDeterminer.isAssignable(indexedRecordValueType, mapValueParam).isValid
-      case _ => false
-    }
-
-  private def handleFlinkRowToMapConversion(
-      from: SingleTypingResult,
-      to: TypedClass
-  )(
-      implicit conversionStrategy: NonEmptyConversionStrategy
-  ): Boolean =
-    (from.withoutValue, to) match {
-      case (
-            TypedObjectTypingResult(fromFields, TypedClass(fromRuntimeObjClass, _), _),
-            TypedClass(`javaMapClass`, mapKeyParam :: mapValueParam :: Nil)
-          ) =>
-        lazy val flinkRowValueType = superTypeOfTypes(fromFields.values)
-
-        AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, flinkRowClassName) &&
-        AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
-        AssignabilityDeterminer.isAssignable(flinkRowValueType, mapValueParam).isValid
       case _ => false
     }
 
