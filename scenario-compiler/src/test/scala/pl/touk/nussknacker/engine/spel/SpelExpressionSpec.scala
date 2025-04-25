@@ -802,9 +802,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
   }
 
-  test("generic record selection typing") {
+  test("generic record selecting by key") {
     val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
     val validationResult = parseV[JInteger]("#genericRecord.?[#this.key == 'foo'].get('foo')", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  test("literal map selecting by key") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
+    val validationResult = parseV[JInteger]("{foo: 42, bar: 43}.?[#this.key == 'foo'].get('foo')", validationCtx)
     val typingResult     = validationResult.validValue.typingInfo.typingResult
     typingResult shouldBe Typed[Int]
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42

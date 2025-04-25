@@ -15,9 +15,9 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -26,13 +26,7 @@ import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
-  ConstructionOfUnknown,
-  NonReferenceError,
-  NoPropertyError,
-  NoPropertyTypeError,
-  UnresolvedReferenceError
-}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{
   IllegalProjectionError,
@@ -54,8 +48,9 @@ import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
-import pl.touk.nussknacker.engine.util.{AssignabilityUtil, MathUtils}
+import pl.touk.nussknacker.engine.util.MathUtils
 
+import java.util
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 import scala.reflect.runtime._
@@ -443,12 +438,11 @@ private[spel] class Typer(
 
       case e: Projection =>
         for {
-          iterateType <- current.stackHead.map(valid).getOrElse(invalid(IllegalProjectionError))
-          elementType <- extractIterativeType(iterateType)
+          iterateType                        <- current.stackHead.map(valid).getOrElse(invalid(IllegalProjectionError))
+          elementTypeWithTypeAfterConversion <- extractIterativeType(iterateType)
+          (elementType, _) = elementTypeWithTypeAfterConversion
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
             case result :: Nil =>
-              // Limitation: projection on an iterative type makes it loses it's known value,
-              // as properly determining it would require evaluating the projection expression for each element (likely working on the AST)
               projectionResult(iterateType, result)
             case other =>
               invalid(IllegalSelectionTypeError(other))
@@ -466,9 +460,10 @@ private[spel] class Typer(
 
       case e: Selection =>
         for {
-          iterateType <- current.stackHead.map(valid).getOrElse(invalid(IllegalSelectionError))
-          elementType <- extractIterativeType(iterateType)
-          selectionType = resolveSelectionTypingResult(e, iterateType, elementType)
+          iterateType                        <- current.stackHead.map(valid).getOrElse(invalid(IllegalSelectionError))
+          elementTypeWithTypeAfterConversion <- extractIterativeType(iterateType)
+          (elementType, typeAfterConversion) = elementTypeWithTypeAfterConversion
+          selectionType                      = resolveSelectionTypingResult(e, typeAfterConversion, elementType)
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
             case result :: Nil if result.canBeLooselyAssignedTo(Typed[Boolean]) =>
               valid(selectionType)
@@ -530,25 +525,18 @@ private[spel] class Typer(
   // currently there is no better way than to check ast string starting with $ or ^
   private def resolveSelectionTypingResult(
       node: Selection,
-      parentType: TypingResult,
+      collectionType: TypingResult,
       childElementType: TypingResult
   ) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
-
     if (isSingleElementSelection)
       childElementType
     else {
-      // Limitation: selection from an iterative type makes it loses it's known value,
-      // as properly determining it would require evaluating the selection expression for each element (likely working on the AST)
-      parentType match {
-        case tc: SingleTypingResult
-            if tc.runtimeObjType.canBeLooselyAssignedTo(Typed[java.util.Collection[_]]) ||
-              tc.runtimeObjType.klass.isArray =>
-          tc.withoutValue
-        case tc: SingleTypingResult if tc.runtimeObjType.canBeLooselyAssignedTo(Typed[java.util.Map[_, _]]) =>
-          Typed.record(Map.empty)
-        case _ =>
-          parentType
+      collectionType match {
+        case single: SingleTypingResult =>
+          single.runtimeObjType // Filtering can change set of fields in record, so we have to return underlying type
+        case other =>
+          other
       }
     }
   }
@@ -711,39 +699,40 @@ private[spel] class Typer(
   private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference, u: Unknown): Option[TypingResult] =
     classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(u, e.getName))
 
-  private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
-    case tc: SingleTypingResult
-        if tc.runtimeObjType.canBeLooselyAssignedTo(Typed[java.util.Collection[_]]) ||
-          tc.runtimeObjType.klass.isArray =>
-      valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
-    // it would have been caught by the next case, but since IndexedRecord does not have type parameters we
-    // extract iterative type in different way
-    case tc: TypedObjectTypingResult
-        if AssignabilityUtil.isAssignableToLoadableClass(
-          tc.runtimeObjType.klass,
-          "org.apache.avro.generic.IndexedRecord"
-        ) =>
-      valid(
-        Typed.record(
-          Map(
-            "key"   -> Typed.genericTypeClass(classOf[String], List()),
-            "value" -> superTypeOfTypes(tc.fields.values)
+  // It returns iterative type and type after conversion if it was necessary
+  private def extractIterativeType(collectionType: TypingResult): TypingR[(TypingResult, TypingResult)] = {
+    val collectionResult = Option(collectionType).collect {
+      case tc: SingleTypingResult
+          if tc.runtimeObjType.canBeStrictlyAssignedTo(Typed[java.util.Collection[_]]) ||
+            tc.runtimeObjType.klass.isArray =>
+        // For Collection and array we don't do the conversion - so we return input collectionType instead
+        valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown), collectionType)
+    }
+    lazy val mapResult: Option[TypingR[(TypingResult, TypingResult)]] = AssignabilityDeterminer
+      .typeAfterPotentialConversion(collectionType, Typed[java.util.Map[_, _]])(ConversionStrategy.Loose)
+      .toOption
+      .collect { case singleTypeAfterPotentialConversion: SingleTypingResult =>
+        (singleTypeAfterPotentialConversion.runtimeObjType, singleTypeAfterPotentialConversion)
+      }
+      .collect { case (TypedClass(_, keyParam :: valueParam :: Nil), typeAfterPotentialConversion) =>
+        valid(
+          (
+            Typed.record(
+              Map(
+                "key"   -> keyParam,
+                "value" -> valueParam
+              )
+            ),
+            typeAfterPotentialConversion
           )
         )
-      )
-    case tc: SingleTypingResult if tc.runtimeObjType.canBeLooselyAssignedTo(Typed[java.util.Map[_, _]]) =>
-      valid(
-        Typed.record(
-          Map(
-            "key"   -> tc.runtimeObjType.params.headOption.getOrElse(Unknown),
-            "value" -> tc.runtimeObjType.params.drop(1).headOption.getOrElse(Unknown)
-          )
-        )
-      )
-    case tc: SingleTypingResult =>
-      invalid(IllegalProjectionSelectionError(tc))
-    // FIXME: what if more results are present?
-    case _ => valid(Unknown)
+      }
+    collectionResult orElse mapResult getOrElse (collectionType match {
+      case tc: SingleTypingResult =>
+        invalid(IllegalProjectionSelectionError(tc)).map((_, collectionType))
+      // FIXME: what if more results are present?
+      case _ => valid((Unknown, collectionType))
+    })
   }
 
   private def projectionResult(iterableType: TypingResult, elementType: TypingResult): TypingR[TypingResult] =
