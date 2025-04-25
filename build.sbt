@@ -855,7 +855,9 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
         "org.apache.avro"         % "avro"                          % avroV          % Test,
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,
-        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
+        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
+        // TODO_PAWEL nowy remvoe
+        "org.apache.flink"        % "flink-core"                    % flinkV,
       )
     }
   )
@@ -1161,7 +1163,7 @@ lazy val defaultHelpers = (project in utils("default-helpers"))
     name := "nussknacker-default-helpers",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-core"  % flinkV % Test,
+        "org.apache.flink" % "flink-core" % flinkV % Test,
       )
     }
   )
