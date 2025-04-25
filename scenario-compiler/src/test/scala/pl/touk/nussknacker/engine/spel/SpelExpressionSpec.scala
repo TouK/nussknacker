@@ -794,6 +794,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Integer]("#map.key2", withMapVar).validExpression.evaluateSync[Integer](withMapVar) should equal(20)
   }
 
+  // TODO_PAWEL nowy analogicznytest
   test("generic record projection typing") {
     val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
     val validationResult = parseV[JInteger]("#genericRecord.![#this.value].get(0)", validationCtx)

@@ -731,6 +731,21 @@ private[spel] class Typer(
           )
         )
       )
+    // it would have been caught by the next case, but since flink row does not have type parameters we
+    // extract iterative type in different way
+    case tc: TypedObjectTypingResult
+        if AssignabilityUtil.isAssignableToLoadableClass(
+          tc.runtimeObjType.klass,
+          "org.apache.flink.types.Row"
+        ) =>
+      valid(
+        Typed.record(
+          Map(
+            "key"   -> Typed.genericTypeClass(classOf[String], List()),
+            "value" -> superTypeOfTypes(tc.fields.values)
+          )
+        )
+      )
     case tc: SingleTypingResult if tc.runtimeObjType.canBeLooselyAssignedTo(Typed[java.util.Map[_, _]]) =>
       valid(
         Typed.record(
