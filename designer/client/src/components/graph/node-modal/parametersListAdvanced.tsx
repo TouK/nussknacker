@@ -1,12 +1,12 @@
-import type { PropsWithChildren } from "react";
-import React from "react";
+import { partition } from "lodash";
+import type { PropsWithChildren} from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Parameter } from "../../../types";
+import type { Parameter} from "../../../types";
 import { ParameterCategory } from "../../../types";
 import { Expandable } from "../../common/Expandable";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";
-import type { ParameterWithIndex } from "./parametersList";
 import { ParametersList } from "./parametersList";
 
 type ParametersListItemProps = Omit<ParameterExpressionFieldProps, "listFieldPath" | "parameter">;
@@ -24,18 +24,24 @@ export const ParametersListAdvanced = ({
 }: PropsWithChildren<AdvancedParametersListProps>) => {
     const { t } = useTranslation();
     const { parameterDefinitions } = props;
-    const paramsCategoryByName = parameterDefinitions.reduce((acc, paramDef) => {
-        acc[paramDef.name] = paramDef.category ?? ParameterCategory.Standard;
-        return acc;
-    }, {} as Record<string, ParameterCategory>);
-    const { standard, advanced } = parameters.reduce(
-        (acc, param, index) => {
-            const category = paramsCategoryByName[param.name] ?? ParameterCategory.Standard;
-            acc[category.toLowerCase()].push({ index: index, param: param });
-            return acc;
+
+    const getParamCategory = useCallback(
+        (name: string) => {
+            const paramDef = parameterDefinitions.find((paramDef) => paramDef.name === name);
+            return paramDef?.category || ParameterCategory.Standard;
         },
-        { standard: [], advanced: [] } as { standard: ParameterWithIndex[]; advanced: ParameterWithIndex[] },
+        [parameterDefinitions],
     );
+
+    const [standard, advanced] = useMemo(
+        () =>
+            partition(
+                parameters.map((param, index) => ({ index, param })),
+                (p) => getParamCategory(p.param.name) === ParameterCategory.Standard,
+            ),
+        [getParamCategory, parameters],
+    );
+
     return (
         <>
             <ParametersList {...props} parameters={standard} getListFieldPath={getListFieldPath} />
