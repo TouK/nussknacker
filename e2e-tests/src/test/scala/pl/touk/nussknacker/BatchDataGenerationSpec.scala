@@ -43,9 +43,9 @@ class BatchDataGenerationSpec
         .when()
         .request()
         .basicAuthAdmin()
-        .jsonBody(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2)
+        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2, 10))
         .post(
-          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generate/10"
+          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generatedTestData"
         )
         .Then()
         .statusCode(200)
@@ -68,9 +68,9 @@ class BatchDataGenerationSpec
         .when()
         .request()
         .basicAuthAdmin()
-        .jsonBody(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2)
+        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2, 1))
         .post(
-          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generate/1"
+          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generatedTestData"
         )
         .Then()
         .statusCode(200)
@@ -95,9 +95,17 @@ class BatchDataGenerationSpec
       .when()
       .request()
       .basicAuthAdmin()
-      .jsonBody(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2)
+      .jsonBody(
+        s"""{
+           | "testData": {
+           |   "type": "WITH_GENERATED_DATA",
+           |   "numberOfSamples": 1
+           | },
+           | "scenarioGraph": ${toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2}
+           |}""".stripMargin
+      )
       .post(
-        s"$designerServiceUrl/api/processManagement/generateAndTest/$scenarioName/1"
+        s"$designerServiceUrl/api/scenarioTesting/$scenarioName/performTest"
       )
       .Then()
       .statusCode(200)
@@ -129,7 +137,7 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                "datetime": "2024-01-01T10:00:00",
            |                "client_id": "client1",
-           |                "amount": 100.1,
+           |                "amount": 100.10,
            |                "amountDoubled": 200.20,
            |                "file.name": "transactions.ndjson"
            |              }
@@ -138,6 +146,48 @@ class BatchDataGenerationSpec
            |        }
            |      ]
            |    },
+           |    "nodeTransitionResults": [
+           |      {
+           |        "sourceNodeId": "sourceId",
+           |        "destinationNodeId": "end",
+           |        "results": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.10,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |        ]
+           |      },
+           |      {
+           |        "sourceNodeId": "end",
+           |        "destinationNodeId": null,
+           |        "results": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.10,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |        ]
+           |      }
+           |    ],
            |    "invocationResults": {},
            |    "externalInvocationResults": {},
            |    "exceptions": []
@@ -188,11 +238,11 @@ class BatchDataGenerationSpec
            |          "variables": {
            |            "input": {
            |              "pretty": {
-           |                 "datetime": "2024-07-19T08:56:08.485",
-           |                 "client_id": "aClientId",
-           |                 "amount": 123123.12,
-           |                 "amountDoubled": 246246.24,
-           |                 "file.name": "foo.ndjson"
+           |                "datetime": "2024-07-19T08:56:08.485",
+           |                "client_id": "aClientId",
+           |                "amount": 123123.12,
+           |                "amountDoubled": 246246.24,
+           |                "file.name": "foo.ndjson"
            |              }
            |            }
            |          }
@@ -215,6 +265,48 @@ class BatchDataGenerationSpec
            |        }
            |      ]
            |    },
+           |    "nodeTransitionResults": [
+           |      {
+           |        "sourceNodeId": "sourceId",
+           |        "destinationNodeId": "end",
+           |        "results": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-07-19T08:56:08.485",
+           |                "client_id": "aClientId",
+           |                "amount": 123123.12,
+           |                "amountDoubled": 246246.24,
+           |                "file.name": "foo.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |        ]
+           |      },
+           |      {
+           |        "sourceNodeId": "end",
+           |        "destinationNodeId": null,
+           |        "results": [
+           |        {
+           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-07-19T08:56:08.485",
+           |                "client_id": "aClientId",
+           |                "amount": 123123.12,
+           |                "amountDoubled": 246246.24,
+           |                "file.name": "foo.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |        ]
+           |      }
+           |    ],
            |    "invocationResults": {},
            |    "externalInvocationResults": {},
            |    "exceptions": []
@@ -252,5 +344,14 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(in(Array[Integer](201, 400)))
   }
+
+  private def testDataGenerationRequest(
+      scenarioGraphStr: String,
+      numberOfSamples: Int,
+  ) =
+    s"""{
+       |  "scenarioGraph": $scenarioGraphStr,
+       |  "numberOfSamples": $numberOfSamples
+       |}""".stripMargin
 
 }

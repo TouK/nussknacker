@@ -35,7 +35,9 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.containers.WithDockerContainers
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests.{
   ageVariable,
   getScenarioWithDataSample,
@@ -228,10 +230,11 @@ object SchemalessKafkaJsonTypeTests {
     override protected def invalidParameters: TestSourceParameters =
       TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(invalidJson)))
 
-    override protected def parametersProvidedForDryRun: String = AdhocTestParametersRequest(
-      sourceParameters = validParameters,
-      scenarioGraph = toScenarioGraph(exampleScenario)
-    ).asJson.toString()
+    override protected def parametersProvidedForDryRun: String =
+      ScenarioTestValidationRequest(
+        testData = ScenarioTestData.WithParameters(validParameters),
+        scenarioGraph = toScenarioGraph(exampleScenario)
+      ).asJson.toString()
 
     override protected def expectedValidationErrorsOnInvalidParametersJson: String =
       s"""

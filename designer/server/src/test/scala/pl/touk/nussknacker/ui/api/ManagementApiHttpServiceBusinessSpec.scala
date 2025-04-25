@@ -42,6 +42,7 @@ class ManagementApiHttpServiceBusinessSpec
             Map(
               exampleScenario.name.value -> TestResults(
                 nodeResults = Map.empty,
+                nodeTransitionResults = Map.empty,
                 invocationResults = Map.empty,
                 externalInvocationResults = Map.empty,
                 exceptions = List.empty,
@@ -52,22 +53,25 @@ class ManagementApiHttpServiceBusinessSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(s"""{
-            | "sourceParameters": {
-            |   "sourceId": "1",
-            |   "parameterExpressions": {
-            |     "param1": {
-            |       "language": "spel",
-            |       "expression": "1"
-            |     },
-            |     "param2": {
-            |       "language": "spel",
-            |       "expression": "test"
+            | "testData": {
+            |   "type": "WITH_PARAMETERS",
+            |   "sourceParameters": {
+            |     "sourceId": "1",
+            |     "parameterExpressions": {
+            |       "param1": {
+            |         "language": "spel",
+            |         "expression": "1"
+            |       },
+            |       "param2": {
+            |         "language": "spel",
+            |         "expression": "test"
+            |       }
             |     }
             |   }
             | },
             | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
             |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -75,6 +79,7 @@ class ManagementApiHttpServiceBusinessSpec
              |{
              |  "results": {
              |    "nodeResults": {},
+             |    "nodeTransitionResults": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
              |    "exceptions": []

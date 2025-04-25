@@ -171,7 +171,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
 
               val dictValueType = dictDefinition.valueType(dictId)
 
-              if (dictValueType.canBeConvertedTo(fragmentParameterTypingResult)) {
+              if (dictValueType.canBeLooselyAssignedTo(fragmentParameterTypingResult)) {
                 Valid(())
               } else {
                 invalidNel(

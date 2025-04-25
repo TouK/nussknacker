@@ -1,11 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { getProcessName, getScenarioGraph, getTestCapabilities } from "../../../../reducers/selectors/graph";
-import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
-import { ToolbarButtonProps } from "../../types";
+
 import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";
+import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
+import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
+import { getProcessName, getScenarioGraph, getTestCapabilities } from "../../../../reducers/selectors/graph";
+import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
+import type { ToolbarButtonProps } from "../../types";
 
 function FromFileButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
@@ -15,7 +17,7 @@ function FromFileButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;
     const { t } = useTranslation();
 
-    const available = !disabled && testCapabilities && testCapabilities.canBeTested;
+    const available = !disabled && testCapabilities && testCapabilities.testWithGeneratedData.status == TestCapabilityStatus.AVAILABLE;
 
     return (
         <CapabilitiesToolbarButton

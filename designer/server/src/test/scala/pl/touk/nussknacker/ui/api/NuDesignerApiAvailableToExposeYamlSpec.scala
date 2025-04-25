@@ -32,7 +32,8 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
     val examplesValidationResult = OpenAPIExamplesValidator.forTapir.validateExamples(
       specYaml = generatedSpec,
       excludeResponseValidationForOperationIds = List(
-        "getApiProcessesScenarionameActivityActivities" // TODO: NU-1772: responses contain discriminator, it is not properly handled by validator
+        "getApiProcessesScenarionameActivityActivities", // TODO: NU-1772: responses contain discriminator, it is not properly handled by validator,
+        "postApiScenariotestingScenarionameCapabilities" // same reason as above
       )
     )
     val clue = examplesValidationResult

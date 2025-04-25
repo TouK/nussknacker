@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.development.manager
 
+import cats.Functor
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.{Resource, SyncIO}
@@ -67,22 +68,21 @@ object MockableDeploymentManagerProvider {
   ) extends DeploymentManager
       with ManagerSpecificScenarioActivitiesStoredByManager {
 
-    private lazy val miniClusterWithServicesOpt = modelDataProviderOpt.map { modelData =>
-      FlinkMiniClusterFactory.createMiniClusterWithServices(
-        modelData.modelClassLoader,
-        new Configuration,
-      )
-    }
-
-    private lazy val testRunnerOpt =
-      modelDataProviderOpt.map { modelDataProvider =>
-        new FlinkMiniClusterScenarioTestRunner(
+    private lazy val (miniClusterWithServicesOpt, testRunnerOpt) = {
+      Functor[Option].unzip(modelDataProviderOpt.map { modelDataProvider =>
+        val miniClusterWithServices = FlinkMiniClusterFactory.createMiniClusterWithServices(
+          modelDataProvider.modelClassLoader,
+          new Configuration,
+        )
+        val testRunner = new FlinkMiniClusterScenarioTestRunner(
           modelDataProvider,
-          miniClusterWithServicesOpt,
+          miniClusterWithServices,
           parallelism = 1,
           waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
         )
-      }
+        (miniClusterWithServices, testRunner)
+      })
+    }
 
     override def processStateDefinitionManager: ProcessStateDefinitionManager =
       SimpleProcessStateDefinitionManager

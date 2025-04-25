@@ -93,12 +93,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testCapabilities: action.capabilities,
-            };
-        }
-        case "UPDATE_TEST_FORM_PARAMETERS": {
-            return {
-                ...state,
-                testFormParameters: action.testFormParameters,
+                testFormParameters: action.capabilities?.testWithParameters?.sourceParameters,
             };
         }
         case "UPDATE_TEST_TYPE": {
@@ -395,7 +390,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
     groupBy: batchGroupBy.init(),
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-    }, excludeAction(["VALIDATION_RESULT", "STICKY_NOTE_SET_ERRORS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ", "UPDATE_TEST_FORM_PARAMETERS"])),
+    }, excludeAction(["VALIDATION_RESULT", "STICKY_NOTE_SET_ERRORS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ"])),
 });
 
 // apply only undoable changes for undo actions

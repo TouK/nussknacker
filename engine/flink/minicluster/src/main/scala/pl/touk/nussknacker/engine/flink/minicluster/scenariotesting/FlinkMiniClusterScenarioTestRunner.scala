@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioParallelismOverride._
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster.LegacyFallbackToSingleUseMiniClusterHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
@@ -21,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkMiniClusterScenarioTestRunner(
     modelDataProvider: BaseModelDataProvider,
-    sharedMiniClusterServicesOpt: Option[FlinkMiniClusterWithServices],
+    miniClusterWithServices: FlinkMiniClusterWithServices,
     parallelism: Int,
     waitForJobIsFinishedRetryPolicy: retry.Policy
 )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime) {
@@ -35,50 +34,40 @@ class FlinkMiniClusterScenarioTestRunner(
     "run"
   )
 
-  private val legacyFallbackToSingleUseMiniClusterHandler =
-    new LegacyFallbackToSingleUseMiniClusterHandler(modelDataProvider.modelClassLoader, "scenario testing")
-
   // NU-1455: We encode variable on the engine, because of classLoader's problems
   def runTests(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): Future[TestResults[Json]] = {
-    legacyFallbackToSingleUseMiniClusterHandler.withSharedOrSingleUseClusterAsync(
-      sharedMiniClusterServicesOpt,
-      scenario
-    ) { miniClusterWithServices =>
-      val scenarioWithOverriddenParallelism = sharedMiniClusterServicesOpt
-        .map(_ => scenario.overrideParallelism(parallelism))
-        .getOrElse(scenario)
-      def runJob(
-          collectingListener: ResultsCollectingListener[Json],
-          env: StreamExecutionEnvironment
-      ): JobExecutionResult = {
-        jobInvoker.invokeStaticMethod(
-          modelDataProvider.getCurrentModelData(),
-          scenarioWithOverriddenParallelism,
-          scenarioTestData,
-          collectingListener,
-          env
-        )
-      }
-      (for {
-        env                <- miniClusterWithServices.createDetachedStreamExecutionEnvironment[IO]
-        collectingListener <- ResultsCollectingListenerHolder.registerTestEngineListener
-      } yield (env, collectingListener))
-        .use { case (env, collectingListener) =>
-          (for {
-            executionResult <- EitherT.right(IO(runJob(collectingListener, env)))
-            _ <- EitherT(IO.fromFuture(IO {
-              miniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)(
-                waitForJobIsFinishedRetryPolicy,
-                // We don't want to extend request processing time
-                terminalCheckRetryPolicyOpt = None
-              )
-            }))
-          } yield collectingListener.results).value
-        }
-        .unsafeToFuture()
-        // TODO: business error returned to endpoint
-        .map(_.toTry.get)
+    val scenarioWithOverriddenParallelism = scenario.overrideParallelism(parallelism)
+    def runJob(
+        collectingListener: ResultsCollectingListener[Json],
+        env: StreamExecutionEnvironment
+    ): JobExecutionResult = {
+      jobInvoker.invokeStaticMethod(
+        modelDataProvider.getCurrentModelData(),
+        scenarioWithOverriddenParallelism,
+        scenarioTestData,
+        collectingListener,
+        env
+      )
     }
+    (for {
+      env                <- miniClusterWithServices.createDetachedStreamExecutionEnvironment[IO]
+      collectingListener <- ResultsCollectingListenerHolder.registerTestEngineListener
+    } yield (env, collectingListener))
+      .use { case (env, collectingListener) =>
+        (for {
+          executionResult <- EitherT.right(IO(runJob(collectingListener, env)))
+          _ <- EitherT(IO.fromFuture(IO {
+            miniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)(
+              waitForJobIsFinishedRetryPolicy,
+              // We don't want to extend request processing time
+              terminalCheckRetryPolicyOpt = None
+            )
+          }))
+        } yield collectingListener.results).value
+      }
+      .unsafeToFuture()
+      // TODO: business error returned to endpoint
+      .map(_.toTry.get)
   }
 
 }

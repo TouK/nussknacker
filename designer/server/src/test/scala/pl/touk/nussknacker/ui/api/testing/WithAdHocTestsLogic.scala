@@ -7,15 +7,17 @@ import org.hamcrest.Matchers.equalTo
 import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, EqualsJsonBody, JsonBody}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersBasicAuth
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 trait WithAdHocTestsLogic {
   self: WithAdHocTestParameters with WithSimplifiedConfigScenarioHelper with NuItTest =>
 
   def shouldValidateParametersProperly(): Unit = {
-    val request = AdhocTestParametersRequest(
-      validParameters,
-      exampleScenarioGraph
+    val request = ScenarioTestValidationRequest(
+      testData = ScenarioTestData.WithParameters(validParameters),
+      scenarioGraph = toScenarioGraph(exampleScenario)
     ).asJson.toString()
 
     given()
@@ -25,7 +27,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/adhoc/validate")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/validate")
       .Then()
       .statusCode(200)
       .equalsJsonBody(
@@ -37,9 +39,9 @@ trait WithAdHocTestsLogic {
   }
 
   def shouldReturnErrorsForInvalidParameters(): Unit = {
-    val request = AdhocTestParametersRequest(
-      invalidParameters,
-      exampleScenarioGraph
+    val request = ScenarioTestValidationRequest(
+      exampleScenarioGraph,
+      ScenarioTestData.WithParameters(invalidParameters),
     ).asJson.toString()
 
     given()
@@ -49,7 +51,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/adhoc/validate")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/validate")
       .Then()
       .statusCode(200)
       .equalsJsonBody(
@@ -69,7 +71,7 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(parametersProvidedForDryRun)
-      .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
       .Then()
       .statusCode(200)
       .body(
@@ -90,12 +92,21 @@ trait WithAdHocTestsLogic {
       .when()
       .basicAuthAllPermUser()
       .jsonBody(request)
-      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/parameters")
+      .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
       .Then()
       .statusCode(200)
-      .equalsJsonBody(
-        expectedTestParametersJson
-      )
+      .equalsJsonBody(responseWithParameters(expectedTestParametersJson))
   }
+
+  def responseWithParameters(parametersJson: String): String =
+    s"""{
+       |    "testWithParameters": {
+       |      "status": "AVAILABLE",
+       |      "sourceParameters": $parametersJson
+       |    },
+       |    "testWithGeneratedData": {
+       |      "status": "AVAILABLE"
+       |    }
+       |}""".stripMargin
 
 }

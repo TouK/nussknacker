@@ -8,10 +8,12 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
-trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServiceSpec {
+trait EventGeneratorSourceTestingApiHttpServiceSpec extends ScenarioTestingApiHttpServiceSpec {
 
   // We need to add flinkBaseUnbounded components to the classpath in order to test EventGenerator
   override def designerRawConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
@@ -37,8 +39,8 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends TestingApiHttpServic
       .emptySink("end", "dead-end")
 
   override protected def parametersProvidedForDryRun: String =
-    AdhocTestParametersRequest(
-      sourceParameters = validParameters,
+    ScenarioTestValidationRequest(
+      testData = ScenarioTestData.WithParameters(validParameters),
       scenarioGraph = toScenarioGraph(exampleScenario)
     ).asJson.toString()
 

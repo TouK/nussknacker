@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 import pl.touk.nussknacker.engine.management.jobrunner.{FlinkMiniClusterScenarioJobRunner, RemoteFlinkScenarioJobRunner}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
+import scala.collection.compat._
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration.FiniteDuration
@@ -78,44 +79,37 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
   ): Validated[String, DeploymentManager] = {
     logger.info("Creating FlinkStreamingDeploymentManager")
     import dependencies._
-    val miniClusterWithServicesOpt = createMiniClusterIfNeeded(modelDataProvider, flinkConfig)
-    val miniClusterJobManagerUriOpt = miniClusterWithServicesOpt
-      .filter(_ => flinkConfig.useMiniClusterForDeployment)
-      .map { miniClusterWithServices =>
-        Await.result(
-          miniClusterWithServices.miniCluster.getRestAddress.toScala,
-          flinkConfig.miniCluster.waitForJobManagerRestAPIAvailableTimeout
-        )
-      }
+    val miniClusterWithServices = FlinkMiniClusterFactory.createMiniClusterWithServices(
+      modelDataProvider.modelClassLoader,
+      flinkConfig.miniCluster.config,
+    )
+    val miniClusterJobManagerUriOpt = Option.when(flinkConfig.useMiniClusterForDeployment) {
+      Await.result(
+        miniClusterWithServices.miniCluster.getRestAddress.toScala,
+        flinkConfig.miniCluster.waitForJobManagerRestAPIAvailableTimeout
+      )
+    }
     flinkConfig
       .parseHttpClientConfig(miniClusterJobManagerUriOpt, scenarioStateCacheTTL)
       .map { parsedHttpClientConfig =>
         val client = FlinkClient.create(parsedHttpClientConfig)
-        val jobRunner = miniClusterWithServicesOpt
-          .filter { _ => flinkConfig.useMiniClusterForDeployment }
-          .map(new FlinkMiniClusterScenarioJobRunner(_, modelDataProvider))
-          .getOrElse(new RemoteFlinkScenarioJobRunner(modelDataProvider, client))
+        val jobRunner =
+          if (flinkConfig.useMiniClusterForDeployment)
+            new FlinkMiniClusterScenarioJobRunner(miniClusterWithServices, modelDataProvider)
+          else
+            new RemoteFlinkScenarioJobRunner(modelDataProvider, client)
         val underlying =
           new FlinkDeploymentManager(
             modelDataProvider,
             dependencies,
             flinkConfig,
-            miniClusterWithServicesOpt,
+            miniClusterWithServices,
             client,
             jobRunner
           )
         CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
       }
   }
-
-  private def createMiniClusterIfNeeded(modelDataProvider: BaseModelDataProvider, flinkConfig: FlinkConfig) =
-    FlinkMiniClusterFactory.createMiniClusterWithServicesIfConfigured(
-      modelDataProvider.modelClassLoader,
-      flinkConfig.miniCluster,
-      flinkConfig.useMiniClusterForDeployment,
-      flinkConfig.scenarioTesting,
-      flinkConfig.scenarioStateVerification
-    )
 
 }
 
