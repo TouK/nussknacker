@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.flink.types.Row
 import org.scalacheck.Gen
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -811,6 +812,26 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
   }
 
+  test("flink row projection typing") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
+    val validationResult = parseV[JInteger]("#flinkTableApiRow.![#this.value].get(0)", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  test("flink row selection typing") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
+    // TODO_PAWEL nowy tutaj podejrzane, ze nie moge zrobic metody .get() na tym table api row
+//    val validationResult = parseV[JInteger]("#flinkTableApiRow.?[#this.key == 'foo'].get('foo')", validationCtx)
+    // TODO_PAWEL nowy dziwne, ze to .foo dziala, no ale jeszcze Arek cos zmieni i ja sie dostosuje
+    val validationResult = parseV[JInteger]("#flinkTableApiRow.?[#this.key == 'foo'].foo", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    // TODO_PAWEL byc moze zly tu jest
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
   private def prepareGenericRecordTest: (ValidationContext, Context) = {
     val validationCtx = ValidationContext.empty
       .withVariable(
@@ -837,6 +858,28 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     record.put("foo", 42)
     record.put("bar", 43)
     val ctxWithMap = ctx.withVariable("genericRecord", record)
+    (validationCtx, ctxWithMap)
+  }
+
+  private def prepareFlinkRowTest: (ValidationContext, Context) = {
+    val validationCtx = ValidationContext.empty
+      .withVariable(
+        "flinkTableApiRow",
+        Typed.record(
+          Map(
+            "foo" -> Typed[Int],
+            "bar" -> Typed[Int],
+          ),
+          Typed.genericTypeClass(classOf[org.apache.flink.types.Row], List())
+        ),
+        paramName = None
+      )
+      .toOption
+      .get
+    val record = Row.withNames()
+    record.setField("foo", 42)
+    record.setField("bar", 43)
+    val ctxWithMap = ctx.withVariable("flinkTableApiRow", record)
     (validationCtx, ctxWithMap)
   }
 
