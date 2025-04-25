@@ -34,4 +34,14 @@ class FragmentParameterTypingParserSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("should fail to parse a class name when it contains a non-existing type") {
+    val triedTypingResult =
+      fragmentParameterTypingParser.parseClassNameToTypingResult("Map[String, NotExistingType]")
+
+    triedTypingResult match {
+      case Failure(ex) => ex shouldBe a[ClassNotFoundException]
+      case Success(tr) => fail(s"Expected failure due to non-existing type, but got success with: $tr")
+    }
+  }
+
 }
