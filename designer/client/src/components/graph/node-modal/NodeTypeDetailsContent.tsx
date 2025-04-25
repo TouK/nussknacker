@@ -1,9 +1,10 @@
 import { cloneDeep, isEqual, set } from "lodash";
-import type { SetStateAction} from "react";
+import type { SetStateAction } from "react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { validateNodeData } from "../../../actions/nk";
+import type { RootState } from "../../../reducers";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType, NodeValidationError } from "../../../types";
@@ -70,7 +71,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const processName = useSelector(getProcessName);
     const processProperties = useSelector(getProcessProperties);
 
-    const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
+    const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
 
     const adjustNode = useNodeAdjust();
     const [proxyNode, setProxyNode] = useState(() => adjustNode(node));
@@ -95,6 +96,9 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         (n: SetStateAction<NodeType>) => {
             setProxyNode((current) => {
                 const nextNode = typeof n === "function" ? n(current) : n;
+                if (isEqual(current, nextNode)) {
+                    return current;
+                }
                 change(nextNode, edges);
                 return nextNode;
             });
