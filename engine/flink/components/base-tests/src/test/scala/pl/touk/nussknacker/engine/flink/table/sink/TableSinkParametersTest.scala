@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
+import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -26,14 +27,19 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
-class TableSinkParametersTest extends AnyFunSuite with Matchers with PatientScalaFutures with BeforeAndAfterAll {
+class TableSinkParametersTest
+    extends AnyFunSuite
+    with Matchers
+    with PatientScalaFutures
+    with BeforeAndAfterAll
+    with ModelClassLoaderSimulationSuite {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val inputTableName                 = "input"
   private val outputTableName                = "output"
-  private val virtualColumnOutputTableName   = "virtual-column-output"
+  private val virtualColumnOutputTableName   = "virtual_column_output"
   private val outputTableNameWithInvalidCols = "output_invalid_column_names"
 
   private lazy val outputDirectory =

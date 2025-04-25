@@ -223,7 +223,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   def additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 
   final lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
-    val modelDefinitions = withThisAsContextClassLoader {
+    val modelDefinitions = withModelClassloaderAsContextClassLoader {
       extractModelDefinitionFun(
         modelClassLoader,
         ProcessObjectDependencies(modelConfig, namingStrategy),
@@ -255,8 +255,8 @@ trait ModelData extends BaseModelData with AutoCloseable {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader, modelConfig)
   }
 
-  final def withThisAsContextClassLoader[T](block: => T): T = {
-    ThreadUtils.withThisAsContextClassLoader(modelClassLoader) {
+  final def withModelClassloaderAsContextClassLoader[T](block: => T): T = {
+    ThreadUtils.withContextClassLoader(modelClassLoader) {
       block
     }
   }

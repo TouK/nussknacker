@@ -227,43 +227,6 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       runTestAndVerify()
     }
 
-    "be able to run tests with legacy ad-hoc mini cluster" in {
-      val process =
-        ScenarioBuilder
-          .streaming(scenarioName)
-          .source(sourceNodeId, "input")
-          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
-
-      val input = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
-
-      val testRunner = prepareTestRunner(useIOMonadInInterpreter, useLegacySingleUseMiniCluster = true)
-
-      val results = testRunner
-        .runTests(
-          process,
-          ScenarioTestData(
-            List(
-              ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
-            )
-          )
-        )
-        .futureValue
-
-      val nodeResults = results.nodeResults
-
-      nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input))
-      nodeResults("out") shouldBe List(nodeResult(0, "input" -> input))
-
-      val invocationResults = results.invocationResults
-
-      invocationResults("out") shouldBe
-        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable(11)))
-
-      results.externalInvocationResults("out") shouldBe List(
-        ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "valueMonitor", variable(11))
-      )
-    }
-
     "collect results for split" in {
       val process =
         ScenarioBuilder
@@ -939,7 +902,6 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       useIOMonadInInterpreter: Boolean,
       enrichDefaultConfig: Config => Config = identity,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
-      useLegacySingleUseMiniCluster: Boolean = false,
       waitForJobIsFinishedRetryPolicy: retry.Policy =
         DurationToRetryPolicyConverter.toPausePolicy(patienceConfig.timeout - 3.second, patienceConfig.interval * 2)
   ): FlinkMiniClusterScenarioTestRunner = {
@@ -955,7 +917,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     )
     new FlinkMiniClusterScenarioTestRunner(
       modelData.toModelDataProvider,
-      Some(miniClusterWithServices).filterNot(_ => useLegacySingleUseMiniCluster),
+      miniClusterWithServices,
       parallelism = 1,
       waitForJobIsFinishedRetryPolicy
     )

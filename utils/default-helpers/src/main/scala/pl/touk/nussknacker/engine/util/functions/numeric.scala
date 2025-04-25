@@ -130,7 +130,7 @@ object NumericUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
-      if (arguments.head.canBeConvertedTo(Typed[Number])) arguments.head.withoutValue.validNel
+      if (arguments.head.canBeLooselyAssignedTo(Typed[Number])) arguments.head.withoutValue.validNel
       else Typed[Number].validNel
     }
 

@@ -1,13 +1,14 @@
-import { createFilterRules, ExternalLink, fragmentNodeHref, Highlight, nodeHref, useFilterContext } from "../../common";
-import React, { memo, useCallback, useMemo } from "react";
 import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
 import { Chip, styled } from "@mui/material";
-import { TruncateWrapper } from "../../common/utils";
-import { GridRenderCellParams } from "@mui/x-data-grid";
-import { NodeUsageData } from "nussknackerUi/HttpService";
-import { UsageWithStatus } from "../useComponentsQuery";
-import { UsagesFiltersModel } from "./usagesFiltersModel";
+import type { GridRenderCellParams } from "@mui/x-data-grid";
+import type { NodeUsageData } from "nussknackerUi/HttpService";
+import React, { memo, useCallback, useMemo } from "react";
+
+import { createFilterRules, ExternalLink, fragmentNodeHref, Highlight, nodeHref, TruncateWrapper } from "../../common";
+import type { UsageWithStatus } from "../useComponentsQuery";
+import type { UsagesFiltersModel } from "./usagesFiltersModel";
 import { nodeFilter } from "./usagesTable";
+import { useUsagesFilterContext } from "./useUsagesFilterContext";
 
 const icon = <LinkIcon />;
 
@@ -36,7 +37,7 @@ export const NodesCell = ({
         [filterSegments],
     );
 
-    const { getFilter } = useFilterContext<UsagesFiltersModel>();
+    const { getFilter } = useUsagesFilterContext();
     const filters = useMemo(
         () =>
             nodesFilterRules.map(

@@ -101,35 +101,6 @@ class DictApiHttpServiceSpec
         )
     }
 
-    "return proper list for expected type BigInteger" in {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody("""{
-                    |  "expectedType" : {
-                    |      "type" : "TypedClass",
-                    |      "refClazzName" : "java.math.BigInteger",
-                    |      "params" : []
-                    |  }
-                    |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""[
-             |
-             |  {
-             |    "id": "integer_dict",
-             |    "label": "integer_dict"
-             |  },
-             |  {
-             |    "id" : "long_dict",
-             |    "label" : "long_dict"
-             |  }
-             |]""".stripMargin
-        )
-    }
-
     "fail for bad request" in {
       given()
         .when()

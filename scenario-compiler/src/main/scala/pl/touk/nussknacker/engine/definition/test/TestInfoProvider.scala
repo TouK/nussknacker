@@ -6,18 +6,20 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
-  ScenarioTestDataGenerationError,
-  SourceTestDataGenerationError,
-  TestDataPreparationError
-}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider._
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 
 trait TestInfoProvider {
 
-  def getTestingCapabilities(processVersion: ProcessVersion, scenario: CanonicalProcess): TestingCapabilities
+  def getTestingCapabilities(
+      processVersion: ProcessVersion,
+      scenario: CanonicalProcess
+  ): Either[TestingCapabilitiesError, TestingCapabilities]
 
-  def getTestParameters(processVersion: ProcessVersion, scenario: CanonicalProcess): Map[String, List[Parameter]]
+  def getTestParameters(
+      processVersion: ProcessVersion,
+      scenario: CanonicalProcess
+  ): Either[ParametersDefinitionError, Map[String, List[Parameter]]]
 
   def generateTestData(
       processVersion: ProcessVersion,
@@ -68,6 +70,22 @@ object TestInfoProvider {
   object TestDataPreparationError {
     final case class MissingSource(sourceId: NodeId, recordIndex: Int) extends TestDataPreparationError
     final case class MultipleSourcesRequired(recordIndex: Int)         extends TestDataPreparationError
+  }
+
+  sealed trait TestingCapabilitiesError
+
+  object TestingCapabilitiesError {
+    case object NoSourcesError         extends TestingCapabilitiesError
+    case object SourceCompilationError extends TestingCapabilitiesError
+  }
+
+  sealed trait ParametersDefinitionError {
+    def message: String
+  }
+
+  object ParametersDefinitionError {
+    final case class NotSupportedBySource(message: String)  extends ParametersDefinitionError
+    final case class SourceValidationError(message: String) extends ParametersDefinitionError
   }
 
 }

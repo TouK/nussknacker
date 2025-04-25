@@ -50,16 +50,6 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
         );
 }
 
-export function fetchTestFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
-    return (dispatch) =>
-        HttpService.getTestFormParameters(processName, scenarioGraph).then(({ data }) => {
-            dispatch({
-                type: "UPDATE_TEST_FORM_PARAMETERS",
-                testFormParameters: data,
-            });
-        });
-}
-
 export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
         HttpService.getTestCapabilities(processName, scenarioGraph).then(({ data }) =>

@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.engine.definition.test
 
 import cats.data.NonEmptyList
+import cats.effect.kernel.Resource
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.{process, CirceUtil, MetaData, NodeId, Params, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -24,6 +26,7 @@ import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataPrepa
   MissingSource,
   MultipleSourcesRequired
 }
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestingCapabilitiesError.NoSourcesError
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -88,47 +91,58 @@ class ModelDataTestInfoProviderSpec
 
   }
 
-  private val testInfoProvider: TestInfoProvider = new ModelDataTestInfoProvider(modelData)
+  private val testInfoProvider: TestInfoProvider =
+    new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
 
   test("should detect capabilities for empty scenario") {
     val scenario     = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = false)
+    capabilities shouldBe Left(NoSourcesError)
   }
 
   test("should detect capabilities: can parse and generate test data") {
     val scenario     = createScenarioWithSingleSource()
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
+    capabilities shouldBe Right(
+      TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
+    )
   }
 
   test("should detect capabilities: can only parse test data") {
     val scenario     = createScenarioWithSingleSource("genericSourceNoGenerate")
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = false)
+    capabilities shouldBe Right(
+      TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = false)
+    )
   }
 
   test("should detect capabilities: does not support testing") {
     val scenario     = createScenarioWithSingleSource("genericSourceNoSupport")
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = false)
+    capabilities shouldBe Right(
+      TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = false)
+    )
   }
 
   test("should detect capabilities: can create test view") {
     val scenario     = createScenarioWithSingleSource("genericSourceWithTestParameters")
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = true)
+    capabilities shouldBe Right(
+      TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = true)
+    )
   }
 
   test("should detect capabilities for fragment with valid input") {
     val scenario     = createSimpleFragment()
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
-    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = true)
+    capabilities shouldBe Right(
+      TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = true)
+    )
   }
 
   test("should detect capabilities for scenario with multiple sources: at least one supports generating and testing") {
@@ -145,7 +159,9 @@ class ModelDataTestInfoProviderSpec
 
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
+    capabilities shouldBe Right(
+      TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
+    )
   }
 
   test("should detect capabilities for scenario with multiple sources: one can only parse test data") {
@@ -162,7 +178,9 @@ class ModelDataTestInfoProviderSpec
 
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = false)
+    capabilities shouldBe Right(
+      TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = false)
+    )
   }
 
   test("should generate data for a scenario with single source") {
@@ -332,7 +350,7 @@ class ModelDataTestInfoProviderSpec
       .emptySink("end", "dead-end")
     val processVersion = processVersionFor(scenarioWithMultipleParams)
 
-    val result = testInfoProvider.getTestParameters(processVersion, scenarioWithMultipleParams)
+    val result = testInfoProvider.getTestParameters(processVersion, scenarioWithMultipleParams).toOption.get
 
     result.getOrElse("source1", Nil).find(_.name.value == "par1").value.defaultValue shouldBe Some("".spelTemplate)
     result.getOrElse("source1", Nil).find(_.name.value == "a").value.defaultValue shouldBe Some("0".spel)

@@ -1,19 +1,17 @@
 package pl.touk.nussknacker.engine.flink.minicluster
 
-import cats.effect.IO
+import cats.Applicative
+import cats.effect.{Sync, SyncIO}
 import cats.effect.kernel.Resource
-import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration._
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
-  ScenarioStateVerificationConfig,
-  ScenarioTestingConfig
-}
 import pl.touk.nussknacker.engine.util.ThreadUtils
+
+import scala.language.higherKinds
 
 object FlinkMiniClusterFactory extends LazyLogging {
 
@@ -38,20 +36,6 @@ object FlinkMiniClusterFactory extends LazyLogging {
     config
   }
 
-  def createMiniClusterWithServicesIfConfigured(
-      modelClassLoader: ModelClassLoader,
-      config: FlinkMiniClusterConfig,
-      useMiniClusterForDeployment: Boolean,
-      scenarioTestingConfig: ScenarioTestingConfig,
-      stateVerificationConfig: ScenarioStateVerificationConfig,
-  ): Option[FlinkMiniClusterWithServices] = {
-    if (useMiniClusterForDeployment || scenarioTestingConfig.reuseSharedMiniCluster || stateVerificationConfig.reuseSharedMiniCluster) {
-      Some(createMiniClusterWithServices(modelClassLoader, config.config))
-    } else {
-      None
-    }
-  }
-
   def createUnitTestsMiniClusterWithServices(
       miniClusterConfigOverrides: Configuration = new Configuration,
   ): FlinkMiniClusterWithServices = {
@@ -72,21 +56,13 @@ object FlinkMiniClusterFactory extends LazyLogging {
     // We have to setup classloader that contains flink-runtime as a context classloader,
     // because otherwise sometimes MiniCluster couldn't load any RpcSystemLoader
     // On the same classpath, there should be extensions such as MetricReporterFactory
-    val miniCluster = ThreadUtils.withThisAsContextClassLoader(modelClassLoader) {
+    val miniCluster = ThreadUtils.withContextClassLoader(modelClassLoader) {
       val mc = createMiniCluster(miniClusterConfig)
       mc.start()
       mc
     }
 
-    def createStreamExecutionEnv(attached: Boolean): StreamExecutionEnvironment = {
-      FlinkMiniClusterStreamExecutionEnvironmentFactory.createStreamExecutionEnvironment(
-        miniCluster,
-        modelClassLoader,
-        attached
-      )
-    }
-
-    new FlinkMiniClusterWithServices(miniCluster, createStreamExecutionEnv)
+    new FlinkMiniClusterWithServices(miniCluster, modelClassLoader)
   }
 
   private def createMiniCluster(configuration: Configuration) = {
@@ -105,16 +81,36 @@ object FlinkMiniClusterFactory extends LazyLogging {
 
 class FlinkMiniClusterWithServices(
     val miniCluster: MiniCluster,
-    streamExecutionEnvironmentFactory: Boolean => StreamExecutionEnvironment
+    modelClassLoader: ModelClassLoader
 ) extends AutoCloseable {
 
   def withDetachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
-    createDetachedStreamExecutionEnvironment.use(env => IO(action(env))).unsafeRunSync()
+    // We use SyncIO, because passed actions sometimes uses ThreadLocal and we don't want to change the Thread which run this action
+    createDetachedStreamExecutionEnvironment[SyncIO].use(env => SyncIO.pure(action(env))).unsafeRunSync()
   }
 
-  def createDetachedStreamExecutionEnvironment: Resource[IO, StreamExecutionEnvironment] = {
-    Resource.fromAutoCloseable(IO(streamExecutionEnvironmentFactory(false)))
+  def createDetachedStreamExecutionEnvironment[F[_]: Sync]: Resource[F, StreamExecutionEnvironment] = {
+    Resource.fromAutoCloseable(Applicative[F].pure(streamExecutionEnvironmentFactory(false)))
   }
+
+  // This method should be used with caution because action on StreamExecutionEnvironment can be blocking and it can cause
+  // thread pool starvation or deadlock. As an alternative, we recommend to use withDetachedStreamExecutionEnvironment
+  // combined with MiniClusterJobStatusCheckingOps
+  def withAttachedStreamExecutionEnvironment[T](action: StreamExecutionEnvironment => T): T = {
+    // We use SyncIO, because passed actions sometimes uses ThreadLocal and we don't want to change the Thread which run this action
+    createAttachedStreamExecutionEnvironment[SyncIO].use(env => SyncIO.pure(action(env))).unsafeRunSync()
+  }
+
+  private def createAttachedStreamExecutionEnvironment[F[_]: Sync]: Resource[F, StreamExecutionEnvironment] = {
+    Resource.fromAutoCloseable(Applicative[F].pure(streamExecutionEnvironmentFactory(true)))
+  }
+
+  private def streamExecutionEnvironmentFactory(attached: Boolean): StreamExecutionEnvironment =
+    FlinkMiniClusterStreamExecutionEnvironmentFactory.createStreamExecutionEnvironment(
+      miniCluster,
+      modelClassLoader,
+      attached
+    )
 
   override def close(): Unit = miniCluster.close()
 

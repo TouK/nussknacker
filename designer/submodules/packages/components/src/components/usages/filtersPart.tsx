@@ -1,16 +1,18 @@
-import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType, UsagesFiltersValues } from "./usagesFiltersModel";
-import { useFilterContext } from "../../common";
-import { QuickFilter } from "../../scenarios/filters/quickFilter";
-import { FilterMenu } from "../../scenarios/filters/filterMenu";
-import { SimpleOptionsStack } from "../../scenarios/filters/simpleOptionsStack";
-import { StatusOptionsStack } from "../../scenarios/filters/typeOptionsStack";
-import { OptionsStack } from "../../scenarios/filters/optionsStack";
-import { FilterListItem } from "../../scenarios/filters/filterListItem";
-import React from "react";
-import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
 import { xor } from "lodash";
 import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import { FilterListItem } from "../../scenarios/filters/filterListItem";
+import { FilterMenu } from "../../scenarios/filters/filterMenu";
+import { OptionsStack } from "../../scenarios/filters/optionsStack";
+import { QuickFilter } from "../../scenarios/filters/quickFilter";
+import { SimpleOptionsStack } from "../../scenarios/filters/simpleOptionsStack";
+import { StatusOptionsStack } from "../../scenarios/filters/typeOptionsStack";
+import { UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
+import type { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
+import { useUsagesFilterContext } from "./useUsagesFilterContext";
 
 interface FiltersPartProps {
     isLoading: boolean;
@@ -19,7 +21,7 @@ interface FiltersPartProps {
 
 export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
+    const { getFilter, setFilter } = useUsagesFilterContext();
 
     const otherFilters: Array<keyof UsagesFiltersModel> = ["TYPE", "USAGE_TYPE"];
 

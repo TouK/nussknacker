@@ -3,10 +3,13 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
+import enumeratum._
 import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.json.encoders.{ToJsonEncoderWithFallback, TypeEncoders}
+import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
+import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
@@ -29,23 +32,32 @@ object typing {
   sealed trait TypingResult {
 
     /**
-     * Checks if there exists a conversion to a given typingResult, with possible loss of precision, e.g. long to int.
-     * If you need to retain conversion precision, use canBeStrictlyConvertedTo
+     * Checks if given type is a target type or given type can be converted to target type without loss of precision
+     * e.g. int to long conversion is acceptable but long to int is not
      */
-    final def canBeConvertedTo(typingResult: TypingResult): Boolean =
-      AssignabilityDeterminer.isAssignableLoose(this, typingResult).isValid
+    final def canBeStrictlyAssignedTo(typingResult: TypingResult): Boolean =
+      AssignabilityDeterminer.isAssignable(this, typingResult)(Strict).isValid
+
+    // TODO: We should remove this method and instead, use variant with ConversionStrategy parameter
+    //       Thanks to that we can have one, simple method using Strict ConversionStrategy in components API
+    //       Before we do this, we should verify if canBeLooselyAssignedTo was correctly used - in some places
+    //       canBeStrictlyAssignedTo was probly the better choice
+    /**
+     * Checks if given type is a target type or there exists a conversion to target type, with possible
+     * loss of precision, e.g. both int to long and long to int conversions are acceptable.
+     * If you need to retain conversion precision, use canBeStrictlyAssignedTo
+     */
+    final def canBeLooselyAssignedTo(typingResult: TypingResult): Boolean =
+      AssignabilityDeterminer.isAssignable(this, typingResult)(Loose).isValid
 
     /**
-     * Checks if the conversion to a given typingResult can be made without loss of precision
+     * Checks if the given type is a target type or can be converted to target type with custom conversion strategy.
+     * This method is package protected, because it is designed for internal, Nussknacker usage.
      */
-    final def canBeStrictlyConvertedTo(typingResult: TypingResult): Boolean =
-      AssignabilityDeterminer.isAssignableStrict(this, typingResult).isValid
-
-    /**
-     * Checks if the conversion to a given typingResult can be made without any conversion.
-     */
-    final def canBeConvertedWithoutConversionTo(typingResult: TypingResult): Boolean =
-      AssignabilityDeterminer.isAssignableWithoutConversion(this, typingResult).isValid
+    private[engine] final def canBeAssignedTo(typingResult: TypingResult)(
+        implicit conversionStrategy: ConversionStrategy
+    ): Boolean =
+      AssignabilityDeterminer.isAssignable(this, typingResult).isValid
 
     def valueOpt: Option[Any]
 
@@ -167,14 +179,35 @@ object typing {
     override val display = "Null"
   }
 
-  // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult {
-    override def withoutValue: Unknown.type = Unknown
-
-    override val valueOpt: None.type = None
-
-    override val display = "Unknown"
+  sealed trait DisplayStrategy extends EnumEntry {
+    val display: String
   }
+
+  object DisplayStrategy extends Enum[DisplayStrategy] {
+    override def values = findValues
+
+    case object DefaultDisplayStrategy extends DisplayStrategy {
+      override val display: String = "Unknown"
+    }
+
+    case object JsonDisplayStrategy extends DisplayStrategy {
+      override val display: String = "Json"
+    }
+
+    def valueOfDisplay(display: String): Option[DisplayStrategy] = {
+      values.find(_.display == display)
+    }
+
+  }
+
+  // Unknown is representation of TypedUnion of all possible types
+  case class Unknown(displayStrategy: DisplayStrategy) extends TypingResult {
+    override def withoutValue: TypingResult = this
+    override val valueOpt: None.type        = None
+    override val display: String            = displayStrategy.display
+  }
+
+  object Unknown extends Unknown(DefaultDisplayStrategy)
 
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
@@ -265,6 +298,8 @@ object typing {
     def apply(klass: Class[_]): TypingResult = {
       if (klass == classOf[Any]) Unknown else typedClass(klass, None)
     }
+
+    val json: Unknown = new Unknown(JsonDisplayStrategy)
 
     // TODO: how to assert in compile time that T != Any, AnyRef, Object?
     // TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.
@@ -409,7 +444,7 @@ object typing {
       //       computing the output type of SPeL's ternary operator - see CommonSupertypeFinder.commonSupertype(nel, nel)
       //       which can generate a long unions of types
       def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
-        case Unknown                    => None
+        case Unknown(_)                 => None
         case TypedNull                  => Some(Set.empty)
         case single: SingleTypingResult => Some(Set(single))
         case union: TypedUnion          => Some(union.possibleTypes.toList.toSet)
@@ -417,6 +452,7 @@ object typing {
 
       val flattenedTypes = possibleTypes.toList.map(flattenType).sequence.map(_.flatten.distinct)
       flattenedTypes match {
+        case None if possibleTypes.toList.contains(json)           => json
         case None                                                  => Unknown
         case Some(Nil) if possibleTypes.toList.contains(TypedNull) => TypedNull
         case Some(Nil)                                             =>
@@ -480,7 +516,7 @@ object typing {
 
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
       Option(typingResult)
-        .filter(_.canBeConvertedTo(Typed.fromDetailedType[T]))
+        .filter(_.canBeLooselyAssignedTo(Typed.fromDetailedType[T]))
         .map(new TypingResultTypedValue(_))
     }
 

@@ -12,14 +12,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioParallelismOverride.Ops
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.legacysingleuseminicluster.LegacyFallbackToSingleUseMiniClusterHandler
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkMiniClusterScenarioStateVerifier(
     modelDataProvider: BaseModelDataProvider,
-    sharedMiniClusterServicesOpt: Option[FlinkMiniClusterWithServices],
+    miniClusterWithServices: FlinkMiniClusterWithServices,
     waitForJobIsFinishedRetryPolicy: retry.Policy
 )(implicit executionContext: ExecutionContext, ioRuntime: IORuntime)
     extends LazyLogging {
@@ -35,55 +34,48 @@ class FlinkMiniClusterScenarioStateVerifier(
     "run"
   )
 
-  private val legacyFallbackToSingleUseMiniClusterHandler =
-    new LegacyFallbackToSingleUseMiniClusterHandler(modelDataProvider.modelClassLoader, "scenario state verification")
-
   def verify(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess,
       savepointPath: String
   ): Future[Unit] = {
-    legacyFallbackToSingleUseMiniClusterHandler.withSharedOrSingleUseCluster(sharedMiniClusterServicesOpt, scenario) {
-      miniClusterWithServices =>
-        val scenarioWithOverriddenParallelism = sharedMiniClusterServicesOpt
-          .map(_ => scenario.overrideParallelism(StateVerificationParallelism))
-          .getOrElse(scenario)
-        def runJob(env: StreamExecutionEnvironment): JobExecutionResult =
-          jobInvoker.invokeStaticMethod(
-            modelDataProvider.getCurrentModelData(),
-            scenarioWithOverriddenParallelism,
-            processVersion,
-            savepointPath,
-            env
+    val scenarioWithOverriddenParallelism = scenario.overrideParallelism(StateVerificationParallelism)
+    def runJob(env: StreamExecutionEnvironment): JobExecutionResult =
+      jobInvoker.invokeStaticMethod(
+        modelDataProvider.getCurrentModelData(),
+        scenarioWithOverriddenParallelism,
+        processVersion,
+        savepointPath,
+        env
+      )
+    val scenarioName = processVersion.processName
+    miniClusterWithServices
+      .createDetachedStreamExecutionEnvironment[IO]
+      .use { env =>
+        logger.info(s"Starting to verify $scenarioName")
+        (for {
+          executionResult <- EitherT.right(IO(runJob(env)))
+          _ <- EitherT(IO.fromFuture(IO {
+            miniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)(
+              waitForJobIsFinishedRetryPolicy,
+              // We don't want to extend request processing time
+              terminalCheckRetryPolicyOpt = None
+            )
+          }))
+        } yield ()).value
+      }
+      .unsafeToFuture()
+      // TODO: business error returned to endpoint
+      .map {
+        case Right(_) =>
+          logger.info(s"Verification of $scenarioName successful")
+        case Left(jobStateCheckError) =>
+          logger.info(s"Failed to verify $scenarioName", jobStateCheckError)
+          throw new IllegalArgumentException(
+            "State is incompatible, please stop scenario and start again with clean state",
+            jobStateCheckError
           )
-        val scenarioName = processVersion.processName
-        miniClusterWithServices.createDetachedStreamExecutionEnvironment
-          .use { env =>
-            logger.info(s"Starting to verify $scenarioName")
-            (for {
-              executionResult <- EitherT.right(IO(runJob(env)))
-              _ <- EitherT(IO.fromFuture(IO {
-                miniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)(
-                  waitForJobIsFinishedRetryPolicy,
-                  // We don't want to extend request processing time
-                  terminalCheckRetryPolicyOpt = None
-                )
-              }))
-            } yield ()).value
-          }
-          .unsafeToFuture()
-          // TODO: business error returned to endpoint
-          .map {
-            case Right(_) =>
-              logger.info(s"Verification of $scenarioName successful")
-            case Left(jobStateCheckError) =>
-              logger.info(s"Failed to verify $scenarioName", jobStateCheckError)
-              throw new IllegalArgumentException(
-                "State is incompatible, please stop scenario and start again with clean state",
-                jobStateCheckError
-              )
-          }
-    }
+      }
   }
 
 }

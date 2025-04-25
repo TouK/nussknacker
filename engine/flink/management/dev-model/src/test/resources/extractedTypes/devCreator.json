@@ -18817,39 +18817,16 @@
     "methods": {
       "distanceInKm": [
         {
-          "description": "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm",
+          "description": "Calculate distance in kilometers between two points (with decimal coordinates), using the Haversine formula",
           "name": "distanceInKm",
           "signature": {
             "noVarArgs": [
-              {"name": "first point latitude", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "first point longitude", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "second point latitude", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "first point longitude", "refClazz": {"refClazzName": "java.lang.Number"}}
+              {"name": "latitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "latitude2", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "longitude2", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
             "result": {"refClazzName": "java.lang.Double"}
-          }
-        },
-        {
-          "description": "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm",
-          "name": "distanceInKm",
-          "signature": {
-            "noVarArgs": [
-              {"name": "first point", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.Point"}},
-              {"name": "second point", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.Point"}}
-            ],
-            "result": {"refClazzName": "java.lang.Double"}
-          }
-        }
-      ],
-      "toPoint": [
-        {
-          "name": "toPoint",
-          "signature": {
-            "noVarArgs": [
-              {"name": "lat", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "lon", "refClazz": {"refClazzName": "java.lang.Number"}}
-            ],
-            "result": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.Point"}
           }
         }
       ]
@@ -19580,52 +19557,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ]
-    }
-  },
-  {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.Point"},
-    "methods": {
-      "lat": [
-        {
-          "name": "lat",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Double"}
-          }
-        }
-      ],
-      "lon": [
-        {
-          "name": "lon",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Double"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {
-      "apply": [
-        {
-          "name": "apply",
-          "signature": {
-            "noVarArgs": [
-              {"name": "lat", "refClazz": {"refClazzName": "java.lang.Double"}},
-              {"name": "lon", "refClazz": {"refClazzName": "java.lang.Double"}}
-            ],
-            "result": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.Point"}
           }
         }
       ]

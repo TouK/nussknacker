@@ -7,8 +7,10 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -459,7 +461,11 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
+    val jobData          = jobDataFor(process)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    val validationResult =
+      processValidator.validate(process, isFragment = false)(scenarioCompilationDependencies).result
     assert(validationResult.isInvalid)
   }
 
@@ -504,7 +510,11 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, ResultsCollectingListenerHolder.noopListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
+    val jobData          = jobDataFor(process)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    val validationResult =
+      processValidator.validate(process, isFragment = false)(scenarioCompilationDependencies).result
     assert(validationResult.isInvalid)
   }
 

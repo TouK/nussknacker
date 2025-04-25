@@ -29,6 +29,7 @@ object KafkaUniversalComponentTransformer {
   final val sinkRawEditorParamName      = ParameterName("Raw editor")
   final val contentTypeParamName        = ParameterName("Content type")
   final val dataSampleParamName         = ParameterName("Data sample")
+  final val inputParamName              = ParameterName("Input")
 
   def extractValidationMode(value: String): ValidationMode =
     ValidationMode.fromString(value, sinkValidationModeParamName)

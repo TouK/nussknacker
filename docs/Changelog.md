@@ -150,6 +150,15 @@
 * [#7864](https://github.com/TouK/nussknacker/pull/7864) Add the forbidden IPs feature to the HTTP client configuration,
   if `followRedirect` is enabled then `Location` response header is also checked:
   * `forbiddenCidrs` - list of forbidden CIDR.
+* [#7961](https://github.com/TouK/nussknacker/pull/7961) Fix distance calculated by `GeoUtils.distanceInKm`
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window components is not transformed into a string.
+  Key will now have type of value given in `groupBy` field. Previously we wrapped `groupBy` value as a list in String, e.g. for `id = 1` before: `groupBy: id -> key: "[1]"`, after: `groupBy: id -> key: 1`
+* [#7824](https://github.com/TouK/nussknacker/pull/7824) Add Json type support for schemaless topic data with Json content type.
+* [#7959](https://github.com/TouK/nussknacker/pull/7959) Scenario testing API changes:
+    * Scenario testing API (on path prefix `/scenarioTesting`) is refactored - incompatible change, please check the Migration Guide for details
+    * test endpoints moved from Process Management API to Scenario Testing API
+    * introduced new representation of test results
 
 ## 1.18
 

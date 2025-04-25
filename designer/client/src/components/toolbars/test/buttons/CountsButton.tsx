@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useIntervalWhen } from "rooks";
+
 import Icon from "../../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessCountsRefresh, isFragment } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { ToolbarButtonProps } from "../../types";
-import { ButtonProgress } from "./ButtonProgress";
+import type { ToolbarButtonProps } from "../../types";
 
 // TODO: counts and metrics should not be visible in archived process
 function CountsButton(props: ToolbarButtonProps) {
@@ -30,20 +30,21 @@ function CountsButton(props: ToolbarButtonProps) {
     );
 
     return featuresSettings?.counts && !fragment ? (
-        <ButtonProgress enabled={enabled} variant="determinate" value={percent}>
-            <ToolbarButton
-                name={t("panels.actions.test-counts.name", "counts")}
-                title={t("panels.actions.test-counts.button.title", "count node invocations in given period")}
-                icon={<Icon />}
-                disabled={disabled}
-                onClick={() =>
-                    open({
-                        kind: WindowKind.calculateCounts,
-                    })
-                }
-                type={type}
-            />
-        </ButtonProgress>
+        <ToolbarButton
+            isLoading={enabled}
+            loadingVariant={"determinate"}
+            loadingProgress={percent}
+            name={t("panels.actions.test-counts.name", "counts")}
+            title={t("panels.actions.test-counts.button.title", "count node invocations in given period")}
+            icon={<Icon />}
+            disabled={disabled}
+            onClick={() =>
+                open({
+                    kind: WindowKind.calculateCounts,
+                })
+            }
+            type={type}
+        />
     ) : null;
 }
 

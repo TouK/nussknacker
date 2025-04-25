@@ -90,7 +90,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         availableEditors.find((editor) => {
             const editorParameters = editorsParameters[editor.type];
 
-            return editorParameters.language === expressionObj.language && allowsSwitch(editor);
+            return editorParameters?.language === expressionObj?.language && allowsSwitch(editor);
         }) ?? availableEditors[0],
     );
 

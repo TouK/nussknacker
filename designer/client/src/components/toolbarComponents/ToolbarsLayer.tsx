@@ -52,7 +52,7 @@ type ToolbarsLayerProps = PropsWithChildren<{
 const AbsolutePanel = styled(Box)(({ theme }) => ({
     position: "absolute",
     inset: 0,
-    zIndex: theme.zIndex.snackbar,
+    zIndex: theme.zIndex.modal - 2, // elements using mui modal zIndex (e.g. menu, click outside mask) should be over our toolbar
     overflow: "hidden",
 }));
 

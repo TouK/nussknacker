@@ -107,7 +107,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
         !settings.isHidden(str.runtimeObjType.klass) && str.runtimeObjType.params.forall(typeResultVisible)
       case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
       case TypedNull         => true
-      case Unknown           => true
+      case Unknown(_)        => true
     }
     def filterOneMethod(method: MethodDefinition): Boolean = {
       val noVarArgTypes = method.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
@@ -141,7 +141,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
 
         methodsForParams
           .find { case (_, method) =>
-            methodsForParams.forall(mi => method.signature.result.canBeConvertedTo(mi._2.signature.result))
+            methodsForParams.forall(mi => method.signature.result.canBeLooselyAssignedTo(mi._2.signature.result))
           }
           .getOrElse(methodsForParams.minBy(_._2.signature.result.display))
       }
@@ -273,7 +273,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
               )
               reflectionBasedDefinition.result
             }
-            if (returnedResultType.canBeConvertedTo(returnedResultType)) {
+            if (returnedResultType.canBeLooselyAssignedTo(returnedResultType)) {
               returnedResultType
             } else {
               logger.warn(

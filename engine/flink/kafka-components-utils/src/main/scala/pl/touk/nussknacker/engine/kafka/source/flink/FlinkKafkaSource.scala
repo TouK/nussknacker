@@ -37,6 +37,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.util
@@ -179,8 +180,8 @@ class FlinkKafkaSource[T](
     val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
     val removedValue = if (unflattenedParams.size == 1) {
       unflattenedParams.head match {
-        case ("Value", inner) => inner
-        case _                => unflattenedParams
+        case (`inputParamName`.`value`, inner) => inner
+        case _                                 => unflattenedParams
       }
     } else unflattenedParams
     deserializeTestData(

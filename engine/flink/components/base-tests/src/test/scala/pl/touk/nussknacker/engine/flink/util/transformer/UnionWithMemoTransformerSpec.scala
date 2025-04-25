@@ -5,9 +5,11 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -140,9 +142,11 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar)
     )
-    val processValidator          = ProcessValidator.default(model)
-    implicit val jobData: JobData = jobDataFor(process)
-    val validationResult          = processValidator.validate(process, isFragment = false).result
+    val processValidator = ProcessValidator.default(model)
+    val jobData: JobData = jobDataFor(process)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    val validationResult = processValidator.validate(process, isFragment = false).result
 
     val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}""""
     validationResult should matchPattern {
@@ -190,9 +194,11 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
     )
-    val processValidator          = ProcessValidator.default(model)
-    implicit val jobData: JobData = jobDataFor(process)
-    val validationResult          = processValidator.validate(process, isFragment = false).result
+    val processValidator = ProcessValidator.default(model)
+    val jobData          = jobDataFor(process)
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    val validationResult = processValidator.validate(process, isFragment = false).result
 
     val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""
     validationResult should matchPattern {

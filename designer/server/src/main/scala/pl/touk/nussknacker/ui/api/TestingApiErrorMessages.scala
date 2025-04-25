@@ -1,6 +1,36 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataPreparationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
+
 object TestingApiErrorMessages {
+
+  def from(performTestError: ScenarioTestService.PerformTestError): String = {
+    performTestError match {
+      case PerformTestError.DeserializationError(cause) =>
+        cause match {
+          case DeserializationError.TooManyCharacters(length, limit) =>
+            TestingApiErrorMessages.passedTestData.tooManyCharacters(length, limit)
+          case DeserializationError.TooManySamples(size, limit) =>
+            TestingApiErrorMessages.passedTestData.tooManySamples(size, limit)
+          case DeserializationError.NoRecords =>
+            TestingApiErrorMessages.passedTestData.empty
+          case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
+            TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
+        }
+      case PerformTestError.TestDataPreparationError(cause) =>
+        cause match {
+          case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
+            TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
+          case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
+            TestingApiErrorMessages.problemInSample(recordIndex).multipleSourcesRequired
+        }
+      case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
+        TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
+    }
+  }
 
   object generatedTestData {
     def requestedTooManySamplesToGenerate(maxSamples: Int) =

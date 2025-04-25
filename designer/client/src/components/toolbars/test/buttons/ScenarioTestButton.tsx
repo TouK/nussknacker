@@ -3,15 +3,16 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, getTestResultsLoading, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
-import { ButtonProgress } from "./ButtonProgress";
 
 export type ScenarioTestButtonProps = {
+    type: CustomButtonTypes.scenarioTest;
     name?: string;
     title?: string;
     docs?: TestingViewParams["docs"];
@@ -31,7 +32,10 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const testCapabilities = useSelector(getTestCapabilities);
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
     const testFromGeneratedDataIsAvailable =
-        !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canGenerateTestData;
+        !disabled &&
+        processIsLatestVersion &&
+        testCapabilities &&
+        testCapabilities.testWithGeneratedData.status == TestCapabilityStatus.AVAILABLE;
 
     const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromGeneratedDataIsAvailable;
 
@@ -41,7 +45,11 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             isResizable: true,
             kind: WindowKind.scenarioTest,
             meta: {
-                viewParams: { Icon: TestingIcon, docs, markdownContent },
+                viewParams: {
+                    Icon: TestingIcon,
+                    docs,
+                    markdownContent,
+                },
             },
         });
     }, [docs, markdownContent, open, t]);
@@ -61,16 +69,15 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         : title;
 
     return (
-        <ButtonProgress enabled={isLoading}>
-            <ToolbarButton
-                name={name || t("panels.actions.scenarioTest.button.name", "test")}
-                title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
-                icon={<TestingIcon />}
-                disabled={!atLeastOneTypeOfTestIsAvailable}
-                onClick={openDialog}
-                type={type}
-            />
-        </ButtonProgress>
+        <ToolbarButton
+            name={name || t("panels.actions.scenarioTest.button.name", "test")}
+            title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
+            icon={<TestingIcon />}
+            isLoading={isLoading}
+            disabled={!atLeastOneTypeOfTestIsAvailable}
+            onClick={openDialog}
+            type={type}
+        />
     );
 }
 

@@ -52,7 +52,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       path: Option[String]
   ): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
-      case (Unknown, _) if validationMode == ValidationMode.lax =>
+      case (Unknown(_), _) if validationMode == ValidationMode.lax =>
         valid
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
@@ -69,9 +69,9 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         invalid(typingResult, schema, path)
       case (TypedNull, _) if schema.isNullable =>
         valid
-      case (Unknown, Type.NULL) if !schema.isNullable =>
+      case (Unknown(_), Type.NULL) if !schema.isNullable =>
         invalid(typingResult, schema, path)
-      case (Unknown, Type.NULL) if schema.isNullable =>
+      case (Unknown(_), Type.NULL) if schema.isNullable =>
         valid
       case (typingResult, Type.ENUM) =>
         validateEnum(typingResult, schema, path)
@@ -157,7 +157,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case _ @TypedClass(klass, key :: value :: Nil) if isMap(klass) =>
         // Map keys are assumed to be strings: https://avro.apache.org/docs/current/spec.html#Maps
         condNel(
-          key.canBeConvertedTo(Typed.apply[java.lang.String]),
+          key.canBeLooselyAssignedTo(Typed.apply[java.lang.String]),
           (),
           typeError(typingResult, schema, path)
         ).andThen(_ => validateTypingResult(value, schema.getValueType, buildPath("*", path, useIndexer = true)))

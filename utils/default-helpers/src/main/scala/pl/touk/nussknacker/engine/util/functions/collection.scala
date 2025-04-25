@@ -363,8 +363,8 @@ object CollectionUtils {
           case _ if firstComponentType.withoutValue == secondComponentType.withoutValue =>
             listType.copy(params = firstComponentType.withoutValue :: Nil)
           case _
-              if firstComponentType.canBeConvertedTo(numberType) && secondComponentType
-                .canBeConvertedTo(numberType) =>
+              if firstComponentType.canBeLooselyAssignedTo(numberType) && secondComponentType
+                .canBeLooselyAssignedTo(numberType) =>
             Typed.genericTypeClass(fClass, List(numberType))
           case _ => listType.copy(params = Unknown :: Nil)
         }
@@ -526,7 +526,7 @@ object CollectionUtils {
       fields.get(fieldName.asInstanceOf[String]) match {
         case Some(TypedClass(klass, _)) if comparableClass.isAssignableFrom(klass) =>
           baseTypeClass.copy(params = parametersTypes.withoutValue :: Nil).validNel
-        case Some(t @ (TypedClass(_, _) | Unknown)) =>
+        case Some(t @ (TypedClass(_, _) | Unknown(_))) =>
           GenericFunctionTypingError
             .OtherError(
               s"Field: $fieldName of the type: ${t.display} isn't comparable (doesn't implement the " +

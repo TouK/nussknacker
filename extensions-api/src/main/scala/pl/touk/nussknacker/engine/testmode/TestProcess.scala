@@ -7,6 +7,7 @@ object TestProcess {
 
   case class TestResults[T](
       nodeResults: Map[String, List[ResultContext[T]]],
+      nodeTransitionResults: Map[NodeTransition, List[ResultContext[T]]],
       invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]]
@@ -17,6 +18,20 @@ object TestProcess {
         nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
           .fromContext(context, variableEncoder)))
       )
+
+    def updateNodeOutputResult(
+        nodeId: String,
+        nextNodeIdOpt: Option[String],
+        context: Context,
+        variableEncoder: Any => T
+    ): TestResults[T] = {
+      copy(nodeTransitionResults =
+        nodeTransitionResults + (NodeTransition(nodeId, nextNodeIdOpt) ->
+          (nodeTransitionResults
+            .getOrElse(NodeTransition(nodeId, nextNodeIdOpt), List()) :+ ResultContext
+            .fromContext(context, variableEncoder)))
+      )
+    }
 
     def updateExpressionResult(
         nodeId: String,
@@ -60,6 +75,8 @@ object TestProcess {
     ) :+ invocationResult
 
   }
+
+  final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
 
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 

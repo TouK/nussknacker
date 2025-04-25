@@ -3,7 +3,13 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{api, CustomProcessValidatorLoader, InterpretationResult, RuntimeMode}
+import pl.touk.nussknacker.engine.{
+  api,
+  CustomProcessValidatorLoader,
+  InterpretationResult,
+  RuntimeMode,
+  ScenarioCompilationDependencies
+}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -13,6 +19,7 @@ import pl.touk.nussknacker.engine.api.component.{
   UnboundedStreamComponent
 }
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -38,10 +45,20 @@ class InterpreterSetup[T: ClassTag] {
     val jobData      = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     val compilerData = prepareCompilerData(jobData, additionalComponents)
     val interpreter  = compilerData.interpreter
-    val parts        = failOnErrors(compilerData.compile(process))
+
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+
+    val parts = failOnErrors(compilerData.compile(process))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
+      failOnErrors(
+        compilerData.subPartCompiler
+          .compile(part.node, part.validationContext)
+          .result
+      )
 
     val compiled = compileNode(parts.sources.head)
     (initialCtx: Context, ec: ServiceExecutionContext) => interpreter.interpret[F](compiled, jobData, initialCtx, ec)

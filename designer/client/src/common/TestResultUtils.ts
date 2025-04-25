@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { head, uniq, values } from "lodash";
-import { NodeId, UIParameter } from "../types";
+
+import type { NodeId, UIParameter } from "../types";
 
 export interface Variable {
     original?: string;
@@ -29,9 +30,22 @@ interface ExternalInvocationResult {
 }
 
 export interface TestCapabilities {
-    canBeTested: boolean;
-    canGenerateTestData: boolean;
-    canTestWithForm: boolean;
+    testWithParameters: TestWithParametersCapability;
+    testWithGeneratedData: GenericCapability;
+}
+
+export interface TestWithParametersCapability {
+    status: TestCapabilityStatus;
+    sourceParameters?: TestFormParameters[];
+}
+
+export interface GenericCapability {
+    status: TestCapabilityStatus;
+}
+
+export enum TestCapabilityStatus {
+    AVAILABLE = "AVAILABLE",
+    NOT_AVAILABLE = "NOT_AVAILABLE",
 }
 
 export interface TestFormParameters {

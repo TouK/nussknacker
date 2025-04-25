@@ -6,35 +6,18 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.table.FlinkSqlTableTestCases
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement.{
+  Connector,
   CreateTable,
   SqlString
 }
-import pl.touk.nussknacker.engine.flink.table.definition.FlinkDdlParseError.{ParseError, UnallowedStatement}
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinitionCreationError.FlinkDdlParseError._
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDdlParserTest.syntacticallyInvalidSqlStatements
 
 class FlinkDdlParserTest extends AnyFunSuite with Matchers {
 
-  test("return error for syntactically invalid statements") {
-    syntacticallyInvalidSqlStatements.foreach { s =>
-      FlinkDdlParser.parse(s) should matchPattern { case Invalid(NonEmptyList(ParseError(_), _)) => }
-    }
-  }
-
-  test("return multiple errors for multiple unallowed statements") {
-    val sqlStatements = FlinkDdlParserTest.unallowedSqlStatements.mkString(";\n")
-    FlinkDdlParser.parse(sqlStatements) should matchPattern {
-      case Invalid(NonEmptyList(UnallowedStatement(_), List(UnallowedStatement(_)))) =>
-    }
-  }
-
-  test("parses semantically invalid but parseable statements") {
-    val sqlStatements = FlinkDdlParserTest.semanticallyIllegalButParseableStatements.mkString(";\n")
-    FlinkDdlParser.parse(sqlStatements) should matchPattern { case Valid(_) => }
-  }
-
   test("parse valid create table statements") {
     FlinkDdlParser.parse(FlinkSqlTableTestCases.unboundedKafkaTable) shouldBe Valid(
-      List(CreateTable(SqlString(FlinkSqlTableTestCases.unboundedKafkaTableFormatted)))
+      List(CreateTable(SqlString(FlinkSqlTableTestCases.unboundedKafkaTableFormatted), Connector("kafka")))
     )
   }
 
@@ -51,11 +34,43 @@ class FlinkDdlParserTest extends AnyFunSuite with Matchers {
         s"${FlinkSqlTableTestCases.PostgresCatalog.postgresCatalog}"
     ) shouldBe Valid(
       List(
-        CreateTable(SqlString(FlinkSqlTableTestCases.unboundedKafkaTableFormatted)),
-        CreateTable(SqlString(FlinkSqlTableTestCases.unboundedDatagenTableFormatted)),
+        CreateTable(SqlString(FlinkSqlTableTestCases.unboundedKafkaTableFormatted), Connector("kafka")),
+        CreateTable(SqlString(FlinkSqlTableTestCases.unboundedDatagenTableFormatted), Connector("datagen")),
         FlinkSqlTableTestCases.PostgresCatalog.postgresCatalogParsed
       )
     )
+  }
+
+  test("parses semantically invalid but parseable statements") {
+    val sqlStatements = FlinkDdlParserTest.semanticallyIllegalButParseableStatements.mkString(";\n")
+    FlinkDdlParser.parse(sqlStatements) should matchPattern { case Valid(_) => }
+  }
+
+  test("return error for syntactically invalid statements") {
+    syntacticallyInvalidSqlStatements.foreach { s =>
+      FlinkDdlParser.parse(s) should matchPattern { case Invalid(NonEmptyList(ParseError(_), Nil)) => }
+    }
+  }
+
+  test("return multiple errors for multiple unallowed statements") {
+    val sqlStatements = FlinkDdlParserTest.unallowedSqlStatements.mkString(";\n")
+    FlinkDdlParser.parse(sqlStatements) should matchPattern {
+      case Invalid(NonEmptyList(UnallowedStatement(_), List(UnallowedStatement(_)))) =>
+    }
+  }
+
+  test("return error for missing connector option") {
+    val sqlStatement = "CREATE TABLE testTable (str STRING) WITH ()"
+    FlinkDdlParser.parse(sqlStatement) should matchPattern {
+      case Invalid(NonEmptyList(MissingConnectorOption(_), Nil)) =>
+    }
+  }
+
+  test("return error for missing catalog type") {
+    val sqlStatement = "CREATE CATALOG testCatalog WITH ()"
+    FlinkDdlParser.parse(sqlStatement) should matchPattern {
+      case Invalid(NonEmptyList(MissingCatalogTypeOption(_, _), Nil)) =>
+    }
   }
 
 }
@@ -85,9 +100,6 @@ object FlinkDdlParserTest {
         |    duplicatedColumnName STRING
         |) WITH (
         |    'connector' = 'datagen'
-        |)""".stripMargin,
-    s"""|CREATE TABLE testTableWithoutOptions (
-        |    col STRING
         |)""".stripMargin,
     s"""|CREATE TABLE testTableWithEmptyConnector (
         |    col STRING

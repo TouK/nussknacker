@@ -3,7 +3,7 @@ import React from "react";
 
 import { AggregateContextProvider } from "./aggregate/aggregateContext";
 import { AggregateFieldOverrideWrapper } from "./customNodeParameters";
-import type { AdvancedParametersListProps} from "./parametersListAdvanced";
+import type { AdvancedParametersListProps } from "./parametersListAdvanced";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 export const AggregateParametersList = ({ children, ...props }: PropsWithChildren<AdvancedParametersListProps>) => {
