@@ -80,6 +80,64 @@ class TableSourceTest
     result.successes.loneElement
   }
 
+  test("be possible to use merge") {
+    import scala.jdk.CollectionConverters._
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
+      .buildSimpleVariable("sth", "someVariable", "#COLLECTION.merge(#input, #input).get('quantity')".spel)
+      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#someVariable".spel)
+
+    val result = runner
+      .runWithoutData[Row](
+        scenario,
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
+      )
+      .validValue
+    result.errors shouldBe empty
+    result.successes(0) shouldBe a[Int]
+  }
+
+  test("be possible to use selection") {
+    import scala.jdk.CollectionConverters._
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
+      .buildSimpleVariable(
+        "sth",
+        "someVariable",
+        "#input.?[(#this.value / 10 + 42 - #this.value / 10) == 42].quantity".spel
+      )
+      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#someVariable".spel)
+
+    val result = runner
+      .runWithoutData[Row](
+        scenario,
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
+      )
+      .validValue
+    result.errors shouldBe empty
+    result.successes(0) shouldBe a[Int]
+  }
+
+  test("be possible to use projection") {
+    import scala.jdk.CollectionConverters._
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
+      .buildSimpleVariable("sth", "someVariable", "#input.![#this.value / 10 + 42 - #this.value / 10]".spel)
+      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#someVariable".spel)
+
+    val result = runner
+      .runWithoutData[Row](
+        scenario,
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
+      )
+      .validValue
+    result.errors shouldBe empty
+    result.successes(0) shouldBe List(42).asJava
+  }
+
   test("be possible combine nodes deployment data with catalogs configuration") {
     val configWithCatalogConfiguration = ConfigFactory.parseString(
       s"""catalogConfiguration {
