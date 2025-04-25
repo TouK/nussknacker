@@ -14,9 +14,6 @@ class FragmentParameterTypingParser(classLoader: ClassLoader, classDefinitions: 
   private def identifier[_: P]: P[String] =
     P(CharIn("a-zA-Z_") ~ CharsWhileIn("a-zA-Z0-9_.", 0)).!
 
-  private def typParser[_: P]: P[TypingResult] =
-    P(mapType | listType | setType | simpleType)
-
   private def simpleType[_: P]: P[TypingResult] =
     identifier.map(resolveInnerClass)
 
@@ -31,6 +28,9 @@ class FragmentParameterTypingParser(classLoader: ClassLoader, classDefinitions: 
   private def setType[_: P]: P[TypingResult] =
     P("Set[" ~/ typParser ~ "]")
       .map(tr => Typed.genericTypeClass[java.util.Set[_]](List(tr)))
+
+  private def typParser[_: P]: P[TypingResult] =
+    P(mapType | listType | setType | simpleType)
 
   private val classDefinitionsByName = classDefinitions.byName
 
