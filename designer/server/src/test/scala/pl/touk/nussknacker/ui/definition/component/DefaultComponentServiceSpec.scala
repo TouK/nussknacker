@@ -919,9 +919,9 @@ class DefaultComponentServiceSpec
     new DBProcessService(
       scenarioStatusProvider = mock[ScenarioStatusProvider],
       scenarioStatusPresenter = mock[ScenarioStatusPresenter],
-      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
+      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType(),
       scenarioParametersServiceProvider = scenarioParametersServiceProvider,
-      processResolverByProcessingType = TestFactory.processResolverByProcessingType,
+      processResolverByProcessingType = TestFactory.processResolverByProcessingType(),
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       scenarioActionRepository = TestFactory.newDummyActionRepository(),

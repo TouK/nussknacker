@@ -39,7 +39,7 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     import deploymentManagerDependencies._
-    valid(new MockableDeploymentManager(Some(modelDataProvider)))
+    valid(new MockableDeploymentManager(MockableDeploymentManager, Some(modelDataProvider)))
   }
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
@@ -58,7 +58,10 @@ object MockableDeploymentManagerProvider {
 
   private type ScenarioName = String
 
-  class MockableDeploymentManager(modelDataProviderOpt: Option[BaseModelDataProvider])(
+  class MockableDeploymentManager(
+      configurator: MockableDeploymentManagerConfigurator,
+      modelDataProviderOpt: Option[BaseModelDataProvider]
+  )(
       implicit executionContext: ExecutionContext,
       ioRuntime: IORuntime
   ) extends DeploymentManager
@@ -87,7 +90,7 @@ object MockableDeploymentManagerProvider {
     override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy
     ): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
-      val statusDetails = MockableDeploymentManager.scenarioStatuses
+      val statusDetails = configurator.scenarioStatuses
         .get()
         .getOrElse(scenarioName.value, BasicStatusDetails(SimpleStateStatus.NotDeployed, version = None))
       Future.successful(
@@ -109,11 +112,11 @@ object MockableDeploymentManagerProvider {
         case DMRunDeploymentCommand(_, deploymentData, _, _) =>
           Future {
             deploymentData.deploymentId.toNewDeploymentIdOpt
-              .flatMap(MockableDeploymentManager.deploymentResults.get().get)
+              .flatMap(configurator.deploymentResults.get().get)
               .flatMap(_.get)
           }
         case DMTestScenarioCommand(processVersion, scenario, testData) =>
-          MockableDeploymentManager.testResults
+          configurator.testResults
             .get()
             .get(processVersion.processName.value)
             .map(Future.successful)
@@ -138,7 +141,7 @@ object MockableDeploymentManagerProvider {
         ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
           Future {
             WithDataFreshnessStatus.fresh(
-              MockableDeploymentManager.scenarioStatuses.get().map { case (k, v) =>
+              configurator.scenarioStatuses.get().map { case (k, v) =>
                 (ProcessName(k), DeploymentStatusDetails(v.status, None, v.version) :: Nil)
               }
             )
@@ -152,7 +155,7 @@ object MockableDeploymentManagerProvider {
         processIdWithName: ProcessIdWithName,
         after: Option[Instant],
     ): Future[List[ScenarioActivity]] =
-      Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
+      Future.successful(configurator.managerSpecificScenarioActivities.get())
 
     override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
       Resource.pure(EngineScenarioCompilationDependencies.empty)
@@ -163,39 +166,46 @@ object MockableDeploymentManagerProvider {
 
   }
 
-  // note: At the moment this manager cannot be used in tests which are executed in parallel. It can be obviously
-  //       improved, but there is no need to do it ATM.
-  object MockableDeploymentManager {
+  class MockableDeploymentManagerConfigurator {
 
-    private val scenarioStatuses  = new AtomicReference[Map[ScenarioName, BasicStatusDetails]](Map.empty)
-    private val testResults       = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
-    private val deploymentResults = new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
-    private val managerSpecificScenarioActivities = new AtomicReference[List[ScenarioActivity]](List.empty)
+    private[MockableDeploymentManagerProvider] val scenarioStatuses =
+      new AtomicReference[Map[ScenarioName, BasicStatusDetails]](Map.empty)
+    private[MockableDeploymentManagerProvider] val testResults =
+      new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
+    private[MockableDeploymentManagerProvider] val deploymentResults =
+      new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
+    private[MockableDeploymentManagerProvider] val managerSpecificScenarioActivities =
+      new AtomicReference[List[ScenarioActivity]](List.empty)
 
     def configureScenarioStatuses(scenarioStates: Map[ScenarioName, BasicStatusDetails]): Unit = {
-      MockableDeploymentManager.scenarioStatuses.set(scenarioStates)
+      scenarioStatuses.set(scenarioStates)
     }
 
     def configureDeploymentResults(deploymentResults: Map[DeploymentId, Try[Option[ExternalDeploymentId]]]): Unit = {
-      MockableDeploymentManager.deploymentResults.set(deploymentResults)
+      this.deploymentResults.set(deploymentResults)
     }
 
     def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults[Json]]): Unit = {
-      MockableDeploymentManager.testResults.set(scenarioTestResults)
+      testResults.set(scenarioTestResults)
     }
 
     def configureManagerSpecificScenarioActivities(scenarioActivities: List[ScenarioActivity]): Unit = {
-      MockableDeploymentManager.managerSpecificScenarioActivities.set(scenarioActivities)
+      managerSpecificScenarioActivities.set(scenarioActivities)
     }
 
     def clean(): Unit = {
-      MockableDeploymentManager.scenarioStatuses.set(Map.empty)
-      MockableDeploymentManager.deploymentResults.set(Map.empty)
-      MockableDeploymentManager.testResults.set(Map.empty)
-      MockableDeploymentManager.managerSpecificScenarioActivities.set(List.empty)
+      scenarioStatuses.set(Map.empty)
+      deploymentResults.set(Map.empty)
+      testResults.set(Map.empty)
+      managerSpecificScenarioActivities.set(List.empty)
     }
 
   }
+
+  // todo: modify text?
+  // note: At the moment this manager cannot be used in tests which are executed in parallel. It can be obviously
+  //       improved, but there is no need to do it ATM.
+  object MockableDeploymentManager extends MockableDeploymentManagerConfigurator
 
 }
 

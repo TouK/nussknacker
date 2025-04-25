@@ -16,8 +16,6 @@ class LimitsService(
     scenarioStatusProvider: ScenarioStatusProvider
 ) {
 
-  // todo: check locking
-
   def checkScenarioLimitsBeforeDeployment(
       scenarioProcessingType: ProcessingType
   )(implicit user: LoggedUser): IO[Either[LimitError, Unit]] = {
@@ -49,7 +47,25 @@ class LimitsService(
     }
   }
 
-  private def checkGlobalLimits(): EitherT[IO, ActiveScenariosLimitExceededError, Unit] = ???
+  private def checkGlobalLimits()(implicit user: LoggedUser): EitherT[IO, ActiveScenariosLimitExceededError, Unit] = {
+    globalLimitsConfig.activeScenariosLimit match {
+      case Some(activeScenariosLimit) =>
+        EitherT { // todo: user nu user?
+          scenarioStatusProvider
+            .getActiveScenariosCountFor(activeScenariosLimitProvider.all.keys)
+            .map { activeScenariosCount =>
+              Either.cond(
+                test = activeScenariosCount < activeScenariosLimit.value,
+                right = (),
+                left = ActiveScenariosLimitExceededError(activeScenariosLimit.value)
+              )
+            }
+        }
+      case None =>
+        EitherT.right(IO.unit)
+    }
+  }
+
 }
 
 object LimitsService {

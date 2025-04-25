@@ -314,8 +314,8 @@ class NotificationServiceTest
     )
     val deploymentService = new DeploymentService(
       managerDispatcher,
-      TestFactory.processValidatorByProcessingType,
-      TestFactory.scenarioResolverByProcessingType,
+      TestFactory.processValidatorByProcessingType(),
+      TestFactory.scenarioResolverByProcessingType(),
       actionService,
       TestFactory.additionalComponentConfigsByProcessingType,
       new LimitsService(

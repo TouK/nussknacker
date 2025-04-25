@@ -79,20 +79,25 @@ class ScenarioStatusProvider(
     )
   }
 
-  def getActiveScenariosCountFor(processingType: ProcessingType)(implicit user: LoggedUser): IO[Int] = IO.fromFuture {
-    IO {
-      implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-      deploymentStatusesProvider
-        .getBulkQueriedDeploymentStatusesForSupportedManagers(processingType :: Nil)
-        .map { statuses =>
-          statuses.getAllDeploymentStatuses
-            .count { status =>
-              status.status == SimpleStateStatus.DuringDeploy ||
-              status.status == SimpleStateStatus.Running ||
-              status.status == SimpleStateStatus.Restarting
-            }
-        }
+  def getActiveScenariosCountFor(processingTypes: Iterable[ProcessingType])(implicit user: LoggedUser): IO[Int] =
+    IO.fromFuture {
+      IO {
+        implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+        deploymentStatusesProvider
+          .getBulkQueriedDeploymentStatusesForSupportedManagers(processingTypes)
+          .map { statuses =>
+            statuses.getAllDeploymentStatuses
+              .count { status =>
+                status.status == SimpleStateStatus.DuringDeploy ||
+                status.status == SimpleStateStatus.Running ||
+                status.status == SimpleStateStatus.Restarting
+              }
+          }
+      }
     }
+
+  def getActiveScenariosCountFor(processingType: ProcessingType)(implicit user: LoggedUser): IO[Int] = {
+    getActiveScenariosCountFor(processingType :: Nil)
   }
 
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](

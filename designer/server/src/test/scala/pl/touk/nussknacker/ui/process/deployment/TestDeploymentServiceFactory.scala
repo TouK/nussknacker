@@ -101,7 +101,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
                 deploymentManager,
                 EngineSetupName("mock"),
                 JobsRecoverySettings.noRecovery,
-                TestFactory.scenarioResolver
+                TestFactory.scenarioResolver()
               )
             )
           )
@@ -117,7 +117,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       TestFactory.mapProcessingTypeDataProvider(
         Streaming.stringify -> ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData))
       ),
-      TestFactory.scenarioResolverByProcessingType,
+      TestFactory.scenarioResolverByProcessingType(),
       actionService,
       additionalComponentConfigsByProcessingType,
       new LimitsService(

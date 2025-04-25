@@ -98,13 +98,12 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
           .emptySink("sink", ProcessTestData.existingSinkFactory)
       )
 
-    val validationResult =
-      flinkProcessValidator.validate(
-        invalidGraph,
-        ProcessTestData.sampleProcessName,
-        isFragment = false,
-        labels = List.empty
-      )
+    val validationResult = flinkProcessValidator().validate(
+      invalidGraph,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
     val process = wrapWithDetailsForMigration(invalidGraph, validationResult = validationResult)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
@@ -144,7 +143,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider("streaming" -> new ProcessModelMigrator(new TestMigrations(8))),
-      mapProcessingTypeDataProvider("streaming" -> TestFactory.flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> TestFactory.flinkProcessValidator("streaming" :: Nil))
     )
 
     val process =
@@ -186,7 +185,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
     new TestModelMigrations(
       mapProcessingTypeDataProvider("streaming" -> new ProcessModelMigrator(testMigrations)),
-      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator("streaming" :: Nil))
     )
 
 }

@@ -157,8 +157,8 @@ trait NuResourcesTest
   protected val deploymentService: DeploymentService =
     new DeploymentService(
       dispatcher = dmDispatcher,
-      processValidator = processValidatorByProcessingType,
-      scenarioResolver = scenarioResolverByProcessingType,
+      processValidator = processValidatorByProcessingType(),
+      scenarioResolver = scenarioResolverByProcessingType(),
       actionService = actionService,
       additionalComponentConfigs = mapProcessingTypeDataProvider(),
       limitsService = new LimitsService(
@@ -259,9 +259,9 @@ trait NuResourcesTest
     new DBProcessService(
       processStateProvider,
       scenarioStatusPresenter,
-      newProcessPreparerByProcessingType,
+      newProcessPreparerByProcessingType(),
       processingTypeDataProvider.mapCombined(_.parametersService),
-      processResolverByProcessingType,
+      processResolverByProcessingType(),
       dbioRunner,
       futureFetchingScenarioRepository,
       actionRepository,
@@ -278,12 +278,12 @@ trait NuResourcesTest
   ): ScenarioTestService =
     new ScenarioTestService(
       testInfoProvider,
-      processResolver,
+      processResolver(),
       designerConfig.testDataSettings,
       new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
-      new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
+      new ProcessCounter(TestFactory.prepareSampleFragmentRepository()),
       new ScenarioTestExecutorServiceImpl(
-        new ScenarioResolver(sampleResolver, Streaming.stringify),
+        new ScenarioResolver(sampleResolver(), Streaming.stringify),
         deploymentManager
       )
     )
@@ -582,7 +582,7 @@ trait NuResourcesTest
       processName: ProcessName,
       isFragment: Boolean = false,
   ): ProcessId = {
-    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName, isFragment)
+    val emptyProcess = newProcessPreparer().prepareEmptyProcess(processName, isFragment)
     saveAndGetId(emptyProcess, Category1, isFragment).futureValue
   }
 
