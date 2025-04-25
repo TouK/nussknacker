@@ -66,7 +66,8 @@ class TableSourceTest
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
-      .buildSimpleVariable("sth", "someVariable", "#input.![#this]".spel)
+      // TODO_PAWEL this is only to test in debug
+//      .buildSimpleVariable("sth", "someVariable", "#input.![#this]".spel)
       .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
 
     val result = runner
