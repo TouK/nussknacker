@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProvider,
   ComponentAdditionalConfig,
@@ -53,7 +53,7 @@ final class ProcessingTypeServices private (
 
   def category: String = processingTypeData.category
 
-  def activeScenariosLimit: Option[ActiveScenariosLimit] = processingTypeData.activeScenariosLimit
+  def limitsConfig: LimitsConfig = processingTypeData.limitsConfig
 
   def designerModelData: DesignerModelData = processingTypeData.designerModelData
 

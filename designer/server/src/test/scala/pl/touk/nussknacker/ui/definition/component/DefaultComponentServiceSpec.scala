@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer, ModelData}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
@@ -888,7 +888,7 @@ class DefaultComponentServiceSpec
           modelData,
           deploymentData,
           category = category,
-          activeScenariosLimit = None,
+          limitsConfig = LimitsConfig.default,
           ComponentDefinitionExtractionMode.FinalDefinition
         )
     }

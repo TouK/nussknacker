@@ -172,8 +172,7 @@ object TapirHttpServiceFactory {
           dbioRunner,
           clock,
           processingTypeServicesProvider.mapValues(_.additionalComponentConfigs),
-          scenarioStatusProvider,
-          processingTypeServicesProvider.mapValues(_.activeScenariosLimit),
+          limitsService
         )
       val activityService =
         new ActivityService(

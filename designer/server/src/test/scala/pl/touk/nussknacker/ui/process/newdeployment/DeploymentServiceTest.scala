@@ -5,7 +5,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeploymentStatus, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -24,6 +25,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.{
   newFetchingProcessRepository
 }
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
@@ -87,8 +89,13 @@ class DeploymentServiceTest
       dbioRunner,
       clock,
       TestFactory.additionalComponentConfigsByProcessingType,
-      scenarioStatusProvider,
-      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> Some(ActiveScenariosLimit(2)))
+      new LimitsService(
+        globalLimitsConfig = GlobalLimitsConfig.default,
+        activeScenariosLimitProvider = TestFactory.mapProcessingTypeDataProvider(
+          Streaming.stringify -> LimitsConfig.default.copy(activeScenariosLimit = Some(ActiveScenariosLimit(2)))
+        ),
+        scenarioStatusProvider = scenarioStatusProvider
+      )
     )
   }
 

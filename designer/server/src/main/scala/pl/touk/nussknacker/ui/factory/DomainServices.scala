@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentService, DefaultComponentService}
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeListenerLoader}
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.notifications.Notification
@@ -82,6 +83,7 @@ final class DomainServices(
     val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
     val reloadModelData: IO[Unit],
     val processAuthorizer: AuthorizeProcess,
+    val limitsService: LimitsService
 )
 
 object DomainServices extends LazyLogging {
@@ -305,6 +307,7 @@ object DomainServices extends LazyLogging {
         reconciler,
         alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
       )
+      limitsService = createLimitsService(alreadyLoadedConfig, processingTypeServicesProvider, scenarioStatusProvider)
       _ = Initialization.init(
         migrations,
         dbRef,
@@ -336,6 +339,7 @@ object DomainServices extends LazyLogging {
       processingTypeServicesProvider = processingTypeServicesProvider,
       reloadModelData = modelDataProvider.reloadAll,
       processAuthorizer = processAuthorizer,
+      limitsService = limitsService
     )
   }
 
@@ -434,6 +438,18 @@ object DomainServices extends LazyLogging {
           ) => // It is done jus in case, it rather shouldn't happen because we have exception handling for each recovered deployment
         logger.error("Error while deployments recovery", exception)
     }
+  }
+
+  private def createLimitsService(
+      designerConfig: DesignerConfig,
+      processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
+      scenarioStatusProvider: ScenarioStatusProvider
+  ) = {
+    new LimitsService(
+      globalLimitsConfig = designerConfig.globalLimitsConfig,
+      activeScenariosLimitProvider = processingTypeServicesProvider.mapValues(_.limitsConfig),
+      scenarioStatusProvider = scenarioStatusProvider
+    )
   }
 
   // This hack with delayed init is needed because we have a cycle of dependencies:

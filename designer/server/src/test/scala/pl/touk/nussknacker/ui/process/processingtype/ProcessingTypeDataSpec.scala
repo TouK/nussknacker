@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -87,7 +87,7 @@ class ProcessingTypeDataSpec extends AnyFunSuite with Matchers {
       deploymentData,
       category = "dummy category",
       componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode,
-      activeScenariosLimit = None
+      limitsConfig = LimitsConfig.default
     )
   }
 

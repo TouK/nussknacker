@@ -19,6 +19,7 @@ import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
@@ -49,6 +50,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
@@ -150,6 +152,8 @@ trait NuResourcesTest
     Clock.systemUTC()
   )
 
+  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
+
   protected val deploymentService: DeploymentService =
     new DeploymentService(
       dispatcher = dmDispatcher,
@@ -157,9 +161,13 @@ trait NuResourcesTest
       scenarioResolver = scenarioResolverByProcessingType,
       actionService = actionService,
       additionalComponentConfigs = mapProcessingTypeDataProvider(),
-      scenarioStatusProvider = scenarioStatusProvider,
-      activeScenariosLimitProvider = TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> None)
-    )
+      limitsService = new LimitsService(
+        globalLimitsConfig = designerConfig.globalLimitsConfig,
+        activeScenariosLimitProvider =
+          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
+        scenarioStatusProvider = scenarioStatusProvider
+      )
+    )(executionContextWithIORuntime)
 
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
@@ -196,12 +204,10 @@ trait NuResourcesTest
         modelData = modelData,
         deploymentData = deploymentData,
         category = processingTypeConfig.category,
-        activeScenariosLimit = None,
+        limitsConfig = LimitsConfig.default,
         componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
       )
     )
-
-  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
 
   protected val (processingTypeDataProvider, closeDeploymentManagers) = {
     val designerConfig = DesignerConfig.from(testConfig)

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 
 import cats.Traverse
+import cats.effect.IO
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
@@ -78,18 +79,20 @@ class ScenarioStatusProvider(
     )
   }
 
-  def getActiveScenariosCountFor(processingType: ProcessingType)(implicit user: LoggedUser): Future[Int] = {
-    implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    deploymentStatusesProvider
-      .getBulkQueriedDeploymentStatusesForSupportedManagers(processingType :: Nil)
-      .map { statuses =>
-        statuses.getAllDeploymentStatuses
-          .count { status =>
-            status.status == SimpleStateStatus.DuringDeploy ||
-            status.status == SimpleStateStatus.Running ||
-            status.status == SimpleStateStatus.Restarting
-          }
-      }
+  def getActiveScenariosCountFor(processingType: ProcessingType)(implicit user: LoggedUser): IO[Int] = IO.fromFuture {
+    IO {
+      implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+      deploymentStatusesProvider
+        .getBulkQueriedDeploymentStatusesForSupportedManagers(processingType :: Nil)
+        .map { statuses =>
+          statuses.getAllDeploymentStatuses
+            .count { status =>
+              status.status == SimpleStateStatus.DuringDeploy ||
+              status.status == SimpleStateStatus.Running ||
+              status.status == SimpleStateStatus.Restarting
+            }
+        }
+    }
   }
 
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](

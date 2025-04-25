@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import db.util.DBIOActionInstances.DB
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{
   actorSystem,
   clock,
@@ -55,7 +56,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       modelData: ModelData = new StubModelDataWithModelDefinition(modelDefinition()),
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
-      activeScenariosLimit: Option[ActiveScenariosLimit] = None
+      processingTypeLimits: LimitsConfig = LimitsConfig.default
   ): TestDeploymentServiceServices = {
     val deploymentManagerProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
@@ -119,8 +120,12 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       TestFactory.scenarioResolverByProcessingType,
       actionService,
       additionalComponentConfigsByProcessingType,
-      scenarioStatusProvider,
-      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> activeScenariosLimit)
+      new LimitsService(
+        globalLimitsConfig = GlobalLimitsConfig.default,
+        activeScenariosLimitProvider =
+          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> processingTypeLimits),
+        scenarioStatusProvider = scenarioStatusProvider
+      )
     )
     TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, deploymentsReconciler)
   }

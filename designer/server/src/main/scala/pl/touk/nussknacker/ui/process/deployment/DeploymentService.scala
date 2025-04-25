@@ -2,23 +2,21 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService.ActiveScenariosLimitExceededError
+import pl.touk.nussknacker.engine.util.{AdditionalComponentConfigsForRuntimeExtractor, ExecutionContextWithIORuntime}
+import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.DeployingInvalidScenarioError
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.language.higherKinds
 import scala.util.{Failure, Success}
 
@@ -32,10 +30,11 @@ class DeploymentService(
       Map[DesignerWideComponentId, ComponentAdditionalConfig],
       _
     ],
-    scenarioStatusProvider: ScenarioStatusProvider,
-    activeScenariosLimitProvider: ProcessingTypeDataProvider[Option[ActiveScenariosLimit], _],
-)(implicit ec: ExecutionContext)
+    limitsService: LimitsService
+)(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime)
     extends LazyLogging {
+
+  import executionContextWithIORuntime.ioRuntime
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
@@ -118,18 +117,18 @@ class DeploymentService(
   }
 
   protected def validateBeforeDeploy(
-      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+      scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       runDeploymentCommand: DMRunDeploymentCommand,
   )(implicit user: LoggedUser): Future[Unit] = {
     for {
       // 1. check scenario has no errors
       _ <- Future {
         processValidator
-          .forProcessingTypeUnsafe(processDetails.processingType)
+          .forProcessingTypeUnsafe(scenarioDetails.processingType)
           .validateCanonicalProcess(
-            processDetails.json,
-            processDetails.toEngineProcessVersion,
-            processDetails.isFragment
+            scenarioDetails.json,
+            scenarioDetails.toEngineProcessVersion,
+            scenarioDetails.isFragment
           )
       }.flatMap {
         case validationResult if validationResult.hasErrors =>
@@ -137,11 +136,11 @@ class DeploymentService(
         case _ => Future.successful(())
       }
       // 2. limits check
-      _ <- checkActiveScenariosLimits(processDetails.processingType, user)
+      _ <- checkActiveScenariosLimits(scenarioDetails, user)
       // 3. deployment managers specific checks
       // TODO: scenario was already resolved during validation - use it here
       _ <- dispatcher
-        .deploymentManagerUnsafe(processDetails.processingType)
+        .deploymentManagerUnsafe(scenarioDetails.processingType)
         .processCommand(
           DMValidateScenarioCommand(
             runDeploymentCommand.processVersion,
@@ -153,20 +152,18 @@ class DeploymentService(
     } yield ()
   }
 
-  private def checkActiveScenariosLimits(processingType: ProcessingType, deployer: LoggedUser) = {
+  private def checkActiveScenariosLimits(
+      scenario: ScenarioWithDetailsEntity[CanonicalProcess],
+      deployer: LoggedUser
+  ) = {
     implicit val loggedUser: LoggedUser = deployer
-    activeScenariosLimitProvider.forProcessingType(processingType).flatten match {
-      case Some(ActiveScenariosLimit(activeScenariosLimit)) =>
-        scenarioStatusProvider
-          .getActiveScenariosCountFor(processingType)
-          .map { activeScenariosCount =>
-            if (activeScenariosCount >= activeScenariosLimit) {
-              throw ActiveScenariosLimitExceededError(activeScenariosLimit)
-            }
-          }
-      case None =>
-        Future.unit
-    }
+    limitsService
+      .checkScenarioLimitsBeforeDeployment(scenario.processingType)
+      .map {
+        case Right(())              => ()
+        case Left(error: Throwable) => throw error
+      }
+      .unsafeToFuture()
   }
 
   private def prepareDMRunDeploymentCommand(
@@ -208,14 +205,5 @@ class DeploymentService(
       )
     )
   }
-
-}
-
-object DeploymentService {
-
-  final case class ActiveScenariosLimitExceededError(activeScenariosLimit: Int)
-      extends IllegalArgumentException(
-        s"The limit of active scenarios has been reached. You can have a maximum of $activeScenariosLimit active scenarios."
-      )
 
 }

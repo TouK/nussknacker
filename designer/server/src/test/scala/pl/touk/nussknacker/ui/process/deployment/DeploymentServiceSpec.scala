@@ -7,7 +7,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.LoneElement._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -30,8 +31,8 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService.ActiveScenariosLimitExceededError
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.FragmentStateException
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.ActiveScenariosLimitExceededError
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -71,7 +72,10 @@ class DeploymentServiceSpec
   private val deploymentManager: MockDeploymentManager = MockDeploymentManager.create()
 
   val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, reconciler) =
-    deploymentServiceFactory.create(deploymentManager, activeScenariosLimit = Some(ActiveScenariosLimit(2)))
+    deploymentServiceFactory.create(
+      deploymentManager,
+      processingTypeLimits = LimitsConfig.default.copy(activeScenariosLimit = Some(ActiveScenariosLimit(2)))
+    )
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
   private def createDeploymentServiceWithCommentSettings = {

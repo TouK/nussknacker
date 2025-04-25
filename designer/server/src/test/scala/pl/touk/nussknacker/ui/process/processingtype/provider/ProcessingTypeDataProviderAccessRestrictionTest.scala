@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
@@ -64,7 +64,7 @@ class ProcessingTypeDataProviderAccessRestrictionTest
         deploymentConfig = ConfigFactory.empty(),
         modelConfig = ConfigWithUnresolvedVersion(ConfigFactory.empty()),
         category = s"${processingType}Category",
-        activeScenariosLimit = None
+        limits = LimitsConfig.default
       )
     }.toMap)
     TestProcessingTypeDataProviderFactory.create(

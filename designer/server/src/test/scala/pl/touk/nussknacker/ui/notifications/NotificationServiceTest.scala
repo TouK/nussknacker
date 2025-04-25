@@ -8,6 +8,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -24,6 +25,7 @@ import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.deployment._
@@ -316,11 +318,15 @@ class NotificationServiceTest
       TestFactory.scenarioResolverByProcessingType,
       actionService,
       TestFactory.additionalComponentConfigsByProcessingType,
-      scenarioStatusProvider,
-      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> None)
+      new LimitsService(
+        globalLimitsConfig = GlobalLimitsConfig.default,
+        activeScenariosLimitProvider =
+          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
+        scenarioStatusProvider = scenarioStatusProvider,
+      )
     ) {
       override protected def validateBeforeDeploy(
-          processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+          scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           runDeploymentCommand: DMRunDeploymentCommand,
       )(implicit user: LoggedUser): Future[Unit] = Future.successful(())
     }

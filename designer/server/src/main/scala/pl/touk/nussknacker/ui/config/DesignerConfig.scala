@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.{
 }
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbConfig
+import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig
 import pl.touk.nussknacker.ui.notifications.NotificationConfig
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.FinishedDeploymentsStatusesSynchronizationConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
@@ -66,6 +67,7 @@ final class DesignerConfig private (
     val http: HttpConfig,
     val attachments: AttachmentsConfig,
     val assistantSettings: AssistantSettings,
+    val globalLimitsConfig: GlobalLimitsConfig
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -157,6 +159,8 @@ object DesignerConfig {
     val assistantSettings =
       resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
 
+    val limitsConfig = resolvedConfig.getAs[GlobalLimitsConfig]("globalLimits").getOrElse(GlobalLimitsConfig.default)
+
     new DesignerConfig(
       rawConfigWithUnresolvedVersion = rawConfig,
       managersDir = managersDir,
@@ -193,6 +197,7 @@ object DesignerConfig {
       http = http,
       attachments = attachments,
       assistantSettings = assistantSettings,
+      globalLimitsConfig = limitsConfig
     )
   }
 

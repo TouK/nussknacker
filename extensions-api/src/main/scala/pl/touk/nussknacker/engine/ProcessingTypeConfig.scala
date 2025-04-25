@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.{ActiveScenariosLimit, DeploymentManagerType}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
 case class ProcessingTypeConfig(
@@ -11,7 +12,7 @@ case class ProcessingTypeConfig(
     deploymentConfig: Config,
     modelConfig: ConfigWithUnresolvedVersion,
     category: String,
-    activeScenariosLimit: Option[ActiveScenariosLimit]
+    limits: LimitsConfig
 )
 
 object ProcessingTypeConfig {
@@ -26,11 +27,27 @@ object ProcessingTypeConfig {
       config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig"),
       config.resolved.as[String]("category"),
-      config.resolved.getAs[Int]("activeScenariosLimit").map(ActiveScenariosLimit.apply),
+      readLimitsConfig(config.resolved)
     )
   }
 
+  private def readLimitsConfig(config: Config) = {
+    Option(config.getConfig("limits")) match {
+      case Some(limitsConfig) =>
+        LimitsConfig(
+          limitsConfig.getAs[Int]("activeScenariosLimit").map(ActiveScenariosLimit.apply)
+        )
+      case None => LimitsConfig.default
+    }
+  }
+
   final case class DeploymentManagerType(value: String) extends AnyVal
-  final case class ActiveScenariosLimit(value: Int)     extends AnyVal
+  final case class LimitsConfig(activeScenariosLimit: Option[ActiveScenariosLimit])
+
+  object LimitsConfig {
+    final case class ActiveScenariosLimit(value: Int) extends AnyVal
+
+    val default = LimitsConfig(activeScenariosLimit = None)
+  }
 
 }

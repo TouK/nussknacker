@@ -4,7 +4,6 @@ import cats.Applicative
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -19,15 +18,16 @@ import pl.touk.nussknacker.engine.deployment.{
   DeploymentId => LegacyDeploymentId
 }
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
+import pl.touk.nussknacker.engine.util.{AdditionalComponentConfigsForRuntimeExtractor, ExecutionContextWithIORuntime}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.limits.LimitsService
+import pl.touk.nussknacker.ui.limits.LimitsService.LimitError
 import pl.touk.nussknacker.ui.process.ScenarioMetadata
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{DeploymentEntityData, WithModifiedAt}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -37,7 +37,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.sql.Timestamp
 import java.time.Clock
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.language.higherKinds
 import scala.util.control.NonFatal
 
@@ -57,10 +57,11 @@ class DeploymentService(
       Map[DesignerWideComponentId, ComponentAdditionalConfig],
       _
     ],
-    scenarioStatusProvider: ScenarioStatusProvider,
-    activeScenariosLimitProvider: ProcessingTypeDataProvider[Option[ActiveScenariosLimit], _],
-)(implicit ec: ExecutionContext)
+    limitsService: LimitsService
+)(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime)
     extends LazyLogging {
+
+  import executionContextWithIORuntime.ioRuntime
 
   def getDeploymentStatus(
       id: DeploymentId
@@ -177,24 +178,14 @@ class DeploymentService(
   private def checkActiveScenariosLimits(
       scenarioMetadata: ScenarioMetadata,
       deployer: LoggedUser
-  ): EitherT[Future, RunDeploymentError, Unit] = {
+  ): EitherT[Future, RunDeploymentError, Unit] = EitherT {
     implicit val loggedUser: LoggedUser = deployer
-    activeScenariosLimitProvider.forProcessingType(scenarioMetadata.processingType).flatten match {
-      case Some(ActiveScenariosLimit(activeScenariosLimit)) =>
-        EitherT {
-          scenarioStatusProvider
-            .getActiveScenariosCountFor(scenarioMetadata.processingType)
-            .map { activeScenariosCount =>
-              Either.cond(
-                test = activeScenariosCount < activeScenariosLimit,
-                right = (),
-                left = ActiveScenariosLimitExceededError(activeScenariosLimit)
-              )
-            }
-        }
-      case None =>
-        EitherT.pure(())
-    }
+    limitsService
+      .checkScenarioLimitsBeforeDeployment(scenarioMetadata.processingType)
+      .map(_.left.map { case LimitError.ActiveScenariosLimitExceededError(limit) =>
+        ActiveScenariosLimitExceededError(limit)
+      })
+      .unsafeToFuture()
   }
 
   private def runDeploymentManagerSpecificValidations(
