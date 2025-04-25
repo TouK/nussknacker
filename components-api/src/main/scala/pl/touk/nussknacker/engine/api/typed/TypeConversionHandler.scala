@@ -22,8 +22,10 @@ import scala.util.Try
   */
 private[engine] object TypeConversionHandler {
 
-  private val javaListClass      = classOf[java.util.List[_]]
-  private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
+  private val javaListClass              = classOf[java.util.List[_]]
+  private val javaMapClass               = classOf[java.util.Map[_, _]]
+  private val arrayOfAnyRefClass         = classOf[Array[AnyRef]]
+  private val avroIndexedRecordClassName = "org.apache.avro.generic.IndexedRecord"
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -74,8 +76,7 @@ private[engine] object TypeConversionHandler {
       implicit conversionStrategy: NonEmptyConversionStrategy
   ): Boolean = {
     handleImplicitConversion(from, to) ||
-    handleNumberConversion(from.runtimeObjType, to) ||
-    handleIndexedRecordToMapConversion(from.runtimeObjType, to)
+    handleNumberConversion(from.runtimeObjType, to)
   }
 
   private def handleImplicitConversion(from: SingleTypingResult, to: TypedClass)(
@@ -86,7 +87,8 @@ private[engine] object TypeConversionHandler {
       case Strict => false
       case Loose =>
         handleStringToValueClassConversions(from, to) ||
-        handleArrayToListConversions(from.runtimeObjType, to)
+        handleArrayToListConversions(from.runtimeObjType, to) ||
+        handleIndexedRecordToMapConversion(from, to)
     }
   }
 
@@ -97,37 +99,6 @@ private[engine] object TypeConversionHandler {
       case Strict => handleStrictNumberConversions(from.runtimeObjType.klass, to.klass)
       case Loose  => handleLooseNumberConversion(from.runtimeObjType.klass, to.klass)
     }
-  }
-
-  private def handleIndexedRecordToMapConversion(
-      from: SingleTypingResult,
-      to: TypedClass
-  )(implicit conversionStrategy: NonEmptyConversionStrategy): Boolean = {
-    conversionStrategy match {
-      case Loose
-          if AssignabilityUtil.isAssignableToLoadableClass(
-            from.runtimeObjType.klass,
-            "org.apache.avro.generic.IndexedRecord"
-          ) && ClassUtils.isAssignable(to.klass, classOf[java.util.Map[_, _]]) =>
-        val indexedRecordValueType = from match {
-          case TypedObjectTypingResult(fromFields, _, _) =>
-            superTypeOfTypes(fromFields.values)
-          case _ => Unknown
-        }
-
-        val (mapKeyParam, mapValueParam) = to match {
-          case TypedClass(_, key :: value :: Nil) =>
-            (key, value)
-          case _ => (Unknown, Unknown)
-        }
-
-        AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
-        AssignabilityDeterminer
-          .isAssignable(indexedRecordValueType, mapValueParam)
-          .isValid
-      case _ => false
-    }
-
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
@@ -173,6 +144,25 @@ private[engine] object TypeConversionHandler {
         false
     }
   }
+
+  private def handleIndexedRecordToMapConversion(
+      from: SingleTypingResult,
+      to: TypedClass
+  )(
+      implicit conversionStrategy: NonEmptyConversionStrategy
+  ): Boolean =
+    (from.withoutValue, to) match {
+      case (
+            TypedObjectTypingResult(fromFields, TypedClass(fromRuntimeObjClass, _), _),
+            TypedClass(`javaMapClass`, mapKeyParam :: mapValueParam :: Nil)
+          ) =>
+        lazy val indexedRecordValueType = superTypeOfTypes(fromFields.values)
+
+        AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, avroIndexedRecordClassName) &&
+        AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
+        AssignabilityDeterminer.isAssignable(indexedRecordValueType, mapValueParam).isValid
+      case _ => false
+    }
 
 }
 

@@ -174,11 +174,11 @@ private[typed] object AssignabilityDeterminer {
       ) orElse
         isAssignable(givenClass.klass, to.klass)
 
-    val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, to))
+    val canAssignAndParametersMatches = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, to))
     conversionStrategy match {
-      case NoConversion => canBeSubclass
+      case NoConversion => canAssignAndParametersMatches
       case nonEmptyStrategy: NonEmptyConversionStrategy =>
-        canBeSubclass.recover {
+        canAssignAndParametersMatches.recover {
           case _ if TypeConversionHandler.canBeConverted(from, to)(nonEmptyStrategy) => ()
         }
     }
