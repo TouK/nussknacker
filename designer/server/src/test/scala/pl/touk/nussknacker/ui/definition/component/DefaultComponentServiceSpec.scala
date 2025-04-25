@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockFetchingProcessRepository}
 import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
@@ -34,24 +35,14 @@ import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, DesignerConfig}
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
-import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
-  FetchAllWithoutUsages,
-  FetchAllWithUsages,
-  FetchNonFragmentsWithoutUsages,
-  FetchNonFragmentsWithUsages
-}
+import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{FetchAllWithUsages, FetchAllWithoutUsages, FetchNonFragmentsWithUsages, FetchNonFragmentsWithoutUsages}
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.{
-  DeploymentData,
-  ProcessingTypeData,
-  ScenarioParametersService,
-  ValueWithRestriction
-}
+import pl.touk.nussknacker.ui.process.processingtype.{DeploymentData, ProcessingTypeData, ScenarioParametersService, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api._
@@ -876,7 +867,7 @@ class DefaultComponentServiceSpec
       case (processingType, (modelData, category)) =>
         val deploymentData = new DeploymentData(
           DeploymentManagerType("mock"),
-          Valid(MockDeploymentManager.create()),
+          Valid(MockDeploymentManager.create(ConfigWithScalaVersion.StreamingProcessTypeConfig)),
           MetaDataInitializer("streaming", Map.empty[String, String]),
           deploymentScenarioPropertiesConfig = Map.empty,
           additionalValidators = List.empty,

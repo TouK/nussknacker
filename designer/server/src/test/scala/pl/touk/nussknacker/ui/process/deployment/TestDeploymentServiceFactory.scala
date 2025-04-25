@@ -5,11 +5,10 @@ import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
@@ -20,8 +19,7 @@ import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{
   actorSystem,
   clock,
-  executionContextWithIORuntime,
-  processingType
+  executionContextWithIORuntime
 }
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
@@ -37,12 +35,12 @@ import scala.concurrent.duration.FiniteDuration
 
 class TestDeploymentServiceFactory(dbRef: DbRef) {
 
-  private val dbioRunner                                                    = newDBIOActionRunner(dbRef)
-  val fetchingScenarioDBIORepository: DBFetchingProcessRepository[DB]       = newFetchingProcessRepository(dbRef)
+  private val dbioRunner = newDBIOActionRunner(dbRef)
+  val fetchingScenarioDBIORepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(dbRef)
   val fetchingScenarioFutureRepository: DBFetchingProcessRepository[Future] = newFutureFetchingScenarioRepository(dbRef)
   val activityRepository: ScenarioActivityRepository = newScenarioActivityRepository(dbRef, clock)
-  val actionRepository: ScenarioActionRepository     = newActionProcessRepository(dbRef)
-  val listener                                       = new TestProcessChangeListener
+  val actionRepository: ScenarioActionRepository = newActionProcessRepository(dbRef)
+  val listener = new TestProcessChangeListener
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = new DeploymentManagerDependencies(
     executionContextWithIORuntime,
@@ -52,14 +50,19 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
   )
 
   def create(
-      deploymentManager: DeploymentManager,
-      modelData: ModelData = new StubModelDataWithModelDefinition(modelDefinition()),
-      scenarioStateTimeout: Option[FiniteDuration] = None,
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
-      processingTypeLimits: LimitsConfig = LimitsConfig.default
-  ): TestDeploymentServiceServices = {
+              deploymentManagers: Map[ProcessingType, DeploymentManager],
+              modelData: ModelData = new StubModelDataWithModelDefinition(modelDefinition()),
+              scenarioStateTimeout: Option[FiniteDuration] = None,
+              deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
+              globalLimitsConfig: GlobalLimitsConfig = GlobalLimitsConfig.default,
+              processingTypeLimits: LimitsConfig = LimitsConfig.default,
+            ): TestDeploymentServiceServices = {
+
     val deploymentManagerProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
-      Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
+      deploymentManagers
+        .map { case (processingType, deploymentManager) =>
+          processingType -> ValueWithRestriction.anyUser(deploymentManager)
+        }
     )
 
     val dmDispatcher = {
@@ -80,31 +83,30 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       )
     }
 
-    val actionService = {
-      new ActionService(
-        fetchingScenarioDBIORepository,
-        actionRepository,
-        dbioRunner,
-        listener,
-        scenarioStatusProvider,
-        deploymentCommentSettings,
-        clock
-      )
-    }
+    val actionService = new ActionService(
+      fetchingScenarioDBIORepository,
+      actionRepository,
+      dbioRunner,
+      listener,
+      scenarioStatusProvider,
+      deploymentCommentSettings,
+      clock
+    )
 
     val deploymentsReconciler =
       new ScenarioDeploymentReconciler(
         TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
-          Map(
-            processingType.stringify -> ValueWithRestriction.anyUser(
-              new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
-                deploymentManager,
-                EngineSetupName("mock"),
-                JobsRecoverySettings.noRecovery,
-                TestFactory.scenarioResolver()
+          deploymentManagers
+            .map { case (processingType, deploymentManager) =>
+              processingType -> ValueWithRestriction.anyUser(
+                new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
+                  deploymentManager,
+                  EngineSetupName("mock"),
+                  JobsRecoverySettings.noRecovery,
+                  TestFactory.scenarioResolver(processingType)
+                )
               )
-            )
-          )
+            }
         ),
         deploymentsStatusesProvider,
         actionRepository,
@@ -112,18 +114,20 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         dbioRunner
       )
 
+    val validator = ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData))
     val deploymentService = new DeploymentService(
       dmDispatcher,
       TestFactory.mapProcessingTypeDataProvider(
-        Streaming.stringify -> ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData))
+        deploymentManagers.map { case (processingType, _) => processingType -> validator }.toList: _*
       ),
-      TestFactory.scenarioResolverByProcessingType(),
+      TestFactory.scenarioResolverByProcessingType(deploymentManagers.keys.toList),
       actionService,
       additionalComponentConfigsByProcessingType,
       new LimitsService(
-        globalLimitsConfig = GlobalLimitsConfig.default,
-        activeScenariosLimitProvider =
-          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> processingTypeLimits),
+        globalLimitsConfig = globalLimitsConfig,
+        activeScenariosLimitProvider = TestFactory.mapProcessingTypeDataProvider(
+          deploymentManagers.map { case (processingType, _) => processingType -> processingTypeLimits }.toList: _*
+        ),
         scenarioStatusProvider = scenarioStatusProvider
       )
     )
@@ -133,11 +137,11 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
 }
 
 case class TestDeploymentServiceServices(
-    scenarioStatusProvider: ScenarioStatusProvider,
-    actionService: ActionService,
-    deploymentService: DeploymentService,
-    scenarioDeploymentReconciler: ScenarioDeploymentReconciler
-)
+                                          scenarioStatusProvider: ScenarioStatusProvider,
+                                          actionService: ActionService,
+                                          deploymentService: DeploymentService,
+                                          scenarioDeploymentReconciler: ScenarioDeploymentReconciler
+                                        )
 
 object TestDeploymentServiceFactory {
 
@@ -146,7 +150,5 @@ object TestDeploymentServiceFactory {
     ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(actorSystem.dispatcher)
 
   val clock: Clock = Clock.systemUTC()
-
-  val processingType: TestProcessingType = TestProcessingType.Streaming
 
 }

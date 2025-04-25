@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigException}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+
+import scala.util.{Failure, Success, Try}
 
 case class ProcessingTypeConfig(
     deploymentManagerType: DeploymentManagerType,
@@ -32,12 +34,15 @@ object ProcessingTypeConfig {
   }
 
   private def readLimitsConfig(config: Config) = {
-    Option(config.getConfig("limits")) match {
-      case Some(limitsConfig) =>
+    Try(config.getConfig("limits")) match {
+      case Success(limitsConfig) =>
         LimitsConfig(
           limitsConfig.getAs[Int]("activeScenariosLimit").map(ActiveScenariosLimit.apply)
         )
-      case None => LimitsConfig.default
+      case Failure(_: ConfigException.Missing) =>
+        LimitsConfig.default
+      case Failure(ex) =>
+        throw ex
     }
   }
 

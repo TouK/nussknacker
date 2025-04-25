@@ -7,7 +7,7 @@ import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import io.circe.{parser, Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, parser}
 import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
@@ -39,12 +39,7 @@ import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDe
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.mock.{
-  MockDeploymentManager,
-  MockManagerProvider,
-  TestProcessChangeListener,
-  WithTestDeploymentManagerClassLoader
-}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener, WithTestDeploymentManagerClassLoader}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
@@ -116,6 +111,7 @@ trait NuResourcesTest
   protected val processChangeListener = new TestProcessChangeListener()
 
   protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
+    config = ConfigWithScalaVersion.StreamingProcessTypeConfig,
     // In pekko-based resources tests, it is hard to use deploymentManager.withStubbedDeployResult(...) syntax because checks are done in function pipeline.
     // Because of that we stub results with happy-path defaults. After rewriting endpoint to Tapir and tests to rest-assured-based it should be easier
     defaultDeployResult = Future.successful(None),

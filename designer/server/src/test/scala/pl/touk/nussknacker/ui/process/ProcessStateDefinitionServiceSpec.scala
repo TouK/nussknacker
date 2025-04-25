@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFac
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
 import pl.touk.nussknacker.test.utils.domain.TestProcessingTypeDataProviderFactory
@@ -187,6 +188,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       category: String
   ): ProcessingTypeData = {
     val mockManager = MockDeploymentManager.create(
+      config = ConfigWithScalaVersion.StreamingProcessTypeConfig,
       customProcessStateDefinitionManager = Some(stateDefinitionManager)
     )
     val deploymentData = new DeploymentData(

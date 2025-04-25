@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
@@ -31,11 +32,7 @@ import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsSco
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
-import pl.touk.nussknacker.ui.process.repository.{
-  DBIOActionRunner,
-  DbScenarioActionRepository,
-  ScenarioWithDetailsEntity
-}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbScenarioActionRepository, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
@@ -71,7 +68,7 @@ class NotificationServiceTest
   private val dbProcessRepository        = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository     = TestFactory.newWriteProcessRepository(testDbRef, clock)
   private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
-  private val dm: MockDeploymentManager  = MockDeploymentManager.create()
+  private val dm: MockDeploymentManager  = MockDeploymentManager.create(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
   private val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(Streaming.stringify -> dm),

@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStat
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
-import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.MockDeploymentManager.{sampleDeploymentId, sampleDeploymentStatusDetails}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
@@ -33,21 +32,21 @@ import scala.util.Success
 import scala.util.control.NonFatal
 
 // DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
-class MockDeploymentManager private (
-    modelData: ModelData,
-    deploymentManagerDependencies: DeploymentManagerDependencies,
-    customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
-    defaultDeployResult: Future[Option[ExternalDeploymentId]],
-    defaultCancelResult: Future[Unit],
-    closeCreatedDeps: () => Unit,
-) extends FlinkDeploymentManager(
-      modelData.toModelDataProvider,
-      deploymentManagerDependencies,
-      FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
-      FlinkMiniClusterFactory.createMiniClusterWithServices(modelData.modelClassLoader, new Configuration),
-      FlinkClientStub,
-      FlinkScenarioJobRunnerStub
-    ) {
+class MockDeploymentManager private(
+                                     modelData: ModelData,
+                                     deploymentManagerDependencies: DeploymentManagerDependencies,
+                                     customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager],
+                                     defaultDeployResult: Future[Option[ExternalDeploymentId]],
+                                     defaultCancelResult: Future[Unit],
+                                     closeCreatedDeps: () => Unit,
+                                   ) extends FlinkDeploymentManager(
+  modelData.toModelDataProvider,
+  deploymentManagerDependencies,
+  FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
+  FlinkMiniClusterFactory.createMiniClusterWithServices(modelData.modelClassLoader, new Configuration),
+  FlinkClientStub,
+  FlinkScenarioJobRunnerStub
+) {
 
   import deploymentManagerDependencies._
 
@@ -68,14 +67,14 @@ class MockDeploymentManager private (
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     customProcessStateDefinitionManager match {
       case Some(manager) => manager
-      case None          => super.processStateDefinitionManager
+      case None => super.processStateDefinitionManager
     }
 
   override protected def getScenarioDeploymentsStatusesWithJobOverview(
-      scenarioName: ProcessName
-  )(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[List[(DeploymentStatusDetails, JobOverview)]]] = {
+                                                                        scenarioName: ProcessName
+                                                                      )(
+                                                                        implicit freshnessPolicy: DataFreshnessPolicy
+                                                                      ): Future[WithDataFreshnessStatus[List[(DeploymentStatusDetails, JobOverview)]]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
       WithDataFreshnessStatus.fresh(
@@ -123,7 +122,7 @@ class MockDeploymentManager private (
     new DeploymentsStatusesQueryForAllScenariosSupported {
 
       override def getAllScenariosDeploymentsStatuses()(
-          implicit freshnessPolicy: DataFreshnessPolicy
+        implicit freshnessPolicy: DataFreshnessPolicy
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
         Future {
           WithDataFreshnessStatus.fresh(managerProcessStates.asScala.toMap)
@@ -143,9 +142,9 @@ class MockDeploymentManager private (
 object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
 
   override def runScenarioJob(
-      command: DMRunDeploymentCommand,
-      savepointPathOpt: Option[String]
-  ): Future[Option[JobID]] =
+                               command: DMRunDeploymentCommand,
+                               savepointPathOpt: Option[String]
+                             ): Future[Option[JobID]] =
     Future.failed(new IllegalAccessException("This implementation shouldn't be used"))
 
 }
@@ -153,25 +152,26 @@ object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
 object MockDeploymentManager {
 
   def create(
-      customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
-      defaultDeployResult: Future[Option[ExternalDeploymentId]] = Future.failed(
-        new IllegalAccessException(
-          "Unexpected deploy. Check if either withStubbedDeployFinish or withWaitForDeployFinish has been used."
-        )
-      ),
-      defaultCancelResult: Future[Unit] =
-        Future.failed(new IllegalAccessException("Unexpected cancel. Check if withWaitForCancelFinish has been used."))
-  ): MockDeploymentManager = {
+              config: ConfigWithUnresolvedVersion,
+              customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
+              defaultDeployResult: Future[Option[ExternalDeploymentId]] = Future.failed(
+                new IllegalAccessException(
+                  "Unexpected deploy. Check if either withStubbedDeployFinish or withWaitForDeployFinish has been used."
+                )
+              ),
+              defaultCancelResult: Future[Unit] =
+              Future.failed(new IllegalAccessException("Unexpected cancel. Check if withWaitForCancelFinish has been used."))
+            ): MockDeploymentManager = {
     val actorSystem = ActorSystem("MockDeploymentManager")
     val (deploymentManagersClassLoader, closeDeploymentManagerClassLoader) =
       DeploymentManagersClassLoaderFactory.create(List.empty).allocated.unsafeRunSync()(IORuntime.global)
     val modelData = ModelData(
-      ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
+      ProcessingTypeConfig.read(config),
       TestFactory.modelDependencies,
       ModelClassLoaderFactory.create(
-        ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig).classPath,
-        None,
-        deploymentManagersClassLoader
+        urls = ProcessingTypeConfig.read(config).classPath,
+        workingDirectoryOpt = None,
+        deploymentManagersClassLoader = deploymentManagersClassLoader
       )
     )
     val deploymentManagerDependencies = new DeploymentManagerDependencies(
@@ -197,10 +197,10 @@ object MockDeploymentManager {
   }
 
   private[mock] def sampleDeploymentStatusDetails(
-      status: StateStatus,
-      deploymentId: DeploymentId,
-      version: Option[VersionId] = Some(VersionId.initialVersionId)
-  ): DeploymentStatusDetails =
+                                                   status: StateStatus,
+                                                   deploymentId: DeploymentId,
+                                                   version: Option[VersionId] = Some(VersionId.initialVersionId)
+                                                 ): DeploymentStatusDetails =
     DeploymentStatusDetails(status, Some(deploymentId), version)
 
   // Pass correct deploymentId
@@ -224,7 +224,7 @@ object MockDeploymentManagerSyntaxSugar {
 
     def withWaitForDeployFinish[T](name: ProcessName)(action: => T): T = {
       val promise = Promise[Option[ExternalDeploymentId]]()
-      val future  = promise.future
+      val future = promise.future
       deploymentManager.deployResult.put(name, future)
       try {
         action
@@ -278,21 +278,21 @@ object MockDeploymentManagerSyntaxSugar {
     }
 
     def withProcessFinished[T](processName: ProcessName, deploymentId: DeploymentId = sampleDeploymentId)(
-        action: => T
+      action: => T
     ): T = {
       withProcessStateStatus(processName, SimpleStateStatus.Finished, deploymentId)(action)
     }
 
     def withProcessStateStatus[T](
-        processName: ProcessName,
-        status: StateStatus,
-        deploymentId: DeploymentId = sampleDeploymentId
-    )(action: => T): T = {
+                                   processName: ProcessName,
+                                   status: StateStatus,
+                                   deploymentId: DeploymentId = sampleDeploymentId
+                                 )(action: => T): T = {
       withProcessStates(processName, List(sampleDeploymentStatusDetails(status, deploymentId)))(action)
     }
 
     def withProcessStateVersion[T](processName: ProcessName, status: StateStatus, version: Option[VersionId])(
-        action: => T
+      action: => T
     ): T = {
       withProcessStates(processName, List(sampleDeploymentStatusDetails(status, sampleDeploymentId, version)))(action)
     }
@@ -313,15 +313,15 @@ object MockDeploymentManagerSyntaxSugar {
 
 }
 
-class MockManagerProvider(deploymentManager: DeploymentManager = MockDeploymentManager.create())
-    extends FlinkDeploymentManagerProvider {
+class MockManagerProvider(deploymentManager: DeploymentManager)
+  extends FlinkDeploymentManagerProvider {
 
   override def createDeploymentManager(
-      modelDataProvider: BaseModelDataProvider,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config,
-      scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] =
+                                        modelDataProvider: BaseModelDataProvider,
+                                        deploymentManagerDependencies: DeploymentManagerDependencies,
+                                        deploymentConfig: Config,
+                                        scenarioStateCacheTTL: Option[FiniteDuration]
+                                      ): ValidatedNel[String, DeploymentManager] =
     valid(deploymentManager)
 
   override def engineSetupIdentity(config: Config): Any = ()

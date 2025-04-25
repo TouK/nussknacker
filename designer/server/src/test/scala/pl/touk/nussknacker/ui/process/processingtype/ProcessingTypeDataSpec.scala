@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ScenarioPr
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
 
@@ -67,7 +68,7 @@ class ProcessingTypeDataSpec extends AnyFunSuite with Matchers {
       modelConfig: Config,
       deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
   ): ProcessingTypeData = {
-    val mockManager = MockDeploymentManager.create()
+    val mockManager = MockDeploymentManager.create(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val deploymentData = new DeploymentData(
       DeploymentManagerType("mock"),
       Valid(mockManager),
