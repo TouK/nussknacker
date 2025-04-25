@@ -1,6 +1,6 @@
 import { cloneDeep, isEqual, set } from "lodash";
-import type { SetStateAction } from "react";
-import React, { useCallback, useEffect, useMemo } from "react";
+import type { SetStateAction} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { validateNodeData } from "../../../actions/nk";
@@ -45,6 +45,19 @@ export type NodeTypeDetailsContentProps = {
     errors: NodeValidationError[];
 };
 
+export function useNodeAdjust() {
+    const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
+    const adjustNode = useCallback(
+        (node: NodeType) => {
+            const parameterDefinitions = getParameterDefinitions(node);
+            const { adjustedNode } = adjustParameters(node, parameterDefinitions);
+            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
+        },
+        [getParameterDefinitions],
+    );
+    return adjustNode;
+}
+
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
     const { onChange, node, edges, showValidation } = props;
     const dispatch = useDispatch();
@@ -59,6 +72,16 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
 
     const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
 
+    const adjustNode = useNodeAdjust();
+    const [proxyNode, setProxyNode] = useState(() => adjustNode(node));
+
+    useEffect(() => {
+        setProxyNode((node) => {
+            const adjustedNode = adjustNode(node);
+            return isEqual(adjustedNode, node) ? node : adjustedNode;
+        });
+    }, [adjustNode]);
+
     const change = useCallback(
         (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
             if (isEditMode) {
@@ -68,19 +91,20 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         [isEditMode, onChange],
     );
 
-    const setEditedNode = useCallback((n: SetStateAction<NodeType>) => change(n, edges), [edges, change]);
+    const setEditedNode = useCallback(
+        (n: SetStateAction<NodeType>) => {
+            setProxyNode((current) => {
+                const nextNode = typeof n === "function" ? n(current) : n;
+                change(nextNode, edges);
+                return nextNode;
+            });
+        },
+        [edges, change],
+    );
 
     const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => change(node, e), [node, change]);
 
     const parameterDefinitions = useMemo(() => getParameterDefinitions(node), [getParameterDefinitions, node]);
-
-    const adjustNode = useCallback(
-        (node: NodeType) => {
-            const { adjustedNode } = adjustParameters(node, parameterDefinitions);
-            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
-        },
-        [parameterDefinitions],
-    );
 
     const renderFieldLabel = useCallback(
         (paramName: string): JSX.Element => {
@@ -135,13 +159,6 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         }
     }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
 
-    useEffect(() => {
-        setEditedNode((node) => {
-            const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, node) ? node : adjustedNode;
-        });
-    }, [adjustNode, setEditedNode]);
-
     return {
         ...props,
         isEditMode,
@@ -154,7 +171,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         removeElement,
         addElement,
         setProperty,
-        node,
+        node: proxyNode,
     };
 }
 
