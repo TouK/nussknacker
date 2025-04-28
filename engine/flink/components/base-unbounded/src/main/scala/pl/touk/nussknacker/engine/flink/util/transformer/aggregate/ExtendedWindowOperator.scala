@@ -35,8 +35,16 @@ object ExtendedWindowOperator {
   // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
   // without modifying too much Flink code. This assumes that window is triggered only on event
   val elementHolder = new ThreadLocal[api.Context]
-  // This ThreadLocal is also used to pass information between two distant places in flink code without
-  // modifying it
+
+  // If we fire window prematurely using org.apache.flink.streaming.api.windowing.triggers.Trigger.Trigger class (that is when
+  // method onElement in trigger returns TriggerResult satisfying _.isFire() condition)
+  // we want the resulting flink event to have timestamp equal to the timestamp of the event which triggered the firing of window.
+  // However, normally in flink resulting event would have the timestamp equal to window end time, which may be far ahead in the future if window is large.
+  // To override timestamp of this event we use this ThreadLocal, which is set if window was evaluated prematurely.
+  // SessionWindowAggregateTransformer will emit events both at the end of window and prematurely, so there really is a need to
+  // pass this boolean information about premature window firing for each event.
+  // Also, we need to react differently in case when window ended naturally, in that case we would not want to override
+  // the timestamp of resulting event.
   val overriddenResultEventTimeHolder = new ThreadLocal[Long]
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
