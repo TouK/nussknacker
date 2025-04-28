@@ -23,6 +23,7 @@ class ExpressionMigration(
     private val mapping: PartialFunction[Expression, Expression]
 ) {
 
+  // comment
   def migrateNode: PartialFunction[node.NodeData, node.NodeData] = {
     case n: CustomNode if shouldApplyMappingToParams(n) =>
       n.copy(parameters = n.parameters.map(applyMappingOrSelf))
