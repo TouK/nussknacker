@@ -1160,6 +1160,71 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should allow usage of nested generic type in FragmentInputDefinition parameter") {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              ParameterName(paramName),
+              FragmentClazzRef("Map[List[Integer], Map[String, Map[Double, List[Integer]]]]"),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test("should not allow type definition with unbalanced brackets") {
+    val nodeId: String    = "in"
+    val paramName         = "param1"
+    val additionalBracket = "]"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              ParameterName(paramName),
+              FragmentClazzRef(s"Map[List[Integer], Map[String, Map[Double, List[Integer]]]]$additionalBracket"),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe List(
+        FragmentParamClassLoadError(
+          ParameterName("param1"),
+          "Map[List[Integer], Map[String, Map[Double, List[Integer]]]]]",
+          "in"
+        )
+      )
+    }
+  }
+
   test(
     "should not allow usage of generic type in FragmentInputDefinition parameter when occurring type is not on classpath"
   ) {
