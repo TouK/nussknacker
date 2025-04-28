@@ -4,6 +4,7 @@ import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{AggregateFunction, OpenContext, RuntimeContext}
 import org.apache.flink.api.common.state.AggregatingStateDescriptor
 import org.apache.flink.streaming.api.datastream.{KeyedStream, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
 import org.apache.flink.streaming.api.operators.TimestampedCollector
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
@@ -18,14 +19,14 @@ import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{Input, elementHolder, stateDescriptorName, overriddenResultEventTimeHolder}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{Input, elementHolder, overriddenResultEventTimeHolder, stateDescriptorName}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
 
 import java.lang
 
 object ExtendedWindowOperator {
-  type Input[A] = ValueWithContext[StringKeyedValue[A]]
+  type Input[A] = EventWithTimestamp[ValueWithContext[StringKeyedValue[A]]]
 
   // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
   // without modifying too much Flink code. This assumes that window is triggered only on event
@@ -59,7 +60,7 @@ object ExtendedWindowOperator {
         aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
         trigger: Trigger[_ >: Input[A], TimeWindow]
     ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = extendedWindow(assigner, types, aggregateFunction,
-      fireOnEachEventTriggerWrapper[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger), preserveContext = true)
+      fireOnEachEventTriggerWrapper[EventWithTimestamp[ValueWithContext[StringKeyedValue[A]]], TimeWindow](trigger), preserveContext = true)
 
     def extendedWindow(
                             assigner: WindowAssigner[_ >: Input[A], TimeWindow],
@@ -77,6 +78,14 @@ object ExtendedWindowOperator {
 
 }
 
+case class EventWithTimestamp[E](event: E, timestamp: Long)
+
+class SomeProcessFunction[KEY, IN, OUT] extends KeyedProcessFunction[KEY, IN, EventWithTimestamp[OUT]] {
+  override def processElement(value: IN, ctx: KeyedProcessFunction[KEY, IN, EventWithTimestamp[OUT]]#Context, out: Collector[EventWithTimestamp[OUT]]): Unit = {
+    out.collect(EventWithTimestamp(value, ctx.timestamp()))
+  }
+}
+
 @silent("deprecated")
 class ExtendedWindowOperator[A](
     stream: KeyedStream[Input[A], String],
@@ -86,7 +95,7 @@ class ExtendedWindowOperator[A](
     aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
     trigger: Trigger[_ >: Input[A], TimeWindow],
     preserveContext: Boolean,
-) extends WindowOperator[String, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
+) extends WindowOperator[String, Input[A], EventWithTimestamp[AnyRef], ValueWithContext[AnyRef], TimeWindow](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
       stream.getKeySelector,
@@ -104,9 +113,9 @@ class ExtendedWindowOperator[A](
       null // tag
     ) {
 
-  override def processElement(element: StreamRecord[ValueWithContext[StringKeyedValue[A]]]): Unit = {
+  override def processElement(element: StreamRecord[EventWithTimestamp[ValueWithContext[StringKeyedValue[A]]]]): Unit = {
     if (preserveContext) {
-      elementHolder.set(element.getValue.context)
+      elementHolder.set(element.getValue.event.context)
     }
     try {
       super.processElement(element)
@@ -121,7 +130,7 @@ class ExtendedWindowOperator[A](
 private class ValueEmittingWindowFunction(
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: String
-) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow] {
+) extends ProcessWindowFunction[EventWithTimestamp[AnyRef], ValueWithContext[AnyRef], String, TimeWindow] {
 
   @transient
   private var contextIdGenerator: ContextIdGenerator = _
@@ -132,8 +141,8 @@ private class ValueEmittingWindowFunction(
 
   override def process(
       key: String,
-      context: ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow]#Context,
-      elements: lang.Iterable[AnyRef],
+      context: ProcessWindowFunction[EventWithTimestamp[AnyRef], ValueWithContext[AnyRef], String, TimeWindow]#Context,
+      elements: lang.Iterable[EventWithTimestamp[AnyRef]],
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     elements.forEach { element =>
@@ -142,11 +151,11 @@ private class ValueEmittingWindowFunction(
       out match {
         // it should always be an instance of this class
         case timedOut: TimestampedCollector[_] =>
-          Option(overriddenResultEventTimeHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(timestamp))
+          Option(overriddenResultEventTimeHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(element.timestamp))
         case _ =>
       }
 
-      out.collect(ValueWithContext(element, KeyEnricher.enrichWithKey(ctx, key)))
+      out.collect(ValueWithContext(element.event, KeyEnricher.enrichWithKey(ctx, key)))
     }
   }
 

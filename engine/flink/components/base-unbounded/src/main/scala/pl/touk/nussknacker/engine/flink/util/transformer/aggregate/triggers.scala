@@ -36,10 +36,10 @@ object triggers {
         case TriggerResult.PURGE    => TriggerResult.FIRE_AND_PURGE
         case fire                   => fire
       }
-
-      if (!previousResult.isFire && result.isFire) {
-        onOverrideFireOnElementAtTimestamp(timestamp)
-      }
+//
+//      if (!previousResult.isFire && result.isFire) {
+//        onOverrideFireOnElementAtTimestamp(timestamp)
+//      }
 
       result
     }
