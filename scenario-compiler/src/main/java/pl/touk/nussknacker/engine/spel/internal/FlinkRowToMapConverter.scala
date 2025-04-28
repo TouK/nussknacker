@@ -31,13 +31,11 @@ class FlinkRowToMapConverter(val conversionService: ConversionService) extends C
 //            val fields = r.getFieldNames(true).asScala
 //            fields.map(e => e -> r.getField(e)).toMap.asJava
       val getFieldsMethod = source.getClass.getMethod("getFieldNames", classOf[Boolean])
-      getFieldsMethod.setAccessible(true)
       val fields =
         getFieldsMethod.invoke(source, (true).asInstanceOf[AnyRef]).asInstanceOf[java.util.Set[String]].asScala
       fields
         .map(e => {
           val getFieldMethod = source.getClass.getMethod("getField", classOf[String])
-          getFieldMethod.setAccessible(true)
           e -> getFieldMethod.invoke(source, e)
         })
         .toMap

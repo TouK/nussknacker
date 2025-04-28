@@ -37,15 +37,17 @@ class IndexedRecordToMapConverter(val conversionService: ConversionService) exte
       val schema = invokeReflectiveMethodWithNoParameters(source, "getSchema")
       // fields is of type List[org.apache.avro.Schema.Field]
       val fields = invokeReflectiveMethodWithNoParameters(schema, "getFields").asInstanceOf[util.List[_]]
-      fields.asScala.map(n => {
-        val name = invokeReflectiveMethodWithNoParameters(n, "name").asInstanceOf[String]
-        val pos = invokeReflectiveMethodWithNoParameters(n, "pos").asInstanceOf[Int]
+      fields.asScala
+        .map(n => {
+          val name = invokeReflectiveMethodWithNoParameters(n, "name").asInstanceOf[String]
+          val pos  = invokeReflectiveMethodWithNoParameters(n, "pos").asInstanceOf[Int]
 
-        val getMethod = source.getClass.getDeclaredMethod("get", classOf[Int])
-        getMethod.setAccessible(true)
-        val value = getMethod.invoke(source, pos.asInstanceOf[AnyRef])
-        name -> value
-      }).toMap.asJava
+          val getMethod = source.getClass.getDeclaredMethod("get", classOf[Int])
+          val value     = getMethod.invoke(source, pos.asInstanceOf[AnyRef])
+          name -> value
+        })
+        .toMap
+        .asJava
     }
   }
 
@@ -54,4 +56,5 @@ class IndexedRecordToMapConverter(val conversionService: ConversionService) exte
     method.setAccessible(true)
     method.invoke(target)
   }
+
 }
