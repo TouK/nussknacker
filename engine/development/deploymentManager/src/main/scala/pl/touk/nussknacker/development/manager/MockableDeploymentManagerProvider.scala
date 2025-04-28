@@ -202,9 +202,6 @@ object MockableDeploymentManagerProvider {
 
   }
 
-  // todo: modify text?
-  // note: At the moment this manager cannot be used in tests which are executed in parallel. It can be obviously
-  //       improved, but there is no need to do it ATM.
   object MockableDeploymentManager extends MockableDeploymentManagerConfigurator
 
 }

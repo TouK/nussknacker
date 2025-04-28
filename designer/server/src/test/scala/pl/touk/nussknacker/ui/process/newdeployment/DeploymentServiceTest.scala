@@ -228,6 +228,20 @@ class DeploymentServiceTest
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
+      "1st scenario is being redeployed, when the 2nd scenario is running" in {
+        val firstScenario = ProcessName("scenario1")
+        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
+          Map(
+            firstScenario.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
+            "scenario2"         -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
+          )
+        )
+
+        val result = deployExampleScenario(firstScenario)
+
+        inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
+        }
+      }
     }
     "two processing types are considered" when {
       "1st scenario is running (in streaming1), and the 2nd scenario is not deployed (in streaming2)" in {
@@ -311,6 +325,24 @@ class DeploymentServiceTest
         )
 
         val result = deployExampleScenario(ProcessName("scenario3"))
+
+        inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
+        }
+      }
+      "1st scenario is being redeployed (streaming1), when the 2nd scenario is running (streaming2)" in {
+        val firstScenario = ProcessName("scenario1")
+        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
+          Map(
+            firstScenario.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
+          )
+        )
+        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
+          Map(
+            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
+          )
+        )
+
+        val result = deployExampleScenario(firstScenario)
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }

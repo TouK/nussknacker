@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ActiveScenariosStatuses, ProblemStateStatus}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
@@ -79,25 +79,27 @@ class ScenarioStatusProvider(
     )
   }
 
-  def getActiveScenariosCountFor(processingTypes: Iterable[ProcessingType])(implicit user: LoggedUser): IO[Int] =
+  def getActiveScenariosFor(
+      processingTypes: Iterable[ProcessingType]
+  )(implicit user: LoggedUser): IO[Set[ProcessName]] =
     IO.fromFuture {
       IO {
         implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
         deploymentStatusesProvider
           .getBulkQueriedDeploymentStatusesForSupportedManagers(processingTypes)
           .map { statuses =>
-            statuses.getAllDeploymentStatuses
-              .count { status =>
-                status.status == SimpleStateStatus.DuringDeploy ||
-                status.status == SimpleStateStatus.Running ||
-                status.status == SimpleStateStatus.Restarting
-              }
+            statuses.getAllDeploymentScenariosAndStatuses.flatMap {
+              case (scenarioName, statusDetails) if ActiveScenariosStatuses.contains(statusDetails.status) =>
+                Some(scenarioName)
+              case (_, _) =>
+                None
+            }.toSet
           }
       }
     }
 
-  def getActiveScenariosCountFor(processingType: ProcessingType)(implicit user: LoggedUser): IO[Int] = {
-    getActiveScenariosCountFor(processingType :: Nil)
+  def getActiveScenariosFor(processingType: ProcessingType)(implicit user: LoggedUser): IO[Set[ProcessName]] = {
+    getActiveScenariosFor(processingType :: Nil)
   }
 
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](
@@ -197,6 +199,7 @@ class ScenarioStatusProvider(
       logger.debug(s"Status for: '${processDetails.name}' is: $scenarioStatus")
       DBIOAction.successful(scenarioStatus)
     }
+
     if (processDetails.isFragment) {
       throw FragmentStateException
     } else if (processDetails.isArchived) {

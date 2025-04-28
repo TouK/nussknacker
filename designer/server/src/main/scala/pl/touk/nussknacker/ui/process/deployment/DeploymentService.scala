@@ -158,7 +158,7 @@ class DeploymentService(
   ) = {
     implicit val loggedUser: LoggedUser = deployer
     limitsService
-      .checkScenarioLimitsBeforeDeployment(scenario.processingType)
+      .checkScenarioLimitsBeforeDeployment(scenario.name, scenario.processingType)
       .map {
         case Right(())              => ()
         case Left(error: Throwable) => throw error

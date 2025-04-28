@@ -94,6 +94,7 @@ object SimpleStateStatus {
   val Canceled: StateStatus     = StateStatus("CANCELED")
 
   val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringDeploy, Running)
+  val ActiveScenariosStatuses: Set[StateStatus]        = DefaultFollowingDeployStatuses + Restarting
 
   def isFinalOrTransitioningToFinalStatus(status: StateStatus): Boolean =
     List(SimpleStateStatus.Finished, SimpleStateStatus.DuringCancel, SimpleStateStatus.Canceled).contains(

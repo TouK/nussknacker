@@ -181,7 +181,7 @@ class DeploymentService(
   ): EitherT[Future, RunDeploymentError, Unit] = EitherT {
     implicit val loggedUser: LoggedUser = deployer
     limitsService
-      .checkScenarioLimitsBeforeDeployment(scenarioMetadata.processingType)
+      .checkScenarioLimitsBeforeDeployment(scenarioMetadata.name, scenarioMetadata.processingType)
       .map(_.left.map { case LimitError.ActiveScenariosLimitExceededError(limit) =>
         ActiveScenariosLimitExceededError(limit)
       })
