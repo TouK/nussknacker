@@ -9,10 +9,6 @@ import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
-import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.{
-  ScenarioStateVerificationConfig,
-  ScenarioTestingConfig
-}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.language.higherKinds
@@ -38,20 +34,6 @@ object FlinkMiniClusterFactory extends LazyLogging {
     // Reasonable number of available parallel slots
     config.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, DefaultTaskSlots)
     config
-  }
-
-  def createMiniClusterWithServicesIfConfigured(
-      modelClassLoader: ModelClassLoader,
-      config: FlinkMiniClusterConfig,
-      useMiniClusterForDeployment: Boolean,
-      scenarioTestingConfig: ScenarioTestingConfig,
-      stateVerificationConfig: ScenarioStateVerificationConfig,
-  ): Option[FlinkMiniClusterWithServices] = {
-    if (useMiniClusterForDeployment || scenarioTestingConfig.reuseSharedMiniCluster || stateVerificationConfig.reuseSharedMiniCluster) {
-      Some(createMiniClusterWithServices(modelClassLoader, config.config))
-    } else {
-      None
-    }
   }
 
   def createUnitTestsMiniClusterWithServices(

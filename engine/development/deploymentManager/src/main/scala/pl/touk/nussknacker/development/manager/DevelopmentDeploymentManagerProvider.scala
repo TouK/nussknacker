@@ -55,7 +55,7 @@ class DevelopmentDeploymentManager(
   private lazy val flinkTestRunner =
     new FlinkMiniClusterScenarioTestRunner(
       modelDataProvider,
-      Some(miniClusterWithServices),
+      miniClusterWithServices,
       parallelism = 1,
       waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
     )
