@@ -18,7 +18,12 @@ import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{Input, elementHolder, stateDescriptorName, overriddenResultEventTimeHolder}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{
+  elementHolder,
+  overriddenResultEventTimeHolder,
+  stateDescriptorName,
+  Input
+}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
 
@@ -41,11 +46,14 @@ object ExtendedWindowOperator {
     overriddenResultEventTimeHolder.set(timestamp)
   }
 
-  def fireOnEachEventTriggerWrapper[T, W <: Window](delegate: Trigger[_ >: T, W]): FireOnEachEvent[T, W]  = {
+  def fireOnEachEventTriggerWrapper[T, W <: Window](delegate: Trigger[_ >: T, W]): FireOnEachEvent[T, W] = {
     FireOnEachEvent(delegate, timestamp => overrideResultEventTime(timestamp))
   }
 
-  def closingEndEventTriggerWrapper[T, W <: Window](delegate: Trigger[_ >: T, W], endFunction: T => Boolean): ClosingEndEventTrigger[T, W] = {
+  def closingEndEventTriggerWrapper[T, W <: Window](
+      delegate: Trigger[_ >: T, W],
+      endFunction: T => Boolean
+  ): ClosingEndEventTrigger[T, W] = {
     ClosingEndEventTrigger(delegate, endFunction, timestamp => overrideResultEventTime(timestamp))
   }
 
@@ -58,16 +66,21 @@ object ExtendedWindowOperator {
         types: AggregatorTypeInformations,
         aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
         trigger: Trigger[_ >: Input[A], TimeWindow]
-    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = extendedWindow(assigner, types, aggregateFunction,
-      fireOnEachEventTriggerWrapper[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger), preserveContext = true)
+    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = extendedWindow(
+      assigner,
+      types,
+      aggregateFunction,
+      fireOnEachEventTriggerWrapper[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger),
+      preserveContext = true
+    )
 
     def extendedWindow(
-                            assigner: WindowAssigner[_ >: Input[A], TimeWindow],
-                            types: AggregatorTypeInformations,
-                            aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
-                            trigger: Trigger[_ >: Input[A], TimeWindow],
-                            preserveContext: Boolean,
-                          ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = stream.transform(
+        assigner: WindowAssigner[_ >: Input[A], TimeWindow],
+        types: AggregatorTypeInformations,
+        aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
+        trigger: Trigger[_ >: Input[A], TimeWindow],
+        preserveContext: Boolean,
+    ): SingleOutputStreamOperator[ValueWithContext[AnyRef]] = stream.transform(
       assigner.getClass.getSimpleName,
       types.returnedValueTypeInfo,
       new ExtendedWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger, preserveContext)
@@ -144,6 +157,9 @@ private class ValueEmittingWindowFunction(
         case timedOut: TimestampedCollector[_] =>
           Option(overriddenResultEventTimeHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(timestamp))
         case _ =>
+          throw new IllegalStateException(
+            "Cast to TimestampedCollector did not succeed, we are based here on flink implementation so probably it was changed"
+          )
       }
 
       out.collect(ValueWithContext(element, KeyEnricher.enrichWithKey(ctx, key)))
