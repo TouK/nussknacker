@@ -20,17 +20,22 @@ type SettingsNames =
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
+const getInitialUserFlag = (flagName: SettingsNames, defaultValue = false): boolean => {
+    console.log("$initialUserFlags", window["$initialUserFlags"]);
+    return window?.["$initialUserFlags"]?.[flagName] || defaultValue;
+};
+
 const reducer: Reducer<UserSettings> = (
     state = {
-        "node.showAggregateSwitcher": false,
-        "node.shortCounts": false,
-        "node.showInputsAndOutputs": false,
-        "node.showFragmentCreator": false,
-        "node.autoApply": false,
-        "cloud.showIntegrationsCreators": false,
-        "debug.nodesAsJson": false,
-        "debug.forceDisableModals": false,
-        "debug.userSettingsVisible": isDev,
+        "node.showAggregateSwitcher": getInitialUserFlag("node.showAggregateSwitcher"),
+        "node.shortCounts": getInitialUserFlag("node.shortCounts"),
+        "node.showInputsAndOutputs": getInitialUserFlag("node.showInputsAndOutputs"),
+        "node.showFragmentCreator": getInitialUserFlag("node.showFragmentCreator"),
+        "node.autoApply": getInitialUserFlag("node.autoApply"),
+        "cloud.showIntegrationsCreators": getInitialUserFlag("cloud.showIntegrationsCreators"),
+        "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
+        "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
+        "debug.userSettingsVisible": getInitialUserFlag("debug.userSettingsVisible", isDev),
     },
     action,
 ) => {
