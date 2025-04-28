@@ -10,15 +10,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  CannotCreateObjectError,
-  ExpressionParserCompilationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
@@ -26,6 +23,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TestRecordHours.hoursToMillis
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
@@ -361,7 +359,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         .endVariablesForKey(id)
         .map(
           _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
-        ) shouldBe List(2 * 3600 * 1000 - 1, 4 * 3600 * 1000 - 1)
+        ) shouldBe List(hoursToMillis(2) - 1, hoursToMillis(4) - 1)
     }
   }
 
@@ -761,12 +759,14 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       val nodeResults = collectingListener.endVariablesForKey(id)
       nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
 
-      val timeMultiplier = 3600 * 1000
-
       nodeResults.map(
         _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
-          // session timeout is 2
-      ) shouldBe List((3 + 2) * timeMultiplier - 1, 6 * timeMultiplier, (6 + 2) * timeMultiplier - 1)
+      ) shouldBe List(
+        // session timeout is 2
+        hoursToMillis(5) - 1, // 3h last event time + (2h - 1ms) timeout
+        hoursToMillis(6),     // 6h event time from event witch evaluated stop condition to true
+        hoursToMillis(8) - 1  // 6h last event time + (2h - 1ms) timeout
+      )
     }
   }
 
@@ -1098,7 +1098,11 @@ trait TestRecord {
 }
 
 case class TestRecordHours(id: String, timeHours: Int, eId: Int, str: String) extends TestRecord {
-  override def timestamp: Long = timeHours * 3600L * 1000
+  override def timestamp: Long = hoursToMillis(timeHours)
+}
+
+object TestRecordHours {
+  def hoursToMillis(hours: Int): Long = hours * 3600L * 1000
 }
 
 case class TestRecordWithTimestamp(id: String, timestamp: Long, eId: Int, str: String) extends TestRecord
