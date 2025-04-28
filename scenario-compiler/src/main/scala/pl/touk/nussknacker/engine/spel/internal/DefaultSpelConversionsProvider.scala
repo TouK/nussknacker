@@ -32,6 +32,7 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     // For purpose of concise usage of numbers in spel templates
     service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
     service.addConverter(new IndexedRecordToMapConverter(service))
+    service.addConverter(new FlinkRowToMapConverter(service))
     service.addConverter(new ConversionHandler.ArrayToListConverter(service))
     service
   }
