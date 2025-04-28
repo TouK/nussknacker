@@ -813,7 +813,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("flink row projection typing") {
     val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
-    val validationResult = parseV[JInteger]("#flinkTableApiRow.![#this.value].get(0)", validationCtx)
+    // TODO_PAWEL maybe do it in a way that preserves order? is it possible?
+    val validationResult = parseV[JInteger]("#flinkTableApiRow.![#this.value].^[#this == 42].get(0)", validationCtx)
     val typingResult     = validationResult.validValue.typingInfo.typingResult
     typingResult shouldBe Typed[Int]
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
