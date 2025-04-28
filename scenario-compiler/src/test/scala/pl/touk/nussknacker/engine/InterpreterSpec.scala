@@ -196,7 +196,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
-      ClassExtractionSettings.Default
+      ClassExtractionSettings.Default,
+      ModelSettings.Default,
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ModelSettings}
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
@@ -205,7 +205,8 @@ final case class ModelDefinitionBuilder(
     ModelDefinition(
       Components.empty(componentDefinitionExtractionMode).withComponents(components),
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
-      ClassExtractionSettings.Default
+      ClassExtractionSettings.Default,
+      ModelSettings.Default,
     )
   }
 

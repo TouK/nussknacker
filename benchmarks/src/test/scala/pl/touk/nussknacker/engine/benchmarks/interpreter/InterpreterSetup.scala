@@ -83,7 +83,8 @@ class InterpreterSetup[T: ClassTag] {
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
-      ClassExtractionSettings.Default
+      ClassExtractionSettings.Default,
+      ModelSettings.Default,
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 

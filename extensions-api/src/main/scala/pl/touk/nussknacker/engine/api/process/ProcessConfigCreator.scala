@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.api.process
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 
+import scala.util.Try
+
 /**
   * There Nussknacker fetches information about user defined model.
   * Any invocation of user defined logic or resource goes through this class.
@@ -31,5 +33,13 @@ trait ProcessConfigCreator extends Serializable {
 
   def classExtractionSettings(modelDependencies: ProcessObjectDependencies): ClassExtractionSettings =
     ClassExtractionSettings.Default
+
+  def modelSettings(modelDependencies: ProcessObjectDependencies): ModelSettings = {
+    Try(
+      ModelSettings(
+        allowEndingScenarioWithoutSink = modelDependencies.config.getBoolean("allowEndingScenarioWithoutSink")
+      )
+    ).getOrElse(ModelSettings.Default)
+  }
 
 }

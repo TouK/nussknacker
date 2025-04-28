@@ -67,7 +67,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
     ModelDefinitionBuilder.emptyExpressionConfig,
-    ClassExtractionSettings.Default
+    ClassExtractionSettings.Default,
+    ModelSettings.Default,
   )
 
   private val validator = ProcessValidator.default(

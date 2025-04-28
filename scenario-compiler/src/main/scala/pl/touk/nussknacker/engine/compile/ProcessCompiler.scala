@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
-import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
@@ -251,11 +250,17 @@ protected trait ProcessCompilerBase {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): CompilationResult[part.SinkPart] = {
-    val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
-    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
-    CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
-      compiledgraph.part.SinkPart(obj, node, ctx, ctx)
-    )
+    nodeCompiler
+      .compileSinkOption(node.data, ctx)
+      .map { case NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) =>
+        val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
+        CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
+          compiledgraph.part.SinkPart(obj, node, ctx, ctx)
+        )
+      }
+      .getOrElse(
+        nodeCompiler.handleMissingSinkFactory(node)
+      )
   }
 
   def compileEndingCustomNodePart(

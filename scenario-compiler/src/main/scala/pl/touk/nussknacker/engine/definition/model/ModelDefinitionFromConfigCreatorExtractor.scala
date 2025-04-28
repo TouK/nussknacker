@@ -49,12 +49,14 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentDefinitionExtractionMode,
     )
 
-    val settings = creator.classExtractionSettings(modelDependencies)
+    val classExtractionSettings = creator.classExtractionSettings(modelDependencies)
+    val modelSettings           = creator.modelSettings(modelDependencies)
 
     ModelDefinition(
       components,
       toDefinition(expressionConfig, categoryOpt),
-      settings
+      classExtractionSettings,
+      modelSettings,
     )
   }
 
@@ -104,7 +106,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig.methodExecutionForUnknownAllowed,
       expressionConfig.dynamicPropertyAccessAllowed,
       expressionConfig.spelExpressionExcludeList,
-      expressionConfig.customConversionsProviders
+      expressionConfig.customConversionsProviders,
     )
   }
 

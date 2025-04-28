@@ -108,7 +108,7 @@ object ProcessCanonizer {
         MaybeArtificial.artificialSink(InvalidTailOfBranch(invalidHead.id))
 
       case Nil =>
-        MaybeArtificial.artificialSink(InvalidTailOfBranch(previous.id))
+        MaybeArtificial.artificialDeadEndSink(previous.id)
     }
 
 }

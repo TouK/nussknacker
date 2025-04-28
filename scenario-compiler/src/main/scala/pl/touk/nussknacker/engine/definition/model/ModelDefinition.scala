@@ -2,14 +2,15 @@ package pl.touk.nussknacker.engine.definition.model
 
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ModelSettings}
 import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 
 case class ModelDefinition private (
     components: Components,
     expressionConfig: ExpressionConfigDefinition,
-    settings: ClassExtractionSettings
+    settings: ClassExtractionSettings,
+    modelSettings: ModelSettings,
 ) {
 
   def withComponent(component: ComponentDefinitionWithImplementation): ModelDefinition = {
@@ -48,7 +49,8 @@ object ModelDefinition {
   def apply(
       components: Components,
       expressionConfig: ExpressionConfigDefinition,
-      settings: ClassExtractionSettings,
-  ): ModelDefinition = new ModelDefinition(components, expressionConfig, settings)
+      classExtractionSettings: ClassExtractionSettings,
+      modelSettings: ModelSettings,
+  ): ModelDefinition = new ModelDefinition(components, expressionConfig, classExtractionSettings, modelSettings)
 
 }

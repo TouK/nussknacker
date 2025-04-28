@@ -56,4 +56,13 @@ private[engine] object MaybeArtificial {
       node.SourceNode(node.Source(generateArtificialName(), SourceRef(artificalSourceSinkRef, Nil)), _)
     )
 
+  def artificialDeadEndSink(previousNodeId: String): MaybeArtificial[node.SubsequentNode] =
+    new MaybeArtificial(
+      node.EndingNode(new ArtificialDeadEndSink(previousNodeId)),
+      List.empty,
+    )
+
+  class ArtificialDeadEndSink(val previousNodeId: String)
+      extends node.Sink(s"artificialDeadEndSink-after-$previousNodeId", SinkRef(artificalSourceSinkRef, Nil), None)
+
 }

@@ -61,6 +61,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     ),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default,
+    ModelSettings.Default,
   )
 
   private val validator = ProcessValidator.default(
