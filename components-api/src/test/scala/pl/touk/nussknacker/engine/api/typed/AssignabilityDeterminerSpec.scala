@@ -6,6 +6,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
+import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment.{
+  ConvertionIsNeeded,
+  NoConvertionIsNeeded
+}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
@@ -15,12 +19,12 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
 
   val wideningConversionCases = Table(
     ("sourceType", "targetType", "expectedStrict", "expectedLoose"),
-    (Typed[Int], Typed[Int], Valid(()), Valid(())),
-    (Typed[Int], Typed[Double], Valid(()), Valid(())),
-    (Typed[List[Int]], Typed[List[Int]], Valid(()), Valid(())),
-    (Typed[List[Int]], Typed[List[Any]], Valid(()), Valid(())),
-    (Typed[Map[String, Int]], Typed[Map[String, Int]], Valid(()), Valid(())),
-    (Typed[Map[String, Int]], Typed[Map[Any, Any]], Valid(()), Valid(()))
+    (Typed[Int], Typed[Int], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[Int], Typed[Double], Valid(ConvertionIsNeeded(Typed[Double])), Valid(ConvertionIsNeeded(Typed[Double]))),
+    (Typed[List[Int]], Typed[List[Int]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[List[Int]], Typed[List[Any]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[Map[String, Int]], Typed[Map[String, Int]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[Map[String, Int]], Typed[Map[Any, Any]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded))
   )
 
   test("isAssignable with Strict ConversionStrategy should pass for widening cases") {
