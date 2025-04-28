@@ -2,6 +2,8 @@ package pl.touk.nussknacker.ui.limits
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.effect.std.Mutex
+import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
@@ -17,15 +19,40 @@ class LimitsService(
     scenarioStatusProvider: ScenarioStatusProvider
 ) extends LazyLogging {
 
-  def checkScenarioLimitsBeforeDeployment(
+  def checkScenarioLimitsBeforeDeploymentUnsafe(
       deployingScenario: ProcessName,
       scenarioProcessingType: ProcessingType
   )(implicit user: LoggedUser): IO[Either[LimitError, Unit]] = {
-    val result = for {
+    checkAllLimits(deployingScenario, scenarioProcessingType).value
+  }
+
+  def checkScenarioLimitsBeforeDeployment[ACTION_RESULT](
+      deployingScenario: ProcessName,
+      scenarioProcessingType: ProcessingType
+  )(withinLimitsAction: IO[ACTION_RESULT])(implicit user: LoggedUser): IO[Either[LimitError, ACTION_RESULT]] = {
+    limitsServiceLock.surround {
+      val result = for {
+        _      <- checkAllLimits(deployingScenario, scenarioProcessingType)
+        result <- EitherT.right[LimitError](withinLimitsAction)
+      } yield result
+      result.value
+    }
+  }
+
+  private def checkAllLimits(
+      deployingScenario: ProcessName,
+      scenarioProcessingType: ProcessingType
+  )(implicit user: LoggedUser) = {
+    for {
       _ <- checkPerProcessingTypeLimits(deployingScenario, scenarioProcessingType)
       _ <- checkGlobalLimits(deployingScenario)
     } yield ()
-    result.value
+  }
+
+  private def limitsServiceLock = {
+    // note: currently we use in memory lock. It exposes Resource[Io, Unit] interface. It can be easily implemented
+    //       e.g. as a Postgresql-based lock. We may want to do this when the want to have Designer deployed in HA
+    LimitsService.mutex.lock
   }
 
   private def checkPerProcessingTypeLimits(
@@ -94,6 +121,7 @@ class LimitsService(
 }
 
 object LimitsService {
+
   sealed trait LimitError
 
   object LimitError {
@@ -104,6 +132,11 @@ object LimitsService {
         )
         with LimitError
 
+  }
+
+  private val mutex: Mutex[IO] = {
+    implicit val ioRuntime: IORuntime = IORuntime.global
+    Mutex[IO].unsafeRunSync()
   }
 
 }

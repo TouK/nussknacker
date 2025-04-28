@@ -157,8 +157,10 @@ class DeploymentService(
       deployer: LoggedUser
   ) = {
     implicit val loggedUser: LoggedUser = deployer
+    // note: we use "unsafe" version here (without critical section), because we're already in the actions critical section,
+    //       so there is no way to have two deployments at the same time. The limits will be assured.
     limitsService
-      .checkScenarioLimitsBeforeDeployment(scenario.name, scenario.processingType)
+      .checkScenarioLimitsBeforeDeploymentUnsafe(scenario.name, scenario.processingType)
       .map {
         case Right(())              => ()
         case Left(error: Throwable) => throw error

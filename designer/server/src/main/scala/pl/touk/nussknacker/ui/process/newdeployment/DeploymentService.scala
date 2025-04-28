@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.Applicative
 import cats.data.{EitherT, NonEmptyList}
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
@@ -84,13 +85,20 @@ class DeploymentService(
         permission = Permission.Deploy
       )
       scenarioGraphVersion <- getScenarioGraphVersion(scenarioMetadata, command.user)
-      _                    <- validateDeployment(scenarioMetadata, scenarioGraphVersion, command.user)
-      // We keep deployments metrics (used by counts mechanism) keyed by scenario name.
-      // Because of that we can't run more than one deployment for scenario in a time.
-      // TODO: We should key metrics by deployment id and remove this limitation
-      // Saving of deployment is the final step before deployment request because we want to store only requested deployments
-      _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
-      _ <- runDeploymentUsingDeploymentManagerAsync(scenarioMetadata, scenarioGraphVersion, command)
+      _ <- checkActiveScenariosLimits(scenarioMetadata, command.user) {
+        IO.fromFuture(IO {
+          val result = for {
+            _ <- validateDeployment(scenarioMetadata, scenarioGraphVersion, command.user)
+            // We keep deployments metrics (used by counts mechanism) keyed by scenario name.
+            // Because of that we can't run more than one deployment for scenario in a time.
+            // TODO: We should key metrics by deployment id and remove this limitation
+            // Saving of deployment is the final step before deployment request because we want to store only requested deployments
+            _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
+            _ <- runDeploymentUsingDeploymentManagerAsync(scenarioMetadata, scenarioGraphVersion, command)
+          } yield ()
+          result.value
+        })
+      }
     } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
 
   private def validateDeployment(
@@ -101,7 +109,6 @@ class DeploymentService(
     for {
       _ <- EitherT.cond[Future](!scenarioMetadata.isFragment, (), DeploymentOfFragmentError)
       _ <- EitherT.cond[Future](!scenarioMetadata.isArchived, (), DeploymentOfArchivedScenarioError)
-      _ <- checkActiveScenariosLimits(scenarioMetadata, deployer)
       _ <- runDeploymentManagerSpecificValidations(scenarioMetadata, scenarioGraphVersion, deployer)
     } yield ()
   }
@@ -178,13 +185,14 @@ class DeploymentService(
   private def checkActiveScenariosLimits(
       scenarioMetadata: ScenarioMetadata,
       deployer: LoggedUser
-  ): EitherT[Future, RunDeploymentError, Unit] = EitherT {
+  )(action: IO[Either[RunDeploymentError, Unit]]): EitherT[Future, RunDeploymentError, Unit] = EitherT {
     implicit val loggedUser: LoggedUser = deployer
     limitsService
-      .checkScenarioLimitsBeforeDeployment(scenarioMetadata.name, scenarioMetadata.processingType)
-      .map(_.left.map { case LimitError.ActiveScenariosLimitExceededError(limit) =>
-        ActiveScenariosLimitExceededError(limit)
-      })
+      .checkScenarioLimitsBeforeDeployment(scenarioMetadata.name, scenarioMetadata.processingType)(action)
+      .map {
+        case Left(LimitError.ActiveScenariosLimitExceededError(limit)) => Left(ActiveScenariosLimitExceededError(limit))
+        case Right(result)                                             => result
+      }
       .unsafeToFuture()
   }
 
