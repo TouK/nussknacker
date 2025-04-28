@@ -44,6 +44,10 @@ export const useTooltip = ({ customComponentsProps }: { customComponentsProps: T
         };
     }, [customComponentsProps]);
 
+    const handleSetTooltipOpen = useCallback(() => {
+        setTooltipOpen(true);
+    }, []);
+
     const handleSetTooltipClose = useCallback(() => {
         setTooltipOpen(false);
     }, []);
@@ -54,5 +58,5 @@ export const useTooltip = ({ customComponentsProps }: { customComponentsProps: T
         setTooltipOpen((prev) => !prev);
     }, []);
 
-    return { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipClose, handleToggleTooltip };
+    return { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipOpen, handleSetTooltipClose, handleToggleTooltip };
 };

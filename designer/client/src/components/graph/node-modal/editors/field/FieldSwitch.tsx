@@ -169,7 +169,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             icon={
                                 option.hint && (
                                     <div>
-                                        <InfoTooltip text={option.hint} />
+                                        <InfoTooltip title={option.hint} />
                                     </div>
                                 )
                             }

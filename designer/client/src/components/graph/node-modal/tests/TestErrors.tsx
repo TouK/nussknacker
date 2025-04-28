@@ -16,7 +16,7 @@ export default function TestErrors(): JSX.Element {
     return (
         <FormControl>
             <FormLabel>
-                <InfoTooltip text={"Test case error"} variant={"hover"}>
+                <InfoTooltip title={"Test case error"} variant={"hover"}>
                     <WarningIcon sx={(theme) => ({ color: theme.palette.warning.main })} />
                 </InfoTooltip>
             </FormLabel>

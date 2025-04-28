@@ -78,7 +78,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
                     customComponentsProps={{
                         tooltip: { sx: { maxWidth: "none" } },
                     }}
-                    text={t(
+                    title={t(
                         "editors.spelEditor.infoText",
                         `You are using an expression-based input, allowing calculations and conditions. Access variables and helpers with \`#\`, e.g., \`#input.someField == 'value'\` or \`#UTIL.split('foo-bar', '-')\`. \n 
 When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
@@ -96,7 +96,7 @@ Use autocompletion to explore available options. To read more see [Documentation
                     customComponentsProps={{
                         tooltip: { sx: { maxWidth: "none" } },
                     }}
-                    text={t(
+                    title={t(
                         "editors.spelTemplateEditor.infoText",
                         `You are using a string-template-based input, allowing text with embedded expressions. Text should not be quoted. \n 
 Embed expression with \`#{ }\`, e.g., \`Hello #{ #input.name }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n

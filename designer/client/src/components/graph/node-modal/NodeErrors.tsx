@@ -27,7 +27,7 @@ export default function NodeErrors(props: { errors: NodeValidationError[]; messa
 
     return (
         <div className={className} style={{ alignItems: "center" }}>
-            <InfoTooltip variant={"hover"} text={errorMessage} className={nodeTip}>
+            <InfoTooltip variant={"hover"} title={errorMessage} className={nodeTip}>
                 <DangerousIcon sx={(theme) => ({ color: theme.palette.error.main, alignSelf: "center", width: 24, height: 24 })} />
             </InfoTooltip>
             <div>

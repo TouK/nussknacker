@@ -43,7 +43,7 @@ export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): J
                         </Typography>
                     ) : null}
                 </Box>
-                {hintText ? <StyledNodeTip variant={"hover"} text={hintText} /> : null}
+                {hintText ? <StyledNodeTip variant={"hover"} title={hintText} /> : null}
             </FormLabel>
         </>
     );

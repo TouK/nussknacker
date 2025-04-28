@@ -7,19 +7,19 @@ import { StyledInfoChildrenWrapper, StyledInfoMarkdown } from "./StyledInfo";
 import { useTooltip } from "./useTooltip";
 
 interface Props {
-    text: string;
+    title: string;
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
 }
 
-export const InfoTooltipHover = ({ text, className, children, customComponentsProps }: PropsWithChildren<Props>) => {
-    const { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip({ customComponentsProps });
+export const InfoTooltipHover = ({ title, className, children, customComponentsProps }: PropsWithChildren<Props>) => {
+    const { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipOpen, handleSetTooltipClose } = useTooltip({ customComponentsProps });
 
     return (
         <Tooltip
             title={
                 <div ref={tooltipRef}>
-                    <StyledInfoMarkdown>{text}</StyledInfoMarkdown>
+                    <StyledInfoMarkdown>{title}</StyledInfoMarkdown>
                 </div>
             }
             placement="bottom-start"
@@ -31,8 +31,9 @@ export const InfoTooltipHover = ({ text, className, children, customComponentsPr
             disableTouchListener
             componentsProps={componentsProps}
             className={className}
+            TransitionProps={{ timeout: 300 }}
         >
-            <StyledInfoChildrenWrapper onMouseEnter={handleToggleTooltip} onMouseLeave={handleToggleTooltip}>
+            <StyledInfoChildrenWrapper onMouseEnter={handleSetTooltipOpen} onMouseLeave={handleSetTooltipClose}>
                 {children}
             </StyledInfoChildrenWrapper>
         </Tooltip>

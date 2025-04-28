@@ -22,7 +22,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
         <Box sx={(theme) => ({ border: `1px solid ${theme.palette.success.main}`, padding: "5px" })}>
             <FormControl>
                 <FormLabel>
-                    <InfoTooltip text={"Variables in test case"} variant={"hover"}>
+                    <InfoTooltip title={"Variables in test case"} variant={"hover"}>
                         <InfoIcon />
                     </InfoTooltip>
                 </FormLabel>

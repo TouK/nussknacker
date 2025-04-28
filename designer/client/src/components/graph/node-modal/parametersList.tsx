@@ -3,6 +3,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { CopyIconButton, useCopyClipboard } from "../../../common/copyToClipboard";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import type { Parameter } from "../../../types";
 import { getValidationErrorsForField } from "./editors/Validators";
@@ -27,6 +28,7 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
     const { node } = props;
     const scenarioState = useSelector(getProcessState);
     const { t } = useTranslation();
+    const [isCopied, copy] = useCopyClipboard();
 
     return (
         <>
@@ -35,6 +37,23 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                     <ParameterExpressionField
                         listFieldPath={getListFieldPath(paramWithIndex.index)}
                         parameter={paramWithIndex.param}
+                        endAdornment={
+                            paramWithIndex.param.name === "Endpoint" && (
+                                <CopyIconButton
+                                    onClick={() => {
+                                        const possibleValues = props.parameterDefinitions.find(
+                                            (parameterDefinition) => parameterDefinition.name === "Endpoint",
+                                        ).editors[0].possibleValues;
+
+                                        const selectedValue = possibleValues.find(
+                                            (possibleValue) => possibleValue.expression === paramWithIndex.param.expression.expression,
+                                        );
+                                        copy(selectedValue.label);
+                                    }}
+                                    isCopied={isCopied}
+                                />
+                            )
+                        }
                         {...props}
                     />
                     {paramWithIndex.param.name === "Endpoint" && (

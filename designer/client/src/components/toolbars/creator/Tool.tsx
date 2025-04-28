@@ -43,7 +43,7 @@ export default function Tool(props: OwnProps): JSX.Element {
             <div className="toolWrapper">
                 <ComponentIcon node={nodeModel} className="toolIcon" />
                 <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
-                {tooltip ? <InfoTooltip variant={"hover"} text={tooltip} /> : ""}
+                {tooltip ? <InfoTooltip variant={"hover"} title={tooltip} /> : ""}
             </div>
         </div>
     );

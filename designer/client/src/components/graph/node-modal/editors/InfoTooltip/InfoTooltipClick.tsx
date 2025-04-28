@@ -7,12 +7,12 @@ import { StyledInfoChildrenWrapper, StyledInfoMarkdown } from "./StyledInfo";
 import { useTooltip } from "./useTooltip";
 
 interface Props {
-    text: string;
+    title: string;
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
 }
 
-export const InfoTooltipClick = ({ text, className, customComponentsProps, children }: PropsWithChildren<Props>) => {
+export const InfoTooltipClick = ({ title, className, customComponentsProps, children }: PropsWithChildren<Props>) => {
     const { tooltipRef, tooltipOpen, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip({ customComponentsProps });
 
     const handleIconClick = (e) => {
@@ -32,7 +32,7 @@ export const InfoTooltipClick = ({ text, className, customComponentsProps, child
             <Tooltip
                 title={
                     <div ref={tooltipRef}>
-                        <StyledInfoMarkdown>{text}</StyledInfoMarkdown>
+                        <StyledInfoMarkdown>{title}</StyledInfoMarkdown>
                     </div>
                 }
                 placement={"bottom-start"}

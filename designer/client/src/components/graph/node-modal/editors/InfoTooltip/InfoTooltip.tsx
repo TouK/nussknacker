@@ -7,24 +7,24 @@ import { InfoTooltipHover } from "./InfoTooltipHover";
 import { StyledInfo } from "./StyledInfo";
 
 interface Props {
-    text: string | undefined;
+    title: string | undefined;
     variant?: "hover" | "click";
     children?: ReactElement;
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
 }
 
-export const InfoTooltip = ({ text, variant = "click", children = <StyledInfo />, className, customComponentsProps }: Props) => {
-    if (!text) {
+export const InfoTooltip = ({ title, variant = "click", children = <StyledInfo />, className, customComponentsProps }: Props) => {
+    if (!title) {
         return children;
     }
 
     return variant === "hover" ? (
-        <InfoTooltipHover text={text} className={className} customComponentsProps={customComponentsProps}>
+        <InfoTooltipHover title={title} className={className} customComponentsProps={customComponentsProps}>
             {children}
         </InfoTooltipHover>
     ) : (
-        <InfoTooltipClick text={text} className={className} customComponentsProps={customComponentsProps}>
+        <InfoTooltipClick title={title} className={className} customComponentsProps={customComponentsProps}>
             {children}
         </InfoTooltipClick>
     );

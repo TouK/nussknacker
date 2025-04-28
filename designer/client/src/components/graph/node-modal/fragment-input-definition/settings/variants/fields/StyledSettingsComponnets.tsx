@@ -5,7 +5,6 @@ import React from "react";
 import { blendLighten } from "../../../../../../../containers/theme/helpers";
 import { StyledNodeTip } from "../../../../FieldLabel";
 
-
 export const SettingsWrapper = styled("div")(({ theme }) => ({
     padding: "10px",
     width: "100%",
@@ -71,6 +70,6 @@ export const CustomSwitch = styled(Switch)`
 export const fieldLabel = ({ label, required = false, hintText }: { label: string; required?: boolean; hintText?: string }) => (
     <SettingLabelStyled required={required}>
         {label}
-        {hintText && <StyledNodeTip variant={"hover"} text={hintText} />}
+        {hintText && <StyledNodeTip variant={"hover"} title={hintText} />}
     </SettingLabelStyled>
 );

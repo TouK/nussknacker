@@ -52,7 +52,7 @@ export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: P
                     title={t("node.actions.sendRequest.button.title", "Send Request")}
                     action={handleSendHttpRequest}
                 />
-                {infoTooltip && <InfoTooltip text={infoTooltip} variant={"hover"} />}
+                {infoTooltip && <InfoTooltip title={infoTooltip} variant={"hover"} />}
             </Box>
 
             <Collapse sx={{ width: "80%" }} in={showInfoAfterSendData} timeout="auto">
