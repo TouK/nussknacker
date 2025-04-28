@@ -814,7 +814,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("flink row projection typing") {
     val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
     // TODO_PAWEL maybe do it in a way that preserves order? is it possible?
-    val validationResult = parseV[JInteger]("#flinkTableApiRow.![#this.value].^[#this == 42].get(0)", validationCtx)
+    val validationResult = parseV[JInteger]("#flinkTableApiRow.![#this.value].^[#this == 42]", validationCtx)
     val typingResult     = validationResult.validValue.typingInfo.typingResult
     typingResult shouldBe Typed[Int]
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
@@ -830,6 +830,28 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     // TODO_PAWEL byc moze zly tu jest
     typingResult shouldBe Typed[Int]
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  private def prepareFlinkRowTest: (ValidationContext, Context) = {
+    val validationCtx = ValidationContext.empty
+      .withVariable(
+        "flinkTableApiRow",
+        Typed.record(
+          Map(
+            "foo" -> Typed[Int],
+            "bar" -> Typed[Int],
+          ),
+          Typed.genericTypeClass(classOf[org.apache.flink.types.Row], List())
+        ),
+        paramName = None
+      )
+      .toOption
+      .get
+    val record = Row.withNames()
+    record.setField("foo", 42)
+    record.setField("bar", 43)
+    val ctxWithMap = ctx.withVariable("flinkTableApiRow", record)
+    (validationCtx, ctxWithMap)
   }
 
   test("literal map selecting by key") {
@@ -866,28 +888,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     record.put("foo", 42)
     record.put("bar", 43)
     val ctxWithMap = ctx.withVariable("genericRecord", record)
-    (validationCtx, ctxWithMap)
-  }
-
-  private def prepareFlinkRowTest: (ValidationContext, Context) = {
-    val validationCtx = ValidationContext.empty
-      .withVariable(
-        "flinkTableApiRow",
-        Typed.record(
-          Map(
-            "foo" -> Typed[Int],
-            "bar" -> Typed[Int],
-          ),
-          Typed.genericTypeClass(classOf[org.apache.flink.types.Row], List())
-        ),
-        paramName = None
-      )
-      .toOption
-      .get
-    val record = Row.withNames()
-    record.setField("foo", 42)
-    record.setField("bar", 43)
-    val ctxWithMap = ctx.withVariable("flinkTableApiRow", record)
     (validationCtx, ctxWithMap)
   }
 
