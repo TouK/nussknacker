@@ -1,4 +1,4 @@
-import { Alert, Box } from "@mui/material";
+import { Alert, Box, Collapse } from "@mui/material";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -38,7 +38,6 @@ export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: P
                     }),
                 );
             }
-
             setShowInfoAfterSendData(true);
         } catch (error) {
             console.error("Error sending request:", error);
@@ -56,18 +55,18 @@ export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: P
                 {infoTooltip && <InfoTooltip text={infoTooltip} variant={"hover"} />}
             </Box>
 
-            {showInfoAfterSendData && (
+            <Collapse sx={{ width: "80%" }} in={showInfoAfterSendData} timeout="auto">
                 <Alert
                     icon={false}
+                    sx={{ width: "100%" }}
                     severity="success"
-                    sx={{ width: "80%" }}
                     onClose={() => {
                         setShowInfoAfterSendData(false);
                     }}
                 >
                     TODO
                 </Alert>
-            )}
+            </Collapse>
         </Box>
     );
 };
