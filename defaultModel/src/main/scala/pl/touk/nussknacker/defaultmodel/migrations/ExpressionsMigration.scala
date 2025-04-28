@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.node.{
 }
 import pl.touk.nussknacker.engine.graph.variable.Field
 
-class ExpressionMigration(
+class ExpressionsMigration(
     private val mapping: PartialFunction[Expression, Expression]
 ) {
 
