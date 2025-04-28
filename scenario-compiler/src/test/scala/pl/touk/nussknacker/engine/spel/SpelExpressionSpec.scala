@@ -813,7 +813,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("flink row projection typing") {
     val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
-    // TODO_PAWEL maybe do it in a way that preserves order? is it possible?
     val validationResult = parseV[JInteger]("#flinkTableApiRow.![#this.value].^[#this == 42]", validationCtx)
     val typingResult     = validationResult.validValue.typingInfo.typingResult
     typingResult shouldBe Typed[Int]
@@ -822,12 +821,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("flink row selection typing") {
     val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
-    // TODO_PAWEL nowy tutaj podejrzane, ze nie moge zrobic metody .get() na tym table api row
-//    val validationResult = parseV[JInteger]("#flinkTableApiRow.?[#this.key == 'foo'].get('foo')", validationCtx)
-    // TODO_PAWEL nowy dziwne, ze to .foo dziala, no ale jeszcze Arek cos zmieni i ja sie dostosuje
-    val validationResult = parseV[JInteger]("#flinkTableApiRow.?[#this.key == 'foo'].foo", validationCtx)
+    val validationResult = parseV[JInteger]("#flinkTableApiRow.?[#this.key == 'foo'].get('foo')", validationCtx)
     val typingResult     = validationResult.validValue.typingInfo.typingResult
-    // TODO_PAWEL byc moze zly tu jest
     typingResult shouldBe Typed[Int]
     validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
   }
