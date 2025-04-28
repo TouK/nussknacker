@@ -328,6 +328,7 @@ val jacksonV                = "2.17.2"
 val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
 val everitSchemaV           = "1.14.4"
+val fastParseV              = "3.1.1"
 val slf4jV                  = "1.7.36"
 val scalaLoggingV           = "3.9.5"
 val scalaCompatV            = "1.0.2"
@@ -848,6 +849,7 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
       Seq(
         "org.typelevel"          %% "cats-effect"                   % catsEffectV,
         "org.scala-lang.modules" %% "scala-java8-compat"            % scalaCompatV,
+        "com.lihaoyi"            %% "fastparse"                     % fastParseV,
         "org.apache.avro"         % "avro"                          % avroV          % Test,
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,

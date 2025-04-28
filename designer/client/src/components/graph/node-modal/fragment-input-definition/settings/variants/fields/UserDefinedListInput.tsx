@@ -1,22 +1,23 @@
-import { SettingLabelStyled } from "./StyledSettingsComponnets";
-import { ExpressionLang } from "../../../../editors/expression/types";
-import AceEditor from "react-ace";
-import { ListItems } from "./ListItems";
-import React, { useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { FieldName, FixedValuesOption, onChangeType } from "../../../item";
-import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
-import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
-import HttpService from "../../../../../../../http/HttpService";
-import { useSelector } from "react-redux";
-import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
-import { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
-import { debounce } from "lodash";
-import { useSettings } from "../../SettingsProvider";
 import { Box, Button, CircularProgress, FormControl, Stack } from "@mui/material";
+import { debounce } from "lodash";
+import React, { useMemo, useRef, useState } from "react";
+import type AceEditor from "react-ace";
+import type { IAceEditor } from "react-ace/lib/types";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+
+import type { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
+import HttpService from "../../../../../../../http/HttpService";
+import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
+import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
-import { IAceEditor } from "react-ace/lib/types";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
+import { ExpressionLang } from "../../../../editors/expression/types";
+import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
+import type { FieldName, FixedValuesOption, onChangeType } from "../../../item";
+import { useSettings } from "../../SettingsProvider";
+import { ListItems } from "./ListItems";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
 const ENTER_VALUE_COMMAND = "addValueOnEnter";
 
@@ -187,7 +188,7 @@ export const UserDefinedListInput = ({
                         validationLabelInfo={
                             temporaryValuesTyping && <CircularProgress size={"1rem"} sx={(theme) => ({ marginTop: theme.spacing(0.5) })} />
                         }
-                        expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
+                        expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem.trim() }}
                         onValueChange={(value) => {
                             setTemporaryListItem(value.expression);
                             setTemporaryValuesTyping(true);
