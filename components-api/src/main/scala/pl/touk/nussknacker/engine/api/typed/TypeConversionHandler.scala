@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.api.typed
 import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
 import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.util.AssignabilityUtil
 
 import java.nio.charset.Charset
@@ -23,6 +22,7 @@ import scala.util.Try
 private[engine] object TypeConversionHandler {
 
   private val javaListClass            = classOf[java.util.List[_]]
+  private val javaCollectionClass      = classOf[java.util.Collection[_]]
   private val javaMapClass             = classOf[java.util.Map[_, _]]
   private val arrayOfAnyRefClass       = classOf[Array[AnyRef]]
   private val mapConvertableClassNames = List("org.apache.avro.generic.IndexedRecord", "org.apache.flink.types.Row")
@@ -74,9 +74,13 @@ private[engine] object TypeConversionHandler {
 
   def canBeConverted(from: SingleTypingResult, to: TypedClass)(
       implicit conversionStrategy: NonEmptyConversionStrategy
-  ): Boolean = {
-    handleImplicitConversion(from, to) ||
-    handleNumberConversion(from.runtimeObjType, to)
+  ): Option[SingleTypingResult] = {
+    if (from.runtimeObjType == to) {
+      None
+    } else {
+      handleImplicitConversion(from, to) orElse
+        Option.when(handleNumberConversion(from.runtimeObjType, to))(to)
+    }
   }
 
   private def handleImplicitConversion(from: SingleTypingResult, to: TypedClass)(
@@ -84,11 +88,11 @@ private[engine] object TypeConversionHandler {
   ) = {
     conversionStrategy match {
       // Implicit conversions are not allowed in strict conversion strategy. We want to behave as plain java, without magical tricks.
-      case Strict => false
+      case Strict => None
       case Loose =>
-        handleStringToValueClassConversions(from, to) ||
-        handleArrayToListConversions(from.runtimeObjType, to) ||
-        handleMapConversions(from, to)
+        Option.when(handleStringToValueClassConversions(from, to))(to) orElse
+          handleArrayToListConversions(from.runtimeObjType, to) orElse
+          handleMapConversions(from, to)
     }
   }
 
@@ -135,13 +139,16 @@ private[engine] object TypeConversionHandler {
     }
 
   // See pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
-  private def handleArrayToListConversions(from: TypedClass, to: TypedClass): Boolean = {
+  private def handleArrayToListConversions(from: TypedClass, to: TypedClass): Option[SingleTypingResult] = {
     (from, to) match {
       // Generic type parameters are checked in AssignabilityDeterminer
-      case (TypedClass(`arrayOfAnyRefClass`, _), TypedClass(`javaListClass`, _)) =>
-        true
+      case (
+            TypedClass(`arrayOfAnyRefClass`, genericParam :: Nil),
+            TypedClass(`javaListClass` | `javaCollectionClass`, _)
+          ) =>
+        Some(Typed.genericTypeClass(javaListClass, genericParam :: Nil))
       case _ =>
-        false
+        None
     }
   }
 
@@ -150,7 +157,7 @@ private[engine] object TypeConversionHandler {
       to: TypedClass
   )(
       implicit conversionStrategy: NonEmptyConversionStrategy
-  ): Boolean =
+  ): Option[SingleTypingResult] =
     (from.withoutValue, to) match {
       case (
             TypedObjectTypingResult(fromFields, TypedClass(fromRuntimeObjClass, _), _),
@@ -158,12 +165,16 @@ private[engine] object TypeConversionHandler {
           ) =>
         lazy val indexedRecordValueType = superTypeOfTypes(fromFields.values)
 
-        mapConvertableClassNames.exists(className =>
-          AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, className)
-        ) &&
-        AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
-        AssignabilityDeterminer.isAssignable(indexedRecordValueType, mapValueParam).isValid
-      case _ => false
+        Option.when(
+          mapConvertableClassNames.exists(className =>
+            AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, className)
+          ) &&
+            AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
+            AssignabilityDeterminer.isAssignable(indexedRecordValueType, mapValueParam).isValid
+        )(
+          Typed.record(fromFields, Typed.genericTypeClass(javaMapClass, Typed[String] :: indexedRecordValueType :: Nil))
+        )
+      case _ => None
     }
 
 }
