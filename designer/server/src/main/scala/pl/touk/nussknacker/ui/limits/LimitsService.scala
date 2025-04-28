@@ -6,6 +6,11 @@ import cats.effect.std.Mutex
 import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.{
+  DontReplaceDeployment,
+  ReplaceDeploymentWithSameScenarioName
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.ActiveScenariosLimitExceededError
@@ -21,18 +26,20 @@ class LimitsService(
 
   def checkScenarioLimitsBeforeDeploymentUnsafe(
       deployingScenario: ProcessName,
-      scenarioProcessingType: ProcessingType
+      deployingScenarioProcessingType: ProcessingType,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy
   )(implicit user: LoggedUser): IO[Either[LimitError, Unit]] = {
-    checkAllLimits(deployingScenario, scenarioProcessingType).value
+    checkAllLimits(deployingScenario, deployingScenarioProcessingType, deploymentUpdateStrategy).value
   }
 
   def checkScenarioLimitsBeforeDeployment[ACTION_RESULT](
       deployingScenario: ProcessName,
-      scenarioProcessingType: ProcessingType
+      deployingScenarioProcessingType: ProcessingType,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy,
   )(withinLimitsAction: IO[ACTION_RESULT])(implicit user: LoggedUser): IO[Either[LimitError, ACTION_RESULT]] = {
     limitsServiceLock.surround {
       val result = for {
-        _      <- checkAllLimits(deployingScenario, scenarioProcessingType)
+        _      <- checkAllLimits(deployingScenario, deployingScenarioProcessingType, deploymentUpdateStrategy)
         result <- EitherT.right[LimitError](withinLimitsAction)
       } yield result
       result.value
@@ -41,11 +48,12 @@ class LimitsService(
 
   private def checkAllLimits(
       deployingScenario: ProcessName,
-      scenarioProcessingType: ProcessingType
+      deployingScenarioProcessingType: ProcessingType,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy,
   )(implicit user: LoggedUser) = {
     for {
-      _ <- checkPerProcessingTypeLimits(deployingScenario, scenarioProcessingType)
-      _ <- checkGlobalLimits(deployingScenario)
+      _ <- checkPerProcessingTypeLimits(deployingScenario, deployingScenarioProcessingType, deploymentUpdateStrategy)
+      _ <- checkGlobalLimits(deployingScenario, deploymentUpdateStrategy)
     } yield ()
   }
 
@@ -57,18 +65,20 @@ class LimitsService(
 
   private def checkPerProcessingTypeLimits(
       deployingScenario: ProcessName,
-      scenarioProcessingType: ProcessingType
+      deployingScenarioProcessingType: ProcessingType,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy,
   )(implicit user: LoggedUser): EitherT[IO, ActiveScenariosLimitExceededError, Unit] = {
-    activeScenariosLimitProvider.forProcessingType(scenarioProcessingType) match {
+    activeScenariosLimitProvider.forProcessingType(deployingScenarioProcessingType) match {
       case Some(LimitsConfig(Some(activeScenariosLimit))) =>
         EitherT {
           scenarioStatusProvider
-            .getActiveScenariosFor(scenarioProcessingType)
+            .getActiveScenariosFor(deployingScenarioProcessingType)
             .map { currentlyActiveScenarios =>
               checkCurrentlyActiveScenariosLimit(
                 deployingScenario,
                 currentlyActiveScenarios,
-                activeScenariosLimit.value
+                activeScenariosLimit.value,
+                deploymentUpdateStrategy
               )
             }
         }
@@ -78,7 +88,8 @@ class LimitsService(
   }
 
   private def checkGlobalLimits(
-      deployingScenario: ProcessName
+      deployingScenario: ProcessName,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy,
   ): EitherT[IO, ActiveScenariosLimitExceededError, Unit] = {
     globalLimitsConfig.activeScenariosLimit match {
       case Some(activeScenariosLimit) =>
@@ -91,7 +102,8 @@ class LimitsService(
               checkCurrentlyActiveScenariosLimit(
                 deployingScenario,
                 currentlyActiveScenarios,
-                activeScenariosLimit.value
+                activeScenariosLimit.value,
+                deploymentUpdateStrategy
               )
             }
         }
@@ -103,18 +115,22 @@ class LimitsService(
   private def checkCurrentlyActiveScenariosLimit(
       currentlyDeployingScenario: ProcessName,
       currentlyActiveScenarios: Set[ProcessName],
-      activeScenariosLimit: Int
+      activeScenariosLimit: Int,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy,
   ) = {
-    if (currentlyActiveScenarios.contains(currentlyDeployingScenario)) {
-      Right(())
-    } else if (currentlyActiveScenarios.size + 1 <= activeScenariosLimit) {
-      Right(())
-    } else {
-      logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
-           |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
-           |Scenario is being deployed: $currentlyDeployingScenario.
-           |""".stripMargin)
-      Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
+    deploymentUpdateStrategy match {
+      case ReplaceDeploymentWithSameScenarioName(_) if currentlyActiveScenarios.contains(currentlyDeployingScenario) =>
+        Right(())
+      case ReplaceDeploymentWithSameScenarioName(_) | DontReplaceDeployment =>
+        if (currentlyActiveScenarios.size + 1 <= activeScenariosLimit) {
+          Right(())
+        } else {
+          logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
+               |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
+               |Scenario is being deployed: $currentlyDeployingScenario.
+               |""".stripMargin)
+          Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
+        }
     }
   }
 

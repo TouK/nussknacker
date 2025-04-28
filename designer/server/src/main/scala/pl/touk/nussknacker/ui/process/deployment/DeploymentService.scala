@@ -136,7 +136,7 @@ class DeploymentService(
         case _ => Future.successful(())
       }
       // 2. limits check
-      _ <- checkActiveScenariosLimits(scenarioDetails, user)
+      _ <- checkActiveScenariosLimits(scenarioDetails, user, runDeploymentCommand.updateStrategy)
       // 3. deployment managers specific checks
       // TODO: scenario was already resolved during validation - use it here
       _ <- dispatcher
@@ -154,13 +154,14 @@ class DeploymentService(
 
   private def checkActiveScenariosLimits(
       scenario: ScenarioWithDetailsEntity[CanonicalProcess],
-      deployer: LoggedUser
+      deployer: LoggedUser,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy,
   ) = {
     implicit val loggedUser: LoggedUser = deployer
     // note: we use "unsafe" version here (without critical section), because we're already in the actions critical section,
     //       so there is no way to have two deployments at the same time. The limits will be assured.
     limitsService
-      .checkScenarioLimitsBeforeDeploymentUnsafe(scenario.name, scenario.processingType)
+      .checkScenarioLimitsBeforeDeploymentUnsafe(scenario.name, scenario.processingType, deploymentUpdateStrategy)
       .map {
         case Right(())              => ()
         case Left(error: Throwable) => throw error

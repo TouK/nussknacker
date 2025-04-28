@@ -85,7 +85,8 @@ class DeploymentService(
         permission = Permission.Deploy
       )
       scenarioGraphVersion <- getScenarioGraphVersion(scenarioMetadata, command.user)
-      _ <- checkActiveScenariosLimits(scenarioMetadata, command.user) {
+      deploymentUpdateStrategy = DeploymentUpdateStrategy.DontReplaceDeployment
+      _ <- checkActiveScenariosLimits(scenarioMetadata, command.user, deploymentUpdateStrategy) {
         IO.fromFuture(IO {
           val result = for {
             _ <- validateDeployment(scenarioMetadata, scenarioGraphVersion, command.user)
@@ -94,7 +95,12 @@ class DeploymentService(
             // TODO: We should key metrics by deployment id and remove this limitation
             // Saving of deployment is the final step before deployment request because we want to store only requested deployments
             _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
-            _ <- runDeploymentUsingDeploymentManagerAsync(scenarioMetadata, scenarioGraphVersion, command)
+            _ <- runDeploymentUsingDeploymentManagerAsync(
+              scenarioMetadata,
+              scenarioGraphVersion,
+              command,
+              deploymentUpdateStrategy
+            )
           } yield ()
           result.value
         })
@@ -184,11 +190,16 @@ class DeploymentService(
 
   private def checkActiveScenariosLimits(
       scenarioMetadata: ScenarioMetadata,
-      deployer: LoggedUser
+      deployer: LoggedUser,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy
   )(action: IO[Either[RunDeploymentError, Unit]]): EitherT[Future, RunDeploymentError, Unit] = EitherT {
     implicit val loggedUser: LoggedUser = deployer
     limitsService
-      .checkScenarioLimitsBeforeDeployment(scenarioMetadata.name, scenarioMetadata.processingType)(action)
+      .checkScenarioLimitsBeforeDeployment(
+        scenarioMetadata.name,
+        scenarioMetadata.processingType,
+        deploymentUpdateStrategy
+      )(action)
       .map {
         case Left(LimitError.ActiveScenariosLimitExceededError(limit)) => Left(ActiveScenariosLimitExceededError(limit))
         case Right(result)                                             => result
@@ -233,7 +244,8 @@ class DeploymentService(
   private def runDeploymentUsingDeploymentManagerAsync(
       scenarioMetadata: ScenarioMetadata,
       scenarioGraphVersion: ProcessVersionEntityData,
-      command: RunDeploymentCommand
+      command: RunDeploymentCommand,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy
   ): EitherT[Future, RunDeploymentError, Unit] = {
     val runtimeVersionData = processVersionFor(scenarioMetadata, scenarioGraphVersion)
     val deploymentData = createDeploymentData(
@@ -249,7 +261,7 @@ class DeploymentService(
           runtimeVersionData,
           deploymentData,
           scenarioGraphVersion.jsonUnsafe,
-          DeploymentUpdateStrategy.DontReplaceDeployment
+          deploymentUpdateStrategy
         )
       )
       .map { externalDeploymentId =>
