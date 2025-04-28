@@ -992,7 +992,7 @@ class HttpService {
 
     async nodeActions(scenarioName: string, actionName: "send-sample-request" | "generate-endpoint", nodeData: NodeType) {
         try {
-            return await api.post(`nodes/${scenarioName}/actions`, { actionName, nodeData });
+            return await api.post(`/custom/nodes/${scenarioName}/actions`, { actionName, nodeData });
         } catch (error) {
             return await Promise.reject(
                 this.#addError(i18next.t("notification.error.failedToSendHttpRequest", `Failed to send ${actionName} action`), error),

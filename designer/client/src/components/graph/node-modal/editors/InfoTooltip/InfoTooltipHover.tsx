@@ -1,4 +1,5 @@
 import { Tooltip } from "@mui/material";
+import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
@@ -8,10 +9,11 @@ import { useTooltip } from "./useTooltip";
 interface Props {
     text: string;
     className?: string;
+    customComponentsProps?: TooltipProps["componentsProps"];
 }
 
-export const InfoTooltipHover = ({ text, className, children }: PropsWithChildren<Props>) => {
-    const { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip();
+export const InfoTooltipHover = ({ text, className, children, customComponentsProps }: PropsWithChildren<Props>) => {
+    const { tooltipOpen, tooltipRef, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip({ customComponentsProps });
 
     return (
         <Tooltip

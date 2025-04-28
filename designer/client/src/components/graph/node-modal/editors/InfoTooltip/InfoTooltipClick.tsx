@@ -1,4 +1,5 @@
 import { ClickAwayListener, Tooltip } from "@mui/material";
+import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
 import type { PropsWithChildren } from "react";
 import React from "react";
 
@@ -8,10 +9,11 @@ import { useTooltip } from "./useTooltip";
 interface Props {
     text: string;
     className?: string;
+    customComponentsProps?: TooltipProps["componentsProps"];
 }
 
-export const InfoTooltipClick = ({ text, className, children }: PropsWithChildren<Props>) => {
-    const { tooltipRef, tooltipOpen, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip();
+export const InfoTooltipClick = ({ text, className, customComponentsProps, children }: PropsWithChildren<Props>) => {
+    const { tooltipRef, tooltipOpen, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip({ customComponentsProps });
 
     const handleIconClick = (e) => {
         handleToggleTooltip(e);

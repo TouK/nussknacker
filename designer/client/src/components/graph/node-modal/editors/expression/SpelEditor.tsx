@@ -75,6 +75,9 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
             properties.placeholder = placeholder || t("editors.spelEditor.placeholder", "e.g. #input.someField");
             properties.InputAdornmentEnd = (
                 <InfoTooltip
+                    customComponentsProps={{
+                        tooltip: { sx: { maxWidth: "none" } },
+                    }}
                     text={t(
                         "editors.spelEditor.infoText",
                         `You are using an expression-based input, allowing calculations and conditions. Access variables and helpers with \`#\`, e.g., \`#input.someField == 'value'\` or \`#UTIL.split('foo-bar', '-')\`. \n 
@@ -90,6 +93,9 @@ Use autocompletion to explore available options. To read more see [Documentation
             properties.placeholder = placeholder || t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");
             properties.InputAdornmentEnd = (
                 <InfoTooltip
+                    customComponentsProps={{
+                        tooltip: { sx: { maxWidth: "none" } },
+                    }}
                     text={t(
                         "editors.spelTemplateEditor.infoText",
                         `You are using a string-template-based input, allowing text with embedded expressions. Text should not be quoted. \n 
