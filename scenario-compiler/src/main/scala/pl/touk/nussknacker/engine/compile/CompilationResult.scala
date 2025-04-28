@@ -115,10 +115,24 @@ object CompilationResult extends Applicative[CompilationResult] {
         case head :: tail =>
           rawValue.copy(
             typing = rawValue.typing.filterKeysNow(key => !key.startsWith(MaybeArtificial.DummyObjectNamePrefix)),
-            result = Invalid(fromUncanonizationErrors(NonEmptyList(head, tail)))
+            result = Invalid(fromUncanonizationErrors(NonEmptyList(head, tail ++ uncanonizationErrors(rawValue))))
           )
       }
     }
+
+  private def uncanonizationErrors[A](
+      compilationResult: CompilationResult[A]
+  ): List[canonize.ProcessUncanonizationError] = {
+    compilationResult.result match {
+      case Valid(_) => List.empty
+      case Invalid(e) =>
+        e.collect {
+          case EmptyProcess                 => List(canonize.EmptyProcess)
+          case InvalidRootNode(nodeIds)     => nodeIds.map(canonize.InvalidRootNode).toList
+          case InvalidTailOfBranch(nodeIds) => nodeIds.map(canonize.InvalidTailOfBranch).toList
+        }.flatten
+    }
+  }
 
   implicit def mergingTypingInfoSemigroup: Semigroup[NodeTypingInfo] = new Semigroup[NodeTypingInfo] with LazyLogging {
 

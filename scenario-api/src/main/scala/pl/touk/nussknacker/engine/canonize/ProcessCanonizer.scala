@@ -96,8 +96,8 @@ object ProcessCanonizer {
           node.SwitchNode(data, nextsV, Some(defaultNextV))
         }
 
-      case (a @ canonicalnode.SplitNode(bare, Nil)) :: Nil =>
-        MaybeArtificial.artificialSink(InvalidTailOfBranch(bare.id))
+      case canonicalnode.SplitNode(bare, Nil) :: Nil =>
+        MaybeArtificial.artificialDeadEndSink(bare.id)
 
       case (a @ canonicalnode.SplitNode(bare, nexts)) :: Nil =>
         nexts.map(uncanonize(a, _)).sequence[MaybeArtificial, node.SubsequentNode].map { uncanonized =>

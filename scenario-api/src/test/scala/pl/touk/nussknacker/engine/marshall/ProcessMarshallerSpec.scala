@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.marshall
 
-import cats.data.NonEmptyList
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Valid
 import io.circe.{Codec, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.syntax._
@@ -9,15 +8,14 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
@@ -223,10 +221,35 @@ class ProcessMarshallerSpec
   it should "detect bad branch" in {
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
-      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty))) {
-        case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
+      inside(
+        ProcessCanonizer
+          .uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty))
+          .map(ProcessCanonizer.canonize)
+          .map(canonicalProcess => sinks(canonicalProcess.nodes))
+      ) { case Valid(sinks) =>
+        sinks.collectFirst {
+          case sink: MaybeArtificial.ArtificialDeadEndSink if sink.previousNodeId == expectedBadNodeId => ()
+        } shouldBe defined
       }
     }
+
+    def sinks(nodes: List[CanonicalNode]): List[node.Sink] = {
+      nodes.flatMap {
+        case canonicalnode.FlatNode(sink: node.Sink) =>
+          List(sink)
+        case canonicalnode.FlatNode(_) =>
+          List.empty
+        case canonicalnode.SplitNode(_, nexts) =>
+          nexts.flatMap(sinks)
+        case canonicalnode.FilterNode(_, nextFalse) =>
+          sinks(nextFalse)
+        case canonicalnode.SwitchNode(_, cases, defaultNext) =>
+          cases.flatMap(c => sinks(c.nodes)) ::: sinks(defaultNext)
+        case canonicalnode.Fragment(_, outputs) =>
+          outputs.toList.flatMap { case (_, value) => sinks(value) }
+      }
+    }
+
     val source = FlatNode(Source("s1", SourceRef("a", List())))
 
     checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression(Language.Spel, "")), List()))
