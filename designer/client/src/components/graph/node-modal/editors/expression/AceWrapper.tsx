@@ -133,7 +133,7 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
     if (editorMode) {
         return editorMode.valueOf();
     }
-    if (language === ExpressionLang.TabularDataDefinition || language === ExpressionLang.JsonTemplate) {
+    if (language === ExpressionLang.TabularDataDefinition) {
         return ExpressionLang.JSON;
     }
     return language;
