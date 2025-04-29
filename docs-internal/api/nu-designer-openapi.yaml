@@ -5822,6 +5822,9 @@ components:
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
+    JsonTemplateParameterEditor:
+      title: JsonTemplateParameterEditor
+      type: object
     LayoutData:
       title: LayoutData
       type: object
@@ -6685,6 +6688,7 @@ components:
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/JsonTemplateParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
@@ -7234,6 +7238,7 @@ components:
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/JsonTemplateParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/StaticStringParameterEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'

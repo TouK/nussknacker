@@ -107,6 +107,8 @@ class SpelExpression(
 
   override val language: Language = flavour.languageId
 
+  val parsedSpringExpression: Expression = parsed.parsed
+
   private val expectedClass =
     expectedReturnType match {
       case r: SingleTypingResult =>

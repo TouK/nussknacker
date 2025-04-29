@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
 import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment.{
+  ConvertionIsNeeded,
+  NoConvertionIsNeeded
+}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
 import pl.touk.nussknacker.engine.api.typed.typing._
 
@@ -17,18 +21,33 @@ import pl.touk.nussknacker.engine.api.typed.typing._
  * 2. Strict conversion checks whether we can convert to a wider type. Eg only widening numerical types
  * are allowed ( Int -> Long). For other types it should work the same as a loose conversion.
  */
-private[typed] object AssignabilityDeterminer {
+private[engine] object AssignabilityDeterminer {
 
   private val javaMapClass       = classOf[java.util.Map[_, _]]
   private val javaListClass      = classOf[java.util.List[_]]
   private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
 
+  def typeAfterPotentialConversion(givenType: TypingResult, targetType: TypingResult)(
+      implicit conversionStrategy: NonEmptyConversionStrategy
+  ): Validated[NonEmptyList[String], TypingResult] = {
+    isAssignable(givenType, targetType).map {
+      case NoConvertionIsNeeded                    => givenType
+      case ConvertionIsNeeded(typeAfterConversion) => typeAfterConversion
+    }
+  }
+
+  /**
+   * @return Valid if assignment is possible. Inner type (ConversionNecessaryForTypeAssignment) tell us if
+   *         assignment is possible only after the conversion. For ConversionStrategy = NoConversion it
+   *         will always return NoConvertionIsNeeded, for ConversionStrategy = Strict it
+   *         can return ConvertionIsNeeded only with numeric type passed in to (only when conversion is necessary and safe)
+   */
   def isAssignable(from: TypingResult, to: TypingResult)(
       implicit conversionStrategy: ConversionStrategy
-  ): ValidatedNel[String, Unit] = {
+  ): ValidatedNel[String, ConversionNecessaryForTypeAssignment] = {
     (from, to) match {
-      case (_, Unknown(_))    => ().validNel
-      case (Unknown(_), _)    => ().validNel
+      case (_, Unknown(_))    => NoConvertionIsNeeded.validNel
+      case (Unknown(_), _)    => NoConvertionIsNeeded.validNel
       case (TypedNull, other) => isNullAssignableTo(other)
       case (_, TypedNull)     => s"${from.display} cannot be assigned to ${TypedNull.display}".invalidNel
       case (given: SingleTypingResult, target: TypedUnion) =>
@@ -42,42 +61,41 @@ private[typed] object AssignabilityDeterminer {
     }
   }
 
-  private def isNullAssignableTo(to: TypingResult): ValidatedNel[String, Unit] = to match {
-    // TODO: Null should not be subclass of typed map that has all values assigned.
-    case TypedObjectWithValue(_, _) => s"${TypedNull.display} cannot be assigned to type with value".invalidNel
-    case _                          => ().validNel
-  }
+  private def isNullAssignableTo(to: TypingResult): ValidatedNel[String, ConversionNecessaryForTypeAssignment] =
+    to match {
+      // TODO: Null should not be subclass of typed map that has all values assigned.
+      case TypedObjectWithValue(_, _) => s"${TypedNull.display} cannot be assigned to type with value".invalidNel
+      case _                          => NoConvertionIsNeeded.validNel
+    }
 
   private def isSingleAssignableToSingle(from: SingleTypingResult, to: SingleTypingResult)(
       implicit conversionStrategy: ConversionStrategy
-  ): ValidatedNel[String, Unit] = {
-    val objTypeRestriction = isSingleAssignableToTypedClass(from, to.runtimeObjType)
-    val typedObjectRestrictions = (_: Unit) =>
-      to match {
-        case target: TypedObjectTypingResult =>
-          val givenTypeFields = from match {
-            case given: TypedObjectTypingResult => given.fields
-            case _                              => Map.empty[String, TypingResult]
-          }
+  ): ValidatedNel[String, ConversionNecessaryForTypeAssignment] = {
+    lazy val recordFieldsRestrictions = to match {
+      case target: TypedObjectTypingResult =>
+        val givenTypeFields = from match {
+          case given: TypedObjectTypingResult => given.fields
+          case _                              => Map.empty[String, TypingResult]
+        }
 
-          target.fields.toList
-            .map { case (name, typ) =>
-              givenTypeFields.get(name) match {
-                case None =>
-                  s"Field '$name' is lacking".invalidNel
-                case Some(givenFieldType) =>
-                  condNel(
-                    isAssignable(givenFieldType, typ).isValid,
-                    (),
-                    s"Field '$name' is of the wrong type. Expected: ${givenFieldType.display}, actual: ${typ.display}"
-                  )
-              }
+        target.fields.toList
+          .map { case (name, typ) =>
+            givenTypeFields.get(name) match {
+              case None =>
+                s"Field '$name' is lacking".invalidNel
+              case Some(givenFieldType) =>
+                condNel(
+                  isAssignable(givenFieldType, typ).isValid,
+                  (),
+                  s"Field '$name' is of the wrong type. Expected: ${givenFieldType.display}, actual: ${typ.display}"
+                )
             }
-            .foldLeft(().validNel[String])(_.combine(_))
-        case _ =>
-          ().validNel
-      }
-    val dictRestriction = (_: Unit) => {
+          }
+          .foldLeft(().validNel[String])(_.combine(_))
+      case _ =>
+        ().validNel
+    }
+    lazy val dictRestriction = {
       (from, to) match {
         case (given: TypedDict, target: TypedDict) =>
           condNel(
@@ -93,7 +111,7 @@ private[typed] object AssignabilityDeterminer {
           ().validNel
       }
     }
-    val taggedValueRestriction = (_: Unit) => {
+    lazy val taggedValueRestriction = {
       (from, to) match {
         case (givenTaggedValue: TypedTaggedValue, targetTaggedValue: TypedTaggedValue) =>
           condNel(
@@ -109,7 +127,7 @@ private[typed] object AssignabilityDeterminer {
     }
     // Type like Integer{5} can be assigned to Integer, because Integer could possibly have value of 5 which was erased
     // This allows us to supply unknown Integer to function that requires Integer{5}.
-    val dataValueRestriction = (_: Unit) => {
+    lazy val dataValueRestriction = {
       (from, to) match {
         case (TypedObjectWithValue(_, givenValue), TypedObjectWithValue(_, candidateValue))
             if givenValue == candidateValue =>
@@ -119,13 +137,15 @@ private[typed] object AssignabilityDeterminer {
         case _ => ().validNel
       }
     }
-    objTypeRestriction andThen
-      (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
+    isSingleTypeMatchesTargetObjType(from, to.runtimeObjType) andThen { conversionIsNecessary =>
+      (recordFieldsRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
+        .map(_ => conversionIsNecessary)
+    }
   }
 
-  private def isSingleAssignableToTypedClass(from: SingleTypingResult, to: TypedClass)(
+  private def isSingleTypeMatchesTargetObjType(from: SingleTypingResult, to: TypedClass)(
       implicit conversionStrategy: ConversionStrategy
-  ): ValidatedNel[String, Unit] = {
+  ): ValidatedNel[String, ConversionNecessaryForTypeAssignment] = {
     def typeParametersMatches(givenClass: TypedClass, targetCandidate: TypedClass) = {
       def canBeAssignedToOrAssignedFrom(givenClassParam: TypingResult, targetParam: TypingResult) =
         condNel(
@@ -174,12 +194,15 @@ private[typed] object AssignabilityDeterminer {
       ) orElse
         isAssignable(givenClass.klass, to.klass)
 
-    val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, to))
+    val canAssignAndParametersMatches = equalClassesOrCanAssign andThen
+      (_ => typeParametersMatches(givenClass, to)) map (_ => NoConvertionIsNeeded)
     conversionStrategy match {
-      case NoConversion => canBeSubclass
+      case NoConversion => canAssignAndParametersMatches
       case nonEmptyStrategy: NonEmptyConversionStrategy =>
-        canBeSubclass.recover {
-          case _ if TypeConversionHandler.canBeConverted(from, to)(nonEmptyStrategy) => ()
+        val conversionResult = TypeConversionHandler.canBeConverted(from, to)(nonEmptyStrategy)
+        (canAssignAndParametersMatches, conversionResult) match {
+          case (Invalid(_), Some(convertedType)) => Valid(ConvertionIsNeeded(convertedType))
+          case (other, _)                        => other
         }
     }
 
@@ -187,23 +210,41 @@ private[typed] object AssignabilityDeterminer {
 
   private def isAnyOfAssignableToAnyOf(from: NonEmptyList[SingleTypingResult], to: NonEmptyList[SingleTypingResult])(
       implicit conversionStrategy: ConversionStrategy
-  ): ValidatedNel[String, Unit] = {
+  ): ValidatedNel[String, ConversionNecessaryForTypeAssignment] = {
     // Would be more safety to do givenTypes.forAll(... targetCandidates.exists ...) - we will protect against
     // e.g. (String | Int).isAnyOfAssignableToAnyOf(String) which can fail in runtime for Int, but on the other hand we can't block user's intended action.
     // He/she could be sure that in this type, only String will appear. He/she also can't easily downcast (String | Int) to String so leaving here
     // "double exists" looks like a good tradeoff
-    condNel(
-      from.exists(given => to.exists(isSingleAssignableToSingle(given, _).isValid)),
-      (),
-      s"""None of the following types:
+
+    from
+      .flatMap { given =>
+        to.map { singleTo =>
+          isSingleAssignableToSingle(given, singleTo)
+        }
+      }
+      .collectFirst { case valid @ Valid(_) =>
+        valid
+      }
+      .getOrElse {
+        s"""None of the following types:
          |${from.map(" - " + _.display).toList.mkString(",\n")}
          |can be a assigned to any of:
-         |${to.map(" - " + _.display).toList.mkString(",\n")}""".stripMargin
-    )
+         |${to.map(" - " + _.display).toList.mkString(",\n")}""".stripMargin.invalidNel
+      }
   }
 
   // we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
   private def isAssignable(from: Class[_], to: Class[_]): ValidatedNel[String, Unit] =
     condNel(ClassUtils.isAssignable(from, to, true), (), s"$from is not assignable to $to")
+
+}
+
+private[engine] sealed trait ConversionNecessaryForTypeAssignment
+
+private[engine] object ConversionNecessaryForTypeAssignment {
+
+  case object NoConvertionIsNeeded extends ConversionNecessaryForTypeAssignment
+
+  case class ConvertionIsNeeded(typeAfterConversion: TypingResult) extends ConversionNecessaryForTypeAssignment
 
 }

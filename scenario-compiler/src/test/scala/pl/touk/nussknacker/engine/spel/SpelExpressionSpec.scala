@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.catsSyntaxValidatedId
-import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
+import org.apache.avro.{Schema, SchemaBuilder}
+import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.flink.types.Row
 import org.scalacheck.Gen
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -792,6 +793,97 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     parse[String]("#map.key1", withMapVar).validExpression.evaluateSync[String](withMapVar) should equal("value1")
     parse[Integer]("#map.key2", withMapVar).validExpression.evaluateSync[Integer](withMapVar) should equal(20)
+  }
+
+  test("generic record projection typing") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
+    val validationResult = parseV[JInteger]("#genericRecord.![#this.value].get(0)", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  test("generic record selecting by key") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
+    val validationResult = parseV[JInteger]("#genericRecord.?[#this.key == 'foo'].get('foo')", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  test("flink row projection typing") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
+    val validationResult = parseV[JInteger]("#flinkTableApiRow.![#this.value].^[#this == 42]", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  test("flink row selection typing") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareFlinkRowTest
+    val validationResult = parseV[JInteger]("#flinkTableApiRow.?[#this.key == 'foo'].get('foo')", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  private def prepareFlinkRowTest: (ValidationContext, Context) = {
+    val validationCtx = ValidationContext.empty
+      .withVariable(
+        "flinkTableApiRow",
+        Typed.record(
+          Map(
+            "foo" -> Typed[Int],
+            "bar" -> Typed[Int],
+          ),
+          Typed.genericTypeClass(classOf[org.apache.flink.types.Row], List())
+        ),
+        paramName = None
+      )
+      .toOption
+      .get
+    val record = Row.withNames()
+    record.setField("foo", 42)
+    record.setField("bar", 43)
+    val ctxWithMap = ctx.withVariable("flinkTableApiRow", record)
+    (validationCtx, ctxWithMap)
+  }
+
+  test("literal map selecting by key") {
+    val (validationCtx: ValidationContext, ctxWithMap: Context) = prepareGenericRecordTest
+    val validationResult = parseV[JInteger]("{foo: 42, bar: 43}.?[#this.key == 'foo'].get('foo')", validationCtx)
+    val typingResult     = validationResult.validValue.typingInfo.typingResult
+    typingResult shouldBe Typed[Int]
+    validationResult.validExpression.evaluateSync[JInteger](ctxWithMap) shouldBe 42
+  }
+
+  private def prepareGenericRecordTest: (ValidationContext, Context) = {
+    val validationCtx = ValidationContext.empty
+      .withVariable(
+        "genericRecord",
+        Typed.record(
+          Map(
+            "foo" -> Typed[Int],
+            "bar" -> Typed[Int],
+          ),
+          Typed.genericTypeClass(classOf[GenericRecord], List())
+        ),
+        paramName = None
+      )
+      .toOption
+      .get
+    val schema = SchemaBuilder
+      .record("ClientIdentifier")
+      .namespace("com.baeldung.avro.model")
+      .fields()
+      .requiredInt("foo")
+      .requiredInt("bar")
+      .endRecord()
+    val record = new GenericData.Record(schema)
+    record.put("foo", 42)
+    record.put("bar", 43)
+    val ctxWithMap = ctx.withVariable("genericRecord", record)
+    (validationCtx, ctxWithMap)
   }
 
   test("missing keys in Maps") {
