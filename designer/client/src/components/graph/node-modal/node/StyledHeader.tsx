@@ -1,6 +1,8 @@
-import { styled, Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
+import { styled } from "@mui/material";
 import { getLuminance } from "@mui/system/colorManipulator";
 import { DefaultComponents as Window } from "@touk/window-manager";
+
 import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
 import { HeaderWithGlobalCursor } from "./HeaderWithGlobalCursor";
 
@@ -48,6 +50,7 @@ export const StyledContent = styled(Window.Content)(({ theme }) => {
     return {
         "body :has(>&)": {
             ...getScrollStyle(theme),
+            scrollbarGutter: "stable",
         },
     };
 });

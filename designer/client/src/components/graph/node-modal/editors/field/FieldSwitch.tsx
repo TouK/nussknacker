@@ -44,6 +44,7 @@ const SINGLE_EDITOR_TO_DISPLAY: Editor["type"][] = [
     EditorType.SQL_PARAMETER_EDITOR,
     EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR,
     EditorType.DICT_PARAMETER_EDITOR,
+    EditorType.JSON_TEMPLATE_PARAMETER_EDITOR,
 ];
 
 interface Props {

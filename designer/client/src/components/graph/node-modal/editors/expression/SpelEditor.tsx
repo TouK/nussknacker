@@ -106,6 +106,23 @@ Use autocompletion to explore available options. To read more see [Documentation
             );
         }
 
+        if (editorMode === EditorMode.JsonTemplate && !readOnly) {
+            properties.placeholder = placeholder || t("editors.jsonTemplateEditor.placeholder", 'e.g. { "key": "#{ #input.value }" }');
+            properties.InputAdornmentEnd = (
+                <InfoTooltip
+                    text={t(
+                        "editors.jsonTemplateEditor.infoText",
+                        `You are using a json-template-based input, allowing json with embedded expressions. \n 
+Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
+Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
+                    )}
+                />
+            );
+        }
+        if (editorMode === EditorMode.JsonTemplate) {
+            properties.useAceWorker = false;
+        }
+
         return properties;
     }, [rows, cols, value, language, handleChange, readOnly, forwardedRef, editorMode, expressionObj.language, placeholder, t]);
 

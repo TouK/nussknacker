@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.defaultmodel.migrations
+package pl.touk.nussknacker.engine.migration
 
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}

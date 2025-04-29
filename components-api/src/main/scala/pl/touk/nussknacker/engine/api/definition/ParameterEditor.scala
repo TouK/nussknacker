@@ -29,6 +29,8 @@ case object TextareaParameterEditor extends ParameterEditor with StaticParameter
 
 case object JsonParameterEditor extends ParameterEditor with StaticParameterEditor
 
+case object JsonTemplateParameterEditor extends ParameterEditor with StaticParameterEditor
+
 case object SqlParameterEditor extends ParameterEditor
 
 case object SpelTemplateParameterEditor extends ParameterEditor

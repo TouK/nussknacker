@@ -1,8 +1,10 @@
 import React, { useCallback, useMemo } from "react";
-import { NodeValidationError, Parameter, VariableTypes } from "../../../../types";
+
+import type { NodeValidationError, Parameter, VariableTypes } from "../../../../types";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
-import { Item, onChangeType, FragmentInputParameter } from "./item";
+import type { FragmentInputParameter, onChangeType } from "./item";
+import { Item } from "./item";
 
 export interface Option {
     value: string;
@@ -51,7 +53,14 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
         () =>
             fields.map((item, index) => ({
                 item,
-                el: <ItemElement key={index} index={index} item={item as FragmentInputParameter} errors={errors} />,
+                el: (
+                    <ItemElement
+                        key={item.uuid || item.name || index}
+                        index={index}
+                        item={item as FragmentInputParameter}
+                        errors={errors}
+                    />
+                ),
             })),
         [ItemElement, errors, fields],
     );
