@@ -159,6 +159,9 @@
     * Scenario testing API (on path prefix `/scenarioTesting`) is refactored - incompatible change, please check the Migration Guide for details
     * test endpoints moved from Process Management API to Scenario Testing API
     * introduced new representation of test results
+* [#7953](https://github.com/TouK/nussknacker/pull/7953) Add implicit conversion from records produced by kafka source to map.
+  Also typing of spel expressions was refactored, which improved typing of selection on a map.
+* [#8005](https://github.com/TouK/nussknacker/pull/8005) Add implicit conversion from records produced by table api source to map.
 
 ## 1.18
 

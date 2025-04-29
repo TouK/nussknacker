@@ -109,6 +109,8 @@ def defaultMergeStrategy: String => MergeStrategy = {
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last == "Projection.class"             => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last == "Selection.class"              => MergeStrategy.first
   // merge Netty version information files
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.concat
   // due to swagger-parser dependencies having different schema definitions (json-schema-validator and json-schema-core)
@@ -311,6 +313,8 @@ val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV                = "3.8.1"
 // to update we need configurable SpEL length limit from 6.0.9, but 6.x requires JDK 17
+// when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
+// and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
 val springV               = "5.2.23.RELEASE"
 val scalaTestV            = "3.2.18"
 val scalaCheckV           = "1.17.1"
@@ -853,7 +857,8 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
         "org.apache.avro"         % "avro"                          % avroV          % Test,
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,
-        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
+        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
+        "org.apache.flink"        % "flink-core"                    % flinkV         % Test,
       )
     }
   )
@@ -1156,7 +1161,12 @@ lazy val mathUtils = (project in utils("math-utils"))
 lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-default-helpers"
+    name := "nussknacker-default-helpers",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-core" % flinkV % Test,
+      )
+    }
   )
   .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 

@@ -205,6 +205,12 @@ object CommonSupertypeFinder {
         )
     }
 
+    def superTypeOfTypes(list: Iterable[TypingResult]): TypingResult = {
+      list
+        .reduceOption(commonSupertype)
+        .getOrElse(Unknown)
+    }
+
   }
 
   // It is the strategy that is looking for the intersection of common super types. If it doesn't find it, returns None

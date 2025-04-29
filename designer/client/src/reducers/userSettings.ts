@@ -34,6 +34,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
     "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
     "debug.userSettingsVisible": getInitialUserFlag("debug.userSettingsVisible", isDev),
+    "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines"),
 });
 
 /**

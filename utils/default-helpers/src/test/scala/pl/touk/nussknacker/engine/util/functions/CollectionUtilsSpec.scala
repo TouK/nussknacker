@@ -1,12 +1,18 @@
 package pl.touk.nussknacker.engine.util.functions
 
 import cats.implicits._
+import org.apache.avro.SchemaBuilder
+import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.flink.types.{Row, RowKind}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, Unknown}
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.spel.Typer.SpelCompilationException
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.text.ParseException
 import scala.jdk.CollectionConverters._
@@ -104,6 +110,77 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     ).forEvery { (expression, expected) =>
       evaluateType(expression, types = types) shouldBe expected.valid
     }
+  }
+
+  test("merge should work on org.apache.flink.types.Row") {
+    val nid: NodeId = NodeId("")
+    val validationCtx = ValidationContext(globalVariables = globalVariables.mapValuesNow(Typed.fromInstance))
+      .withVariable(
+        "flinkTableApiRow",
+        Typed.record(
+          Map(
+            "foo" -> Typed[Int],
+            "bar" -> Typed[Int],
+          ),
+          Typed.genericTypeClass(classOf[org.apache.flink.types.Row], List())
+        ),
+        paramName = None
+      )(nid)
+      .toOption
+      .get
+
+    val row = Row.withNames(RowKind.INSERT)
+    row.setField("foo", 42)
+    row.setField("bar", 43)
+
+    val ctxWithMap = Context("abc").withVariable("flinkTableApiRow", row)
+
+    val result = parser
+      .parse(
+        "#COLLECTION.merge(#flinkTableApiRow, #flinkTableApiRow).foo",
+        validationCtx,
+        Typed.typedClass(classOf[Int])
+      )
+      .value
+      .expression
+      .evaluate[AnyRef](ctxWithMap, globalVariables)
+    result shouldBe 42
+  }
+
+  test("merge should work on avro genericRecord") {
+    val nid: NodeId = NodeId("")
+    val validationCtx = ValidationContext(globalVariables = globalVariables.mapValuesNow(Typed.fromInstance))
+      .withVariable(
+        "genericRecord",
+        Typed.record(
+          List(
+            "foo" -> Typed[Int],
+            "bar" -> Typed[Int]
+          ),
+          Typed.genericTypeClass(classOf[GenericRecord], List())
+        ),
+        paramName = None
+      )(nid)
+      .toOption
+      .get
+    val schema = SchemaBuilder
+      .record("ClientIdentifier")
+      .namespace("com.baeldung.avro.model")
+      .fields()
+      .requiredInt("foo")
+      .requiredInt("bar")
+      .endRecord()
+    val record = new GenericData.Record(schema)
+    record.put("foo", 42)
+    record.put("bar", 43)
+    val ctxWithMap = Context("abc").withVariable("genericRecord", record)
+
+    val result = parser
+      .parse("#COLLECTION.merge(#genericRecord, #genericRecord).foo", validationCtx, Typed.typedClass(classOf[Int]))
+      .value
+      .expression
+      .evaluate[AnyRef](ctxWithMap, globalVariables)
+    result shouldBe 42
   }
 
   test("min") {
