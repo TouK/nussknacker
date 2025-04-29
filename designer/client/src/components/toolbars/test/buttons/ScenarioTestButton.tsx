@@ -8,6 +8,7 @@ import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, getTestResultsLoading, getTestType, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useWindows, WindowKind } from "../../../../windowManager";
+import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
 import { useTestingState } from "../../../modals/Testing/TestingContext";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
@@ -70,6 +71,8 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         !disabled && processIsLatestVersion && testCapabilities?.testWithGeneratedData.status === TestCapabilityStatus.AVAILABLE;
 
     const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromGeneratedDataIsAvailable;
+
+    const hasPendingChanges = useSelector(getHasPendingChanges);
 
     const dispatch = useDispatch();
     const openDialog = useCallback(
@@ -150,7 +153,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                 };
             }}
             isLoading={isLoading}
-            disabled={!atLeastOneTypeOfTestIsAvailable}
+            disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges}
             onClick={() => openDialog(preset)}
             type={type}
             presets={presets}

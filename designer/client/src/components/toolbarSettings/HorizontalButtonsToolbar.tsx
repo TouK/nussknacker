@@ -22,7 +22,7 @@ export const HorizontalToolbar = ({ children }: Props) => {
                     inset: 0,
                     zIndex: -1,
                     borderRadius: theme.spacing(0.75),
-                    boxShadow: "0 0 2px rgba(0,0,0,0.8),0 2px 20px rgba(0,0,0,0.8)",
+                    boxShadow: "0 0 2px rgba(0,0,0,0.8),0 0 20px rgba(0,0,0,0.8)",
                 },
                 ">*": {
                     borderRadius: theme.spacing(0.75),

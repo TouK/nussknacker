@@ -1,5 +1,4 @@
-import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
-import type React from "react";
+import type React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 
 import type { VariableTypes } from "../../../../../types";
 import type { FieldError } from "../Validators";
@@ -50,7 +49,7 @@ export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P
 };
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
-    return (editor as ExtendedEditor).isSwitchableTo !== undefined;
+    return (editor as ExtendedEditor)?.isSwitchableTo !== undefined;
 }
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {

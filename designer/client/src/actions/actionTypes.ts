@@ -4,7 +4,6 @@ export type ActionTypes =
     | "LOGGED_USER"
     | "UI_SETTINGS"
     | "AVAILABLE_QUERY_STATES"
-    | "SWITCH_TOOL_TIPS_HIGHLIGHT"
     | "ZOOM_IN"
     | "ZOOM_OUT"
     | "DELETE_NODES"
