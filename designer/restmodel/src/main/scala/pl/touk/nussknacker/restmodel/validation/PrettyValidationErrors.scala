@@ -134,8 +134,6 @@ object PrettyValidationErrors {
         node(s"Missing sink: $id", s"Please check the name of sink, $id is not available")
       case MissingSourceFactory(id, _) =>
         node(s"Missing source: $id", s"Please check the name of source, $id is not available")
-      case RedundantParameters(params, _) =>
-        node(s"Redundant parameters", s"Please omit redundant parameters: ${params.mkString(", ")}")
       case WrongParameters(requiredParameters, passedParameters, _) =>
         node(
           message = s"Wrong parameters",
