@@ -1,22 +1,9 @@
-package pl.touk.nussknacker.defaultmodel.migrations
+package pl.touk.nussknacker.engine.migration
 
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{
-  CustomNode,
-  Enricher,
-  Filter,
-  FragmentInput,
-  Join,
-  Processor,
-  Sink,
-  Source,
-  Switch,
-  Variable,
-  VariableBuilder,
-  WithParameters
-}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 class ExpressionsMigration(

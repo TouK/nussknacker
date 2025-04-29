@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.migration.NodeMigration
+import pl.touk.nussknacker.engine.migration.{NodeMigration, ParametersMigration}
 
 object SpelToSpelTemplateNodeMigration extends NodeMigration {
   private lazy val spelStringPattern   = "^'(.*)'$".r
