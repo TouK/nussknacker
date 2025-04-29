@@ -158,8 +158,7 @@ public class Selection extends SpelNodeImpl {
             throw new SpelEvaluationException(getStartPosition(), SpelMessage.INVALID_TYPE_FOR_SELECTION, "null");
         }
 
-        // we have IndexedRecord to map conversion
-        // declared in IndexedRecordToMapConverter class
+        // we have conversions to map in classes IndexedRecordToMapConverter and FlinkRowToMapConverter
         Map<?, ?> convertedMap = null;
         try {
             convertedMap = ExpressionUtils.convertTypedValue(state.getEvaluationContext(), op, Map.class);
