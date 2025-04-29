@@ -22,21 +22,30 @@ object ProcessCanonizer {
     )
   }
 
-  def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =
-    uncanonizeArtificial(canonicalProcess).toValidNel
+  def uncanonize(
+      canonicalProcess: CanonicalProcess,
+      allowEndingScenarioWithoutSink: Boolean,
+  ): ValidatedNel[ProcessUncanonizationError, EspProcess] =
+    uncanonizeArtificial(canonicalProcess, allowEndingScenarioWithoutSink).toValidNel
 
-  def uncanonizeArtificial(canonicalProcess: CanonicalProcess): MaybeArtificial[EspProcess] = {
+  def uncanonizeArtificial(
+      canonicalProcess: CanonicalProcess,
+      allowEndingScenarioWithoutSink: Boolean,
+  ): MaybeArtificial[EspProcess] = {
 
     val branches: MaybeArtificial[NonEmptyList[pl.touk.nussknacker.engine.graph.node.SourceNode]] =
-      canonicalProcess.allStartNodes.map(uncanonizeSource).sequence
+      canonicalProcess.allStartNodes.map(uncanonizeSource(_, allowEndingScenarioWithoutSink)).sequence
 
     branches.map(bList => EspProcess(canonicalProcess.metaData, bList))
   }
 
-  private def uncanonizeSource(canonicalNode: List[canonicalnode.CanonicalNode]): MaybeArtificial[node.SourceNode] =
+  private def uncanonizeSource(
+      canonicalNode: List[canonicalnode.CanonicalNode],
+      allowEndingScenarioWithoutSink: Boolean,
+  ): MaybeArtificial[node.SourceNode] =
     canonicalNode match {
       case (a @ canonicalnode.FlatNode(data: node.StartingNodeData)) :: tail =>
-        uncanonize(a, tail).map(node.SourceNode(data, _))
+        uncanonize(a, tail, allowEndingScenarioWithoutSink).map(node.SourceNode(data, _))
 
       case other :: _ =>
         MaybeArtificial.artificialSource(InvalidRootNode(other.id))
@@ -47,7 +56,8 @@ object ProcessCanonizer {
 
   private def uncanonize(
       previous: canonicalnode.CanonicalNode,
-      canonicalNode: List[canonicalnode.CanonicalNode]
+      canonicalNode: List[canonicalnode.CanonicalNode],
+      allowEndingScenarioWithoutSink: Boolean,
   ): MaybeArtificial[node.SubsequentNode] =
     canonicalNode match {
       case canonicalnode.FlatNode(data: node.BranchEndData) :: Nil =>
@@ -57,30 +67,31 @@ object ProcessCanonizer {
         new MaybeArtificial(node.EndingNode(data), Nil)
 
       case (a @ canonicalnode.FlatNode(data: node.OneOutputSubsequentNodeData)) :: tail =>
-        uncanonize(a, tail).map(node.OneOutputSubsequentNode(data, _))
+        uncanonize(a, tail, allowEndingScenarioWithoutSink).map(node.OneOutputSubsequentNode(data, _))
 
       case (a @ canonicalnode.FilterNode(data, nextFalse)) :: tail if nextFalse.isEmpty =>
-        uncanonize(a, tail).map(nextTrue => node.FilterNode(data, Some(nextTrue), None))
+        uncanonize(a, tail, allowEndingScenarioWithoutSink).map(nextTrue => node.FilterNode(data, Some(nextTrue), None))
 
       case (a @ canonicalnode.FilterNode(data, nextFalse)) :: tail if tail.isEmpty =>
-        uncanonize(a, nextFalse).map { nextFalseV =>
+        uncanonize(a, nextFalse, allowEndingScenarioWithoutSink).map { nextFalseV =>
           node.FilterNode(data, None, Some(nextFalseV))
         }
 
       case (a @ canonicalnode.FilterNode(data, nextFalse)) :: tail =>
-        (uncanonize(a, tail), uncanonize(a, nextFalse)).mapN { (nextTrue, nextFalseV) =>
-          node.FilterNode(data, Some(nextTrue), Some(nextFalseV))
-        }
+        (uncanonize(a, tail, allowEndingScenarioWithoutSink), uncanonize(a, nextFalse, allowEndingScenarioWithoutSink))
+          .mapN { (nextTrue, nextFalseV) =>
+            node.FilterNode(data, Some(nextTrue), Some(nextFalseV))
+          }
 
       case (a @ canonicalnode.SwitchNode(data, Nil, defaultNext)) :: Nil =>
-        uncanonize(a, defaultNext).map { defaultNextV =>
+        uncanonize(a, defaultNext, allowEndingScenarioWithoutSink).map { defaultNextV =>
           node.SwitchNode(data, Nil, Some(defaultNextV))
         }
 
       case (a @ canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil if defaultNext.isEmpty =>
         nexts
           .map { casee =>
-            uncanonize(a, casee.nodes).map(node.Case(casee.expression, _))
+            uncanonize(a, casee.nodes, allowEndingScenarioWithoutSink).map(node.Case(casee.expression, _))
           }
           .sequence[MaybeArtificial, node.Case]
           .map(node.SwitchNode(data, _, None))
@@ -88,28 +99,40 @@ object ProcessCanonizer {
       case (a @ canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil =>
         val unFlattenNexts = nexts
           .map { casee =>
-            uncanonize(a, casee.nodes).map(node.Case(casee.expression, _))
+            uncanonize(a, casee.nodes, allowEndingScenarioWithoutSink).map(node.Case(casee.expression, _))
           }
           .sequence[MaybeArtificial, node.Case]
 
-        (unFlattenNexts, uncanonize(a, defaultNext)).mapN { (nextsV, defaultNextV) =>
+        (unFlattenNexts, uncanonize(a, defaultNext, allowEndingScenarioWithoutSink)).mapN { (nextsV, defaultNextV) =>
           node.SwitchNode(data, nextsV, Some(defaultNextV))
         }
 
       case canonicalnode.SplitNode(bare, Nil) :: Nil =>
-        MaybeArtificial.artificialDeadEndSink(bare.id)
+        handleMissingSink(bare.id, allowEndingScenarioWithoutSink)
 
       case (a @ canonicalnode.SplitNode(bare, nexts)) :: Nil =>
-        nexts.map(uncanonize(a, _)).sequence[MaybeArtificial, node.SubsequentNode].map { uncanonized =>
-          node.SplitNode(bare, uncanonized)
+        nexts.map(uncanonize(a, _, allowEndingScenarioWithoutSink)).sequence[MaybeArtificial, node.SubsequentNode].map {
+          uncanonized =>
+            node.SplitNode(bare, uncanonized)
         }
 
       case invalidHead :: _ =>
-        MaybeArtificial.artificialSink(InvalidTailOfBranch(invalidHead.id))
+        MaybeArtificial.missingSinkError(InvalidTailOfBranch(invalidHead.id))
 
       case Nil =>
-        MaybeArtificial.artificialDeadEndSink(previous.id)
+        handleMissingSink(previous.id, allowEndingScenarioWithoutSink)
     }
+
+  private def handleMissingSink(
+      previousNodeId: String,
+      allowEndingScenarioWithoutSink: Boolean
+  ): MaybeArtificial[node.SubsequentNode] = {
+    if (allowEndingScenarioWithoutSink) {
+      MaybeArtificial.addedArtificialDeadEndSink(previousNodeId)
+    } else {
+      MaybeArtificial.missingSinkError(InvalidTailOfBranch(previousNodeId))
+    }
+  }
 
 }
 

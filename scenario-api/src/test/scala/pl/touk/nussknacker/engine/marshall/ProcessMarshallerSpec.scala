@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.marshall
 
-import cats.data.Validated.Valid
+import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
 import io.circe.{Codec, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.syntax._
@@ -224,34 +225,14 @@ class ProcessMarshallerSpec
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
       inside(
-        ProcessCanonizer
-          .uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty))
-          .map(ProcessCanonizer.canonize)
-          .map(canonicalProcess => sinks(canonicalProcess.nodes))
-      ) { case Valid(sinks) =>
-        sinks.collectFirst {
-          case sink: MaybeArtificial.ArtificialDeadEndSink if sink.previousNodeId == expectedBadNodeId => ()
-        } shouldBe defined
+        ProcessCanonizer.uncanonize(
+          CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty),
+          allowEndingScenarioWithoutSink = false
+        )
+      ) { case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) =>
+        id shouldBe expectedBadNodeId
       }
     }
-
-    def sinks(nodes: List[CanonicalNode]): List[node.Sink] = {
-      nodes.flatMap {
-        case canonicalnode.FlatNode(sink: node.Sink) =>
-          List(sink)
-        case canonicalnode.FlatNode(_) =>
-          List.empty
-        case canonicalnode.SplitNode(_, nexts) =>
-          nexts.flatMap(sinks)
-        case canonicalnode.FilterNode(_, nextFalse) =>
-          sinks(nextFalse)
-        case canonicalnode.SwitchNode(_, cases, defaultNext) =>
-          cases.flatMap(c => sinks(c.nodes)) ::: sinks(defaultNext)
-        case canonicalnode.Fragment(_, outputs) =>
-          outputs.toList.flatMap { case (_, value) => sinks(value) }
-      }
-    }
-
     val source = FlatNode(Source("s1", SourceRef("a", List())))
 
     checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression(Language.Spel, "")), List()))

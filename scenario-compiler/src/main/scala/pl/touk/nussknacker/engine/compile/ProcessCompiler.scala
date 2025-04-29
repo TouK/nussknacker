@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ArtificialDeadEndSink, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compiledgraph.{part, CompiledProcessParts}
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
@@ -114,7 +114,10 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withContextClassLoader(classLoader) {
       val compilationResultWithArtificial =
-        ProcessCanonizer.uncanonizeArtificial(process).map(ProcessSplitter.split).map(compile)
+        ProcessCanonizer
+          .uncanonizeArtificial(process, nodeCompiler.allowEndingScenarioWithoutSink)
+          .map(ProcessSplitter.split)
+          .map(compile)
       compilationResultWithArtificial.extract
     }
   }
@@ -188,14 +191,22 @@ protected trait ProcessCompilerBase {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
     import CompilationResult._
-    parts
-      .map(p =>
+    parts.map {
+      case SinkPart(node @ EndingNode(_: MaybeArtificial.ArtificialDeadEndSink)) =>
+        CompilationResult.pure(
+          compiledgraph.part.SinkPart(
+            obj = ArtificialDeadEndSink,
+            node = node,
+            contextBefore = ValidationContext.empty,
+            validationContext = ValidationContext.empty
+          )
+        )
+      case p =>
         ctx
           .get(p.id)
           .map(compileSubsequentPart(p, _))
           .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
-      )
-      .sequence
+    }.sequence
   }
 
   private def compileSubsequentPart(part: SubsequentPart, ctx: ValidationContext)(
@@ -250,17 +261,11 @@ protected trait ProcessCompilerBase {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): CompilationResult[part.SinkPart] = {
-    nodeCompiler
-      .compileSinkOption(node.data, ctx)
-      .map { case NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) =>
-        val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
-        CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
-          compiledgraph.part.SinkPart(obj, node, ctx, ctx)
-        )
-      }
-      .getOrElse(
-        nodeCompiler.handleMissingSinkFactory(node)
-      )
+    val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
+    val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
+    CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
+      compiledgraph.part.SinkPart(obj, node, ctx, ctx)
+    )
   }
 
   def compileEndingCustomNodePart(

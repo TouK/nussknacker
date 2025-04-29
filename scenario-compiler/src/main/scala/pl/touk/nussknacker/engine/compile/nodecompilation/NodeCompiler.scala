@@ -15,9 +15,8 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.canonize.MaybeArtificial
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ArtificialDeadEndSink, NodeCompilationResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
@@ -36,7 +35,6 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import shapeless.Typeable
 import shapeless.syntax.typeable._
@@ -72,6 +70,15 @@ class NodeCompiler(
     nodesDeploymentData: NodesDeploymentData,
     nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
 ) {
+
+  def allowEndingScenarioWithoutSink(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): Boolean = {
+    import scenarioCompilationDependencies._
+    lazy val allowEndingScenarioWithoutSink = definitions.modelSettings.allowEndingScenarioWithoutSink
+    lazy val isFragment                     = metaData.typeSpecificData.isFragment
+    allowEndingScenarioWithoutSink && !isFragment
+  }
 
   def withLabelsDictTyper: NodeCompiler = {
     new NodeCompiler(
@@ -271,60 +278,21 @@ class NodeCompiler(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[api.process.Sink] = {
-    compileSinkOption(sink, ctx).getOrElse {
-      val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
-      NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
-    }
-  }
-
-  def compileSinkOption(
-      sink: Sink,
-      ctx: ValidationContext
-  )(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): Option[NodeCompilationResult[api.process.Sink]] = {
     val ref = sink.ref
 
-    definitions
-      .getComponent(ComponentType.Sink, ref.typ)
-      .map {
+    definitions.getComponent(ComponentType.Sink, ref.typ) match {
+      case Some(definition) =>
         compileComponentWithContextTransformation[api.process.Sink](
           sink.parameters,
           Nil,
           Left(ctx),
           None,
-          _,
+          definition,
           _ => Valid(ctx)
         ).map(_._1)
-      }
-  }
-
-  def handleMissingSinkFactory(
-      sinkNode: EndingNode[Sink],
-  )(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): CompilationResult[compiledgraph.part.SinkPart] = {
-    import scenarioCompilationDependencies._
-
-    lazy val allowEndingScenarioWithoutSink = definitions.modelSettings.allowEndingScenarioWithoutSink
-    lazy val isFragment                     = metaData.typeSpecificData.isFragment
-
-    sinkNode.data match {
-      case _: MaybeArtificial.ArtificialDeadEndSink if allowEndingScenarioWithoutSink && !isFragment =>
-        CompilationResult.pure(
-          compiledgraph.part.SinkPart(
-            obj = ArtificialDeadEndSink,
-            node = sinkNode,
-            contextBefore = ValidationContext.empty,
-            validationContext = ValidationContext.empty
-          )
-        )
-      case sink: MaybeArtificial.ArtificialDeadEndSink =>
-        compilationErrorResult(InvalidTailOfBranch(Set(sink.previousNodeId)))
-      case _ =>
-        compilationErrorResult(MissingSinkFactory(sinkNode.data.ref.typ))
+      case None =>
+        val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
+        NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
     }
   }
 
