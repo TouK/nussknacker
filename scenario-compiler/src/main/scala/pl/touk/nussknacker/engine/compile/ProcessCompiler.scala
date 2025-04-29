@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ArtificialDeadEndSink, NodeCompilationResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.{part, CompiledProcessParts}
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
@@ -410,3 +410,5 @@ object ProcessValidator {
   }
 
 }
+
+object ArtificialDeadEndSink extends api.process.Sink

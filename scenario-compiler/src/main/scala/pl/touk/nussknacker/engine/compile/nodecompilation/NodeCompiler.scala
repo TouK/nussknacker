@@ -55,8 +55,6 @@ object NodeCompiler {
 
   }
 
-  object ArtificialDeadEndSink extends api.process.Sink
-
 }
 
 class NodeCompiler(
@@ -411,10 +409,6 @@ class NodeCompiler(
         val error = invalid(MissingService(n.id)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
     }
-  }
-
-  private def compilationErrorResult[T](error: ProcessCompilationError): CompilationResult[T] = {
-    CompilationResult[T](Invalid(NonEmptyList.of[ProcessCompilationError](error)))
   }
 
   private def compileEagerService(
