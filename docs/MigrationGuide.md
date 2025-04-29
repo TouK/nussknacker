@@ -189,6 +189,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Auto-generated label is created by formating component's name into Title Case, e.g. for component with name `aggregate-session`, label will be `Aggregate Session`. If component provider has `componentPrefix` set, it'll be included in auto-generated label.
 * [#7553](https://github.com/TouK/nussknacker/pull/7553) `#key` variable created in window components won't be a list in a string, but it'll have provided types, e.g. instead of `"[12.0, ab]"` it'll now be `[12.0, "ab"]`.
   To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`
+* [#8011](https://github.com/TouK/nussknacker/pull/8011) During scenario compilation, redundant parameters used in node are treated only as warning now. They are skipped and compilation passes.
 
 ## In version 1.18.0
 
