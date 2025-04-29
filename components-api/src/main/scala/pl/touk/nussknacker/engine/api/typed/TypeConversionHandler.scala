@@ -22,11 +22,11 @@ import scala.util.Try
   */
 private[engine] object TypeConversionHandler {
 
-  private val javaListClass              = classOf[java.util.List[_]]
-  private val javaCollectionClass        = classOf[java.util.Collection[_]]
-  private val javaMapClass               = classOf[java.util.Map[_, _]]
-  private val arrayOfAnyRefClass         = classOf[Array[AnyRef]]
-  private val avroIndexedRecordClassName = "org.apache.avro.generic.IndexedRecord"
+  private val javaListClass            = classOf[java.util.List[_]]
+  private val javaCollectionClass      = classOf[java.util.Collection[_]]
+  private val javaMapClass             = classOf[java.util.Map[_, _]]
+  private val arrayOfAnyRefClass       = classOf[Array[AnyRef]]
+  private val mapConvertableClassNames = List("org.apache.avro.generic.IndexedRecord", "org.apache.flink.types.Row")
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -93,7 +93,7 @@ private[engine] object TypeConversionHandler {
       case Loose =>
         Option.when(handleStringToValueClassConversions(from, to))(to) orElse
           handleArrayToListConversions(from.runtimeObjType, to) orElse
-          handleIndexedRecordToMapConversion(from, to)
+          handleMapConversions(from, to)
     }
   }
 
@@ -153,7 +153,7 @@ private[engine] object TypeConversionHandler {
     }
   }
 
-  private def handleIndexedRecordToMapConversion(
+  private def handleMapConversions(
       from: SingleTypingResult,
       to: TypedClass
   )(
@@ -167,7 +167,9 @@ private[engine] object TypeConversionHandler {
         lazy val indexedRecordValueType = superTypeOfTypes(fromFields.values)
 
         Option.when(
-          AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, avroIndexedRecordClassName) &&
+          mapConvertableClassNames.exists(className =>
+            AssignabilityUtil.isAssignableToLoadableClass(fromRuntimeObjClass, className)
+          ) &&
             AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
             AssignabilityDeterminer.isAssignable(indexedRecordValueType, mapValueParam).isValid
         )(

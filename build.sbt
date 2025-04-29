@@ -857,7 +857,8 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
         "org.apache.avro"         % "avro"                          % avroV          % Test,
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,
-        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
+        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
+        "org.apache.flink"        % "flink-core"                    % flinkV         % Test,
       )
     }
   )
@@ -1160,7 +1161,12 @@ lazy val mathUtils = (project in utils("math-utils"))
 lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-default-helpers"
+    name := "nussknacker-default-helpers",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-core" % flinkV % Test,
+      )
+    }
   )
   .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
