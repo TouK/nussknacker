@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.config
 
 import cats.data.Validated.{Invalid, Valid}
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigException, ConfigFactory, ConfigRenderOptions}
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.{
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbConfig
 import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig
+import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.ui.notifications.NotificationConfig
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.FinishedDeploymentsStatusesSynchronizationConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
@@ -29,6 +30,7 @@ import java.nio.file.{Path, Paths}
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 final class DesignerConfig private (
     // unresolved version is only needed for deployment where we want to pass to engine unresolved version and resolve it on the engine side
@@ -159,7 +161,18 @@ object DesignerConfig {
     val assistantSettings =
       resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
 
-    val limitsConfig = resolvedConfig.getAs[GlobalLimitsConfig]("globalLimits").getOrElse(GlobalLimitsConfig.default)
+    val limitsConfig = if (resolvedConfig.hasPath("globalLimits")) {
+      Try(resolvedConfig.getConfig("globalLimits").getInt("activeScenariosLimit")) match {
+        case Success(activeScenariosLimit) =>
+          GlobalLimitsConfig(activeScenariosLimit = Some(ActiveScenariosLimit(activeScenariosLimit)))
+        case Failure(_: ConfigException.Missing) =>
+          GlobalLimitsConfig(activeScenariosLimit = None)
+        case Failure(exception) =>
+          throw exception
+      }
+    } else {
+      GlobalLimitsConfig.default
+    }
 
     new DesignerConfig(
       rawConfigWithUnresolvedVersion = rawConfig,
