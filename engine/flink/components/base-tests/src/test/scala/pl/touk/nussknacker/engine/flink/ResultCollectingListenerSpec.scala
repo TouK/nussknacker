@@ -312,7 +312,7 @@ class ResultCollectingListenerSpec
 
     catchExceptionMessage(
       withCollectingTestResults(scenario, _ => ())
-    ) shouldBe "Compilation errors: InvalidTailOfBranch(Set(bv1)), InvalidTailOfBranch(Set(bv2))"
+    ) shouldBe "Compilation errors: InvalidTailOfBranch(Set(bv2, bv1))"
 
   }
 
