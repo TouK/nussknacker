@@ -21,8 +21,7 @@ type SettingsNames =
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
 const getInitialUserFlag = (flagName: SettingsNames, defaultValue = false): boolean => {
-    console.log("$initialUserFlags", window["$initialUserFlags"]);
-    return window?.["$initialUserFlags"]?.[flagName] || defaultValue;
+    return window?.["$initialUserFlags"]?.[flagName] ?? defaultValue;
 };
 
 const reducer: Reducer<UserSettings> = (
