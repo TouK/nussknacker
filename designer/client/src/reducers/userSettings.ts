@@ -31,6 +31,7 @@ const reducer: Reducer<UserSettings> = (
         "debug.nodesAsJson": false,
         "debug.forceDisableModals": false,
         "debug.userSettingsVisible": isDev,
+        "editor.jsonTemplate.showLines": true,
     },
     action,
 ) => {
