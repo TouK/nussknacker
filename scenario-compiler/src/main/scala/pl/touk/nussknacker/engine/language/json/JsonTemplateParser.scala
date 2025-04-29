@@ -9,9 +9,10 @@ import org.springframework.expression.common.{CompositeStringExpression, Literal
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
+import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.TypeValueDeterminer
@@ -21,13 +22,20 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.{
   stringTypingResult,
   CompiledJsonTemplateExpression,
-  JsonTemplateExpressionTypingInfo
+  JsonTemplateExpressionTypingInfo,
+  SpelExpressionConverter,
+  UnparsedSpelExpression,
+  WithContextValidationSpelExpressionConverter,
+  WithoutContextValidationSpelExpressionConverter
 }
+import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.SpelExpressionConverter._
 import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelExpressionParser, SpelExpressionRepr}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 
 class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: SpelExpressionParser)
     extends ExpressionParser {
+  private val withoutContextValidationSpelExpressionConverter =
+    new WithoutContextValidationSpelExpressionConverter(spelParser)
 
   override def languageId: Expression.Language = Expression.Language.JsonTemplate
 
@@ -38,19 +46,22 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
   ): ValidatedNel[ExpressionParseError, TypedExpression] =
     spelTemplateParser
       .parse(original, ctx, stringTypingResult)
-      .andThen(parsedSpelTemplateExpression =>
-        extractJsonStringFromParsedExpression(parsedSpelTemplateExpression, ctx)
+      .andThen { parsedSpelTemplateExpression =>
+        extractJsonStringFromParsedExpression(
+          parsedSpelTemplateExpression.expression,
+          new WithContextValidationSpelExpressionConverter(spelParser, ctx)
+        )
           .andThen { jsonString =>
             JsonParser.parse(jsonString, ctx, expectedType)
           }
           .map { jsonTypeExpression =>
             parsedSpelTemplateExpression -> jsonTypeExpression
           }
-      )
+      }
       .map { case (templateTypeExpression, jsonTypeExpression) =>
         TypedExpression(
-          CompiledJsonTemplateExpression(languageId, original, templateTypeExpression.expression, expectedType),
-          JsonTemplateExpressionTypingInfo(jsonTypeExpression.typingInfo, expectedType),
+          new CompiledJsonTemplateExpression(languageId, original, templateTypeExpression.expression, expectedType),
+          new JsonTemplateExpressionTypingInfo(jsonTypeExpression.typingInfo),
         )
       }
 
@@ -59,90 +70,49 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
       expectedType: typing.TypingResult
   ): ValidatedNel[ExpressionParseError, CompiledExpression] = spelTemplateParser
     .parseWithoutContextValidation(original, stringTypingResult)
-    .andThen(parsedSpelTemplateExpression =>
-      extractJsonStringFromCompiledExpression(parsedSpelTemplateExpression)
-        .andThen(jsonString => JsonParser.parseWithoutContextValidation(jsonString, expectedType))
-        .map(_ => parsedSpelTemplateExpression)
-    )
-    .map(templateTypeExpression =>
-      CompiledJsonTemplateExpression(languageId, original, templateTypeExpression, expectedType)
-    )
+    .andThen { parsedSpelTemplateExpression =>
+      extractJsonStringFromParsedExpression(
+        parsedSpelTemplateExpression,
+        withoutContextValidationSpelExpressionConverter
+      )
+        .andThen { jsonString => JsonParser.parseWithoutContextValidation(jsonString, expectedType) }
+        .map { _ => parsedSpelTemplateExpression }
+    }
+    .map { templateTypeExpression =>
+      new CompiledJsonTemplateExpression(languageId, original, templateTypeExpression, expectedType)
+    }
 
   private def extractJsonStringFromParsedExpression(
-      typedExpression: TypedExpression,
-      ctx: ValidationContext,
+      compiledExpression: CompiledExpression,
+      converter: SpelExpressionConverter,
   ): ValidatedNel[ExpressionParseError, String] =
-    typedExpression.expression match {
+    compiledExpression match {
       case expression: SpelExpression =>
-        joinLiteralsAndReplaceExpressionWithDefaults(
-          spelExpressionToDefaultJsonValue(ctx),
-          expression.parsedSpringExpression,
-        )
+        convertSpelExpressionToJsonWithDefaultValues(converter, expression.parsedSpringExpression)
       case _ => invalidNel(ExpressionCompilationError("Invalid compiled expression type"))
     }
 
-  private def joinLiteralsAndReplaceExpressionWithDefaults(
-      spelExpressionToDefaultJsonValue: (String, typing.TypingResult) => ValidatedNel[ExpressionParseError, String],
+  private def convertSpelExpressionToJsonWithDefaultValues(
+      converter: SpelExpressionConverter,
       expression: SpringExpression,
   ): ValidatedNel[ExpressionParseError, String] = expression match {
     case expression: CompositeStringExpression =>
       expression.getExpressions.toList
-        .map(e => joinLiteralsAndReplaceExpressionWithDefaults(spelExpressionToDefaultJsonValue, e))
+        .map(e => convertSpelExpressionToJsonWithDefaultValues(converter, e))
         .sequence
         .map(_.mkString)
     case expression: LiteralExpression => validNel(expression.getValue)
     case expression: standard.SpelExpression =>
-      spelExpressionToDefaultJsonValue(expression.getExpressionString, Typed[SpelExpressionRepr])
+      converter.toJsonDefaultValue(UnparsedSpelExpression(expression.getExpressionString))
     case _ => invalidNel(ExpressionCompilationError("Unknown expression type"))
   }
-
-  private def spelExpressionToDefaultJsonValue(ctx: ValidationContext)(
-      original: String,
-      expectedType: typing.TypingResult
-  ): ValidatedNel[ExpressionParseError, String] = spelParser
-    .parse(original, ctx, expectedType)
-    .map(_.typingInfo.typingResult)
-    .map(typingResultToDefaultJsonValue)
-
-  private def typingResultToDefaultJsonValue(typingResult: TypingResult): String = typingResult match {
-    case TypedClass(k, _) =>
-      k match {
-        case className if TypeValueDeterminer.isIntegerNumber(className)       => "0"
-        case className if TypeValueDeterminer.isFloatingPointNumber(className) => "0.5"
-        case className if TypeValueDeterminer.isBoolean(className)             => "true"
-        case className if TypeValueDeterminer.isString(className)              => "unquoted string"
-        // For now, complex types are treated as String
-        case _ => "unquoted string"
-      }
-    // For now, complex types are treated as String
-    case _ => "unquoted string"
-  }
-
-  private def extractJsonStringFromCompiledExpression(
-      compiledExpression: CompiledExpression
-  ): ValidatedNel[ExpressionParseError, String] =
-    compiledExpression match {
-      case expression: SpelExpression =>
-        joinLiteralsAndReplaceExpressionWithDefaults(
-          spelExpressionToDefaultJsonValue,
-          expression.parsedSpringExpression,
-        )
-      case _ => invalidNel(ExpressionCompilationError("Invalid compiled expression type"))
-    }
-
-  private def spelExpressionToDefaultJsonValue(
-      original: String,
-      expectedType: typing.TypingResult
-  ): ValidatedNel[ExpressionParseError, String] = spelParser
-    .parseWithoutContextValidation(original, expectedType)
-    .map(_ => "0")
 
 }
 
 object JsonTemplateParser {
   private val stringTypingResult = Typed.typedClass[String]
 
-  case class CompiledJsonTemplateExpression(
+  class CompiledJsonTemplateExpression(
       languageId: Language,
       originalJsonString: String,
       templateCompiledExpression: CompiledExpression,
@@ -153,28 +123,77 @@ object JsonTemplateParser {
 
     override def original: String = originalJsonString
 
-    override def evaluate[T](ctx: Context, globals: Map[String, Any]): T =
-      if (expectedType == stringTypingResult) {
-        templateCompiledExpression.evaluate[T](ctx, globals)
-      } else {
-        val jsonString = templateCompiledExpression.evaluate[String](ctx, globals)
-        parser.parse(jsonString) match {
-          case Left(error)  => throw new IllegalStateException("Parsing JSON failed with error", error)
-          case Right(value) => FromJsonSimpleDecoder.jsonToAny(value).asInstanceOf[T]
+    override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
+      val jsonString = templateCompiledExpression.evaluate[String](ctx, globals)
+      parser
+        .parse(jsonString)
+        .flatMap { value =>
+          FromJsonTypingResultBasedDecoder.decodeValue(expectedType, value.hcursor)
         }
-      }
+        .fold(e => throw new JsonTemplateEvaluationException(originalJsonString, e), _.asInstanceOf[T])
+    }
 
   }
 
-  case class JsonTemplateExpressionTypingInfo(typingInfo: ExpressionTypingInfo, expectedType: typing.TypingResult)
-      extends ExpressionTypingInfo {
+  class JsonTemplateExpressionTypingInfo(typingInfo: ExpressionTypingInfo) extends ExpressionTypingInfo {
+    override val typingResult: TypingResult = typingInfo.typingResult.withoutValue
+  }
 
-    override val typingResult: TypingResult =
-      if (expectedType == stringTypingResult) {
-        stringTypingResult
-      } else {
-        typingInfo.typingResult.withoutValue
-      }
+  private class JsonTemplateEvaluationException(
+      input: String,
+      cause: Throwable,
+  ) extends NonTransientException(
+        input = input,
+        message = s"Expression [$input] evaluation failed, message: ${cause.getMessage}",
+        cause = cause
+      )
+
+  final case class UnparsedSpelExpression(value: String) extends AnyVal
+
+  trait SpelExpressionConverter {
+    def toJsonDefaultValue(expression: UnparsedSpelExpression): ValidatedNel[ExpressionParseError, String]
+  }
+
+  object SpelExpressionConverter {
+    val defaultSpelTypingResult: TypingResult     = Typed[SpelExpressionRepr]
+    val placeHolderForIntegerNumber: String       = "0"
+    val placeHolderForFloatingPointNumber: String = "0.5"
+    val placeHolderForBoolean: String             = "true"
+    val placeHolderForString: String              = "unquoted string"
+  }
+
+  class WithContextValidationSpelExpressionConverter(spelParser: SpelExpressionParser, context: ValidationContext)
+      extends SpelExpressionConverter {
+
+    override def toJsonDefaultValue(expression: UnparsedSpelExpression): ValidatedNel[ExpressionParseError, String] =
+      spelParser
+        .parse(expression.value, context, defaultSpelTypingResult)
+        .map(_.typingInfo.typingResult)
+        .map(typingResultToDefaultJsonValue)
+
+    private def typingResultToDefaultJsonValue(typingResult: TypingResult): String = typingResult match {
+      case TypedClass(k, _) =>
+        k match {
+          case clazz if TypeValueDeterminer.isIntegerNumber(clazz)       => placeHolderForIntegerNumber
+          case clazz if TypeValueDeterminer.isFloatingPointNumber(clazz) => placeHolderForFloatingPointNumber
+          case clazz if TypeValueDeterminer.isBoolean(clazz)             => placeHolderForBoolean
+          case clazz if TypeValueDeterminer.isString(clazz)              => placeHolderForString
+          // For now, complex types are treated as String. In runtime, .toString is invoked on these types.
+          case _ => placeHolderForString
+        }
+      // For now, complex types are treated as String. In runtime, .toString is invoked on these types.
+      case _ => placeHolderForString
+    }
+
+  }
+
+  class WithoutContextValidationSpelExpressionConverter(spelParser: SpelExpressionParser)
+      extends SpelExpressionConverter {
+
+    override def toJsonDefaultValue(expression: UnparsedSpelExpression): ValidatedNel[ExpressionParseError, String] =
+      spelParser
+        .parseWithoutContextValidation(expression.value, SpelExpressionConverter.defaultSpelTypingResult)
+        .map(_ => placeHolderForIntegerNumber)
 
   }
 

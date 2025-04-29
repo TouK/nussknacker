@@ -9,7 +9,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -66,21 +66,31 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
   test("should parse json templates") {
     forAll(
       Table(
-        "Data sample",
-        "{}",
-        "123",
-        "[]",
-        "\"text\"",
-        "false",
-        "null",
-        s"""
+        ("Data sample", "Typing result"),
+        ("{}", Typed.record(List())),
+        ("123", Typed.typedClass[Integer]),
+        ("[]", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
+        ("\"text\"", Typed.typedClass[String]),
+        ("false", Typed.typedClass[java.lang.Boolean]),
+        ("null", Unknown),
+        (
+          s"""
            |{
            |  "name": "Tom",
            |  "age": 22,
            |  "city": "Warsaw"
            |}
            |""".stripMargin,
-        s"""
+          Typed.record(
+            List(
+              "name" -> Typed.typedClass[String],
+              "age"  -> Typed.typedClass[Integer],
+              "city" -> Typed.typedClass[String],
+            )
+          )
+        ),
+        (
+          s"""
            |[
            |  {
            |    "name": "Tom",
@@ -89,21 +99,43 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
            |  }
            |]
            |""".stripMargin,
-        s"""
+          Typed.genericTypeClass[java.util.List[_]](
+            List(
+              Typed.record(
+                List(
+                  "name" -> Typed.typedClass[String],
+                  "age"  -> Typed.typedClass[Integer],
+                  "city" -> Typed.typedClass[String],
+                )
+              )
+            )
+          )
+        ),
+        (
+          s"""
            |{
            |  "name": "#{#name}",
            |  "age": #{#age},
            |  "hasConsent": #{#hasConsent},
            |  "amount": #{#amount}
            |}""".stripMargin,
+          Typed.record(
+            List(
+              "name"       -> Typed.typedClass[String],
+              "age"        -> Typed.typedClass[Integer],
+              "hasConsent" -> Typed.typedClass[java.lang.Boolean],
+              "amount"     -> Typed.typedClass[java.math.BigDecimal],
+            )
+          )
+        ),
       )
-    ) { dataSample: String =>
-      parse[String](dataSample, ctxWithVariables).map(_.returnType) shouldBe Valid(Typed.typedClass[String])
+    ) { (dataSample: String, typingResult: TypingResult) =>
+      parse[Any](dataSample, ctxWithVariables).map(_.returnType) shouldBe Valid(typingResult)
       parseWithoutContextValidation[String](dataSample).isValid shouldBe true
     }
   }
 
-  test("should evaluate json template to string") {
+  test("should evaluate json template") {
     val dataSample =
       s"""{
          |  "name": "#{#name}",
@@ -111,17 +143,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
          |  "hasConsent": #{#hasConsent},
          |  "amount": #{#amount}
          |}""".stripMargin
-
-    val stringResult = parse[String](dataSample, ctxWithVariables).validValue.expression
-      .evaluate[String](evaluationContext, Map.empty)
-
-    stringResult shouldBe
-      """{
-        |  "name": "John",
-        |  "age": 50,
-        |  "hasConsent": true,
-        |  "amount": 100.5
-        |}""".stripMargin
 
     val mapResult = parse[Any](dataSample, ctxWithVariables).validValue.expression
       .evaluate[Any](evaluationContext, Map.empty)
@@ -141,7 +162,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
                                      |}""".stripMargin
 
     val result =
-      parse[String](
+      parse[Any](
         jsonWithComplexVariables,
         ValidationContext(
           Map(
@@ -153,7 +174,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
           )
         )
       ).validValue.expression
-        .evaluate[String](
+        .evaluate[Any](
           Context("test").withVariables(
             Map(
               "products" -> List("a", "b").asJava,
@@ -163,11 +184,10 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
           Map.empty
         )
 
-    result shouldBe
-      """{
-        |  "products": "[a, b]",
-        |  "pricing": "{a=1000, b=500}"
-        |}""".stripMargin
+    result shouldBe Map(
+      "products" -> "[a, b]",
+      "pricing"  -> "{a=1000, b=500}",
+    ).asJava
   }
 
   test("should return error when JSON cannot be parsed") {
