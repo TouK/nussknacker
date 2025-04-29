@@ -120,15 +120,23 @@ class LimitsService(
   ) = {
     deploymentUpdateStrategy match {
       case ReplaceDeploymentWithSameScenarioName(_) if currentlyActiveScenarios.contains(currentlyDeployingScenario) =>
-        Right(())
-      case ReplaceDeploymentWithSameScenarioName(_) | DontReplaceDeployment =>
         if (currentlyActiveScenarios.size + 1 <= activeScenariosLimit) {
           Right(())
         } else {
           logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
-               |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
-               |Scenario is being deployed: $currentlyDeployingScenario.
-               |""".stripMargin)
+                          |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
+                          |Scenario is being deployed: $currentlyDeployingScenario.
+                          |""".stripMargin)
+          Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
+        }
+      case ReplaceDeploymentWithSameScenarioName(_) | DontReplaceDeployment =>
+        if (currentlyActiveScenarios.size <= activeScenariosLimit) {
+          Right(())
+        } else {
+          logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
+                          |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
+                          |Scenario is being deployed: $currentlyDeployingScenario.
+                          |""".stripMargin)
           Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
         }
     }
