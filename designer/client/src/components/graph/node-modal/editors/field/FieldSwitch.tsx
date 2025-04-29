@@ -1,7 +1,7 @@
 import { css } from "@emotion/css";
-import { Box, Tabs, Tab, styled } from "@mui/material";
+import { Box, styled, Tab, Tabs } from "@mui/material";
 import type { ReactNode } from "react";
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
@@ -111,14 +111,17 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
     if (readOnly || !showSwitch || isSingleEditorVisible) {
         return <>{typeof children === "function" ? children(selectedEditor) : children}</>;
     }
+
+    const selectedOption = availableEditorsOptions.find(({ value }) => value === selectedEditor.type);
+    if (!selectedOption) {
+        return null;
+    }
+
     return (
         <Box display="block" flexBasis={"60%"} flex={1} width={"100%"}>
             <Box display="flex" justifyContent="flex-end">
                 <Tabs
-                    value={
-                        availableEditorsOptions.find((availableEditorsOption) => availableEditorsOption.value === selectedEditor.type)
-                            ?.value
-                    }
+                    value={selectedOption.value}
                     variant="standard"
                     scrollButtons="auto"
                     sx={{
