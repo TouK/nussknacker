@@ -1,11 +1,12 @@
+import { Divider } from "@mui/material";
+import type { Ace } from "ace-builds";
+import ace from "ace-builds/src-noconflict/ace";
 import { isEmpty, overSome } from "lodash";
 import React from "react";
-import { ExpressionSuggester, ExpressionSuggestion } from "./ExpressionSuggester";
-import ProcessUtils from "../../../../../common/ProcessUtils";
 import ReactDOMServer from "react-dom/server";
-import { Ace } from "ace-builds";
-import ace from "ace-builds/src-noconflict/ace";
-import { Divider } from "@mui/material";
+
+import ProcessUtils from "../../../../../common/ProcessUtils";
+import type { ExpressionSuggester, ExpressionSuggestion } from "./ExpressionSuggester";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
 
@@ -27,7 +28,7 @@ function isSqlTokenAllowed(iterator, modeId): boolean {
 
 function isSpelTokenAllowed(iterator, modeId): boolean {
     // We need to handle #dict['Label'], where Label is a string token
-    return modeId === "ace/mode/spel" || modeId === "ace/mode/spelTemplate";
+    return modeId === "ace/mode/spel" || modeId === "ace/mode/spelTemplate" || modeId === "ace/mode/jsonTemplate";
 }
 
 declare module "ace-builds" {
