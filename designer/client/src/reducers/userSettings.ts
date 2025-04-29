@@ -34,7 +34,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
     "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
     "debug.userSettingsVisible": getInitialUserFlag("debug.userSettingsVisible", isDev),
-    "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines"),
+    "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines", true),
 });
 
 /**
@@ -76,4 +76,4 @@ const reducer: Reducer<UserSettings> = (state = getDefaultUserSettings(), action
     }
 };
 
-export const userSettings = persistReducer({ key: "settings", storage, debug: true, transforms: [filterInitialValuesTransform] }, reducer);
+export const userSettings = persistReducer({ key: "settings", storage, transforms: [filterInitialValuesTransform] }, reducer);
