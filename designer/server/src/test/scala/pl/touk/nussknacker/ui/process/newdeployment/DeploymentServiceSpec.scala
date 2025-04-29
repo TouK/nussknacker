@@ -47,7 +47,7 @@ import java.time.{Clock, Instant, ZoneOffset}
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
 
-class DeploymentServiceTest
+class DeploymentServiceSpec
     extends AnyWordSpec
     with Matchers
     with Inside

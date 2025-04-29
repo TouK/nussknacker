@@ -21,7 +21,7 @@ trait BaseSpelSpec {
 
   protected val fixedZoned: ZonedDateTime = ZonedDateTime.of(2020, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
 
-  private val globalVariables = Map[String, Any](
+  protected val globalVariables = Map[String, Any](
     "COLLECTION"  -> collection,
     "DATE"        -> new DateUtils(Clock.fixed(fixedZoned.toInstant, ZoneOffset.UTC)),
     "DATE_FORMAT" -> new DateFormatUtils(Locale.US),
@@ -31,7 +31,7 @@ trait BaseSpelSpec {
     "BASE64"      -> base64
   )
 
-  private val parser = SpelExpressionParser.default(
+  protected val parser = SpelExpressionParser.default(
     getClass.getClassLoader,
     ModelDefinitionBuilder.emptyExpressionConfig,
     new SimpleDictRegistry(Map.empty),
