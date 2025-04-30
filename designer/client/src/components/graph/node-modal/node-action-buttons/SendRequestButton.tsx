@@ -9,6 +9,7 @@ import { getProcessName } from "../../../../reducers/selectors/graph";
 import type { NodeType } from "../../../../types";
 import { useSourceParameters } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { InfoTooltip } from "../editors/InfoTooltip";
+import { MarkdownStyled } from "../MarkdownStyled";
 import { StyledLoadingButton } from "./StyledLoadingButton";
 
 interface Props {
@@ -64,7 +65,17 @@ export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: P
                         setShowInfoAfterSendData(false);
                     }}
                 >
-                    TODO
+                    <MarkdownStyled>
+                        {t(
+                            "node.actions.sendRequest.successMessage",
+                            `
+The message has been sent. You can now check the processing outcome by:
+- Reviewing the metrics,
+- Using counts,
+- Using the logging component to inspect the message content.
+`,
+                        )}
+                    </MarkdownStyled>
                 </Alert>
             </Collapse>
         </Box>
