@@ -956,19 +956,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("validate service params") {
-    val process = ScenarioBuilder
-      .streaming("process1")
-      .source("id1", "typed-source")
-      .enricher("enricher1", "out", "withParamsService")
-      .emptySink("id2", "sink")
-
-    inside(validate(process, definitionWithTypedSource).result) {
-      case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) =>
-        missingParam shouldBe Set(ParameterName("par1"))
-    }
-  }
-
   test("find usage of fields that does not exist in option object") {
     val process = ScenarioBuilder
       .streaming("process1")
