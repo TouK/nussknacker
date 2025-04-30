@@ -791,14 +791,14 @@ class HttpService {
         return promise;
     }
 
-    testScenarioWithFile(processName: ProcessName, scenarioGraph: ScenarioGraph, file: File): Promise<AxiosResponse<TestProcessResponse>> {
+    testScenarioWithFile(processName: ProcessName, scenarioGraph: ScenarioGraph, file: File) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const data = new FormData();
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+        const promise = api.post<TestProcessResponse>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
             params: {
                 skipResultsPerTransition: this.#skipResultsPerTransition,
             },
@@ -829,7 +829,7 @@ class HttpService {
               },
     ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const promise = api.post(
+        const promise = api.post<TestProcessResponse>(
             `/scenarioTesting/${encodeURIComponent(processName)}/performTest`,
             {
                 testData,
