@@ -12,10 +12,10 @@ object SimpleStateStatus {
 
   def fromDeploymentStatus(deploymentStatus: DeploymentStatus): StateStatus = {
     deploymentStatus match {
-      case noAttributes: NoAttributesDeploymentStatus => NoAttributesStateStatus(noAttributes.name.value)
+      case status: NoAttributesDeploymentStatus => NoAttributesStateStatus(status.name.value)
       // We assume that all deployment status have default allowedActions. Non-default allowedActions have only
       // statuses that are not deployment statuses but scenario statuses.
-      case problem: ProblemDeploymentStatus => ProblemStateStatus(problem.description)
+      case status: ProblemDeploymentStatus => ProblemStateStatus(status.problemDescription)
     }
   }
 

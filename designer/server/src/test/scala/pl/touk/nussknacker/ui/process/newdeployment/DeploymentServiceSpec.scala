@@ -416,19 +416,18 @@ class DeploymentServiceSpec
       processingType: TestProcessingType = Streaming1,
       deploymentStatus: Option[DeploymentStatus] = None
   ): ProcessIdWithName = {
-    val creator    = adminUser()
-    val scenario   = validProcessWithName(scenarioName)
-    val scenarioId = saveScenario(scenario, creator, processingType)
-    deploymentStatus.foreach(configureScenarioDeploymentStatus(scenarioId, creator, _))
-    ProcessIdWithName(scenarioId, scenario.name)
+    val creator  = adminUser()
+    val scenario = saveScenario(validProcessWithName(scenarioName), creator, processingType)
+    deploymentStatus.foreach(configureScenarioDeploymentStatus(scenario.id, creator, _))
+    scenario
   }
 
   private def saveScenario(
       scenario: CanonicalProcess,
       createdByUser: LoggedUser = adminUser(),
       processingType: TestProcessingType = Streaming1
-  ): ProcessId = {
-    writeScenarioRepository
+  ): ProcessIdWithName = {
+    val scenarioId = writeScenarioRepository
       .saveNewProcess(
         CreateProcessAction(
           processName = scenario.name,
@@ -441,6 +440,7 @@ class DeploymentServiceSpec
       .dbioActionValues
       .get
       .processId
+    ProcessIdWithName(scenarioId, scenario.name)
   }
 
   private def configureScenarioDeploymentStatus(
@@ -469,22 +469,20 @@ class DeploymentServiceSpec
       scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): Either[DeploymentService.RunDeploymentError, DeploymentForeignKeys] = {
-    val scenario = validProcessWithName(scenarioName)
-    saveScenario(scenario, adminUser(), processingType)
-
-    deploymentService
-      .runDeployment(
-        RunDeploymentCommand(DeploymentId.generate, scenario.name, NodesDeploymentData.empty, adminUser())
-      )
-      .futureValue
+    val scenario = saveScenario(validProcessWithName(scenarioName), adminUser(), processingType)
+    runDeployment(scenario, adminUser())
   }
 
   private def redeployExampleScenario(
       scenario: ProcessIdWithName
   ): Either[DeploymentService.RunDeploymentError, DeploymentForeignKeys] = {
+    runDeployment(scenario, adminUser())
+  }
+
+  private def runDeployment(scenario: ProcessIdWithName, deployingByUser: LoggedUser) = {
     deploymentService
       .runDeployment(
-        RunDeploymentCommand(DeploymentId.generate, scenario.name, NodesDeploymentData.empty, adminUser())
+        RunDeploymentCommand(DeploymentId.generate, scenario.name, NodesDeploymentData.empty, deployingByUser)
       )
       .futureValue
   }

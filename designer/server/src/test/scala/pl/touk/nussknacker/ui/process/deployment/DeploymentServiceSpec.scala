@@ -120,15 +120,13 @@ class DeploymentServiceSpec
 
   "should return error when trying to deploy without comment when comment is required" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
-
-    val processName: ProcessName = generateScenarioName()
-    val processIdWithName        = prepareScenario(processName)
+    val scenario                             = prepareScenario(generateScenarioName())
 
     val result =
       deploymentServiceWithCommentSettings
         .processCommand(
           RunDeploymentCommand(
-            CommonCommandData(processIdWithName, None, user),
+            CommonCommandData(scenario, None, user),
             StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
             NodesDeploymentData.empty
           )
@@ -141,20 +139,18 @@ class DeploymentServiceSpec
 
     eventually {
       val inProgressActions =
-        actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
+        actionRepository.getInProgressActionNames(scenario.id).dbioActionValues
       inProgressActions should have size 0
     }
   }
 
   "should not deploy without comment when comment is required" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
-
-    val processName: ProcessName = generateScenarioName()
-    val processIdWithName        = prepareScenario(processName)
+    val scenario                             = prepareScenario(generateScenarioName())
 
     deploymentServiceWithCommentSettings.processCommand(
       RunDeploymentCommand(
-        CommonCommandData(processIdWithName, None, user),
+        CommonCommandData(scenario, None, user),
         StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
         NodesDeploymentData.empty
       )
@@ -162,7 +158,7 @@ class DeploymentServiceSpec
 
     eventually {
       val status = scenarioStatusProvider
-        .getScenarioStatus(processIdWithName)
+        .getScenarioStatus(scenario)
         .futureValue
 
       status should not be SimpleStateStatus.Running
@@ -171,7 +167,7 @@ class DeploymentServiceSpec
     }
 
     eventually {
-      val inProgressActions = actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
+      val inProgressActions = actionRepository.getInProgressActionNames(scenario.id).dbioActionValues
       inProgressActions should have size 0
     }
   }
@@ -179,15 +175,14 @@ class DeploymentServiceSpec
   "should pass when having an ok comment" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
 
-    val processName: ProcessName = generateScenarioName()
-    val processIdWithName        = prepareScenario(processName)
+    val scenario = prepareScenario(generateScenarioName())
 
     deploymentManager1
-      .withWaitForDeployFinish(processName) {
+      .withWaitForDeployFinish(scenario.name) {
         deploymentServiceWithCommentSettings
           .processCommand(
             RunDeploymentCommand(
-              CommonCommandData(processIdWithName, Comment.from("samplePattern"), user),
+              CommonCommandData(scenario, Comment.from("samplePattern"), user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty
             )
@@ -197,20 +192,19 @@ class DeploymentServiceSpec
       .futureValue
   }
 
-  "should not cancel a deployed process without cancel comment when comment is required" in {
+  "should not cancel a deployed scenario without cancel comment when comment is required" in {
     val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
 
-    val processName: ProcessName = generateScenarioName()
-    val (processIdWithName, _)   = prepareDeployedProcess(processName)
-    deploymentManager1.withProcessRunning(processName) {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
+    deploymentManager1.withScenarioRunning(scenario.name) {
       val error = deploymentServiceWithCommentSettings
-        .processCommand(CancelScenarioCommand(CommonCommandData(processIdWithName, None, user)))
+        .processCommand(CancelScenarioCommand(CommonCommandData(scenario, None, user)))
         .failed
         .futureValue
       error.getMessage shouldBe "Comment is required."
 
       eventually {
-        val status = scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue
+        val status = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
         status should not be SimpleStateStatus.Canceled
 
@@ -218,121 +212,116 @@ class DeploymentServiceSpec
       }
 
       eventually {
-        val inProgressActions = actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
+        val inProgressActions = actionRepository.getInProgressActionNames(scenario.id).dbioActionValues
         inProgressActions should have size 0
       }
     }
   }
 
   "should return state correctly when state is deployed" in {
-    val processName: ProcessName = generateScenarioName()
-    val processIdWithName        = prepareScenario(processName)
+    val scenario = prepareScenario(generateScenarioName())
 
-    deploymentManager1.withProcessRunning(processName) {
-      deploymentManager1.withWaitForDeployFinish(processName) {
+    deploymentManager1.withScenarioRunning(scenario.name) {
+      deploymentManager1.withWaitForDeployFinish(scenario.name) {
         deploymentService
           .processCommand(
             RunDeploymentCommand(
-              CommonCommandData(processIdWithName, None, user),
+              CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty
             )
           )
           .futureValue
-        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.DuringDeploy
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.DuringDeploy
       }
 
       eventually {
-        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.Running
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.Running
       }
     }
   }
 
   "should return state correctly when state is cancelled" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
     deploymentManager1.withWaitForCancelFinish {
-      deploymentService.processCommand(CancelScenarioCommand(CommonCommandData(processId, None, user)))
+      deploymentService.processCommand(CancelScenarioCommand(CommonCommandData(scenario, None, user)))
       eventually {
-        scenarioStatusProvider.getScenarioStatus(processId).futureValue shouldBe SimpleStateStatus.DuringCancel
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.DuringCancel
       }
     }
   }
 
   "should mark Action ExecutionFinished and publish an event as finished" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, actionId)    = prepareDeployedProcess(processName)
+    val (scenario, actionId) = prepareDeployedScenario(generateScenarioName())
 
     actionService.markActionExecutionFinished(Streaming1.stringify, actionId).futureValue
     eventually {
       val action =
-        actionRepository.getFinishedProcessActions(processId.id, Some(Set(ScenarioActionName.Deploy))).dbioActionValues
+        actionRepository.getFinishedProcessActions(scenario.id, Some(Set(ScenarioActionName.Deploy))).dbioActionValues
 
       action.loneElement.state shouldBe ProcessActionState.ExecutionFinished
       listener.events.toArray.filter(_.isInstanceOf[OnActionExecutionFinished]) should have length 1
     }
   }
 
-  "should mark finished process as finished" in {
-    val processName: ProcessName    = generateScenarioName()
-    val (processId, deployActionId) = prepareDeployedProcess(processName)
+  "should mark finished scenario as finished" in {
+    val (scenario, deployActionId) = prepareDeployedScenario(generateScenarioName())
 
-    deploymentManager1.withProcessRunning(processName) {
+    deploymentManager1.withScenarioRunning(scenario.name) {
       checkIsFollowingDeploy(
-        scenarioStatusProvider.getScenarioStatus(processId).futureValue,
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue,
         expected = true
       )
       fetchingScenarioDBIORepository
-        .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+        .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
         .dbioActionValues
         .value
         .lastStateAction should not be None
     }
 
-    deploymentManager1.withProcessFinished(processName, DeploymentId.fromActionId(deployActionId)) {
+    deploymentManager1.withScenarioFinished(scenario.name, DeploymentId.fromActionId(deployActionId)) {
       reconciler.synchronizeEngineFinishedDeploymentsLocalStatuses().futureValue
     }
 
-    val processDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    val lastStateAction = processDetails.lastStateAction.value
+    val scenarioDetails =
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+    val lastStateAction = scenarioDetails.lastStateAction.value
     lastStateAction.actionName shouldBe ScenarioActionName.Deploy
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
     // we want to hide finished deploys
-    processDetails.lastDeployedAction shouldBe empty
-    dbioRunner.run(activityRepository.findActivity(processId.id)).futureValue.comments should have length 1
+    scenarioDetails.lastDeployedAction shouldBe empty
+    dbioRunner.run(activityRepository.findActivity(scenario.id)).futureValue.comments should have length 1
 
-    deploymentManager1.withEmptyProcessState(processName) {
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
       val stateAfterJobRetention =
-        scenarioStatusProvider.getScenarioStatus(processId).futureValue
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       stateAfterJobRetention shouldBe SimpleStateStatus.Finished
     }
 
-    archiveProcess(processId)
-    scenarioStatusProvider.getScenarioStatus(processId).futureValue shouldBe SimpleStateStatus.Finished
+    archiveScenario(scenario)
+    scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.Finished
   }
 
   "should finish deployment only after DeploymentManager finishes" in {
-    val processName: ProcessName = generateScenarioName()
-    val processIdWithName        = prepareScenario(processName)
+    val scenario = prepareScenario(generateScenarioName())
 
     def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ScenarioActionName]) = {
       fetchingScenarioDBIORepository
-        .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
+        .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
         .dbioActionValues
         .flatMap(_.lastStateAction)
         .map(_.actionName) shouldBe expectedAction
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe expectedStatus
+      scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe expectedStatus
     }
 
-    deploymentManager1.withEmptyProcessState(processName) {
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
       checkStatusAction(SimpleStateStatus.NotDeployed, None)
-      deploymentManager1.withWaitForDeployFinish(processName) {
+      deploymentManager1.withWaitForDeployFinish(scenario.name) {
         deploymentService
           .processCommand(
             RunDeploymentCommand(
-              CommonCommandData(processIdWithName, None, user),
+              CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty
             )
@@ -343,14 +332,14 @@ class DeploymentServiceSpec
       }
     }
 
-    deploymentManager1.withProcessRunning(processName) {
+    deploymentManager1.withScenarioRunning(scenario.name) {
       eventually {
         checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
         listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
       }
     }
 
-    val activities = dbioRunner.run(activityRepository.findActivities(processIdWithName.id)).futureValue
+    val activities = dbioRunner.run(activityRepository.findActivities(scenario.id)).futureValue
 
     activities.size shouldBe 2
     activities(0) match {
@@ -364,17 +353,15 @@ class DeploymentServiceSpec
   }
 
   "should skip notifications and deployment on validation errors" in {
-    val processName: ProcessName = generateScenarioName()
-    val requestedParallelism     = FlinkClientStub.maxParallelism + 1
-    val processIdWithName =
-      prepareScenario(processName, parallelism = Some(requestedParallelism))
+    val requestedParallelism = FlinkClientStub.maxParallelism + 1
+    val scenario             = prepareScenario(generateScenarioName(), parallelism = Some(requestedParallelism))
 
-    deploymentManager1.withEmptyProcessState(processName) {
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
       val result =
         deploymentService
           .processCommand(
             RunDeploymentCommand(
-              CommonCommandData(processIdWithName, None, user),
+              CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty
             )
@@ -383,72 +370,68 @@ class DeploymentServiceSpec
           .futureValue
       result.getMessage shouldBe s"Not enough free slots on Flink cluster. Available slots: ${FlinkClientStub.maxParallelism}, requested: $requestedParallelism. " +
         s"Decrease scenario's parallelism or extend Flink cluster resources"
-      deploymentManager1.successfulDeploys should not contain processName
+      deploymentManager1.successfulDeploys should not contain scenario.name
       fetchingScenarioDBIORepository
-        .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
+        .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
         .dbioActionValues
         .flatMap(_.lastStateAction) shouldBe None
       listener.events shouldBe Symbol("empty")
       // during short period of time, status will be during deploy - because parallelism validation are done in the same critical section as deployment
       eventually {
-        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.NotDeployed
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.NotDeployed
       }
     }
   }
 
   "should return properly state when state is canceled and process is canceled" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareCanceledProcess(processName)
+    val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
-      scenarioStatusProvider.getScenarioStatus(processId).futureValue shouldBe SimpleStateStatus.Canceled
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Canceled) {
+      scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.Canceled
     }
   }
 
-  "should return canceled status for canceled process with empty state - cleaned state" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareCanceledProcess(processName)
+  "should return canceled status for canceled scenario with empty state - cleaned state" in {
+    val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction should not be None
 
-    deploymentManager1.withEmptyProcessState(processName) {
-      scenarioStatusProvider.getScenarioStatus(processId).futureValue shouldBe SimpleStateStatus.Canceled
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
+      scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.Canceled
     }
 
-    val processDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+    val scenarioDetails =
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+    scenarioDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
   "should return canceled status for canceled process with not founded state - cleaned state" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareCanceledProcess(processName)
+    val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction should not be None
 
-    deploymentManager1.withEmptyProcessState(processName) {
-      scenarioStatusProvider.getScenarioStatus(processId).futureValue shouldBe SimpleStateStatus.Canceled
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
+      scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.Canceled
     }
 
-    val processDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+    val scenarioDetails =
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+    scenarioDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
-  "should return state with warning when state is running and process is canceled" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareCanceledProcess(processName)
+  "should return state with warning when state is running and scenario is canceled" in {
+    val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state shouldBe expectedStatus
@@ -456,30 +439,27 @@ class DeploymentServiceSpec
     }
   }
 
-  "should return not deployed when engine returns any state and process hasn't action" in {
-    val processName: ProcessName = generateScenarioName()
-    val processId                = prepareScenario(processName)
+  "should return not deployed when engine returns any state and scenario hasn't action" in {
+    val scenario = prepareScenario(generateScenarioName())
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.NotDeployed
     }
   }
 
-  "should return DuringCancel state when is during canceled and process has CANCEL action" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareCanceledProcess(processName)
+  "should return DuringCancel state when is during canceled and scenario has CANCEL action" in {
+    val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.DuringCancel) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.DuringCancel) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       state shouldBe SimpleStateStatus.DuringCancel
     }
   }
 
-  "should return state with status Restarting when process has been deployed and is restarting" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
+  "should return state with status Restarting when scenario has been deployed and is restarting" in {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
     val state =
       DeploymentStatusDetails(
@@ -488,33 +468,19 @@ class DeploymentServiceSpec
         version = Some(VersionId.initialVersionId)
       )
 
-    deploymentManager1.withProcessStates(processName, List(state)) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStates(scenario.name, List(state)) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       state shouldBe SimpleStateStatus.Restarting
       getAllowedActions(state) shouldBe Set(ScenarioActionName.Cancel)
     }
   }
 
-  "should return state with error when state is not running and process is deployed" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
+  "should return state with error when state is not running and scenario is deployed" in {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
-
-      val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
-      state shouldBe expectedStatus
-      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-    }
-  }
-
-  "should return state with error when state is null and process is deployed" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
-
-    deploymentManager1.withEmptyProcessState(processName) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Canceled) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state shouldBe expectedStatus
@@ -522,13 +488,24 @@ class DeploymentServiceSpec
     }
   }
 
-  "should return error state when state is running and process is deployed with mismatch versions" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
-    val version                  = Some(VersionId(2))
+  "should return state with error when state is null and scenario is deployed" in {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
-    deploymentManager1.withProcessStateVersion(processName, SimpleStateStatus.Running, version) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
+
+      val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
+      state shouldBe expectedStatus
+      getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    }
+  }
+
+  "should return error state when state is running and scenario is deployed with mismatch versions" in {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
+    val version       = Some(VersionId(2))
+
+    deploymentManager1.withScenarioStateVersion(scenario.name, SimpleStateStatus.Running, version) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       val expectedStatus = ProblemStateStatus.mismatchDeployedVersion(VersionId(2L), VersionId(1L), "admin")
       state shouldBe expectedStatus
@@ -536,26 +513,24 @@ class DeploymentServiceSpec
     }
   }
 
-  "should always return process manager failure, even if some other verifications return invalid" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
-    val version                  = Some(VersionId(2))
+  "should always return scenario manager failure, even if some other verifications return invalid" in {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
+    val version       = Some(VersionId(2))
 
     // FIXME: doesnt check recover from failed verifications ???
-    deploymentManager1.withProcessStateVersion(processName, ProblemStateStatus.Failed, version) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateVersion(scenario.name, ProblemStateStatus.Failed, version) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       state shouldBe ProblemStateStatus.Failed
       getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
-  "should return warning state when state is running with empty version and process is deployed" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
+  "should return warning state when state is running with empty version and scenario is deployed" in {
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
-    deploymentManager1.withProcessStateVersion(processName, SimpleStateStatus.Running, Option.empty) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateVersion(scenario.name, SimpleStateStatus.Running, Option.empty) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       val expectedStatus = ProblemStateStatus.missingDeployedVersion(VersionId(1L), "admin")
       state shouldBe expectedStatus
@@ -564,12 +539,11 @@ class DeploymentServiceSpec
   }
 
   "should return error state when failed to get state" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
     // FIXME: doesnt check recover from failed future of findJobStatus ???
-    deploymentManager1.withProcessStateVersion(processName, ProblemStateStatus.FailedToGet, Option.empty) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateVersion(scenario.name, ProblemStateStatus.FailedToGet, Option.empty) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       val expectedStatus = ProblemStateStatus.FailedToGet
       state shouldBe expectedStatus
@@ -577,132 +551,123 @@ class DeploymentServiceSpec
     }
   }
 
-  "should return not deployed status for process with empty state - not deployed state" in {
-    val processName: ProcessName = generateScenarioName()
-    val processId                = prepareScenario(processName)
+  "should return not deployed status for scenario with empty state - not deployed state" in {
+    val scenario = prepareScenario(generateScenarioName())
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction shouldBe None
 
-    deploymentManager1.withEmptyProcessState(processName) {
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
       scenarioStatusProvider
-        .getScenarioStatus(ProcessIdWithName(processId.id, processName))
+        .getScenarioStatus(scenario)
         .futureValue shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction shouldBe None
-    processDetails.lastAction shouldBe None
+    val scenarioDetails =
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+    scenarioDetails.lastStateAction shouldBe None
+    scenarioDetails.lastAction shouldBe None
   }
 
-  "should return not deployed status for process with not found state - not deployed state" in {
-    val processName: ProcessName = generateScenarioName()
-    val processId                = prepareScenario(processName)
+  "should return not deployed status for scenario with not found state - not deployed state" in {
+    val scenario = prepareScenario(generateScenarioName())
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction shouldBe None
 
-    deploymentManager1.withEmptyProcessState(processName) {
-      scenarioStatusProvider.getScenarioStatus(processId).futureValue shouldBe SimpleStateStatus.NotDeployed
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
+      scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction shouldBe None
-    processDetails.lastAction shouldBe None
+    val scenarioDetails =
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+    scenarioDetails.lastStateAction shouldBe None
+    scenarioDetails.lastAction shouldBe None
   }
 
-  "should return not deployed status for process without actions and with state (it should never happen)" in {
-    val processName: ProcessName = generateScenarioName()
-    val processId                = prepareScenario(processName)
+  "should return not deployed status for scenario without actions and with state (it should never happen)" in {
+    val scenario = prepareScenario(generateScenarioName())
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction shouldBe None
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running) {
       scenarioStatusProvider
-        .getScenarioStatus(ProcessIdWithName(processId.id, processName))
+        .getScenarioStatus(scenario)
         .futureValue shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction shouldBe None
-    processDetails.lastAction shouldBe None
+    val scenarioDetails =
+      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+    scenarioDetails.lastStateAction shouldBe None
+    scenarioDetails.lastAction shouldBe None
   }
 
-  "should return not deployed state for archived never deployed process" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareArchivedProcess(processName, None)
+  "should return not deployed state for archived never deployed scenario" in {
+    val (scenario, _) = prepareArchivedScenario(generateScenarioName(), None)
 
-    val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
     state shouldBe SimpleStateStatus.NotDeployed
   }
 
-  "should return not deployed state for archived never deployed process with running state (it should never happen)" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareArchivedProcess(processName, None)
+  "should return not deployed state for archived never deployed scenario with running state (it should never happen)" in {
+    val (scenario, _) = prepareArchivedScenario(generateScenarioName(), None)
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.NotDeployed
     }
   }
 
-  "should return canceled status for archived canceled process" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel))
+  "should return canceled status for archived canceled scenario" in {
+    val (scenario, _) = prepareArchivedScenario(generateScenarioName(), Some(Cancel))
 
-    val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
     state shouldBe SimpleStateStatus.Canceled
   }
 
-  "should return canceled status for archived canceled process with running state (it should never happen)" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel))
+  "should return canceled status for archived canceled scenario with running state (it should never happen)" in {
+    val (scenario, _) = prepareArchivedScenario(generateScenarioName(), Some(Cancel))
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.Canceled
     }
   }
 
-  "should return not deployed state for unarchived never deployed process" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = preparedUnArchivedProcess(processName, None)
+  "should return not deployed state for unarchived never deployed scenario" in {
+    val (scenario, _) = preparedUnarchivedScenario(generateScenarioName(), None)
 
-    val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
     state shouldBe SimpleStateStatus.NotDeployed
   }
 
-  "should return during deploy for process in deploy in progress" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = preparedUnArchivedProcess(processName, None)
+  "should return during deploy for scenario in deploy in progress" in {
+    val (scenario, _) = preparedUnarchivedScenario(generateScenarioName(), None)
     val _ = actionRepository
-      .addInProgressAction(processId.id, ScenarioActionName.Deploy, Some(VersionId(1)))
+      .addInProgressAction(scenario.id, ScenarioActionName.Deploy, Some(VersionId(1)))
       .dbioActionValues
 
-    val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
     state shouldBe SimpleStateStatus.DuringDeploy
   }
 
   "should getScenariosStatuses bulk with the same result as for single scenario" in {
     val (_, _, runningScenarioId) = prepareScenariosInVariousStates()
 
-    val processesDetails = fetchingScenarioDBIORepository
+    val scenarioDetails = fetchingScenarioDBIORepository
       .fetchLatestProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
-    deploymentManager1.withProcessRunning(runningScenarioId.name) {
+    deploymentManager1.withScenarioRunning(runningScenarioId.name) {
       val statesBasedOnCachedInProgressActionTypes = scenarioStatusProvider
-        .getScenariosStatuses(processesDetails)
+        .getScenariosStatuses(scenarioDetails)
         .futureValue
         .map(_.map(_.name))
 
@@ -714,7 +679,7 @@ class DeploymentServiceSpec
       )
 
       val statesBasedOnNotCachedInProgressActionTypes =
-        processesDetails
+        scenarioDetails
           .map(pd =>
             Option(pd)
               .filterNot(_.isFragment)
@@ -728,74 +693,68 @@ class DeploymentServiceSpec
     }
   }
 
-  "should return not deployed status for archived never deployed process with running state (it should never happen)" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareArchivedProcess(processName, None)
+  "should return not deployed status for archived never deployed scenario with running state (it should never happen)" in {
+    val (scenario, _) = prepareArchivedScenario(generateScenarioName(), None)
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.NotDeployed
     }
   }
 
-  "should return problem status for archived deployed process (last action deployed instead of cancel)" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Deploy))
+  "should return problem status for archived deployed scenario (last action deployed instead of cancel)" in {
+    val (scenario, _) = prepareArchivedScenario(generateScenarioName(), Some(Deploy))
 
-    val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
     state shouldBe ProblemStateStatus.ArchivedShouldBeCanceled
   }
 
-  "should return canceled status for unarchived process" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel))
+  "should return canceled status for unarchived scenario" in {
+    val (scenario, _) = prepareArchivedScenario(generateScenarioName(), Some(Cancel))
 
-    deploymentManager1.withEmptyProcessState(processName) {
-      val state = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
+      val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.Canceled
     }
   }
 
-  "should return problem status for unarchived process with running state (it should never happen)" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = preparedUnArchivedProcess(processName, Some(Cancel))
+  "should return problem status for unarchived scenario with running state (it should never happen)" in {
+    val (scenario, _) = preparedUnarchivedScenario(generateScenarioName(), Some(Cancel))
 
-    deploymentManager1.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state          = scenarioStatusProvider.getScenarioStatus(processId).futureValue
+    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running) {
+      val state          = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state shouldBe expectedStatus
       getAllowedActions(state) shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
-  "should invalidate in progress processes" in {
-    val processName: ProcessName = generateScenarioName()
-    val processIdWithName        = prepareScenario(processName)
+  "should invalidate in progress scenarios" in {
+    val scenario = prepareScenario(generateScenarioName())
 
-    deploymentManager1.withEmptyProcessState(processName) {
+    deploymentManager1.withEmptyScenarioState(scenario.name) {
       val initialStatus = SimpleStateStatus.NotDeployed
-      scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe initialStatus
-      deploymentManager1.withWaitForDeployFinish(processName) {
+      scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe initialStatus
+      deploymentManager1.withWaitForDeployFinish(scenario.name) {
         deploymentService
           .processCommand(
             RunDeploymentCommand(
-              CommonCommandData(processIdWithName, None, user),
+              CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty
             )
           )
           .futureValue
-        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe SimpleStateStatus.DuringDeploy
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe SimpleStateStatus.DuringDeploy
 
         actionService.invalidateInProgressActions()
-        scenarioStatusProvider.getScenarioStatus(processIdWithName).futureValue shouldBe initialStatus
+        scenarioStatusProvider.getScenarioStatus(scenario).futureValue shouldBe initialStatus
       }
     }
   }
 
   "should return problem after occurring timeout during waiting on DM response" in {
-    val processName: ProcessName = generateScenarioName()
-    val (processId, _)           = prepareDeployedProcess(processName)
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
     val timeout = 1.second
     val serviceWithTimeout = deploymentServiceFactory
@@ -811,45 +770,41 @@ class DeploymentServiceSpec
     val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
     deploymentManager1.withDelayBeforeStateReturn(durationLongerThanTimeout) {
       val status = serviceWithTimeout
-        .getScenarioStatus(processId)
+        .getScenarioStatus(scenario)
         .futureValueEnsuringInnerException(durationLongerThanTimeout)
       status shouldBe ProblemStateStatus.FailedToGet
     }
   }
 
   "should fail when trying to get state for fragment" in {
-    val processName: ProcessName = generateScenarioName()
-    val id                       = prepareFragment(processName)
+    val fragment = prepareFragment(generateScenarioName())
 
     assertThrowsWithParent[FragmentStateException.type] {
-      scenarioStatusProvider.getScenarioStatus(id).futureValue
+      scenarioStatusProvider.getScenarioStatus(fragment).futureValue
     }
   }
 
   // TODO: add tests for more advanced things such as changes in model api
   "should recover jobs" in {
-    val processName = generateScenarioName()
-    prepareDeployedProcess(processName)
+    val (scenario, _) = prepareDeployedScenario(generateScenarioName())
 
-    deploymentManager1.withStubbedDeployResult(processName) {
+    deploymentManager1.withStubbedDeployResult(scenario.name) {
       reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_ => true).futureValue
     }
 
     eventually {
-      deploymentManager1.successfulDeploys should contain(processName)
+      deploymentManager1.successfulDeploys should contain(scenario.name)
     }
   }
 
   "should allow to deploy scenario when active scenarios count is less than the limit" when {
     "one processing type is considered" when {
       "1st scenario is running, and the 2nd scenario is not deployed" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1)
-        prepareNotDeployedProcess(scenario2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val scenario2      = prepareNotDeployedScenario(generateScenarioName("scenario2"))
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.NotDeployed) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.NotDeployed) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -857,13 +812,11 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is running, and the 2nd scenario is cancelled" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1)
-        prepareCanceledProcess(scenario2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareCanceledScenario(generateScenarioName("scenario2"))
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.Canceled) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Canceled) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -871,13 +824,11 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is running, and the 2nd scenario is during cancel" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1)
-        prepareCanceledProcess(scenario2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareCanceledScenario(generateScenarioName("scenario2"))
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.DuringCancel) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringCancel) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -885,25 +836,21 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is running, and the 2nd scenario is finished" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1)
-        prepareDeployedProcess(scenario2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
 
-        deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.Finished) {
+        deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Finished) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
       }
       "1st scenario is running, and the 2nd scenario is problem" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1)
-        prepareDeployedProcess(scenario2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager1.withProcessStateStatus(scenario2, StateStatus("PROBLEM")) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager1.withScenarioStateStatus(scenario2.name, StateStatus("PROBLEM")) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -911,14 +858,12 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is being redeployed, when the 2nd scenario is running" in {
-        val scenario1        = generateScenarioName("scenario1")
-        val scenario2        = generateScenarioName("scenario2")
-        val (scenario1Id, _) = prepareDeployedProcess(scenario1)
-        prepareDeployedProcess(scenario2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.Running) {
-            redeployExampleScenario(scenario1Id)
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Running) {
+            redeployExampleScenario(scenario1)
           }
         }
 
@@ -927,13 +872,11 @@ class DeploymentServiceSpec
     }
     "two processing types are considered" when {
       "1st scenario is running (streaming1), and the 2nd scenario is not deployed (streaming2)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareNotDeployedProcess(scenario2, Streaming2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val scenario2      = prepareNotDeployedScenario(generateScenarioName("scenario2"), Streaming2)
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.NotDeployed) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.NotDeployed) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -941,13 +884,11 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is running (streaming1), and the 2nd scenario is cancelled (streaming2)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareCanceledProcess(scenario2, Streaming2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareCanceledScenario(generateScenarioName("scenario2"), Streaming2)
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.Canceled) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Canceled) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -955,13 +896,11 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is running (streaming1), and the 2nd scenario is during cancel (streaming2)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareCanceledProcess(scenario2, Streaming2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareCanceledScenario(generateScenarioName("scenario2"), Streaming2)
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.DuringCancel) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringCancel) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -969,13 +908,11 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is running (streaming1), and the 2nd scenario is finished (streaming2)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareDeployedProcess(scenario2, Streaming2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.Finished) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Finished) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -983,13 +920,11 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is running (streaming1), and the 2nd scenario is problem (streaming2)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareDeployedProcess(scenario2, Streaming2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager2.withProcessStateStatus(scenario2, StateStatus("PROBLEM")) {
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager2.withScenarioStateStatus(scenario2.name, StateStatus("PROBLEM")) {
             deployExampleScenario(generateScenarioName("scenario3"))
           }
         }
@@ -997,14 +932,12 @@ class DeploymentServiceSpec
         result should not be None
       }
       "1st scenario is being redeployed (streaming1), when the 2nd scenario is running (streaming2)" in {
-        val scenario1        = generateScenarioName("scenario1")
-        val scenario2        = generateScenarioName("scenario2")
-        val (scenario1Id, _) = prepareDeployedProcess(scenario1, Streaming1)
-        prepareDeployedProcess(scenario2, Streaming2)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
 
-        val result = deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-          deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.Running) {
-            redeployExampleScenario(scenario1Id)
+        val result = deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+          deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Running) {
+            redeployExampleScenario(scenario1)
           }
         }
 
@@ -1016,17 +949,14 @@ class DeploymentServiceSpec
   "should not allow more scenarios than active scenario limits to be used" when {
     "one processing type is considered" when {
       "1st scenario is running, and the 2nd scenario is running, and the 3rd scenario is not deployed" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        val scenario3 = generateScenarioName("scenario3")
-        prepareDeployedProcess(scenario1)
-        prepareDeployedProcess(scenario2)
-        prepareNotDeployedProcess(scenario3)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"))
 
         assertThrowsWithParent[ActiveScenariosLimitExceededError] {
-          deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-            deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.Running) {
-              deploymentManager1.withProcessStateStatus(scenario3, SimpleStateStatus.NotDeployed) {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Running) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
               }
             }
@@ -1034,17 +964,14 @@ class DeploymentServiceSpec
         }
       }
       "1st scenario is running, and the 2nd scenario is during deploy, and the 3rd scenario is not deployed" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        val scenario3 = generateScenarioName("scenario3")
-        prepareDeployedProcess(scenario1)
-        prepareDeployedProcess(scenario2)
-        prepareNotDeployedProcess(scenario3)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"))
 
         assertThrowsWithParent[ActiveScenariosLimitExceededError] {
-          deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-            deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.DuringDeploy) {
-              deploymentManager1.withProcessStateStatus(scenario3, SimpleStateStatus.NotDeployed) {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringDeploy) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
               }
             }
@@ -1052,17 +979,14 @@ class DeploymentServiceSpec
         }
       }
       "1st scenario is running, and the 2nd scenario is restarting, and the 3rd scenario is not deployed" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        val scenario3 = generateScenarioName("scenario3")
-        prepareDeployedProcess(scenario1)
-        prepareDeployedProcess(scenario2)
-        prepareNotDeployedProcess(scenario3)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"))
 
         assertThrowsWithParent[ActiveScenariosLimitExceededError] {
-          deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-            deploymentManager1.withProcessStateStatus(scenario2, SimpleStateStatus.Restarting) {
-              deploymentManager1.withProcessStateStatus(scenario3, SimpleStateStatus.NotDeployed) {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Restarting) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
               }
             }
@@ -1072,17 +996,14 @@ class DeploymentServiceSpec
     }
     "two processing types are considered" when {
       "1st scenario is running (streaming1), and the 2nd scenario is running (streaming2), and the 3rd scenario is not deployed (streaming1)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        val scenario3 = generateScenarioName("scenario3")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareDeployedProcess(scenario2, Streaming2)
-        prepareNotDeployedProcess(scenario3, Streaming1)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"), Streaming1)
 
         assertThrowsWithParent[ActiveScenariosLimitExceededError] {
-          deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-            deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.Running) {
-              deploymentManager1.withProcessStateStatus(scenario3, SimpleStateStatus.NotDeployed) {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Running) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
               }
             }
@@ -1090,17 +1011,14 @@ class DeploymentServiceSpec
         }
       }
       "1st scenario is running (streaming1), and the 2nd scenario is during deploy (streaming2), and the 3rd scenario is not deployed (streaming1)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        val scenario3 = generateScenarioName("scenario3")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareDeployedProcess(scenario2, Streaming2)
-        prepareNotDeployedProcess(scenario3, Streaming1)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"), Streaming1)
 
         assertThrowsWithParent[ActiveScenariosLimitExceededError] {
-          deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-            deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.DuringDeploy) {
-              deploymentManager1.withProcessStateStatus(scenario3, SimpleStateStatus.NotDeployed) {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringDeploy) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
               }
             }
@@ -1108,17 +1026,14 @@ class DeploymentServiceSpec
         }
       }
       "1st scenario is running (streaming1), and the 2nd scenario is restarting (streaming2), and the 3rd scenario is not deployed (streaming1)" in {
-        val scenario1 = generateScenarioName("scenario1")
-        val scenario2 = generateScenarioName("scenario2")
-        val scenario3 = generateScenarioName("scenario3")
-        prepareDeployedProcess(scenario1, Streaming1)
-        prepareDeployedProcess(scenario2, Streaming2)
-        prepareNotDeployedProcess(scenario3, Streaming1)
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"), Streaming1)
 
         assertThrowsWithParent[ActiveScenariosLimitExceededError] {
-          deploymentManager1.withProcessStateStatus(scenario1, SimpleStateStatus.Running) {
-            deploymentManager2.withProcessStateStatus(scenario2, SimpleStateStatus.Restarting) {
-              deploymentManager1.withProcessStateStatus(scenario3, SimpleStateStatus.NotDeployed) {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Restarting) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
               }
             }
@@ -1129,15 +1044,15 @@ class DeploymentServiceSpec
   }
 
   private def deployExampleScenario(
-      scenarioName: ProcessName = generateScenarioName()
+      scenarioName: String = generateScenarioName()
   ): Option[ExternalDeploymentId] = {
-    val scenarioId = prepareScenario(scenarioName)
+    val scenario = prepareScenario(scenarioName)
     deploymentManager1
-      .withWaitForDeployFinish(scenarioName, result = Some(ExternalDeploymentId("1"))) {
+      .withWaitForDeployFinish(scenario.name, result = Some(ExternalDeploymentId("1"))) {
         deploymentService
           .processCommand(
             RunDeploymentCommand(
-              CommonCommandData(scenarioId, None, user),
+              CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty
             )
@@ -1176,118 +1091,118 @@ class DeploymentServiceSpec
     }
   }
 
-  private def prepareCanceledProcess(
-      processName: ProcessName,
+  private def prepareCanceledScenario(
+      scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): (ProcessIdWithName, ProcessActionId) = {
-    val (processId, _) = prepareDeployedProcess(processName, processingType)
-    val cancelActionId = prepareAction(processId.id, Cancel)
-    (processId, cancelActionId)
+    val (scenario, _)  = prepareDeployedScenario(scenarioName, processingType)
+    val cancelActionId = prepareAction(scenario.id, Cancel)
+    (scenario, cancelActionId)
   }
 
-  private def prepareDeployedProcess(
-      processName: ProcessName,
+  private def prepareDeployedScenario(
+      scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): (ProcessIdWithName, ProcessActionId) =
-    prepareProcessWithAction(processName, processingType, Some(Deploy)) match {
-      case (processId, Some(actionId)) => (processId, actionId)
-      case (_, None) => throw new IllegalStateException("Deploy actionId should be defined for deployed process")
+    prepareScenarioWithAction(scenarioName, processingType, Some(Deploy)) match {
+      case (scenario, Some(actionId)) => (scenario, actionId)
+      case (_, None) => throw new IllegalStateException("Deploy actionId should be defined for deployed scenario")
     }
 
-  private def prepareNotDeployedProcess(
-      processName: ProcessName,
+  private def prepareNotDeployedScenario(
+      scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): ProcessIdWithName =
-    prepareScenario(processName, processingType)
+    prepareScenario(scenarioName, processingType)
 
-  private def preparedUnArchivedProcess(
-      processName: ProcessName,
+  private def preparedUnarchivedScenario(
+      scenarioName: String,
       actionNameOpt: Option[ScenarioActionName]
   ): (ProcessIdWithName, Option[ProcessActionId]) = {
-    val (processId, actionIdOpt) = prepareArchivedProcess(processName, actionNameOpt)
+    val (scenario, actionIdOpt) = prepareArchivedScenario(scenarioName, actionNameOpt)
     writeProcessRepository
-      .archive(processId = processId, isArchived = false)
+      .archive(processId = scenario, isArchived = false)
       .dbioActionValues
     actionRepository
       .addInstantAction(
-        processId.id,
+        scenario.id,
         VersionId.initialVersionId,
         ScenarioActionName.UnArchive,
         None
       )
       .dbioActionValues
-    (processId, actionIdOpt)
+    (scenario, actionIdOpt)
   }
 
-  private def prepareArchivedProcess(
-      processName: ProcessName,
+  private def prepareArchivedScenario(
+      scenarioName: String,
       actionNameOpt: Option[ScenarioActionName],
       processingType: TestProcessingType = Streaming1,
   ): (ProcessIdWithName, Option[ProcessActionId]) = {
-    val (processId, actionIdOpt) = prepareProcessWithAction(processName, processingType, actionNameOpt)
-    archiveProcess(processId)
-    (processId, actionIdOpt)
+    val (scenario, actionIdOpt) = prepareScenarioWithAction(scenarioName, processingType, actionNameOpt)
+    archiveScenario(scenario)
+    (scenario, actionIdOpt)
   }
 
-  private def archiveProcess(processId: ProcessIdWithName): Unit = {
+  private def archiveScenario(scenario: ProcessIdWithName): Unit = {
     writeProcessRepository
-      .archive(processId = processId, isArchived = true)
+      .archive(processId = scenario, isArchived = true)
       .flatMap(_ =>
-        actionRepository.addInstantAction(processId.id, VersionId.initialVersionId, ScenarioActionName.Archive, None)
+        actionRepository.addInstantAction(scenario.id, VersionId.initialVersionId, ScenarioActionName.Archive, None)
       )
       .dbioActionValues
   }
 
   private def prepareScenariosInVariousStates(): (ProcessIdWithName, ProcessIdWithName, ProcessIdWithName) = {
-    val duringDeployProcessName :: duringCancelProcessName :: otherProcess :: fragmentName :: Nil =
+    val duringDeployScenarioName :: duringCancelScenarioName :: otherScenario :: fragmentName :: Nil =
       (1 to 4).map(_ => generateScenarioName()).toList
 
-    val (duringDeployProcessId, _) = preparedUnArchivedProcess(duringDeployProcessName, None)
-    val (duringCancelProcessId, _) = prepareDeployedProcess(duringCancelProcessName)
+    val (duringDeployScenario, _) = preparedUnarchivedScenario(duringDeployScenarioName, None)
+    val (duringCancelScenario, _) = prepareDeployedScenario(duringCancelScenarioName)
     actionRepository
-      .addInProgressAction(duringDeployProcessId.id, ScenarioActionName.Deploy, Some(VersionId.initialVersionId))
+      .addInProgressAction(duringDeployScenario.id, ScenarioActionName.Deploy, Some(VersionId.initialVersionId))
       .dbioActionValues
     actionRepository
-      .addInProgressAction(duringCancelProcessId.id, ScenarioActionName.Cancel, Some(VersionId.initialVersionId))
+      .addInProgressAction(duringCancelScenario.id, ScenarioActionName.Cancel, Some(VersionId.initialVersionId))
       .dbioActionValues
-    val (deployedProcessId, _) = prepareDeployedProcess(otherProcess)
+    val (deployedScenario, _) = prepareDeployedScenario(otherScenario)
     prepareFragment(fragmentName)
 
-    (duringDeployProcessId, duringCancelProcessId, deployedProcessId)
+    (duringDeployScenario, duringCancelScenario, deployedScenario)
   }
 
-  private def prepareProcessWithAction(
-      processName: ProcessName,
+  private def prepareScenarioWithAction(
+      scenarioName: String,
       processingType: TestProcessingType,
       actionNameOpt: Option[ScenarioActionName]
   ): (ProcessIdWithName, Option[ProcessActionId]) = {
-    val processId   = prepareScenario(processName, processingType)
-    val actionIdOpt = actionNameOpt.map(prepareAction(processId.id, _))
-    (processId, actionIdOpt)
+    val scenario    = prepareScenario(generateScenarioName(scenarioName), processingType)
+    val actionIdOpt = actionNameOpt.map(prepareAction(scenario.id, _))
+    (scenario, actionIdOpt)
   }
 
-  private def prepareAction(processId: ProcessId, actionName: ScenarioActionName): ProcessActionId = {
+  private def prepareAction(scenarioId: ProcessId, actionName: ScenarioActionName): ProcessActionId = {
     val comment = Comment.from(actionName.toString.capitalize)
     actionRepository
-      .addInstantAction(processId, VersionId.initialVersionId, actionName, comment)
+      .addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment)
       .map(_.id)
       .dbioActionValues
   }
 
   private def prepareScenario(
-      scenarioName: ProcessName,
+      scenarioName: String,
       processingType: TestProcessingType = Streaming1,
       parallelism: Option[Int] = None
   ): ProcessIdWithName = {
     val baseBuilder = ScenarioBuilder
-      .streaming(scenarioName.value)
+      .streaming(scenarioName)
     val canonicalProcess = parallelism
       .map(baseBuilder.parallelism)
       .getOrElse(baseBuilder)
       .source("source", ProcessTestData.existingSourceFactory)
       .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action = CreateProcessAction(
-      processName = scenarioName,
+      processName = ProcessName(scenarioName),
       category = "Category1",
       canonicalProcess = canonicalProcess,
       processingType = processingType.stringify,
@@ -1296,20 +1211,20 @@ class DeploymentServiceSpec
     writeProcessRepository
       .saveNewProcess(action)
       .map(_.value.processId)
-      .map(ProcessIdWithName(_, scenarioName))
+      .map(ProcessIdWithName(_, ProcessName(scenarioName)))
       .dbioActionValues
   }
 
   private def prepareFragment(
-      processName: ProcessName,
+      scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): ProcessIdWithName = {
     val canonicalProcess = ScenarioBuilder
-      .fragment(processName.value)
+      .fragment(scenarioName)
       .emptySink("end", "end")
 
     val action = CreateProcessAction(
-      processName = processName,
+      processName = ProcessName(scenarioName),
       category = "Category1",
       canonicalProcess = canonicalProcess,
       processingType = processingType.stringify,
@@ -1319,12 +1234,12 @@ class DeploymentServiceSpec
     writeProcessRepository
       .saveNewProcess(action)
       .map(_.value.processId)
-      .map(ProcessIdWithName(_, processName))
+      .map(ProcessIdWithName(_, ProcessName(scenarioName)))
       .dbioActionValues
   }
 
-  private def generateScenarioName(prefix: String = "process"): ProcessName = {
-    ProcessName(s"${prefix}_${UUID.randomUUID()}")
+  private def generateScenarioName(prefix: String = "process"): String = {
+    s"${prefix}_${UUID.randomUUID()}"
   }
 
   private def getAllowedActions(status: StateStatus, deploymentManager: MockDeploymentManager = deploymentManager1) = {
