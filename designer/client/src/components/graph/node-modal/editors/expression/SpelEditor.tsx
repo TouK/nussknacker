@@ -110,7 +110,7 @@ Use autocompletion to explore available options. To read more see [Documentation
             properties.placeholder = placeholder || t("editors.jsonTemplateEditor.placeholder", 'e.g. { "key": "#{ #input.value }" }');
             properties.InputAdornmentEnd = (
                 <InfoTooltip
-                    text={t(
+                    title={t(
                         "editors.jsonTemplateEditor.infoText",
                         `You are using a json-template-based input, allowing json with embedded expressions. \n 
 Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
