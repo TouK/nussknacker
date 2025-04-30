@@ -71,17 +71,6 @@ export function EnricherProcessor({
                         errors={errors}
                     />
                 ) : null}
-                {node.type === "Enricher" ? (
-                    <MockExpressionField
-                        isEditMode={isEditMode}
-                        editedNode={node}
-                        showValidation={showValidation}
-                        showSwitch={showSwitch}
-                        setNodeDataAt={setProperty}
-                        renderFieldLabel={renderFieldLabel}
-                        errors={errors}
-                    />
-                ) : null}
                 {node.type === "Processor" ? (
                     <DisableField
                         node={node}
@@ -100,6 +89,17 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     errors={errors}
                 />
+                {node.type === "Enricher" && node.service.id !== "decision-table" ? (
+                    <MockExpressionField
+                        isEditMode={isEditMode}
+                        editedNode={node}
+                        showValidation={showValidation}
+                        showSwitch={showSwitch}
+                        setNodeDataAt={setProperty}
+                        renderFieldLabel={renderFieldLabel}
+                        errors={errors}
+                    />
+                ) : null}
             </ParametersListAdvanced>
         </>
     );
