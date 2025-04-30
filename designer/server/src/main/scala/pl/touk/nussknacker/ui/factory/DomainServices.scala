@@ -307,7 +307,13 @@ object DomainServices extends LazyLogging {
         reconciler,
         alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
       )
-      limitsService = createLimitsService(alreadyLoadedConfig, processingTypeServicesProvider, scenarioStatusProvider)
+      limitsService = createLimitsService(
+        alreadyLoadedConfig,
+        processingTypeServicesProvider,
+        scenarioStatusProvider,
+        deploymentRepository,
+        dbioRunner
+      )
       _ = Initialization.init(
         migrations,
         dbRef,
@@ -443,12 +449,16 @@ object DomainServices extends LazyLogging {
   private def createLimitsService(
       designerConfig: DesignerConfig,
       processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
-      scenarioStatusProvider: ScenarioStatusProvider
+      scenarioStatusProvider: ScenarioStatusProvider,
+      deploymentRepository: DeploymentRepository,
+      dbioRunner: DBIOActionRunner
   ) = {
     new LimitsService(
       globalLimitsConfig = designerConfig.globalLimitsConfig,
       activeScenariosLimitProvider = processingTypeServicesProvider.mapValues(_.limitsConfig),
-      scenarioStatusProvider = scenarioStatusProvider
+      scenarioStatusProvider = scenarioStatusProvider,
+      deploymentRepository = deploymentRepository,
+      dbioRunner = dbioRunner
     )
   }
 

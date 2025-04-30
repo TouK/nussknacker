@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.newdeployment
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.{
   MockableDeploymentManager,
   MockableDeploymentManagerConfigurator
@@ -11,15 +10,15 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeploymentStatus, StateStatus}
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
+import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestProcessingType.{
   Streaming1,
   Streaming2
@@ -32,6 +31,7 @@ import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{DeploymentEntityData, WithModifiedAt}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.{
   ActiveScenariosLimitExceededError,
   DeploymentForeignKeys
@@ -39,7 +39,9 @@ import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.{
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.sql.Timestamp
 import java.time.{Clock, Instant, ZoneOffset}
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
@@ -57,11 +59,12 @@ class DeploymentServiceSpec
 
   private implicit val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
     ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(ExecutionContext.global)
+
   import executionContextWithIORuntime.ioRuntime
 
   "request deployment and provide status for it" in {
     val scenario = validProcessWithName("validScenario")
-    saveSampleScenario(scenario)
+    saveScenario(scenario)
 
     val deploymentId = DeploymentId.generate
     val user         = adminUser()
@@ -78,7 +81,7 @@ class DeploymentServiceSpec
 
   "deployment which ended up with failure during request should has problem status" in {
     val scenario = validProcessWithName("scenarioCausingFailure")
-    saveSampleScenario(scenario)
+    saveScenario(scenario)
     val deploymentId = DeploymentId.generate
     streaming1DeploymentManagerConfigurator.configureDeploymentResults(
       Map(deploymentId -> Failure(new Exception("Some failure during deployment")))
@@ -101,66 +104,46 @@ class DeploymentServiceSpec
   "should allow to deploy scenario when active scenarios count is less than the limit" when {
     "one processing type is considered" when {
       "1st scenario is running, and the 2nd scenario is not deployed" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1")
+        prepareNotDeployedScenario("scenario2")
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is cancelled" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Canceled, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1")
+        prepareCanceledScenario("scenario2")
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is during cancel" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.DuringCancel, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1")
+        prepareDuringCancelScenario("scenario2")
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is finished" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Finished, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1")
+        prepareFinishedScenario("scenario2")
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is problem" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(StateStatus("PROBLEM"), version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1")
+        prepareScenarioWithProblem("scenario2")
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
@@ -168,86 +151,46 @@ class DeploymentServiceSpec
     }
     "two processing types are considered" when {
       "1st scenario is running (in streaming1), and the 2nd scenario is not deployed (in streaming2)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareNotDeployedScenario("scenario2", Streaming2)
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is cancelled (in streaming2)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Canceled, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareCanceledScenario("scenario2", Streaming2)
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is during cancel (in streaming2)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.DuringCancel, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareDuringCancelScenario("scenario2", Streaming2)
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is finished (in streaming2)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Finished, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareFinishedScenario("scenario2", Streaming2)
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is problem (in streaming2)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(StateStatus("PROBLEM"), version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareScenarioWithProblem("scenario2", Streaming2)
 
-        val result = deployExampleScenario(ProcessName("scenario3"))
+        val result = deployExampleScenario("scenario3")
 
         inside(result) { case Right(DeploymentForeignKeys(_, _)) =>
         }
@@ -258,64 +201,40 @@ class DeploymentServiceSpec
   "should not allow more scenarios than active scenario limits to be used" when {
     "one processing type is considered" when {
       "1st scenario is running, and the 2nd scenario is running, and the 3rd scenario is not deployed" in {
-        val scenario1 = validProcessWithName("scenario1")
-        saveSampleScenario(scenario1)
-        val scenario2 = validProcessWithName("scenario2")
-        saveSampleScenario(scenario2)
-        val scenario3 = validProcessWithName("scenario3")
-        saveSampleScenario(scenario3)
+        prepareDeployedScenario("scenario1")
+        prepareDeployedScenario("scenario2")
+        prepareNotDeployedScenario("scenario3")
 
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            scenario1.name.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            scenario2.name.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            scenario3.name.value -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
-
-        val result = deployExampleScenario(ProcessName("scenario4"))
+        val result = deployExampleScenario("scenario4")
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is during deploy, and the 3rd scenario is not deployed" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.DuringDeploy, version = Some(VersionId(1))),
-            "scenario3" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1")
+        prepareDuringDeployScenario("scenario2")
+        prepareNotDeployedScenario("scenario3")
 
-        val result = deployExampleScenario(ProcessName("scenario4"))
+        val result = deployExampleScenario("scenario4")
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is restarting, and the 3rd scenario is not deployed" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Restarting, version = Some(VersionId(1))),
-            "scenario3" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1")
+        prepareRestartingScenario("scenario2")
+        prepareNotDeployedScenario("scenario3")
 
-        val result = deployExampleScenario(ProcessName("scenario4"))
+        val result = deployExampleScenario("scenario4")
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
       }
       "1st scenario is being redeployed, when the 2nd scenario is running" in {
-        val firstScenario = ProcessName("scenario1")
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            firstScenario.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2"         -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
+        val scenario1 = prepareDeployedScenario("scenario1")
+        prepareDeployedScenario("scenario2")
 
-        val result = deployExampleScenario(firstScenario)
+        val result = redeployExampleScenario(scenario1)
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
@@ -323,73 +242,40 @@ class DeploymentServiceSpec
     }
     "two processing types are considered" when {
       "1st scenario is running (in streaming1), and the 2nd scenario is running (in streaming2), and the 3rd scenario is not deployed (in streaming1)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario3" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareDeployedScenario("scenario2", Streaming2)
+        prepareNotDeployedScenario("scenario3", Streaming1)
 
-        val result = deployExampleScenario(ProcessName("scenario4"))
+        val result = deployExampleScenario("scenario4")
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is during deploy (in streaming2), and the 3rd scenario is not deployed (in streaming1)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario3" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.DuringDeploy, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareDuringDeployScenario("scenario2", Streaming2)
+        prepareNotDeployedScenario("scenario3", Streaming1)
 
-        val result = deployExampleScenario(ProcessName("scenario4"))
+        val result = deployExampleScenario("scenario4")
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is restarting (in streaming2), and the 3rd scenario is not deployed (in streaming1)" in {
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario3" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Restarting, version = Some(VersionId(1))),
-          )
-        )
+        prepareDeployedScenario("scenario1", Streaming1)
+        prepareRestartingScenario("scenario2", Streaming2)
+        prepareNotDeployedScenario("scenario3", Streaming1)
 
-        val result = deployExampleScenario(ProcessName("scenario4"))
+        val result = deployExampleScenario("scenario4")
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
       }
       "1st scenario is being redeployed (streaming1), when the 2nd scenario is running (streaming2)" in {
-        val firstScenario = ProcessName("scenario1")
-        streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            firstScenario.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
-        streaming2DeploymentManagerConfigurator.configureScenarioStatuses(
-          Map(
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-          )
-        )
+        val scenario1 = prepareDeployedScenario("scenario1", Streaming1)
+        prepareDeployedScenario("scenario2", Streaming2)
 
-        val result = deployExampleScenario(firstScenario)
+        val result = redeployExampleScenario(scenario1)
 
         inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
         }
@@ -411,6 +297,7 @@ class DeploymentServiceSpec
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
   private val writeScenarioRepository = newWriteProcessRepository(testDbRef, clock, modelVersions = None)
+  private val deploymentRepository    = newDeploymentRepository(testDbRef, clock)
 
   private lazy val streaming1DeploymentManagerConfigurator = new MockableDeploymentManagerConfigurator()
   private lazy val streaming2DeploymentManagerConfigurator = new MockableDeploymentManagerConfigurator()
@@ -449,44 +336,155 @@ class DeploymentServiceSpec
     )
 
     new DeploymentService(
-      scenarioMetadataRepository,
-      newScenarioGraphVersionService(testDbRef, supportedProcessingTypes),
-      newDeploymentRepository(testDbRef, clock),
-      deploymentManagerDispatcher,
-      dbioRunner,
-      clock,
-      additionalComponentConfigsByProcessingType,
-      new LimitsService(
+      scenarioMetadataRepository = scenarioMetadataRepository,
+      scenarioGraphVersionService = newScenarioGraphVersionService(testDbRef, supportedProcessingTypes),
+      deploymentRepository = deploymentRepository,
+      dmDispatcher = deploymentManagerDispatcher,
+      dbioRunner = dbioRunner,
+      clock = clock,
+      additionalComponentConfigs = additionalComponentConfigsByProcessingType,
+      limitsService = new LimitsService(
         globalLimitsConfig = globalLimitsConfig,
         activeScenariosLimitProvider = mapProcessingTypeDataProvider(
           supportedProcessingTypes.map(pt => (pt, processingTypeLimitsConfig)): _*
         ),
-        scenarioStatusProvider = scenarioStatusProvider
+        scenarioStatusProvider = scenarioStatusProvider,
+        deploymentRepository = deploymentRepository,
+        dbioRunner = dbioRunner
       )
     )
   }
 
-  private def saveSampleScenario(scenario: CanonicalProcess, processingType: String = Streaming1.stringify) = {
+  private def prepareNotDeployedScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, deploymentStatus = None)
+  }
+
+  private def prepareDeployedScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Running))
+  }
+
+  private def prepareDuringDeployScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.DuringDeploy))
+  }
+
+  private def prepareRestartingScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Restarting))
+  }
+
+  private def prepareCanceledScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Canceled))
+  }
+
+  private def prepareDuringCancelScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.DuringCancel))
+  }
+
+  private def prepareFinishedScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Finished))
+  }
+
+  private def prepareScenarioWithProblem(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): ProcessIdWithName = {
+    prepareScenarioInStatus(scenarioName, processingType, Some(ProblemDeploymentStatus("PROBLEM")))
+  }
+
+  private def prepareScenarioInStatus(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1,
+      deploymentStatus: Option[DeploymentStatus] = None
+  ): ProcessIdWithName = {
+    val creator    = adminUser()
+    val scenario   = validProcessWithName(scenarioName)
+    val scenarioId = saveScenario(scenario, creator, processingType)
+    deploymentStatus.foreach(configureScenarioDeploymentStatus(scenarioId, creator, _))
+    ProcessIdWithName(scenarioId, scenario.name)
+  }
+
+  private def saveScenario(
+      scenario: CanonicalProcess,
+      createdByUser: LoggedUser = adminUser(),
+      processingType: TestProcessingType = Streaming1
+  ): ProcessId = {
     writeScenarioRepository
       .saveNewProcess(
         CreateProcessAction(
           processName = scenario.name,
           category = "fooCategory",
           canonicalProcess = scenario,
-          processingType = processingType,
+          processingType = processingType.stringify,
           isFragment = false,
         )
-      )(adminUser())
+      )(createdByUser)
       .dbioActionValues
+      .get
+      .processId
   }
 
-  private def deployExampleScenario(scenarioName: ProcessName) = {
-    val scenario = validProcessWithName(scenarioName.value)
-    saveSampleScenario(scenario)
+  private def configureScenarioDeploymentStatus(
+      scenarioId: ProcessId,
+      deployedByUser: LoggedUser,
+      deploymentStatus: DeploymentStatus
+  ): Unit = {
+    val now = Timestamp.from(clock.instant())
+    deploymentRepository
+      .saveDeployment(
+        DeploymentEntityData(
+          id = DeploymentId.generate,
+          scenarioId = scenarioId,
+          createdAt = now,
+          createdBy = deployedByUser.username,
+          statusWithModifiedAt = WithModifiedAt(deploymentStatus, now)
+        )
+      )
+      .dbioActionValues match {
+      case Left(error) => throw new IllegalStateException(s"Unexpected error: $error")
+      case Right(())   =>
+    }
+  }
+
+  private def deployExampleScenario(
+      scenarioName: String,
+      processingType: TestProcessingType = Streaming1
+  ): Either[DeploymentService.RunDeploymentError, DeploymentForeignKeys] = {
+    val scenario = validProcessWithName(scenarioName)
+    saveScenario(scenario, adminUser(), processingType)
 
     deploymentService
       .runDeployment(
-        RunDeploymentCommand(DeploymentId.generate, scenarioName, NodesDeploymentData.empty, adminUser())
+        RunDeploymentCommand(DeploymentId.generate, scenario.name, NodesDeploymentData.empty, adminUser())
+      )
+      .futureValue
+  }
+
+  private def redeployExampleScenario(
+      scenario: ProcessIdWithName
+  ): Either[DeploymentService.RunDeploymentError, DeploymentForeignKeys] = {
+    deploymentService
+      .runDeployment(
+        RunDeploymentCommand(DeploymentId.generate, scenario.name, NodesDeploymentData.empty, adminUser())
       )
       .futureValue
   }

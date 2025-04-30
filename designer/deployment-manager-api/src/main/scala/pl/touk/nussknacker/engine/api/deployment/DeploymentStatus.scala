@@ -41,6 +41,17 @@ object DeploymentStatus extends Enum[DeploymentStatus] {
   case object DuringCancel extends NoAttributesDeploymentStatus
   case object Canceled     extends NoAttributesDeploymentStatus
 
+  implicit class IsActive(val status: DeploymentStatus) extends AnyVal {
+
+    def isActive: Boolean = {
+      status match {
+        case DuringDeploy | Running | Restarting                             => true
+        case Finished | DuringCancel | Canceled | ProblemDeploymentStatus(_) => false
+      }
+    }
+
+  }
+
 }
 
 object ProblemDeploymentStatus {

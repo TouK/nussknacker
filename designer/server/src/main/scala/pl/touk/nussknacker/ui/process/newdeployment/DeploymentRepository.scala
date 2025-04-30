@@ -20,7 +20,28 @@ import scala.concurrent.ExecutionContext
 class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionContext) extends NuTables {
 
   override protected val profile: NuJdbcProfile = dbRef.profile
+
   import profile.apiWithEnforcedSchema._
+
+  def getProcessingTypesDeployments(processingTypes: Iterable[ProcessingType]): DB[Set[Deployment]] = {
+    toEffectAll(
+      deploymentsTable
+        .join(processesTable)
+        .on(_.scenarioId === _.id)
+        .filter { case (_, scenarioMetadata) =>
+          scenarioMetadata.processingType inSet processingTypes
+        }
+        .map { case (deployment, scenarioMetadata) =>
+          (deployment.id, scenarioMetadata.name, deployment.statusName)
+        }
+        .result
+        .map(
+          _.map { case (id, scenarioName, statusName) =>
+            Deployment(id, scenarioName, DeploymentStatus.withName(statusName.value))
+          }.toSet
+        )
+    )
+  }
 
   def getProcessingTypeDeploymentsIdsInNotMatchingStatus(
       processingType: ProcessingType,

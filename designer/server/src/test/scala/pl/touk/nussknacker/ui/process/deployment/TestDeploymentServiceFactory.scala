@@ -35,12 +35,12 @@ import scala.concurrent.duration.FiniteDuration
 
 class TestDeploymentServiceFactory(dbRef: DbRef) {
 
-  private val dbioRunner = newDBIOActionRunner(dbRef)
-  val fetchingScenarioDBIORepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(dbRef)
+  private val dbioRunner                                                    = newDBIOActionRunner(dbRef)
+  val fetchingScenarioDBIORepository: DBFetchingProcessRepository[DB]       = newFetchingProcessRepository(dbRef)
   val fetchingScenarioFutureRepository: DBFetchingProcessRepository[Future] = newFutureFetchingScenarioRepository(dbRef)
   val activityRepository: ScenarioActivityRepository = newScenarioActivityRepository(dbRef, clock)
-  val actionRepository: ScenarioActionRepository = newActionProcessRepository(dbRef)
-  val listener = new TestProcessChangeListener
+  val actionRepository: ScenarioActionRepository     = newActionProcessRepository(dbRef)
+  val listener                                       = new TestProcessChangeListener
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = new DeploymentManagerDependencies(
     executionContextWithIORuntime,
@@ -50,13 +50,13 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
   )
 
   def create(
-              deploymentManagers: Map[ProcessingType, DeploymentManager],
-              modelData: ModelData = new StubModelDataWithModelDefinition(modelDefinition()),
-              scenarioStateTimeout: Option[FiniteDuration] = None,
-              deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
-              globalLimitsConfig: GlobalLimitsConfig = GlobalLimitsConfig.default,
-              processingTypeLimits: LimitsConfig = LimitsConfig.default,
-            ): TestDeploymentServiceServices = {
+      deploymentManagers: Map[ProcessingType, DeploymentManager],
+      modelData: ModelData = new StubModelDataWithModelDefinition(modelDefinition()),
+      scenarioStateTimeout: Option[FiniteDuration] = None,
+      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
+      globalLimitsConfig: GlobalLimitsConfig = GlobalLimitsConfig.default,
+      processingTypeLimits: LimitsConfig = LimitsConfig.default,
+  ): TestDeploymentServiceServices = {
 
     val deploymentManagerProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
       deploymentManagers
@@ -128,7 +128,9 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         activeScenariosLimitProvider = TestFactory.mapProcessingTypeDataProvider(
           deploymentManagers.map { case (processingType, _) => processingType -> processingTypeLimits }.toList: _*
         ),
-        scenarioStatusProvider = scenarioStatusProvider
+        scenarioStatusProvider = scenarioStatusProvider,
+        deploymentRepository = TestFactory.newDeploymentRepository(dbRef, clock),
+        dbioRunner = dbioRunner
       )
     )
     TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, deploymentsReconciler)
@@ -137,11 +139,11 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
 }
 
 case class TestDeploymentServiceServices(
-                                          scenarioStatusProvider: ScenarioStatusProvider,
-                                          actionService: ActionService,
-                                          deploymentService: DeploymentService,
-                                          scenarioDeploymentReconciler: ScenarioDeploymentReconciler
-                                        )
+    scenarioStatusProvider: ScenarioStatusProvider,
+    actionService: ActionService,
+    deploymentService: DeploymentService,
+    scenarioDeploymentReconciler: ScenarioDeploymentReconciler
+)
 
 object TestDeploymentServiceFactory {
 
