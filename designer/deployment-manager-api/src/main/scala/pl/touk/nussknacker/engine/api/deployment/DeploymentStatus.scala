@@ -9,13 +9,22 @@ import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 // descriptions depending on DM implementation. It makes implementation of logic based on statuses easier. In case
 // if we have requirement to make it more flexible, we can relax this restriction.
 sealed trait DeploymentStatus extends EnumEntry with UpperSnakecase {
-  def name: DeploymentStatusName = DeploymentStatusName(entryName)
+  def name: DeploymentStatusName
+  def description: Option[String]
 }
 
-sealed abstract class NoAttributesDeploymentStatus extends DeploymentStatus
+sealed abstract class NoAttributesDeploymentStatus extends DeploymentStatus {
+  override val name: DeploymentStatusName  = DeploymentStatusName(entryName)
+  override val description: Option[String] = None
+}
 
-final case class ProblemDeploymentStatus(description: String) extends DeploymentStatus {
-  override def name: DeploymentStatusName = ProblemDeploymentStatus.name
+final case class ProblemDeploymentStatus(problemDescription: String) extends DeploymentStatus {
+  override val name: DeploymentStatusName  = ProblemDeploymentStatus.name
+  override val description: Option[String] = Some(problemDescription)
+}
+
+object ProblemDeploymentStatus {
+  val name: DeploymentStatusName = DeploymentStatusName("PROBLEM")
 }
 
 object DeploymentStatus extends Enum[DeploymentStatus] {
@@ -41,18 +50,26 @@ object DeploymentStatus extends Enum[DeploymentStatus] {
   case object DuringCancel extends NoAttributesDeploymentStatus
   case object Canceled     extends NoAttributesDeploymentStatus
 
-}
+  implicit class IsActive(val status: DeploymentStatus) extends AnyVal {
 
-object ProblemDeploymentStatus {
-  def name: DeploymentStatusName = DeploymentStatusName("PROBLEM")
-
-  def extractDescription(status: DeploymentStatus): Option[String] =
-    status match {
-      case problem: ProblemDeploymentStatus =>
-        Some(problem.description)
-      case _: NoAttributesDeploymentStatus =>
-        None
+    def isActive: Boolean = {
+      status match {
+        case DuringDeploy | Running | Restarting                             => true
+        case Finished | DuringCancel | Canceled | ProblemDeploymentStatus(_) => false
+      }
     }
+
+  }
+
+  def from(name: DeploymentStatusName, description: Option[String]): DeploymentStatus = {
+    name match {
+      case ProblemDeploymentStatus.name =>
+        val desc = description.getOrElse(throw new IllegalStateException("No description for ProblemDeploymentStatus"))
+        ProblemDeploymentStatus(desc)
+      case other =>
+        DeploymentStatus.withName(other.value)
+    }
+  }
 
 }
 

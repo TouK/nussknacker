@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.{DbRef, NuJdbcProfile, NuTables, SqlStates}
@@ -20,7 +20,28 @@ import scala.concurrent.ExecutionContext
 class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionContext) extends NuTables {
 
   override protected val profile: NuJdbcProfile = dbRef.profile
+
   import profile.apiWithEnforcedSchema._
+
+  def getProcessingTypesDeployments(processingTypes: Iterable[ProcessingType]): DB[Set[Deployment]] = {
+    toEffectAll(
+      deploymentsTable
+        .join(processesTable)
+        .on(_.scenarioId === _.id)
+        .filter { case (_, scenarioMetadata) =>
+          scenarioMetadata.processingType inSet processingTypes
+        }
+        .map { case (deployment, scenarioMetadata) =>
+          (deployment.id, scenarioMetadata.name, deployment.statusName, deployment.statusProblemDescription)
+        }
+        .result
+        .map(
+          _.map { case (id, scenarioName, statusName, statusDescription) =>
+            Deployment(id, scenarioName, DeploymentStatus.from(statusName, statusDescription))
+          }.toSet
+        )
+    )
+  }
 
   def getProcessingTypeDeploymentsIdsInNotMatchingStatus(
       processingType: ProcessingType,
@@ -82,12 +103,11 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
   }
 
   def updateDeploymentStatus(id: DeploymentId, status: DeploymentStatus): DB[Boolean] = {
-    val problemDescription = ProblemDeploymentStatus.extractDescription(status)
     toEffectAll(
       deploymentsTable
-        .filter(d => d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= problemDescription))
+        .filter(d => d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= status.description))
         .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt))
-        .update((status.name, problemDescription, Timestamp.from(clock.instant())))
+        .update((status.name, status.description, Timestamp.from(clock.instant())))
         .map(_ > 0)
     )
   }

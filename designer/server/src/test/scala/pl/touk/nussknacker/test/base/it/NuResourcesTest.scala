@@ -7,7 +7,7 @@ import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import io.circe.{Decoder, Encoder, Json, parser}
+import io.circe.{parser, Decoder, Encoder, Json}
 import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
@@ -39,7 +39,12 @@ import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDe
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener, WithTestDeploymentManagerClassLoader}
+import pl.touk.nussknacker.test.mock.{
+  MockDeploymentManager,
+  MockManagerProvider,
+  TestProcessChangeListener,
+  WithTestDeploymentManagerClassLoader
+}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
@@ -49,6 +54,7 @@ import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.clock
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
@@ -94,9 +100,7 @@ trait NuResourcesTest
   protected val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(testDbRef)
 
   protected val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
-    newFutureFetchingScenarioRepository(
-      testDbRef
-    )
+    newFutureFetchingScenarioRepository(testDbRef)
 
   protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingScenarioRepository)
 
@@ -161,7 +165,9 @@ trait NuResourcesTest
         globalLimitsConfig = designerConfig.globalLimitsConfig,
         activeScenariosLimitProvider =
           TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
-        scenarioStatusProvider = scenarioStatusProvider
+        scenarioStatusProvider = scenarioStatusProvider,
+        deploymentRepository = TestFactory.newDeploymentRepository(testDbRef, clock),
+        dbioRunner = dbioRunner
       )
     )(executionContextWithIORuntime)
 

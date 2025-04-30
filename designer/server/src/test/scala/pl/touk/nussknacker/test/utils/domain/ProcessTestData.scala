@@ -190,7 +190,7 @@ object ProcessTestData {
 
   val sampleScenarioLabels: List[String] = List("tag1", "tag2")
 
-  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName)
+  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName.value)
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
@@ -225,8 +225,11 @@ object ProcessTestData {
       .to(endWithMessage("suffix", "message"))
   }
 
-  def validProcessWithName(name: ProcessName): CanonicalProcess = ScenarioBuilder
-    .streaming(name.value)
+  def validProcessWithName(name: ProcessName): CanonicalProcess =
+    validProcessWithName(name.value)
+
+  def validProcessWithName(name: String): CanonicalProcess = ScenarioBuilder
+    .streaming(name)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)

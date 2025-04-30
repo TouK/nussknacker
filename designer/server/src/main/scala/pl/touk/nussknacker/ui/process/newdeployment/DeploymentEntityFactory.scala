@@ -62,25 +62,18 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       statusProblemDescription: Option[String],
       statusModifiedAt: Timestamp
   ) = {
-    val status = if (statusName == ProblemDeploymentStatus.name) {
-      ProblemDeploymentStatus(
-        statusProblemDescription.getOrElse(throw new IllegalStateException("Problem status without description"))
-      )
-    } else {
-      DeploymentStatus.withName(statusName.value)
-    }
+    val status = DeploymentStatus.from(statusName, statusProblemDescription)
     DeploymentEntityData(id, scenarioId, createdAt, createdBy, WithModifiedAt(status, statusModifiedAt))
   }
 
   private def extractFieldsFromEntity(entity: DeploymentEntityData) = {
-    val statusProblemDescription = ProblemDeploymentStatus.extractDescription(entity.statusWithModifiedAt.value)
     Option(
       entity.id,
       entity.scenarioId,
       entity.createdAt,
       entity.createdBy,
       entity.statusWithModifiedAt.value.name,
-      statusProblemDescription,
+      entity.statusWithModifiedAt.value.description,
       entity.statusWithModifiedAt.modifiedAt
     )
   }

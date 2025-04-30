@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ActiveScenariosStatuses, ProblemStateStatus}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.BadRequestError
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.{
   BulkQueriedDeploymentStatuses,
@@ -81,22 +82,52 @@ class ScenarioStatusProvider(
 
   def getActiveScenariosFor(
       processingTypes: Iterable[ProcessingType]
-  )(implicit user: LoggedUser): IO[Set[ProcessName]] =
+  )(implicit user: LoggedUser): IO[Set[ProcessName]] = {
     IO.fromFuture {
       IO {
         implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-        deploymentStatusesProvider
-          .getBulkQueriedDeploymentStatusesForSupportedManagers(processingTypes)
-          .map { statuses =>
-            statuses.getAllDeploymentScenariosAndStatuses.flatMap {
-              case (scenarioName, statusDetails) if ActiveScenariosStatuses.contains(statusDetails.status) =>
-                Some(scenarioName)
-              case (_, _) =>
-                None
-            }.toSet
-          }
+        dbioRunner.run(for {
+          scenarios <- processRepository.fetchLatestProcessesDetails[Unit](
+            ScenarioQuery.empty
+              .copy(isFragment = Some(false), isArchived = Some(false), processingTypes = Some(processingTypes))
+          )
+          activeScenarios <- DBIOAction
+            .sequence {
+              scenarios.map { process =>
+                for {
+                  inProgressActionNames <- actionRepository.getInProgressActionNames(process.processId)
+                  scenarioStatus <- getScenarioStatusFetchingDeploymentsStatusesFromManager(
+                    process,
+                    inProgressActionNames
+                  )
+                } yield {
+                  if (ActiveScenariosStatuses.contains(scenarioStatus)) Some(process.name) else None
+                }
+              }
+            }
+        } yield activeScenarios.flatten.toSet)
       }
     }
+  }
+
+//  def getActiveScenariosFor(
+//                             processingTypes: Iterable[ProcessingType]
+//                           )(implicit user: LoggedUser): IO[Set[ProcessName]] =
+//    IO.fromFuture {
+//      IO {
+//        implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+//        deploymentStatusesProvider
+//          .getBulkQueriedDeploymentStatusesForSupportedManagers(processingTypes)
+//          .map { statuses =>
+//            statuses.getAllDeploymentScenariosAndStatuses.flatMap {
+//              case (scenarioName, statusDetails) if ActiveScenariosStatuses.contains(statusDetails.status) =>
+//                Some(scenarioName)
+//              case (_, _) =>
+//                None
+//            }.toSet
+//          }
+//      }
+//    }
 
   def getActiveScenariosFor(processingType: ProcessingType)(implicit user: LoggedUser): IO[Set[ProcessName]] = {
     getActiveScenariosFor(processingType :: Nil)

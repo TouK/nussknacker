@@ -75,7 +75,7 @@ class ManagementResourcesSpec
   test("process during deploy cannot be deployed again") {
     createDeployedExampleScenario(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
+    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -85,7 +85,7 @@ class ManagementResourcesSpec
   test("canceled process can't be canceled again") {
     createDeployedCanceledExampleScenario(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
+    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -95,7 +95,7 @@ class ManagementResourcesSpec
   test("can't deploy archived process") {
     createArchivedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
+    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.Canceled) {
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
         responseAs[String] shouldBe ProcessIllegalAction
@@ -307,7 +307,7 @@ class ManagementResourcesSpec
       )
     saveCanonicalProcessAndAssertSuccess(invalidScenario)
 
-    deploymentManager.withEmptyProcessState(invalidScenario.name) {
+    deploymentManager.withEmptyScenarioState(invalidScenario.name) {
       deployProcess(invalidScenario.name) ~> check {
         responseAs[String] shouldBe "Cannot deploy invalid scenario"
         status shouldBe StatusCodes.Conflict
@@ -351,7 +351,7 @@ class ManagementResourcesSpec
 
   test("snapshots process") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deploymentManager.withProcessRunning(ProcessTestData.sampleScenario.name) {
+    deploymentManager.withScenarioRunning(ProcessTestData.sampleScenario.name) {
       snapshot(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe FlinkClientStub.savepointPath
@@ -361,7 +361,7 @@ class ManagementResourcesSpec
 
   test("stops process") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deploymentManager.withProcessRunning(ProcessTestData.sampleScenario.name) {
+    deploymentManager.withScenarioRunning(ProcessTestData.sampleScenario.name) {
       stop(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe FlinkClientStub.stopSavepointPath

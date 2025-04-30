@@ -15,13 +15,17 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.ActiveScenariosLimitExceededError
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 class LimitsService(
     globalLimitsConfig: GlobalLimitsConfig,
     activeScenariosLimitProvider: ProcessingTypeDataProvider[LimitsConfig, _],
-    scenarioStatusProvider: ScenarioStatusProvider
+    scenarioStatusProvider: ScenarioStatusProvider,
+    deploymentRepository: DeploymentRepository,
+    dbioRunner: DBIOActionRunner
 ) extends LazyLogging {
 
   def checkScenarioLimitsBeforeDeploymentUnsafe(
@@ -71,8 +75,7 @@ class LimitsService(
     activeScenariosLimitProvider.forProcessingType(deployingScenarioProcessingType) match {
       case Some(LimitsConfig(Some(activeScenariosLimit))) =>
         EitherT {
-          scenarioStatusProvider
-            .getActiveScenariosFor(deployingScenarioProcessingType)
+          getActiveScenariosFor(deployingScenarioProcessingType :: Nil)
             .map { currentlyActiveScenarios =>
               checkCurrentlyActiveScenariosLimit(
                 deployingScenario,
@@ -96,8 +99,7 @@ class LimitsService(
         EitherT {
           implicit val user: LoggedUser = NussknackerInternalUser.instance
           val allProcessingTypes        = activeScenariosLimitProvider.all.keys
-          scenarioStatusProvider
-            .getActiveScenariosFor(allProcessingTypes)
+          getActiveScenariosFor(allProcessingTypes)
             .map { currentlyActiveScenarios =>
               checkCurrentlyActiveScenariosLimit(
                 deployingScenario,
@@ -118,20 +120,47 @@ class LimitsService(
       activeScenariosLimit: Int,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
   ) = {
-    deploymentUpdateStrategy match {
+    val maxActiveScenariosIncludingCurrentlyDeployingScenario = deploymentUpdateStrategy match {
       case ReplaceDeploymentWithSameScenarioName(_) if currentlyActiveScenarios.contains(currentlyDeployingScenario) =>
-        Right(())
+        activeScenariosLimit + 1
       case ReplaceDeploymentWithSameScenarioName(_) | DontReplaceDeployment =>
-        if (currentlyActiveScenarios.size + 1 <= activeScenariosLimit) {
-          Right(())
-        } else {
-          logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
-               |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
-               |Scenario is being deployed: $currentlyDeployingScenario.
-               |""".stripMargin)
-          Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
-        }
+        activeScenariosLimit
     }
+    if (currentlyActiveScenarios.size + 1 <= maxActiveScenariosIncludingCurrentlyDeployingScenario) {
+      Right(())
+    } else {
+      logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
+           |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
+           |Scenario is being deployed: $currentlyDeployingScenario.
+           |""".stripMargin)
+      Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
+    }
+  }
+
+  private def getActiveScenariosFor(
+      processingTypes: Iterable[ProcessingType]
+  )(implicit user: LoggedUser): IO[Set[ProcessName]] = {
+    IO
+      .both(
+        scenarioStatusProvider.getActiveScenariosFor(processingTypes),
+        newDeploymentGetActiveScenariosFor(processingTypes),
+      )
+      .map { case (oldDeploymentSolutionScenarios, newDeploymentSolutionScenarios) =>
+        oldDeploymentSolutionScenarios ++ newDeploymentSolutionScenarios
+      }
+  }
+
+  private def newDeploymentGetActiveScenariosFor(processingTypes: Iterable[ProcessingType]) = {
+    IO
+      .fromFuture(IO {
+        dbioRunner.run(deploymentRepository.getProcessingTypesDeployments(processingTypes))
+      })
+      .map { deployments =>
+        deployments.flatMap { deployment =>
+          if (deployment.status.isActive) Some(deployment.scenarioName) else None
+        }
+
+      }
   }
 
 }
