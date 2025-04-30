@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 import { validateAdhocTestParameters } from "../../../actions/nk/adhocTesting";
+import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import type { NodeValidationError } from "../../../types";
 import type { AdhocTestingParameters } from "./AdhocTestingDialog";
 import type { ActionValues } from "./AdhocTestingFormContext";
 
 export function useAdhocTestingParametersValidation(
-    action: Pick<AdhocTestingParameters, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
+    action: Pick<AdhocTestingParameters, "parameters" | "sourceId">,
     value: ActionValues,
 ): {
     isValid: boolean;
     errors: NodeValidationError[];
 } {
-    const { scenarioName, parameters, sourceId, scenarioGraph } = action;
+    const { parameters, sourceId } = action;
+    const scenarioName = useSelector(getProcessName);
+    const scenarioGraph = useSelector(getScenarioGraph);
     const [errors, setErrors] = useState<NodeValidationError[]>([]);
 
     const validate = useCallback(

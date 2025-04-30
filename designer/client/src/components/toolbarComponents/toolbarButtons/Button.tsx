@@ -15,4 +15,7 @@ export const Button = styled("button")(({ theme }) => ({
     padding: 0,
     flexDirection: "column",
     color: "inherit",
+    "&[disabled]": {
+        opacity: 0.3,
+    },
 }));

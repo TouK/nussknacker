@@ -1,7 +1,7 @@
 import { cx } from "@emotion/css";
 import { Box, Fade, IconButton, LinearProgress, styled } from "@mui/material";
 import { isEmpty } from "lodash";
-import type { ReactNode} from "react";
+import type { ReactNode } from "react";
 import React, { useCallback, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
 

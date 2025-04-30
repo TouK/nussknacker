@@ -24,7 +24,7 @@ type FileButtonProps = BaseButtonProps & {
     onDrop: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void;
 };
 
-type PresetsButtonProps<Preset = { value: string; label: string }> = BaseButtonProps & {
+type PresetsButtonProps<Preset = { value: string; label: string; isDisabled?: boolean }> = BaseButtonProps & {
     presets: Preset[];
     selected: Preset | null;
     onPresetChange: (value: Preset) => void;

@@ -19,7 +19,10 @@ import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
 
   val supportBySchemaType: Map[String, UniversalSchemaSupport] =
-    Map(AvroSchema.TYPE -> new AvroSchemaSupport(kafkaConfig), JsonSchema.TYPE -> JsonSchemaSupport)
+    Map(
+      AvroSchema.TYPE -> new AvroSchemaSupport(kafkaConfig),
+      JsonSchema.TYPE -> JsonSchemaSupport
+    )
 
   def forSchemaType(schemaType: String): UniversalSchemaSupport =
     supportBySchemaType.getOrElse(schemaType, throw new UnsupportedSchemaType(schemaType))

@@ -2,7 +2,7 @@ import { isEqual } from "lodash";
 import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useDebounce, useDebounceFn } from "rooks";
+import { useDebounce } from "rooks";
 
 import { editNode } from "../../../../actions/nk";
 import { PendingPromise } from "../../../../common/PendingPromise";
@@ -15,6 +15,7 @@ import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
 import { applyIdFromFakeName } from "../IdField";
 import type { NodeDetailsMeta } from "./NodeDetails";
+import { useEditState } from "./useEditState";
 
 export function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -73,7 +74,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         });
     }, [node, scenario]);
 
-    const [status, setStatus] = useState<EditState>("idle");
+    const [status, setStatus] = useEditState();
     const performNodeEdit = useCallback(
         async (editedNode: EditedNode, outputEdges: Edge[]) => {
             setStatus("processing");
@@ -93,7 +94,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
                 setStatus("error");
             }
         },
-        [dispatch, scenario, node, autoApply],
+        [dispatch, scenario, node, autoApply, setStatus],
     );
     const performNodeEditDebounced = useDebounce(performNodeEdit, 750);
 
@@ -132,7 +133,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
                 performNodeEditDebounced(node, edges);
             });
         },
-        [autoApply, performNodeEditDebounced],
+        [autoApply, performNodeEditDebounced, setStatus],
     );
 
     return {

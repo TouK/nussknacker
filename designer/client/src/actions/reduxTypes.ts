@@ -7,7 +7,7 @@ import type { SquashHistoryActions } from "../reducers/graph/historySquash";
 import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
 import type { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
-import type { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
+import type { TestsActions } from "./nk/displayTestResults";
 import type { NotificationActions } from "./nk/notifications";
 import type { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
 import type { ToolbarActions } from "./nk/toolbars";
@@ -18,7 +18,6 @@ import type { SettingsActions } from "./settingsActions";
 type TypedAction =
     | CloudDataActions
     | CountsActions
-    | DisplayTestResultsDetailsAction
     | GetScenarioActivitiesAction
     | NodeActions
     | NodeDetailsActions
@@ -29,6 +28,7 @@ type TypedAction =
     | SelectionActions
     | SettingsActions
     | SquashHistoryActions
+    | TestsActions
     | ToolbarActions
     | UiActions
     | UpdateScenarioActivitiesAction

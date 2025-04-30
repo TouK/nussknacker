@@ -77,11 +77,11 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const [proxyNode, setProxyNode] = useState(() => adjustNode(node));
 
     useEffect(() => {
-        setProxyNode((node) => {
+        setProxyNode((currentNode) => {
             const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, node) ? node : adjustedNode;
+            return isEqual(adjustedNode, currentNode) ? currentNode : adjustedNode;
         });
-    }, [adjustNode]);
+    }, [adjustNode, node]);
 
     const change = useCallback(
         (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
