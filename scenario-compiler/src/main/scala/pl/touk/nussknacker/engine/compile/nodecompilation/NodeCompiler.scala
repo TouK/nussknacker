@@ -394,7 +394,9 @@ class NodeCompiler(
 
     val expressionCompilationResult = n.mockExpression match {
       case Some(expression) =>
-        compileEnricherMockExpression(expression, serviceCompilationResult.expressionType.getOrElse(Unknown), ctx)
+        val expectedType =
+          serviceCompilationResult.validationContext.map(_.localVariables(outputVar.outputName)).getOrElse(Unknown)
+        compileEnricherMockExpression(expression, expectedType, ctx)
           .map(Some(_))
       case None => Validated.validNel(None)
     }
