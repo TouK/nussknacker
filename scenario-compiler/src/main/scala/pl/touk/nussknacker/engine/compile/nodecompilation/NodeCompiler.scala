@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.compile.{
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{
   EnricherCompilationResult,
+  MockExpressionParameterName,
   NodeCompilationResult
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
@@ -48,6 +49,8 @@ import shapeless.Typeable
 import shapeless.syntax.typeable._
 
 object NodeCompiler {
+
+  val MockExpressionParameterName: ParameterName = ParameterName("mockExpression")
 
   case class NodeCompilationResult[T](
       expressionTypingInfo: Map[String, ExpressionTypingInfo],
@@ -405,7 +408,7 @@ class NodeCompiler(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
     expressionCompiler
-      .compile(expression, None, ctx, expectedType)
+      .compile(expression, Some(MockExpressionParameterName), ctx, expectedType)
       .map(_.expression)
   }
 
