@@ -10,9 +10,9 @@ import type { ToolbarButtonProps } from "./index";
 
 function ToolbarButtonComponent(props: ToolbarButtonProps) {
     if ("isLoading" in props) {
-        const { isLoading, loadingProgress, loadingVariant, children, ...passProps } = props;
+        const { isLoading, loadingProgress, loadingVariant, children, disabled, ...passProps } = props;
         return (
-            <ToolbarButtonComponent {...passProps}>
+            <ToolbarButtonComponent {...passProps} disabled={disabled || isLoading}>
                 <ButtonProgress enabled={isLoading} variant={loadingVariant} value={loadingProgress} />
                 {children}
             </ToolbarButtonComponent>
@@ -54,9 +54,6 @@ export const ToolbarButton = styled(ToolbarButtonComponent)(({ theme }) => {
     const highlight = blend(normal, base.color, base.alpha);
     return {
         color: alpha(theme.palette.getContrastText(normal), 0.75),
-        ".toolbarButton-Root": {
-            backgroundColor: normal,
-        },
         "&:hover": {
             color: alpha(theme.palette.getContrastText(highlight), 0.75),
             ".toolbarButton-Root, .toolbarButton-MenuExpand": {

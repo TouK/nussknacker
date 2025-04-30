@@ -162,6 +162,8 @@
 * [#7953](https://github.com/TouK/nussknacker/pull/7953) Add implicit conversion from records produced by kafka source to map.
   Also typing of spel expressions was refactored, which improved typing of selection on a map.
 * [#8005](https://github.com/TouK/nussknacker/pull/8005) Add implicit conversion from records produced by table api source to map.
+* [#7964](https://github.com/TouK/nussknacker/pull/7964) Add JsonTemplate language and editor.
+* [#8006](https://github.com/TouK/nussknacker/pull/8006) Add JsonTemplate editor to Event Generator source and Kafka sink value.
 * [#8004](https://github.com/TouK/nussknacker/pull/8004) Scenarios no longer have to end with final `Sink` node
   * set `modelConfig.allowEndingScenarioWithoutSink` of the scenarioType in the `scenarioTypes` config section to `true` in order to allow ending scenarios with nodes other than sinks
   * the flag is optional, the default value of the flag is `false` (no changes in behavior)

@@ -22,7 +22,7 @@ export function useAdhocTestingAvailability(disabled: boolean) {
     const scenarioGraph = useSelector(getScenarioGraph);
 
     const isAvailable = useMemo(() => {
-        return !disabled && processIsLatestVersion && testCapabilities?.testWithParameters.status == TestCapabilityStatus.AVAILABLE;
+        return !disabled && processIsLatestVersion && testCapabilities?.testWithParameters.status === TestCapabilityStatus.AVAILABLE;
     }, [disabled, processIsLatestVersion, testCapabilities?.testWithParameters.status]);
 
     useEffect(() => {

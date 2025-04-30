@@ -1,11 +1,16 @@
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { Typography } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { isEmpty } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenarioGraph } from "../../reducers/selectors/graph";
+
+import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { NodeInput } from "../FormElements";
 import {
     extendErrors,
     getValidationErrorsForField,
@@ -14,21 +19,13 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import ValidationLabels from "./ValidationLabels";
-import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
-import { isEmpty } from "lodash";
-import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
-import { Typography } from "@mui/material";
-import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
-import { NodeInput } from "../FormElements";
+import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import ValidationLabels from "./ValidationLabels";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const processName = useSelector(getProcessName);
-    const scenarioGraph = useSelector(getScenarioGraph);
     const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ testSampleSize }, setState] = useState({
@@ -36,9 +33,9 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     });
 
     const confirmAction = useCallback(async () => {
-        await dispatch(testScenarioWithGeneratedData(testSampleSize, processName, scenarioGraph));
+        await dispatch(testScenarioWithGeneratedData(testSampleSize));
         props.close();
-    }, [dispatch, processName, scenarioGraph, props, testSampleSize]);
+    }, [dispatch, props, testSampleSize]);
 
     const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator];
     const errors = extendErrors([], testSampleSize, "testData", validators);

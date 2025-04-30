@@ -36,11 +36,7 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (arr:
 
         if (!content) return "";
 
-        if (entries.length > 1) {
-            return `{ ${content} }`;
-        } else {
-            return `${content}`;
-        }
+        return `{ ${content} }`;
     }, []);
 
     const deserialize = useCallback((input: string) => {
