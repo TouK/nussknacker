@@ -4,7 +4,7 @@ import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { ScenarioGraph, UIParameter, VariableTypes } from "../../../types";
+import type { UIParameter, VariableTypes } from "../../../types";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
@@ -34,11 +34,9 @@ export interface AdhocTestingParameters {
     parameters: UIParameter[];
     variableTypes: VariableTypes;
     processingType: string;
-    scenarioName: string;
     initialValues: ActionValues;
     onConfirmAction: (values: ActionValues) => void;
     sourceId: string;
-    scenarioGraph: ScenarioGraph;
     previousTestData?: ActionValues;
 }
 

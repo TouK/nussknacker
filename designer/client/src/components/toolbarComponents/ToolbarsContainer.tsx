@@ -12,7 +12,7 @@ import type {
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { alpha, styled } from "@mui/material";
 import type { CSSProperties, PropsWithChildren } from "react";
-import React, { Suspense, useCallback, useContext, useMemo } from "react";
+import React, { createContext, Suspense, useCallback, useContext, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
@@ -119,9 +119,7 @@ const CloneWrapper = (
     return <div>{props.children}</div>;
 };
 
-function CloneWrapper2(props) {
-    return <CloneWrapper {...props} />;
-}
+export const ToolbarSideContext = createContext<ToolbarsSide>(null);
 
 export function ToolbarsContainer(props: Props): JSX.Element {
     const { side, availableToolbars, className } = props;
@@ -160,9 +158,9 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                         >
                             <Suspense fallback={<SimpleDragHandle />}>
                                 {s.isClone ? (
-                                    <CloneWrapper2 draggable={p} snapshot={s} toolbar={toolbar}>
+                                    <CloneWrapper draggable={p} snapshot={s} toolbar={toolbar}>
                                         {finalElement}
-                                    </CloneWrapper2>
+                                    </CloneWrapper>
                                 ) : (
                                     finalElement
                                 )}
@@ -215,15 +213,17 @@ export function ToolbarsContainer(props: Props): JSX.Element {
     );
 
     return (
-        <Droppable
-            direction={isHorizontal(side) ? "horizontal" : "vertical"}
-            droppableId={side}
-            type={TOOLBAR_DRAGGABLE_TYPE}
-            renderClone={renderDraggable}
-            isDropDisabled={dropDisabled}
-        >
-            {renderDroppable}
-        </Droppable>
+        <ToolbarSideContext.Provider value={side}>
+            <Droppable
+                direction={isHorizontal(side) ? "horizontal" : "vertical"}
+                droppableId={side}
+                type={TOOLBAR_DRAGGABLE_TYPE}
+                renderClone={renderDraggable}
+                isDropDisabled={dropDisabled}
+            >
+                {renderDroppable}
+            </Droppable>
+        </ToolbarSideContext.Provider>
     );
 }
 

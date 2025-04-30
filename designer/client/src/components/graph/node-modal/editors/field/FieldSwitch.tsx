@@ -98,7 +98,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
     const availableEditorsOptions: (Option & { hint: string | undefined })[] = useMemo(
         () =>
             availableEditors.map((editor) => ({
-                label: editorsParameters[editor.type].displayName,
+                label: editorsParameters[editor.type]?.displayName,
                 value: editor.type,
                 isDisabled: readOnly || (!allowsSwitch(editor) && editor.type !== selectedEditor.type),
                 hint: editor.type !== selectedEditor.type ? getHint(editor) : undefined,
@@ -154,7 +154,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             disableRipple
                             disableTouchRipple
                             key={index}
-                            label={option.label.toLowerCase()}
+                            label={option.label?.toLowerCase()}
                             value={option.value}
                             classes={{
                                 selected: css({ outline: "none" }),
