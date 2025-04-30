@@ -50,13 +50,12 @@ object ModelDefinitionFromConfigCreatorExtractor {
     )
 
     val classExtractionSettings = creator.classExtractionSettings(modelDependencies)
-    val modelSettings           = creator.modelSettings(modelDependencies)
 
     ModelDefinition(
       components,
       toDefinition(expressionConfig, categoryOpt),
       classExtractionSettings,
-      modelSettings,
+      modelDependencies.modelConfig.allowEndingScenarioWithoutSink,
     )
   }
 

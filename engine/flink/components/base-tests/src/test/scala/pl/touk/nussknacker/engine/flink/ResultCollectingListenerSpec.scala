@@ -5,15 +5,12 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.compile.FragmentResolver
-import pl.touk.nussknacker.engine.flink.ResultCollectingListenerSpec.AllowingToEndScenarioWithoutSink
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
@@ -562,18 +559,21 @@ class ResultCollectingListenerSpec
       EmitWatermarkAfterEachElementCollectionSource
         .create[Int](data, _ => Instant.now.toEpochMilli, Duration.ofHours(1))
     )
-    val configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
-    val decoratedConfigCreator =
-      if (allowEndingScenarioWithoutSink) new AllowingToEndScenarioWithoutSink(configCreator) else configCreator
+    val config =
+      if (allowEndingScenarioWithoutSink) {
+        ConfigFactory.parseString("""allowEndingScenarioWithoutSink: true""")
+      } else {
+        ConfigFactory.empty()
+      }
     LocalModelData(
-      ConfigFactory.empty(),
+      config,
       ComponentDefinition("start1", sourceComponent(data1)) ::
         ComponentDefinition("start2", sourceComponent(data2)) ::
         FlinkBaseUnboundedComponentProvider.create(
           DocsConfig.Default,
           aggregateWindowsConfig
         ) ::: FlinkBaseComponentProvider.Components,
-      configCreator = decoratedConfigCreator,
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
   }
 
@@ -599,44 +599,5 @@ class ResultCollectingListenerSpec
   }
 
   private def catchExceptionMessage(f: => Any): String = Try(f).failed.get.getMessage
-
-}
-
-object ResultCollectingListenerSpec {
-
-  class AllowingToEndScenarioWithoutSink(underlying: ProcessConfigCreator) extends ProcessConfigCreator {
-
-    override def modelSettings(modelDependencies: ProcessObjectDependencies): ModelSettings = {
-      ModelSettings(allowEndingScenarioWithoutSink = true)
-    }
-
-    override def customStreamTransformers(
-        modelDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] =
-      underlying.customStreamTransformers(modelDependencies)
-
-    override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-      underlying.services(modelDependencies)
-
-    override def sourceFactories(
-        modelDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] =
-      underlying.sourceFactories(modelDependencies)
-
-    override def sinkFactories(
-        modelDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] =
-      underlying.sinkFactories(modelDependencies)
-
-    override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-      underlying.listeners(modelDependencies)
-
-    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
-      underlying.expressionConfig(modelDependencies)
-
-    override def modelInfo(): ModelInfo =
-      underlying.modelInfo()
-
-  }
 
 }

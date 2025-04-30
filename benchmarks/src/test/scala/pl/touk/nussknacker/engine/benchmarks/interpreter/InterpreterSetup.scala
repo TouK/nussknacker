@@ -84,7 +84,7 @@ class InterpreterSetup[T: ClassTag] {
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default,
-      ModelSettings.Default,
+      allowEndingScenarioWithoutSink = false,
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 

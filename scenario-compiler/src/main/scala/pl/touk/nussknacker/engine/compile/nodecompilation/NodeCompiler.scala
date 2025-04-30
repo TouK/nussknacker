@@ -73,7 +73,7 @@ class NodeCompiler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Boolean = {
     import scenarioCompilationDependencies._
-    lazy val allowEndingScenarioWithoutSink = definitions.modelSettings.allowEndingScenarioWithoutSink
+    lazy val allowEndingScenarioWithoutSink = definitions.allowEndingScenarioWithoutSink
     lazy val isFragment                     = metaData.typeSpecificData.isFragment
     allowEndingScenarioWithoutSink && !isFragment
   }
