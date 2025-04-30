@@ -51,8 +51,8 @@ export function useNodeAdjust() {
     const adjustNode = useCallback(
         (node: NodeType) => {
             const parameterDefinitions = getParameterDefinitions(node);
-            const { adjustedNode } = adjustParameters(node, parameterDefinitions);
-            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
+            // const { adjustedNode } = adjustParameters(node, parameterDefinitions);
+            return generateUUIDs(node, ["fields", "parameters"]);
         },
         [getParameterDefinitions],
     );
