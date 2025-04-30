@@ -1,4 +1,3 @@
-import { cx } from "@emotion/css";
 import { Box, Typography } from "@mui/material";
 import React, { useContext } from "react";
 
@@ -21,7 +20,6 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
             sx={{
                 pointerEvents: props.disabled ? "none" : null,
                 position: "relative",
-                overflow: "hidden",
             }}
         >
             <Button
@@ -42,11 +40,8 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
                             : "4px 0",
                     flexDirection: [ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant) ? "row" : null,
                     zoom: variant === ButtonsVariant.xs ? 0.75 : null,
-
                     borderColor: hasError ? theme.palette.error.main : null,
                     color: hasError ? theme.palette.error.main : isActive ? theme.palette.success.main : null,
-
-                    opacity: props.disabled ? 0.3 : 1,
                 })}
             >
                 <Icon
@@ -73,6 +68,7 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
                         color: "inherit",
                         display: [ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? "none" : null,
                         whiteSpace: variant === ButtonsVariant.horizontal ? "nowrap" : null,
+                        textTransform: variant === ButtonsVariant.label ? "lowercase" : null,
                         marginLeft: variant === ButtonsVariant.horizontal ? 1 : null,
                     }}
                 >

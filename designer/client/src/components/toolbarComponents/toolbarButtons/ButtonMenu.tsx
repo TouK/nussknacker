@@ -33,7 +33,7 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const { variant } = useContext(ToolbarButtonsContext);
 
-    if (options.length < 1 || buttonProps.disabled) {
+    if (options.length < 1) {
         return <ToolbarButton {...buttonProps} className={className} />;
     }
 
@@ -55,9 +55,6 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
                 ".toolbarButton-Root": {
                     paddingRight: ButtonsVariant.horizontal === variant ? 3.5 : ButtonsVariant.xs === variant ? 2.5 : null,
                 },
-                ".toolbarButton-Label": {
-                    display: ButtonsVariant.xs === variant ? "inline" : null,
-                },
             }}
         >
             <ExpandButton
@@ -76,6 +73,7 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
                     borderBottomRightRadius: [ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant) ? null : 0,
                 }}
                 className={"toolbarButton-MenuExpand"}
+                disabled={buttonProps.disabled}
                 onClick={(e) => {
                     e.stopPropagation();
                     setAnchorEl(e.currentTarget);

@@ -22,7 +22,7 @@ import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
 import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
-import { getHistoryCounts } from "../../reducers/selectors/getHistory";
+import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHistory";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
@@ -35,7 +35,6 @@ type UserAction = ((e: Event) => unknown) | null;
 interface UserActions {
     copy: UserAction;
     paste: UserAction;
-    canPaste: boolean;
     cut: UserAction;
     delete: UserAction;
     undo: UserAction;
@@ -115,15 +114,15 @@ export const useSelectionActions = (): UserActions => {
     return selectionActions;
 };
 
-function useUndoRedoActions() {
+function useUndoRedoActions(disabled?: boolean) {
     const dispatch = useDispatch();
     const [past, future] = useSelector(getHistoryCounts);
     return useMemo(() => {
         return {
-            undo: past <= 0 ? null : () => dispatch(UndoActionCreators.undo()),
-            redo: future <= 0 ? null : () => dispatch(UndoActionCreators.redo()),
+            undo: past <= 0 || disabled ? null : () => dispatch(UndoActionCreators.undo()),
+            redo: future <= 0 || disabled ? null : () => dispatch(UndoActionCreators.redo()),
         };
-    }, [past, future, dispatch]);
+    }, [past, disabled, future, dispatch]);
 }
 
 export default function SelectionContextProvider(
@@ -224,22 +223,24 @@ export default function SelectionContextProvider(
     );
 
     const canAccessClipboard = useClipboardPermission();
-    const undoRedoActions = useUndoRedoActions();
+
+    const graphLocked = useSelector(getGraphLocked);
+    const undoRedoActions = useUndoRedoActions(graphLocked);
     const userActions: UserActions = useMemo(
         () => ({
             ...undoRedoActions,
             copy: canModifySelected && !hasSelection && (() => dispatch(copySelection(copy))),
-            canPaste: !!canAccessClipboard,
-            paste: capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
-            cut: canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
-            delete: canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
-            selectAll: () => dispatch(selectAll()),
-            deselectAll: () => dispatch(resetSelection()),
+            paste: !!canAccessClipboard && !graphLocked && capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
+            cut: !graphLocked && canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
+            delete: !graphLocked && canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
+            selectAll: !graphLocked && (() => dispatch(selectAll())),
+            deselectAll: !graphLocked && (() => dispatch(resetSelection())),
         }),
         [
             undoRedoActions,
             canModifySelected,
             hasSelection,
+            graphLocked,
             canAccessClipboard,
             capabilities.editFrontend,
             dispatch,
