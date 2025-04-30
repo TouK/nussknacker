@@ -1,8 +1,10 @@
 import { get } from "lodash";
 import type { ReactNode} from "react";
+import { useMemo } from "react";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type ProcessUtils from "../../../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../../../types";
 import { useDiffMark } from "../../PathsToMark";
 import { useTestResults } from "../../TestResultsWrapper";
@@ -20,13 +22,14 @@ type Props = {
     isEditMode: boolean;
     showValidation: boolean;
     showSwitch: boolean;
+    findAvailableVariables: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     renderFieldLabel: (paramName: string) => ReactNode;
     errors: NodeValidationError[];
 };
 
 function MockExpressionField(props: Props): JSX.Element {
-    const { editedNode, isEditMode, showValidation, showSwitch, setNodeDataAt, renderFieldLabel, errors } = props;
+    const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, renderFieldLabel, errors } = props;
     const [mockExpression, setMockExpression] = useState(() => {
         return get(editedNode, MOCK_EXPRESSION_FIELD_NAME) || { expression: "", language: "spel" };
     });
@@ -46,6 +49,8 @@ function MockExpressionField(props: Props): JSX.Element {
         [setNodeDataAt],
     );
 
+    const variableTypes = useMemo(() => findAvailableVariables(editedNode.id), [findAvailableVariables, editedNode.id]);
+
     const { t } = useTranslation();
     const testResultsState = useTestResults();
 
@@ -59,7 +64,7 @@ function MockExpressionField(props: Props): JSX.Element {
     const mockExpressionParameter: UIParameter = {
         additionalVariables: {},
         branchParam: false,
-        defaultValue: { expression: "", language: undefined },
+        defaultValue: { expression: "", language: "spel" },
         editor: { type: EditorType.SPEL_PARAMETER_EDITOR },
         label: "",
         name: MOCK_EXPRESSION_FIELD_NAME,
@@ -78,9 +83,9 @@ function MockExpressionField(props: Props): JSX.Element {
                 showValidation={showValidation}
                 showSwitch={showSwitch}
                 readOnly={readOnly}
-                variableTypes={{}}
+                variableTypes={variableTypes}
                 onValueChange={onValueChange}
-                fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_FIELD_NAME)} // todo: check if it works
+                fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_FIELD_NAME)}
             />
         </ExpressionTestResults>
     );
