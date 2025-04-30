@@ -174,7 +174,7 @@ type ResponseStatus = { status: "success"; data?: any } | { status: "error"; err
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
-    #skipResultsPerTransition = true;
+    #skipResultsPerTransition = null;
 
     setNotificationActions(na: NotificationActions) {
         this.#notificationActions = na;
