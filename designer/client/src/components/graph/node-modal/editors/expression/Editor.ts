@@ -1,4 +1,4 @@
-import type React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
+import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 
 import type { VariableTypes } from "../../../../../types";
 import type { FieldError } from "../Validators";
