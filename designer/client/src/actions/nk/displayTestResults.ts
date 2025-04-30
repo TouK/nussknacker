@@ -10,32 +10,42 @@ import { displayProcessCounts } from "./displayProcessCounts";
 
 export function testProcessFromFile(testDataFile: File): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
-        HttpService.testProcess(processName, testDataFile, scenarioGraph).then(({ data }) => ({
+        HttpService.testScenarioWithFile(processName, scenarioGraph, testDataFile).then(({ data }) => ({
             testResults: data,
         })),
     );
 }
 
-export function testProcessWithParameters(testData: SourceWithParametersTest): ThunkAction {
+export function testProcessWithParameters(sourceParameters: SourceWithParametersTest): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
-        HttpService.testProcessWithParameters(processName, testData, scenarioGraph).then(({ data }) => ({
+        HttpService.testScenario(processName, scenarioGraph, {
+            type: "WITH_PARAMETERS",
+            sourceParameters,
+        }).then(({ data }) => ({
             testResults: data,
-            testData,
+            testData: sourceParameters,
         })),
     );
 }
 
 export function testScenarioWithGeneratedData(testSampleSize: string): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
-        HttpService.testScenarioWithGeneratedData(processName, parseInt(testSampleSize), scenarioGraph).then(({ data }) => ({
+        HttpService.testScenario(processName, scenarioGraph, {
+            type: "WITH_GENERATED_DATA",
+            numberOfSamples: parseInt(testSampleSize),
+        }).then(({ data }) => ({
             testResults: data,
         })),
     );
 }
 
 export type TestsActions =
-    | { type: "TEST_RESULTS_LOADING" }
-    | { type: "TEST_RESULTS_FAILED" }
+    | {
+          type: "TEST_RESULTS_LOADING";
+      }
+    | {
+          type: "TEST_RESULTS_FAILED";
+      }
     | {
           type: "DISPLAY_TEST_RESULTS_DETAILS";
           testResults: TestResults;
