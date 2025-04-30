@@ -55,11 +55,11 @@ describe("Process", () => {
             cy.contains(/^save/i).should("be.enabled").click();
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
-
-            cy.contains(/^ok$/i).should("not.exist");
             cy.get('[role="alert"]')
                 .contains(/scenario name changed/i)
                 .should("be.visible");
+
+            cy.contains(/^ok$/i).should("not.exist");
             cy.location("href").should("contain", "-renamed");
             cy.contains(/^properties/i)
                 .should("be.enabled")
