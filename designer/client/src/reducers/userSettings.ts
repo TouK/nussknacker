@@ -1,4 +1,4 @@
-import { persistReducer } from "redux-persist";
+import { persistReducer, createTransform } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 
 import type { Reducer } from "../actions/reduxTypes";
@@ -20,30 +20,60 @@ type SettingsNames =
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
-const reducer: Reducer<UserSettings> = (
-    state = {
-        "node.showAggregateSwitcher": false,
-        "node.shortCounts": false,
-        "node.showInputsAndOutputs": false,
-        "node.showFragmentCreator": false,
-        "node.autoApply": false,
-        "cloud.showIntegrationsCreators": false,
-        "debug.nodesAsJson": false,
-        "debug.forceDisableModals": false,
-        "debug.userSettingsVisible": isDev,
+const getInitialUserFlag = (flagName: SettingsNames, defaultValue = false): boolean => {
+    return window?.["$initialUserFlags"]?.[flagName] ?? defaultValue;
+};
+
+const getDefaultUserSettings = (): UserSettings => ({
+    "node.showAggregateSwitcher": getInitialUserFlag("node.showAggregateSwitcher"),
+    "node.shortCounts": getInitialUserFlag("node.shortCounts"),
+    "node.showInputsAndOutputs": getInitialUserFlag("node.showInputsAndOutputs"),
+    "node.showFragmentCreator": getInitialUserFlag("node.showFragmentCreator"),
+    "node.autoApply": getInitialUserFlag("node.autoApply"),
+    "cloud.showIntegrationsCreators": getInitialUserFlag("cloud.showIntegrationsCreators"),
+    "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
+    "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
+    "debug.userSettingsVisible": getInitialUserFlag("debug.userSettingsVisible", isDev),
+    "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines", true),
+});
+
+/**
+ * @desc The idea is to get default values from the global config and then use them in the reducer unless the user changed the setting manually; in this case, we take a value from local storage.
+ * 1. We want to persist in a user setting state in localstorage only if the user has changed it.
+ * 2. We don't want to persist the default values.
+ * 3. When the value set by the user is the same as the default value, we don't want to persist it.
+ */
+const filterInitialValuesTransform = createTransform(
+    (inboundState, key) => {
+        const persistedState = localStorage.getItem("persist:settings");
+        const defaults = getDefaultUserSettings();
+
+        const valueFromLocalStorage = persistedState?.[key];
+        if (valueFromLocalStorage) {
+            return valueFromLocalStorage;
+        }
+
+        const valueSetByTheUserManually = defaults[key] !== inboundState;
+
+        if (valueSetByTheUserManually) {
+            return inboundState;
+        }
+        return undefined;
     },
-    action,
-) => {
+    (outboundState) => outboundState,
+);
+
+const reducer: Reducer<UserSettings> = (state = getDefaultUserSettings(), action) => {
     switch (action.type) {
         case "SET_SETTINGS":
             return action.settings;
         case "TOGGLE_SETTINGS":
             return action.settings.reduce((value, key) => ({ ...value, [key]: !state[key] }), state);
         case "RESET_TOOLBARS":
-            return { ...state, "debug.userSettingsVisible": isDev };
+            return { ...state, ...getDefaultUserSettings() };
         default:
             return state;
     }
 };
 
-export const userSettings = persistReducer({ key: `settings`, storage }, reducer);
+export const userSettings = persistReducer({ key: "settings", storage, transforms: [filterInitialValuesTransform] }, reducer);

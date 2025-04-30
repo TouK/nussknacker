@@ -1,23 +1,25 @@
-import { BoolEditor } from "./BoolEditor";
-import { SpelEditor } from "./SpelEditor";
-import { SqlEditor } from "./SqlEditor";
-import { StaticStringEditor } from "./StaticStringEditor";
-import { FixedValuesEditor } from "./FixedValuesEditor";
-import { EditorType, ExpressionLang, ExpressionObj } from "./types";
-import React, { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
-import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
+import type { ForwardRefExoticComponent, LegacyRef, ReactNode } from "react";
 
+import type { VariableTypes } from "../../../../../types";
+import type { FieldError } from "../Validators";
+import { BoolEditor } from "./BoolEditor";
+import { CronEditor } from "./Cron/CronEditor";
+import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
+import { DictParameterEditor } from "./DictParameterEditor";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
-import { CronEditor } from "./Cron/CronEditor";
-import { TextareaEditor } from "./TextareaEditor";
+import { FixedValuesEditor } from "./FixedValuesEditor";
+import type { Formatter } from "./Formatter";
 import JsonEditor from "./JsonEditor";
+import { JsonTemplateEditor } from "./JsonTemplateEditor";
+import { SpelEditor } from "./SpelEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
-import { Formatter } from "./Formatter";
-import { VariableTypes } from "../../../../../types";
-import { FieldError } from "../Validators";
+import { SqlEditor } from "./SqlEditor";
+import { StaticStringEditor } from "./StaticStringEditor";
 import { TableEditor } from "./Table/TableEditor";
-import { DictParameterEditor } from "./DictParameterEditor";
+import { TextareaEditor } from "./TextareaEditor";
+import type { ExpressionLang, ExpressionObj } from "./types";
+import { EditorType } from "./types";
 
 export type EditorProps = {
     onValueChange: OnValueChange;
@@ -47,7 +49,7 @@ export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P
 };
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
-    return (editor as ExtendedEditor).isSwitchableTo !== undefined;
+    return (editor as ExtendedEditor)?.isSwitchableTo !== undefined;
 }
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
@@ -69,6 +71,7 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
     [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
     [EditorType.TABLE_EDITOR]: TableEditor,
+    [EditorType.JSON_TEMPLATE_PARAMETER_EDITOR]: JsonTemplateEditor,
 };
 
 export type OnValueChange = {

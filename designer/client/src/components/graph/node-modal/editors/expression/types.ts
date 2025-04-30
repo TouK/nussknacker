@@ -7,6 +7,7 @@ export enum ExpressionLang {
     TabularDataDefinition = "tabularDataDefinition",
     DictKeyWithLabel = "dictKeyWithLabel",
     MD = "markdown",
+    JsonTemplate = "jsonTemplate",
 }
 
 export type ExpressionObj = {
@@ -17,6 +18,7 @@ export type ExpressionObj = {
 export enum EditorMode {
     SpEL = "spel",
     SpELTemplate = "spelTemplate",
+    JsonTemplate = "jsonTemplate",
     SQL = "sql",
 }
 
@@ -39,4 +41,5 @@ export enum EditorType {
     SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor",
     DICT_PARAMETER_EDITOR = "DictParameterEditor",
     TABLE_EDITOR = "TabularTypedDataEditor",
+    JSON_TEMPLATE_PARAMETER_EDITOR = "JsonTemplateParameterEditor",
 }

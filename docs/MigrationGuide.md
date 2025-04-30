@@ -187,8 +187,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   was removed to temporarily disable consumer group namespacing.
 * [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels will be auto-generated for all components that don't have `label` defined in `ComponentDefinition`. Labels will be visible in components palette and in components list.
   Auto-generated label is created by formating component's name into Title Case, e.g. for component with name `aggregate-session`, label will be `Aggregate Session`. If component provider has `componentPrefix` set, it'll be included in auto-generated label.
-* [#7553](https://github.com/TouK/nussknacker/pull/7553) `#key` variable created in window components won't be a list in a string, but it'll have provided types, e.g. instead of `"[12.0, ab]"` it'll now be `[12.0, "ab"]`.
-  To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) [#8011](https://github.com/TouK/nussknacker/pull/8011) `#key` variable created in window components won't be a list in a string, but it'll have provided types, e.g. instead of `"[12.0, ab]"` it'll now be `[12.0, "ab"]`.
+  To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`. 
+  Also, if you provide one element in `groupBy` expression, it will be presented as one element list instead of scalar.
 * [#8011](https://github.com/TouK/nussknacker/pull/8011) During scenario compilation, redundant parameters used in node are treated only as warning now. They are skipped and compilation passes.
 
 ## In version 1.18.0

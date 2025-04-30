@@ -1,14 +1,18 @@
 /* eslint-disable i18next/no-literal-string */
-import { SerializedStyles } from "@emotion/react";
+import type { SerializedStyles } from "@emotion/react";
 import { Box } from "@mui/material";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
-import React, { ForwardedRef, forwardRef, ReactNode, useMemo } from "react";
-import ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
-import { ICommand } from "react-ace/lib/types";
-import { IAceOptions, IEditorProps } from "react-ace/src/types";
+import type { ForwardedRef, ReactNode } from "react";
+import React, { forwardRef, useMemo } from "react";
+import type { IAceEditorProps } from "react-ace/lib/ace";
+import type ReactAce from "react-ace/lib/ace";
+import type { ICommand } from "react-ace/lib/types";
+import type { IAceOptions, IEditorProps } from "react-ace/src/types";
+
 import AceEditor from "./ace";
-import { EditorMode, ExpressionLang } from "./types";
+import type { EditorMode } from "./types";
+import { ExpressionLang } from "./types";
 
 export type AceWrapperInputProps = {
     language: string;
@@ -20,6 +24,7 @@ export type AceWrapperInputProps = {
     cols?: number;
     placeholder?: string;
     InputAdornmentEnd?: ReactNode;
+    useAceWorker?: boolean;
 };
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
@@ -146,7 +151,7 @@ export default forwardRef(function AceWrapper(
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
-    const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd } = inputProps;
+    const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
 
     const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
         () => [
@@ -199,6 +204,8 @@ export default forwardRef(function AceWrapper(
                     ...DEFAULT_OPTIONS,
                     enableLiveAutocompletion,
                     showLineNumbers,
+                    // We don't want to check syntax correctness with ace
+                    useWorker: useAceWorker,
                 }}
                 enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
                 commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}

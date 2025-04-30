@@ -70,10 +70,14 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       @Min(1)
       @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
       nullableCount: Integer,
-      @ParamName("value")
+      @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       @DefaultValue(
-        "{\n\t\"sampleField\": #UTIL.uuid(),\n\t\"dateTime\": #DATE_FORMAT.format(#DATE.now),\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+        value =
+          "{\n\t\"sampleField\": \"#{#UTIL.uuid()}\",\n\t\"dateTime\": \"#{#DATE_FORMAT.format(#DATE.now)}\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
+        language = ExpressionLanguage.JSON_TEMPLATE
       )
+      @ParamName("value")
       value: LazyParameter[AnyRef]
   ): Source = {
     new StandardFlinkSource[AnyRef]

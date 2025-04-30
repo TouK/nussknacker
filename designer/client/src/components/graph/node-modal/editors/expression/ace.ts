@@ -8,6 +8,7 @@ import AceEditor from "react-ace";
 
 import "../../../../../brace/mode/spel";
 import "../../../../../brace/mode/spelTemplate";
+import "../../../../../brace/mode/jsonTemplate";
 import "../../../../../brace/mode/sql";
 import "../../../../../brace/theme/nussknacker";
 
