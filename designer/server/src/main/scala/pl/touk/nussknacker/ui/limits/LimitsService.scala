@@ -118,27 +118,20 @@ class LimitsService(
       activeScenariosLimit: Int,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
   ) = {
-    deploymentUpdateStrategy match {
+    val maxActiveScenariosIncludingCurrentlyDeployingScenario = deploymentUpdateStrategy match {
       case ReplaceDeploymentWithSameScenarioName(_) if currentlyActiveScenarios.contains(currentlyDeployingScenario) =>
-        if (currentlyActiveScenarios.size + 1 <= activeScenariosLimit) {
-          Right(())
-        } else {
-          logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
-                          |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
-                          |Scenario is being deployed: $currentlyDeployingScenario.
-                          |""".stripMargin)
-          Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
-        }
+        activeScenariosLimit + 1
       case ReplaceDeploymentWithSameScenarioName(_) | DontReplaceDeployment =>
-        if (currentlyActiveScenarios.size <= activeScenariosLimit) {
-          Right(())
-        } else {
-          logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
-                          |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
-                          |Scenario is being deployed: $currentlyDeployingScenario.
-                          |""".stripMargin)
-          Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
-        }
+        activeScenariosLimit
+    }
+    if (currentlyActiveScenarios.size + 1 <= maxActiveScenariosIncludingCurrentlyDeployingScenario) {
+      Right(())
+    } else {
+      logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
+                      |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
+                      |Scenario is being deployed: $currentlyDeployingScenario.
+                      |""".stripMargin)
+      Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
     }
   }
 

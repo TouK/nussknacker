@@ -26,16 +26,17 @@ object DeploymentManagerReliableStatusesWrapper {
     ): Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] = {
       import executionContextWithIORuntime.ioRuntime
       val deploymentStatusesOpt = IO.fromFuture(IO {
-        dmDispatcher
-          .deploymentManager(scenarioIdData.processingType)
-          .map(
-            _.getScenarioDeploymentsStatuses(scenarioIdData.name)
+        dmDispatcher.deploymentManager(scenarioIdData.processingType) match {
+          case Some(deploymentManager) =>
+            deploymentManager
+              .getScenarioDeploymentsStatuses(scenarioIdData.name)
               .map(Right(_))
-              .recover { case NonFatal(e) => Left(GetDeploymentsStatusesFailure(scenarioIdData.name, e)) }
-          )
-          .getOrElse(
+              .recover { case NonFatal(e) =>
+                Left(GetDeploymentsStatusesFailure(scenarioIdData.name, e))
+              }
+          case None =>
             Future.successful(Left(ProcessingTypeIsNotConfigured(scenarioIdData.name, scenarioIdData.processingType)))
-          )
+        }
       })
 
       timeoutOpt

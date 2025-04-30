@@ -24,12 +24,9 @@ import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfi
   Streaming1,
   Streaming2
 }
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{
-  adminUser,
-  newActionProcessRepository,
-  newFetchingProcessRepository
-}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.validProcessWithName
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypeDataProviderFactory
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
@@ -62,85 +59,25 @@ class DeploymentServiceSpec
     ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(ExecutionContext.global)
   import executionContextWithIORuntime.ioRuntime
 
-  override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
-
-  private val writeScenarioRepository = TestFactory.newWriteProcessRepository(testDbRef, clock, modelVersions = None)
-
-  private val streaming1DeploymentManagerConfigurator = new MockableDeploymentManagerConfigurator()
-  private val streaming2DeploymentManagerConfigurator = new MockableDeploymentManagerConfigurator()
-
-  private val service = {
-    val clock                      = Clock.fixed(Instant.ofEpochMilli(0), ZoneOffset.UTC)
-    val scenarioMetadataRepository = TestFactory.newScenarioMetadataRepository(testDbRef)
-    val streaming1DeploymentManager =
-      new MockableDeploymentManager(streaming1DeploymentManagerConfigurator, modelDataProviderOpt = None)
-    val streaming2DeploymentManager =
-      new MockableDeploymentManager(streaming2DeploymentManagerConfigurator, modelDataProviderOpt = None)
-    val deploymentManagerDispatcher = new DeploymentManagerDispatcher(
-      TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
-        Map(
-          Streaming1.stringify -> ValueWithRestriction.anyUser(streaming1DeploymentManager),
-          Streaming2.stringify -> ValueWithRestriction.anyUser(streaming2DeploymentManager)
-        )
-      ),
-      TestFactory.newFutureFetchingScenarioRepository(testDbRef)
-    )
-
-    val scenarioStatusProvider = {
-      new ScenarioStatusProvider(
-        new EngineSideDeploymentStatusesProvider(deploymentManagerDispatcher, scenarioStateTimeout = None),
-        deploymentManagerDispatcher,
-        newFetchingProcessRepository(testDbRef),
-        newActionProcessRepository(testDbRef),
-        dbioRunner
-      )
-    }
-
-    val supportedProcessingTypes   = List(Streaming1.stringify, Streaming2.stringify)
-    val processingTypeLimitsConfig = LimitsConfig.default.copy(activeScenariosLimit = Some(ActiveScenariosLimit(2)))
-    val globalLimitsConfig = GlobalLimitsConfig.default.copy(
-      activeScenariosLimit = Some(GlobalLimitsConfig.ActiveScenariosLimit(2))
-    )
-
-    new DeploymentService(
-      scenarioMetadataRepository,
-      TestFactory.newScenarioGraphVersionService(testDbRef, supportedProcessingTypes),
-      TestFactory.newDeploymentRepository(testDbRef, clock),
-      deploymentManagerDispatcher,
-      dbioRunner,
-      clock,
-      TestFactory.additionalComponentConfigsByProcessingType,
-      new LimitsService(
-        globalLimitsConfig = globalLimitsConfig,
-        activeScenariosLimitProvider = TestFactory.mapProcessingTypeDataProvider(
-          supportedProcessingTypes.map(pt => (pt, processingTypeLimitsConfig)): _*
-        ),
-        scenarioStatusProvider = scenarioStatusProvider
-      )
-    )
-  }
-
   "request deployment and provide status for it" in {
-    val scenarioName = ProcessName("validScenario")
-    val scenario     = ProcessTestData.validProcessWithName(scenarioName)
+    val scenario = validProcessWithName("validScenario")
     saveSampleScenario(scenario)
 
     val deploymentId = DeploymentId.generate
     val user         = adminUser()
-    service
+    deploymentService
       .runDeployment(
-        RunDeploymentCommand(deploymentId, scenarioName, NodesDeploymentData.empty, user)
+        RunDeploymentCommand(deploymentId, scenario.name, NodesDeploymentData.empty, user)
       )
       .futureValue
       .rightValue
 
-    val status = service.getDeploymentStatus(deploymentId)(user).futureValue.rightValue
+    val status = deploymentService.getDeploymentStatus(deploymentId)(user).futureValue.rightValue
     status.value shouldEqual DeploymentStatus.DuringDeploy
   }
 
   "deployment which ended up with failure during request should has problem status" in {
-    val scenarioName = ProcessName("scenarioCausingFailure")
-    val scenario     = ProcessTestData.validProcessWithName(scenarioName)
+    val scenario = validProcessWithName("scenarioCausingFailure")
     saveSampleScenario(scenario)
     val deploymentId = DeploymentId.generate
     streaming1DeploymentManagerConfigurator.configureDeploymentResults(
@@ -148,15 +85,15 @@ class DeploymentServiceSpec
     )
 
     val user = adminUser()
-    service
+    deploymentService
       .runDeployment(
-        RunDeploymentCommand(deploymentId, scenarioName, NodesDeploymentData.empty, user)
+        RunDeploymentCommand(deploymentId, scenario.name, NodesDeploymentData.empty, user)
       )
       .futureValue
       .rightValue
 
     eventually {
-      val status = service.getDeploymentStatus(deploymentId)(user).futureValue.rightValue
+      val status = deploymentService.getDeploymentStatus(deploymentId)(user).futureValue.rightValue
       status.value.name shouldEqual ProblemDeploymentStatus.name
     }
   }
@@ -321,11 +258,18 @@ class DeploymentServiceSpec
   "should not allow more scenarios than active scenario limits to be used" when {
     "one processing type is considered" when {
       "1st scenario is running, and the 2nd scenario is running, and the 3rd scenario is not deployed" in {
+        val scenario1 = validProcessWithName("scenario1")
+        saveSampleScenario(scenario1)
+        val scenario2 = validProcessWithName("scenario2")
+        saveSampleScenario(scenario2)
+        val scenario3 = validProcessWithName("scenario3")
+        saveSampleScenario(scenario3)
+
         streaming1DeploymentManagerConfigurator.configureScenarioStatuses(
           Map(
-            "scenario1" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario2" -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
-            "scenario3" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
+            scenario1.name.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
+            scenario2.name.value -> BasicStatusDetails(SimpleStateStatus.Running, version = Some(VersionId(1))),
+            scenario3.name.value -> BasicStatusDetails(SimpleStateStatus.NotDeployed, version = Some(VersionId(1))),
           )
         )
 
@@ -464,6 +408,64 @@ class DeploymentServiceSpec
     super.afterAll()
   }
 
+  override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
+
+  private val writeScenarioRepository = newWriteProcessRepository(testDbRef, clock, modelVersions = None)
+
+  private lazy val streaming1DeploymentManagerConfigurator = new MockableDeploymentManagerConfigurator()
+  private lazy val streaming2DeploymentManagerConfigurator = new MockableDeploymentManagerConfigurator()
+
+  private lazy val deploymentService = {
+    val clock                      = Clock.fixed(Instant.ofEpochMilli(0), ZoneOffset.UTC)
+    val scenarioMetadataRepository = newScenarioMetadataRepository(testDbRef)
+    val streaming1DeploymentManager =
+      new MockableDeploymentManager(streaming1DeploymentManagerConfigurator, modelDataProviderOpt = None)
+    val streaming2DeploymentManager =
+      new MockableDeploymentManager(streaming2DeploymentManagerConfigurator, modelDataProviderOpt = None)
+    val deploymentManagerDispatcher = new DeploymentManagerDispatcher(
+      TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
+        Map(
+          Streaming1.stringify -> ValueWithRestriction.anyUser(streaming1DeploymentManager),
+          Streaming2.stringify -> ValueWithRestriction.anyUser(streaming2DeploymentManager)
+        )
+      ),
+      newFutureFetchingScenarioRepository(testDbRef)
+    )
+
+    val scenarioStatusProvider = {
+      new ScenarioStatusProvider(
+        new EngineSideDeploymentStatusesProvider(deploymentManagerDispatcher, scenarioStateTimeout = None),
+        deploymentManagerDispatcher,
+        newFetchingProcessRepository(testDbRef),
+        newActionProcessRepository(testDbRef),
+        dbioRunner
+      )
+    }
+
+    val supportedProcessingTypes   = List(Streaming1.stringify, Streaming2.stringify)
+    val processingTypeLimitsConfig = LimitsConfig.default.copy(activeScenariosLimit = Some(ActiveScenariosLimit(2)))
+    val globalLimitsConfig = GlobalLimitsConfig.default.copy(
+      activeScenariosLimit = Some(GlobalLimitsConfig.ActiveScenariosLimit(2))
+    )
+
+    new DeploymentService(
+      scenarioMetadataRepository,
+      newScenarioGraphVersionService(testDbRef, supportedProcessingTypes),
+      newDeploymentRepository(testDbRef, clock),
+      deploymentManagerDispatcher,
+      dbioRunner,
+      clock,
+      additionalComponentConfigsByProcessingType,
+      new LimitsService(
+        globalLimitsConfig = globalLimitsConfig,
+        activeScenariosLimitProvider = mapProcessingTypeDataProvider(
+          supportedProcessingTypes.map(pt => (pt, processingTypeLimitsConfig)): _*
+        ),
+        scenarioStatusProvider = scenarioStatusProvider
+      )
+    )
+  }
+
   private def saveSampleScenario(scenario: CanonicalProcess, processingType: String = Streaming1.stringify) = {
     writeScenarioRepository
       .saveNewProcess(
@@ -479,10 +481,10 @@ class DeploymentServiceSpec
   }
 
   private def deployExampleScenario(scenarioName: ProcessName) = {
-    val scenario = ProcessTestData.validProcessWithName(scenarioName)
+    val scenario = validProcessWithName(scenarioName.value)
     saveSampleScenario(scenario)
 
-    service
+    deploymentService
       .runDeployment(
         RunDeploymentCommand(DeploymentId.generate, scenarioName, NodesDeploymentData.empty, adminUser())
       )
