@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { CopyIconButton, useCopyClipboard } from "../../../common/copyToClipboard";
+import { useUserSettings } from "../../../common/userSettings";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import type { Parameter } from "../../../types";
 import { getValidationErrorsForField } from "./editors/Validators";
@@ -29,6 +30,7 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
     const scenarioState = useSelector(getProcessState);
     const { t } = useTranslation();
     const [isCopied, copy] = useCopyClipboard();
+    const [settings] = useUserSettings();
 
     return (
         <>
@@ -56,12 +58,19 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                         }
                         {...props}
                     />
-                    {paramWithIndex.param.name === "Endpoint" && (
+                    {/*
+                     * TODO: Remove it when the backend is ready and action buttons will be send by default
+                     */}
+                    {paramWithIndex.param.name === "Endpoint" && settings["node.showGenerateEndpointButton"] && (
                         <Box display={"flex"} justifyContent={"flex-end"}>
                             <GenerateNewEndpoint node={node} />
                         </Box>
                     )}
-                    {paramWithIndex.param.name === "Data sample" && (
+
+                    {/*
+                     * TODO: Remove it when the backend is ready and action buttons will be send by default
+                     */}
+                    {paramWithIndex.param.name === "Data sample" && settings["node.showSendRequestButton"] && (
                         <Box display={"flex"} justifyContent={"flex-end"}>
                             <SendRequestButton
                                 disabled={
