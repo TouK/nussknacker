@@ -34,7 +34,30 @@ trait GraphBuilder[R] {
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
       creator(
-        Some(OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output), node))
+        Some(
+          OneOutputSubsequentNode(
+            Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockExpression = None),
+            node
+          )
+        )
+      )
+    )
+
+  def enricherWithMockExpression(
+                                  id: String,
+                                  output: String,
+                                  svcId: String,
+                                  mockExpression: Expression,
+                                  params: (String, Expression)*
+                                ): GraphBuilder[R] =
+    build(node =>
+      creator(
+        Some(
+          OneOutputSubsequentNode(
+            Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockExpression = Some(mockExpression)),
+            node
+          )
+        )
       )
     )
 
