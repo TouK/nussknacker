@@ -96,6 +96,7 @@ export function EnricherProcessor({
                         editedNode={node}
                         showValidation={showValidation}
                         showSwitch={showSwitch}
+                        findAvailableVariables={findAvailableVariables}
                         setNodeDataAt={setProperty}
                         renderFieldLabel={renderFieldLabel}
                         errors={errors}
