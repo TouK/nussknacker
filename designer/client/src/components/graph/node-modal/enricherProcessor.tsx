@@ -5,6 +5,7 @@ import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
+import MockExpressionField from "./editors/expression/MockExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
@@ -67,6 +68,17 @@ export function EnricherProcessor({
                         fieldType={FieldType.input}
                         fieldLabel={t("nodes.enricher.output", "Output variable name")}
                         fieldName={"output"}
+                        errors={errors}
+                    />
+                ) : null}
+                {node.type === "Enricher" ? (
+                    <MockExpressionField
+                        isEditMode={isEditMode}
+                        editedNode={node}
+                        showValidation={showValidation}
+                        showSwitch={showSwitch}
+                        setNodeDataAt={setProperty}
+                        renderFieldLabel={renderFieldLabel}
                         errors={errors}
                     />
                 ) : null}
