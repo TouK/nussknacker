@@ -1,22 +1,21 @@
-import { useSelector } from "react-redux";
-import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
-import { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
-import { debounce } from "lodash";
-import { useSettings } from "../../SettingsProvider";
 import { Box, Button, CircularProgress, FormControl, Stack } from "@mui/material";
+import { debounce } from "lodash";
 import React, { useMemo, useRef, useState } from "react";
 import type AceEditor from "react-ace";
-
-
 import type { IAceEditor } from "react-ace/lib/types";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+
+import type { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
 import HttpService from "../../../../../../../http/HttpService";
+import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
 import type { FieldName, FixedValuesOption, onChangeType } from "../../../item";
+import { useSettings } from "../../SettingsProvider";
 import { ListItems } from "./ListItems";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
@@ -191,7 +190,7 @@ export const UserDefinedListInput = ({
                         }
                         expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem.trim() }}
                         onValueChange={(value) => {
-                            setTemporaryListItem(value.expression);
+                            setTemporaryListItem(value.expression.trim());
                             setTemporaryValuesTyping(true);
                             setTemporaryValueErrors([]);
                             validateTemporaryListItem(value.expression);
