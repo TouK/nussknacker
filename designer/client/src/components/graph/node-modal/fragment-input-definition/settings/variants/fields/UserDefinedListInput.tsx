@@ -190,7 +190,7 @@ export const UserDefinedListInput = ({
                         }
                         expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem.trim() }}
                         onValueChange={(value) => {
-                            setTemporaryListItem(value.expression);
+                            setTemporaryListItem(value.expression.trim());
                             setTemporaryValuesTyping(true);
                             setTemporaryValueErrors([]);
                             validateTemporaryListItem(value.expression);
