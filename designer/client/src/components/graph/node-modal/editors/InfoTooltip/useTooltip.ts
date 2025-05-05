@@ -1,6 +1,7 @@
 import type { Theme } from "@mui/material";
 import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
 import type { SystemStyleObject } from "@mui/system";
+import type { MouseEvent } from "react";
 import { useState, useRef, useMemo, useCallback } from "react";
 
 import { getBorderColor } from "../../../../../containers/theme/helpers";
@@ -52,7 +53,7 @@ export const useTooltip = ({ customComponentsProps }: { customComponentsProps: T
         setTooltipOpen(false);
     }, []);
 
-    const handleToggleTooltip = useCallback((e) => {
+    const handleToggleTooltip = useCallback((e: MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         setTooltipOpen((prev) => !prev);

@@ -2,7 +2,7 @@ import copy from "copy-to-clipboard";
 import { useEffect, useState } from "react";
 
 export function useCopyClipboard(): [boolean, (value: string) => void] {
-    const [isCopied, setIsCopied] = useState<boolean>();
+    const [isCopied, setIsCopied] = useState<boolean>(false);
     const [text, setText] = useState<string>();
 
     useEffect(() => {
