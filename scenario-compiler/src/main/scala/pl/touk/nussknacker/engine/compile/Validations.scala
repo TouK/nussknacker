@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.compile.CompilationLoggerExtensions.Ops
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -53,9 +54,8 @@ object Validations extends LazyLogging {
   ): Unit = {
     val redundantParams = usedParamNamesSet.diff(definedParamNamesSet)
     if (redundantParams.nonEmpty) {
-      logger.warn(
-        s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
-          s"Found redundant parameters: ${redundantParams.toList.map(_.value).sorted.mkString(", ")}. They will be skipped."
+      logger.compilationWarning(
+        s"Found redundant parameters: ${redundantParams.toList.map(_.value).sorted.mkString(", ")}. They will be skipped."
       )
     }
   }
