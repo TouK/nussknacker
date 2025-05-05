@@ -126,8 +126,8 @@ class DeploymentService(
               }
             }
           }
-            .map {
-              case Right(result) => result
+            .flatMap {
+              case Right(result) => Future.successful(result)
               case Left(error: MaxActiveScenariosCountExceededError) =>
                 Future.failed(error).whenThrowRemoveInvalidAction()
             }
