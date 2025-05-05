@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
@@ -115,7 +115,7 @@ protected trait ProcessCompilerBase {
     ThreadUtils.withContextClassLoader(classLoader) {
       val compilationResultWithArtificial =
         ProcessCanonizer
-          .uncanonizeArtificial(process, nodeCompiler.allowEndingScenarioWithoutSink)
+          .uncanonizeArtificial(process, nodeCompiler.missingSinkHandler)
           .map(ProcessSplitter.split)
           .map(compile)
       compilationResultWithArtificial.extract
@@ -191,22 +191,14 @@ protected trait ProcessCompilerBase {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
     import CompilationResult._
-    parts.map {
-      case SinkPart(node @ EndingNode(_: MaybeArtificial.ArtificialDeadEndSink)) =>
-        CompilationResult.pure(
-          compiledgraph.part.SinkPart(
-            obj = ArtificialDeadEndSink,
-            node = node,
-            contextBefore = ValidationContext.empty,
-            validationContext = ValidationContext.empty
-          )
-        )
-      case p =>
+    parts
+      .map(p =>
         ctx
           .get(p.id)
           .map(compileSubsequentPart(p, _))
           .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
-    }.sequence
+      )
+      .sequence
   }
 
   private def compileSubsequentPart(part: SubsequentPart, ctx: ValidationContext)(
@@ -410,5 +402,3 @@ object ProcessValidator {
   }
 
 }
-
-object ArtificialDeadEndSink extends api.process.Sink

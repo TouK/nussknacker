@@ -45,9 +45,9 @@ private[engine] object MaybeArtificial {
   // we need to make sure it's unique to prevent weird errors
   private def generateArtificialName() = s"$DummyObjectNamePrefix-${UUID.randomUUID()}"
 
-  def missingSinkError(errors: ProcessUncanonizationError*): MaybeArtificial[node.SubsequentNode] =
+  def missingSinkError(errors: ProcessUncanonizationError*): MaybeArtificial[Option[node.SubsequentNode]] =
     new MaybeArtificial(
-      node.EndingNode(node.Sink(generateArtificialName(), SinkRef(artificalSourceSinkRef, Nil), None)),
+      Some(node.EndingNode(node.Sink(generateArtificialName(), SinkRef(artificalSourceSinkRef, Nil), None))),
       errors.toList
     )
 
@@ -55,14 +55,5 @@ private[engine] object MaybeArtificial {
     missingSinkError(errors: _*).map(
       node.SourceNode(node.Source(generateArtificialName(), SourceRef(artificalSourceSinkRef, Nil)), _)
     )
-
-  def addedArtificialDeadEndSink(previousNodeId: String): MaybeArtificial[node.SubsequentNode] =
-    new MaybeArtificial(
-      node.EndingNode(new ArtificialDeadEndSink(previousNodeId)),
-      List.empty,
-    )
-
-  class ArtificialDeadEndSink(val previousNodeId: String)
-      extends node.Sink(s"artificialDeadEndSink-after-$previousNodeId", SinkRef(artificalSourceSinkRef, Nil), None)
 
 }

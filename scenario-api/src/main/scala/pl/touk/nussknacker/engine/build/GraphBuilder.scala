@@ -20,34 +20,36 @@ trait GraphBuilder[R] {
   def build(inner: GraphBuilder.Creator[R]): GraphBuilder[R]
 
   def source(id: String, typ: String, params: (String, Expression)*): GraphBuilder[SourceNode] =
-    new SimpleGraphBuilder(
-      SourceNode(Source(id, SourceRef(typ, toNodeParameters(params))), _)
-    )
+    new SimpleGraphBuilder(node => SourceNode(Source(id, SourceRef(typ, toNodeParameters(params))), Some(node)))
 
   def buildVariable(id: String, varName: String, fields: (String, Expression)*): GraphBuilder[R] =
     build(node =>
-      creator(OneOutputSubsequentNode(VariableBuilder(id, varName, fields.map(f => Field(f._1, f._2)).toList), node))
+      creator(
+        OneOutputSubsequentNode(VariableBuilder(id, varName, fields.map(f => Field(f._1, f._2)).toList), Some(node))
+      )
     )
 
   def buildSimpleVariable(id: String, varName: String, value: Expression): GraphBuilder[R] =
-    build(node => creator(OneOutputSubsequentNode(Variable(id, varName, value), node)))
+    build(node => creator(OneOutputSubsequentNode(Variable(id, varName, value), Some(node))))
 
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
       creator(
-        OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output), node)
+        OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output), Some(node))
       )
     )
 
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
-    build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, toNodeParameters(params))), node)))
+    build(node =>
+      creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, toNodeParameters(params))), Some(node)))
+    )
 
   def disabledProcessor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
       creator(
         OneOutputSubsequentNode(
           Processor(id, ServiceRef(svcId, toNodeParameters(params)), isDisabled = Some(true)),
-          node
+          Some(node)
         )
       )
     )
@@ -98,24 +100,24 @@ trait GraphBuilder[R] {
     )
 
   def fragmentInput(id: String, params: (String, Class[_])*): GraphBuilder[SourceNode] =
-    new SimpleGraphBuilder(
+    new SimpleGraphBuilder(node =>
       SourceNode(
         FragmentInputDefinition(
           id = id,
           parameters = params.map(kv => FragmentParameter(ParameterName(kv._1), FragmentClazzRef(kv._2.getName))).toList
         ),
-        _
+        Some(node)
       )
     )
 
   def fragmentInputWithRawParameters(id: String, params: FragmentParameter*): GraphBuilder[SourceNode] =
-    new SimpleGraphBuilder(
+    new SimpleGraphBuilder(node =>
       SourceNode(
         FragmentInputDefinition(
           id = id,
           parameters = params.toList
         ),
-        _
+        Some(node)
       )
     )
 
@@ -172,7 +174,7 @@ trait GraphBuilder[R] {
       creator(
         OneOutputSubsequentNode(
           CustomNode(id, Some(outputVar), customNodeRef, toNodeParameters(params)),
-          node
+          Some(node)
         )
       )
     )
@@ -184,7 +186,7 @@ trait GraphBuilder[R] {
   def customNodeNoOutput(id: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
       creator(
-        OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, toNodeParameters(params)), node)
+        OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, toNodeParameters(params)), Some(node))
       )
     )
 
@@ -203,7 +205,9 @@ trait GraphBuilder[R] {
     val branchParameters = branchParams.map { case (branchId, bParams) =>
       BranchParameters(branchId, toNodeParameters(bParams))
     }
-    new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, toNodeParameters(params), branchParameters), _))
+    new SimpleGraphBuilder(n =>
+      SourceNode(node.Join(id, output, typ, toNodeParameters(params), branchParameters), Some(n))
+    )
   }
 
   def decisionTable(

@@ -38,14 +38,14 @@ object node {
   }
 
   sealed trait OneOutputNode extends NodeWithData {
-    def next: SubsequentNode
+    def next: Option[SubsequentNode]
   }
 
-  case class SourceNode(data: StartingNodeData, next: SubsequentNode) extends OneOutputNode
+  case class SourceNode(data: StartingNodeData, next: Option[SubsequentNode]) extends OneOutputNode
 
   sealed trait SubsequentNode extends Node
 
-  case class OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next: SubsequentNode)
+  case class OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next: Option[SubsequentNode])
       extends OneOutputNode
       with SubsequentNode
 
@@ -61,7 +61,11 @@ object node {
 
   case class SplitNode(data: Split, nextParts: List[SubsequentNode]) extends SubsequentNode
 
-  case class Case(expression: Expression, node: SubsequentNode)
+  case class Case(expression: Expression, node: Option[SubsequentNode])
+
+  object Case {
+    def apply(expression: Expression, node: SubsequentNode): Case = Case(expression, Some(node))
+  }
 
   case class EndingNode(data: EndingNodeData) extends SubsequentNode
 

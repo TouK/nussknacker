@@ -6,7 +6,7 @@ import cats.data.Validated._
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.{compiledgraph, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -52,7 +52,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       case splittednode.SplitNode(bareNode, nexts) =>
         val compiledNexts = nexts.map(n => compile(n, ctx)).sequence
         compiledNexts.andThen(nx =>
-          toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty)
+          toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx.flatten)), Map.empty)
         )
 
       case splittednode.FilterNode(f @ Filter(id, _, _, _), nextTrue, nextFalse) =>
@@ -67,8 +67,8 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           compiledgraph.node.Filter(
             id = id,
             expression = expr,
-            nextTrue = next,
-            nextFalse = nextFalse,
+            nextTrue = next.flatten,
+            nextFalse = nextFalse.flatten,
             isDisabled = f.isDisabled.contains(true)
           )
         )
@@ -76,7 +76,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       case splittednode.SwitchNode(Switch(id, expression, varName, _), nexts, defaultNext) =>
         val result = nodeCompiler.compileSwitch(
           Applicative[Option].product(varName, expression),
-          nexts.map(c => (c.node.id, c.expression)),
+          nexts.flatMap(c => c.node.map(next => (next.id, c.expression))),
           ctx
         )
         val contextAfter = result.validationContext.getOrElse(ctx)
@@ -88,14 +88,14 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           f3 = defaultNext.map(dn => compile(dn, contextAfter)).sequence
         ) { case (_, (expr, caseExpressions), cases, defaultNext) =>
           val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
-          compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext)
+          compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext.flatten)
         }
       case splittednode.EndingNode(data) => compileEndingNode(ctx, data)
 
     }
   }
 
-  private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next)(
+  private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: Option[splittednode.Next])(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[node.Source] = {
     // just like in a custom node we can't add input context here because it contains output variable context (not input)
@@ -168,7 +168,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
     }
   }
 
-  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(
+  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Option[Next])(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[Node] = {
@@ -264,13 +264,26 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
     }
   }
 
+  private def compile(nextOpt: Option[splittednode.Next], ctx: ValidationContext)(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): CompilationResult[Option[compiledgraph.node.Next]] = {
+    nextOpt match {
+      case Some(next) => compile(next, ctx)
+      case None       => CompilationResult(Map.empty, Valid(None))
+    }
+  }
+
   private def compile(next: splittednode.Next, ctx: ValidationContext)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): CompilationResult[compiledgraph.node.Next] = {
+  ): CompilationResult[Option[compiledgraph.node.Next]] = {
     next match {
-      case splittednode.NextNode(n) => compile(n, ctx).map(cn => compiledgraph.node.NextNode(cn))
+      case splittednode.NextNode(n) =>
+        compile(n, ctx)
+          .map(cn => compiledgraph.node.NextNode(cn))
+          .map(Some(_))
       case splittednode.PartRef(ref) =>
         CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty, None)), Valid(compiledgraph.node.PartRef(ref)))
+          .map(Some(_))
     }
   }
 

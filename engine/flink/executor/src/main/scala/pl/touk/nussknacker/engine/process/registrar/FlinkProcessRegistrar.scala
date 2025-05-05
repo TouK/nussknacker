@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ArtificialDeadEndSink
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
@@ -258,8 +257,6 @@ class FlinkProcessRegistrar(
       processPart match {
         case part @ SinkPart(sink: FlinkSink, _, contextBefore, _) =>
           registerSinkPark(start, part, sink, contextBefore)
-        case part @ SinkPart(ArtificialDeadEndSink, _, contextBefore, _) =>
-          registerSinkPark(start, part, EmptySink, contextBefore)
         case part: SinkPart =>
           // TODO: fixme "part.obj" is not stringified well
           //      (eg. Scenario can only use flink sinks, instead given: pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink$@21220fd7)

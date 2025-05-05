@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.canonize.MissingSinkHandler
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
@@ -69,13 +70,14 @@ class NodeCompiler(
     nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
 ) {
 
-  def allowEndingScenarioWithoutSink(
+  def missingSinkHandler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): Boolean = {
+  ): MissingSinkHandler = {
     import scenarioCompilationDependencies._
     lazy val allowEndingScenarioWithoutSink = definitions.allowEndingScenarioWithoutSink
     lazy val isFragment                     = metaData.typeSpecificData.isFragment
-    allowEndingScenarioWithoutSink && !isFragment
+    if (allowEndingScenarioWithoutSink && !isFragment) MissingSinkHandler.AllowMissingSinkHandler
+    else MissingSinkHandler.DoNotAllowMissingSinkHandler
   }
 
   def withLabelsDictTyper: NodeCompiler = {

@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
+import pl.touk.nussknacker.engine.canonize.MissingSinkHandler.DoNotAllowMissingSinkHandler
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node
@@ -48,7 +49,7 @@ class ProcessMarshallerSpec
         .customNode("b", "alamakota == 'true'", "someRef")
         .buildVariable("c", "fooVar", "f1" -> "expr1".spel, "f2" -> "expr2".spel)
         .enricher("d", "barVar", "dService", "p1" -> "expr3".spel)
-        .switch("f", "expr4".spel, "eVar", nestedGraph("e"), Case("e1".spel, GraphBuilder.emptySink("endE1", "")))
+        .switch("f", "expr4".spel, "eVar", nestedGraph("e"), Case("e1".spel, Some(GraphBuilder.emptySink("endE1", ""))))
 
     val result = marshallAndUnmarshall(process)
 
@@ -227,7 +228,7 @@ class ProcessMarshallerSpec
       inside(
         ProcessCanonizer.uncanonize(
           CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty),
-          allowEndingScenarioWithoutSink = false
+          DoNotAllowMissingSinkHandler,
         )
       ) { case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) =>
         id shouldBe expectedBadNodeId
