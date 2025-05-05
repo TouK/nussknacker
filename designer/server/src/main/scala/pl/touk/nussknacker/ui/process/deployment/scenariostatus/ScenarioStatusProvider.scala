@@ -110,29 +110,6 @@ class ScenarioStatusProvider(
     }
   }
 
-//  def getActiveScenariosFor(
-//                             processingTypes: Iterable[ProcessingType]
-//                           )(implicit user: LoggedUser): IO[Set[ProcessName]] =
-//    IO.fromFuture {
-//      IO {
-//        implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-//        deploymentStatusesProvider
-//          .getBulkQueriedDeploymentStatusesForSupportedManagers(processingTypes)
-//          .map { statuses =>
-//            statuses.getAllDeploymentScenariosAndStatuses.flatMap {
-//              case (scenarioName, statusDetails) if ActiveScenariosStatuses.contains(statusDetails.status) =>
-//                Some(scenarioName)
-//              case (_, _) =>
-//                None
-//            }.toSet
-//          }
-//      }
-//    }
-
-  def getActiveScenariosFor(processingType: ProcessingType)(implicit user: LoggedUser): IO[Set[ProcessName]] = {
-    getActiveScenariosFor(processingType :: Nil)
-  }
-
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](
       actionsInProgress: Map[ProcessId, Set[ScenarioActionName]],
       prefetchedDeploymentStatuses: BulkQueriedDeploymentStatuses,

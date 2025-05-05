@@ -129,14 +129,14 @@ class BulkQueriedDeploymentStatuses(
     ]]
 ) {
 
-  def getAllDeploymentScenariosAndStatuses: Iterable[(ProcessName, DeploymentStatusDetails)] = for {
+  def getAllDeploymentScenarioNamesAndStatuses: Iterable[(ProcessName, DeploymentStatusDetails)] = for {
     processingTypeStatusesWithFreshness <- statusesByProcessingType.values
     (scenarioName, deploymentStatuses)  <- processingTypeStatusesWithFreshness.value
     deploymentStatus                    <- deploymentStatuses
   } yield (scenarioName, deploymentStatus)
 
   def getAllDeploymentStatuses: Iterable[DeploymentStatusDetails] =
-    getAllDeploymentScenariosAndStatuses.map { case (_, status) => status }
+    getAllDeploymentScenarioNamesAndStatuses.map { case (_, status) => status }
 
   def getDeploymentStatusesUnsafe(
       scenarioIdData: ScenarioIdData
