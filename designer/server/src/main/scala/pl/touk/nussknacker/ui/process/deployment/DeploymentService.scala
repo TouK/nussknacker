@@ -91,6 +91,15 @@ class DeploymentService(
         command = command,
         actionName = ScenarioActionName.Deploy
       ) { case (ctx, actionFinalizer) =>
+        implicit class FinalizerExt[T](val future: Future[T]) {
+          def whenThrowRemoveInvalidAction(): Future[T] = {
+            future.transformWith {
+              case Success(result) => Future.successful(result)
+              case Failure(ex)     => actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
+            }
+          }
+        }
+
         for {
           dmCommand <- prepareDMRunDeploymentCommand(
             ctx.latestScenarioDetails,
@@ -98,35 +107,31 @@ class DeploymentService(
             // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
             //       references to existing fields and uses correct types. We should also protect from sql injection attacks
             command
-          )
-          _ <- validateScenario(ctx.latestScenarioDetails)
+          ).whenThrowRemoveInvalidAction()
+          _ <- validateScenario(ctx.latestScenarioDetails).whenThrowRemoveInvalidAction()
           actionResult <- checkActiveScenariosLimits(ctx.latestScenarioDetails, dmCommand.updateStrategy) {
             IO.fromFuture {
               IO {
-                validateUsingDeploymentManager(ctx.latestScenarioDetails, dmCommand)
-                  .transformWith {
-                    case Failure(ex) =>
-                      actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
-                    case Success(_) =>
-                      // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
-                      Future {
-                        actionFinalizer.handleResult {
-                          dispatcher
-                            .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-                            .processCommand(dmCommand)
-                        }
-                      }
+                for {
+                  _ <- validateUsingDeploymentManager(ctx.latestScenarioDetails, dmCommand)
+                    .whenThrowRemoveInvalidAction()
+                } yield {
+                  // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
+                  actionFinalizer.handleResult {
+                    dispatcher
+                      .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+                      .processCommand(dmCommand)
                   }
+                }
               }
             }
           }
-          result <- actionResult match {
-            case Right(result) =>
-              Future.successful(result)
-            case Left(error: MaxActiveScenariosCountExceededError) =>
-              actionFinalizer.removeInvalidAction().transform(_ => Failure(error))
-          }
-        } yield result
+            .map {
+              case Right(result) => result
+              case Left(error: MaxActiveScenariosCountExceededError) =>
+                Future.failed(error).whenThrowRemoveInvalidAction()
+            }
+        } yield actionResult
       }
   }
 
