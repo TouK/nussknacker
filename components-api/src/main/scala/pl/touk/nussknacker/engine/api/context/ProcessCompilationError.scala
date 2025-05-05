@@ -177,15 +177,6 @@ object ProcessCompilationError {
       MissingParameters(params, nodeId.id)
   }
 
-  final case class RedundantParameters(params: Set[ParameterName], nodeId: String)
-      extends PartSubGraphCompilationError
-      with InASingleNode
-
-  object RedundantParameters {
-    def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      RedundantParameters(params, nodeId.id)
-  }
-
   final case class WrongParameters(
       requiredParameters: Set[ParameterName],
       passedParameters: Set[ParameterName],

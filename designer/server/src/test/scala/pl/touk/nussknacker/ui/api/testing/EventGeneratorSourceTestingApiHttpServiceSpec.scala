@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api.testing
 
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -48,23 +47,6 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends ScenarioTestingApiHt
 
   override protected def validParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map.empty)
-
-  override protected def invalidParameters: TestSourceParameters =
-    TestSourceParameters(exampleScenarioSourceId, Map(ParameterName("someParam") -> "0L".spel))
-
-  override protected def expectedValidationErrorsOnInvalidParametersJson: String =
-    """
-      |[
-      |  {
-      |    "typ": "RedundantParameters",
-      |    "message": "Redundant parameters",
-      |    "description": "Please omit redundant parameters: ParameterName(someParam)",
-      |    "fieldName": null,
-      |    "errorType": "SaveAllowed",
-      |    "details": null
-      |  }
-      |]
-      |""".stripMargin
 
   override protected def expectedTestParametersJson: String = {
     s"""

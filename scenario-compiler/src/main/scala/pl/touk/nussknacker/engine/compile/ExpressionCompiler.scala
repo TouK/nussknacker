@@ -160,7 +160,7 @@ class ExpressionCompiler(
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
-    val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
+    val missingValidation = Validations.validateRedundantAndMissingParameters(
       parameterDefinitions,
       nodeParameters ++ nodeBranchParameters.flatMap(_.parameters)
     )
@@ -191,7 +191,7 @@ class ExpressionCompiler(
         // We want to preserve typing information from allCompiledParams even if custom validators give us some errors
         case Invalid(e) => Ior.both(e, compiledParams)
       }
-      combinedParams <- redundantMissingValidation.map(_ => List()).toIor.combine(paramsAfterValidation)
+      combinedParams <- missingValidation.map(_ => List()).toIor.combine(paramsAfterValidation)
     } yield combinedParams
   }
 
