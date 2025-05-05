@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDefinition}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.compile.CompilationLoggerExtensions.Ops
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 
@@ -30,9 +31,8 @@ object NodeParametersAdjuster extends LazyLogging {
   ): Unit = {
     val redundantParams = parameters.map(_.name).toSet.diff(parameterDefinitions.map(_.name).toSet)
     if (redundantParams.nonEmpty) {
-      logger.warn(
-        s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
-          s"Found redundant parameters: ${redundantParams.toList.map(_.value).sorted.mkString(", ")}. They will be skipped."
+      logger.compilationWarning(
+        s"Found redundant parameters: ${redundantParams.toList.map(_.value).sorted.mkString(", ")}. They will be skipped."
       )
     }
   }
@@ -61,9 +61,8 @@ object NodeParametersAdjuster extends LazyLogging {
       .sequence
       .run
     if (missingParameterNames.nonEmpty) {
-      logger.warn(
-        s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
-          s"Found missing parameters: ${missingParameterNames.toList.map(_.value).sorted.mkString(", ")}. " +
+      logger.compilationWarning(
+        s"Found missing parameters: ${missingParameterNames.toList.map(_.value).sorted.mkString(", ")}. " +
           s"They will be recovered based on the default value from parameters definitions."
       )
     }
