@@ -120,10 +120,13 @@ class DeploymentService(
               }
             }
           }
-        } yield actionResult match {
-          case Right(result)                                     => result
-          case Left(error: MaxActiveScenariosCountExceededError) => throw error
-        }
+          result <- actionResult match {
+            case Right(result) =>
+              Future.successful(result)
+            case Left(error: MaxActiveScenariosCountExceededError) =>
+              actionFinalizer.removeInvalidAction().transform(_ => Failure(error))
+          }
+        } yield result
       }
   }
 
