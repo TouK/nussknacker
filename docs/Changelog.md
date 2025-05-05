@@ -164,6 +164,7 @@
 * [#8005](https://github.com/TouK/nussknacker/pull/8005) Add implicit conversion from records produced by table api source to map.
 * [#7964](https://github.com/TouK/nussknacker/pull/7964) Add JsonTemplate language and editor.
 * [#8006](https://github.com/TouK/nussknacker/pull/8006) Add JsonTemplate editor to Event Generator source and Kafka sink value.
+* [#7982](https://github.com/TouK/nussknacker/pull/7982) Mock expression added to enrichers (except decision-table) which can be used to hardcode enricher output in tests without calling external services.
 
 ## 1.18
 
