@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
 }
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.newdeployment
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
@@ -175,7 +176,7 @@ object DomainServices extends LazyLogging {
           alreadyLoadedConfig.scenarioStateTimeout
         )
       processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
-      scenarioStatusProvider = new ScenarioStatusProvider(
+      oldApproachScenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
         processRepository,
@@ -187,7 +188,7 @@ object DomainServices extends LazyLogging {
         actionRepository,
         dbioRunner,
         processChangeListener,
-        scenarioStatusProvider,
+        oldApproachScenarioStatusProvider,
         alreadyLoadedConfig.deploymentCommentSettings,
         clock
       )
@@ -264,7 +265,7 @@ object DomainServices extends LazyLogging {
         ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
 
       processService = new DBProcessService(
-        scenarioStatusProvider,
+        oldApproachScenarioStatusProvider,
         scenarioStatusPresenter,
         processingTypeServicesProvider.mapValues(_.newProcessPreparer),
         processingTypeDataProvider.mapCombined(_.parametersService),
@@ -310,7 +311,7 @@ object DomainServices extends LazyLogging {
       limitsService = createLimitsService(
         alreadyLoadedConfig,
         processingTypeServicesProvider,
-        scenarioStatusProvider,
+        oldApproachScenarioStatusProvider,
         deploymentRepository,
         dbioRunner
       )
@@ -339,7 +340,7 @@ object DomainServices extends LazyLogging {
       countsReporter = countsReporter,
       counter = counter,
       fingerprintService = fingerprintService,
-      scenarioStatusProvider = scenarioStatusProvider,
+      scenarioStatusProvider = oldApproachScenarioStatusProvider,
       scenarioStatusPresenter = scenarioStatusPresenter,
       dmDispatcher = dmDispatcher,
       processingTypeServicesProvider = processingTypeServicesProvider,
@@ -455,10 +456,12 @@ object DomainServices extends LazyLogging {
   ) = {
     new LimitsService(
       globalLimitsConfig = designerConfig.globalLimitsConfig,
-      activeScenariosLimitProvider = processingTypeServicesProvider.mapValues(_.limitsConfig),
-      scenarioStatusProvider = scenarioStatusProvider,
-      deploymentRepository = deploymentRepository,
-      dbioRunner = dbioRunner
+      perProcessingTypesLimitsProvider = processingTypeServicesProvider.mapValues(_.limitsConfig),
+      oldDeploymentsApproachScenarioStatusProvider = scenarioStatusProvider,
+      newDeploymentsApproachScenarioStatusProvider = new newdeployment.ScenarioStatusProvider(
+        deploymentRepository,
+        dbioRunner
+      )
     )
   }
 

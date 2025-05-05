@@ -89,8 +89,3 @@ trait SchedulingSupported extends SchedulingSupport {
 }
 
 case object NoSchedulingSupport extends SchedulingSupport
-
-class ActiveScenariosLimitExceeded(activeScenariosCount: Int)
-    extends IllegalArgumentException(
-      s"Cannot deploy scenario. Active scenarios count is $activeScenariosCount"
-    )

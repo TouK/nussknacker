@@ -54,11 +54,13 @@ import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.clock
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldApproachScenarioStatusProvider
+}
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -132,13 +134,20 @@ trait NuResourcesTest
   protected val deploymentsStatusesProvider =
     new EngineSideDeploymentStatusesProvider(dmDispatcher, None)(executionContextWithIORuntime)
 
-  protected val scenarioStatusProvider: ScenarioStatusProvider = new ScenarioStatusProvider(
-    deploymentsStatusesProvider,
-    dmDispatcher,
-    fetchingProcessRepository,
-    actionRepository,
-    dbioRunner,
-  )
+  protected val oldApproachScenarioStatusProvider: OldApproachScenarioStatusProvider =
+    new OldApproachScenarioStatusProvider(
+      deploymentsStatusesProvider,
+      dmDispatcher,
+      fetchingProcessRepository,
+      actionRepository,
+      dbioRunner,
+    )
+
+  protected val newApproachScenarioStatusProvider: NewApproachScenarioStatusProvider =
+    new NewApproachScenarioStatusProvider(
+      TestFactory.newDeploymentRepository(testDbRef, clock),
+      dbioRunner
+    )
 
   protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
 
@@ -147,7 +156,7 @@ trait NuResourcesTest
     actionRepository,
     dbioRunner,
     processChangeListener,
-    scenarioStatusProvider,
+    oldApproachScenarioStatusProvider,
     deploymentCommentSettings,
     Clock.systemUTC()
   )
@@ -163,11 +172,10 @@ trait NuResourcesTest
       additionalComponentConfigs = mapProcessingTypeDataProvider(),
       limitsService = new LimitsService(
         globalLimitsConfig = designerConfig.globalLimitsConfig,
-        activeScenariosLimitProvider =
+        perProcessingTypesLimitsProvider =
           TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
-        scenarioStatusProvider = scenarioStatusProvider,
-        deploymentRepository = TestFactory.newDeploymentRepository(testDbRef, clock),
-        dbioRunner = dbioRunner
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
       )
     )(executionContextWithIORuntime)
 
@@ -225,7 +233,7 @@ trait NuResourcesTest
       .unsafeRunSync()
   }
 
-  protected val processService: DBProcessService = createDBProcessService(scenarioStatusProvider)
+  protected val processService: DBProcessService = createDBProcessService(oldApproachScenarioStatusProvider)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
@@ -237,7 +245,7 @@ trait NuResourcesTest
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    scenarioStatusProvider = scenarioStatusProvider,
+    scenarioStatusProvider = oldApproachScenarioStatusProvider,
     scenarioStatusPresenter = scenarioStatusPresenter,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
@@ -257,7 +265,7 @@ trait NuResourcesTest
     RealLoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
-  protected def createDBProcessService(processStateProvider: ScenarioStatusProvider): DBProcessService =
+  protected def createDBProcessService(processStateProvider: OldApproachScenarioStatusProvider): DBProcessService =
     new DBProcessService(
       processStateProvider,
       scenarioStatusPresenter,

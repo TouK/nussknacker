@@ -8,7 +8,7 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
   MockableDeploymentManagerConfigurator
 }
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.MaxActiveScenariosCount
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeploymentStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
@@ -23,18 +23,21 @@ import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfi
   Streaming1,
   Streaming2
 }
+import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.validProcessWithName
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
-import pl.touk.nussknacker.test.utils.domain.TestProcessingTypeDataProviderFactory
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldApproachScenarioStatusProvider
+}
+import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{DeploymentEntityData, WithModifiedAt}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.{
-  ActiveScenariosLimitExceededError,
-  DeploymentForeignKeys
+  DeploymentForeignKeys,
+  MaxActiveScenariosCountExceededError
 }
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
@@ -207,7 +210,7 @@ class DeploymentServiceSpec
 
         val result = deployExampleScenario("scenario4")
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is during deploy, and the 3rd scenario is not deployed" in {
@@ -217,7 +220,7 @@ class DeploymentServiceSpec
 
         val result = deployExampleScenario("scenario4")
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
       "1st scenario is running, and the 2nd scenario is restarting, and the 3rd scenario is not deployed" in {
@@ -227,7 +230,7 @@ class DeploymentServiceSpec
 
         val result = deployExampleScenario("scenario4")
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
       "1st scenario is being redeployed, when the 2nd scenario is running" in {
@@ -236,7 +239,7 @@ class DeploymentServiceSpec
 
         val result = redeployExampleScenario(scenario1)
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
     }
@@ -248,7 +251,7 @@ class DeploymentServiceSpec
 
         val result = deployExampleScenario("scenario4")
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is during deploy (in streaming2), and the 3rd scenario is not deployed (in streaming1)" in {
@@ -258,7 +261,7 @@ class DeploymentServiceSpec
 
         val result = deployExampleScenario("scenario4")
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
       "1st scenario is running (in streaming1), and the 2nd scenario is restarting (in streaming2), and the 3rd scenario is not deployed (in streaming1)" in {
@@ -268,7 +271,7 @@ class DeploymentServiceSpec
 
         val result = deployExampleScenario("scenario4")
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
       "1st scenario is being redeployed (streaming1), when the 2nd scenario is running (streaming2)" in {
@@ -277,7 +280,7 @@ class DeploymentServiceSpec
 
         val result = redeployExampleScenario(scenario1)
 
-        inside(result) { case Left(ActiveScenariosLimitExceededError(2)) =>
+        inside(result) { case Left(MaxActiveScenariosCountExceededError(2)) =>
         }
       }
     }
@@ -319,20 +322,24 @@ class DeploymentServiceSpec
       newFutureFetchingScenarioRepository(testDbRef)
     )
 
-    val scenarioStatusProvider = {
-      new ScenarioStatusProvider(
-        new EngineSideDeploymentStatusesProvider(deploymentManagerDispatcher, scenarioStateTimeout = None),
-        deploymentManagerDispatcher,
-        newFetchingProcessRepository(testDbRef),
-        newActionProcessRepository(testDbRef),
-        dbioRunner
-      )
-    }
+    val oldApproachScenarioStatusProvider = new OldApproachScenarioStatusProvider(
+      new EngineSideDeploymentStatusesProvider(deploymentManagerDispatcher, scenarioStateTimeout = None),
+      deploymentManagerDispatcher,
+      newFetchingProcessRepository(testDbRef),
+      newActionProcessRepository(testDbRef),
+      dbioRunner
+    )
 
-    val supportedProcessingTypes   = List(Streaming1.stringify, Streaming2.stringify)
-    val processingTypeLimitsConfig = LimitsConfig.default.copy(activeScenariosLimit = Some(ActiveScenariosLimit(2)))
+    val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
+      TestFactory.newDeploymentRepository(testDbRef, clock),
+      dbioRunner
+    )
+
+    val supportedProcessingTypes = List(Streaming1.stringify, Streaming2.stringify)
+    val processingTypeLimitsConfig =
+      LimitsConfig.default.copy(maxActiveScenariosCount = Some(MaxActiveScenariosCount(2)))
     val globalLimitsConfig = GlobalLimitsConfig.default.copy(
-      activeScenariosLimit = Some(GlobalLimitsConfig.ActiveScenariosLimit(2))
+      maxActiveScenariosCount = Some(GlobalLimitsConfig.MaxActiveScenariosCount(2))
     )
 
     new DeploymentService(
@@ -345,12 +352,11 @@ class DeploymentServiceSpec
       additionalComponentConfigs = additionalComponentConfigsByProcessingType,
       limitsService = new LimitsService(
         globalLimitsConfig = globalLimitsConfig,
-        activeScenariosLimitProvider = mapProcessingTypeDataProvider(
+        perProcessingTypesLimitsProvider = mapProcessingTypeDataProvider(
           supportedProcessingTypes.map(pt => (pt, processingTypeLimitsConfig)): _*
         ),
-        scenarioStatusProvider = scenarioStatusProvider,
-        deploymentRepository = deploymentRepository,
-        dbioRunner = dbioRunner
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
       )
     )
   }

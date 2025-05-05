@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine
 
 import com.typesafe.config.{Config, ConfigException}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.MaxActiveScenariosCount
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
 import scala.util.{Failure, Success, Try}
@@ -37,7 +37,7 @@ object ProcessingTypeConfig {
     Try(config.getConfig("limits")) match {
       case Success(limitsConfig) =>
         LimitsConfig(
-          limitsConfig.getAs[Int]("activeScenariosLimit").map(ActiveScenariosLimit.apply)
+          limitsConfig.getAs[Int]("maxActiveScenariosCount").map(MaxActiveScenariosCount.apply)
         )
       case Failure(_: ConfigException.Missing) =>
         LimitsConfig.default
@@ -47,12 +47,12 @@ object ProcessingTypeConfig {
   }
 
   final case class DeploymentManagerType(value: String) extends AnyVal
-  final case class LimitsConfig(activeScenariosLimit: Option[ActiveScenariosLimit])
+  final case class LimitsConfig(maxActiveScenariosCount: Option[MaxActiveScenariosCount])
 
   object LimitsConfig {
-    final case class ActiveScenariosLimit(value: Int) extends AnyVal
+    final case class MaxActiveScenariosCount(value: Int) extends AnyVal
 
-    val default = LimitsConfig(activeScenariosLimit = None)
+    val default = LimitsConfig(maxActiveScenariosCount = None)
   }
 
 }

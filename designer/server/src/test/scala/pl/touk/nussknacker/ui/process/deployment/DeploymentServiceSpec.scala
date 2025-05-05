@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.MaxActiveScenariosCount
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -36,7 +36,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig
-import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.ActiveScenariosLimitExceededError
+import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.MaxActiveScenariosCountExceededError
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.FragmentStateException
@@ -89,8 +89,9 @@ class DeploymentServiceSpec
   )
 
   private val globalLimitsConfig =
-    GlobalLimitsConfig.default.copy(activeScenariosLimit = Some(GlobalLimitsConfig.ActiveScenariosLimit(2)))
-  private val processingTypeLimits = LimitsConfig.default.copy(activeScenariosLimit = Some(ActiveScenariosLimit(2)))
+    GlobalLimitsConfig.default.copy(maxActiveScenariosCount = Some(GlobalLimitsConfig.MaxActiveScenariosCount(2)))
+  private val processingTypeLimits =
+    LimitsConfig.default.copy(maxActiveScenariosCount = Some(MaxActiveScenariosCount(2)))
 
   val TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, reconciler) =
     deploymentServiceFactory.create(
@@ -953,7 +954,7 @@ class DeploymentServiceSpec
         val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
         val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"))
 
-        assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
             deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Running) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -968,7 +969,7 @@ class DeploymentServiceSpec
         val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
         val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"))
 
-        assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
             deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringDeploy) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -983,7 +984,7 @@ class DeploymentServiceSpec
         val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
         val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"))
 
-        assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
             deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Restarting) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1000,7 +1001,7 @@ class DeploymentServiceSpec
         val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
         val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"), Streaming1)
 
-        assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Running) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1015,7 +1016,7 @@ class DeploymentServiceSpec
         val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
         val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"), Streaming1)
 
-        assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringDeploy) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1030,7 +1031,7 @@ class DeploymentServiceSpec
         val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
         val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"), Streaming1)
 
-        assertThrowsWithParent[ActiveScenariosLimitExceededError] {
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Restarting) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {

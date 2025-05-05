@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.{
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbConfig
 import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig
-import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig.ActiveScenariosLimit
+import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig.MaxActiveScenariosCount
 import pl.touk.nussknacker.ui.notifications.NotificationConfig
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.FinishedDeploymentsStatusesSynchronizationConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
@@ -162,11 +162,11 @@ object DesignerConfig {
       resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
 
     val limitsConfig = if (resolvedConfig.hasPath("globalLimits")) {
-      Try(resolvedConfig.getConfig("globalLimits").getInt("activeScenariosLimit")) match {
-        case Success(activeScenariosLimit) =>
-          GlobalLimitsConfig(activeScenariosLimit = Some(ActiveScenariosLimit(activeScenariosLimit)))
+      Try(resolvedConfig.getConfig("globalLimits").getInt("maxActiveScenariosCount")) match {
+        case Success(maxActiveScenariosCount) =>
+          GlobalLimitsConfig(maxActiveScenariosCount = Some(MaxActiveScenariosCount(maxActiveScenariosCount)))
         case Failure(_: ConfigException.Missing) =>
-          GlobalLimitsConfig(activeScenariosLimit = None)
+          GlobalLimitsConfig(maxActiveScenariosCount = None)
         case Failure(exception) =>
           throw exception
       }

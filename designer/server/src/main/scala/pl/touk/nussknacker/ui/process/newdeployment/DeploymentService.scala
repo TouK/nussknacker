@@ -195,14 +195,15 @@ class DeploymentService(
   )(action: IO[Either[RunDeploymentError, Unit]]): EitherT[Future, RunDeploymentError, Unit] = EitherT {
     implicit val loggedUser: LoggedUser = deployer
     limitsService
-      .checkScenarioLimitsBeforeDeployment(
+      .checkActiveScenarioLimitsBeforeDeployment(
         scenarioMetadata.name,
         scenarioMetadata.processingType,
         deploymentUpdateStrategy
       )(action)
       .map {
-        case Left(LimitError.ActiveScenariosLimitExceededError(limit)) => Left(ActiveScenariosLimitExceededError(limit))
-        case Right(result)                                             => result
+        case Left(LimitError.MaxActiveScenariosCountExceededError(limit)) =>
+          Left(MaxActiveScenariosCountExceededError(limit))
+        case Right(result) => result
       }
       .unsafeToFuture()
   }
@@ -363,7 +364,7 @@ object DeploymentService {
 
   case object DeploymentOfArchivedScenarioError extends RunDeploymentError
 
-  final case class ActiveScenariosLimitExceededError(activeScenariosLimit: Int) extends RunDeploymentError
+  final case class MaxActiveScenariosCountExceededError(maxActiveScenariosCount: Int) extends RunDeploymentError
 
   final case class DeploymentNotFoundError(id: DeploymentId) extends GetDeploymentStatusError
 

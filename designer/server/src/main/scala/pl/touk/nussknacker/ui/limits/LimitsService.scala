@@ -13,30 +13,24 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.{
 }
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError
-import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.ActiveScenariosLimitExceededError
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
+import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.MaxActiveScenariosCountExceededError
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldDeploymentsApproachScenarioStatusProvider
+}
+import pl.touk.nussknacker.ui.process.newdeployment.{
+  ScenarioStatusProvider => NewDeploymentsApproachScenarioStatusProvider
+}
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 class LimitsService(
     globalLimitsConfig: GlobalLimitsConfig,
-    activeScenariosLimitProvider: ProcessingTypeDataProvider[LimitsConfig, _],
-    scenarioStatusProvider: ScenarioStatusProvider,
-    deploymentRepository: DeploymentRepository,
-    dbioRunner: DBIOActionRunner
+    perProcessingTypesLimitsProvider: ProcessingTypeDataProvider[LimitsConfig, _],
+    oldDeploymentsApproachScenarioStatusProvider: OldDeploymentsApproachScenarioStatusProvider,
+    newDeploymentsApproachScenarioStatusProvider: NewDeploymentsApproachScenarioStatusProvider
 ) extends LazyLogging {
 
-  def checkScenarioLimitsBeforeDeploymentUnsafe(
-      deployingScenario: ProcessName,
-      deployingScenarioProcessingType: ProcessingType,
-      deploymentUpdateStrategy: DeploymentUpdateStrategy
-  )(implicit user: LoggedUser): IO[Either[LimitError, Unit]] = {
-    checkAllLimits(deployingScenario, deployingScenarioProcessingType, deploymentUpdateStrategy).value
-  }
-
-  def checkScenarioLimitsBeforeDeployment[ACTION_RESULT](
+  def checkActiveScenarioLimitsBeforeDeployment[ACTION_RESULT](
       deployingScenario: ProcessName,
       deployingScenarioProcessingType: ProcessingType,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
@@ -71,16 +65,16 @@ class LimitsService(
       deployingScenario: ProcessName,
       deployingScenarioProcessingType: ProcessingType,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
-  )(implicit user: LoggedUser): EitherT[IO, ActiveScenariosLimitExceededError, Unit] = {
-    activeScenariosLimitProvider.forProcessingType(deployingScenarioProcessingType) match {
-      case Some(LimitsConfig(Some(activeScenariosLimit))) =>
+  )(implicit user: LoggedUser): EitherT[IO, MaxActiveScenariosCountExceededError, Unit] = {
+    perProcessingTypesLimitsProvider.forProcessingType(deployingScenarioProcessingType) match {
+      case Some(LimitsConfig(Some(maxActiveScenariosCount))) =>
         EitherT {
           getActiveScenariosFor(deployingScenarioProcessingType :: Nil)
             .map { currentlyActiveScenarios =>
-              checkCurrentlyActiveScenariosLimit(
+              checkCurrentlyActiveScenariosCount(
                 deployingScenario,
                 currentlyActiveScenarios,
-                activeScenariosLimit.value,
+                maxActiveScenariosCount.value,
                 deploymentUpdateStrategy
               )
             }
@@ -93,18 +87,18 @@ class LimitsService(
   private def checkGlobalLimits(
       deployingScenario: ProcessName,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
-  ): EitherT[IO, ActiveScenariosLimitExceededError, Unit] = {
-    globalLimitsConfig.activeScenariosLimit match {
-      case Some(activeScenariosLimit) =>
+  ): EitherT[IO, MaxActiveScenariosCountExceededError, Unit] = {
+    globalLimitsConfig.maxActiveScenariosCount match {
+      case Some(maxActiveScenariosCount) =>
         EitherT {
           implicit val user: LoggedUser = NussknackerInternalUser.instance
-          val allProcessingTypes        = activeScenariosLimitProvider.all.keys
+          val allProcessingTypes        = perProcessingTypesLimitsProvider.all.keys
           getActiveScenariosFor(allProcessingTypes)
             .map { currentlyActiveScenarios =>
-              checkCurrentlyActiveScenariosLimit(
+              checkCurrentlyActiveScenariosCount(
                 deployingScenario,
                 currentlyActiveScenarios,
-                activeScenariosLimit.value,
+                maxActiveScenariosCount.value,
                 deploymentUpdateStrategy
               )
             }
@@ -114,26 +108,26 @@ class LimitsService(
     }
   }
 
-  private def checkCurrentlyActiveScenariosLimit(
+  private def checkCurrentlyActiveScenariosCount(
       currentlyDeployingScenario: ProcessName,
       currentlyActiveScenarios: Set[ProcessName],
-      activeScenariosLimit: Int,
+      maxActiveScenariosCount: Int,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
   ) = {
     val maxActiveScenariosIncludingCurrentlyDeployingScenario = deploymentUpdateStrategy match {
       case ReplaceDeploymentWithSameScenarioName(_) if currentlyActiveScenarios.contains(currentlyDeployingScenario) =>
-        activeScenariosLimit + 1
+        maxActiveScenariosCount + 1
       case ReplaceDeploymentWithSameScenarioName(_) | DontReplaceDeployment =>
-        activeScenariosLimit
+        maxActiveScenariosCount
     }
     if (currentlyActiveScenarios.size + 1 <= maxActiveScenariosIncludingCurrentlyDeployingScenario) {
       Right(())
     } else {
-      logger.debug(s"""Active scenarios limit ($activeScenariosLimit) exceeded.
+      logger.debug(s"""Active scenarios limit ($maxActiveScenariosCount) exceeded.
            |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
            |Scenario is being deployed: $currentlyDeployingScenario.
            |""".stripMargin)
-      Left(ActiveScenariosLimitExceededError(activeScenariosLimit))
+      Left(MaxActiveScenariosCountExceededError(maxActiveScenariosCount))
     }
   }
 
@@ -142,24 +136,11 @@ class LimitsService(
   )(implicit user: LoggedUser): IO[Set[ProcessName]] = {
     IO
       .both(
-        scenarioStatusProvider.getActiveScenariosFor(processingTypes),
-        newDeploymentGetActiveScenariosFor(processingTypes),
+        oldDeploymentsApproachScenarioStatusProvider.getActiveScenariosFor(processingTypes),
+        newDeploymentsApproachScenarioStatusProvider.getActiveScenariosFor(processingTypes),
       )
       .map { case (oldDeploymentSolutionScenarios, newDeploymentSolutionScenarios) =>
         oldDeploymentSolutionScenarios ++ newDeploymentSolutionScenarios
-      }
-  }
-
-  private def newDeploymentGetActiveScenariosFor(processingTypes: Iterable[ProcessingType]) = {
-    IO
-      .fromFuture(IO {
-        dbioRunner.run(deploymentRepository.getProcessingTypesDeployments(processingTypes))
-      })
-      .map { deployments =>
-        deployments.flatMap { deployment =>
-          if (deployment.status.isActive) Some(deployment.scenarioName) else None
-        }
-
       }
   }
 
@@ -171,9 +152,9 @@ object LimitsService {
 
   object LimitError {
 
-    final case class ActiveScenariosLimitExceededError(activeScenariosLimit: Int)
+    final case class MaxActiveScenariosCountExceededError(maxActiveScenariosCount: Int)
         extends IllegalArgumentException(
-          s"The limit of active scenarios has been reached. You can have a maximum of $activeScenariosLimit active scenarios."
+          s"The limit of active scenarios has been reached. You can have a maximum of $maxActiveScenariosCount active scenarios."
         )
         with LimitError
 

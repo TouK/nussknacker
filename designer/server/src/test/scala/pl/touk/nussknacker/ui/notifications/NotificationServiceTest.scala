@@ -31,7 +31,10 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldApproachScenarioStatusProvider
+}
+import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
   DbScenarioActionRepository,
@@ -235,6 +238,7 @@ class NotificationServiceTest
     val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
 
     var passedDeploymentId = Option.empty[DeploymentId]
+
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
@@ -296,13 +300,15 @@ class NotificationServiceTest
       config,
       clock
     )
-    val deploymentsStatusesProvider =
-      new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout = None)
-    val scenarioStatusProvider = new ScenarioStatusProvider(
-      deploymentsStatusesProvider,
+    val oldApproachScenarioStatusProvider = new OldApproachScenarioStatusProvider(
+      new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout = None),
       managerDispatcher,
       dbProcessRepository,
       actionRepository,
+      dbioRunner
+    )
+    val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
+      TestFactory.newDeploymentRepository(testDbRef, clock),
       dbioRunner
     )
     val actionService = new ActionService(
@@ -310,7 +316,7 @@ class NotificationServiceTest
       actionRepository,
       dbioRunner,
       mock[ProcessChangeListener],
-      scenarioStatusProvider,
+      oldApproachScenarioStatusProvider,
       None,
       clock
     )
@@ -322,14 +328,14 @@ class NotificationServiceTest
       TestFactory.additionalComponentConfigsByProcessingType,
       new LimitsService(
         globalLimitsConfig = GlobalLimitsConfig.default,
-        activeScenariosLimitProvider =
+        perProcessingTypesLimitsProvider =
           TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
-        scenarioStatusProvider = scenarioStatusProvider,
-        deploymentRepository = TestFactory.newDeploymentRepository(testDbRef, clock),
-        dbioRunner = dbioRunner
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
       )
     ) {
-      override protected def validateBeforeDeploy(
+
+      override protected def validateUsingDeploymentManager(
           scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           runDeploymentCommand: DMRunDeploymentCommand,
       )(implicit user: LoggedUser): Future[Unit] = Future.successful(())
@@ -358,9 +364,11 @@ class NotificationServiceTest
 
   private def clockForInstant(currentInstant: () => Instant): Clock = {
     new Clock {
-      override def getZone: ZoneId               = ZoneId.systemDefault()
+      override def getZone: ZoneId = ZoneId.systemDefault()
+
       override def withZone(zone: ZoneId): Clock = ???
-      override def instant(): Instant            = currentInstant()
+
+      override def instant(): Instant = currentInstant()
     }
   }
 

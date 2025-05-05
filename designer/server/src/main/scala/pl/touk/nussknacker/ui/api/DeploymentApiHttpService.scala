@@ -57,9 +57,9 @@ class DeploymentApiHttpService(
                     ScenarioGraphValidationError(errors)
                   case DeploymentService.DeployValidationError(message) =>
                     DeployValidationError(message)
-                  case DeploymentService.ActiveScenariosLimitExceededError(limit) =>
+                  case DeploymentService.MaxActiveScenariosCountExceededError(maxCount) =>
                     DeployValidationError(
-                      s"The limit of active scenarios has been reached. You can have a maximum of $limit active scenarios."
+                      s"The limit of active scenarios has been reached. You can have a maximum of $maxCount active scenarios."
                     )
                 }
               case ActivityService.CommentValidationError(message) => CommentValidationError(message)

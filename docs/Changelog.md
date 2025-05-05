@@ -164,7 +164,7 @@
 * [#8005](https://github.com/TouK/nussknacker/pull/8005) Add implicit conversion from records produced by table api source to map.
 * [#7964](https://github.com/TouK/nussknacker/pull/7964) Add JsonTemplate language and editor.
 * [#8006](https://github.com/TouK/nussknacker/pull/8006) Add JsonTemplate editor to Event Generator source and Kafka sink value.
-* [#7970](https://github.com/TouK/nussknacker/pull/7970) Added "activeScenariosLimit" setting defined per processing type and "globalLimits.activeScenariosLimit" to limit active scenarios globally
+* [#7970](https://github.com/TouK/nussknacker/pull/7970) Added "limits.maxActiveScenariosCount" setting defined per processing type and "globalLimits.maxActiveScenariosCount" to limit active scenarios globally
 
 ## 1.18
 

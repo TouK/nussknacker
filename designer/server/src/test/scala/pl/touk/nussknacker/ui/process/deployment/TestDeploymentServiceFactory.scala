@@ -23,7 +23,10 @@ import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{
 }
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldApproachScenarioStatusProvider
+}
+import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ScenarioActionRepository}
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
@@ -70,25 +73,26 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       new DeploymentManagerDispatcher(deploymentManagerProvider, futureFetchingProcessRepository)
     }
 
-    val deploymentsStatusesProvider =
-      new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout)
+    val deploymentsStatusesProvider = new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout)
+    val oldApproachScenarioStatusProvider = new OldApproachScenarioStatusProvider(
+      deploymentsStatusesProvider,
+      dmDispatcher,
+      fetchingScenarioDBIORepository,
+      actionRepository,
+      dbioRunner
+    )
 
-    val scenarioStatusProvider = {
-      new ScenarioStatusProvider(
-        deploymentsStatusesProvider,
-        dmDispatcher,
-        fetchingScenarioDBIORepository,
-        actionRepository,
-        dbioRunner
-      )
-    }
+    val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
+      TestFactory.newDeploymentRepository(dbRef, clock),
+      dbioRunner
+    )
 
     val actionService = new ActionService(
       fetchingScenarioDBIORepository,
       actionRepository,
       dbioRunner,
       listener,
-      scenarioStatusProvider,
+      oldApproachScenarioStatusProvider,
       deploymentCommentSettings,
       clock
     )
@@ -125,21 +129,25 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       additionalComponentConfigsByProcessingType,
       new LimitsService(
         globalLimitsConfig = globalLimitsConfig,
-        activeScenariosLimitProvider = TestFactory.mapProcessingTypeDataProvider(
+        perProcessingTypesLimitsProvider = TestFactory.mapProcessingTypeDataProvider(
           deploymentManagers.map { case (processingType, _) => processingType -> processingTypeLimits }.toList: _*
         ),
-        scenarioStatusProvider = scenarioStatusProvider,
-        deploymentRepository = TestFactory.newDeploymentRepository(dbRef, clock),
-        dbioRunner = dbioRunner
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
       )
     )
-    TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, deploymentsReconciler)
+    TestDeploymentServiceServices(
+      oldApproachScenarioStatusProvider,
+      actionService,
+      deploymentService,
+      deploymentsReconciler
+    )
   }
 
 }
 
 case class TestDeploymentServiceServices(
-    scenarioStatusProvider: ScenarioStatusProvider,
+    scenarioStatusProvider: OldApproachScenarioStatusProvider,
     actionService: ActionService,
     deploymentService: DeploymentService,
     scenarioDeploymentReconciler: ScenarioDeploymentReconciler
