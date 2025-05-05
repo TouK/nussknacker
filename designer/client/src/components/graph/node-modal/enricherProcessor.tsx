@@ -5,7 +5,7 @@ import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
-import MockExpressionField from "./editors/expression/MockExpressionField";
+import MockedOutputField from "./editors/expression/MockExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
@@ -90,8 +90,8 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     errors={errors}
                 />
-                {node.type === "Enricher" && node.service.id !== "decision-table" ? (
-                    <MockExpressionField
+                {node.type === "Enricher" ? (
+                    <MockedOutputField
                         isEditMode={isEditMode}
                         editedNode={node}
                         showValidation={showValidation}

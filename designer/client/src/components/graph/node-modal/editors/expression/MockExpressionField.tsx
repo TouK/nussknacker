@@ -1,5 +1,5 @@
 import { get } from "lodash";
-import type { ReactNode} from "react";
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,28 @@ import type { OnValueChange } from "./Editor";
 import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
-const MOCK_EXPRESSION_FIELD_NAME = "mockExpression";
+const MOCKED_OUTPUT_IN_NODE_FIELD_NAME = "mockedOutput";
+const MOCK_EXPRESSION_PARAMETER_NAME = "mockExpression";
+const EXPRESSION_TEXT_PATH = `${MOCKED_OUTPUT_IN_NODE_FIELD_NAME}.${MOCK_EXPRESSION_PARAMETER_NAME}.expression`;
+
+const UnknownTypingResult = {
+    params: [],
+    type: "Unknown",
+    display: "Unknown",
+    refClazzName: "java.lang.Object",
+};
+
+// we construct artificial and hardcoded parameter definition to reuse EditableEditor for mockExpression field
+const MockExpressionParameter: UIParameter = {
+    additionalVariables: {},
+    branchParam: false,
+    defaultValue: { expression: "", language: "spel" },
+    editor: { type: EditorType.SPEL_PARAMETER_EDITOR },
+    label: "",
+    name: MOCK_EXPRESSION_PARAMETER_NAME,
+    typ: UnknownTypingResult,
+    variablesToHide: [],
+};
 
 type Props = {
     editedNode: NodeType;
@@ -31,19 +52,18 @@ type Props = {
 function MockExpressionField(props: Props): JSX.Element {
     const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, renderFieldLabel, errors } = props;
     const [mockExpression, setMockExpression] = useState(() => {
-        return get(editedNode, MOCK_EXPRESSION_FIELD_NAME) || { expression: "", language: "spel" };
+        return get(editedNode, MOCKED_OUTPUT_IN_NODE_FIELD_NAME)?.mockExpression || { expression: "", language: "spel" };
     });
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
-    const exprTextPath = `${MOCK_EXPRESSION_FIELD_NAME}.expression`;
 
     const onValueChange: OnValueChange = useCallback(
         (value: ExpressionObj) => {
             setMockExpression(value);
             if (value.expression.length > 0) {
-                setNodeDataAt(MOCK_EXPRESSION_FIELD_NAME, value);
+                setNodeDataAt(MOCKED_OUTPUT_IN_NODE_FIELD_NAME, { type: "SingleMockExpression", mockExpression: value });
             } else {
-                setNodeDataAt(MOCK_EXPRESSION_FIELD_NAME, null);
+                setNodeDataAt(MOCKED_OUTPUT_IN_NODE_FIELD_NAME, null);
             }
         },
         [setNodeDataAt],
@@ -54,38 +74,20 @@ function MockExpressionField(props: Props): JSX.Element {
     const { t } = useTranslation();
     const testResultsState = useTestResults();
 
-    const unknownTypingResult = {
-        params: [],
-        type: "Unknown",
-        display: "Unknown",
-        refClazzName: "java.lang.Object",
-    };
-
-    const mockExpressionParameter: UIParameter = {
-        additionalVariables: {},
-        branchParam: false,
-        defaultValue: { expression: "", language: "spel" },
-        editor: { type: EditorType.SPEL_PARAMETER_EDITOR },
-        label: "",
-        name: MOCK_EXPRESSION_FIELD_NAME,
-        typ: unknownTypingResult,
-        variablesToHide: undefined,
-    };
-
     return (
-        <ExpressionTestResults fieldName={MOCK_EXPRESSION_FIELD_NAME} resultsToShow={testResultsState.testResultsToShow}>
+        <ExpressionTestResults fieldName={MOCK_EXPRESSION_PARAMETER_NAME} resultsToShow={testResultsState.testResultsToShow}>
             <EditableEditor
-                param={mockExpressionParameter}
+                param={MockExpressionParameter}
                 renderFieldLabel={renderFieldLabel}
-                fieldLabel={t("nodes.enricher.mockExpression", "Mock expression")}
+                fieldLabel={t("nodes.enricher.mockExpression", "Mocked Output Expression")}
                 expressionObj={mockExpression}
-                isMarked={isMarked(exprTextPath)}
+                isMarked={isMarked(EXPRESSION_TEXT_PATH)}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 onValueChange={onValueChange}
-                fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_FIELD_NAME)}
+                fieldErrors={getValidationErrorsForField(errors, MOCK_EXPRESSION_PARAMETER_NAME)}
             />
         </ExpressionTestResults>
     );
