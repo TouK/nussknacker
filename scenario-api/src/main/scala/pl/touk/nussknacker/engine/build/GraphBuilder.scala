@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.EnricherMockedOutput.SingleMockExpression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -36,7 +37,7 @@ trait GraphBuilder[R] {
     build(node =>
       creator(
         OneOutputSubsequentNode(
-          Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockExpression = None),
+          Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockedOutput = None),
           node
         )
       )
@@ -52,7 +53,12 @@ trait GraphBuilder[R] {
     build(node =>
       creator(
         OneOutputSubsequentNode(
-          Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockExpression = Some(mockExpression)),
+          Enricher(
+            id,
+            ServiceRef(svcId, toNodeParameters(params)),
+            output,
+            mockedOutput = Some(SingleMockExpression(mockExpression))
+          ),
           node
         )
       )

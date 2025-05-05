@@ -196,13 +196,22 @@ object node {
       service: ServiceRef,
       output: String,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
-      mockExpression: Option[Expression] = None
+      mockedOutput: Option[EnricherMockedOutput] = None
   ) extends OneOutputSubsequentNodeData
       with WithComponent
       with WithParameters {
     override val componentId: String = service.id
 
     override def parameters: List[NodeParameter] = service.parameters
+  }
+
+  sealed trait EnricherMockedOutput
+
+  object EnricherMockedOutput {
+    implicit val enricherMockedOutputEncoder: Encoder[EnricherMockedOutput] = deriveConfiguredEncoder
+    implicit val enricherMockedOutputDecoder: Decoder[EnricherMockedOutput] = deriveConfiguredDecoder
+
+    final case class SingleMockExpression(mockExpression: Expression) extends EnricherMockedOutput
   }
 
   case class CustomNode(
