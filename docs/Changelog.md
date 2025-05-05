@@ -188,6 +188,7 @@ description: Stay informed with detailed changelogs covering new features, impro
         throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated
       }
       ```
+* [#7982](https://github.com/TouK/nussknacker/pull/7982) Mock expression added to enrichers (except decision-table) which can be used to hardcode enricher output in tests without calling external services.
 
 ## 1.18
 
