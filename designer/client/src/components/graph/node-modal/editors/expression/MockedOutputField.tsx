@@ -49,7 +49,7 @@ type Props = {
     errors: NodeValidationError[];
 };
 
-function MockExpressionField(props: Props): JSX.Element {
+function MockedOutputField(props: Props): JSX.Element {
     const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, renderFieldLabel, errors } = props;
     const [mockExpression, setMockExpression] = useState(() => {
         return get(editedNode, MOCKED_OUTPUT_IN_NODE_FIELD_NAME)?.mockExpression || { expression: "", language: "spel" };
@@ -93,4 +93,4 @@ function MockExpressionField(props: Props): JSX.Element {
     );
 }
 
-export default MockExpressionField;
+export default MockedOutputField;
