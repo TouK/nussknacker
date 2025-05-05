@@ -169,3 +169,10 @@ The following ML models are supported:
 
 You can read [this blogpost](https://nussknacker.io/blog/ml-models-inference-in-fraud-detection/) for the end-to-end example of how to use ML enricher. 
 The [integration](../integration/MachineLearning.md) section of the documentation has additional information on how to enable ML enricher. 
+
+## Behaviour in tests
+
+By default, during tests execution enrichers behave the same as during production deployment. 
+In particular, they can make calls to external services which in turn can cause unintended changes in those services (e.g. by POST call in OpenAPI enricher)   
+To deal with it enrichers (except `Decision Table`) can be configured with `Mock Output Expression` which will be evaluated during tests instead of calling external services behind enricher.
+A result from a mock expression will be returned as output of an enricher, so their types must match - e.g. `Mock Output Expression` of an OpenAPI enricher must returns a value matching schema of the endpoint response body.
