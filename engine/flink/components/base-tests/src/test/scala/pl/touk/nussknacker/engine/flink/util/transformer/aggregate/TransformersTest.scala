@@ -1115,13 +1115,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
   private def process(aggregateData: AggregateData*): CanonicalProcess = {
     def params(data: AggregateData) = {
-      val baseParams: List[(String, Expression)] = List(
+      val baseParams: Map[String, Expression] = Map(
         "groupBy"             -> "#id".spel,
         "aggregateBy"         -> data.aggregateBy.spel,
         "aggregator"          -> data.aggregator.spel,
         data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')".spel
       )
-      baseParams ++ data.additionalParams.mapValuesNow(_.spel).toList
+      baseParams ++ data.additionalParams.mapValuesNow(_.spel)
     }
 
     val beforeAggregate = ScenarioBuilder
@@ -1138,7 +1138,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             s"transform${definition.idSuffix}",
             s"fragmentResult${definition.idSuffix}",
             definition.aggregatingNode,
-            params(definition): _*
+            params(definition).toList: _*
           )
           .buildSimpleVariable(
             s"after-aggregate-expression-${definition.idSuffix}",
