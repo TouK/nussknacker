@@ -53,7 +53,7 @@ object node {
       extends SubsequentNode
 
   // this should never occur in process to be run (unresolved)
-  case class FragmentNode(data: FragmentInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode
+  case class FragmentNode(data: FragmentInput, nexts: Map[String, Option[SubsequentNode]]) extends SubsequentNode
 
   // defaultNext is deprecated, will be removed in future versions
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None)

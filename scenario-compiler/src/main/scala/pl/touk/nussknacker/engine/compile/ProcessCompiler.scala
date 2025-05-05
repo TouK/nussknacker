@@ -241,7 +241,7 @@ protected trait ProcessCompilerBase {
         splittednode.SourceNode(sourceData, part.node.next),
         ctx,
         nextParts,
-        part.ends.map(e => TypedEnd(e, typesForParts(e.nodeId)))
+        part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId, ValidationContext.empty)))
       )
     }
   }
@@ -324,7 +324,7 @@ protected trait ProcessCompilerBase {
           ctx.left.getOrElse(ValidationContext.empty),
           nextCtx,
           nextPartsCompiled,
-          part.ends.map(e => TypedEnd(e, typesForParts(e.nodeId)))
+          part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId, ValidationContext.empty)))
         )
       }
       .distinctErrors

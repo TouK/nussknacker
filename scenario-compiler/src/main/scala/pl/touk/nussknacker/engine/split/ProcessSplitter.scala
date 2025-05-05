@@ -67,7 +67,11 @@ object ProcessSplitter {
               DeadEnd(data.id) :: nextTrueT.ends
             )
           case (None, None) =>
-            NextWithParts.end(data.id)
+            NextWithParts(
+              NextNode(splittednode.FilterNode(data, None, None)),
+              List.empty,
+              DeadEnd(data.id) :: Nil,
+            )
         }
       case SwitchNode(data, nexts, defaultNext) =>
         val (nextsT, casesNextParts, casesEnds) = nexts.map { casee =>

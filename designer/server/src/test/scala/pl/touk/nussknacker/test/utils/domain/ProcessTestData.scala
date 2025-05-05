@@ -207,7 +207,7 @@ object ProcessTestData {
 
   // TODO: merge with this below
   val sampleScenario: CanonicalProcess = {
-    def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
+    def endWithMessage(idSuffix: String, message: String): Option[SubsequentNode] = {
       GraphBuilder
         .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'".spel)
         .emptySink(
@@ -493,7 +493,7 @@ object ProcessTestData {
       .to(endWithMessage)
   }
 
-  private def endWithMessage: SubsequentNode = {
+  private def endWithMessage: Option[SubsequentNode] = {
     val idSuffix   = "suffix"
     val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
 

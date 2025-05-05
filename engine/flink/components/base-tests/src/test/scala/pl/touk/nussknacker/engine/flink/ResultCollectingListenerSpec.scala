@@ -113,7 +113,7 @@ class ResultCollectingListenerSpec
   }
 
   test("union of two sources with additional variable in only one of the branches - without sinks") {
-    val scenario = removeSinks(
+    val scenario =
       ScenarioBuilder
         .streaming("sample-union")
         .sources(
@@ -134,14 +134,13 @@ class ResultCollectingListenerSpec
                 "bar" -> List("Output expression" -> "'bar source'".spel)
               )
             )
-            .emptySink("end", "dead-end") // sink must be created by the DSL, but is then removed
+            .endWithoutSink
         )
-    )
 
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "artificialDeadEndSink-after-union", 8)
+        assertNumberOfSamplesThatFinishedInNode(testResults, "union", 8)
         transitionVariables(testResults, "start-foo", Some("union")) shouldBe Set(
           Map("input" -> 10),
           Map("input" -> 20),
@@ -160,17 +159,7 @@ class ResultCollectingListenerSpec
           Map("input" -> 300, "customVariableInBarBranch" -> 150),
           Map("input" -> 400, "customVariableInBarBranch" -> 200),
         )
-        transitionVariables(testResults, "union", Some("artificialDeadEndSink-after-union")) shouldBe Set(
-          Map("input" -> 10, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 20, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 30, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 40, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 100, "customVariableInBarBranch" -> 50, "dataIsFrom"  -> "bar source"),
-          Map("input" -> 200, "customVariableInBarBranch" -> 100, "dataIsFrom" -> "bar source"),
-          Map("input" -> 300, "customVariableInBarBranch" -> 150, "dataIsFrom" -> "bar source"),
-          Map("input" -> 400, "customVariableInBarBranch" -> 200, "dataIsFrom" -> "bar source"),
-        )
-        transitionVariables(testResults, "artificialDeadEndSink-after-union", None) shouldBe Set(
+        transitionVariables(testResults, "union", None) shouldBe Set(
           Map("input" -> 10, "dataIsFrom"                 -> "foo source"),
           Map("input" -> 20, "dataIsFrom"                 -> "foo source"),
           Map("input" -> 30, "dataIsFrom"                 -> "foo source"),
@@ -292,7 +281,7 @@ class ResultCollectingListenerSpec
   }
 
   test("there is a split - fail to compile without sinks") {
-    val scenario = removeSinks(
+    val scenario =
       ScenarioBuilder
         .streaming("sample-split")
         .source("start-foo", "start1")
@@ -300,12 +289,11 @@ class ResultCollectingListenerSpec
           "split",
           GraphBuilder
             .buildSimpleVariable("bv1", "timesTwo", "#input*2".spel)
-            .emptySink("end1", "dead-end"),
+            .endWithoutSink,
           GraphBuilder
             .buildSimpleVariable("bv2", "timesFour", "#input*4".spel)
-            .emptySink("end2", "dead-end")
+            .endWithoutSink
         )
-    )
 
     catchExceptionMessage(
       withCollectingTestResults(scenario, _ => ())
@@ -314,7 +302,7 @@ class ResultCollectingListenerSpec
   }
 
   test("there is a split - without sinks") {
-    val scenario = removeSinks(
+    val scenario =
       ScenarioBuilder
         .streaming("sample-split")
         .source("start-foo", "start1")
@@ -322,18 +310,17 @@ class ResultCollectingListenerSpec
           "split",
           GraphBuilder
             .buildSimpleVariable("bv1", "timesTwo", "#input*2".spel)
-            .emptySink("end1", "dead-end"),
+            .endWithoutSink,
           GraphBuilder
             .buildSimpleVariable("bv2", "timesFour", "#input*4".spel)
-            .emptySink("end2", "dead-end")
+            .endWithoutSink
         )
-    )
 
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "artificialDeadEndSink-after-bv1", 4)
-        assertNumberOfSamplesThatFinishedInNode(testResults, "artificialDeadEndSink-after-bv2", 4)
+        assertNumberOfSamplesThatFinishedInNode(testResults, "bv1", 4)
+        assertNumberOfSamplesThatFinishedInNode(testResults, "bv2", 4)
         transitionVariables(testResults, "start-foo", Some("split")) shouldBe Set(
           Map("input" -> 10),
           Map("input" -> 20),
@@ -352,25 +339,13 @@ class ResultCollectingListenerSpec
           Map("input" -> 30),
           Map("input" -> 40),
         )
-        transitionVariables(testResults, "bv1", Some("artificialDeadEndSink-after-bv1")) shouldBe Set(
+        transitionVariables(testResults, "bv1", None) shouldBe Set(
           Map("input" -> 10, "timesTwo" -> 20),
           Map("input" -> 20, "timesTwo" -> 40),
           Map("input" -> 30, "timesTwo" -> 60),
           Map("input" -> 40, "timesTwo" -> 80),
         )
-        transitionVariables(testResults, "bv2", Some("artificialDeadEndSink-after-bv2")) shouldBe Set(
-          Map("input" -> 10, "timesFour" -> 40),
-          Map("input" -> 20, "timesFour" -> 80),
-          Map("input" -> 30, "timesFour" -> 120),
-          Map("input" -> 40, "timesFour" -> 160),
-        )
-        transitionVariables(testResults, "artificialDeadEndSink-after-bv1", None) shouldBe Set(
-          Map("input" -> 10, "timesTwo" -> 20),
-          Map("input" -> 20, "timesTwo" -> 40),
-          Map("input" -> 30, "timesTwo" -> 60),
-          Map("input" -> 40, "timesTwo" -> 80),
-        )
-        transitionVariables(testResults, "artificialDeadEndSink-after-bv2", None) shouldBe Set(
+        transitionVariables(testResults, "bv2", None) shouldBe Set(
           Map("input" -> 10, "timesFour" -> 40),
           Map("input" -> 20, "timesFour" -> 80),
           Map("input" -> 30, "timesFour" -> 120),
@@ -447,7 +422,7 @@ class ResultCollectingListenerSpec
   }
 
   test("there is a fragment - without sinks") {
-    val scenarioWithFragment = removeSinks(
+    val scenarioWithFragment =
       ScenarioBuilder
         .streaming("sample-scenario-with-fragment")
         .source("source", "start1")
@@ -456,9 +431,8 @@ class ResultCollectingListenerSpec
           "fragment1",
           List("fragment1_input" -> "#input".spel),
           Map("output"           -> "fragmentResult"),
-          Map("output"           -> GraphBuilder.emptySink("end", "dead-end"))
+          Map("output"           -> None)
         )
-    )
 
     val fragment = ScenarioBuilder
       .fragment("fragment1", "fragment1_input" -> classOf[Int])
@@ -470,7 +444,7 @@ class ResultCollectingListenerSpec
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "artificialDeadEndSink-after-sub-fragmentEnd", 3)
+        assertNumberOfSamplesThatFinishedInNode(testResults, "sub-fragmentEnd", 3)
         assertNumberOfSamplesThatFinishedInNode(testResults, "sub-filter", 1)
         transitionVariables(testResults, "source", Some("sub")) shouldBe Set(
           Map("input" -> 10),
@@ -502,13 +476,8 @@ class ResultCollectingListenerSpec
         transitionVariables(
           testResults,
           "sub-fragmentEnd",
-          Some("artificialDeadEndSink-after-sub-fragmentEnd")
+          None
         ) shouldBe Set(
-          Map("input" -> 20, "fragmentResult" -> Map("output" -> 20)),
-          Map("input" -> 30, "fragmentResult" -> Map("output" -> 30)),
-          Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),
-        )
-        transitionVariables(testResults, "artificialDeadEndSink-after-sub-fragmentEnd", None) shouldBe Set(
           Map("input" -> 20, "fragmentResult" -> Map("output" -> 20)),
           Map("input" -> 30, "fragmentResult" -> Map("output" -> 30)),
           Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),

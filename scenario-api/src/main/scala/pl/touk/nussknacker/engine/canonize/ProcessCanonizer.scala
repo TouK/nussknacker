@@ -136,7 +136,7 @@ object NodeCanonizer {
       case node.SplitNode(bare, nexts) =>
         canonicalnode.SplitNode(bare, nexts.map(canonize)) :: Nil
       case node.FragmentNode(input, nexts) =>
-        canonicalnode.Fragment(input, nexts.mapValuesNow(canonize)) :: Nil
+        canonicalnode.Fragment(input, nexts.mapValuesNow(_.map(canonize).getOrElse(List.empty))) :: Nil
       case BranchEnd(e: BranchEndData) =>
         canonicalnode.FlatNode(e) :: Nil
     }
