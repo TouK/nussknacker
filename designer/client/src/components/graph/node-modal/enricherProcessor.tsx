@@ -5,7 +5,7 @@ import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
-import MockedOutputField from "./editors/expression/MockExpressionField";
+import MockedOutputField from "./editors/expression/MockedOutputField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
