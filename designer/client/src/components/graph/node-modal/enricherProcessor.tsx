@@ -89,7 +89,7 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     errors={errors}
                 />
-                {node.type === "Enricher" ? (
+                {node.type === "Enricher" && node.service.id !== "decision-table" ? (
                     <MockedOutputField
                         isEditMode={isEditMode}
                         editedNode={node}
@@ -97,7 +97,6 @@ export function EnricherProcessor({
                         showSwitch={showSwitch}
                         findAvailableVariables={findAvailableVariables}
                         setNodeDataAt={setProperty}
-                        renderFieldLabel={renderFieldLabel}
                         errors={errors}
                     />
                 ) : null}

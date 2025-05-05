@@ -1,11 +1,10 @@
 import { get } from "lodash";
-import type { ReactNode } from "react";
-import { useMemo } from "react";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type ProcessUtils from "../../../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../../../types";
+import { FieldLabel } from "../../FieldLabel";
 import { useDiffMark } from "../../PathsToMark";
 import { useTestResults } from "../../TestResultsWrapper";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
@@ -45,16 +44,16 @@ type Props = {
     showSwitch: boolean;
     findAvailableVariables: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
-    renderFieldLabel: (paramName: string) => ReactNode;
     errors: NodeValidationError[];
 };
 
 function MockedOutputField(props: Props): JSX.Element {
-    const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, renderFieldLabel, errors } = props;
+    const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, errors } = props;
     const [mockExpression, setMockExpression] = useState(() => {
         return get(editedNode, MOCKED_OUTPUT_IN_NODE_FIELD_NAME)?.mockExpression || { expression: "", language: "spel" };
     });
     const [isMarked] = useDiffMark();
+    const { t } = useTranslation();
     const readOnly = !isEditMode;
 
     const onValueChange: OnValueChange = useCallback(
@@ -69,17 +68,19 @@ function MockedOutputField(props: Props): JSX.Element {
         [setNodeDataAt],
     );
 
-    const variableTypes = useMemo(() => findAvailableVariables(editedNode.id), [findAvailableVariables, editedNode.id]);
+    const renderMockExpressionParameterLabel = (): JSX.Element => {
+        return <FieldLabel title={MOCK_EXPRESSION_PARAMETER_NAME} label={t("nodes.enricher.mockExpression", "Mocked Output Expression")} />;
+    };
 
-    const { t } = useTranslation();
+    const variableTypes = useMemo(() => findAvailableVariables(editedNode.id), [findAvailableVariables, editedNode.id]);
     const testResultsState = useTestResults();
 
     return (
         <ExpressionTestResults fieldName={MOCK_EXPRESSION_PARAMETER_NAME} resultsToShow={testResultsState.testResultsToShow}>
             <EditableEditor
                 param={MockExpressionParameter}
-                renderFieldLabel={renderFieldLabel}
-                fieldLabel={t("nodes.enricher.mockExpression", "Mocked Output Expression")}
+                renderFieldLabel={renderMockExpressionParameterLabel}
+                fieldLabel={"unused"}
                 expressionObj={mockExpression}
                 isMarked={isMarked(EXPRESSION_TEXT_PATH)}
                 showValidation={showValidation}
