@@ -1,4 +1,3 @@
-import InfoIcon from "@mui/icons-material/Info";
 import { alpha, css, FormLabel, styled, Switch } from "@mui/material";
 import React from "react";
 

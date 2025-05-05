@@ -6,7 +6,7 @@ import { InfoTooltipClick } from "./InfoTooltipClick";
 import { InfoTooltipHover } from "./InfoTooltipHover";
 import { StyledInfo } from "./StyledInfo";
 
-interface Props {
+export interface Props {
     title: string | undefined;
     variant?: "hover" | "click";
     children?: ReactElement;
