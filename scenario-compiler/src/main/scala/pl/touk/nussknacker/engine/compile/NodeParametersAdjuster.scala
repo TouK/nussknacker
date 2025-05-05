@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.Id
-import cats.data.{NonEmptySet, WriterT}
-import cats.data.Validated.valid
+import cats.data.WriterT
 import cats.implicits.toTraverseOps
-import cats.instances.set
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDefinition}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
