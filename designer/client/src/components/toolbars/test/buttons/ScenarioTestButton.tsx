@@ -1,3 +1,4 @@
+import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -121,7 +122,11 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     return (
         <ToolbarButton
-            name={preset?.label || name || t("panels.actions.scenarioTest.button.name", "Test scenario")}
+            name={
+                preset?.value === RERUN_PREVIOUS
+                    ? t("panels.actions.scenarioTest.button.nameAlt", "Retest")
+                    : name || t("panels.actions.scenarioTest.button.name", "Test")
+            }
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
             icon={<TestingIcon />}
             sx={(theme) => {
@@ -129,7 +134,8 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                 const highlight = theme.palette.primary.light;
                 const isHorizontal = variant === ButtonsVariant.xs && [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom].includes(side);
                 return {
-                    color: theme.palette.getContrastText(normal),
+                    color: alpha(theme.palette.getContrastText(normal), 0.75),
+
                     ".toolbarButton-Root": {
                         backgroundColor: normal,
                     },
@@ -146,8 +152,10 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                     },
                     ".toolbarButton-Label": isHorizontal
                         ? {
-                              minWidth: "12em",
+                              fontSize: "16px",
+                              minWidth: "5em",
                               display: "inline",
+                              textTransform: "initial",
                           }
                         : null,
                 };
