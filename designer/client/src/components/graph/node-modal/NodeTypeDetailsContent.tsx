@@ -48,15 +48,14 @@ export type NodeTypeDetailsContentProps = {
 
 export function useNodeAdjust() {
     const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
-    const adjustNode = useCallback(
+    return useCallback(
         (node: NodeType) => {
             const parameterDefinitions = getParameterDefinitions(node);
-            const { adjustedNode } = adjustParameters(node, parameterDefinitions);
+            const adjustedNode = adjustParameters(node, parameterDefinitions);
             return generateUUIDs(adjustedNode, ["fields", "parameters"]);
         },
         [getParameterDefinitions],
     );
-    return adjustNode;
 }
 
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
