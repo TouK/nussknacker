@@ -4,7 +4,6 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{Assertion, BeforeAndAfterAll, LoneElement, TryValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -96,9 +95,8 @@ class SecurityTest
       )
     stubbedSecretCheckingLogics.foreach { logic =>
       withClue(logic.operationId) {
-        implicit val contextId: ContextId = ContextId("1")
         enricherWithCorrectConfig(ServiceName(logic.operationId))
-          .invoke(Map.empty)
+          .invoke(context)
           .futureValue shouldBe TypedMap(Map.empty)
       }
     }
@@ -114,8 +112,7 @@ class SecurityTest
     stubbedSecretCheckingLogics.foreach { logic =>
       withClue(logic.operationId) {
         intercept[Exception] {
-          implicit val contextId: ContextId = ContextId("1")
-          enricherWithBadConfig(ServiceName(logic.operationId)).invoke(Map.empty).futureValue
+          enricherWithBadConfig(ServiceName(logic.operationId)).invoke(context).futureValue
         }
       }
     }
@@ -129,9 +126,8 @@ class SecurityTest
           backend,
           baseConfig.copy(secret = Some(config.expectedSecret))
         )
-        implicit val contextId: ContextId = ContextId("1")
         enricherWithSingleSecurityConfig(ServiceName(config.operationId))
-          .invoke(Map.empty)
+          .invoke(context)
           .futureValue shouldBe TypedMap(Map.empty)
       }
     }
@@ -155,9 +151,8 @@ class SecurityTest
       backend,
       baseConfig.copy(secret = Some(secretMatchesEveryScheme))
     )
-    implicit val contextId: ContextId = ContextId("1")
     enricherWithSingleSecurityConfig(ServiceName("root"))
-      .invoke(Map.empty)
+      .invoke(context)
       .futureValue shouldBe TypedMap(Map.empty)
   }
 

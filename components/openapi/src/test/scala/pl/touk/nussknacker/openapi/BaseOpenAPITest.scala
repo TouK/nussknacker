@@ -4,10 +4,11 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
-import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
-import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
+import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
+import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import sttp.client3.SttpBackend
 
@@ -22,7 +23,7 @@ trait BaseOpenAPITest {
   implicit val componentUseContext: ComponentUseContext = ComponentUseContext.LiveRuntime(None)
   implicit val metaData: MetaData                       = MetaData("testProc", StreamMetaData())
   implicit val context: Context                         = Context("testContextId", Map.empty)
-  private val jobData        = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
+  protected val jobData      = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
   private val runtimeContext = TestEngineRuntimeContext(jobData)
 
   protected def parseServicesFromResource(
@@ -48,16 +49,19 @@ trait BaseOpenAPITest {
   protected def parseToEnrichers(
       resource: String,
       backend: SttpBackend[Future, Any],
-      config: OpenAPIServicesConfig = baseConfig
-  ): Map[ServiceName, EagerServiceWithStaticParametersAndReturnType] = {
-    val services = parseServicesFromResourceUnsafe(resource, config)
-    val creator  = new SwaggerEnricherCreator((_: ExecutionContext) => backend)
-    val enrichers = SwaggerEnrichers
-      .prepare(config, services, creator)
-      .map(ed => ed.name -> ed.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType])
-      .toMap
-    enrichers.foreach(_._2.open(runtimeContext))
-    enrichers
-  }
+      config: OpenAPIServicesConfig = baseConfig,
+      params: Map[ParameterName, Any] = Map.empty,
+      getTimeMeasurement: () => AsyncExecutionTimeMeasurement = () =>
+        new AsyncExecutionTimeMeasurement(runtimeContext, "openAPI", Map.empty)
+  ): Map[ServiceName, ServiceInvoker] =
+    parseServicesFromResourceUnsafe(resource, config).map { service =>
+      service.name -> SwaggerEnricher(
+        service = service,
+        config = config,
+        clientProvider = (_: ExecutionContext) => backend,
+        params = Params(params),
+        getTimeMeasurement = getTimeMeasurement
+      )
+    }.toMap
 
 }
