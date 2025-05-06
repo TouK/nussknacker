@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{api, compiledgraph, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
@@ -68,7 +69,7 @@ class NodeCompiler(
     runtimeMode: RuntimeMode,
     nodesDeploymentData: NodesDeploymentData,
     nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
-) {
+) extends LazyLogging {
 
   def missingSinkHandler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
@@ -427,13 +428,18 @@ class NodeCompiler(
       outputVar match {
         case Some(out) =>
           returnTypeOpt
-            .map(Valid(_))
-            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable"))))))
-            .andThen(validationContext.withVariable(out, _))
+            .map(validationContext.withVariable(out, _))
+            .getOrElse {
+              logger.warn(
+                s"Scenario [${scenarioCompilationDependencies.metaData.name}] node [$nodeId] compilation warning. " +
+                  s"Found ${out.fieldName} = ${out.outputName} but service [${serviceRef.id}] used by the node doesn't need it. It will be skipped."
+              )
+              Valid(validationContext)
+            }
         case None => Valid(validationContext)
       }
 
-    def createService(invoker: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
+    def createService(invoker: ServiceInvoker) =
       compiledgraph.service.ServiceRef(
         id = serviceRef.id,
         invoker = invoker,
@@ -452,7 +458,7 @@ class NodeCompiler(
       // TODO: Currently in case of object compilation failures we prefer to create "dumb" service invoker, with empty parameters list
       //       instead of return Invalid - I assume that it is probably because of errors accumulation purpose.
       //       We should clean up this compilation process by some NodeCompilationResult refactor like introduction of WriterT monad transformer
-      createService(serviceInvoker, nodeParams, compilationResult.parameters.getOrElse(List.empty))
+      createService(serviceInvoker)
     }
   }
 
@@ -483,7 +489,12 @@ class NodeCompiler(
       (node.outputVar, returnTypeOpt) match {
         case (Some(varName), Some(typ)) => ctxWithVar(OutputVar.customNode(varName), typ)
         case (None, None)               => Valid(validationContext)
-        case (Some(_), None) => Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable")))))
+        case (Some(outputVarValue), None) =>
+          logger.warn(
+            s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
+              s"Found outputVar = ${outputVarValue} but custom node [${node.id}] used by the node doesn't need it. It will be skipped."
+          )
+          Valid(validationContext)
         case (None, Some(_)) if ending => Valid(validationContext)
         case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set(ParameterName("OutputVariable")))))
       }
@@ -705,26 +716,31 @@ class NodeCompiler(
   object ServiceCompiler {
 
     def compile(
-        n: ServiceRef,
+        serviceRef: ServiceRef,
         outputVar: Option[OutputVar],
         objWithMethod: MethodBasedComponentDefinitionWithImplementation,
         ctx: ValidationContext
     )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters =
-        expressionCompiler.compileExecutorComponentNodeParameters(objWithMethod.parameters, n.parameters, ctx)
+        expressionCompiler.compileExecutorComponentNodeParameters(objWithMethod.parameters, serviceRef.parameters, ctx)
       val outputCtx = outputVar match {
         case Some(output) =>
           objWithMethod.returnType
-            .map(Valid(_))
-            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable"))))))
-            .andThen(ctx.withVariable(output, _))
+            .map(ctx.withVariable(output, _))
+            .getOrElse {
+              logger.warn(
+                s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
+                  s"Found ${output.fieldName} = ${output.outputName} but service [${serviceRef.id}] used by the node doesn't need it. It will be skipped."
+              )
+              Valid(ctx)
+            }
         case None => Valid(ctx)
       }
 
-      val serviceRef = computedParameters.map { params =>
+      val compiledServiceRef = computedParameters.map { params =>
         val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, jobData))
         compiledgraph.service.ServiceRef(
-          id = n.id,
+          id = serviceRef.id,
           invoker = new MethodBasedServiceInvoker(jobData.metaData, nodeId, outputVar, objWithMethod, evaluateParams),
           resultCollector = resultCollector
         )
@@ -734,7 +750,7 @@ class NodeCompiler(
         nodeTypingInfo,
         None,
         outputCtx,
-        serviceRef.fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
+        compiledServiceRef.fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
       )
     }
 

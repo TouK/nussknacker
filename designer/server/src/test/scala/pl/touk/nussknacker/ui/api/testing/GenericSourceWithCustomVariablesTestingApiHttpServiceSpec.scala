@@ -10,7 +10,9 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestD
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
-class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends ScenarioTestingApiHttpServiceSpec {
+class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec
+    extends ScenarioTestingApiHttpServiceSpec
+    with WithAdHocInvalidParametersTestsLogic {
 
   override protected def exampleScenarioSourceId = "sourceId"
 

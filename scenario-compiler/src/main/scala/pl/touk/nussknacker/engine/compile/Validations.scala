@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.valid
-import pl.touk.nussknacker.engine.api.NodeId
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, RedundantParameters}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.compile.CompilationLoggerExtensions.Ops
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-object Validations {
+object Validations extends LazyLogging {
 
   import cats.data.ValidatedNel
   import cats.implicits._
@@ -20,15 +22,14 @@ object Validations {
       parameterDefinitions: List[Parameter],
       parameters: List[NodeParameter]
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      jobData: JobData
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     val definedParamNamesSet = parameterDefinitions.map(_.name).toSet
     val usedParamNamesSet    = parameters.map(_.name).toSet
 
-    val validatedRedundant = validateRedundancy(definedParamNamesSet, usedParamNamesSet)
-    val validatedMissing   = validateMissingness(definedParamNamesSet, usedParamNamesSet)
-
-    validatedRedundant.combine(validatedMissing)
+    checkRedundancyAndWarnIfNeeded(definedParamNamesSet, usedParamNamesSet)
+    validateMissingness(definedParamNamesSet, usedParamNamesSet)
   }
 
   def validateWithCustomValidators(
@@ -44,11 +45,19 @@ object Validations {
       .sequence
       .map(_ => parameters)
 
-  private def validateRedundancy(definedParamNamesSet: Set[ParameterName], usedParamNamesSet: Set[ParameterName])(
-      implicit nodeId: NodeId
-  ) = {
+  private def checkRedundancyAndWarnIfNeeded(
+      definedParamNamesSet: Set[ParameterName],
+      usedParamNamesSet: Set[ParameterName]
+  )(
+      implicit nodeId: NodeId,
+      jobData: JobData
+  ): Unit = {
     val redundantParams = usedParamNamesSet.diff(definedParamNamesSet)
-    if (redundantParams.nonEmpty) RedundantParameters(redundantParams).invalidNel[Unit] else valid(())
+    if (redundantParams.nonEmpty) {
+      logger.compilationWarning(
+        s"Found redundant parameters: ${redundantParams.toList.map(_.value).sorted.mkString(", ")}. They will be skipped."
+      )
+    }
   }
 
   private def validateMissingness(definedParamNamesSet: Set[ParameterName], usedParamNamesSet: Set[ParameterName])(

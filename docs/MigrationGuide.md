@@ -190,6 +190,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7553](https://github.com/TouK/nussknacker/pull/7553) [#8011](https://github.com/TouK/nussknacker/pull/8011) `#key` variable created in window components won't be a list in a string, but it'll have provided types, e.g. instead of `"[12.0, ab]"` it'll now be `[12.0, "ab"]`.
   To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`. 
   Also, if you provide one element in `groupBy` expression, it will be presented as one element list instead of scalar.
+* [#8011](https://github.com/TouK/nussknacker/pull/8011) During scenario compilation, redundant parameters used in node are treated only as warning now. They are skipped and compilation passes.
 
 ## In version 1.18.0
 
