@@ -20,6 +20,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7590](https://github.com/TouK/nussknacker/pull/7590) All `akka.*` configuration options and `AKKA_*` and Akka environment
   variables were replaced with their `pekko.*` and `PEKKO_*` counterparts - it's enough to do a quick search and replace
 * [#7693](https://github.com/TouK/nussknacker/pull/7693) Configuration entry `secondaryEnvironment.remoteConfig.uri` is moved to `secondaryEnvironment.uri`.
+* [#8042](https://github.com/TouK/nussknacker/pull/8042) When adding multiple OpenAPI components, `ComponentPrefix`
+  should be added to distinguish the components.
 
 ### REST API changes
 
