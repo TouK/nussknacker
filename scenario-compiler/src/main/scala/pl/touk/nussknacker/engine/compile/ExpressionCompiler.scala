@@ -186,7 +186,10 @@ class ExpressionCompiler(
 
     for {
       compiledParams <- allCompiledParams.toIor
-      _              <- Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap).toIor
+      customValidatorsResult = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap)
+      // We want to accumulate errors from custom validators, but also preserve typing information from allCompiledParams
+      // even if custom validators return some errors
+      _ <- customValidatorsResult.toIor.addRight(())
     } yield compiledParams
   }
 
