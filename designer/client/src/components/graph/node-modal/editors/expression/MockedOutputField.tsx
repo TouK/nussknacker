@@ -69,7 +69,7 @@ function MockedOutputField(props: Props): JSX.Element {
     );
 
     const renderMockExpressionParameterLabel = (): JSX.Element => {
-        return <FieldLabel title={MOCK_EXPRESSION_PARAMETER_NAME} label={t("nodes.enricher.mockExpression", "Mocked Output Expression")} />;
+        return <FieldLabel title={MOCK_EXPRESSION_PARAMETER_NAME} label={t("nodes.enricher.mockExpression", "Mock")} />;
     };
 
     const variableTypes = useMemo(() => findAvailableVariables(editedNode.id), [findAvailableVariables, editedNode.id]);
