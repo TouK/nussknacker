@@ -7,6 +7,7 @@ import pl.touk.nussknacker.http.backend.{DefaultHttpClientConfig, HttpClientConf
 import sttp.model.StatusCode
 
 import java.net.URL
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.matching.Regex
 
 final case class OpenAPIServicesConfig(
@@ -19,7 +20,8 @@ final case class OpenAPIServicesConfig(
     // For backward compatibility it is called security. We should probably rename it and bundle together with secret
     private val security: Map[SecuritySchemeName, Secret] = Map.empty,
     private val secret: Option[Secret] = None,
-    httpClientConfig: HttpClientConfig = DefaultHttpClientConfig()
+    httpClientConfig: HttpClientConfig = DefaultHttpClientConfig(),
+    openApiServicesDiscoveryCacheTtl: FiniteDuration = 30 seconds
 ) {
   def securityConfig: SecurityConfig =
     new SecurityConfig(secretBySchemeName = security, commonSecretForAnyScheme = secret)
