@@ -18,6 +18,10 @@ const MOCKED_OUTPUT_IN_NODE_FIELD_NAME = "mockedOutput";
 const MOCK_EXPRESSION_PARAMETER_NAME = "mockExpression";
 const EXPRESSION_TEXT_PATH = `${MOCKED_OUTPUT_IN_NODE_FIELD_NAME}.${MOCK_EXPRESSION_PARAMETER_NAME}.expression`;
 
+const MOCK_EXPRESSION_HINT_TEXT =
+    "If provided the expression will be evaluated in tests instead of invoking real enricher behaviour (e.g. instead of calling a service/database).\n\n" +
+    "Evaluated value will be placed under output variable name during tests.";
+
 const UnknownTypingResult = {
     params: [],
     type: "Unknown",
@@ -69,7 +73,7 @@ function MockedOutputField(props: Props): JSX.Element {
     );
 
     const renderMockExpressionParameterLabel = (): JSX.Element => {
-        return <FieldLabel title={MOCK_EXPRESSION_PARAMETER_NAME} label={t("nodes.enricher.mockExpression", "Mock")} />;
+        return <FieldLabel label={t("nodes.enricher.mockExpression", "Mock")} hintText={MOCK_EXPRESSION_HINT_TEXT} />;
     };
 
     const variableTypes = useMemo(() => findAvailableVariables(editedNode.id), [findAvailableVariables, editedNode.id]);
