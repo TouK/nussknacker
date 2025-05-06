@@ -152,7 +152,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                     },
                     ".toolbarButton-Label": isHorizontal
                         ? {
-                              fontSize: "16px",
+                              fontSize: "1em",
                               minWidth: "5em",
                               display: "inline",
                               textTransform: "initial",
