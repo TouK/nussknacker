@@ -4,7 +4,6 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -34,11 +33,11 @@ class CodeHandlingTest
     // should be non 2xx
     val customEmptyCode = 409
     val config          = baseConfig.copy(codesToInterpretAsEmpty = List(customEmptyCode))
-    val service         = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
     def runWithCode(code: Int) = {
-      implicit val contextId: ContextId = ContextId("1")
-      service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
+      val service =
+        parseToEnrichers("custom-codes.yml", backend, config, Map(codeParameter -> code))(ServiceName("code"))
+      service.invoke(context).futureValue.asInstanceOf[AnyRef]
     }
 
     runWithCode(customEmptyCode) shouldBe null
