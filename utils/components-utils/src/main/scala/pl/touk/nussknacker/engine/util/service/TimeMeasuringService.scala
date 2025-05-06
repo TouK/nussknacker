@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.{Lifecycle, Service}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.SafeLazyValues
 import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
+import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement.serviceNameTagKey
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -63,7 +64,12 @@ class AsyncExecutionTimeMeasurement(
   }
 
   private def getOrCreateTimer(tags: Map[String, String], meterType: String): EspTimer = {
-    metrics.getOrCreate(meterType, () => espTimer(tags + ("serviceName" -> serviceName), metricName :+ meterType))
+    // We don't override serviceName if it's already provided by API client
+    val tagsWithServiceName = tags.get(serviceNameTagKey) match {
+      case Some(serviceNameAlreadyExists) => tags
+      case None                           => tags + (serviceNameTagKey -> serviceName)
+    }
+    metrics.getOrCreate(meterType, () => espTimer(tagsWithServiceName, metricName :+ meterType))
   }
 
   def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = {
@@ -77,4 +83,8 @@ class AsyncExecutionTimeMeasurement(
     }
   }
 
+}
+
+object AsyncExecutionTimeMeasurement {
+  val serviceNameTagKey = "serviceName"
 }
