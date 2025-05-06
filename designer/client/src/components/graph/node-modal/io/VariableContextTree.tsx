@@ -1,18 +1,18 @@
-import { Box, Stack, Typography } from "@mui/material";
+import { CloudOff } from "@mui/icons-material";
+import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
-import { useSelector } from "react-redux";
-import { Context } from "../../../../common/TestResultUtils";
-import { getProcessCounts } from "../../../../reducers/selectors/graph";
-import { getUserSettings } from "../../../../reducers/selectors/userSettings";
+import { useTranslation } from "react-i18next";
+
+import type { Context } from "../../../../common/TestResultUtils";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTitle } from "./ContextTitle";
-import { useInputOutputContext } from "./InputOutputContext";
-import { CountsForNodes } from "./CountsForNodes";
 import { ContextTree } from "./ContextTree";
-import { startCase } from "lodash";
+import { CountsForNodes } from "./CountsForNodes";
+import { useInputOutputContext } from "./InputOutputContext";
 
 type ValuesContextTreeProps = {
     direction?: "input" | "output";
+    onIsEmptyChange?: (value: boolean) => void;
 };
 
 export type VariableContextType = Context & {
@@ -26,15 +26,13 @@ function useVariableContext(direction: "input" | "output") {
         state: { inputDataSetId, outputDataSetId, inputVariables },
         dispatch,
         getAvailableContexts,
-        inputNodes,
-        outputNodes,
-        prevNodes,
+        inputNodesIds,
+        outputNodesIds,
     } = useInputOutputContext();
 
     const value = useMemo(() => (direction === "input" ? inputDataSetId : outputDataSetId), [direction, inputDataSetId, outputDataSetId]);
-    const nodeIds = useMemo(() => (direction === "input" ? inputNodes : outputNodes), [direction, inputNodes, outputNodes]);
     const [availableContexts, hiddenAvailableContexts] = useMemo(() => {
-        const contexts = getAvailableContexts(nodeIds, direction);
+        const contexts = getAvailableContexts(direction);
         const pageSize = 30;
         if (contexts.length > pageSize) {
             const sliced = contexts
@@ -44,7 +42,7 @@ function useVariableContext(direction: "input" | "output") {
             return [sliced, contexts.length - sliced.length];
         }
         return [contexts, 0];
-    }, [direction, getAvailableContexts, nodeIds]);
+    }, [direction, getAvailableContexts]);
 
     const setContext = useCallback(
         (context: VariableContextType) =>
@@ -55,19 +53,23 @@ function useVariableContext(direction: "input" | "output") {
         [direction, dispatch],
     );
 
+    const transitionNodesIds = direction === "input" ? inputNodesIds : outputNodesIds;
+
     return {
         value,
-        nodeIds,
         availableContexts,
         hiddenAvailableContexts,
         setContext,
         inputVariables,
-        prevNodes,
+        transitionNodesIds,
     };
 }
 
-export const VariableContextTree = memo(function ValuesContextTree({ direction = "input" }: ValuesContextTreeProps): JSX.Element {
-    const { value, nodeIds, availableContexts, hiddenAvailableContexts, setContext, inputVariables, prevNodes } =
+export const VariableContextTree = memo(function ValuesContextTree({
+    onIsEmptyChange,
+    direction = "input",
+}: ValuesContextTreeProps): JSX.Element {
+    const { value, availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds } =
         useVariableContext(direction);
 
     useEffect(() => {
@@ -78,15 +80,48 @@ export const VariableContextTree = memo(function ValuesContextTree({ direction =
         setContext(enabled[0]);
     }, [availableContexts, direction, setContext, value]);
 
-    const processCounts = useSelector(getProcessCounts);
+    useEffect(() => {
+        onIsEmptyChange?.(transitionNodesIds.length < 1);
+    }, [onIsEmptyChange, transitionNodesIds.length]);
+
+    const { t } = useTranslation();
 
     return (
         <Box
             sx={{
                 width: "100%",
+                height: "100%",
                 minWidth: 260,
             }}
         >
+            <Fade in={availableContexts.length < 1}>
+                <Box
+                    sx={(theme) => ({
+                        position: "absolute",
+                        inset: 0,
+                        background: alpha(theme.palette.background.default, 0.75),
+                        backdropFilter: "blur(1px)",
+                    })}
+                >
+                    <Stack
+                        direction="column"
+                        sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -100%)",
+                            textAlign: "center",
+                            alignItems: "center",
+                            opacity: 0.25,
+                        }}
+                    >
+                        <CloudOff sx={{ fontSize: "4em" }} />
+                        <Typography variant="subtitle2" noWrap>
+                            {t("variableContext.noData", "data not available yet")}
+                        </Typography>
+                    </Stack>
+                </Box>
+            </Fade>
             <Stack
                 spacing={1}
                 sx={{
@@ -98,9 +133,9 @@ export const VariableContextTree = memo(function ValuesContextTree({ direction =
             >
                 <Typography variant="subtitle1">{direction === "input" ? "Input context" : "Output context"}</Typography>
                 <CountsForNodes
-                    nodes={(direction === "input" ? prevNodes : nodeIds).map((id) => ({
+                    nodes={transitionNodesIds.map(({ id, results }) => ({
                         id,
-                        count: processCounts[id]?.all,
+                        count: results?.length,
                     }))}
                     input={direction === "input"}
                 />
@@ -117,7 +152,7 @@ export const VariableContextTree = memo(function ValuesContextTree({ direction =
                         disabled={r.disabled}
                         expanded={value === r.id && !r.disabled}
                         onToggle={() => setContext(r)}
-                        title={<ContextTitle context={r} showNodes={nodeIds.length > 1} />}
+                        title={<ContextTitle context={r} showNodes={transitionNodesIds.length > 1} />}
                     >
                         {direction === "output" ? <>{r.error}</> : null}
                         <ContextTree context={r} oldFields={inputVariables} />
@@ -137,7 +172,7 @@ export const VariableContextTree = memo(function ValuesContextTree({ direction =
                         zIndex: -1,
                     }}
                 >
-                    ...and {hiddenAvailableContexts} more
+                    {t("variableContext.truncatedList", "...and {{count}} more", { count: hiddenAvailableContexts })}
                 </Typography>
             ) : null}
         </Box>
