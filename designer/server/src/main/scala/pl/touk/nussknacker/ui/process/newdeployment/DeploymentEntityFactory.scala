@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.{BaseEntityFactory, ProcessEntityData, ProcessEntityFactory}
@@ -73,7 +73,7 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       entity.createdAt,
       entity.createdBy,
       entity.statusWithModifiedAt.value.name,
-      entity.statusWithModifiedAt.value.description,
+      entity.statusWithModifiedAt.value.problemDescription,
       entity.statusWithModifiedAt.modifiedAt
     )
   }

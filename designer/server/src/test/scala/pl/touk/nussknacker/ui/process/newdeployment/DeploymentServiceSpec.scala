@@ -10,7 +10,12 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig.MaxActiveScenariosCount
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentManager,
+  DeploymentStatus,
+  DeploymentStatusName,
+  ProblemDeploymentStatus
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
@@ -40,6 +45,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.{
   MaxActiveScenariosCountExceededError
 }
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -100,7 +106,7 @@ class DeploymentServiceSpec
 
     eventually {
       val status = deploymentService.getDeploymentStatus(deploymentId)(user).futureValue.rightValue
-      status.value.name shouldEqual ProblemDeploymentStatus.name
+      status.value.name shouldEqual DeploymentStatusName.problemStatusName
     }
   }
 
@@ -312,13 +318,15 @@ class DeploymentServiceSpec
       new MockableDeploymentManager(streaming1DeploymentManagerConfigurator, modelDataProviderOpt = None)
     val streaming2DeploymentManager =
       new MockableDeploymentManager(streaming2DeploymentManagerConfigurator, modelDataProviderOpt = None)
-    val deploymentManagerDispatcher = new DeploymentManagerDispatcher(
+    val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, _] =
       TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
         Map(
           Streaming1.stringify -> ValueWithRestriction.anyUser(streaming1DeploymentManager),
           Streaming2.stringify -> ValueWithRestriction.anyUser(streaming2DeploymentManager)
         )
-      ),
+      )
+    val deploymentManagerDispatcher = new DeploymentManagerDispatcher(
+      processingTypeDataProvider,
       newFutureFetchingScenarioRepository(testDbRef)
     )
 
@@ -331,6 +339,7 @@ class DeploymentServiceSpec
     )
 
     val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
+      processingTypeDataProvider,
       TestFactory.newDeploymentRepository(testDbRef, clock),
       dbioRunner
     )

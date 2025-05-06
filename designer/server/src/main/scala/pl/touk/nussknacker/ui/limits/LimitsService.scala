@@ -30,11 +30,13 @@ class LimitsService(
     newDeploymentsApproachScenarioStatusProvider: NewDeploymentsApproachScenarioStatusProvider
 ) extends LazyLogging {
 
+  private implicit val userForLimitChecking: LoggedUser = NussknackerInternalUser.instance
+
   def checkActiveScenarioLimitsBeforeDeployment[ACTION_RESULT](
       deployingScenario: ProcessName,
       deployingScenarioProcessingType: ProcessingType,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
-  )(withinLimitsAction: IO[ACTION_RESULT])(implicit user: LoggedUser): IO[Either[LimitError, ACTION_RESULT]] = {
+  )(withinLimitsAction: IO[ACTION_RESULT]): IO[Either[LimitError, ACTION_RESULT]] = {
     limitsServiceLock.surround {
       val result = for {
         _      <- checkAllLimits(deployingScenario, deployingScenarioProcessingType, deploymentUpdateStrategy)
@@ -48,7 +50,7 @@ class LimitsService(
       deployingScenario: ProcessName,
       deployingScenarioProcessingType: ProcessingType,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
-  )(implicit user: LoggedUser) = {
+  ) = {
     for {
       _ <- checkPerProcessingTypeLimits(deployingScenario, deployingScenarioProcessingType, deploymentUpdateStrategy)
       _ <- checkGlobalLimits(deployingScenario, deploymentUpdateStrategy)
@@ -65,7 +67,7 @@ class LimitsService(
       deployingScenario: ProcessName,
       deployingScenarioProcessingType: ProcessingType,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
-  )(implicit user: LoggedUser): EitherT[IO, MaxActiveScenariosCountExceededError, Unit] = {
+  ): EitherT[IO, MaxActiveScenariosCountExceededError, Unit] = {
     perProcessingTypesLimitsProvider.forProcessingType(deployingScenarioProcessingType) match {
       case Some(LimitsConfig(Some(maxActiveScenariosCount))) =>
         EitherT {
@@ -91,8 +93,7 @@ class LimitsService(
     globalLimitsConfig.maxActiveScenariosCount match {
       case Some(maxActiveScenariosCount) =>
         EitherT {
-          implicit val user: LoggedUser = NussknackerInternalUser.instance
-          val allProcessingTypes        = perProcessingTypesLimitsProvider.all.keys
+          val allProcessingTypes = perProcessingTypesLimitsProvider.all.keys
           getActiveScenariosFor(allProcessingTypes)
             .map { currentlyActiveScenarios =>
               checkCurrentlyActiveScenariosCount(
@@ -114,26 +115,27 @@ class LimitsService(
       maxActiveScenariosCount: Int,
       deploymentUpdateStrategy: DeploymentUpdateStrategy,
   ) = {
-    val maxActiveScenariosIncludingCurrentlyDeployingScenario = deploymentUpdateStrategy match {
+    val activeScenariosCountAfterDeployment = deploymentUpdateStrategy match {
       case ReplaceDeploymentWithSameScenarioName(_) if currentlyActiveScenarios.contains(currentlyDeployingScenario) =>
-        maxActiveScenariosCount + 1
+        currentlyActiveScenarios.size
       case ReplaceDeploymentWithSameScenarioName(_) | DontReplaceDeployment =>
-        maxActiveScenariosCount
+        currentlyActiveScenarios.size + 1
     }
-    if (currentlyActiveScenarios.size + 1 <= maxActiveScenariosIncludingCurrentlyDeployingScenario) {
+
+    if (activeScenariosCountAfterDeployment <= maxActiveScenariosCount) {
       Right(())
     } else {
       logger.debug(s"""Active scenarios limit ($maxActiveScenariosCount) exceeded.
-           |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
-           |Scenario is being deployed: $currentlyDeployingScenario.
-           |""".stripMargin)
+                      |Active scenarios: ${currentlyActiveScenarios.map(_.value).mkString(", ")}.
+                      |Scenario is being deployed: $currentlyDeployingScenario.
+                      |""".stripMargin)
       Left(MaxActiveScenariosCountExceededError(maxActiveScenariosCount))
     }
   }
 
   private def getActiveScenariosFor(
       processingTypes: Iterable[ProcessingType]
-  )(implicit user: LoggedUser): IO[Set[ProcessName]] = {
+  ): IO[Set[ProcessName]] = {
     IO
       .both(
         oldDeploymentsApproachScenarioStatusProvider.getActiveScenariosFor(processingTypes),

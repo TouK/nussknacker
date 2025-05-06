@@ -147,7 +147,7 @@ class DeploymentService(
 
   private def getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata: ScenarioMetadata) = {
     val nonPerformingDeploymentStatuses =
-      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
+      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, DeploymentStatusName.problemStatusName)
     EitherT.right(
       deploymentRepository.getScenarioDeploymentsInNotMatchingStatus(
         scenarioMetadata.id,

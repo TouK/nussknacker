@@ -138,7 +138,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
               Example.of(
                 GetDeploymentStatusResponse(
                   DeploymentStatus.Problem.Failed.name,
-                  DeploymentStatus.Problem.Failed.description,
+                  Some(DeploymentStatus.Problem.Failed.problemDescription),
                   exampleInstant
                 ),
                 Some("PROBLEM status")

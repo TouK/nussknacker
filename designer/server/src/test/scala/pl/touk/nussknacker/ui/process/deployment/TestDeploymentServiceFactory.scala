@@ -83,6 +83,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
     )
 
     val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
+      deploymentManagerProvider,
       TestFactory.newDeploymentRepository(dbRef, clock),
       dbioRunner
     )

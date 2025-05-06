@@ -86,26 +86,23 @@ class ScenarioStatusProvider(
     IO.fromFuture {
       IO {
         implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-        dbioRunner.run(for {
-          scenarios <- processRepository.fetchLatestProcessesDetails[Unit](
-            ScenarioQuery.empty
-              .copy(isFragment = Some(false), isArchived = Some(false), processingTypes = Some(processingTypes))
+        for {
+          scenariosForGivenProcessingTypes <- dbioRunner.run(
+            processRepository.fetchLatestProcessesDetails[Unit](
+              ScenarioQuery.empty
+                .copy(isFragment = Some(false), isArchived = Some(false), processingTypes = Some(processingTypes))
+            )
           )
-          activeScenarios <- DBIOAction
-            .sequence {
-              scenarios.map { process =>
-                for {
-                  inProgressActionNames <- actionRepository.getInProgressActionNames(process.processId)
-                  scenarioStatus <- getScenarioStatusFetchingDeploymentsStatusesFromManager(
-                    process,
-                    inProgressActionNames
-                  )
-                } yield {
-                  if (ActiveScenariosStatuses.contains(scenarioStatus)) Some(process.name) else None
+          activeScenarios <- getScenariosStatuses(scenariosForGivenProcessingTypes)
+            .map { statuses =>
+              statuses
+                .zip(scenariosForGivenProcessingTypes)
+                .collect {
+                  case (Some(status), process) if ActiveScenariosStatuses.contains(status) =>
+                    process.name
                 }
-              }
             }
-        } yield activeScenarios.flatten.toSet)
+        } yield activeScenarios.toSet
       }
     }
   }

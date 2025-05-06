@@ -1,13 +1,7 @@
 package pl.touk.nussknacker.ui.process.newdeployment.synchronize
 
 import cats.implicits.toTraverseOps
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeploymentStatus,
-  DeploymentSynchronisationSupport,
-  DeploymentSynchronisationSupported,
-  NoDeploymentSynchronisationSupport,
-  ProblemDeploymentStatus
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
@@ -27,7 +21,7 @@ class DeploymentsStatusesSynchronizer(
 
   def synchronizeAll(): Future[Unit] = {
     val finalStatusesNames =
-      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
+      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, DeploymentStatusName.problemStatusName)
     synchronizationSupport
       .all(NussknackerInternalUser.instance)
       .toList

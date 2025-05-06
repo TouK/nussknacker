@@ -459,8 +459,9 @@ object DomainServices extends LazyLogging {
       perProcessingTypesLimitsProvider = processingTypeServicesProvider.mapValues(_.limitsConfig),
       oldDeploymentsApproachScenarioStatusProvider = scenarioStatusProvider,
       newDeploymentsApproachScenarioStatusProvider = new newdeployment.ScenarioStatusProvider(
-        deploymentRepository,
-        dbioRunner
+        processingTypeChecker = processingTypeServicesProvider,
+        deploymentRepository = deploymentRepository,
+        dbioRunner = dbioRunner
       )
     )
   }

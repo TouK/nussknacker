@@ -79,7 +79,7 @@ class DeploymentApiHttpService(
               _.map { statusWithModifiedAt =>
                 GetDeploymentStatusResponse(
                   statusWithModifiedAt.value.name,
-                  statusWithModifiedAt.value.description,
+                  statusWithModifiedAt.value.problemDescription,
                   statusWithModifiedAt.modifiedAt.toInstant
                 )
               }.left.map {

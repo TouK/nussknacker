@@ -145,6 +145,7 @@ trait NuResourcesTest
 
   protected val newApproachScenarioStatusProvider: NewApproachScenarioStatusProvider =
     new NewApproachScenarioStatusProvider(
+      mapProcessingTypeDataProvider(Streaming.stringify -> ()),
       TestFactory.newDeploymentRepository(testDbRef, clock),
       dbioRunner
     )

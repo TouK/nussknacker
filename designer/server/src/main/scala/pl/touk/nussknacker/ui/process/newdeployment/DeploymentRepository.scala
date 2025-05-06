@@ -105,9 +105,11 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
   def updateDeploymentStatus(id: DeploymentId, status: DeploymentStatus): DB[Boolean] = {
     toEffectAll(
       deploymentsTable
-        .filter(d => d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= status.description))
+        .filter(d =>
+          d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= status.problemDescription)
+        )
         .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt))
-        .update((status.name, status.description, Timestamp.from(clock.instant())))
+        .update((status.name, status.problemDescription, Timestamp.from(clock.instant())))
         .map(_ > 0)
     )
   }
