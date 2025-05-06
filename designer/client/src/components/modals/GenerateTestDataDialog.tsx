@@ -1,12 +1,17 @@
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { Typography } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { isEmpty } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
 import HttpService from "../../http/HttpService";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { NodeInput } from "../FormElements";
 import {
     extendErrors,
     getValidationErrorsForField,
@@ -15,13 +20,9 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import { NodeInput } from "../FormElements";
-import ValidationLabels from "./ValidationLabels";
-import { isEmpty } from "lodash";
-import { Typography } from "@mui/material";
-import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
+import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import ValidationLabels from "./ValidationLabels";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -35,7 +36,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     });
 
     const confirmAction = useCallback(async () => {
-        await HttpService.generateTestData(processName, testSampleSize, scenarioGraph);
+        await HttpService.generateTestData(processName, scenarioGraph, parseInt(testSampleSize));
         props.close();
     }, [processName, testSampleSize, scenarioGraph, props]);
 

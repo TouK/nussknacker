@@ -1,15 +1,17 @@
 import { css } from "@emotion/css";
 import { ExpandLess, MoreHoriz } from "@mui/icons-material";
 import { Box, styled } from "@mui/material";
-import { CSSObject } from "@mui/styled-engine";
+import type { CSSObject } from "@mui/styled-engine";
 import { Allotment } from "allotment";
 import type { AllotmentHandle } from "allotment/dist/types/src/allotment";
 import { sum } from "lodash";
-import React, { PropsWithChildren, useCallback, useRef, useState } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import "allotment/dist/style.css";
+import { ErrorBoundary } from "react-error-boundary";
+
 import { getScrollStyle } from "../node/StyledHeader";
 import { VariableContextTree } from "./VariableContextTree";
-import { ErrorBoundary } from "react-error-boundary";
 
 const shadowClassName = css({
     boxShadow: "0px 0px 15px rgba(0,0,0,0.2)",
@@ -53,16 +55,16 @@ export const InputOutputLayout = function InputOutputWrapper({ children }: Props
     }, []);
 
     const prevSizes = useRef<number[]>([0, 0, 0]);
-    const togglePanel = useCallback((index: number, collapsedSize: number) => {
-        const prevSize = prevSizes.current[index];
+
+    const togglePanel = useCallback((index: number, collapsedSize: number, shouldCollapse = sizes.current[index] > collapsedSize * 2) => {
         const currentSize = sizes.current[index];
+        const prevSize = prevSizes.current[index];
         const defaultSize = 0.2 * sum(sizes.current);
-        const shouldCollapse = currentSize > collapsedSize * 2;
         const newSize = shouldCollapse ? collapsedSize : Math.max(prevSize, defaultSize);
         const updatedCenter = sizes.current[1] + (shouldCollapse ? currentSize : collapsedSize) - newSize;
 
         prevSizes.current = sizes.current;
-        ref.current.resize(
+        ref.current?.resize(
             sizes.current.map((size, i) => {
                 if (i === index) return newSize;
                 if (i === 1) return updatedCenter;
@@ -85,13 +87,34 @@ export const InputOutputLayout = function InputOutputWrapper({ children }: Props
         setRightCollapsed(right < collapsedSize * 2);
     }, []);
 
+    const [leftHidden, setLeftHidden] = useState(false);
+    const [rightHidden, setRightHidden] = useState(false);
+
     return (
         <Wrapper>
             <Allotment ref={ref} onChange={onChange} defaultSizes={[278, 820, 278]}>
-                <Allotment.Pane preferredSize="20%" minSize={collapsedSize}>
-                    <SidePanelBox sx={{ alignItems: "flex-start", overflowY: leftCollapsed ? "hidden" : "auto" }}>
+                <Allotment.Pane
+                    preferredSize="20%"
+                    minSize={leftHidden ? 0 : collapsedSize}
+                    maxSize={leftHidden ? 0 : Infinity}
+                    visible={!leftHidden}
+                >
+                    <SidePanelBox
+                        sx={{
+                            alignItems: "flex-start",
+                            overflowY: leftCollapsed ? "hidden" : "auto",
+                        }}
+                    >
                         <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
-                            <VariableContextTree direction="input" />
+                            <VariableContextTree
+                                direction="input"
+                                onIsEmptyChange={(isEmpty) => {
+                                    setLeftHidden(isEmpty);
+                                    if (isEmpty) {
+                                        togglePanel(0, 0, true);
+                                    }
+                                }}
+                            />
                         </ErrorBoundary>
                     </SidePanelBox>
                     <PanelButton side="left" collapsed={leftCollapsed} onClick={() => togglePanel(0, collapsedSize)}>
@@ -101,10 +124,28 @@ export const InputOutputLayout = function InputOutputWrapper({ children }: Props
                 <Allotment.Pane preferredSize="60%" minSize={820} className={shadowClassName}>
                     {children}
                 </Allotment.Pane>
-                <Allotment.Pane preferredSize="20%" minSize={collapsedSize}>
-                    <SidePanelBox sx={{ alignItems: "flex-end", overflowY: rightCollapsed ? "hidden" : "auto" }}>
+                <Allotment.Pane
+                    preferredSize="20%"
+                    minSize={rightHidden ? 0 : collapsedSize}
+                    maxSize={rightHidden ? 0 : Infinity}
+                    visible={!rightHidden}
+                >
+                    <SidePanelBox
+                        sx={{
+                            alignItems: "flex-end",
+                            overflowY: rightCollapsed ? "hidden" : "auto",
+                        }}
+                    >
                         <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
-                            <VariableContextTree direction="output" />
+                            <VariableContextTree
+                                direction="output"
+                                onIsEmptyChange={(isEmpty) => {
+                                    setRightHidden(isEmpty);
+                                    if (isEmpty) {
+                                        togglePanel(2, 0, isEmpty);
+                                    }
+                                }}
+                            />
                         </ErrorBoundary>
                     </SidePanelBox>
                     <PanelButton side="right" collapsed={rightCollapsed} onClick={() => togglePanel(2, collapsedSize)}>
@@ -132,7 +173,10 @@ const SidePanelBox = styled(Box)(({ theme }) => ({
 
 const PanelButton = styled("button", {
     shouldForwardProp: (prop) => prop !== "side" && prop !== "collapsed",
-})<{ side?: "center" | "left" | "right"; collapsed?: boolean }>(({ side, collapsed, theme }) => {
+})<{
+    side?: "center" | "left" | "right";
+    collapsed?: boolean;
+}>(({ side, collapsed, theme }) => {
     const styles: CSSObject = {
         position: "absolute",
         bottom: "50%",

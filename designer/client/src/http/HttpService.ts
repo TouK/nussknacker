@@ -174,6 +174,7 @@ type ResponseStatus = { status: "success"; data?: any } | { status: "error"; err
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
+    #skipResultsPerTransition = null;
 
     setNotificationActions(na: NotificationActions) {
         this.#notificationActions = na;
@@ -698,12 +699,12 @@ class HttpService {
         return promise;
     }
 
-    generateTestData(processName: string, testSampleSize: string, scenarioGraph: ScenarioGraph): Promise<AxiosResponse> {
+    generateTestData(processName: string, scenarioGraph: ScenarioGraph, numberOfSamples: number): Promise<AxiosResponse> {
         const promise = api.post(
             `/scenarioTesting/${encodeURIComponent(processName)}/generatedTestData`,
             {
                 scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
-                numberOfSamples: +testSampleSize,
+                numberOfSamples,
             },
             {
                 responseType: "blob",
@@ -790,14 +791,18 @@ class HttpService {
         return promise;
     }
 
-    testProcess(processName: ProcessName, file: File, scenarioGraph: ScenarioGraph): Promise<AxiosResponse<TestProcessResponse>> {
+    testScenarioWithFile(processName: ProcessName, scenarioGraph: ScenarioGraph, file: File) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const data = new FormData();
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}?skipResultsPerTransition=true`, data);
+        const promise = api.post<TestProcessResponse>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+            params: {
+                skipResultsPerTransition: this.#skipResultsPerTransition,
+            },
+        });
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
@@ -810,49 +815,35 @@ class HttpService {
         return promise;
     }
 
-    testProcessWithParameters(
-        processName: ProcessName,
-        testData: SourceWithParametersTest,
+    testScenario(
+        processName: string,
         scenarioGraph: ScenarioGraph,
-    ): Promise<AxiosResponse<TestProcessResponse>> {
+        testData:
+            | {
+                  type: "WITH_PARAMETERS";
+                  sourceParameters: SourceWithParametersTest;
+              }
+            | {
+                  type: "WITH_GENERATED_DATA";
+                  numberOfSamples: number;
+              },
+    ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const request = {
-            testData: {
-                type: "WITH_PARAMETERS",
-                sourceParameters: testData,
+        const promise = api.post<TestProcessResponse>(
+            `/scenarioTesting/${encodeURIComponent(processName)}/performTest`,
+            {
+                testData,
+                scenarioGraph: sanitized,
             },
-            scenarioGraph: sanitized,
-        };
-
-        const promise = api.post(`/scenarioTesting/${encodeURIComponent(processName)}/performTest?skipResultsPerTransition=true`, request);
+            {
+                params: {
+                    skipResultsPerTransition: this.#skipResultsPerTransition,
+                },
+            },
+        );
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
-                    axiosError: handleAxiosError(error),
-                }),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
-    testScenarioWithGeneratedData(
-        processName: ProcessName,
-        testSampleSize: number,
-        scenarioGraph: ScenarioGraph,
-    ): Promise<AxiosResponse<TestProcessResponse>> {
-        const request = {
-            testData: {
-                type: "WITH_GENERATED_DATA",
-                numberOfSamples: testSampleSize,
-            },
-            scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
-        };
-        const promise = api.post(`/scenarioTesting/${encodeURIComponent(processName)}/performTest?skipResultsPerTransition=true`, request);
-        promise.catch((error: AxiosError) =>
-            this.#addError(
-                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test due to: {{axiosError}}", {
                     axiosError: handleAxiosError(error),
                 }),
                 error,

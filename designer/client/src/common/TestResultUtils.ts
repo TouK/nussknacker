@@ -53,10 +53,17 @@ export interface TestFormParameters {
     parameters: UIParameter[];
 }
 
+export type TransitionResults = {
+    sourceNodeId: NodeId;
+    destinationNodeId: NodeId;
+    results: Context[];
+};
+
 export interface TestResults {
     externalInvocationResults: Record<NodeId, ExternalInvocationResult[]>;
     invocationResults: Record<NodeId, InvocationResult[]>;
     nodeResults: Record<NodeId, Context[]>;
+    nodeTransitionResults: Array<TransitionResults>;
     exceptions: Error[];
 }
 
