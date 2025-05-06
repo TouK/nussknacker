@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.effect.IO
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
+import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -16,8 +17,8 @@ class ScenarioStatusProvider(
       processingTypes: Iterable[ProcessingType]
   )(implicit user: LoggedUser): IO[Set[ProcessName]] = {
     for {
-      allowedProcessingTypes <- onlyAllowedProcessingTypes(processingTypes)
-      deployments            <- processingTypesDeploymentsRelatedTo(allowedProcessingTypes)
+      _           <- checkIfProcessingTypesAreAllowed(processingTypes)
+      deployments <- processingTypesDeploymentsRelatedTo(processingTypes)
     } yield {
       deployments.flatMap { deployment =>
         if (deployment.status.isActive) Some(deployment.scenarioName) else None
@@ -25,10 +26,13 @@ class ScenarioStatusProvider(
     }
   }
 
-  private def onlyAllowedProcessingTypes(processingTypes: Iterable[ProcessingType])(implicit user: LoggedUser) = {
+  private def checkIfProcessingTypesAreAllowed(processingTypes: Iterable[ProcessingType])(implicit user: LoggedUser) = {
     IO.delay {
-      processingTypes.filter { processingType =>
-        processingTypeChecker.forProcessingType(processingType).isDefined
+      processingTypes.foreach { processingType =>
+        processingTypeChecker.forProcessingTypeE(processingType) match {
+          case Left(error: UnauthorizedError) => throw error
+          case Right(_)                       =>
+        }
       }
     }
   }
