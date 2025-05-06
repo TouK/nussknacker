@@ -728,23 +728,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("find redundant service parameters") {
-    val serviceId  = "serviceId"
-    val definition = baseDefinitionBuilder.withService(serviceId).build
-
-    val redundantServiceParameter = "foo"
-
-    val processWithInvalidServiceInvocation =
-      ScenarioBuilder
-        .streaming("process1")
-        .source("id1", "source")
-        .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'".spel)
-
-    validate(processWithInvalidServiceInvocation, definition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(_, _), _)) =>
-    }
-  }
-
   test("find missing source") {
     val serviceId = "serviceId"
     val processWithRefToMissingService =
@@ -1231,8 +1214,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("not allow customNode outputVar when no return type in definition") {
-    val processWithInvalidExpresssion =
+  test("allow customNode outputVar when no return type in definition - it will be reported only as a warning in logs") {
+    val processWithOutputWhenNoOutputNeeded =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
@@ -1240,9 +1223,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
-    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set(ParameterName("OutputVariable")) =>
-    }
+    validate(processWithOutputWhenNoOutputNeeded, baseDefinition).result shouldBe Symbol("valid")
   }
 
   test("require customNode outputVar when return type in definition") {

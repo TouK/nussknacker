@@ -138,7 +138,7 @@ object CompilationResult extends Applicative[CompilationResult] {
               s"This can be a bug in code or duplicated node ids with same expression ids"
           )
         }
-        if (x.parameters.isDefined && y.parameters.isDefined) {
+        if (x.parameters.isDefined && y.parameters.isDefined && y.parameters != x.parameters) {
           logger.warn(
             s"Merging different parameters: ${x.parameters} and ${y.parameters}. " +
               s"This can be a bug in code or duplicated node ids with same expression ids"
