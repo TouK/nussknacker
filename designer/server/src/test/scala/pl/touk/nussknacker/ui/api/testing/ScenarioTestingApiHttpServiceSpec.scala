@@ -41,7 +41,6 @@ trait ScenarioTestingApiHttpServiceSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
-    with WithAdHocTestParameters
     with WithAdHocTestsLogic {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -364,9 +363,6 @@ trait ScenarioTestingApiHttpServiceSpec
     "return no errors on valid parameters" in {
       shouldValidateParametersProperly()
     }
-    "return errors if passed parameter is not valid" in {
-      shouldReturnErrorsForInvalidParameters()
-    }
   }
 
   "The endpoint for adhoc test run should" - {
@@ -384,15 +380,6 @@ trait ScenarioTestingApiHttpServiceSpec
   private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
 
   private def testDataGenerationRequest(
-      scenarioGraphStr: String,
-      numberOfSamples: Int,
-  ) =
-    s"""{
-       |  "scenarioGraph": $scenarioGraphStr,
-       |  "numberOfSamples": $numberOfSamples
-       |}""".stripMargin
-
-  private def capabilitiesResponse(
       scenarioGraphStr: String,
       numberOfSamples: Int,
   ) =

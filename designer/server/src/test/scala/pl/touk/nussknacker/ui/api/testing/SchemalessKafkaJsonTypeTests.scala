@@ -47,7 +47,7 @@ import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests.{
   sinkTopicName,
   sourceTopicName,
   variablesNodeName,
-  WithSchemalessAdHocTestParameters
+  WithSchemalessAdHocTestsLogic
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
@@ -64,7 +64,8 @@ class SchemalessKafkaJsonTypeTests
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
     with WithAdHocTestsLogic
-    with WithSchemalessAdHocTestParameters
+    with WithSchemalessAdHocTestsLogic
+    with WithAdHocInvalidParametersTestsLogic
     with WithDockerContainers
     with ForAllTestContainer
     with StrictLogging {
@@ -197,7 +198,10 @@ class SchemalessKafkaJsonTypeTests
 
 object SchemalessKafkaJsonTypeTests {
 
-  private[SchemalessKafkaJsonTypeTests] trait WithSchemalessAdHocTestParameters extends WithAdHocTestParameters {
+  private[SchemalessKafkaJsonTypeTests] trait WithSchemalessAdHocTestsLogic
+      extends WithAdHocTestsLogic
+      with WithAdHocInvalidParametersTestsLogic {
+    self: WithSimplifiedConfigScenarioHelper with NuItTest =>
 
     override protected def exampleScenarioSourceId: String = "start"
 

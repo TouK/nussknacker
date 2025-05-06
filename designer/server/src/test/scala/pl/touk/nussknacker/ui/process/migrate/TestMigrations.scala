@@ -57,8 +57,8 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
           ServiceRef(
-            ProcessTestData.existingServiceId,
-            NodeParameter(ParameterName("newParam"), "'abc'".spel) :: parameters
+            "non-existing-service-id",
+            List.empty
           )
         )
     }
@@ -73,8 +73,8 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
           ServiceRef(
-            ProcessTestData.existingServiceId,
-            NodeParameter(ParameterName("newParam"), "'abc'".spel) :: parameters
+            "non-existing-service-id",
+            List.empty
           )
         )
     }
@@ -142,8 +142,8 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override val description = "testMigration9"
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, parameters), _) =>
-        n.copy(ref = ref.copy(parameters = NodeParameter(ParameterName("newParam"), "'abc'".spel) :: parameters))
+      case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
+        n.copy(ref = ref.copy(typ = "non-existing-source"))
     }
 
   }

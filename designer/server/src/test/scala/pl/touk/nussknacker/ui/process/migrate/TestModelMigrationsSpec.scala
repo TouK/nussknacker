@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingService, MissingSourceFactory}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -61,7 +61,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
+    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[MissingService].getSimpleName))
   }
 
   test("should detect failed migration on multiple sources scenario") {
@@ -71,18 +71,9 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val results = testMigration.testMigrations(List(scenarioGraph), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map(
-      "source1" -> List(classOf[RedundantParameters].getSimpleName),
-      "source2" -> List(classOf[RedundantParameters].getSimpleName)
+      "source1" -> List(classOf[MissingSourceFactory].getSimpleName),
+      "source2" -> List(classOf[MissingSourceFactory].getSimpleName)
     )
-  }
-
-  test("should ignore failed migration when it may fail") {
-    val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
-    val process       = wrapWithDetailsForMigration(validScenarioGraph)
-
-    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
-
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
   }
 
   test("should report only new errors") {
@@ -109,7 +100,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
+    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[MissingService].getSimpleName))
   }
 
   test("should migrate fragment and its usage within scenario") {
