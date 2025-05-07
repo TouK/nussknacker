@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 import java.util.UUID
@@ -20,7 +21,7 @@ class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       DeploymentStatusDetails(
-        ProblemStateStatus(
+        GeneralProblemStateStatus(
           description = "More than one deployment is running.",
           allowedActions = Set(ScenarioActionName.Cancel),
           tooltip = Some(
@@ -41,7 +42,7 @@ class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       DeploymentStatusDetails(
-        ProblemStateStatus(
+        GeneralProblemStateStatus(
           description = "More than one deployment is running.",
           allowedActions = Set(ScenarioActionName.Cancel),
           tooltip = Some(

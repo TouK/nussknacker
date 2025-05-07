@@ -10,7 +10,10 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ActiveScenariosStatuses, ProblemStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{
+  CanBeConsideredAsActiveStatus,
+  ProblemStateStatus
+}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.ScenarioQuery
@@ -98,7 +101,7 @@ class ScenarioStatusProvider(
               statuses
                 .zip(scenariosForGivenProcessingTypes)
                 .collect {
-                  case (Some(status), process) if ActiveScenariosStatuses.contains(status) =>
+                  case (Some(status), process) if status.isActive =>
                     process.name
                 }
             }

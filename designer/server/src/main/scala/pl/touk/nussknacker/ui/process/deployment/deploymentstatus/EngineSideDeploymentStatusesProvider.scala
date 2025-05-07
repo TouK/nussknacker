@@ -74,9 +74,9 @@ class EngineSideDeploymentStatusesProvider(
       .flatMap(_.getDeploymentStatuses(scenarioIdData))
       .map { prefetchedStatusDetails =>
         logger.whenWarnEnabled(prefetchedStatusDetails.value.foreach {
-          case DeploymentStatusDetails(ProblemStateStatus(description, _, _), deploymentId, version) =>
+          case DeploymentStatusDetails(status: ProblemStateStatus, deploymentId, version) =>
             logger.warn(
-              s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. $description"
+              s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. ${status.description}"
             )
           case _ => ()
         })
@@ -102,9 +102,9 @@ class EngineSideDeploymentStatusesProvider(
         logger.whenWarnEnabled(
           withDataFreshnessStatus.value.values.foreach { deploymentStatusDetails =>
             deploymentStatusDetails.foreach {
-              case DeploymentStatusDetails(ProblemStateStatus(description, _, _), deploymentId, version) =>
+              case DeploymentStatusDetails(status: ProblemStateStatus, deploymentId, version) =>
                 logger.warn(
-                  s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. $description"
+                  s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. ${status.description}"
                 )
               case _ => ()
             }

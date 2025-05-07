@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
@@ -15,20 +15,37 @@ object SimpleStateStatus {
       case status: NoAttributesDeploymentStatus => NoAttributesStateStatus(status.name.value)
       // We assume that all deployment status have default allowedActions. Non-default allowedActions have only
       // statuses that are not deployment statuses but scenario statuses.
-      case status: ProblemDeploymentStatus => ProblemStateStatus(status.problemDescription)
+      case status: ProblemDeploymentStatus => GeneralProblemStateStatus(status.problemDescription)
     }
   }
 
-  // Represents general problem.
-  final case class ProblemStateStatus(
-      description: String,
-      allowedActions: Set[ScenarioActionName] = defaultActions,
-      tooltip: Option[String] = None
-  ) extends StateStatus {
+  sealed trait ProblemStateStatus extends StateStatus {
     override def name: StatusName = ProblemStateStatus.name
+    def description: String
+    def allowedActions: Set[ScenarioActionName]
+    def tooltip: Option[String]
   }
 
   object ProblemStateStatus {
+
+    final case class ShouldNotBeRunning(
+        deployed: Boolean,
+        override val allowedActions: Set[ScenarioActionName] = defaultActions,
+        override val tooltip: Option[String] = None
+    ) extends ProblemStateStatus {
+
+      val description: String =
+        if (deployed) "Scenario has been canceled but still is running."
+        else "Scenario has been never deployed but now is running."
+
+    }
+
+    final case class GeneralProblemStateStatus(
+        override val description: String,
+        override val allowedActions: Set[ScenarioActionName] = defaultActions,
+        override val tooltip: Option[String] = None
+    ) extends ProblemStateStatus
+
     val name: String = "PROBLEM"
 
     def isProblemStatus(status: StateStatus): Boolean = status.name == name
@@ -40,38 +57,34 @@ object SimpleStateStatus {
 
     // Problem factory methods
 
-    val Failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
+    val Failed: ProblemStateStatus = GeneralProblemStateStatus(defaultDescription)
 
     val ArchivedShouldBeCanceled: ProblemStateStatus =
-      ProblemStateStatus("Archived scenario should be canceled.", Set(ScenarioActionName.Cancel))
+      GeneralProblemStateStatus("Archived scenario should be canceled.", Set(ScenarioActionName.Cancel))
 
     val FailedToGet: ProblemStateStatus =
-      ProblemStateStatus(s"Failed to get a state of the scenario.")
+      GeneralProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user is not running.")
+      GeneralProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user is not running.")
 
     def mismatchDeployedVersion(
         deployedVersionId: VersionId,
         exceptedVersionId: VersionId,
         user: String
     ): ProblemStateStatus =
-      ProblemStateStatus(
+      GeneralProblemStateStatus(
         s"Scenario deployed in version $deployedVersionId by $user, expected version $exceptedVersionId."
       )
 
-    def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus = {
-      val shouldNotBeRunningMessage =
-        if (deployed) "Scenario has been canceled but still is running."
-        else "Scenario has been never deployed but now is running."
-      ProblemStateStatus(shouldNotBeRunningMessage)
-    }
+    def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus =
+      ShouldNotBeRunning(deployed)
 
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
+      GeneralProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
     def multipleJobsRunning(nonFinalDeploymentIds: List[(DeploymentId, StateStatus)]): ProblemStateStatus =
-      ProblemStateStatus(
+      GeneralProblemStateStatus(
         description = "More than one deployment is running.",
         allowedActions = Set(ScenarioActionName.Cancel),
         tooltip = Some(
@@ -85,6 +98,19 @@ object SimpleStateStatus {
 
   }
 
+  implicit class CanBeConsideredAsActiveStatus(val status: StateStatus) extends AnyVal {
+
+    def isActive: Boolean = {
+      status match {
+        case _: ProblemStateStatus.ShouldNotBeRunning => true
+        case _: GeneralProblemStateStatus             => false
+        case `Restarting`                             => true
+        case status                                   => DefaultFollowingDeployStatuses.contains(status)
+      }
+    }
+
+  }
+
   val NotDeployed: StateStatus  = StateStatus("NOT_DEPLOYED")
   val DuringDeploy: StateStatus = StateStatus("DURING_DEPLOY")
   val Running: StateStatus      = StateStatus("RUNNING")
@@ -94,7 +120,6 @@ object SimpleStateStatus {
   val Canceled: StateStatus     = StateStatus("CANCELED")
 
   val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringDeploy, Running)
-  val ActiveScenariosStatuses: Set[StateStatus]        = DefaultFollowingDeployStatuses + Restarting
 
   def isFinalOrTransitioningToFinalStatus(status: StateStatus): Boolean =
     List(SimpleStateStatus.Finished, SimpleStateStatus.DuringCancel, SimpleStateStatus.Canceled).contains(
@@ -120,7 +145,8 @@ object SimpleStateStatus {
       Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
-    case SimpleStateStatus.ProblemStateStatus(_, allowedActions, _) => allowedActions
+    case ProblemStateStatus.ShouldNotBeRunning(_, allowedActions, _) => allowedActions
+    case GeneralProblemStateStatus(_, allowedActions, _)             => allowedActions
   }
 
   val definitions: Map[StatusName, StateDefinitionDetails] = Map(
