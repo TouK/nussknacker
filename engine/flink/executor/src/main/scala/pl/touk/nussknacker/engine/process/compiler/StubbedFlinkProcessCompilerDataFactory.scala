@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.RuntimeMode
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.api.{NodeId, Params, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   ComponentType,
@@ -37,6 +37,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     runtimeMode: RuntimeMode,
     configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     nodesDeploymentData: NodesDeploymentData,
+    processListeners: List[ProcessListener],
 ) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
@@ -44,6 +45,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       runtimeMode,
       configsFromProviderWithDictionaryEditor,
       nodesDeploymentData,
+      processListeners,
     ) {
 
   override protected def adjustDefinitions(

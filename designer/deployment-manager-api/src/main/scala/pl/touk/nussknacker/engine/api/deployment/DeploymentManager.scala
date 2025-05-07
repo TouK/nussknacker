@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import cats.effect.{IO, Resource, SyncIO}
+import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.newdeployment
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import java.time.Instant
 import scala.concurrent.Future
@@ -32,6 +34,8 @@ trait DeploymentManager extends AutoCloseable {
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
   def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies]
+
+  def liveDataPreviewSupport: LiveDataPreviewSupport
 
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())
@@ -90,3 +94,15 @@ trait SchedulingSupported extends SchedulingSupport {
 }
 
 case object NoSchedulingSupport extends SchedulingSupport
+
+sealed trait LiveDataPreviewSupport
+
+trait LiveDataPreviewSupported extends LiveDataPreviewSupport {
+
+  def getLiveData(
+      processIdWithName: ProcessIdWithName,
+  ): Future[TestResults[Json]]
+
+}
+
+case object NoLiveDataPreviewSupport extends LiveDataPreviewSupport

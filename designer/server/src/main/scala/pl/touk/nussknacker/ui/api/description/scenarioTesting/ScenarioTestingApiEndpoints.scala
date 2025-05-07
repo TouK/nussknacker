@@ -20,7 +20,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError
-import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.{
+  BadRequestTestingError,
+  NotFoundTestingError
+}
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.BadRequestTestingError.{
   ScenarioGraphValidationError,
   TooManyCharactersGenerated,
@@ -189,6 +192,27 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "performTest")
       .in(jsonBody[PerformTestRequest])
+      .in(skipResultsPerNodeQueryParam)
+      .in(skipResultsPerTransitionQueryParam)
+      .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
+      .errorOut(
+        oneOf[TestingError](
+          noScenarioErrorOutput
+        )
+      )
+      .withSecurity(auth)
+
+  def scenarioLiveDataEndpoint: SecuredEndpoint[
+    (ProcessName, Option[SkipResultsPerNode], Option[SkipResultsPerTransition]),
+    TestingError,
+    ResultsWithCountsDto,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Perform test")
+      .tag("Testing")
+      .get
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "liveData")
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
       .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))

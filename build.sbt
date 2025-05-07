@@ -647,6 +647,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
   )
   .dependsOn(
     deploymentManagerApi % Provided,
+    // For testResultsVariableEncoder purpose
+    scenarioCompiler     % Provided,
     scenarioCompilerFlinkDeps,
     flinkMiniCluster,
     commonUtils          % Provided,

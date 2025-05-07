@@ -60,7 +60,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       modelConfig,
       runtimeMode,
       configsFromProviderWithDictionaryEditor,
-      nodesData
+      nodesData,
+      List.empty,
     ) {
 
       override protected def adjustDefinitions(

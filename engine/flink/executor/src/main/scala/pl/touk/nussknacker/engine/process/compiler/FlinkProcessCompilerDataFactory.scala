@@ -48,18 +48,20 @@ class FlinkProcessCompilerDataFactory(
     runtimeMode: RuntimeMode,
     configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     nodesData: NodesDeploymentData,
+    processListeners: List[ProcessListener],
 ) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  def this(modelData: ModelData, deploymentData: DeploymentData) = this(
+  def this(modelData: ModelData, deploymentData: DeploymentData, processListeners: List[ProcessListener]) = this(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
     runtimeMode = RuntimeMode.Live,
     modelData.additionalConfigsFromProvider,
-    nodesData = deploymentData.nodesData
+    nodesData = deploymentData.nodesData,
+    processListeners = processListeners,
   )
 
   def prepareCompilerData(
@@ -86,7 +88,7 @@ class FlinkProcessCompilerDataFactory(
         modelConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
       )
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelDependencies)
-    val listenersToUse   = adjustListeners(defaultListeners, modelDependencies)
+    val listenersToUse   = adjustListeners(defaultListeners, modelDependencies) ++ processListeners
 
     val (definitionWithTypes, dictRegistry) = definitions(modelDependencies, userCodeClassLoader)
 

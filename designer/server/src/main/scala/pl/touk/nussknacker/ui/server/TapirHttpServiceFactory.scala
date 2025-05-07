@@ -117,6 +117,7 @@ object TapirHttpServiceFactory {
       processingTypeToParametersValidator = processingTypeServicesProvider.mapValues(_.parametersValidator),
       processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
       scenarioService = processService,
+      dmDispatcher = dmDispatcher,
     )
 
     val actionInfoHttpService = new ActionInfoHttpService(

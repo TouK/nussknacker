@@ -75,7 +75,7 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
       modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       flinkConfig: FlinkConfig,
-      scenarioStateCacheTTL: Option[FiniteDuration]
+      scenarioStateCacheTTL: Option[FiniteDuration],
   ): Validated[String, DeploymentManager] = {
     logger.info("Creating FlinkStreamingDeploymentManager")
     import dependencies._

@@ -136,6 +136,8 @@ object MockableDeploymentManagerProvider {
 
     override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+    override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
+
     override def managerSpecificScenarioActivities(
         processIdWithName: ProcessIdWithName,
         after: Option[Instant],

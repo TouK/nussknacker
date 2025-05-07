@@ -76,6 +76,28 @@ object TestProcess {
 
   }
 
+  object TestResults {
+
+    def aggregate[T](testResults: Iterable[TestResults[T]]): TestResults[T] = {
+      TestResults[T](
+        nodeResults = mergeMaps(testResults.map(_.nodeResults)),
+        nodeTransitionResults = mergeMaps(testResults.map(_.nodeTransitionResults)),
+        invocationResults = mergeMaps(testResults.map(_.invocationResults)),
+        externalInvocationResults = mergeMaps(testResults.map(_.externalInvocationResults)),
+        exceptions = testResults.flatMap(_.exceptions).toList,
+      )
+    }
+
+    private def mergeMaps[K, V](listOfMaps: Iterable[Map[K, List[V]]]): Map[K, List[V]] = {
+      listOfMaps.foldLeft(Map.empty[K, List[V]]) { case (acc, map) =>
+        map.foldLeft(acc) { case (innerAcc, (key, value)) =>
+          innerAcc.updated(key, innerAcc.getOrElse(key, Nil) ++ value)
+        }
+      }
+    }
+
+  }
+
   final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
 
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)

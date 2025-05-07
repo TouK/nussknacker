@@ -2,12 +2,15 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import io.circe.Json
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPreviewSupported, NoLiveDataPreviewSupport}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ParametersDefinitionError,
   ScenarioTestDataGenerationError,
   TestingCapabilitiesError
 }
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -32,9 +35,10 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.ScenarioTestingApi
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.test.{ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
@@ -49,6 +53,7 @@ class ScenarioTestingApiHttpService(
     scenarioAuthorizer: AuthorizeProcess,
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
+    dmDispatcher: DeploymentManagerDispatcher,
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
@@ -161,6 +166,42 @@ class ScenarioTestingApiHttpService(
             }
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
+            skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
+            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
+          )
+        }
+      }
+  }
+
+  expose {
+    scenarioTestingApiEndpoints.scenarioLiveDataEndpoint
+      .serverSecurityLogic(authorizeKnownUser[TestingError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, skipResultsPerNode, skipResultsPerTransition) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT
+              .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
+            processIdWithName = ProcessIdWithName(processId, scenarioName)
+            _ <- isAuthorized(processId, Permission.Deploy)
+            deploymentManager <- EitherT[Future, TestingError, DeploymentManager] {
+              dmDispatcher.deploymentManager(processIdWithName).map {
+                case Some(deploymentManager) => Right(deploymentManager)
+                case None                    => Left(NoScenario(scenarioName))
+              }
+            }
+            testResults <- EitherT[Future, TestingError, TestResults[Json]] {
+              deploymentManager.liveDataPreviewSupport match {
+                case supported: LiveDataPreviewSupported =>
+                  supported.getLiveData(processIdWithName).map(Right(_))
+                case NoLiveDataPreviewSupport =>
+                  Future.successful(
+                    Left(TestingError.UnsupportedOperation("This scenario does not support live data preview"))
+                  )
+              }
+            }
+          } yield ResultsWithCountsDto.from(
+            ResultsWithCounts(testResults, Map.empty),
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
             skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
           )

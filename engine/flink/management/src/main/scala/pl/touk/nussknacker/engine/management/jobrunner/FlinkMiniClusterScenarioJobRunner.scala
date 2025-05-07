@@ -1,12 +1,23 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
+import io.circe.Json
 import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelDataProvider
-import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
+import pl.touk.nussknacker.engine.api.deployment.{
+  DMRunDeploymentCommand,
+  LiveDataPreviewSupport,
+  LiveDataPreviewSupported
+}
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
+import pl.touk.nussknacker.engine.management.jobrunner.livedata.{
+  LiveDataCollectingListener,
+  LiveDataCollectingListenerHolder
+}
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,12 +57,18 @@ class FlinkMiniClusterScenarioJobRunner(
             command.canonicalProcess,
             command.processVersion,
             command.deploymentData,
-            env
+            env,
+            List(LiveDataCollectingListener.forProcess(command.processVersion.processName)),
           )
           .getJobID
         Some(jobID)
       }
     }
+  }
+
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = new LiveDataPreviewSupported {
+    override def getLiveData(processIdWithName: ProcessIdWithName): Future[TestResults[Json]] =
+      Future(LiveDataCollectingListenerHolder.results(processIdWithName.name))
   }
 
 }

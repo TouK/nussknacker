@@ -42,6 +42,8 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
+
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
     Resource.pure(EngineScenarioCompilationDependencies.empty)
 

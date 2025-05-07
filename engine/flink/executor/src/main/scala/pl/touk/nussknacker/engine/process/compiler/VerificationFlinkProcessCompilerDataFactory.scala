@@ -19,7 +19,8 @@ object VerificationFlinkProcessCompilerDataFactory {
       modelData.modelConfig,
       runtimeMode = RuntimeMode.Live,
       modelData.additionalConfigsFromProvider,
-      NodesDeploymentData.empty
+      NodesDeploymentData.empty,
+      List.empty,
     ) {
 
       override protected def adjustListeners(
