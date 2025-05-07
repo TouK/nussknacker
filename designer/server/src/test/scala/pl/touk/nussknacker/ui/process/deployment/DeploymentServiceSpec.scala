@@ -1009,6 +1009,21 @@ class DeploymentServiceSpec
           }
         }
       }
+      "1st scenario is running, and the 2nd scenario has 'multiple jobs are running' problem, and the 3rd scenario is not deployed" in {
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"))
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"))
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"))
+
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager1.withScenarioStateStatus(scenario2.name, exampleMultipleJobsRunningStatus) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
+                deployExampleScenario(generateScenarioName("scenario4"))
+              }
+            }
+          }
+        }
+      }
     }
     "two processing types are considered" when {
       "1st scenario is running (streaming1), and the 2nd scenario is running (streaming2), and the 3rd scenario is not deployed (streaming1)" in {
@@ -1064,6 +1079,21 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, ProblemStateStatus.shouldNotBeRunning(true)) {
+              deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
+                deployExampleScenario(generateScenarioName("scenario4"))
+              }
+            }
+          }
+        }
+      }
+      "1st scenario is running (streaming1), and the 2nd scenario has 'multiple jobs are running' problem, and the 3rd scenario is not deployed (streaming1)" in {
+        val (scenario1, _) = prepareDeployedScenario(generateScenarioName("scenario1"), Streaming1)
+        val (scenario2, _) = prepareDeployedScenario(generateScenarioName("scenario2"), Streaming2)
+        val scenario3      = prepareNotDeployedScenario(generateScenarioName("scenario3"), Streaming1)
+
+        assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
+          deploymentManager1.withScenarioStateStatus(scenario1.name, SimpleStateStatus.Running) {
+            deploymentManager2.withScenarioStateStatus(scenario2.name, exampleMultipleJobsRunningStatus) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
               }
@@ -1282,5 +1312,10 @@ class DeploymentServiceSpec
       )
     )
   }
+
+  private def exampleMultipleJobsRunningStatus = ProblemStateStatus.multipleJobsRunning(
+    first = DeploymentId(UUID.randomUUID().toString)  -> SimpleStateStatus.Running,
+    second = DeploymentId(UUID.randomUUID().toString) -> SimpleStateStatus.Running
+  )
 
 }
