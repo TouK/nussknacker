@@ -1,6 +1,7 @@
-import { Action } from "../actions/reduxTypes";
-import { NodeValidationError, TypingResult, UIParameter } from "../types";
 import { omit } from "lodash";
+
+import type { Action } from "../actions/reduxTypes";
+import type { NodeValidationError, TypingResult, UIParameter } from "../types";
 
 export type NodeDetailsState = Record<
     string,
@@ -24,13 +25,24 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 },
             };
         }
+        case "NODE_VALIDATION_UPDATING": {
+            const { loading, nodeId } = action;
+            return {
+                ...state,
+                [nodeId]: {
+                    ...state[nodeId],
+                    loading,
+                },
+            };
+        }
         case "NODE_VALIDATION_UPDATED": {
-            const { validationData, nodeId } = action;
+            const { validationData, nodeId, loading } = action;
             return {
                 ...state,
                 [nodeId]: {
                     ...state[nodeId],
                     ...validationData,
+                    loading,
                 },
             };
         }

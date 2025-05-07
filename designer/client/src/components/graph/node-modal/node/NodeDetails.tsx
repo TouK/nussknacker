@@ -162,7 +162,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }
 
     return (
-        <NodeContext.Provider value={editedNode}>
+        <NodeContext.Provider value={{ ...editedNode, editState }}>
             <InputOutputContextProvider nodeId={editedNode.id}>
                 {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
                 <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
