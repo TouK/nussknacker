@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine
 
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies.ModelConfig
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 

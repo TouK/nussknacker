@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegis
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies.ModelConfig
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{
@@ -270,9 +269,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   def modelConfigLoader: ModelConfigLoader
 
   final override lazy val modelConfig: ModelConfig =
-    ProcessObjectDependencies.parseModelConfig(
-      modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader)
-    )
+    ModelConfig.parse(modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader))
 
   final lazy val componentsUiConfig: ComponentsUiConfig = ComponentsUiConfigParser.parse(modelConfig.underlyingConfig)
 

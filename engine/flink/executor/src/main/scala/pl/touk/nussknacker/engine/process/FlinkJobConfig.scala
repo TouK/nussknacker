@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process
 
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies.ModelConfig
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 
