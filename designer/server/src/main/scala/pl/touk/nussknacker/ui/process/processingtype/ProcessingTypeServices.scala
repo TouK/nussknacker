@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProvider,
   ComponentAdditionalConfig,
@@ -51,6 +52,8 @@ final class ProcessingTypeServices private (
   def processingType: ProcessingType = processingTypeData.processingType
 
   def category: String = processingTypeData.category
+
+  def limitsConfig: LimitsConfig = processingTypeData.limitsConfig
 
   def designerModelData: DesignerModelData = processingTypeData.designerModelData
 

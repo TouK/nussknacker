@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
 import skuber.{Container, Pod}
 import skuber.apps.v1.Deployment
@@ -34,7 +34,7 @@ object K8sDeploymentStatusMapper extends LazyLogging {
       case duplicates =>
         Some(
           DeploymentStatusDetails(
-            ProblemStateStatus(
+            GeneralProblemStateStatus(
               description = "More than one deployment is running.",
               allowedActions = Set(ScenarioActionName.Cancel),
               tooltip = Some(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
@@ -80,12 +80,12 @@ object K8sDeploymentStatusMapper extends LazyLogging {
       case (_, Some(progressing), _) if isTrue(progressing) =>
         SimpleStateStatus.DuringDeploy
       case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) =>
-        ProblemStateStatus(
+        GeneralProblemStateStatus(
           "There are some problems with scenario.",
           tooltip = replicaFailure.message.map("Error: " + _)
         )
       case (a, b, _) =>
-        ProblemStateStatus(
+        GeneralProblemStateStatus(
           "There are some problems with scenario.",
           tooltip = NonEmptyList
             .fromList(a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)

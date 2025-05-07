@@ -4,7 +4,10 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.{
+  GeneralProblemStateStatus,
+  MultipleJobsRunning
+}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 import java.util.UUID
@@ -20,15 +23,12 @@ class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       DeploymentStatusDetails(
-        ProblemStateStatus(
-          description = "More than one deployment is running.",
-          allowedActions = Set(ScenarioActionName.Cancel),
-          tooltip = Some(
-            s"Expected one job, instead: ${firstDeploymentStatus.deploymentIdUnsafe} - RUNNING, ${secondDeploymentStatus.deploymentIdUnsafe} - RUNNING"
-          ),
+        status = MultipleJobsRunning(
+          firstDeploymentStatus.deploymentIdUnsafe  -> SimpleStateStatus.Running,
+          secondDeploymentStatus.deploymentIdUnsafe -> SimpleStateStatus.Running
         ),
-        firstDeploymentStatus.deploymentId,
-        None
+        deploymentId = firstDeploymentStatus.deploymentId,
+        version = None
       )
     )
   }
@@ -41,15 +41,12 @@ class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       DeploymentStatusDetails(
-        ProblemStateStatus(
-          description = "More than one deployment is running.",
-          allowedActions = Set(ScenarioActionName.Cancel),
-          tooltip = Some(
-            s"Expected one job, instead: ${firstDeploymentStatus.deploymentIdUnsafe} - RUNNING, ${secondDeploymentStatus.deploymentIdUnsafe} - RESTARTING"
-          ),
+        status = MultipleJobsRunning(
+          firstDeploymentStatus.deploymentIdUnsafe  -> SimpleStateStatus.Running,
+          secondDeploymentStatus.deploymentIdUnsafe -> SimpleStateStatus.Running
         ),
-        firstDeploymentStatus.deploymentId,
-        None
+        deploymentId = firstDeploymentStatus.deploymentId,
+        version = None
       )
     )
   }

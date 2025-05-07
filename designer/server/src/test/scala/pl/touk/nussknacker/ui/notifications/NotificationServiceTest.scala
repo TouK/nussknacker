@@ -8,6 +8,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -16,18 +17,24 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldApproachScenarioStatusProvider
+}
+import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
   DbScenarioActionRepository,
@@ -41,7 +48,6 @@ import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 
 import java.time.{Clock, Duration, Instant, ZoneId}
 import java.time.temporal.ChronoUnit
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
@@ -57,7 +63,10 @@ class NotificationServiceTest
     with DBIOActionValues
     with BeforeAndAfterAll {
 
-  private implicit val system: ActorSystem            = ActorSystem(getClass.getSimpleName)
+  private implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
+  private implicit val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
+    ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(system.dispatcher)
+
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
   private var currentInstant: Instant    = Instant.ofEpochMilli(0)
@@ -66,7 +75,8 @@ class NotificationServiceTest
   private val dbProcessRepository        = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository     = TestFactory.newWriteProcessRepository(testDbRef, clock)
   private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
-  private val dm: MockDeploymentManager  = MockDeploymentManager.create()
+  private val dm: MockDeploymentManager =
+    MockDeploymentManager.create(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
   private val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(Streaming.stringify -> dm),
@@ -88,6 +98,7 @@ class NotificationServiceTest
   override protected def afterAll(): Unit = {
     super.afterAll()
     system.terminate().futureValue
+    executionContextWithIORuntime.close()
   }
 
   test("Should return only events for user in given time") {
@@ -100,7 +111,7 @@ class NotificationServiceTest
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
         .futureValue
 
     def deployProcess(
@@ -151,12 +162,12 @@ class NotificationServiceTest
     val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager                                       = mock[DeploymentManager]
-    val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
+    val deploymentManager                           = mock[DeploymentManager]
+    val (deploymentService, _, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName))
         .futureValue
 
     def deployProcess(
@@ -188,7 +199,7 @@ class NotificationServiceTest
     val notifications = notificationsFor(secondUser)
     notifications shouldBe List(
       Notification(
-        notifications(0).id,
+        notifications.head.id,
         Some(processName),
         "Deployment finished",
         None,
@@ -227,6 +238,7 @@ class NotificationServiceTest
     val (deploymentService, actionService, notificationService) = createServices(deploymentManager)
 
     var passedDeploymentId = Option.empty[DeploymentId]
+
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
@@ -254,7 +266,7 @@ class NotificationServiceTest
     deployProcess(Success(None), user)
     val notificationsAfterDeploy =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
         .futureValue
 
     notificationsAfterDeploy should have length 1
@@ -265,7 +277,7 @@ class NotificationServiceTest
       .futureValue
     val notificationAfterExecutionFinished =
       notificationService
-        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))
         .futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
@@ -288,13 +300,16 @@ class NotificationServiceTest
       config,
       clock
     )
-    val deploymentsStatusesProvider =
-      new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout = None)
-    val scenarioStatusProvider = new ScenarioStatusProvider(
-      deploymentsStatusesProvider,
+    val oldApproachScenarioStatusProvider = new OldApproachScenarioStatusProvider(
+      new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout = None),
       managerDispatcher,
       dbProcessRepository,
       actionRepository,
+      dbioRunner
+    )
+    val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
+      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> ()),
+      TestFactory.newDeploymentRepository(testDbRef, clock),
       dbioRunner
     )
     val actionService = new ActionService(
@@ -302,19 +317,27 @@ class NotificationServiceTest
       actionRepository,
       dbioRunner,
       mock[ProcessChangeListener],
-      scenarioStatusProvider,
+      oldApproachScenarioStatusProvider,
       None,
       clock
     )
     val deploymentService = new DeploymentService(
       managerDispatcher,
-      TestFactory.processValidatorByProcessingType,
-      TestFactory.scenarioResolverByProcessingType,
+      TestFactory.processValidatorByProcessingType(),
+      TestFactory.scenarioResolverByProcessingType(),
       actionService,
       TestFactory.additionalComponentConfigsByProcessingType,
+      new LimitsService(
+        globalLimitsConfig = GlobalLimitsConfig.default,
+        perProcessingTypesLimitsProvider =
+          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
+      )
     ) {
-      override protected def validateBeforeDeploy(
-          processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+
+      override protected def validateUsingDeploymentManager(
+          scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           runDeploymentCommand: DMRunDeploymentCommand,
       )(implicit user: LoggedUser): Future[Unit] = Future.successful(())
     }

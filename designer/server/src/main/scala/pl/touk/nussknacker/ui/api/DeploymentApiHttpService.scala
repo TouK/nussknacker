@@ -57,6 +57,10 @@ class DeploymentApiHttpService(
                     ScenarioGraphValidationError(errors)
                   case DeploymentService.DeployValidationError(message) =>
                     DeployValidationError(message)
+                  case DeploymentService.MaxActiveScenariosCountExceededError(maxCount) =>
+                    DeployValidationError(
+                      s"The limit of active scenarios has been reached. You can have a maximum of $maxCount active scenarios."
+                    )
                 }
               case ActivityService.CommentValidationError(message) => CommentValidationError(message)
             })
@@ -75,7 +79,7 @@ class DeploymentApiHttpService(
               _.map { statusWithModifiedAt =>
                 GetDeploymentStatusResponse(
                   statusWithModifiedAt.value.name,
-                  ProblemDeploymentStatus.extractDescription(statusWithModifiedAt.value),
+                  statusWithModifiedAt.value.problemDescription,
                   statusWithModifiedAt.modifiedAt.toInstant
                 )
               }.left.map {
