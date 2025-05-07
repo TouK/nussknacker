@@ -40,9 +40,10 @@ class DeploymentService(
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
-      case command: RunDeploymentCommand  => runDeployment(command)
-      case command: CancelScenarioCommand => cancelScenario(command)
-      case command: RunOffScheduleCommand => runOffSchedule(command)
+      case command: RunDeploymentCommand   => runDeployment(command)
+      case command: RunRedeploymentCommand => runRedeployment(command)
+      case command: CancelScenarioCommand  => cancelScenario(command)
+      case command: RunOffScheduleCommand  => runOffSchedule(command)
     }
   }
 
@@ -135,6 +136,41 @@ class DeploymentService(
       }
   }
 
+  private def runRedeployment(command: RunRedeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
+    import command.commonData._
+    actionService
+      .actionProcessorForLatestVersion[CanonicalProcess]
+      .processActionWithCustomFinalization[RunRedeploymentCommand, Future[Option[ExternalDeploymentId]]](
+        command = command,
+        actionName = ScenarioActionName.Redeploy
+      ) { case (ctx, actionFinalizer) =>
+        for {
+          dmCommand <- prepareDMRunDeploymentCommandRedeploy(
+            ctx.latestScenarioDetails,
+            ctx.actionId,
+            // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
+            //       references to existing fields and uses correct types. We should also protect from sql injection attacks
+            command
+          )
+          // TODO: move validateBeforeDeploy before creating an action
+          actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, dmCommand)
+            .transformWith {
+              case Failure(ex) =>
+                actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
+              case Success(_) =>
+                // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
+                Future {
+                  actionFinalizer.handleResult {
+                    dispatcher
+                      .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+                      .processCommand(dmCommand)
+                  }
+                }
+            }
+        } yield actionResult
+      }
+  }
+
   private def validateScenario(
       scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess]
   )(implicit user: LoggedUser) = Future {
@@ -182,6 +218,38 @@ class DeploymentService(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
       command: RunDeploymentCommand,
+  )(implicit user: LoggedUser): Future[DMRunDeploymentCommand] = {
+    for {
+      resolvedCanonicalProcess <- scenarioResolver
+        .forProcessingTypeUnsafe(processDetails.processingType)
+        .resolveScenario(processDetails.json)
+        .flatMap {
+          case Validated.Valid(scenario) => Future.successful(scenario)
+          case Validated.Invalid(e)      => Future.failed(new RuntimeException(e.head.toString))
+        }
+      deploymentData = DeploymentData(
+        DeploymentId.fromActionId(actionId),
+        user.toManagerUser,
+        additionalDeploymentData = Map.empty,
+        command.nodesDeploymentData,
+        getAdditionalModelConfigsRequiredForRuntime(processDetails.processingType)
+      )
+      updateStrategy = DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+        command.stateRestoringStrategy
+      )
+      dmCommand = DMRunDeploymentCommand(
+        processDetails.toEngineProcessVersion,
+        deploymentData,
+        resolvedCanonicalProcess,
+        updateStrategy
+      )
+    } yield dmCommand
+  }
+
+  private def prepareDMRunDeploymentCommandRedeploy(
+      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+      actionId: ProcessActionId,
+      command: RunRedeploymentCommand,
   )(implicit user: LoggedUser): Future[DMRunDeploymentCommand] = {
     for {
       resolvedCanonicalProcess <- scenarioResolver

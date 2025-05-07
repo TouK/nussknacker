@@ -52,7 +52,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
 
     const message = t("panels.actions.redeploy.dialog", "Redeploy scenario {{name}}", { name: processName });
     const action = (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
-        HttpService.deploy(name, comment, nodesDeploymentData).finally(() => dispatch(loadProcessState(name, versionId)));
+        HttpService.redeploy(name, comment, nodesDeploymentData).finally(() => dispatch(loadProcessState(name, versionId)));
 
     const handleOnClick = async () => {
         await HttpService.validateProcessVersion(processName, processVersionId).then((res) => {

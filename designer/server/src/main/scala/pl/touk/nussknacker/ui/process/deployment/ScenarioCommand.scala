@@ -24,6 +24,12 @@ case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Opti
 // - deployment on engine side - it is longer part, the result will be shown as a notification
 case class RunDeploymentCommand(
     commonData: CommonCommandData,
+    stateRestoringStrategy: StateRestoringStrategy, // TODO: usunąć bo to dla redeploya?
+    nodesDeploymentData: NodesDeploymentData
+) extends ScenarioCommand[Future[Option[ExternalDeploymentId]]]
+
+case class RunRedeploymentCommand(
+    commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
     nodesDeploymentData: NodesDeploymentData
 ) extends ScenarioCommand[Future[Option[ExternalDeploymentId]]]
