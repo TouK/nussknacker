@@ -174,5 +174,6 @@ The [integration](../integration/MachineLearning.md) section of the documentatio
 
 By default, during tests execution enrichers behave the same as during production deployment. 
 In particular, they can make calls to external services which in turn can cause unintended changes in those services (e.g. by POST call in OpenAPI enricher)   
-To deal with it enrichers (except `Decision Table`) can be configured with `Mocked Output Expression` which will be evaluated during tests instead of calling external services behind enricher.
-A result from a `Mocked Output Expression` will be returned as output of an enricher, so their types must match - e.g. `Mocked Output Expression` of an OpenAPI enricher must returns a value matching schema of the endpoint response body.
+To deal with it enrichers (except `Decision Table`) can be configured with `Mock` parameter which will be evaluated during tests instead of calling external services behind enricher.
+A result of evaluated expression in `Mock` parameter will be returned as output of an enricher, so their types must match - e.g. `Mock` of an OpenAPI enricher must returns a value matching schema of the endpoint response body.
+When the `Mock` parameter is left blank, the enricher will behave the same way during testing as during a normal run. 
