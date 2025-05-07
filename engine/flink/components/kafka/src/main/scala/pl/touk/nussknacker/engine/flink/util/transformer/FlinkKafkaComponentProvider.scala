@@ -86,7 +86,7 @@ private[transformer] object TemporaryKafkaConfigMapping {
     val kafkaConfig = config.getConfig("config")
     val kafkaConfigMergedWithGlobalConfig =
       dependencies.config.withValue(KafkaConfig.DefaultGlobalKafkaConfigPath, fromAnyRef(kafkaConfig.root()))
-    dependencies.copy(config = kafkaConfigMergedWithGlobalConfig)
+    ProcessObjectDependencies.withConfig(kafkaConfigMergedWithGlobalConfig)
   }
 
 }

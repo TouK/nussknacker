@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDef
 case class ModelDefinition private (
     components: Components,
     expressionConfig: ExpressionConfigDefinition,
-    settings: ClassExtractionSettings
+    settings: ClassExtractionSettings,
+    allowEndingScenarioWithoutSink: Boolean,
 ) {
 
   def withComponent(component: ComponentDefinitionWithImplementation): ModelDefinition = {
@@ -48,7 +49,9 @@ object ModelDefinition {
   def apply(
       components: Components,
       expressionConfig: ExpressionConfigDefinition,
-      settings: ClassExtractionSettings,
-  ): ModelDefinition = new ModelDefinition(components, expressionConfig, settings)
+      classExtractionSettings: ClassExtractionSettings,
+      allowEndingScenarioWithoutSink: Boolean,
+  ): ModelDefinition =
+    new ModelDefinition(components, expressionConfig, classExtractionSettings, allowEndingScenarioWithoutSink)
 
 }

@@ -76,12 +76,12 @@ object ProcessingTypeData {
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
     // TODO: consider using ParameterName for property names instead of String (for scenario and fragment properties)
-    val scenarioProperties = deploymentData.deploymentScenarioPropertiesConfig ++ modelData.modelConfig
+    val scenarioProperties = deploymentData.deploymentScenarioPropertiesConfig ++ modelData.modelConfig.underlyingConfig
       .getOrElse[Map[String, ScenarioPropertyConfig]](
         "scenarioPropertiesConfig",
         Map.empty
       )
-    val fragmentProperties = modelData.modelConfig
+    val fragmentProperties = modelData.modelConfig.underlyingConfig
       .getOrElse[Map[String, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     val staticDefinitionForDynamicComponents =

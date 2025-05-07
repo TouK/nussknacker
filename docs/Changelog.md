@@ -165,6 +165,9 @@
 * [#7964](https://github.com/TouK/nussknacker/pull/7964) Add JsonTemplate language and editor.
 * [#8006](https://github.com/TouK/nussknacker/pull/8006) Add JsonTemplate editor to Event Generator source and Kafka sink value.
 * [#7970](https://github.com/TouK/nussknacker/pull/7970) Added "limits.maxActiveScenariosCount" setting defined per processing type and "globalLimits.maxActiveScenariosCount" to limit active scenarios globally
+* [#8004](https://github.com/TouK/nussknacker/pull/8004) Scenarios no longer have to end with final `Sink` node
+  * set `modelConfig.allowEndingScenarioWithoutSink` of the scenarioType in the `scenarioTypes` config section to `true` in order to allow ending scenarios with nodes other than sinks
+  * the flag is optional, the default value of the flag is `false` (no changes in behavior)
 
 ## 1.18
 
