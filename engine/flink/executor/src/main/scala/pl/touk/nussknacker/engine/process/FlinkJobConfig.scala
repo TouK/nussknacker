@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process
 
-import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies.ModelConfig
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 
@@ -16,8 +16,8 @@ object FlinkJobConfig {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  def parse(modelConfig: Config): FlinkJobConfig = {
-    modelConfig.as[FlinkJobConfig]
+  def parse(modelConfig: ModelConfig): FlinkJobConfig = {
+    modelConfig.underlyingConfig.as[FlinkJobConfig]
   }
 
   object ExecutionMode extends Enumeration {

@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.process
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies.ModelConfig
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkTypeInfoRegistrar
@@ -46,7 +46,7 @@ object ExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  class ProcessSettingsPreparer(modelConfig: Config, modelInfo: ModelInfo) extends ExecutionConfigPreparer {
+  class ProcessSettingsPreparer(modelConfig: ModelConfig, modelInfo: ModelInfo) extends ExecutionConfigPreparer {
 
     override def prepareExecutionConfig(
         config: ExecutionConfig
@@ -80,7 +80,7 @@ object ExecutionConfigPreparer extends LazyLogging {
   class SerializationPreparer(modelData: ModelData) extends ExecutionConfigPreparer {
 
     protected def enableObjectReuse: Boolean =
-      modelData.modelConfig.getOrElse[Boolean]("enableObjectReuse", true)
+      modelData.modelConfig.underlyingConfig.getOrElse[Boolean]("enableObjectReuse", true)
 
     override def prepareExecutionConfig(
         config: ExecutionConfig

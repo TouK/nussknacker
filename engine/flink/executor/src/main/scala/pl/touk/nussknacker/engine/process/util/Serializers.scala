@@ -30,7 +30,7 @@ object Serializers extends LazyLogging {
       implicitly[SerializerRegistrar[SpelMapHack]] :: Nil).foreach(_.registerIn(config))
     ScalaServiceLoader
       .load[SerializersRegistrar](getClass.getClassLoader)
-      .foreach(_.register(modelData.modelConfig, config))
+      .foreach(_.register(modelData.modelConfig.underlyingConfig, config))
     TimeSerializers.addDefaultSerializers(config)
   }
 

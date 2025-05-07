@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine
 
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies.ModelConfig
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-
-import java.net.URLClassLoader
 
 // TODO: Replace ModelData -> BasedModelData inheritance with composition. Thanks to that it won't be needed to downcast
 //       to ModelData in case of interpreter invocation
@@ -19,7 +17,7 @@ trait BaseModelData {
 
   def inputConfigDuringExecution: InputConfigDuringExecution
 
-  def modelConfig: Config
+  def modelConfig: ModelConfig
 
 }
 

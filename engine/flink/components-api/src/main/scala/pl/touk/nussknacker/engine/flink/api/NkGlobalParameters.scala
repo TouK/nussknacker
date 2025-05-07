@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api
 
 import _root_.java.util
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import net.ceedubs.ficus.Ficus._
@@ -10,6 +9,7 @@ import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies.ModelConfig
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
 
 import scala.jdk.CollectionConverters._
@@ -50,10 +50,10 @@ object NkGlobalParameters extends LazyLogging {
       modelInfo: ModelInfo,
       deploymentId: String, // TODO: Pass here DeploymentId?
       processVersion: ProcessVersion,
-      modelConfig: Config,
+      modelConfig: ModelConfig,
       additionalInformation: Map[String, String]
   ): NkGlobalParameters = {
-    val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
+    val configGlobalParameters = modelConfig.underlyingConfig.getAs[ConfigGlobalParameters]("globalParameters")
     NkGlobalParameters(
       modelInfo,
       deploymentId,

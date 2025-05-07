@@ -340,7 +340,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val processingType = Streaming
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
-      new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
+      new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig.underlyingConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         model.modelDefinitionWithClasses.classDefinitions,
