@@ -140,6 +140,8 @@ object ScenarioActivityAuditLog {
   private def stringify(scenarioActivity: ScenarioActivity): String = scenarioActivity match {
     case ScenarioActivity.ScenarioDeployed(_, _, _, _, _, comment, result) =>
       s"ScenarioDeployed(comment=${stringify(comment)},result=${stringify(result)})"
+    case ScenarioActivity.ScenarioRedeployed(_, _, _, _, _, comment, result) =>
+      s"ScenarioRedeployed(comment=${stringify(comment)},result=${stringify(result)})"
     case ScenarioActivity.ScenarioPaused(_, _, _, _, _, comment, result) =>
       s"ScenarioPaused(comment=${stringify(comment)},result=${stringify(result)})"
     case ScenarioActivity.ScenarioCanceled(_, _, _, _, _, comment, result) =>

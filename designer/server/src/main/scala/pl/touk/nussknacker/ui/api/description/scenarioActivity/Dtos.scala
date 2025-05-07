@@ -153,6 +153,14 @@ object Dtos {
       override def supportedActions: List[String]     = commentRelatedActions
     }
 
+    case object ScenarioRedeployed extends ScenarioActivityType {
+      private val displayableName: String             = "Deployment (redeploy)"
+      override def displayableNameForScenario: String = displayableName
+      override def displayableNameForFragment: String = displayableName
+      override def icon: String                       = "/assets/activities/deployed.svg"
+      override def supportedActions: List[String]     = commentRelatedActions
+    }
+
     case object ScenarioPaused extends ScenarioActivityType {
       private val displayableName: String             = "Pause"
       override def displayableNameForScenario: String = displayableName
@@ -441,6 +449,23 @@ object Dtos {
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.ScenarioDeployed,
+      user = user,
+      date = date,
+      scenarioVersionId = scenarioVersionId,
+      comment = Some(comment),
+      attachment = None,
+      additionalFields = List.empty,
+    )
+
+    def forScenarioRedeployed(
+        id: UUID,
+        user: String,
+        date: Instant,
+        scenarioVersionId: Option[Long],
+        comment: ScenarioActivityComment,
+    ): ScenarioActivity = ScenarioActivity(
+      id = id,
+      `type` = ScenarioActivityType.ScenarioRedeployed,
       user = user,
       date = date,
       scenarioVersionId = scenarioVersionId,
