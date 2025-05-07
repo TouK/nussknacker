@@ -25,7 +25,7 @@ object Validations {
         paramValidatorsMap(typedParam.name).andThen(validator => validate(validator, typedParam))
       }
       .sequence
-      .map(_ => ())
+      .void
 
   def validate(validators: List[Validator], parameter: TypedParameter)(
       implicit nodeId: NodeId
@@ -49,7 +49,7 @@ object Validations {
         }
       }
       .sequence
-      .map(_ => ())
+      .void
   }
 
 }

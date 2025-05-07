@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.Id
-import cats.data.WriterT
+import cats.data.{Writer, WriterT}
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
@@ -45,21 +45,17 @@ object NodeParametersAdjuster extends LazyLogging {
       jobData: JobData
   ) = {
     val parameterByName = parameters.map(p => p.name -> p).toMapCheckingDuplicates
-    val (missingParameterNames, adjustedParameters) = parameterDefinitions
-      .map { parameterDefinition =>
-        parameterByName
-          .get(parameterDefinition.name)
-          .map(parameter => WriterT.value[Id, Set[ParameterName], NodeParameter](parameter))
-          .getOrElse {
-            WriterT
-              .value[Id, Set[ParameterName], NodeParameter](
-                NodeParameter(parameterDefinition.name, parameterDefinition.finalDefaultValue)
-              )
-              .tell(Set(parameterDefinition.name))
-          }
-      }
-      .sequence
-      .run
+    val (missingParameterNames, adjustedParameters) = parameterDefinitions.traverse { parameterDefinition =>
+      parameterByName
+        .get(parameterDefinition.name)
+        .map(parameter => Writer.value[Set[ParameterName], NodeParameter](parameter))
+        .getOrElse {
+          Writer(
+            Set(parameterDefinition.name),
+            NodeParameter(parameterDefinition.name, parameterDefinition.finalDefaultValue),
+          )
+        }
+    }.run
     if (missingParameterNames.nonEmpty) {
       logger.compilationWarning(
         s"Found missing parameters: ${missingParameterNames.toList.map(_.value).sorted.mkString(", ")}. " +
