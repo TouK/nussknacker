@@ -44,17 +44,19 @@ class InconsistentStateDetector extends LazyLogging {
   private def doExtractAtMostOneStatus(
       deploymentStatuses: List[DeploymentStatusDetails]
   ): Either[DeploymentStatusDetails, Option[DeploymentStatusDetails]] = {
+    def deploymentIfFrom(details: DeploymentStatusDetails) =
+      details.deploymentId.getOrElse(DeploymentId("missing"))
     val notFinalStatuses = deploymentStatuses.filterNot(isFinalOrTransitioningToFinalStatus)
     (deploymentStatuses, notFinalStatuses) match {
       case (Nil, Nil)                    => Right(None)
       case (_, singleNotFinished :: Nil) => Right(Some(singleNotFinished))
-      case (_, firstNotFinished :: _ :: _) =>
+      case (_, firstNotFinished :: secondNotFinished :: otherNotFinished) =>
         Left(
           firstNotFinished.copy(
             status = ProblemStateStatus.multipleJobsRunning(
-              notFinalStatuses.map(deploymentStatus =>
-                deploymentStatus.deploymentId.getOrElse(DeploymentId("missing")) -> deploymentStatus.status
-              )
+              deploymentIfFrom(firstNotFinished)  -> firstNotFinished.status,
+              deploymentIfFrom(secondNotFinished) -> firstNotFinished.status,
+              otherNotFinished.map(d => deploymentIfFrom(d) -> firstNotFinished.status): _*
             )
           )
         )

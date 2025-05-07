@@ -164,7 +164,7 @@ object StandardRemoteEnvironmentSpec {
       mapProcessingTypeDataProvider(
         "streaming" -> new ProcessModelMigrator(new TestMigrations(1, 2))
       ),
-      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator("streaming" :: Nil))
     )
 
     protected def fetchRemoteMigrationScenarioDescriptionVersion: FutureE[Int] = ???
