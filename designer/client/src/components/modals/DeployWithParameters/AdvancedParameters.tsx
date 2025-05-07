@@ -11,7 +11,6 @@ import HttpService from "../../../http/HttpService";
 import type { ActionNodeParameters } from "../../../types/action";
 import { Expandable } from "../../common/Expandable";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
-import { AdvancedParametersSection } from "./AdvancedParametersSection";
 import { GroupedActionParameter } from "./GroupedActionParameter";
 
 interface AdvancedParametersProps {
