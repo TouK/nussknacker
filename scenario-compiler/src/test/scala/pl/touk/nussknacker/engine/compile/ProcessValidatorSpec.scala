@@ -51,6 +51,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   private val baseDefinitionBuilder = ModelDefinitionBuilder.empty
     .withGlobalVariable("processHelper", ProcessHelper)
     .withService("sampleEnricher", Some(Typed[SimpleRecord]))
+    .withService(
+      "sampleEnricherWithPlainRecord",
+      Some(Typed.record(List("someString" -> Typed[String], "someInt" -> Typed[Integer])))
+    )
     .withService("withParamsService", Some(Typed[SimpleRecord]), Parameter[String](ParameterName("par1")))
     .withUnboundedStreamSource("source", Some(Typed[SimpleRecord]))
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
@@ -983,6 +987,45 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     inside(validate(process, definitionWithTypedSource).result) {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) =>
         missingParam shouldBe Set(ParameterName("par1"))
+    }
+  }
+
+  test("should allow mock expression matching enricher return type") {
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "typed-source")
+      .enricherWithMockExpression(
+        "enricher1",
+        "out",
+        "sampleEnricherWithPlainRecord",
+        """{someString: "abc", someInt: 1234}""".spel
+      )
+      .emptySink("id2", "sink")
+
+    inside(validate(process, definitionWithTypedSource).result) { case Valid(_) =>
+    }
+  }
+
+  test("should not allow mock expression not matching enricher return type") {
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "typed-source")
+      .enricherWithMockExpression("enricher1", "out", "sampleEnricherWithPlainRecord", """{someString: "abc"}""".spel)
+      .emptySink("id2", "sink")
+
+    inside(validate(process, definitionWithTypedSource).result) {
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String(abc)}",
+                "enricher1",
+                Some(ParameterName("mockExpression")),
+                _,
+                None
+              ),
+              Nil
+            )
+          ) =>
     }
   }
 
