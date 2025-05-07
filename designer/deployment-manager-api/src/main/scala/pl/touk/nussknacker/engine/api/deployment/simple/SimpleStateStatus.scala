@@ -116,11 +116,13 @@ object SimpleStateStatus {
 
     def isActive: Boolean = {
       status match {
-        case _: ShouldNotBeRunning        => true
-        case _: MultipleJobsRunning       => true
-        case _: GeneralProblemStateStatus => false
-        case `Restarting`                 => true
-        case status                       => DefaultFollowingDeployStatuses.contains(status)
+        case problemStatus: ProblemStateStatus =>
+          problemStatus match {
+            case _: ShouldNotBeRunning | _: MultipleJobsRunning => true
+            case _: GeneralProblemStateStatus                   => false
+          }
+        case `Restarting` => true
+        case status       => DefaultFollowingDeployStatuses.contains(status)
       }
     }
 
