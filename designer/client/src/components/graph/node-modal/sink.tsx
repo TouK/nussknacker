@@ -3,6 +3,7 @@ import React from "react";
 import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DisableField } from "./DisableField";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 import { SourceSinkCommon } from "./SourceSinkCommon";
 
 interface SinkProps {
@@ -12,7 +13,7 @@ interface SinkProps {
     node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }

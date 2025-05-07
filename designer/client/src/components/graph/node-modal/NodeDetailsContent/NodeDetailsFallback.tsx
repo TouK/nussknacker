@@ -2,11 +2,12 @@ import React from "react";
 
 import type { NodeType, NodeValidationError } from "../../../../types";
 import { IdField } from "../IdField";
+import type { SetProperty } from "../NodeTypeDetailsContent";
 
 export function NodeDetailsFallback(props: {
     node: NodeType;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     isEditMode?: boolean;
     showValidation?: boolean;
     errors: NodeValidationError[];

@@ -1,14 +1,15 @@
 import React, { createContext, useCallback, useMemo } from "react";
 
-import type { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+import type { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
 import { DndItems } from "../../../../common/dndItems/DndItems";
 import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
+import type { SetProperty } from "../../NodeTypeDetailsContent";
 import { useDiffMark } from "../../PathsToMark";
 import MapRow from "./MapRow";
 
 interface MapProps<F extends Field> {
-    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty?: SetProperty;
     readOnly?: boolean;
     showValidation?: boolean;
     variableTypes: VariableTypes;
@@ -24,7 +25,7 @@ interface MapProps<F extends Field> {
 export const MapItemsCtx = createContext<{
     readOnly?: boolean;
     showValidation?: boolean;
-    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty?: SetProperty;
     isMarked: (path: string) => boolean;
     errors: NodeValidationError[];
     variableTypes: VariableTypes;

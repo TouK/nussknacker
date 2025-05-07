@@ -3,6 +3,7 @@ import React from "react";
 import type { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 import { findParamDefinitionByName } from "./parameterHelpers";
 import { useTestResults } from "./TestResultsWrapper";
 
@@ -26,7 +27,7 @@ export function StaticExpressionField({
     node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {

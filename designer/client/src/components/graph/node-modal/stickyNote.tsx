@@ -3,6 +3,7 @@ import React from "react";
 import type { NodeType, NodeValidationError, StickyNoteNodeType } from "../../../types";
 import Field, { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 
 export function StickyNote({
     isEditMode,
@@ -15,7 +16,7 @@ export function StickyNote({
     isEditMode?: boolean;
     node: NodeType;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
 }): JSX.Element {

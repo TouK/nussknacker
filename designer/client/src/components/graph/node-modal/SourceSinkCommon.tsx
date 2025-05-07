@@ -6,6 +6,7 @@ import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 interface SourceSinkCommonProps {
@@ -15,7 +16,7 @@ interface SourceSinkCommonProps {
     node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }

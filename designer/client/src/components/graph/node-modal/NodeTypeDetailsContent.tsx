@@ -1,4 +1,4 @@
-import { cloneDeep, isEqual, set } from "lodash";
+import { isEqual } from "lodash";
 import type { SetStateAction } from "react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -27,15 +27,18 @@ import {
 } from "./NodeDetailsContent/selectors";
 import { generateUUIDs } from "./nodeUtils";
 import { adjustParameters } from "./ParametersUtils";
+import { setImmutable } from "./setImmutable";
 import { Sink } from "./sink";
 import { Source } from "./source";
 import { Split } from "./split";
 import { StickyNote } from "./stickyNote";
 import { Switch } from "./switch";
+import type { Paths, PathValue } from "./typeHelpers";
 import Variable from "./Variable";
 import { VariableBuilder } from "./variableBuilder";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
+export type SetProperty<O = NodeType> = <P extends Paths<O>, V extends PathValue<O, P>>(path: P, value: V, fallbackValue?: V) => void;
 
 export type NodeTypeDetailsContentProps = {
     node: NodeType;
@@ -136,8 +139,8 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         [setEditedNode],
     );
 
-    const setProperty = useCallback(
-        <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]): void => {
+    const setProperty = useCallback<SetProperty>(
+        (property, newValue, defaultValue): void => {
             setEditedNode((currentNode) => {
                 const value = newValue == null && defaultValue != undefined ? defaultValue : newValue;
                 const node = cloneDeep(currentNode);

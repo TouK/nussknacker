@@ -1,9 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react";
 
-import type { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
+import type { NodeOrPropertiesType, NodeValidationError } from "../../../types";
 import { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 
 interface DescriptionFieldProps {
     autoFocus?: boolean;
@@ -12,7 +13,7 @@ interface DescriptionFieldProps {
     node: NodeOrPropertiesType;
     readonly?: boolean;
     renderFieldLabel: (paramName: string) => React.ReactNode;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
 }

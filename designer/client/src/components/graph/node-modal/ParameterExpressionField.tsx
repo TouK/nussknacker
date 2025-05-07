@@ -1,9 +1,10 @@
-import type { ComponentType, PropsWithChildren, ReactNode } from "react";
+import type { ComponentType, PropsWithChildren } from "react";
 import React, { useMemo } from "react";
 
 import type { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 import { findParamDefinitionByName } from "./parameterHelpers";
 import { useTestResults } from "./TestResultsWrapper";
 
@@ -20,7 +21,7 @@ export type ParameterExpressionFieldProps = {
     node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
     endAdornment?: ReactNode;

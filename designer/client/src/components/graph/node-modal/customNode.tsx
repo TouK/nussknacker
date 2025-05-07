@@ -9,6 +9,7 @@ import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { isAggregate } from "./isAggregate";
 import { NodeField } from "./NodeField";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 export type CustomNodeProps = {
@@ -19,7 +20,7 @@ export type CustomNodeProps = {
     parameterDefinitions: UIParameter[];
     processDefinitionData: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 };

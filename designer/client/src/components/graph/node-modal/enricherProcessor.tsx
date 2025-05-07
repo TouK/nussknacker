@@ -9,6 +9,7 @@ import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
 import { NodeField } from "./NodeField";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 export function EnricherProcessor({
@@ -28,7 +29,7 @@ export function EnricherProcessor({
     node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {

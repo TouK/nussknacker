@@ -5,6 +5,7 @@ import type { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter 
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { IdField } from "./IdField";
+import type { SetProperty } from "./NodeTypeDetailsContent";
 import OutputParametersList from "./OutputParametersList";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { useParametersList } from "./useParametersList";
@@ -17,7 +18,7 @@ interface FragmentInput {
     parameterDefinitions: UIParameter[];
     processDefinitionData?: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }
