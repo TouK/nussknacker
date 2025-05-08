@@ -1340,7 +1340,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2624](https://github.com/TouK/nussknacker/pull/2624) Default name for `process` tag is now `scenario`. This affects metrics and count functionalities. 
   Please update you Flink/Telegraf setup accordingly (see [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/main/telegraf) for details). 
   If you still want to use `process` tag (e.g. you have a lot of dashboards), please set `countsSettings.metricsConfig.scenarioTag` setting to `process`
-  Also, dashboard links format changed, see [documentation](https://docs.nussknacker.io/documentation/docs/installation_configuration_guide/DesignerConfiguration#metric-dashboard) for the details.
+  Also, dashboard links format changed, see [documentation](https://nussknacker.io/documentation/docs/configuration/DesignerConfiguration/#metric-dashboard) for the details.
 * [#2645](https://github.com/TouK/nussknacker/pull/2645) Default models: `genericModel.jar`, `liteModel.jar`. 
   were merged to `defaultModel.jar`, `managementSample.jar` was renamed to `devModel.jar`. 
   If you use `defaultModel.jar` it's important to include `flinkExecutor.jar` explicitly on model classpath.                         
