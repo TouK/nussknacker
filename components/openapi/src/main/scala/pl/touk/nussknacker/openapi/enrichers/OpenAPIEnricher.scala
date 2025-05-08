@@ -14,7 +14,7 @@ import sttp.model.StatusCode
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class SwaggerEnricher(
+class OpenAPIEnricher(
     service: SwaggerService,
     extractor: ParametersExtractor,
     config: OpenAPIServicesConfig,
@@ -25,8 +25,6 @@ class SwaggerEnricher(
   private val baseUrl                 = determineInvocationBaseUrl(config.url, config.rootUrl, service.servers)
   private val codesToInterpretAsEmpty = config.codesToInterpretAsEmpty.map(StatusCode(_))
   private val swaggerHttpService      = new SwaggerSttpService(baseUrl, service, codesToInterpretAsEmpty)
-  private val preparedParams = extractor
-    .prepareParams(params.nameToValueMap.map { case (p, value) => (p.value, value) })
   private val tags = Map(AsyncExecutionTimeMeasurement.serviceNameTagKey -> service.name.value)
 
   override def invoke(context: Context)(
@@ -35,12 +33,20 @@ class SwaggerEnricher(
       componentUseContext: ComponentUseContext
   ): Future[AnyRef] = getTimeMeasurement().measuring(tags) {
     implicit val httpClient: SttpBackend[Future, Any] = clientProvider.httpBackendForEc
+    val fixedOrEvaluatedParams = extractor.parameterDefinition
+      .map { p => p.name.value -> params.extractOrEvaluateLazyParam[AnyRef](p.name, context) }
+      .collect {
+        case (name, Some(value)) => name -> value
+        case (name, None) => name -> null
+      }
+      .toMap
+    val preparedParams = extractor.prepareParams(fixedOrEvaluatedParams)
     swaggerHttpService.invoke(preparedParams)
   }
 
 }
 
-object SwaggerEnricher {
+object OpenAPIEnricher {
 
   def apply(
       service: SwaggerService,
@@ -48,7 +54,7 @@ object SwaggerEnricher {
       clientProvider: HttpBackendProvider,
       params: Params,
       getTimeMeasurement: () => AsyncExecutionTimeMeasurement
-  ): SwaggerEnricher = new SwaggerEnricher(
+  ): OpenAPIEnricher = new OpenAPIEnricher(
     service,
     new ParametersExtractor(service, Map[String, () => AnyRef]()),
     config,

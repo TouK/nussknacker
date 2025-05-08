@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter, SwaggerService}
 import pl.touk.nussknacker.openapi.discovery.OpenApiDefinitionDiscovery
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherFactory
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 import sttp.client3.{Response, SttpBackend}
@@ -73,7 +73,11 @@ class OpenApiScenarioIntegrationTest
             if headers.exists(_.name == HeaderNames.ContentType)
               && !headers.contains(Header(HeaderNames.ContentType, MediaType.ApplicationJson.toString())) =>
           Response("Unsupported media type", StatusCode.UnsupportedMediaType)
-        case _ => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+        case _ if request.method.method == "GET" && request.uri.path.last == "10" =>
+          Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+        case _ if request.method.method == "POST" =>
+          Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+        case _ => Response(null, StatusCode.BadRequest)
       }
   }
 
@@ -179,7 +183,7 @@ class OpenApiScenarioIntegrationTest
     val services = SwaggerParser.parse(definition, openAPIsConfig).collect { case Valid(service) =>
       service
     }
-    val stubbedGetCustomerOpenApiService = new SwaggerEnricherFactory(
+    val stubbedGetCustomerOpenApiService = new OpenAPIEnricherFactory(
       openAPIsConfig,
       (_: ExecutionContext) => sttpBackend,
       new MockOpenApiDefinitionDiscovery(services)

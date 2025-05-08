@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricher
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import sttp.client3.SttpBackend
 
@@ -55,7 +55,7 @@ trait BaseOpenAPITest {
         new AsyncExecutionTimeMeasurement(runtimeContext, "openAPI", Map.empty)
   ): Map[ServiceName, ServiceInvoker] =
     parseServicesFromResourceUnsafe(resource, config).map { service =>
-      service.name -> SwaggerEnricher(
+      service.name -> OpenAPIEnricher(
         service = service,
         config = config,
         clientProvider = (_: ExecutionContext) => backend,

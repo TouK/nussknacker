@@ -24,24 +24,24 @@ import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.http.backend.HttpBackendProvider
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.discovery.OpenApiDefinitionDiscovery
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherFactory.{
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory.{
   serviceParam,
   ServiceParamName,
   TransformationState
 }
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherFactory.TransformationState.{
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory.TransformationState.{
   FinalState,
   SelectedServiceState
 }
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.backend.HttpClientProvider
 
-class SwaggerEnricherFactory(
+class OpenAPIEnricherFactory(
     config: OpenAPIServicesConfig,
     httpBeProvider: HttpBackendProvider,
     openApiDefinitionDiscovery: OpenApiDefinitionDiscovery,
 ) extends EagerService
-    with SingleInputDynamicComponent[SwaggerEnricher]
+    with SingleInputDynamicComponent[OpenAPIEnricher]
     with AllProcessingModesComponent
     with LazyLogging
     with TimeMeasuringService {
@@ -63,9 +63,9 @@ class SwaggerEnricherFactory(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TransformationState]
-  ): SwaggerEnricher = finalState match {
+  ): OpenAPIEnricher = finalState match {
     case Some(FinalState(service, extractor)) =>
-      new SwaggerEnricher(
+      new OpenAPIEnricher(
         service,
         extractor,
         config,
@@ -117,7 +117,7 @@ class SwaggerEnricherFactory(
 
   private def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): ContextTransformationDefinition = { case TransformationStep(_, Some(SelectedServiceState(service, extractor))) =>
+  ): ContextTransformationDefinition = { case TransformationStep(params, Some(SelectedServiceState(service, extractor))) =>
     FinalResults.forValidation(
       context = context,
       errors = List.empty,
@@ -143,13 +143,13 @@ class SwaggerEnricherFactory(
 
 }
 
-object SwaggerEnricherFactory {
+object OpenAPIEnricherFactory {
   final val ServiceParamName = ParameterName("Service")
 
   def apply(
       config: OpenAPIServicesConfig,
       openApiDefinitionDiscovery: OpenApiDefinitionDiscovery,
-  ) = new SwaggerEnricherFactory(
+  ) = new OpenAPIEnricherFactory(
     config,
     HttpClientProvider.getBackendProvider(config.httpClientConfig),
     openApiDefinitionDiscovery,
