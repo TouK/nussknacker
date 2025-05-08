@@ -64,6 +64,8 @@ object ExtendedWindowOperator {
 
 }
 
+private[aggregate] case class NuWindowContextHolder(var nuWindowContext: NuWindowContext)
+
 private[aggregate] sealed trait NuWindowContext
 
 private[aggregate] final case class OnElementWindowContext(
@@ -82,7 +84,7 @@ private[aggregate] class ExtendedWindowOperator[A](
     aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
     trigger: Trigger[_ >: Input[A], TimeWindow],
     preserveContext: Boolean,
-    private val contextHolderRef: AtomicReference[NuWindowContext] = new AtomicReference(OnTimerWindowContext)
+    private val contextHolderRef: NuWindowContextHolder = NuWindowContextHolder(OnTimerWindowContext)
 ) extends WindowOperator[String, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
@@ -102,13 +104,12 @@ private[aggregate] class ExtendedWindowOperator[A](
     ) {
 
   override def processElement(element: StreamRecord[ValueWithContext[StringKeyedValue[A]]]): Unit = {
-    contextHolderRef.set(
+    contextHolderRef.nuWindowContext =
       OnElementWindowContext(if (preserveContext) Some(element.getValue.context) else None, element.getTimestamp)
-    )
     try {
       super.processElement(element)
     } finally {
-      contextHolderRef.set(OnTimerWindowContext)
+      contextHolderRef.nuWindowContext = OnTimerWindowContext
     }
   }
 
@@ -117,7 +118,7 @@ private[aggregate] class ExtendedWindowOperator[A](
 private class ValueEmittingWindowFunction(
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: String,
-    private val contextHolderRef: AtomicReference[NuWindowContext]
+    private val contextHolderRef: NuWindowContextHolder
 ) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow] {
 
   @transient
@@ -134,7 +135,7 @@ private class ValueEmittingWindowFunction(
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     elements.forEach { element =>
-      val contextOpt = contextHolderRef.get match {
+      val contextOpt = contextHolderRef.nuWindowContext match {
         case OnElementWindowContext(contextToPreserve, timestampToOverride) =>
           // in current flink implementation out is always of type TimestampedCollector
           out.asInstanceOf[TimestampedCollector[_]].setAbsoluteTimestamp(timestampToOverride)
