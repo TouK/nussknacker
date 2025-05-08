@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
 
 import java.lang
-import java.util.concurrent.atomic.AtomicReference
 
 object ExtendedWindowOperator {
   type Input[A] = ValueWithContext[StringKeyedValue[A]]
@@ -137,11 +136,14 @@ private class ValueEmittingWindowFunction(
     elements.forEach { element =>
       val contextOpt = contextHolderRef.nuWindowContext match {
         case OnElementWindowContext(contextToPreserve, timestampToOverride) =>
+          // this means, that end of this window pane was triggered by an element
+
           // in current flink implementation out is always of type TimestampedCollector
           out.asInstanceOf[TimestampedCollector[_]].setAbsoluteTimestamp(timestampToOverride)
           contextToPreserve
 
         case OnTimerWindowContext =>
+          // this means, that end of this window pane was triggered by a timer
           None
       }
 
