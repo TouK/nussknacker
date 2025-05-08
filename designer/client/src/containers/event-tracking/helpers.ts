@@ -52,7 +52,7 @@ export const mapToolbarButtonToStatisticsEvent = (
             return EventTrackingSelector.ActionDeploy;
         }
         case BuiltinButtonTypes.processRedeploy: {
-            return EventTrackingSelector.ActionDeploy; // ActionRedeploy ?
+            return EventTrackingSelector.ActionDeploy; // TODO: ActionRedeploy?
         }
         case BuiltinButtonTypes.processMigrate: {
             return EventTrackingSelector.ScenarioMigrate;

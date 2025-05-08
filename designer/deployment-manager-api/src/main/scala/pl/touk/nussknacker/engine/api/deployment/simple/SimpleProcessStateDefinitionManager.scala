@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.DefaultActions
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{
-  statusActionsPF,
+  allowedActionsPF,
   visibleActionsPF,
   ProblemStateStatus
 }
@@ -30,7 +30,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     visibleActionsPF.lift(input.scenarioStatus).getOrElse(DefaultVisibleActions.toSet)
 
   override def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
-    statusActionsPF.lift(input.scenarioStatus).getOrElse(DefaultActions.toSet)
+    allowedActionsPF.lift(input.scenarioStatus).getOrElse(DefaultActions)
 
   override def statusDescription(input: ScenarioStatusWithScenarioContext): String = statusDescription(
     input.scenarioStatus

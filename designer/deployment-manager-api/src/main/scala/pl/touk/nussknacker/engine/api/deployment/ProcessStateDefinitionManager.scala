@@ -103,13 +103,6 @@ object ProcessStateDefinitionManager {
   /**
    * Actions, that are applicable in standard use-cases for most deployment managers.
    */
-  val DefaultVisibleActions: List[ScenarioActionName] = List(
-    ScenarioActionName.Cancel,
-    ScenarioActionName.Deploy,
-    ScenarioActionName.Pause,
-    ScenarioActionName.Archive,
-    ScenarioActionName.UnArchive,
-    ScenarioActionName.Rename,
-  )
+  val DefaultVisibleActions: Set[ScenarioActionName] = Set.empty
 
 }

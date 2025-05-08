@@ -146,7 +146,7 @@ class ActionService(
      */
     private def prepareCommandContextWithAction(
         processId: ProcessIdWithName,
-        actionName: ScenarioActionName, // funcja (ctx/status) => actionName ???
+        actionName: ScenarioActionName,
         extractVersionOnWhichActionIsDoneFromLatestScenarioDetails: ScenarioWithDetailsEntity[
           LatestScenarioDetailsShape
         ] => Option[VersionId]

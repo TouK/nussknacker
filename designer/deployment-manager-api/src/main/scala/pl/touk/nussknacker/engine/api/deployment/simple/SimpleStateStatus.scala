@@ -145,21 +145,20 @@ object SimpleStateStatus {
       status
     )
 
-  // TODO: does it need to be PF?
   val visibleActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
-    case SimpleStateStatus.Running =>
+    case SimpleStateStatus.Running | SimpleStateStatus.DuringCancel =>
       Set(
         ScenarioActionName.Cancel,
-        ScenarioActionName.Redeploy, // when running or cancelling we display redeploy instead of deploy
+        ScenarioActionName.Redeploy,
         ScenarioActionName.Pause,
         ScenarioActionName.Archive,
         ScenarioActionName.UnArchive,
         ScenarioActionName.Rename,
       )
-    case SimpleStateStatus.DuringCancel =>
+    case _ =>
       Set(
         ScenarioActionName.Cancel,
-        ScenarioActionName.Redeploy, // when running or cancelling we display redeploy instead of deploy
+        ScenarioActionName.Deploy,
         ScenarioActionName.Pause,
         ScenarioActionName.Archive,
         ScenarioActionName.UnArchive,
@@ -167,12 +166,11 @@ object SimpleStateStatus {
       )
   }
 
-  // TODO: does it need to be PF?
-  val statusActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
+  val allowedActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
     case SimpleStateStatus.NotDeployed =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringDeploy =>
-      Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+      Set(ScenarioActionName.Cancel)
     case SimpleStateStatus.Running =>
       Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Redeploy)
     case SimpleStateStatus.Canceled =>
@@ -182,7 +180,7 @@ object SimpleStateStatus {
     case SimpleStateStatus.Finished =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringCancel =>
-      Set(ScenarioActionName.Redeploy, ScenarioActionName.Cancel)
+      Set(ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
     case s: ShouldNotBeRunning                           => s.allowedActions
