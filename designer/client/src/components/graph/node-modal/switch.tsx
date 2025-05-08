@@ -11,9 +11,9 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { useDiffMark } from "./PathsToMark";
 import { StaticExpressionField } from "./StaticExpressionField";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface Props {
     edges: Edge[];

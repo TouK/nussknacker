@@ -6,9 +6,9 @@ import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { IdField } from "./IdField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { useDiffMark } from "./PathsToMark";
 import { StaticExpressionField } from "./StaticExpressionField";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function Filter({
     edges,

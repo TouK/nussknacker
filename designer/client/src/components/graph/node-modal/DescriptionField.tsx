@@ -4,7 +4,7 @@ import React from "react";
 import type { NodeOrPropertiesType, NodeValidationError } from "../../../types";
 import { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface DescriptionFieldProps {
     autoFocus?: boolean;

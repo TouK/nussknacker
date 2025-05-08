@@ -3,8 +3,8 @@ import React from "react";
 import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DisableField } from "./DisableField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { SourceSinkCommon } from "./SourceSinkCommon";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface SinkProps {
     errors: NodeValidationError[];

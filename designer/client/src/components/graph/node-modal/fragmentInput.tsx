@@ -5,9 +5,9 @@ import type { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter 
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { IdField } from "./IdField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import OutputParametersList from "./OutputParametersList";
 import { ParameterExpressionField } from "./ParameterExpressionField";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 import { useParametersList } from "./useParametersList";
 
 interface FragmentInput {

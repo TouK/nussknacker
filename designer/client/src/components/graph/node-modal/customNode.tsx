@@ -9,8 +9,8 @@ import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { isAggregate } from "./isAggregate";
 import { NodeField } from "./NodeField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export type CustomNodeProps = {
     errors: NodeValidationError[];

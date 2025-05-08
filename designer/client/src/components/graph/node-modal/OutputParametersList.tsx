@@ -9,8 +9,8 @@ import Field, { FieldType } from "./editors/field/Field";
 import type { FieldError } from "./editors/Validators";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeInput, nodeInputWithError, nodeValue } from "./NodeDetailsContent/NodeTableStyled";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 type OutputFieldProps = {
     autoFocus?: boolean;

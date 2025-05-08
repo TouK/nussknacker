@@ -11,8 +11,8 @@ import LabeledInput from "./editors/field/LabeledInput";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 

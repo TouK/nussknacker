@@ -3,7 +3,7 @@ import React from "react";
 import type { NodeType, NodeValidationError } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function Split({
     isEditMode,

@@ -9,8 +9,8 @@ import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
 import { NodeField } from "./NodeField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function EnricherProcessor({
     errors,

@@ -6,8 +6,8 @@ import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface SourceSinkCommonProps {
     errors: NodeValidationError[];

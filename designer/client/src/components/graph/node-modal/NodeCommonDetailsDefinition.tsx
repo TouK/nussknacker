@@ -6,8 +6,8 @@ import { DescriptionField } from "./DescriptionField";
 import LabeledInput from "./editors/field/LabeledInput";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export interface NodeDetailsProps<F extends Field> {
     node: NodeType<F>;

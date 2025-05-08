@@ -4,8 +4,8 @@ import type { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes
 import { DndItems } from "../../../../common/dndItems/DndItems";
 import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
-import type { SetProperty } from "../../NodeTypeDetailsContent";
 import { useDiffMark } from "../../PathsToMark";
+import type { SetProperty } from "../../useNodeTypeDetailsContentLogic";
 import MapRow from "./MapRow";
 
 interface MapProps<F extends Field> {

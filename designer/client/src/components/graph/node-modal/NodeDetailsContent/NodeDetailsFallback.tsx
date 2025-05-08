@@ -2,7 +2,7 @@ import React from "react";
 
 import type { NodeType, NodeValidationError } from "../../../../types";
 import { IdField } from "../IdField";
-import type { SetProperty } from "../NodeTypeDetailsContent";
+import type { SetProperty } from "../useNodeTypeDetailsContentLogic";
 
 export function NodeDetailsFallback(props: {
     node: NodeType;

@@ -7,8 +7,8 @@ import type { FieldType } from "./editors/field/Field";
 import Field from "./editors/field/Field";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;

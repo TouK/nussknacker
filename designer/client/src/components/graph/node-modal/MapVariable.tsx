@@ -5,7 +5,7 @@ import type { Field, NodeType, NodeValidationError, TypedObjectTypingResult, Var
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
 import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
-import type { SetProperty } from "./NodeTypeDetailsContent";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export interface MapVariableProps<F extends Field> {
     node: NodeType<F>;

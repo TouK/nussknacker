@@ -4,9 +4,9 @@ import React, { useMemo } from "react";
 import type { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { findParamDefinitionByName } from "./parameterHelpers";
 import { useTestResults } from "./TestResultsWrapper";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export type FieldWrapperProps = PropsWithChildren<Omit<ParameterExpressionFieldProps, "FieldWrapper">>;
 

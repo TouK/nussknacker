@@ -3,7 +3,7 @@ import React from "react";
 import type { NodeType, NodeValidationError, StickyNoteNodeType } from "../../../types";
 import Field, { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
-import type { SetProperty } from "./NodeTypeDetailsContent";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function StickyNote({
     isEditMode,

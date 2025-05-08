@@ -6,7 +6,7 @@ import type { RootState } from "../../../reducers";
 import type { NodeType, NodeValidationError, VariableTypes } from "../../../types";
 import MapVariable from "./MapVariable";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
-import type { SetProperty } from "./NodeTypeDetailsContent";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function VariableBuilder({
     addElement,

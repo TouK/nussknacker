@@ -3,9 +3,9 @@ import React from "react";
 import type { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
-import type { SetProperty } from "./NodeTypeDetailsContent";
 import { findParamDefinitionByName } from "./parameterHelpers";
 import { useTestResults } from "./TestResultsWrapper";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({
