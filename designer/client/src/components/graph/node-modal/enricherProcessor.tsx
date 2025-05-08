@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type ProcessUtils from "../../../common/ProcessUtils";
+import { useUserSettings } from "../../../common/userSettings";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
@@ -35,6 +36,10 @@ export function EnricherProcessor({
     showValidation?: boolean;
 }): JSX.Element {
     const { t } = useTranslation();
+    const [settings] = useUserSettings();
+    const showMockFieldOnEnrichers = settings["node.showMockFieldOnEnrichers"];
+
+    const showMockField = showMockFieldOnEnrichers && node.type === "Enricher" && node.service.id !== "decision-table";
 
     return (
         <>
@@ -90,7 +95,7 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     errors={errors}
                 />
-                {node.type === "Enricher" && node.service.id !== "decision-table" ? (
+                {showMockField ? (
                     <MockedOutputField
                         isEditMode={isEditMode}
                         editedNode={node}
