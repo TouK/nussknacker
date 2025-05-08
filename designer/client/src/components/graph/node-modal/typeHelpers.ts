@@ -1,14 +1,23 @@
 type Primitive = string | number | boolean | symbol | null | undefined;
 
-type NormalizePath<P extends string> = P extends `${infer Left}[${infer Index}].${infer Right}`
-    ? NormalizePath<`${Left}.${Index}.${Right}`>
+export type NormalizePath<P extends string> = P extends `${infer Left}[${infer Index}]${infer Rest}`
+    ? Index extends ""
+        ? never
+        : NormalizePath<`${Left}.${Index}${Rest}`>
     : P;
 
-type ArrayKey = number | `${number}`;
+type ArrayKey<K extends string> = K extends `${infer Key}.${infer I}`
+    ?
+          | `${Key}[]` // for editor completion only
+          | `${Key}[${I}]`
+          | `${Key}.#` // for editor completion only
+          | `${Key}.${I}`
+    : never;
+
 type PathImpl<K extends string | number, V> = V extends Primitive
     ? `${K}`
     : V extends ReadonlyArray<infer U>
-    ? `${K}` | `${K}[${ArrayKey}]` | `${K}[${ArrayKey}].${PathImpl<Extract<ArrayKey, string>, U>}` | `${K}.${PathImpl<ArrayKey, U>}`
+    ? `${K}` | ArrayKey<`${K}.${number}`> | `${ArrayKey<`${K}.${number}`>}.${Paths<U>}`
     : `${K}` | `${K}.${Paths<V>}`;
 
 export type Paths<T> = {

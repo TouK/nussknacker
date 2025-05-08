@@ -140,12 +140,9 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     );
 
     const setProperty = useCallback<SetProperty>(
-        (property, newValue, defaultValue): void => {
-            setEditedNode((currentNode) => {
-                const value = newValue == null && defaultValue != undefined ? defaultValue : newValue;
-                const node = cloneDeep(currentNode);
-                return set(node, property, value);
-            });
+        <P extends Paths<NodeType>, V extends PathValue<NodeType, P>>(path: P, value: V, fallbackValue?: V): void => {
+            const nextValue = value === null && fallbackValue !== undefined ? fallbackValue : value;
+            setEditedNode((currentNode) => setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue));
         },
         [setEditedNode],
     );
