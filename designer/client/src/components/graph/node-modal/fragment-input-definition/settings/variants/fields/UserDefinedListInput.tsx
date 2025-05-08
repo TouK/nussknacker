@@ -188,12 +188,12 @@ export const UserDefinedListInput = ({
                         validationLabelInfo={
                             temporaryValuesTyping && <CircularProgress size={"1rem"} sx={(theme) => ({ marginTop: theme.spacing(0.5) })} />
                         }
-                        expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem.trim() }}
+                        expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
                         onValueChange={(value) => {
-                            setTemporaryListItem(value);
+                            setTemporaryListItem(value.trim());
                             setTemporaryValuesTyping(true);
                             setTemporaryValueErrors([]);
-                            validateTemporaryListItem(value);
+                            validateTemporaryListItem(value.trim());
                             setIsEnterPressed(false);
                         }}
                         variableTypes={variableTypes}
