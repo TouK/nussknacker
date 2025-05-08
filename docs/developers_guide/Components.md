@@ -1,8 +1,10 @@
-# ComponentProvider API
+# Components Management
+
+## ComponentProvider API
               
 Check [nussknacker-sample-components](https://github.com/touk/nussknacker-sample-components) project for self-contained samples of custom Components.
 
-# Components implementation
+## Components implementation
                  
 Component is defined by two parts:
 - specification
