@@ -1,26 +1,28 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy } from "lodash";
-import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
-import { Action, Reducer } from "../../actions/reduxTypes";
+import { concat, defaultsDeep, isEqual, omit as _omit, partition, pick as _pick, sortBy } from "lodash";
+import type { StateWithHistory } from "redux-undo";
+import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
+
+import type { Action, Reducer } from "../../actions/reduxTypes";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { ValidationResult } from "../../types";
+import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
+import type { Scenario } from "../../components/Process/types";
+import type { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
-import { nodes } from "../layoutUtils";
+import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
-import { NestedKeyOf } from "./nestedKeyOf";
+import { appendHistorySquashLogic } from "./historySquash";
+import type { NestedKeyOf } from "./nestedKeyOf";
 import { selectionState } from "./selectionState";
-import { GraphState } from "./types";
+import type { GraphState } from "./types";
 import {
     addNodesWithLayout,
-    addStickyNotesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
-    prepareNewStickyNotesWithLayout,
-    removeStickyNoteFromLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -29,14 +31,20 @@ import {
 
 const emptyGraphState: GraphState = {
     scenarioLoading: false,
-    scenario: null,
+    scenario: {
+        scenarioGraph: {
+            nodes: [],
+            edges: [],
+            properties: null,
+            stickyNotes: [],
+        },
+    } as Scenario,
     layout: [],
     testCapabilities: null,
     testFormParameters: null,
     selectionState: [],
     processCounts: {},
     testResults: null,
-    unsavedNewName: null,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -67,7 +75,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
-            const newNodeids = sortBy(action.scenarioGraph.nodes.map((n) => n.id));
+            const scenarioWithStickyNotes: Scenario = addStickyNotesToNodes(action.scenario);
+            const newNodeids = sortBy(scenarioWithStickyNotes.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
             return {
@@ -76,7 +85,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    ...action,
+                    ...scenarioWithStickyNotes,
                 },
             };
         }
@@ -84,21 +93,22 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testCapabilities: action.capabilities,
+                testFormParameters: action.capabilities?.testWithParameters?.sourceParameters,
             };
         }
-        case "UPDATE_TEST_FORM_PARAMETERS": {
+        case "UPDATE_TEST_TYPE": {
             return {
                 ...state,
-                testFormParameters: action.testFormParameters,
+                testType: action.testType,
             };
         }
         case "DISPLAY_PROCESS": {
-            const { scenario } = action;
+            const scenario = addStickyNotesToNodes(action.scenario);
             return {
                 ...state,
                 scenario,
                 scenarioLoading: false,
-                layout: LayoutUtils.fromMeta(scenario.scenarioGraph),
+                layout: fromMeta(scenario.scenarioGraph),
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
@@ -147,6 +157,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
             return {
                 ...state,
+                selectionState: state.selectionState.map((current) => (current === action.before.id ? action.after.id : current)),
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
@@ -163,12 +174,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     scenarioGraph: { ...action.scenarioGraphAfterChange },
                     validationResult: updateValidationResult(state, action),
                 },
-            };
-        }
-        case "PROCESS_RENAME": {
-            return {
-                ...state,
-                unsavedNewName: action.name,
             };
         }
         case "EDIT_LABELS": {
@@ -242,16 +247,48 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: action.layout,
             });
         }
-        case "STICKY_NOTES_UPDATED": {
-            const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+        case "STICKY_NOTE_UPDATED": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const updatedNodes = nodes.map((node) =>
+                node.id === action.id
+                    ? {
+                          ...node,
+                          dimensions: action.dimensions,
+                          content: action.content ? action.content : node.content,
+                      }
+                    : node,
+            );
             return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: updatedNodes,
+                    },
+                },
             };
         }
-        case "STICKY_NOTE_DELETED": {
-            const { stickyNotes, layout } = removeStickyNoteFromLayout(state, action.stickyNoteId);
+        case "STICKY_NOTE_SET_ERRORS": {
+            const { nodes = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+            const [stickyNotes, graphNodes] = partition(nodes, (node) => node.type === StickyNoteType);
+            const stickyNotesUpdated = stickyNotes.map((stickyNote) => {
+                return action.stickyNoteErrors[stickyNote.id]
+                    ? {
+                          ...stickyNote,
+                          errors: action.stickyNoteErrors[stickyNote.id],
+                      }
+                    : stickyNote;
+            });
             return {
-                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: {
+                        ...scenarioGraph,
+                        nodes: [...graphNodes, ...stickyNotesUpdated],
+                    },
+                },
             };
         }
         case "NODES_WITH_EDGES_ADDED": {
@@ -334,10 +371,14 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     selectionState,
 });
 
+export type GraphStateWithHistory = StateWithHistory<GraphState> & {
+    snapshots: number[];
+};
+
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
-const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "unsavedNewName", "layout", "selectionState"];
+const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.validationResult", "scenario.history"];
 
 const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["scenario.validationResult"]));
@@ -349,11 +390,11 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
     groupBy: batchGroupBy.init(),
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-    }, excludeAction(["VALIDATION_RESULT", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ", "UPDATE_TEST_FORM_PARAMETERS"])),
+    }, excludeAction(["VALIDATION_RESULT", "STICKY_NOTE_SET_ERRORS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ"])),
 });
 
 // apply only undoable changes for undo actions
-function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action): StateWithHistory<GraphState> {
+const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action) => {
     const nextState = undoableReducer(state, action);
 
     if (Object.values(UndoActionTypes).includes(action.type)) {
@@ -362,10 +403,9 @@ function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action)
     }
 
     return nextState;
-}
+};
 
-//TODO: replace this with use of selectors everywhere
-export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
-    const history = fixUndoableHistory(state?.history, action);
-    return { ...history.present, history };
+export const reducerWithUndo: Reducer<GraphStateWithHistory> = (state, action) => {
+    const history = fixUndoableHistory(state, action);
+    return appendHistorySquashLogic({ ...history, snapshots: state?.snapshots }, action);
 };

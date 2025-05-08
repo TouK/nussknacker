@@ -1,7 +1,7 @@
 import { css, cx } from "@emotion/css";
 import { Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import type { PropsWithChildren} from "react";
+import type { PropsWithChildren } from "react";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 

@@ -1,17 +1,19 @@
 import { Divider, Stack, styled, Typography } from "@mui/material";
+import { formatDateTime } from "nussknackerUi/DateUtils";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoryButton, Highlight, TruncateWrapper, useFilterContext } from "../../common";
-import { Author } from "./author";
-import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
-import { RowType } from "./listPart";
-import { FiltersContextType } from "../../common/filters/filtersContext";
-import { CopyTooltip } from "./copyTooltip";
-import { ScenarioStatus } from "./scenarioStatus";
-import { ProcessingModeItem } from "./processingMode";
-import { formatDateTime } from "nussknackerUi/DateUtils";
+
+import { CategoryButton, Highlight, TruncateWrapper } from "../../common";
+import type { FiltersContextType } from "../../common/filters/filtersContext";
 import { LabelChip } from "../../common/labelChip";
+import { useScenariosFilterContext } from "../filters/common/useScenariosFilterContext";
+import type { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { useScenariosWithCategoryVisible } from "../useScenariosQuery";
+import { Author } from "./author";
+import { CopyTooltip } from "./copyTooltip";
+import type { RowType } from "./listPart";
+import { ProcessingModeItem } from "./processingMode";
+import { ScenarioStatus } from "./scenarioStatus";
 
 function Category({
     category,
@@ -40,7 +42,7 @@ const HighlightedName = styled(Highlight)({
 
 export function FirstLine({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
-    const filtersContext = useFilterContext<ScenariosFiltersModel>();
+    const filtersContext = useScenariosFilterContext();
     const { withCategoriesVisible } = useScenariosWithCategoryVisible();
 
     return (
@@ -59,11 +61,11 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
 }
 
 export function SecondLine({ row }: { row: RowType }): JSX.Element {
-    const { getFilter } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter } = useScenariosFilterContext();
     const [createdBy] = getFilter("CREATED_BY", true);
     const [sortedBy] = getFilter("SORT_BY", true);
     const filteredByCreation = createdBy === row.createdBy;
-    const filtersContext = useFilterContext<ScenariosFiltersModel>();
+    const filtersContext = useScenariosFilterContext();
 
     return (
         <Stack

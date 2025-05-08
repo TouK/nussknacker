@@ -14,7 +14,7 @@ object TableTypeOutputValidator {
     val aligned              = ToTableTypeSchemaBasedEncoder.alignTypingResult(actualType, expectedType)
     val expectedTypingResult = expectedType.toTypingResult
 
-    if (aligned.canBeConvertedTo(expectedTypingResult)) {
+    if (aligned.canBeLooselyAssignedTo(expectedTypingResult)) {
       Valid(())
     } else {
       invalidNel(

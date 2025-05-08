@@ -7,7 +7,7 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
@@ -728,23 +728,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("find redundant service parameters") {
-    val serviceId  = "serviceId"
-    val definition = baseDefinitionBuilder.withService(serviceId).build
-
-    val redundantServiceParameter = "foo"
-
-    val processWithInvalidServiceInvocation =
-      ScenarioBuilder
-        .streaming("process1")
-        .source("id1", "source")
-        .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'".spel)
-
-    validate(processWithInvalidServiceInvocation, definition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(_, _), _)) =>
-    }
-  }
-
   test("find missing source") {
     val serviceId = "serviceId"
     val processWithRefToMissingService =
@@ -970,19 +953,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
               _
             )
           ) =>
-    }
-  }
-
-  test("validate service params") {
-    val process = ScenarioBuilder
-      .streaming("process1")
-      .source("id1", "typed-source")
-      .enricher("enricher1", "out", "withParamsService")
-      .emptySink("id2", "sink")
-
-    inside(validate(process, definitionWithTypedSource).result) {
-      case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) =>
-        missingParam shouldBe Set(ParameterName("par1"))
     }
   }
 
@@ -1231,8 +1201,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("not allow customNode outputVar when no return type in definition") {
-    val processWithInvalidExpresssion =
+  test("allow customNode outputVar when no return type in definition - it will be reported only as a warning in logs") {
+    val processWithOutputWhenNoOutputNeeded =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
@@ -1240,9 +1210,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
-    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set(ParameterName("OutputVariable")) =>
-    }
+    validate(processWithOutputWhenNoOutputNeeded, baseDefinition).result shouldBe Symbol("valid")
   }
 
   test("require customNode outputVar when return type in definition") {
@@ -1739,8 +1707,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       definitions: ModelDefinition,
       isFragment: Boolean = false
   ): CompilationResult[Unit] = {
-    implicit val jobData: JobData =
-      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val jobData: JobData = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     ProcessValidator
       .default(
         ModelDefinitionWithClasses(definitions),

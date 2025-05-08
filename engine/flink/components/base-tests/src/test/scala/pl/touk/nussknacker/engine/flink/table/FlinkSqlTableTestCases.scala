@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table
 
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.FlinkSqlDdlStatement.{
   CatalogName,
+  CatalogType,
   CreateCatalog,
   SqlOption
 }
@@ -17,7 +18,9 @@ object FlinkSqlTableTestCases {
         |    someIntComputed AS someInt * 2,
         |    `file.name` STRING NOT NULL METADATA
         |) WITH (
-        |   'connector' = 'filesystem'
+        |    'connector' = 'filesystem',
+        |    'path' = '.',
+        |    'format' = 'csv'
         |);""".stripMargin
 
   val unboundedDatagenTable: String =
@@ -83,7 +86,8 @@ object FlinkSqlTableTestCases {
         SqlOption("username", "username"),
         SqlOption("password", "password"),
         SqlOption("base-url", "jdbc:postgresql://localhost:5432"),
-      )
+      ),
+      CatalogType("jdbc")
     )
 
   }

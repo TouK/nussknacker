@@ -1,2 +1,3 @@
 pl.touk.nussknacker.test.mock.TestCustomHttpServiceProviderFactory
 pl.touk.nussknacker.test.mock.SecondTestCustomHttpServiceProviderFactory
+pl.touk.nussknacker.test.mock.TapirTestCustomHttpServiceProviderFactory

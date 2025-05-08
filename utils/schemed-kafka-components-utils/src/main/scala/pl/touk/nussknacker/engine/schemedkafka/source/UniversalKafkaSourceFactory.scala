@@ -16,28 +16,24 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{
-  ContextInitializer,
-  ProcessObjectDependencies,
-  Source,
-  SourceFactory,
-  TopicName
-}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  schemaVersionParamName,
-  sinkValueParamName
+  inputParamName,
+  schemaVersionParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
+import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleTypeDeterminer
 
 /**
   * This is universal kafka source - it will handle both avro and json
@@ -62,12 +58,27 @@ class UniversalKafkaSourceFactory(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition =
     topicParamStep orElse
-      schemaParamStep(paramsDeterminedAfterSchema) orElse
+      schemaParamStep(Nil) orElse
+      afterSchemaParamStep(paramsDeterminedAfterSchema) orElse
       nextSteps(context, dependencies)
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
+    case step @ TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) ::
+          (`dataSampleParamName`, DefinedEagerParameter(_, typingResult)) :: _,
+          _
+        ) if contentType == ContentTypes.JSON.toString =>
+      val preparedTopic = prepareTopic(topic)
+      val valueValidationResult = Valid(
+        (
+          Some(runtimeDataForJsonSchema),
+          TypingResultFromJsonSampleTypeDeterminer(typingResult)
+        )
+      )
+      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
@@ -77,25 +88,15 @@ class UniversalKafkaSourceFactory(
       val valueValidationResult = if (contentType.equals(ContentTypes.JSON.toString)) {
         Valid(
           (
-            Some(
-              RuntimeSchemaData[ParsedSchema](
-                new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
-                Some(SchemaId.fromString(ContentTypes.JSON.toString))
-              )
-            ),
+            Some(runtimeDataForJsonSchema),
             // This is the type after it leaves source
-            Unknown
+            Typed.json
           )
         )
       } else {
         Valid(
           (
-            Some(
-              RuntimeSchemaData[ParsedSchema](
-                new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain),
-                Some(SchemaId.fromString(ContentTypes.PLAIN.toString))
-              )
-            ),
+            Some(runtimeDataForPlainSchema),
             // This is the type after it leaves source
             Unknown
           )
@@ -165,10 +166,10 @@ class UniversalKafkaSourceFactory(
         FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
         prepareSourceFinalErrors(
-          context,
-          dependencies,
-          parameters,
-          keyValidationResult.swap.toList ++ valueValidationResult.swap.toList
+          context = context,
+          dependencies = dependencies,
+          parameters = parameters,
+          errors = keyValidationResult.swap.toList ++ valueValidationResult.swap.toList
         )
     }
   }
@@ -225,6 +226,17 @@ class UniversalKafkaSourceFactory(
       schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[Any, Any](kafkaConfig, None, None)
     val recordFormatter =
       schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[Any, Any](kafkaConfig, formatterSchema)
+
+    val defaultValuesForTestParameters: Map[ParameterName, Expression] =
+      if (params.isPresent(dataSampleParamName)) {
+        params
+          .extract[Json](dataSampleParamName)
+          .map { dataSample => inputParamName -> Expression.json(dataSample.spaces2) }
+          .toMap
+      } else {
+        Map.empty
+      }
+
     implProvider.createSource(
       params,
       dependencies,
@@ -234,21 +246,22 @@ class UniversalKafkaSourceFactory(
       deserializationSchema,
       recordFormatter,
       kafkaContextInitializer,
-      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original),
+      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original, defaultValuesForTestParameters),
       modelDependencies.namingStrategy
     )
   }
 
   private def prepareKafkaTestParametersInfo(
       runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      topic: TopicName.ForSource
+      topic: TopicName.ForSource,
+      defaultValuesForTestParameters: Map[ParameterName, Expression]
   )(
       implicit nodeId: NodeId
   ): KafkaTestParametersInfo = {
     Validated
       .fromOption(
         runtimeSchemaOpt,
-        NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None))
+        NonEmptyList.one(CustomNodeError("Cannot generate test parameters: no runtime schema found", None))
       )
       .andThen { runtimeSchema =>
         val parsedSchema                                   = runtimeSchema.schema
@@ -258,7 +271,14 @@ class UniversalKafkaSourceFactory(
           .extractParameterForTests(parsedSchema)
           .map(_.toParameters)
           .map { params =>
-            KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
+            val enrichedParams = params.map {
+              case param if defaultValuesForTestParameters.contains(param.name) =>
+                param.copy(
+                  defaultValue = Some(defaultValuesForTestParameters(param.name))
+                )
+              case other => other
+            }
+            KafkaTestParametersInfo(enrichedParams, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
           }
       }
       .valueOr(e => throw new RuntimeException(e.toList.mkString("")))
@@ -279,6 +299,68 @@ class UniversalKafkaSourceFactory(
         serializedConsumerRecord
       ).asJson
     )
+  }
+
+  @transient protected lazy val dataSampleParamName: ParameterName =
+    KafkaUniversalComponentTransformer.dataSampleParamName
+
+  private def afterSchemaParamStep(
+      nextParams: List[Parameter]
+  ): ContextTransformationDefinition = {
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: Nil,
+          _
+        ) if contentType == ContentTypes.JSON.toString && enableSchemaDerivationFromDataSampleForSchemalessJsonTopics =>
+      val dataSampleParam = getJsonDataSampleParam
+      NextParameters(parameters = dataSampleParam.createParameter() :: nextParams)
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(_: String, _)) :: Nil,
+          _
+        ) if nextParams.nonEmpty =>
+      NextParameters(parameters = nextParams)
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) :: Nil,
+          _
+        ) if nextParams.nonEmpty =>
+      NextParameters(parameters = nextParams)
+  }
+
+  private def getJsonDataSampleParam: ParameterCreatorWithNoDependency with ParameterExtractor[Any] = {
+    ParameterDeclaration
+      .optional[Any](dataSampleParamName)
+      .withCreator(
+        modify = _.copy(
+          typ = Typed.json,
+          editors = List(JsonParameterEditor),
+          defaultValue = Some(Expression.json("{}")),
+          hintText = Some(
+            "Provide an example JSON data sample. It will be analyzed to determine field types and generate a schema for easier data access in the subsequent nodes."
+          ),
+        )
+      )
+  }
+
+  private def runtimeDataForPlainSchema = {
+    RuntimeSchemaData[ParsedSchema](
+      new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain),
+      Some(SchemaId.fromString(ContentTypes.PLAIN.toString))
+    )
+  }
+
+  private def runtimeDataForJsonSchema = {
+    RuntimeSchemaData[ParsedSchema](
+      new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
+      Some(SchemaId.fromString(ContentTypes.JSON.toString))
+    )
+  }
+
+  protected lazy val enableSchemaDerivationFromDataSampleForSchemalessJsonTopics: Boolean = {
+    val paramPath =
+      s"${KafkaConfig.DefaultGlobalKafkaConfigPath}.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource"
+    modelDependencies.config.hasPath(paramPath) && modelDependencies.config.getBoolean(paramPath)
   }
 
   override def nodeDependencies: List[NodeDependency] =

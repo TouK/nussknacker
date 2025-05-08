@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 
 import cats.Traverse
+import cats.effect.IO
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
@@ -9,9 +10,13 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{
+  CanBeConsideredAsActiveStatus,
+  ProblemStateStatus
+}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.BadRequestError
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.{
   BulkQueriedDeploymentStatuses,
@@ -76,6 +81,33 @@ class ScenarioStatusProvider(
           .sequence[DB, Option[StateStatus]]
       } yield finalScenariosStatuses
     )
+  }
+
+  def getActiveScenariosFor(
+      processingTypes: Iterable[ProcessingType]
+  )(implicit user: LoggedUser): IO[Set[ProcessName]] = {
+    IO.fromFuture {
+      IO {
+        implicit val freshnessStatus: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+        for {
+          scenariosForGivenProcessingTypes <- dbioRunner.run(
+            processRepository.fetchLatestProcessesDetails[Unit](
+              ScenarioQuery.empty
+                .copy(isFragment = Some(false), isArchived = Some(false), processingTypes = Some(processingTypes))
+            )
+          )
+          activeScenarios <- getScenariosStatuses(scenariosForGivenProcessingTypes)
+            .map { statuses =>
+              statuses
+                .zip(scenariosForGivenProcessingTypes)
+                .collect {
+                  case (Some(status), process) if status.isActive =>
+                    process.name
+                }
+            }
+        } yield activeScenarios.toSet
+      }
+    }
   }
 
   private def getNonFragmentScenarioStatus[ScenarioShape, F[_]: Traverse](
@@ -175,6 +207,7 @@ class ScenarioStatusProvider(
       logger.debug(s"Status for: '${processDetails.name}' is: $scenarioStatus")
       DBIOAction.successful(scenarioStatus)
     }
+
     if (processDetails.isFragment) {
       throw FragmentStateException
     } else if (processDetails.isArchived) {

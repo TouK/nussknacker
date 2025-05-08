@@ -62,10 +62,23 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
         timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
       )
       @Editor(`type` = EditorType.SPEL_EDITOR)
+      @DefaultValue("T(java.time.Duration).parse('PT1M')")
       schedule: Duration,
       // TODO: @DefaultValue(1) instead of nullable
-      @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
-      @ParamName("value") value: LazyParameter[AnyRef]
+      @ParamName("count")
+      @Nullable
+      @Min(1)
+      @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
+      nullableCount: Integer,
+      @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
+      @DefaultValue(
+        value =
+          "{\n\t\"sampleField\": \"#{#UTIL.uuid()}\",\n\t\"dateTime\": \"#{#DATE_FORMAT.format(#DATE.now)}\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
+        language = ExpressionLanguage.JSON_TEMPLATE
+      )
+      @ParamName("value")
+      value: LazyParameter[AnyRef]
   ): Source = {
     new StandardFlinkSource[AnyRef]
       with ReturningType

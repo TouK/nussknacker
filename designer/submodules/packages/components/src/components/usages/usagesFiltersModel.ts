@@ -1,5 +1,5 @@
-import { StatusFilterOption } from "../../scenarios/filters/typeOptionsStack";
-import { ProcessingMode } from "../../scenarios/list/processingMode";
+import type { StatusFilterOption } from "../../scenarios/filters/typeOptionsStack";
+import type { ProcessingMode } from "../../scenarios/list/processingMode";
 
 export interface UsagesFiltersModel {
     TEXT?: string;
@@ -26,3 +26,15 @@ export enum UsagesFiltersUsageType {
     INDIRECT = "INDIRECT",
     DIRECT = "DIRECT",
 }
+
+export type UsagesFilterKey = keyof Required<UsagesFiltersModel>;
+
+export const USAGES_FILTER: { [K in UsagesFilterKey]: K } = {
+    TEXT: "TEXT",
+    CATEGORY: "CATEGORY",
+    CREATED_BY: "CREATED_BY",
+    TYPE: "TYPE",
+    USAGE_TYPE: "USAGE_TYPE",
+    STATUS: "STATUS",
+    PROCESSING_MODE: "PROCESSING_MODE",
+} as const;

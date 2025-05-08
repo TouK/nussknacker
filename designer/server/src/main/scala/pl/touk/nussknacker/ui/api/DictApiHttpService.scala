@@ -86,7 +86,7 @@ class DictApiHttpService(
                   success(
                     dictionaries
                       .filter { case (id, definition) =>
-                        definition.valueType(id).canBeStrictlyConvertedTo(expectedType)
+                        definition.valueType(id).canBeStrictlyAssignedTo(expectedType)
                       }
                       .map { case (id, _) => DictDto(id, id) }
                       .toList

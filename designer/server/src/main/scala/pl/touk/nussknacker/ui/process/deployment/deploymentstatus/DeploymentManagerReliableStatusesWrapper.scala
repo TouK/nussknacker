@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.process.deployment.deploymentstatus
 
-import org.apache.pekko.actor.ActorSystem
+import cats.effect.IO
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentStatusDetails, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.ScenarioIdData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.FutureUtils.FutureOps
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -22,28 +22,29 @@ object DeploymentManagerReliableStatusesWrapper {
     )(
         implicit user: LoggedUser,
         freshnessPolicy: DataFreshnessPolicy,
-        actorSystem: ActorSystem
+        executionContextWithIORuntime: ExecutionContextWithIORuntime
     ): Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] = {
-      import actorSystem._
-      val deploymentStatusesOptFuture
-          : Future[Either[GetDeploymentsStatusesError, WithDataFreshnessStatus[List[DeploymentStatusDetails]]]] =
-        dmDispatcher
-          .deploymentManager(scenarioIdData.processingType)
-          .map(
-            _.getScenarioDeploymentsStatuses(scenarioIdData.name)
+      import executionContextWithIORuntime.ioRuntime
+      val deploymentStatusesOpt = IO.fromFuture(IO {
+        dmDispatcher.deploymentManager(scenarioIdData.processingType) match {
+          case Some(deploymentManager) =>
+            deploymentManager
+              .getScenarioDeploymentsStatuses(scenarioIdData.name)
               .map(Right(_))
-              .recover { case NonFatal(e) => Left(GetDeploymentsStatusesFailure(scenarioIdData.name, e)) }
-          )
-          .getOrElse(
+              .recover { case NonFatal(e) =>
+                Left(GetDeploymentsStatusesFailure(scenarioIdData.name, e))
+              }
+          case None =>
             Future.successful(Left(ProcessingTypeIsNotConfigured(scenarioIdData.name, scenarioIdData.processingType)))
-          )
+        }
+      })
 
       timeoutOpt
         .map { timeout =>
-          deploymentStatusesOptFuture
-            .withTimeout(timeout, timeoutResult = Left(GetDeploymentsStatusTimeout(scenarioIdData.name)))
+          deploymentStatusesOpt.timeoutTo(timeout, IO.delay(Left(GetDeploymentsStatusTimeout(scenarioIdData.name))))
         }
-        .getOrElse(deploymentStatusesOptFuture)
+        .getOrElse(deploymentStatusesOpt)
+        .unsafeToFuture()
     }
 
   }

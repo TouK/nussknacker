@@ -1,15 +1,6 @@
-import { NodeType, Parameter, UIParameter } from "../../../types";
 import { cloneDeep, get, set } from "lodash";
 
-export type AdjustReturn = {
-    adjustedNode: NodeType;
-    //currently not used, but maybe we can e.g. display them somewhere?
-    unusedParameters: Parameter[];
-};
-
-const findUnusedParameters = (parameters: Array<Parameter>, definitions: UIParameter[] = []) => {
-    return parameters.filter((param) => !definitions.find((def) => def.name == param.name));
-};
+import type { NodeType, UIParameter } from "../../../types";
 
 const parametersPath = (node) => {
     switch (node.type) {
@@ -19,6 +10,7 @@ const parametersPath = (node) => {
             return `parameters`;
         case "Source":
         case "Sink":
+        case "FragmentInput":
             return `ref.parameters`;
         case "Enricher":
             return `service.parameters`;
@@ -30,12 +22,12 @@ const parametersPath = (node) => {
 };
 
 //We want to change parameters in node based on current node definition. This function can be used in
-//two cases: dynamic parameters handling and automatic node migrations (e.g. in fragments). Currently we use it only for dynamic parameters
-export function adjustParameters(node: NodeType, parameterDefinitions: UIParameter[]): AdjustReturn {
+//two cases: dynamic parameters handling and automatic node migrations (e.g. in fragments)
+export function adjustParameters(node: NodeType, parameterDefinitions: UIParameter[]): NodeType {
     const path = parametersPath(node);
 
     if (!path || !parameterDefinitions) {
-        return { adjustedNode: node, unusedParameters: [] };
+        return node;
     }
 
     const currentNode = cloneDeep(node);
@@ -51,7 +43,5 @@ export function adjustParameters(node: NodeType, parameterDefinitions: UIParamet
             };
             return currentParam || parameterFromDefinition;
         });
-    const adjustedNode = set(currentNode, path, adjustedParameters);
-    const unusedParameters = findUnusedParameters(currentParameters, parameterDefinitions);
-    return { adjustedNode, unusedParameters };
+    return set(currentNode, path, adjustedParameters);
 }

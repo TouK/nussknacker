@@ -135,6 +135,26 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     definitions.componentGroups.filter(_.name == ComponentGroupName("hiddenComponentGroup")) shouldBe empty
   }
 
+  test("should hide a component marked as `disabled`") {
+    val model: ModelData = LocalModelData(
+      ConfigFactory.parseString(s"""componentsUiConfig {
+                                   |  service-hiddenEnricher: {
+                                   |    disabled: true
+                                   |  }
+                                   |}
+                                   |""".stripMargin),
+      List(
+        ComponentDefinition("hiddenEnricher", TestService),
+        ComponentDefinition("visibleEnricher", TestService)
+      )
+    )
+
+    val definitions = prepareDefinitions(model, List.empty)
+
+    definitions.components shouldNot contain key ComponentId(ComponentType.Service, "hiddenEnricher")
+    definitions.components should contain key ComponentId(ComponentType.Service, "visibleEnricher")
+  }
+
   test("should be able to setup component group name programmatically") {
     val typeConfig      = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val targetGroupName = ComponentGroupName("someGroup")
@@ -320,7 +340,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val processingType = Streaming
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
-      new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
+      new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig.underlyingConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         model.modelDefinitionWithClasses.classDefinitions,

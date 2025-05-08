@@ -1,19 +1,16 @@
-import { Box, BoxProps, Paper, useMediaQuery } from "@mui/material";
+import type { BoxProps } from "@mui/material";
+import { Box, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import {
-    DataGrid,
-    DataGridProps,
-    GridActionsColDef,
-    GridColDef,
-    GridRenderCellParams,
-    GridSlotsComponentsProps,
-    useGridApiRef,
-} from "@mui/x-data-grid";
-import React, { memo, PropsWithChildren, useCallback, useMemo } from "react";
-import { CustomPagination } from "./customPagination";
-import { FilterRules, useFilterContext } from "../common/filters";
+import type { DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams, GridSlotsComponentsProps } from "@mui/x-data-grid";
+import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
+import type { PropsWithChildren } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "rooks";
+
+import type { FilterRules } from "../common/filters";
+import { CustomPagination } from "./customPagination";
+import { useComponentsFilterContext } from "./filters/useComponentsFilterContext";
 
 export type CellRendererParams<R = any, K = unknown> = GridRenderCellParams<K extends keyof R ? R[K] : any, R>;
 
@@ -40,7 +37,7 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { data = [], filterRules, isLoading, ...passProps } = props;
     const { t } = useTranslation();
 
-    const { getFilter } = useFilterContext<M>();
+    const { getFilter } = useComponentsFilterContext<M>();
     const filters = useMemo(
         () =>
             filterRules.map(

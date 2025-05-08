@@ -10,14 +10,19 @@ import org.apache.kafka.common.serialization.Serializer
 import org.everit.json.schema.EmptySchema
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{
+  JsonParameterEditor,
+  JsonTemplateParameterEditor,
+  Parameter,
+  SpelParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
 import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{inputParamName, sinkValueParamName}
 import pl.touk.nussknacker.engine.schemedkafka.encode._
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaBasedParameter, DefaultAvroSchemaEvolution}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
@@ -172,6 +177,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
     extractParameter(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+      .withJsonEditors()
 
   override def extractParameterForTests(schema: ParsedSchema)(
       implicit nodeId: NodeId
@@ -182,7 +188,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
       validationMode = ValidationMode.lax,
       rawParameter = Parameter[AnyRef](sinkValueParamName),
       restrictedParamNames = Set.empty
-    )
+    ).withJsonEditors()
 
   private def extractParameter(
       schema: ParsedSchema,
@@ -202,6 +208,24 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
       // in editor mode we use lax validation mode, to be backward compatible
       JsonSchemaBasedParameter(schema.cast().rawSchema(), defaultParamName = sinkValueParamName, ValidationMode.lax)
     }
+  }
+
+  implicit class WithJsonEditorsExtension(parameter: ValidatedNel[ProcessCompilationError, SchemaBasedParameter]) {
+
+    def withJsonEditors(): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = parameter
+      .map {
+        case s @ SingleSchemaBasedParameter(value, _) if value.editors.isEmpty =>
+          s.copy(value =
+            s.value.copy(
+              editors = List(
+                JsonTemplateParameterEditor,
+                SpelParameterEditor
+              )
+            )
+          )
+        case other => other
+      }
+
   }
 
 }
@@ -234,7 +258,7 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def extractParameterForTests(schema: ParsedSchema)(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
     val parameter =
-      Parameter(sinkValueParamName, Unknown).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
+      Parameter(inputParamName, Typed.json).copy(isLazyParameter = true, editors = List(JsonParameterEditor))
     Valid(
       SingleSchemaBasedParameter(
         parameter,

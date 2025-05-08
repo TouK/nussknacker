@@ -76,6 +76,14 @@ object ProcessCompilationError {
 
   final case class LooseNode(nodeIds: Set[String]) extends ProcessCompilationError with ScenarioGraphLevelError
 
+  final case class StickyNotesLimitExceeded(nodeId: String, notesCount: Int, notesLimit: Int)
+      extends ProcessCompilationError
+      with InASingleNode
+
+  final case class StickyNoteContentTooLong(nodeId: String, length: Int, max: Int)
+      extends ProcessCompilationError
+      with InASingleNode
+
   final case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
   final case class NotSupportedExpressionLanguage(languageId: Language, nodeId: String)
@@ -167,15 +175,6 @@ object ProcessCompilationError {
   object MissingParameters {
     def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingParameters(params, nodeId.id)
-  }
-
-  final case class RedundantParameters(params: Set[ParameterName], nodeId: String)
-      extends PartSubGraphCompilationError
-      with InASingleNode
-
-  object RedundantParameters {
-    def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      RedundantParameters(params, nodeId.id)
   }
 
   final case class WrongParameters(

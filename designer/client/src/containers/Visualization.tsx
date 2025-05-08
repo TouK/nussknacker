@@ -7,7 +7,7 @@ import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 
-import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
+import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import ProcessUtils from "../common/ProcessUtils";
 import { useDecodedParams } from "../common/routerUtils";
@@ -150,7 +150,7 @@ function Visualization() {
     const openAndHighlightNodes = useCallback(
         async (scenario: Scenario) => {
             const windows = await Promise.all(openNodes(scenario));
-            windows.map((w) => dispatch(toggleSelection(w.meta.node.id)));
+            windows.map((w) => dispatch(expandSelection(w.meta.node.id, true)));
         },
         [dispatch, openNodes],
     );

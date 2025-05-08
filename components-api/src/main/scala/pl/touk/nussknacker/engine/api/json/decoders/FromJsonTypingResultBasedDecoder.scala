@@ -64,7 +64,7 @@ object FromJsonTypingResultBasedDecoder {
             decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
           }
       } yield decodedFields.toMap.asJava
-    case Unknown =>
+    case Unknown(_) =>
       /// For Unknown we fallback to generic json to any conversion. It won't work for some types such as LocalDate but for others should work correctly
       obj.as[Json].map(FromJsonSimpleDecoder.jsonToAny)
     case typ => Left(DecodingFailure(s"Decoding of type [$typ] is not supported.", List()))

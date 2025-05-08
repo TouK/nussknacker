@@ -6,30 +6,37 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
+import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment.{
+  ConvertionIsNeeded,
+  NoConvertionIsNeeded
+}
+import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+
+import java.time.ZoneId
 
 class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
 
   val wideningConversionCases = Table(
     ("sourceType", "targetType", "expectedStrict", "expectedLoose"),
-    (Typed[Int], Typed[Int], Valid(()), Valid(())),
-    (Typed[Int], Typed[Double], Valid(()), Valid(())),
-    (Typed[List[Int]], Typed[List[Int]], Valid(()), Valid(())),
-    (Typed[List[Int]], Typed[List[Any]], Valid(()), Valid(())),
-    (Typed[Map[String, Int]], Typed[Map[String, Int]], Valid(()), Valid(())),
-    (Typed[Map[String, Int]], Typed[Map[Any, Any]], Valid(()), Valid(()))
+    (Typed[Int], Typed[Int], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[Int], Typed[Double], Valid(ConvertionIsNeeded(Typed[Double])), Valid(ConvertionIsNeeded(Typed[Double]))),
+    (Typed[List[Int]], Typed[List[Int]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[List[Int]], Typed[List[Any]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[Map[String, Int]], Typed[Map[String, Int]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded)),
+    (Typed[Map[String, Int]], Typed[Map[Any, Any]], Valid(NoConvertionIsNeeded), Valid(NoConvertionIsNeeded))
   )
 
-  test("isAssignableStrict should pass for widening cases") {
+  test("isAssignable with Strict ConversionStrategy should pass for widening cases") {
     forAll(wideningConversionCases) { (sourceType, targetType, expectedStrict, _) =>
-      val result = AssignabilityDeterminer.isAssignableStrict(sourceType, targetType)
+      val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Strict)
       result shouldBe expectedStrict
     }
   }
 
-  test("isAssignableLoose should pass for widening cases") {
+  test("isAssignable with Loose ConversionStrategy should pass for widening cases") {
     forAll(wideningConversionCases) { (sourceType, targetType, _, expectedLoose) =>
-      val result = AssignabilityDeterminer.isAssignableLoose(sourceType, targetType)
+      val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Loose)
       result shouldBe expectedLoose
     }
   }
@@ -42,9 +49,9 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
     (Typed[BigDecimal], Typed[Double], Invalid(NonEmptyList.of("")), Valid(()))
   )
 
-  test("isAssignableStrict should fail for narrowing numerical cases") {
+  test("isAssignable with Strict ConversionStrategy should fail for narrowing numerical cases") {
     forAll(narrowingConversionCases) { (sourceType, targetType, expectedStrict, _) =>
-      val result = AssignabilityDeterminer.isAssignableStrict(sourceType, targetType)
+      val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Strict)
       result match {
         case Valid(_) if expectedStrict.isValid     => succeed
         case Invalid(_) if expectedStrict.isInvalid => succeed
@@ -53,14 +60,37 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("isAssignableLoose should pass for narrowing cases") {
+  test("isAssignable with Loose ConversionStrategy should pass for narrowing cases") {
     forAll(narrowingConversionCases) { (sourceType, targetType, _, expectedLoose) =>
-      val result = AssignabilityDeterminer.isAssignableLoose(sourceType, targetType)
+      val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Loose)
       result match {
         case Valid(_) if expectedLoose.isValid     => succeed
         case Invalid(_) if expectedLoose.isInvalid => succeed
         case _ => fail(s"Unexpected result: $result for types $sourceType -> $targetType")
       }
+    }
+  }
+
+  val implicitConversionCases = Table(
+    ("sourceType", "targetType"),
+    (Typed.fromInstance("UTC"), Typed[ZoneId]),
+    (Typed.fromInstance(Array(1, 2, 3)), Typed.fromDetailedType[java.util.List[Int]]),
+    (Typed.fromInstance(java.math.BigInteger.ONE), Typed[java.math.BigDecimal]),
+    (Typed.fromInstance(123), Typed[java.math.BigDecimal]),
+    (Typed.fromInstance(123), Typed[java.math.BigInteger]),
+  )
+
+  test("isAssignable with Strict ConversionStrategy should fail for implicit conversions") {
+    forAll(implicitConversionCases) { (sourceType, targetType) =>
+      val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Strict)
+      result shouldBe Symbol("invalid")
+    }
+  }
+
+  test("isAssignable with Loose ConversionStrategy should pass for implicit conversions") {
+    forAll(implicitConversionCases) { (sourceType, targetType) =>
+      val result = AssignabilityDeterminer.isAssignable(sourceType, targetType)(Loose)
+      result shouldBe Symbol("valid")
     }
   }
 

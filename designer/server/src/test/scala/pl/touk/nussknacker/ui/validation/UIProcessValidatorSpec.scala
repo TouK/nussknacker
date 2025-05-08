@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
+import cats.effect.Resource
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import org.scalatest.Inside.inside
@@ -23,15 +24,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseContext,
-  EmptyProcessConfigCreator,
-  ExpressionConfig,
-  ProcessingType,
-  ProcessName,
-  ProcessObjectDependencies,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -46,7 +39,6 @@ import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -82,6 +74,7 @@ import pl.touk.nussknacker.test.mock.{
 }
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -607,6 +600,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
+
     def validate(scenarioGraph: ScenarioGraph) =
       processValidator.validate(
         scenarioGraph,
@@ -1678,9 +1672,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
-      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
+      stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     )
 
     val process = processWithOptionalParameterService("")
@@ -1736,9 +1732,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
-      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
+      stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     )
 
     val process = processWithOptionalParameterService("'Barabasz'")
@@ -2189,7 +2187,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("should validate invalid scenario id") {
     val blankValue = ProcessName(" ")
-    val result = TestFactory.flinkProcessValidator
+    val result = TestFactory
+      .flinkProcessValidator()
       .validate(UIProcessValidatorSpec.validFlinkScenarioGraph, blankValue, isFragment = false, labels = List.empty)
       .errors
       .processPropertiesErrors
@@ -2207,7 +2206,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       ),
       List(Edge(blankValue, "out", None))
     )
-    val result = TestFactory.flinkProcessValidator
+    val result = TestFactory
+      .flinkProcessValidator()
       .validate(testedScenario, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
       .errors
       .invalidNodes
@@ -2218,13 +2218,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("should validate scenario id with error preventing canonized form") {
     val incompleteScenarioWithBlankIds = createGraph(
-      List(
-        Variable(id = " ", varName = "var", value = "".spel)
-      ),
+      List(Variable(id = " ", varName = "var", value = "".spel)),
       List.empty
     )
-    val result =
-      TestFactory.flinkProcessValidator.validate(
+    val result = TestFactory
+      .flinkProcessValidator()
+      .validate(
         incompleteScenarioWithBlankIds,
         ProcessName(" "),
         isFragment = false,
@@ -2253,12 +2252,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentOutput("outNode2", duplicatedOutputName),
       )
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(fragment)
-    val result = TestFactory.flinkProcessValidator.validate(
-      scenarioGraph,
-      ProcessName(" "),
-      isFragment = true,
-      labels = List.empty
-    )
+    val result = TestFactory
+      .flinkProcessValidator()
+      .validate(
+        scenarioGraph,
+        ProcessName(" "),
+        isFragment = true,
+        labels = List.empty
+      )
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         PrettyValidationErrors.formatErrorMessage(
@@ -2413,12 +2414,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   private def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
-    TestFactory.processValidator.validate(
-      scenarioGraph,
-      ProcessTestData.sampleProcessName,
-      isFragment = false,
-      labels = List.empty
-    )
+    TestFactory
+      .processValidator()
+      .validate(
+        scenarioGraph,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = List.empty
+      )
   }
 
 }
@@ -2714,9 +2717,11 @@ private object UIProcessValidatorSpec {
     scenarioProperties = Map.empty,
     scenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+    engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
     scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
     additionalValidators = List.empty,
-    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty)),
+    stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
   )
 
   def mockedProcessValidator(
@@ -2747,13 +2752,15 @@ private object UIProcessValidatorSpec {
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),
+      engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
       scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List(SampleCustomProcessValidator),
       fragmentResolver = new FragmentResolver(
         new StubFragmentRepository(
           fragmentsByProcessingType.mapValuesNow(List(_))
         )
-      )
+      ),
+      stickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     )
   }
 
@@ -2773,8 +2780,8 @@ private object UIProcessValidatorSpec {
     override def apply(left: ValidationResult): MatchResult = {
       MatchResult(
         !left.hasErrors && !left.hasWarnings,
-        s"ValidationResult should has neither errors nor warnings but was: ${left}",
-        s"ValidationResult should has either errors or warnings but was:${left}"
+        s"ValidationResult should has neither errors nor warnings but was: $left",
+        s"ValidationResult should has either errors or warnings but was:$left"
       )
     }
 

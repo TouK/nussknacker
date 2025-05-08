@@ -32,10 +32,10 @@ describe("Process", () => {
             cy.contains(/^save/i).should("be.enabled").click();
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
-            cy.contains(/^ok$/i).should("not.exist");
             cy.get('[role="alert"]')
                 .contains(/scenario name changed/i)
                 .should("be.visible");
+            cy.contains(/^ok$/i).should("not.exist");
             cy.location("href").should("contain", "-renamed");
         });
 
@@ -55,11 +55,11 @@ describe("Process", () => {
             cy.contains(/^save/i).should("be.enabled").click();
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
-
-            cy.contains(/^ok$/i).should("not.exist");
             cy.get('[role="alert"]')
                 .contains(/scenario name changed/i)
                 .should("be.visible");
+
+            cy.contains(/^ok$/i).should("not.exist");
             cy.location("href").should("contain", "-renamed");
             cy.contains(/^properties/i)
                 .should("be.enabled")
@@ -111,7 +111,9 @@ describe("Process", () => {
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
             cy.contains(/^ok$/i).should("not.exist");
-            cy.get("#nk-graph-main").wait(200).matchImage();
+
+            cy.contains(/^counts/i).scrollIntoView();
+            cy.get("#nk-graph-main").matchImage();
         });
     });
 
@@ -333,7 +335,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("button", "ad hoc").should("be.enabled").click();
+        cy.contains("button", "test").should("be.enabled").click();
         cy.get("[data-testid=window]").should("be.visible").find("#ace-editor").type("10");
         cy.get("[data-testid=window]")
             .contains(/^test$/i)
@@ -364,12 +366,14 @@ describe("Process", () => {
 
     it("should open more scenario details", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
-        cy.viewport(1500, 800);
-        cy.layoutScenario();
-
-        cy.contains("a", "More details").click();
-        cy.get("[data-testid=window]").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.contains(/^More details$/i).click();
+        cy.get("[data-testid=window]")
+            .should("be.visible")
+            .within(() => {
+                cy.contains(/^last modified$/i).should("be.visible");
+            })
+            .matchImage({
+                maxDiffThreshold: 0.02,
+            });
     });
 });

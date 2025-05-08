@@ -1,12 +1,12 @@
 import React, { useMemo } from "react";
-import { TruncateWrapper } from "../../common/utils";
-import { CategoryChip, useFilterContext } from "../../common";
-import { ComponentsFiltersModel } from "../filters";
-import { CellRendererParams } from "../tableWrapper";
+
+import { CategoryChip, TruncateWrapper } from "../../common";
+import { useComponentsFilterContext } from "../filters/useComponentsFilterContext";
+import type { CellRendererParams } from "../tableWrapper";
 
 export function CategoriesCell(props: CellRendererParams): JSX.Element {
     const { value } = props;
-    const { setFilter, getFilter } = useFilterContext<ComponentsFiltersModel>();
+    const { setFilter, getFilter } = useComponentsFilterContext();
     const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
 
     return (

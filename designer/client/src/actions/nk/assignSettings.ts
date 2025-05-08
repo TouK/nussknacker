@@ -1,6 +1,6 @@
-import { DynamicTabData } from "../../containers/DynamicTab";
-import { AuthenticationSettings } from "../../reducers/settings";
+import type { DynamicTabData } from "../../containers/DynamicTab";
 import type { EnvironmentTagColor } from "../../containers/EnvironmentTag";
+import type { AuthenticationSettings } from "../../reducers/settings";
 
 export type MetricsType = {
     url: string;
@@ -26,6 +26,9 @@ export interface EnvironmentTagSettings {
 }
 
 export type FeaturesSettings = {
+    assistant: {
+        enabled: boolean;
+    };
     counts: boolean;
     search: { url: string };
     metrics: MetricsType;

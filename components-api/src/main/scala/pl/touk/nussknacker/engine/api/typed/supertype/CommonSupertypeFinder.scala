@@ -21,10 +21,10 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   // see commonSuperTypeForClassesNotInSameInheritanceLine and fallback in singleCommonSupertype
   def commonSupertypeOpt(left: TypingResult, right: TypingResult): Option[TypingResult] = {
     (left, right) match {
-      case (Unknown, _)   => Some(Unknown) // can't be sure intention of user - union is more secure than intersection
-      case (_, Unknown)   => Some(Unknown)
-      case (TypedNull, r) => Some(commonSupertypeWithNull(r))
-      case (r, TypedNull) => Some(commonSupertypeWithNull(r))
+      case (u: Unknown, _) => Some(u) // can't be sure intention of user - union is more secure than intersection
+      case (_, u: Unknown) => Some(u)
+      case (TypedNull, r)  => Some(commonSupertypeWithNull(r))
+      case (r, TypedNull)  => Some(commonSupertypeWithNull(r))
       case (l: SingleTypingResult, r: TypedUnion) =>
         commonSupertype(NonEmptyList.one(l), r.possibleTypes).map(Typed(_))
       case (l: TypedUnion, r: SingleTypingResult) =>
@@ -203,6 +203,12 @@ object CommonSupertypeFinder {
           // We don't return Unknown as a sanity check, that our fallback strategy works correctly and supertypes for object types are used
           throw new IllegalStateException(s"Common super type not found: for $left and $right")
         )
+    }
+
+    def superTypeOfTypes(list: Iterable[TypingResult]): TypingResult = {
+      list
+        .reduceOption(commonSupertype)
+        .getOrElse(Unknown)
     }
 
   }

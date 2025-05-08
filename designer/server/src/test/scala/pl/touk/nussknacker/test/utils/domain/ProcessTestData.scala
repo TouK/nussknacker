@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.test.utils.domain
 
+import cats.effect.Resource
 import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
@@ -33,6 +33,7 @@ import pl.touk.nussknacker.test.mock.{
   StubModelDataWithModelDefinition,
   TestAdditionalUIConfigProvider
 }
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
@@ -141,7 +142,8 @@ object ProcessTestData {
   }
 
   private object ProcessValidatorDefaults {
-    val processingType: ProcessingType = Streaming.stringify
+    val processingType: ProcessingType           = Streaming.stringify
+    val stickyNotesSettings: StickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     val processValidator: ProcessValidator =
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition()))
     val scenarioProperties: Map[String, ScenarioPropertyConfig] = Map.empty
@@ -160,15 +162,18 @@ object ProcessTestData {
         ProcessValidatorDefaults.scenarioPropertiesConfigFinalizer,
       scenarioLabelsValidator: ScenarioLabelsValidator = ProcessValidatorDefaults.scenarioLabelsValidator,
       additionalValidators: List[CustomProcessValidator] = ProcessValidatorDefaults.additionalValidators,
-      fragmentResolver: FragmentResolver = ProcessValidatorDefaults.fragmentResolver
+      fragmentResolver: FragmentResolver = ProcessValidatorDefaults.fragmentResolver,
+      stickyNotesSettings: StickyNotesSettings = ProcessValidatorDefaults.stickyNotesSettings
   ): UIProcessValidator = new UIProcessValidator(
     processingType = processingType,
     validator = validator,
     scenarioProperties = scenarioProperties,
     scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
+    engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
     scenarioLabelsValidator = scenarioLabelsValidator,
     additionalValidators = additionalValidators,
-    fragmentResolver = fragmentResolver
+    fragmentResolver = fragmentResolver,
+    stickyNotesSettings = stickyNotesSettings
   )
 
   def processValidator: UIProcessValidator = testProcessValidator()
@@ -185,7 +190,7 @@ object ProcessTestData {
 
   val sampleScenarioLabels: List[String] = List("tag1", "tag2")
 
-  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName)
+  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName.value)
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
@@ -202,7 +207,7 @@ object ProcessTestData {
 
   // TODO: merge with this below
   val sampleScenario: CanonicalProcess = {
-    def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
+    def endWithMessage(idSuffix: String, message: String): Option[SubsequentNode] = {
       GraphBuilder
         .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'".spel)
         .emptySink(
@@ -220,8 +225,11 @@ object ProcessTestData {
       .to(endWithMessage("suffix", "message"))
   }
 
-  def validProcessWithName(name: ProcessName): CanonicalProcess = ScenarioBuilder
-    .streaming(name.value)
+  def validProcessWithName(name: ProcessName): CanonicalProcess =
+    validProcessWithName(name.value)
+
+  def validProcessWithName(name: String): CanonicalProcess = ScenarioBuilder
+    .streaming(name)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)
@@ -488,7 +496,7 @@ object ProcessTestData {
       .to(endWithMessage)
   }
 
-  private def endWithMessage: SubsequentNode = {
+  private def endWithMessage: Option[SubsequentNode] = {
     val idSuffix   = "suffix"
     val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
 

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.components
 
+import com.typesafe.config.ConfigFactory
 import org.everit.json.schema.{CombinedSchema, NullSchema, NumberSchema, Schema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -8,6 +9,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider._
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
@@ -19,9 +21,12 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
-class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class KafkaJsonRefFunctionalSpec extends AnyFunSuite with KafkaSpec with Matchers with ValidatedValuesDetailedMessage {
 
-  private val runner = TestScenarioRunner.kafkaLiteBased().build()
+  private lazy val runner =
+    TestScenarioRunner
+      .kafkaLiteBased(resolveConfig(ConfigFactory.empty()))
+      .build()
 
   test("filled record after empty record with schema using refs") {
     val inputTopic  = TopicName.ForSource("schema-using-refs-input")

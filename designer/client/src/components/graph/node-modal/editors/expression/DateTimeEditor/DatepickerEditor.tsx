@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { ExpressionLang, ExpressionObj } from "../types";
-import { useDebouncedCallback } from "use-debounce";
-import moment from "moment";
-import ValidationLabels from "../../../../../modals/ValidationLabels";
-import { Formatter } from "../Formatter";
-import { DTPicker } from "../../../../../common/DTPicker";
 import { cx } from "@emotion/css";
-import { FieldError } from "../../Validators";
 import { isEmpty } from "lodash";
+import moment from "moment";
+import React, { useEffect, useState } from "react";
+import { useDebounceFn } from "rooks";
+
+import { DTPicker } from "../../../../../common/DTPicker";
+import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { nodeInput, nodeInputWithError } from "../../../NodeDetailsContent/NodeTableStyled";
-import { OnValueChange } from "../Editor";
+import type { FieldError } from "../../Validators";
+import type { OnValueChange } from "../Editor";
+import type { Formatter } from "../Formatter";
+import type { ExpressionLang, ExpressionObj } from "../types";
 
 export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
@@ -59,7 +60,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
 
     const { expression } = expressionObj;
     const [value, setValue] = useState<string | moment.Moment>(decode(expression) == null ? null : decode(expression));
-    const [onChange] = useDebouncedCallback<[value: string | moment.Moment]>((value) => {
+    const [onChange] = useDebounceFn((value: string | moment.Moment) => {
         const encoded = encode(value);
         onValueChange({ expression: encoded, language });
     }, 200);

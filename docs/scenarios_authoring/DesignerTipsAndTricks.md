@@ -103,7 +103,10 @@ The expression to use is as follows:
 
 `#myRecord.![{"fieldName":  #this.key, "numValue": #this.value.toDouble}]`
 
-&nbsp;
+**Convert a list to map**
+
+[See example in Spel Cheat Sheet](./Spel.md#transforming-lists).
+
 **Not trivial list transformations**
 
 In this example, a `{1,2,3,4,5}` list is transformed to a list of records in two steps.

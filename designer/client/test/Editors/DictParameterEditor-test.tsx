@@ -19,12 +19,7 @@ jest.mock("react-i18next", () => ({
 const mockStore = configureMockStore();
 
 const store = mockStore({
-    graphReducer: {
-        scenario: {
-            processingType: "streaming-dev",
-        },
-        history: { present: { scenario: { scenarioGraph: {} } } },
-    },
+    graphReducer: { present: { scenario: {} } },
 });
 
 const ComponentWrapper = ({ children }) => (
@@ -33,7 +28,7 @@ const ComponentWrapper = ({ children }) => (
     </NuThemeProvider>
 );
 
-describe(DictParameterEditor.name, () => {
+describe("DictParameterEditor", () => {
     it("should display validation error when the field contain errors", () => {
         render(
             <ComponentWrapper>

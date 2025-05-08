@@ -20,6 +20,7 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.Codec.PlainCodec
@@ -137,7 +138,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
               Example.of(
                 GetDeploymentStatusResponse(
                   DeploymentStatus.Problem.Failed.name,
-                  Some(DeploymentStatus.Problem.Failed.description),
+                  Some(DeploymentStatus.Problem.Failed.problemDescription),
                   exampleInstant
                 ),
                 Some("PROBLEM status")
@@ -249,7 +250,7 @@ object DeploymentApiEndpoints {
         case DeploymentOfFragmentError            => s"Deployment of fragment is not allowed"
         case DeploymentOfArchivedScenarioError    => s"Deployment of archived scenario is not allowed"
         case CommentValidationError(message)      => message
-        case ScenarioGraphValidationError(errors) => toHumanReadableMessage(errors)
+        case ScenarioGraphValidationError(errors) => errors.toHumanReadableMessage // TODO: Move to some details field
         case DeployValidationError(message)       => message
       }
 
@@ -267,30 +268,6 @@ object DeploymentApiEndpoints {
         s"Deployment ${err.id} not found"
       )
 
-  }
-
-  private def toHumanReadableMessage(errors: ValidationErrors) = {
-    // TODO: Move to some details field
-    s"Scenario is invalid.${Option(errors.invalidNodes)
-        .filterNot(_.isEmpty)
-        .map {
-          _.map { case (nodeId, nodeErrors) =>
-            s"\n  $nodeId: ${nodeErrors.map(_.message).mkString(", ")}"
-          }.mkString("\nNode errors:", "", "")
-        }
-        .getOrElse("")}" +
-      s"${Option(errors.globalErrors)
-          .filterNot(_.isEmpty)
-          .map {
-            _.map(_.error.message).mkString("\nGlobal errors: ", ", ", "")
-          }
-          .getOrElse("")}" +
-      s"${Option(errors.processPropertiesErrors)
-          .filterNot(_.isEmpty)
-          .map {
-            _.map(_.message).mkString("\nProperties errors: ", ", ", "")
-          }
-          .getOrElse("")}"
   }
 
 }

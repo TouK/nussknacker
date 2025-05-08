@@ -140,6 +140,34 @@
   * outgoing activity is not registered on the local environment when migration is failed and rejected on the remote environment
   Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
 * [#7805](https://github.com/TouK/nussknacker/pull/7805) Add `parameter.category` to node parameters validation API.
+* [#7711](https://github.com/TouK/nussknacker/pull/7711) Ability to derive schema from data sample for schemaless Kafka topics for Kafka Sources
+* [#7871](https://github.com/TouK/nussknacker/pull/7871) Added Tapir variant of 'Custom HTTP Service' SPI
+  * Use `TapirCustomHttpServiceProvider` to implement custom Tapir based HTTP services. 
+    Those endpoints are automatically added to the Nussknacker OpenAPI documentation.
+  * `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
+* [#7922](https://github.com/TouK/nussknacker/pull/7922) Fixed the hiding of components configured with `disabled` flag in `componentsUiConfig` section.
+* [#7937](https://github.com/TouK/nussknacker/pull/7937) Data sample from Kafka Source as initial input for Ad-Hoc test
+* [#7864](https://github.com/TouK/nussknacker/pull/7864) Add the forbidden IPs feature to the HTTP client configuration,
+  if `followRedirect` is enabled then `Location` response header is also checked:
+  * `forbiddenCidrs` - list of forbidden CIDR.
+* [#7961](https://github.com/TouK/nussknacker/pull/7961) Fix distance calculated by `GeoUtils.distanceInKm`
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window components is not transformed into a string.
+  Key will now have type of value given in `groupBy` field. Previously we wrapped `groupBy` value as a list in String, e.g. for `id = 1` before: `groupBy: id -> key: "[1]"`, after: `groupBy: id -> key: 1`
+* [#7824](https://github.com/TouK/nussknacker/pull/7824) Add Json type support for schemaless topic data with Json content type.
+* [#7959](https://github.com/TouK/nussknacker/pull/7959) Scenario testing API changes:
+    * Scenario testing API (on path prefix `/scenarioTesting`) is refactored - incompatible change, please check the Migration Guide for details
+    * test endpoints moved from Process Management API to Scenario Testing API
+    * introduced new representation of test results
+* [#7953](https://github.com/TouK/nussknacker/pull/7953) Add implicit conversion from records produced by kafka source to map.
+  Also typing of spel expressions was refactored, which improved typing of selection on a map.
+* [#8005](https://github.com/TouK/nussknacker/pull/8005) Add implicit conversion from records produced by table api source to map.
+* [#7964](https://github.com/TouK/nussknacker/pull/7964) Add JsonTemplate language and editor.
+* [#8006](https://github.com/TouK/nussknacker/pull/8006) Add JsonTemplate editor to Event Generator source and Kafka sink value.
+* [#7970](https://github.com/TouK/nussknacker/pull/7970) Added "limits.maxActiveScenariosCount" setting defined per processing type and "globalLimits.maxActiveScenariosCount" to limit active scenarios globally
+* [#8004](https://github.com/TouK/nussknacker/pull/8004) Scenarios no longer have to end with final `Sink` node
+  * set `modelConfig.allowEndingScenarioWithoutSink` of the scenarioType in the `scenarioTypes` config section to `true` in order to allow ending scenarios with nodes other than sinks
+  * the flag is optional, the default value of the flag is `false` (no changes in behavior)
 
 ## 1.18
 

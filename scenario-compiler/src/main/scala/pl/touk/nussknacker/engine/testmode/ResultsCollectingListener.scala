@@ -45,6 +45,23 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
     updateResults(_.updateNodeResult(nodeId, context, variableEncoder))
   }
 
+  override def transitionToNextNode(
+      nodeId: String,
+      nextNodeId: String,
+      context: Context,
+      processMetaData: MetaData,
+  ): Unit = {
+    updateResults(_.updateNodeOutputResult(nodeId, Some(nextNodeId), context, variableEncoder))
+  }
+
+  override def processingFinishedInNode(
+      nodeId: String,
+      context: Context,
+      processMetaData: MetaData,
+  ): Unit = {
+    updateResults(_.updateNodeOutputResult(nodeId, None, context, variableEncoder))
+  }
+
   override def endEncountered(
       nodeId: String,
       ref: String,
@@ -77,8 +94,9 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
       result: Try[Any]
   ): Unit = {}
 
-  override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit =
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit = {
     updateResults(_.updateExceptionResult(exceptionInfo, variableEncoder))
+  }
 
   private[testmode] override def updateResults(action: TestResults[Any] => TestResults[Any]): Unit = {
     ResultsCollectingListenerHolder.updateResults(runId, action)
@@ -87,7 +105,8 @@ private case class ResultsCollectingListenerImpl[T](holderClass: String, runId: 
 }
 
 private object NoopResultsCollectingListener extends ResultsCollectingListener[Any] with EmptyProcessListener {
-  override def results: TestResults[Any] = TestResults(Map.empty, Map.empty, Map.empty, List.empty)
+  override def results: TestResults[Any] =
+    TestResults(Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
 
   override def clean(): Unit = {}
 
@@ -128,13 +147,19 @@ object ResultsCollectingListenerHolder {
 
   private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = {
     val runId = TestRunId.generate
-    results.put(runId, TestResults(Map(), Map(), Map(), List()))
+    results.put(runId, TestResults(Map(), Map(), Map(), Map(), List()))
     ResultsCollectingListenerImpl(getClass.getCanonicalName, runId, variableEncoder)
   }
 
   private[testmode] def updateResults(runId: TestRunId, action: TestResults[Any] => TestResults[Any]): Unit = {
     Option {
-      results.computeIfPresent(runId, (_: TestRunId, output: TestResults[Any]) => action(output))
+      results.computeIfPresent(
+        runId,
+        (_: TestRunId, output: TestResults[Any]) => {
+          val newValue = action(output)
+          newValue
+        }
+      )
     } match {
       case Some(_) =>
       case None =>

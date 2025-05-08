@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{
@@ -37,7 +36,7 @@ import scala.concurrent.duration.FiniteDuration
 class FlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
-    modelConfig: Config,
+    modelConfig: ModelConfig,
     runtimeMode: RuntimeMode,
     configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     nodesData: NodesDeploymentData,
@@ -67,23 +66,24 @@ class FlinkProcessCompilerDataFactory(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
-    val modelDependencies = ProcessObjectDependencies.withConfig(modelConfig)
+    val modelDependencies = ProcessObjectDependencies.withConfig(modelConfig.underlyingConfig)
 
     // TODO: this should be somewhere else?
-    val timeout = modelConfig.as[FiniteDuration]("timeout")
+    val timeout = modelConfig.underlyingConfig.as[FiniteDuration]("timeout")
 
     // TODO: should this be the default?
     val asyncExecutionContextPreparer = creator
       .asyncExecutionContextPreparer(modelDependencies)
       .getOrElse(
-        modelConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
+        modelConfig.underlyingConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
       )
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelDependencies)
     val listenersToUse   = adjustListeners(defaultListeners, modelDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(modelDependencies, userCodeClassLoader)
 
-    val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
+    val customProcessValidator =
+      CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig.underlyingConfig)
     val compilerData =
       ProcessCompilerData.prepare(
         JobData(metaData, processVersion),

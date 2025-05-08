@@ -3,7 +3,9 @@ import { cloneDeep } from "lodash";
 import React, { useEffect } from "react";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
-import { NodeType } from "../../../types";
+
+import type { NodeType } from "../../../types";
+import { InfoTooltip } from "../../graph/node-modal/editors/expression/InfoTooltip";
 import { ComponentIcon } from "./ComponentIcon";
 import { SearchHighlighter } from "./SearchHighlighter";
 
@@ -16,15 +18,17 @@ type OwnProps = {
     label: string;
     highlights?: string[];
     disabled?: boolean;
+    tooltip?: string;
 };
 
 export default function Tool(props: OwnProps): JSX.Element {
-    const { label, nodeModel, highlights = [], disabled } = props;
+    const { label, nodeModel, highlights = [], disabled, tooltip } = props;
     const [, drag, preview] = useDrag(() => ({
         type: DndTypes.ELEMENT,
         item: { ...cloneDeep(nodeModel), id: label },
         options: { dropEffect: "copy" },
         canDrag: !disabled,
+        tooltip: tooltip,
     }));
 
     useEffect(() => {
@@ -39,6 +43,7 @@ export default function Tool(props: OwnProps): JSX.Element {
             <div className="toolWrapper">
                 <ComponentIcon node={nodeModel} className="toolIcon" />
                 <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
+                {tooltip ? <InfoTooltip text={tooltip} /> : ""}
             </div>
         </div>
     );

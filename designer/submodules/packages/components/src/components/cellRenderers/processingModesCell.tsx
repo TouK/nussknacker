@@ -1,10 +1,11 @@
 import React from "react";
-import { useFilterContext } from "../../common";
+
 import { ProcessingModeItem } from "../../scenarios/list/processingMode";
-import { CellRendererParams } from "../tableWrapper";
+import { useComponentsFilterContext } from "../filters/useComponentsFilterContext";
+import type { CellRendererParams } from "../tableWrapper";
 
 export const ProcessingModesCell = (props: CellRendererParams) => {
-    const filtersContext = useFilterContext();
+    const filtersContext = useComponentsFilterContext();
 
     return (
         <>

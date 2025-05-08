@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema}
@@ -38,11 +39,13 @@ import scala.jdk.CollectionConverters._
 class TableSource(
     tableDefinition: TableDefinition,
     flinkDataDefinition: FlinkDataDefinition,
-    testDataGenerationMode: TestDataGenerationMode
+    testDataGenerationMode: TestDataGenerationMode,
+    environmentForTestingPurposes: StreamTableEnvironment
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
     with FlinkSourceTestSupport[Row]
-    with TestDataGenerator {
+    with TestDataGenerator
+    with LazyLogging {
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -98,7 +101,8 @@ class TableSource(
         .build()
     }
     (testRecords: List[TestRecord]) =>
-      FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDataParserSchema)
+      new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
+        .parseTestRecords(testRecords, tableDataParserSchema)
   }
 
   override def generateTestData(size: Int): TestData = {
@@ -106,17 +110,17 @@ class TableSource(
       val dataType = DataTypes.ROW(fieldsWithoutComputedColumns: _*)
       Schema.newBuilder().fromRowDataType(dataType).build()
     }
+    val tableOps = new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
     testDataGenerationMode match {
       case TestDataGenerationMode.Random =>
-        FlinkMiniClusterTableOperations.generateRandomTestData(
+        tableOps.generateRandomTestData(
           amount = size,
           schema = generateDataSchema
         )
       case TestDataGenerationMode.Live =>
-        FlinkMiniClusterTableOperations.generateLiveTestData(
+        tableOps.generateLiveTestData(
           limit = size,
           schema = generateDataSchema,
-          flinkDataDefinition = flinkDataDefinition,
           tableId = tableDefinition.tableId
         )
     }

@@ -52,7 +52,7 @@ type ToolbarsLayerProps = PropsWithChildren<{
 const AbsolutePanel = styled(Box)(({ theme }) => ({
     position: "absolute",
     inset: 0,
-    zIndex: theme.zIndex.snackbar,
+    zIndex: theme.zIndex.modal - 2, // elements using mui modal zIndex (e.g. menu, click outside mask) should be over our toolbar
     overflow: "hidden",
 }));
 
@@ -77,12 +77,12 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     m={0.5}
                     sx={(theme) => ({
                         transition: theme.transitions.create("top"),
-                        top: windowOpened ? 10 : 45,
+                        top: windowOpened ? 5 : 45,
                         justifyItems: "center",
                         overflow: "auto",
                     })}
                 >
-                    <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.TopCenter} />
+                    <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.CenterTop} />
                 </AbsoluteOverlayGrid9>
             </ExternalLayerWrapper>
 
@@ -104,7 +104,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     <StyledToolbarsContainer
                         sx={{ gridArea: "bottom" }}
                         availableToolbars={availableToolbars}
-                        side={ToolbarsSide.BottomCenter}
+                        side={ToolbarsSide.CenterBottom}
                     />
 
                     <Box gridArea="right" component={SidePanel} side={PanelSide.Right}>

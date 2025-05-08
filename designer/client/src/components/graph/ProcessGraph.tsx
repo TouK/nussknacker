@@ -4,6 +4,7 @@ import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } 
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
 import { bindActionCreators } from "redux";
+
 import {
     editNode,
     fetchProcessDefinition,
@@ -14,23 +15,22 @@ import {
     nodesDisconnected,
     replaceNode,
     resetSelection,
-    stickyNoteAdded,
-    stickyNoteDeleted,
+    stickyNoteSetErrors,
     stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
-import { ThunkAction } from "../../actions/reduxTypes";
+import type { ThunkAction } from "../../actions/reduxTypes";
 import HttpService from "../../http/HttpService";
 import { createUniqueName } from "../../reducers/graph/utils";
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
-import { getLayout, getProcessCounts, getScenario, getStickyNotes } from "../../reducers/selectors/graph";
-import { Capabilities } from "../../reducers/selectors/other";
-import { NodeType } from "../../types";
-import { Scenario } from "../Process/types";
+import { getLayout, getProcessCounts, getScenario } from "../../reducers/selectors/graph";
+import type { Capabilities } from "../../reducers/selectors/other";
+import type { NodeType } from "../../types";
+import type { Scenario } from "../Process/types";
 import { DndTypes } from "../toolbars/creator/Tool";
 import { jsonToFileInFormData } from "./createFragment";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
-import { Graph } from "./Graph";
+import type { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
 import NodeUtils from "./NodeUtils";
 import { setLinksHovered } from "./utils/dragHelpers";
@@ -41,7 +41,6 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
 ): JSX.Element {
     const scenario = useSelector(getScenario);
     const processCounts = useSelector(getProcessCounts);
-    const stickyNotes = useSelector(getStickyNotes);
     const layout = useSelector(getLayout);
 
     const graph = useRef<Graph>();
@@ -90,9 +89,8 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     editNode,
                     replaceNode,
                     nodeAdded,
-                    stickyNoteAdded,
                     stickyNoteUpdated,
-                    stickyNoteDeleted,
+                    stickyNoteSetErrors,
                     resetSelection,
                     toggleSelection,
                 },
@@ -109,7 +107,6 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             connectDropTarget={connectDropTarget}
             isDraggingOver={isDraggingOver}
             capabilities={capabilities}
-            stickyNotes={stickyNotes}
             divId={"nk-graph-main"}
             nodeSelectionEnabled
             scenario={scenario}
@@ -163,6 +160,7 @@ const FRAGMENT_TEMPLATE = {
         },
     ],
     additionalBranches: [],
+    stickyNotes: [],
 };
 
 function createFragmentAction(scenario: Scenario, callback: (node: NodeType | null) => void): ThunkAction {

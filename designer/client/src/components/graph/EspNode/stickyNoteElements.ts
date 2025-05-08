@@ -1,26 +1,22 @@
-import { ProcessDefinitionData } from "../../../types";
-import { Theme } from "@mui/material";
-import { StickyNote } from "../../../common/StickyNote";
-import { dia, elementTools, shapes } from "jointjs";
-import { stickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
-import { createStickyNoteId } from "../../../types/stickyNote";
+import type { Theme } from "@mui/material";
+import type { shapes } from "jointjs";
+import { dia, elementTools } from "jointjs";
+
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
-import { CONTENT_PADDING, ICON_SIZE, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
+import type { StickyNoteNodeType } from "../../../types";
+import { stickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { Events } from "../types";
+import { CONTENT_PADDING, ICON_SIZE, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
 
 export type ModelWithTool = {
     model: shapes.devs.Model;
     tools: dia.ToolsView;
 };
 
-export function makeStickyNoteElement(
-    processDefinitionData: ProcessDefinitionData,
-    theme: Theme,
-): (stickyNote: StickyNote) => ModelWithTool {
-    return (stickyNote: StickyNote) => {
+export function makeStickyNoteElement(theme: Theme): (stickyNote: StickyNoteNodeType) => ModelWithTool {
+    return (stickyNote: StickyNoteNodeType) => {
         const attributes: shapes.devs.ModelAttributes = {
-            id: createStickyNoteId(stickyNote.noteId),
-            noteId: stickyNote.noteId,
+            id: stickyNote.id,
             attrs: {
                 size: {
                     width: stickyNote.dimensions.width,
@@ -45,23 +41,21 @@ export function makeStickyNoteElement(
                     strokeWidth: 1,
                 },
             },
+            nodeData: {
+                id: stickyNote.id,
+            },
+            definitionToCompare: {
+                width: stickyNote.dimensions.width,
+                height: stickyNote.dimensions.height,
+                color: stickyNote.color,
+                content: stickyNote.content,
+                errors: stickyNote.errors,
+            },
             rankDir: "R",
         };
 
         const ThemedStickyNoteShape = StickyNoteShape(theme, stickyNote);
         const stickyNoteModel = new ThemedStickyNoteShape(attributes);
-
-        const removeButtonTool = new elementTools.Remove({
-            focusOpacity: 0.5,
-            rotate: true,
-            x: stickyNote.dimensions.width - 20,
-            y: "0%",
-            offset: { x: 0, y: 20 },
-            className: "sticky-note-remove-tool",
-            action: function () {
-                stickyNoteModel.trigger(Events.CELL_DELETED, stickyNoteModel);
-            },
-        });
 
         const ResizeTool = elementTools.Control.extend({
             children: [
@@ -124,7 +118,6 @@ export function makeStickyNoteElement(
                     selector: "body",
                     scale: 2,
                 }),
-                removeButtonTool,
             ],
         });
         stickyNoteModel.resize(

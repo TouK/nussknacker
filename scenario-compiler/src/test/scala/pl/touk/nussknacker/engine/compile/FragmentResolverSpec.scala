@@ -239,7 +239,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     )
     val resolver = FragmentResolver(List(fragment, emptyFragment))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
-      case Valid(CanonicalProcess(_, flatNodes, _)) =>
+      case Valid(CanonicalProcess(_, flatNodes, _, _)) =>
         flatNodes(0) match {
           case FlatNode(Source(id, _, _)) =>
             id shouldBe "source"
@@ -399,6 +399,44 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     ): GraphBuilder[R] =
       build(node =>
         builder.creator(
+          Some(
+            FragmentNode(
+              FragmentInput(
+                id,
+                FragmentRef(
+                  fragmentId,
+                  params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList
+                ),
+                isDisabled = Some(true)
+              ),
+              Map(output -> node)
+            )
+          )
+        )
+      )
+
+    def fragmentDisabledManyOutputs(
+        id: String,
+        fragmentId: String,
+        params: List[(String, Expression)],
+        outputs: Map[String, Option[SubsequentNode]]
+    ): R =
+      creator(
+        Some(
+          FragmentNode(
+            FragmentInput(
+              id,
+              FragmentRef(fragmentId, params.map { case (name, value) => NodeParameter(ParameterName(name), value) }),
+              isDisabled = Some(true)
+            ),
+            outputs
+          )
+        )
+      )
+
+    def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
+      creator(
+        Some(
           FragmentNode(
             FragmentInput(
               id,
@@ -408,40 +446,8 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
               ),
               isDisabled = Some(true)
             ),
-            Map(output -> node)
+            Map()
           )
-        )
-      )
-
-    def fragmentDisabledManyOutputs(
-        id: String,
-        fragmentId: String,
-        params: List[(String, Expression)],
-        outputs: Map[String, SubsequentNode]
-    ): R =
-      creator(
-        FragmentNode(
-          FragmentInput(
-            id,
-            FragmentRef(fragmentId, params.map { case (name, value) => NodeParameter(ParameterName(name), value) }),
-            isDisabled = Some(true)
-          ),
-          outputs
-        )
-      )
-
-    def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
-      creator(
-        FragmentNode(
-          FragmentInput(
-            id,
-            FragmentRef(
-              fragmentId,
-              params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList
-            ),
-            isDisabled = Some(true)
-          ),
-          Map()
         )
       )
 

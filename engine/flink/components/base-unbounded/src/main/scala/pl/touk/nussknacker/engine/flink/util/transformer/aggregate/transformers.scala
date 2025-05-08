@@ -27,7 +27,7 @@ import scala.concurrent.duration.Duration
 object transformers {
 
   def slidingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -36,7 +36,7 @@ object transformers {
       explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
-      .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy))
+      .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy, groupBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
@@ -70,7 +70,7 @@ object transformers {
   }
 
   def tumblingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -91,7 +91,7 @@ object transformers {
 
   @silent("deprecated")
   def tumblingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -105,7 +105,8 @@ object transformers {
         aggregator.toContextTransformation(
           variableName,
           emitContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent,
-          aggregateBy
+          aggregateBy,
+          groupBy
         )
       )
       .implementedBy(
@@ -156,7 +157,7 @@ object transformers {
   // Experimental component, API may change in the future
   @silent("deprecated")
   def sessionWindowTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       sessionTimeout: Duration,
@@ -169,7 +170,8 @@ object transformers {
         aggregator.toContextTransformation(
           variableName,
           emitContext = sessionWindowTrigger == SessionWindowTrigger.OnEvent,
-          aggregateBy
+          aggregateBy,
+          groupBy
         )
       )
       .implementedBy(
@@ -178,7 +180,7 @@ object transformers {
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val baseTrigger =
-            ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
+            ClosingEndEventTrigger[ValueWithContext[KeyedValue[AnyRef, (AnyRef, java.lang.Boolean)]], TimeWindow](
               EventTimeTrigger.create(),
               _.value.value._2
             )

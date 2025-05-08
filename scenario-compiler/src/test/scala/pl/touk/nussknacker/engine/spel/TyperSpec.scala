@@ -86,7 +86,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
 
   test("detect proper selection types - Map") {
     typeExpression("{'field1': 1, 'field2': 2}.?[(#this.value==1)]").validValue.finalResult.typingResult shouldBe
-      Typed.record(Map.empty) // see comment in Typer.resolveSelectionTypingResult
+      Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[Int]))
   }
 
   test("detect proper first selection types") {

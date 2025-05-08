@@ -1,41 +1,44 @@
 import { Divider, Stack } from "@mui/material";
 import { flatten, uniq } from "lodash";
+import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 import React, { useCallback, useMemo } from "react";
-import { ComponentTable } from "./componentTable";
-import { useComponentsQuery } from "./useComponentsQuery";
+import { useTranslation } from "react-i18next";
+
 import { FiltersContextProvider, useFilterContext } from "../common";
-import { ComponentsFiltersModel } from "./filters";
+import { ActiveFilters } from "../scenarios/filters/activeFilters";
+import { FilterListItem } from "../scenarios/filters/filterListItem";
+import { FilterMenu } from "../scenarios/filters/filterMenu";
+import { OptionsStack } from "../scenarios/filters/optionsStack";
+import { ProcessingModeStack } from "../scenarios/filters/processingModeStack";
 import { QuickFilter } from "../scenarios/filters/quickFilter";
 import { SimpleOptionsStack } from "../scenarios/filters/simpleOptionsStack";
-import { FilterMenu } from "../scenarios/filters/filterMenu";
-import { useTranslation } from "react-i18next";
-import { useUserQuery } from "../scenarios/useScenariosQuery";
-import { ActiveFilters } from "../scenarios/filters/activeFilters";
-import { OptionsStack } from "../scenarios/filters/optionsStack";
-import { FilterListItem } from "../scenarios/filters/filterListItem";
-import { ProcessingModeStack } from "../scenarios/filters/processingModeStack";
 import { processingModeItems } from "../scenarios/list/processingMode";
-import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { useUserQuery } from "../scenarios/useScenariosQuery";
+import { ComponentTable } from "./componentTable";
+import { COMPONENTS_FILTER } from "./filters";
+import type { ComponentsFiltersModel } from "./filters";
+import { useComponentsFilterContext } from "./filters/useComponentsFilterContext";
+import { useComponentsQuery } from "./useComponentsQuery";
 
 function CountFilterItem({ count }: { count: number }) {
-    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+    const { getFilter, setFilter } = useComponentsFilterContext();
 
     return (
         <FilterListItem
-            checked={getFilter("USAGES", true).includes(count)}
+            checked={getFilter(COMPONENTS_FILTER.USAGES, true).includes(count)}
             onChange={(checked) => {
-                const current = getFilter("USAGES", true);
+                const current = getFilter(COMPONENTS_FILTER.USAGES, true);
                 if (checked) {
                     if (count > 0) {
-                        return setFilter("USAGES", [...current.filter((n) => n < 0 && Math.abs(n) > count), count]);
+                        return setFilter(COMPONENTS_FILTER.USAGES, [...current.filter((n) => n < 0 && Math.abs(n) > count), count]);
                     }
                     if (count < 0) {
-                        return setFilter("USAGES", [...current.filter((n) => n > 0 && n < Math.abs(count)), count]);
+                        return setFilter(COMPONENTS_FILTER.USAGES, [...current.filter((n) => n > 0 && n < Math.abs(count)), count]);
                     }
-                    return setFilter("USAGES", [...current, count]);
+                    return setFilter(COMPONENTS_FILTER.USAGES, [...current, count]);
                 }
                 return setFilter(
-                    "USAGES",
+                    COMPONENTS_FILTER.USAGES,
                     current.filter((value) => value !== count),
                 );
             }}
@@ -61,7 +64,7 @@ function CountFilterItem({ count }: { count: number }) {
 
 export function UsagesOptionsStack(): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+    const { getFilter, setFilter } = useComponentsFilterContext();
     const otherFilters: Array<keyof ComponentsFiltersModel> = ["USAGES"];
     return (
         <OptionsStack
@@ -90,7 +93,7 @@ export function UsagesOptionsStack(): JSX.Element {
 
 export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolean; filterableValues }) {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+    const { getFilter, setFilter } = useComponentsFilterContext();
 
     return (
         <QuickFilter<ComponentsFiltersModel>
@@ -99,38 +102,41 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
             {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByName })}
         >
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-                <FilterMenu label={t("table.filter.GROUP", "Group")} count={getFilter("GROUP", true).length}>
+                <FilterMenu label={t("table.filter.GROUP", "Group")} count={getFilter(COMPONENTS_FILTER.GROUP, true).length}>
                     <SimpleOptionsStack
                         label={t("table.filter.GROUP", "Group")}
                         options={filterableValues["componentGroupName"]}
-                        value={getFilter("GROUP", true)}
-                        onChange={setFilter("GROUP")}
+                        value={getFilter(COMPONENTS_FILTER.GROUP, true)}
+                        onChange={setFilter(COMPONENTS_FILTER.GROUP)}
                         {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByGroup })}
                     />
                 </FilterMenu>
-                <FilterMenu label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")} count={getFilter("PROCESSING_MODE", true).length}>
+                <FilterMenu
+                    label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
+                    count={getFilter(COMPONENTS_FILTER.PROCESSING_MODE, true).length}
+                >
                     <ProcessingModeStack
                         label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
                         options={filterableValues.processingModes}
-                        value={getFilter("PROCESSING_MODE", true)}
-                        onChange={setFilter("PROCESSING_MODE")}
+                        value={getFilter(COMPONENTS_FILTER.PROCESSING_MODE, true)}
+                        onChange={setFilter(COMPONENTS_FILTER.PROCESSING_MODE)}
                         {...getEventTrackingProps({
                             selector: EventTrackingSelector.ComponentsByProcessingMode,
                         })}
                     />
                 </FilterMenu>
-                <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
+                <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter(COMPONENTS_FILTER.CATEGORY, true).length}>
                     <SimpleOptionsStack
                         label={t("table.filter.CATEGORY", "Category")}
                         options={filterableValues["categories"]}
-                        value={getFilter("CATEGORY", true)}
-                        onChange={setFilter("CATEGORY")}
+                        value={getFilter(COMPONENTS_FILTER.CATEGORY, true)}
+                        onChange={setFilter(COMPONENTS_FILTER.CATEGORY)}
                         {...getEventTrackingProps({
                             selector: EventTrackingSelector.ComponentsByCategory,
                         })}
                     />
                 </FilterMenu>
-                <FilterMenu label={t("table.filter.USAGE", "Usages")} count={getFilter("USAGES", true).length}>
+                <FilterMenu label={t("table.filter.USAGE", "Usages")} count={getFilter(COMPONENTS_FILTER.USAGES, true).length}>
                     <UsagesOptionsStack />
                 </FilterMenu>
             </Stack>
@@ -181,12 +187,12 @@ export function Components(): JSX.Element {
         [t],
     );
 
-    const { activeKeys } = useFilterContext<ComponentsFiltersModel>();
+    const { activeKeys } = useComponentsFilterContext();
 
     return (
         <>
             <FiltersPart isLoading={isLoading} filterableValues={filterableValues} />
-            <ActiveFilters getLabel={getLabel} activeKeys={activeKeys.filter((k) => k !== "NAME")} />
+            <ActiveFilters getLabel={getLabel} activeKeys={activeKeys.filter((k) => k !== COMPONENTS_FILTER.NAME)} />
             <ComponentTable data={data} isLoading={isLoading} />
         </>
     );

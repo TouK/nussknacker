@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.effect.{Resource, SyncIO}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 
@@ -14,7 +16,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
     Future.failed(new ProcessIllegalAction("Can't perform action because of an error in deployment configuration"))
 
   private val stubbedStatus = DeploymentStatusDetails(
-    ProblemStateStatus("Error in deployment configuration", allowedActions = Set.empty),
+    GeneralProblemStateStatus("Error in deployment configuration", allowedActions = Set.empty),
     deploymentId = None,
     version = None
   )
@@ -39,6 +41,9 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
     NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
   override def close(): Unit = ()
 }

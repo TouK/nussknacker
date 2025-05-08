@@ -10,7 +10,11 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.SourceTestDataGenerationError
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ParametersDefinitionError,
+  SourceTestDataGenerationError,
+  TestingCapabilitiesError
+}
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
@@ -42,7 +46,7 @@ class ScenarioTestService(
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-  ): TestingCapabilities = {
+  ): Either[TestingCapabilitiesError, TestingCapabilities] = {
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     testInfoProvider.getTestingCapabilities(processVersion, canonical)
   }
@@ -51,7 +55,7 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
-  )(implicit user: LoggedUser): Map[String, List[Parameter]] = {
+  )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[String, List[Parameter]]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     testInfoProvider
       .getTestParameters(processVersion, canonical)
@@ -60,12 +64,13 @@ class ScenarioTestService(
   def testUISourceParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-  ): List[UISourceParameters] = {
+  ): Either[ParametersDefinitionError, List[UISourceParameters]] = {
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     testInfoProvider
       .getTestParameters(processVersion, canonical)
-      .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
-      .toList
+      .map(_.map { case (id, params) =>
+        UISourceParameters(id, params.map(DefinitionsService.createUIParameter))
+      }.toList)
   }
 
   def generateData(
@@ -100,9 +105,9 @@ class ScenarioTestService(
         .generateTestDataForSource(metaData, sourceNodeData, size)
         .leftMap {
           case SourceTestDataGenerationError.SourceCompilationError(nodeId, errors) =>
-            SourceTestError.SourceCompilationError(nodeId, errors.map(_.toString))
+            SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString))
           case SourceTestDataGenerationError.UnsupportedSourceError(nodeId) =>
-            SourceTestError.UnsupportedSourcePreviewError(nodeId)
+            SourceTestError.UnsupportedSourcePreviewError(nodeId.id)
           case SourceTestDataGenerationError.NoDataGenerated =>
             SourceTestError.NoDataGeneratedError
         }
@@ -164,7 +169,7 @@ class ScenarioTestService(
     } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
-  private def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {
+  def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {
     Either.cond(
       size <= testDataSettings.maxSamplesCount,
       (),

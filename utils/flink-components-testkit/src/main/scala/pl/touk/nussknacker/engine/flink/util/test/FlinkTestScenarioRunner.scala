@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
+import pl.touk.nussknacker.engine.flink.{FlinkBaseUnboundedComponentProvider, FlinkScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.flink.minicluster.MiniClusterJobStatusCheckingOps._
@@ -221,42 +221,45 @@ class FlinkTestScenarioRunner(
           getClass.getClassLoader,
         )
 
-        compileProcessData.compileProcess(scenario).map { _ =>
-          val registrar = FlinkProcessRegistrar(
-            compilerFactory,
-            FlinkJobConfig.parse(modelData.modelConfig),
-            ExecutionConfigPreparer.unOptimizedChain(modelData)
-          )
+        flinkMiniClusterWithServices.withAttachedStreamExecutionEnvironment { envForCompilation =>
+          compileProcessData.compileProcess(scenario)(new FlinkScenarioCompilationDependencies(envForCompilation)).map {
+            _ =>
+              val registrar = FlinkProcessRegistrar(
+                compilerFactory,
+                FlinkJobConfig.parse(modelData.modelConfig),
+                ExecutionConfigPreparer.unOptimizedChain(modelData)
+              )
 
-          registrar.register(
-            env,
-            scenario,
-            processVersion,
-            DeploymentData.empty.copy(nodesData = nodesData),
-            testScenarioCollectorHandler.resultCollector
-          )
+              registrar.register(
+                env,
+                scenario,
+                processVersion,
+                DeploymentData.empty.copy(nodesData = nodesData),
+                testScenarioCollectorHandler.resultCollector
+              )
 
-          val jobExecutionResult = env.execute(scenario.name.value)
-          flinkMiniClusterWithServices
-            .waitForJobIsFinished(jobExecutionResult.getJobID)(
-              WaitForJobStatusRetryPolicy,
-              Some(WaitForJobStatusRetryPolicy)
-            )
-            .futureValue
-            .toTry
-            .get
+              val jobExecutionResult = env.execute(scenario.name.value)
+              flinkMiniClusterWithServices
+                .waitForJobIsFinished(jobExecutionResult.getJobID)(
+                  WaitForJobStatusRetryPolicy,
+                  Some(WaitForJobStatusRetryPolicy)
+                )
+                .futureValue
+                .toTry
+                .get
 
-          val successes = TestResultSinkFactory.extractOutputFor(testExtensionsHolder.runId) match {
-            case Output.NotAvailable =>
-              // we assume that if there is no output, maybe we can try to get from the external invocation results
-              tryToCollectResultsFromExternalInvocationResults(scenario, testScenarioCollectorHandler)
-            case Output.Available(results) =>
-              results.toList
+              val successes = TestResultSinkFactory.extractOutputFor(testExtensionsHolder.runId) match {
+                case Output.NotAvailable =>
+                  // we assume that if there is no output, maybe we can try to get from the external invocation results
+                  tryToCollectResultsFromExternalInvocationResults(scenario, testScenarioCollectorHandler)
+                case Output.Available(results) =>
+                  results.toList
+              }
+              RunListResult(
+                successes = successes.asInstanceOf[List[OUTPUT]],
+                errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions
+              )
           }
-          RunListResult(
-            successes = successes.asInstanceOf[List[OUTPUT]],
-            errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions
-          )
         }
       }
     }

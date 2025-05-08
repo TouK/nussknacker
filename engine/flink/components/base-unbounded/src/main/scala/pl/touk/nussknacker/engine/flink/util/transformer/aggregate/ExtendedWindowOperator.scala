@@ -21,16 +21,18 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValu
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{stateDescriptorName, Input}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.lang
 
 object ExtendedWindowOperator {
-  type Input[A] = ValueWithContext[StringKeyedValue[A]]
+  // TODO_PAWEL is it ok, previously StringKeyedValue
+  type Input[A] = ValueWithContext[KeyedValue[AnyRef, A]]
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
 
-  implicit class OnEventOperatorKeyedStream[A](stream: KeyedStream[Input[A], String])(
+  implicit class OnEventOperatorKeyedStream[A](stream: KeyedStream[Input[A], AnyRef])(
       implicit fctx: FlinkCustomNodeContext
   ) {
 
@@ -76,7 +78,7 @@ private[aggregate] case object OnTimerWindowContext extends NuWindowContext
 
 @silent("deprecated")
 private[aggregate] class ExtendedWindowOperator[A](
-    stream: KeyedStream[Input[A], String],
+    stream: KeyedStream[Input[A], AnyRef],
     fctx: FlinkCustomNodeContext,
     assigner: WindowAssigner[_ >: Input[A], TimeWindow],
     types: AggregatorTypeInformations,
@@ -84,7 +86,7 @@ private[aggregate] class ExtendedWindowOperator[A](
     trigger: Trigger[_ >: Input[A], TimeWindow],
     preserveContext: Boolean,
     private val contextHolderRef: NuWindowContextHolder = NuWindowContextHolder(OnTimerWindowContext)
-) extends WindowOperator[String, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
+) extends WindowOperator[AnyRef, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
       stream.getKeySelector,
@@ -102,7 +104,7 @@ private[aggregate] class ExtendedWindowOperator[A](
       null // tag
     ) {
 
-  override def processElement(element: StreamRecord[ValueWithContext[StringKeyedValue[A]]]): Unit = {
+  override def processElement(element: StreamRecord[ValueWithContext[KeyedValue[AnyRef, A]]]): Unit = {
     contextHolderRef.nuWindowContext =
       OnElementWindowContext(if (preserveContext) Some(element.getValue.context) else None, element.getTimestamp)
     try {
@@ -118,7 +120,7 @@ private class ValueEmittingWindowFunction(
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: String,
     private val contextHolderRef: NuWindowContextHolder
-) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow] {
+) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow] {
 
   @transient
   private var contextIdGenerator: ContextIdGenerator = _
@@ -128,8 +130,8 @@ private class ValueEmittingWindowFunction(
   }
 
   override def process(
-      key: String,
-      context: ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow]#Context,
+      key: AnyRef,
+      context: ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], AnyRef, TimeWindow]#Context,
       elements: lang.Iterable[AnyRef],
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {

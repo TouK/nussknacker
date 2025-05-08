@@ -1,14 +1,17 @@
-import React, { useState, ReactNode, useMemo, useCallback } from "react";
-import { EditorType, ExpressionObj } from "../expression/types";
-import { Option } from "../../fragment-input-definition/TypeSelect";
-import { Box, Tabs, Tab, styled } from "@mui/material";
 import { css } from "@emotion/css";
-import { Editor, ParamType } from "../types";
-import { editorsParameters } from "../expression/editorsParameters";
-import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
-import { editors, isExtendedEditor } from "../expression/Editor";
+import { Box, styled, Tab, Tabs } from "@mui/material";
+import type { ReactNode } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { blendDarken, getBorderColor } from "../../../../../containers/theme/helpers";
+import type { Option } from "../../fragment-input-definition/TypeSelect";
+import { editors, isExtendedEditor } from "../expression/Editor";
+import { editorsParameters } from "../expression/editorsParameters";
 import { InfoTooltip } from "../expression/InfoTooltip";
+import type { ExpressionObj } from "../expression/types";
+import { EditorType } from "../expression/types";
+import type { Editor, ParamType } from "../types";
 
 const StyledTab = styled(Tab)(({ theme }) => ({
     fontSize: "0.65rem",
@@ -41,6 +44,7 @@ const SINGLE_EDITOR_TO_DISPLAY: Editor["type"][] = [
     EditorType.SQL_PARAMETER_EDITOR,
     EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR,
     EditorType.DICT_PARAMETER_EDITOR,
+    EditorType.JSON_TEMPLATE_PARAMETER_EDITOR,
 ];
 
 interface Props {
@@ -87,14 +91,14 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         availableEditors.find((editor) => {
             const editorParameters = editorsParameters[editor.type];
 
-            return editorParameters.language === expressionObj.language && allowsSwitch(editor);
+            return editorParameters?.language === expressionObj?.language && allowsSwitch(editor);
         }) ?? availableEditors[0],
     );
 
     const availableEditorsOptions: (Option & { hint: string | undefined })[] = useMemo(
         () =>
             availableEditors.map((editor) => ({
-                label: editorsParameters[editor.type].displayName,
+                label: editorsParameters[editor.type]?.displayName,
                 value: editor.type,
                 isDisabled: readOnly || (!allowsSwitch(editor) && editor.type !== selectedEditor.type),
                 hint: editor.type !== selectedEditor.type ? getHint(editor) : undefined,
@@ -107,14 +111,17 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
     if (readOnly || !showSwitch || isSingleEditorVisible) {
         return <>{typeof children === "function" ? children(selectedEditor) : children}</>;
     }
+
+    const selectedOption = availableEditorsOptions.find(({ value }) => value === selectedEditor.type);
+    if (!selectedOption) {
+        return null;
+    }
+
     return (
         <Box display="block" flexBasis={"60%"} flex={1} width={"100%"}>
             <Box display="flex" justifyContent="flex-end">
                 <Tabs
-                    value={
-                        availableEditorsOptions.find((availableEditorsOption) => availableEditorsOption.value === selectedEditor.type)
-                            ?.value
-                    }
+                    value={selectedOption.value}
                     variant="standard"
                     scrollButtons="auto"
                     sx={{
@@ -147,7 +154,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             disableRipple
                             disableTouchRipple
                             key={index}
-                            label={option.label.toLowerCase()}
+                            label={option.label?.toLowerCase()}
                             value={option.value}
                             classes={{
                                 selected: css({ outline: "none" }),

@@ -1,11 +1,13 @@
-import React, { ComponentProps, useCallback, useRef } from "react";
+import { Box, styled } from "@mui/material";
+import type { ComponentProps } from "react";
+import React, { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+
 import Icon from "../../../../assets/img/toolbarButtons/paste.svg";
+import { isTouchDevice } from "../../../../helpers/detectDevice";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { ToolbarButtonProps } from "../../types";
-import { Box, styled } from "@mui/material";
-import { isTouchDevice } from "../../../../helpers/detectDevice";
+import type { ToolbarButtonProps } from "../../types";
 
 const TransparentBox = styled(Box)({
     opacity: 0,
@@ -24,9 +26,9 @@ function FakeInput(props: TransparentBoxProps) {
 
 function PasteButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
-    const { paste, canPaste } = useSelectionActions();
+    const { paste } = useSelectionActions();
     const { disabled, type } = props;
-    const available = !disabled && paste && canPaste;
+    const available = !disabled && paste;
 
     const ref = useRef<HTMLButtonElement & HTMLDivElement>();
 

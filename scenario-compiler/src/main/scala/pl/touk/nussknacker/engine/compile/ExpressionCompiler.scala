@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
-import pl.touk.nussknacker.engine.language.json.JsonParser
+import pl.touk.nussknacker.engine.language.json.{JsonParser, JsonTemplateParser}
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -99,13 +99,16 @@ object ExpressionCompiler {
         classDefinitionSet
       )
 
+    val spelStandardParser = spelParser(SpelExpressionParser.Standard)
+    val spelTemplateParser = spelParser(SpelExpressionParser.Template)
     val defaultParsers =
       Seq(
-        spelParser(SpelExpressionParser.Standard),
-        spelParser(SpelExpressionParser.Template),
+        spelStandardParser,
+        spelTemplateParser,
         DictKeyWithLabelExpressionParser,
         TabularDataDefinitionParser,
-        JsonParser
+        JsonParser,
+        new JsonTemplateParser(spelTemplateParser = spelTemplateParser, spelParser = spelStandardParser),
       )
     val parsers = defaultParsers.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers, dictRegistry, expressionEvaluator)
@@ -157,14 +160,14 @@ class ExpressionCompiler(
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
-    val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
+    val adjustedParameters = NodeParametersAdjuster.adjustNonBranchParameters(
       parameterDefinitions,
-      nodeParameters ++ nodeBranchParameters.flatMap(_.parameters)
+      nodeParameters
     )
     val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, ctx.globalVariables)
     val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
-    val compiledParams = nodeParameters
+    val compiledParams = adjustedParameters
       .flatMap { nodeParam =>
         paramDefMap
           .get(nodeParam.name)
@@ -183,13 +186,11 @@ class ExpressionCompiler(
 
     for {
       compiledParams <- allCompiledParams.toIor
-      paramsAfterValidation = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap) match {
-        case Valid(a) => Ior.right(a)
-        // We want to preserve typing information from allCompiledParams even if custom validators give us some errors
-        case Invalid(e) => Ior.both(e, compiledParams)
-      }
-      combinedParams <- redundantMissingValidation.map(_ => List()).toIor.combine(paramsAfterValidation)
-    } yield combinedParams
+      customValidatorsResult = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap)
+      // We want to accumulate errors from custom validators, but also preserve typing information from allCompiledParams
+      // even if custom validators return some errors
+      _ <- customValidatorsResult.toIor.addRight(())
+    } yield compiledParams
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(

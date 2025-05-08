@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.avro.Schema
 import org.scalatest.LoneElement
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
+  EngineScenarioCompilationDependencies,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   SpelParameterEditor,
@@ -144,14 +146,16 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     intercept[IllegalArgumentException] {
       runAndVerify(topicConfig, process, LongFieldV1.record)
     }.getMessage should include(
-      "LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,ParameterName(delayInMillis),start)"
+      "LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,delayInMillis,start)"
     )
   }
 
   private def prepareTestForTimestampField(topicName: String, schema: Schema) = {
-    val topicConfig   = createAndRegisterTopicConfig(topicName, schema)
-    val process       = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
-    val jobData       = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val topicConfig = createAndRegisterTopicConfig(topicName, schema)
+    val process     = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
+    val jobData     = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     val nodeValidator = new NodeDataValidator(modelData)
 
     val result = nodeValidator.validate(
@@ -160,7 +164,7 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
       Map.empty,
       List.empty,
       FragmentResolver(_ => None)
-    )(jobData)
+    )(scenarioCompilationDependencies)
 
     result
       .asInstanceOf[ValidationPerformed]

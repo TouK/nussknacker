@@ -148,7 +148,7 @@ trait KafkaUtils extends LazyLogging {
   ) = {
     // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
-    ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
+    ThreadUtils.withContextClassLoader(classOf[KafkaClient].getClassLoader) {
       val properties = KafkaUtils.toConsumerProperties(config, groupId)
       // default is read uncommitted which is not a good default
       setIsolationLevelIfAbsent(properties, IsolationLevel.READ_COMMITTED)

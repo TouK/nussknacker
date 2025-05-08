@@ -26,7 +26,8 @@ class FullOuterJoinAggregatorFunction[MapT[_, _]](
     extends LatelyEvictableStateFunction[
       ValueWithContext[StringKeyedValue[AnyRef]],
       ValueWithContext[AnyRef],
-      MapT[Long, AnyRef]
+      MapT[Long, AnyRef],
+      String
     ]
     with AggregatorFunctionMixin[MapT] {
 

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.server
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.customhttpservice.TapirCustomHttpServiceProvider
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.NotificationServiceImpl
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.ScenarioMetadataRepository
-import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.{
@@ -27,7 +27,8 @@ object TapirHttpServiceFactory {
       designerConfig: DesignerConfig,
       infrastructureServices: InfrastructureServices,
       domainServices: DomainServices,
-      authManager: AuthManager
+      authManager: AuthManager,
+      customHttpServiceProviders: Map[String, TapirCustomHttpServiceProvider]
   ): NuDesignerExposedApiHttpService = {
     import domainServices._
     import infrastructureServices._
@@ -110,8 +111,9 @@ object TapirHttpServiceFactory {
       scenarioService = processService,
     )
 
-    val testingApiHttpService = new TestingApiHttpService(
+    val testingApiHttpService = new ScenarioTestingApiHttpService(
       authManager = authManager,
+      scenarioAuthorizer = processAuthorizer,
       processingTypeToParametersValidator = processingTypeServicesProvider.mapValues(_.parametersValidator),
       processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
       scenarioService = processService,
@@ -122,18 +124,6 @@ object TapirHttpServiceFactory {
       processingTypeToActionInfoService = processingTypeServicesProvider.mapValues(_.actionInfoService),
       scenarioService = processService,
     )
-
-    val stickyNotesApiHttpService = {
-      val stickyNotesRepository = DbStickyNotesRepository.create(dbRef, clock)
-      new StickyNotesApiHttpService(
-        authManager = authManager,
-        stickyNotesRepository = stickyNotesRepository,
-        scenarioService = processService,
-        scenarioAuthorizer = processAuthorizer,
-        dbioRunner,
-        stickyNotesSettings = designerConfig.stickyNotesSettings
-      )
-    }
 
     val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
       authManager = authManager,
@@ -182,7 +172,8 @@ object TapirHttpServiceFactory {
           dmDispatcher,
           dbioRunner,
           clock,
-          processingTypeServicesProvider.mapValues(_.additionalComponentConfigs)
+          processingTypeServicesProvider.mapValues(_.additionalComponentConfigs),
+          limitsService
         )
       val activityService =
         new ActivityService(
@@ -229,6 +220,9 @@ object TapirHttpServiceFactory {
       )
     }
 
+    val httpServiceExposingTapirCustomProviders =
+      new HttpServiceExposingTapirCustomProviders(customHttpServiceProviders, authManager)
+
     new NuDesignerExposedApiHttpService(
       appApiHttpService,
       componentsApiHttpService,
@@ -242,10 +236,10 @@ object TapirHttpServiceFactory {
       scenarioActivityApiHttpService,
       scenarioLabelsApiHttpService,
       scenarioParametersHttpService,
-      stickyNotesApiHttpService,
       userApiHttpService,
       versionControlApiHttpService,
-      statisticsApiHttpService
+      statisticsApiHttpService,
+      httpServiceExposingTapirCustomProviders,
     )
   }
 

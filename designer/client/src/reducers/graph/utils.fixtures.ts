@@ -1,7 +1,8 @@
-import { GraphState } from "./types";
+import type { NodesWithPositions } from "../../actions/nk";
+import { TestCapabilityStatus } from "../../common/TestResultUtils";
 import { ProcessingMode } from "../../http/HttpService";
 import { EdgeKind } from "../../types";
-import { NodesWithPositions } from "../../actions/nk";
+import type { GraphState } from "./types";
 
 export const state: GraphState = {
     scenario: {
@@ -164,6 +165,7 @@ export const state: GraphState = {
                     edgeType: null,
                 },
             ],
+            stickyNotes: [],
         },
         state: {
             status: {
@@ -631,7 +633,6 @@ export const state: GraphState = {
             },
         ],
     },
-    unsavedNewName: null,
     layout: [
         {
             id: "choice",
@@ -665,9 +666,12 @@ export const state: GraphState = {
     selectionState: [],
     scenarioLoading: false,
     testCapabilities: {
-        canBeTested: false,
-        canGenerateTestData: false,
-        canTestWithForm: false,
+        testWithParameters: {
+            status: TestCapabilityStatus.NOT_AVAILABLE,
+        },
+        testWithGeneratedData: {
+            status: TestCapabilityStatus.NOT_AVAILABLE,
+        },
     },
     testFormParameters: [],
     processCounts: {},

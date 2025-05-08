@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.CustomProcessValidator
+import cats.effect.SyncIO
+import cats.effect.kernel.Resource
+import pl.touk.nussknacker.engine.{CustomProcessValidator, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -20,6 +23,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
@@ -31,9 +35,11 @@ class UIProcessValidator(
     validator: ProcessValidator,
     scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
+    engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
     scenarioLabelsValidator: ScenarioLabelsValidator,
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
+    stickyNotesSettings: StickyNotesSettings,
 ) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -47,9 +53,11 @@ class UIProcessValidator(
       validator,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
+      engineScenarioCompilationDependenciesResource,
       scenarioLabelsValidator,
       additionalValidators,
-      fragmentResolver
+      fragmentResolver,
+      stickyNotesSettings
     )
 
   def transformValidator(transform: ProcessValidator => ProcessValidator) =
@@ -58,9 +66,11 @@ class UIProcessValidator(
       transform(validator),
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
+      engineScenarioCompilationDependenciesResource,
       scenarioLabelsValidator,
       additionalValidators,
-      fragmentResolver
+      fragmentResolver,
+      stickyNotesSettings
     )
 
   def validate(
@@ -120,6 +130,8 @@ class UIProcessValidator(
       .add(validateNodesId(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
+      .add(validateStickyNotesLength(scenarioGraph))
+      .add(validateStickyNotesLimit(scenarioGraph))
       .add(validateEdgeUniqueness(scenarioGraph))
       .add(validateScenarioProperties(scenarioGraph.properties.additionalFields.properties, isFragment))
       .add(warningValidation(scenarioGraph))
@@ -130,47 +142,55 @@ class UIProcessValidator(
       processVersion: ProcessVersion,
       isFragment: Boolean
   )(implicit loggedUser: LoggedUser): ValidationResult = {
-    def validateAndFormatResult(scenario: CanonicalProcess) = {
-      implicit val jobData: JobData = JobData(scenario.metaData, processVersion)
-      val validated                 = validator.validate(scenario, isFragment)
-      validated.result
-        .fold(formatErrors, _ => ValidationResult.success)
-        .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
-    }
-
-    // TODO: should we validate after resolve?
-    val additionalValidatorErrors = additionalValidators
-      .map(_.validate(canonical))
-      .sequence
-      .fold(formatErrors, _ => ValidationResult.success)
-
-    val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, processingType)
-
-    // TODO: handle types when fragment resolution fails
-    val validationResult = resolvedScenarioResult match {
-      case Invalid(fragmentResolutionErrors) => formatErrors(fragmentResolutionErrors)
-      case Valid(scenario) =>
-        val validationResult = validateAndFormatResult(scenario)
-        val containsDisabledNodes = canonical.collectAllNodes.exists {
-          case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
-          case _                                                           => false
-        }
-        if (containsDisabledNodes) {
-          val resolvedScenarioWithoutDisabledNodes =
-            fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
-          resolvedScenarioWithoutDisabledNodes match {
-            case Invalid(fragmentResolutionErrors)   => formatErrors(fragmentResolutionErrors)
-            case Valid(scenarioWithoutDisabledNodes) =>
-              // FIXME: Validation errors for fragment nodes are not properly handled by FE
-              // We add typing data from disabled nodes to have typing and suggestions for expressions in disabled nodes
-              val resultWithoutDisabledNodes = validateAndFormatResult(scenarioWithoutDisabledNodes)
-              resultWithoutDisabledNodes.copy(nodeResults = validationResult.nodeResults)
+    engineScenarioCompilationDependenciesResource
+      .use { engineScenarioCompilationDependencies =>
+        SyncIO {
+          def validateAndFormatResult(scenario: CanonicalProcess) = {
+            val jobData: JobData = JobData(scenario.metaData, processVersion)
+            implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+              new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+            val validated = validator.validate(scenario, isFragment)
+            validated.result
+              .fold(formatErrors, _ => ValidationResult.success)
+              .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
           }
-        } else {
-          validationResult
+
+          // TODO: should we validate after resolve?
+          val additionalValidatorErrors = additionalValidators
+            .map(_.validate(canonical))
+            .sequence
+            .fold(formatErrors, _ => ValidationResult.success)
+
+          val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, processingType)
+
+          // TODO: handle types when fragment resolution fails
+          val validationResult = resolvedScenarioResult match {
+            case Invalid(fragmentResolutionErrors) => formatErrors(fragmentResolutionErrors)
+            case Valid(scenario) =>
+              val validationResult = validateAndFormatResult(scenario)
+              val containsDisabledNodes = canonical.collectAllNodes.exists {
+                case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
+                case _                                                           => false
+              }
+              if (containsDisabledNodes) {
+                val resolvedScenarioWithoutDisabledNodes =
+                  fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
+                resolvedScenarioWithoutDisabledNodes match {
+                  case Invalid(fragmentResolutionErrors)   => formatErrors(fragmentResolutionErrors)
+                  case Valid(scenarioWithoutDisabledNodes) =>
+                    // FIXME: Validation errors for fragment nodes are not properly handled by FE
+                    // We add typing data from disabled nodes to have typing and suggestions for expressions in disabled nodes
+                    val resultWithoutDisabledNodes = validateAndFormatResult(scenarioWithoutDisabledNodes)
+                    resultWithoutDisabledNodes.copy(nodeResults = validationResult.nodeResults)
+                }
+              } else {
+                validationResult
+              }
+          }
+          validationResult.add(additionalValidatorErrors)
         }
-    }
-    validationResult.add(additionalValidatorErrors)
+      }
+      .unsafeRunSync()
   }
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
@@ -255,6 +275,36 @@ class UIProcessValidator(
     val edgeUniquenessErrors =
       edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(from, edges) }.filterNot(_._2.isEmpty)
     ValidationResult.errors(edgeUniquenessErrors, List(), List())
+  }
+
+  private def validateStickyNotesLength(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val tooLongStickyNotes = scenarioGraph.stickyNotes
+      .filter(n => n.content.length > stickyNotesSettings.maxContentLength)
+
+    if (tooLongStickyNotes.isEmpty) {
+      ValidationResult.success
+    } else {
+      formatErrors(
+        NonEmptyList.fromListUnsafe(
+          tooLongStickyNotes.map(n =>
+            StickyNoteContentTooLong(n.id, n.content.length, stickyNotesSettings.maxContentLength)
+          )
+        )
+      )
+    }
+  }
+
+  private def validateStickyNotesLimit(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val numberOfStickyNotes = scenarioGraph.stickyNotes.length
+    stickyNotesSettings.maxNotesCount.fold(ValidationResult.success)(notesLimit => {
+      if (numberOfStickyNotes > notesLimit)
+        formatErrors(
+          NonEmptyList.fromListUnsafe(
+            scenarioGraph.stickyNotes.map(n => StickyNotesLimitExceeded(n.id, numberOfStickyNotes, notesLimit))
+          )
+        )
+      else ValidationResult.success
+    })
   }
 
   private def validateLooseNodes(scenarioGraph: ScenarioGraph): ValidationResult = {

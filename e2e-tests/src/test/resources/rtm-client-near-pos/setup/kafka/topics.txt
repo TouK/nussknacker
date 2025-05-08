@@ -1,0 +1,4 @@
+GeoLocations
+GeoLocationsOutputEmail
+GeoLocationsOutputSms
+GeoLocationsOutputPush

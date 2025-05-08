@@ -14,7 +14,11 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-// Warning: Flink doesn't work correctly with 2.12.11
+// Warning: Flink doesn't work correctly with Scala 2.12.11 and higher.
+// Upgrading to a newer version of Scala 2.12 causes the JavaCollectionsSerializationTest to fail
+// because these versions switched to the same Java collection wrappers used in Scala 2.13.
+// These wrappers lack dedicated Kryo serializers, which we added in flink-scala-2.13 library https://github.com/TouK/flink-scala-2.13.
+// To bump Scala 2.12 we would need to do flink-scala-2.12 similar to flink-scala-2.13.
 val scala212 = "2.12.10"
 val scala213 = "2.13.15"
 
@@ -105,6 +109,8 @@ def defaultMergeStrategy: String => MergeStrategy = {
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last == "Projection.class"             => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last == "Selection.class"              => MergeStrategy.first
   // merge Netty version information files
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.concat
   // due to swagger-parser dependencies having different schema definitions (json-schema-validator and json-schema-core)
@@ -295,6 +301,7 @@ lazy val commonSettings =
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
 val flinkV                = "1.19.2"
 val flinkConnectorKafkaV  = "3.2.0-1.19"
+val jdbcFlinkConnectorV   = "3.2.0-1.19"
 val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
@@ -306,6 +313,8 @@ val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV                = "3.8.1"
 // to update we need configurable SpEL length limit from 6.0.9, but 6.x requires JDK 17
+// when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
+// and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
 val springV               = "5.2.23.RELEASE"
 val scalaTestV            = "3.2.18"
 val scalaCheckV           = "1.17.1"
@@ -323,6 +332,7 @@ val jacksonV                = "2.17.2"
 val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
 val everitSchemaV           = "1.14.4"
+val fastParseV              = "3.1.1"
 val slf4jV                  = "1.7.36"
 val scalaLoggingV           = "3.9.5"
 val scalaCompatV            = "1.0.2"
@@ -358,6 +368,7 @@ val cronParserV               = "9.1.6"  // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.8"
 val sttpV                     = "3.9.8"
+val sttpSharedV               = "1.3.22"
 val tapirV                    = "1.11.7"
 val openapiCirceYamlV         = "0.11.3"
 //we use legacy version because this one supports Scala 2.12
@@ -636,6 +647,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
   )
   .dependsOn(
     deploymentManagerApi % Provided,
+    scenarioCompilerFlinkDeps,
     flinkMiniCluster,
     commonUtils          % Provided,
     utilsInternal        % Provided,
@@ -680,6 +692,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     // It has to be in the default, Compile scope because all components are eagerly loaded so it will be loaded also
     // on the Flink side where this library is missing
     liteComponentsApi,
+    defaultHelpers,
     componentsUtils      % Provided,
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     scenarioCompiler     % Provided,
@@ -807,6 +820,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     }.toList,
   )
   .dependsOn(
+    scenarioCompilerFlinkDeps,
     flinkComponentsUtils,
     flinkExtensionsApi,
     scenarioCompiler,
@@ -818,6 +832,19 @@ lazy val flinkExecutor = (project in flink("executor"))
     flinkTestUtils % Test,
   )
 
+lazy val scenarioCompilerFlinkDeps = (project in flink("scenario-compiler-deps"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-flink-scenario-compiler-deps",
+    libraryDependencies ++= {
+      Seq(
+        // Dependencies below are provided by flink-dist jar in production flink or by flink DM for scenario testing/state verification purpose
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
+      )
+    }
+  )
+  .dependsOn(componentsApi % Provided)
+
 lazy val scenarioCompiler = (project in file("scenario-compiler"))
   .settings(commonSettings)
   .settings(
@@ -826,10 +853,12 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
       Seq(
         "org.typelevel"          %% "cats-effect"                   % catsEffectV,
         "org.scala-lang.modules" %% "scala-java8-compat"            % scalaCompatV,
+        "com.lihaoyi"            %% "fastparse"                     % fastParseV,
         "org.apache.avro"         % "avro"                          % avroV          % Test,
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,
-        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
+        "org.scalatestplus"      %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
+        "org.apache.flink"        % "flink-core"                    % flinkV         % Test,
       )
     }
   )
@@ -1011,6 +1040,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
   .dependsOn(
     componentsApi        % Provided,
     kafkaComponentsUtils,
+    schemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
     flinkExtensionsApi   % Provided,
     componentsUtils      % Provided,
@@ -1131,7 +1161,12 @@ lazy val mathUtils = (project in utils("math-utils"))
 lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-default-helpers"
+    name := "nussknacker-default-helpers",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-core" % flinkV % Test,
+      )
+    }
   )
   .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
@@ -1229,16 +1264,34 @@ lazy val flinkMiniCluster = (project in flink("minicluster"))
     name := "nussknacker-flink-minicluster",
     libraryDependencies ++= {
       Seq(
-        ("org.apache.flink"           % "flink-streaming-java"       % flinkV)
+        ("org.apache.flink"           % "flink-streaming-java"        % flinkV)
           .excludeAll(
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
-        "org.apache.flink"            % "flink-statebackend-rocksdb" % flinkV,
-        "org.scala-lang.modules"     %% "scala-collection-compat"    % scalaCollectionsCompatV % Provided,
-        "com.typesafe.scala-logging" %% "scala-logging"              % scalaLoggingV           % Provided,
-        "com.softwaremill.retry"     %% "retry"                      % retryV,
+        "org.apache.flink"            % "flink-statebackend-rocksdb"  % flinkV,
+        // Below is a list of libs that are available in flink distribution
+        // We want to make flink minicluster as featured as standard flink distribution
+        "org.apache.flink"            % "flink-connector-files"       % flinkV,
+        "org.apache.flink"            % "flink-csv"                   % flinkV,
+        "org.apache.flink"            % "flink-json"                  % flinkV,
+        ("org.apache.flink"           % "flink-table-api-java-bridge" % flinkV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded")
+          ),
+        ("org.apache.flink"           % "flink-table-runtime"         % flinkV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded")
+          ),
+        ("org.apache.flink"           % "flink-table-planner-loader"  % flinkV)
+          .excludeAll(
+            ExclusionRule("com.esotericsoftware", "kryo-shaded")
+          ),
+        // end of list
+        "org.scala-lang.modules"     %% "scala-collection-compat"     % scalaCollectionsCompatV % Provided,
+        "com.typesafe.scala-logging" %% "scala-logging"               % scalaLoggingV           % Provided,
+        "com.softwaremill.retry"     %% "retry"                       % retryV,
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
@@ -1329,7 +1382,12 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
       )
     },
   )
-  .dependsOn(liteEngineKafkaComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
+  .dependsOn(
+    liteEngineKafkaComponentsApi % Test,
+    componentsUtils              % Test,
+    liteComponentsTestkit        % Test,
+    kafkaTestUtils               % Test
+  )
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response"))
   .settings(commonSettings)
@@ -1717,6 +1775,7 @@ lazy val httpUtils = (project in utils("http-utils"))
         "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
         "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
+        "io.netty"                       % "netty-handler"                    % nettyV,
       )
     }
   )
@@ -1739,7 +1798,8 @@ lazy val openapiComponents = (project in component("openapi"))
         ExclusionRule(organization = "jakarta.validation")
       ),
       "org.apache.flink"   % "flink-streaming-java" % flinkV     % Provided,
-      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test"
+      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test",
+      "org.wiremock"       % "wiremock"             % wireMockV  % Test,
     ),
   )
   .dependsOn(
@@ -1836,9 +1896,7 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   .settings(
     name := "nussknacker-flink-base-components-tests",
     libraryDependencies ++= Seq(
-      "org.apache.flink" % "flink-connector-files" % flinkV % Test,
-      "org.apache.flink" % "flink-csv"             % flinkV % Test,
-      "org.apache.flink" % "flink-json"            % flinkV % Test
+      "org.apache.flink" % "flink-connector-jdbc" % jdbcFlinkConnectorV % Test,
     )
   )
   .dependsOn(
@@ -1869,16 +1927,12 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-        "org.apache.calcite" % "calcite-linq4j"              % calciteV, // required by fliink-sql-parser
-        "org.apache.flink"   % "flink-table-api-java"        % flinkV,
-        "org.apache.flink"   % "flink-table-api-java-bridge" % flinkV,
-        "org.apache.flink"   % "flink-table-planner-loader"  % flinkV,
-        "org.apache.flink"   % "flink-table-runtime"         % flinkV,
-        "org.apache.flink"   % "flink-clients"               % flinkV,
         "org.apache.flink"   % "flink-sql-parser"            % flinkV,
-        "org.apache.flink"   % "flink-connector-files"       % flinkV, // needed for testing data generation
-        "org.apache.flink"   % "flink-json"                  % flinkV, // needed for testing data generation
-        "org.apache.flink"   % "flink-csv"                   % flinkV % Test,
+        "org.apache.calcite" % "calcite-linq4j"              % calciteV, // required by fliink-sql-parser
+        "org.apache.flink"   % "flink-streaming-java"        % flinkV              % Provided,
+        "org.apache.flink"   % "flink-table-api-java"        % flinkV              % Provided,
+        "org.apache.flink"   % "flink-table-api-java-bridge" % flinkV              % Provided,
+        "org.apache.flink"   % "flink-connector-jdbc"        % jdbcFlinkConnectorV % Test,
       )
     }
   )
@@ -1889,7 +1943,8 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     componentsUtils        % Provided,
     flinkComponentsUtils   % Provided,
     jsonUtils              % Provided,
-    flinkMiniCluster       % Provided,
+    extensionsApi          % Provided,
+    flinkMiniCluster       % Test,
     testUtils              % Test,
     flinkComponentsTestkit % Test,
   )
@@ -1931,7 +1986,8 @@ lazy val customHttpServiceApi = (project in file("designer/custom-http-service-a
     name := "nussknacker-custom-http-service-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.pekko" %% "pekko-http" % pekkoHttpV,
+        "org.apache.pekko"             %% "pekko-http" % pekkoHttpV,
+        "com.softwaremill.sttp.shared" %% "pekko"      % sttpSharedV,
       )
     }
   )
@@ -2237,6 +2293,7 @@ lazy val modules = List[ProjectReference](
   utilsInternal,
   testUtils,
   flinkExecutor,
+  scenarioCompilerFlinkDeps,
   flinkSchemedKafkaComponentsUtils,
   flinkKafkaComponentsUtils,
   flinkComponentsUtils,

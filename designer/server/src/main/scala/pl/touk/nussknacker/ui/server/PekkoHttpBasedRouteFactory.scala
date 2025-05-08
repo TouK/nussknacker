@@ -28,17 +28,23 @@ object PekkoHttpBasedRouteFactory {
     val authManager = new AuthManager(authenticationResources)(executionContextWithIORuntime)
 
     for {
-      pekkoRoutes <- PekkoRoutesFactory.createRoutes(
+      customHttpServiceProviders <- CustomHttpServiceProvidersLoader.loadCustomHttpServiceProviders(
+        designerConfig,
+        domainServices,
+      )
+      pekkoRoutes = PekkoRoutesFactory.createRoutes(
         designerConfig,
         infrastructureServices,
         domainServices,
-        authenticationResources
+        authenticationResources,
+        customHttpServiceProviders.pekko
       )
       nuDesignerApi = TapirHttpServiceFactory.createHttpService(
         designerConfig,
         infrastructureServices,
         domainServices,
-        authManager
+        authManager,
+        customHttpServiceProviders.tapir
       )
 
       pekkoHttpServerInterpreter = new NuPekkoHttpServerInterpreterForTapirPurposes()

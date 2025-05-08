@@ -73,6 +73,7 @@ object EditorExtractor {
       case EditorType.DICT_EDITOR               => DictParameterEditor(editor.dictId())
       case EditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
       case EditorType.SPEL_EDITOR               => SpelParameterEditor
+      case EditorType.JSON_TEMPLATE_EDITOR      => JsonTemplateParameterEditor
     }
   }
 

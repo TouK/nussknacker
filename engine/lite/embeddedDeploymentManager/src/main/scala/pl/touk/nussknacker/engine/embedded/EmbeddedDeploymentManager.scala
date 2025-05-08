@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.{newdeployment, BaseModelDataProvider}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
@@ -220,10 +220,10 @@ class EmbeddedDeploymentManager(
       scenarioDeployment: Try[Deployment]
   ) {
 
-    def statusDetails = DeploymentStatusDetails(
+    def statusDetails: DeploymentStatusDetails = DeploymentStatusDetails(
       status = scenarioDeployment
         .fold(
-          _ => ProblemStateStatus(s"Scenario compilation errors"),
+          _ => GeneralProblemStateStatus(s"Scenario compilation errors"),
           deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
         ),
       deploymentId = Some(deploymentId),

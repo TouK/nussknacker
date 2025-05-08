@@ -1,0 +1,196 @@
+{
+    "metaData": {
+        "id": "e2e-004-fragment-test-process",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "docsUrl": "",
+                "componentGroup": "fragments",
+                "icon": ""
+            },
+            "metaDataType": "FragmentSpecificData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "input",
+            "parameters": [
+                {
+                    "name": "name_value_string_any_value",
+                    "typ": {
+                        "refClazzName": "String"
+                    },
+                    "required": false,
+                    "initialValue": null,
+                    "hintText": "",
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "i111",
+                    "typ": {
+                        "refClazzName": "java.lang.String"
+                    },
+                    "required": false,
+                    "initialValue": null,
+                    "hintText": null,
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "i222",
+                    "typ": {
+                        "refClazzName": "int"
+                    },
+                    "required": false,
+                    "initialValue": null,
+                    "hintText": null,
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "i333",
+                    "typ": {
+                        "refClazzName": "boolean"
+                    },
+                    "required": false,
+                    "initialValue": null,
+                    "hintText": null,
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "name_string_any_with_suggestion",
+                    "typ": {
+                        "refClazzName": "String"
+                    },
+                    "required": false,
+                    "initialValue": null,
+                    "hintText": "",
+                    "valueEditor": {
+                        "fixedValuesList": [
+                            {
+                                "expression": "#meta.processName",
+                                "label": "#meta.processName"
+                            }
+                        ],
+                        "allowOtherValue": true,
+                        "type": "ValueInputWithFixedValuesProvided"
+                    },
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "name_string_fixed",
+                    "typ": {
+                        "refClazzName": "String"
+                    },
+                    "required": false,
+                    "initialValue": {
+                        "expression": "#meta.processName",
+                        "label": "#meta.processName"
+                    },
+                    "hintText": "Hint text test",
+                    "valueEditor": {
+                        "fixedValuesList": [
+                            {
+                                "expression": "#meta.processName",
+                                "label": "#meta.processName"
+                            }
+                        ],
+                        "allowOtherValue": true,
+                        "type": "ValueInputWithFixedValuesProvided"
+                    },
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "non_boolean_or_string",
+                    "typ": {
+                        "refClazzName": "Number"
+                    },
+                    "required": false,
+                    "initialValue": {
+                        "expression": "1",
+                        "label": "1"
+                    },
+                    "hintText": "",
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": {
+                        "validationExpression": {
+                            "language": "spel",
+                            "expression": "true"
+                        },
+                        "validationFailedMessage": null
+                    }
+                },
+                {
+                    "name": "any_value_with_suggestions_preset",
+                    "typ": {
+                        "refClazzName": "String"
+                    },
+                    "required": false,
+                    "initialValue": {
+                        "expression": "{\"key\":\"b10d27bc-fc36-49d2-a60d-1001c7dd37c2\",\"label\":\"Email Marketing 12.2019\"}",
+                        "label": "bc"
+                    },
+                    "hintText": "",
+                    "valueEditor": {
+                        "dictId": "bc",
+                        "allowOtherValue": true,
+                        "type": "ValueInputWithDictEditor"
+                    },
+                    "valueCompileTimeValidation": null
+                },
+                {
+                    "name": "generic_type",
+                    "typ": {
+                        "refClazzName": "List[String]"
+                    },
+                    "required": false,
+                    "initialValue": null,
+                    "hintText": "",
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": null
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "FragmentInputDefinition"
+        },
+        {
+            "id": "output",
+            "outputName": "testOutput",
+            "fields": [
+                {
+                    "name": "o111",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "\"aaa\""
+                    }
+                },
+                {
+                    "name": "o222",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "#DATE.now.toEpochMilli"
+                    }
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 0
+                }
+            },
+            "type": "FragmentOutputDefinition"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": []
+}

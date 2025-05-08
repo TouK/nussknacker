@@ -6,6 +6,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -1159,6 +1160,71 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should allow usage of nested generic type in FragmentInputDefinition parameter") {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              ParameterName(paramName),
+              FragmentClazzRef("Map[List[Integer], Map[String, Map[Double, List[Integer]]]]"),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test("should not allow type definition with unbalanced brackets") {
+    val nodeId: String    = "in"
+    val paramName         = "param1"
+    val additionalBracket = "]"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              ParameterName(paramName),
+              FragmentClazzRef(s"Map[List[Integer], Map[String, Map[Double, List[Integer]]]]$additionalBracket"),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe List(
+        FragmentParamClassLoadError(
+          ParameterName("param1"),
+          "Map[List[Integer], Map[String, Map[Double, List[Integer]]]]]",
+          "in"
+        )
+      )
+    }
+  }
+
   test(
     "should not allow usage of generic type in FragmentInputDefinition parameter when occurring type is not on classpath"
   ) {
@@ -1187,6 +1253,24 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) { case ValidationPerformed(errors, None, None) =>
       errors shouldBe List(FragmentParamClassLoadError(ParameterName("param1"), "Map[String, Foo]", "in"))
+    }
+  }
+
+  test("should properly validate Json type parameters") {
+    val ctx = ValidationContext(Map("input" -> Typed.json))
+    val expressionsWithExpectedTypes = List(
+      ("#input", Typed.json),
+      ("#input[0]['products'][1]['id']", Typed.json),
+      ("#input[0]['products'][1]['id'].toInteger()", Typed.typedClass[Int]),
+      ("#input.toList()", Typed.genericTypeClass[java.util.List[_]](List(Typed.json))),
+      ("#input.toMap()", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed.json))),
+      ("#input.toList().get(0)", Typed.json)
+    )
+    expressionsWithExpectedTypes.foreach { case (expression, expectedType) =>
+      inside(validate(Variable("var1", "specialVariable_2", expression.spel, None), ctx)) {
+        case ValidationPerformed(Nil, None, expressionType) =>
+          expressionType shouldBe Some(expectedType)
+      }
     }
   }
 
@@ -1521,9 +1605,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   ): ValidationResponse = {
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
     val metaData         = MetaData("id", StreamMetaData())
-    new NodeDataValidator(aModelData).validate(nodeData, ctx, branchCtxs, outgoingEdges, fragmentResolver)(
-      JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    )
+    val jobData          = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    new NodeDataValidator(aModelData).validate(nodeData, ctx, branchCtxs, outgoingEdges, fragmentResolver)
   }
 
   private def par(name: String, expr: String): NodeParameter = NodeParameter(ParameterName(name), Expression.spel(expr))

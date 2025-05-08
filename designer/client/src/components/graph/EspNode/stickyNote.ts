@@ -1,11 +1,15 @@
-import { Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
 import { dia, shapes, util, V } from "jointjs";
-import { getBorderColor } from "../../../containers/theme/helpers";
-import { StickyNote } from "../../../common/StickyNote";
 import { marked } from "marked";
+
+import { getBorderColor } from "../../../containers/theme/helpers";
 import { StickyNoteElement } from "../StickyNoteElement";
+
 import MarkupNodeJSON = dia.MarkupNodeJSON;
+
 import DOMPurify from "dompurify";
+
+import type { NodeValidationError, StickyNoteNodeType } from "../../../types";
 
 export const STICKY_NOTE_CONSTRAINTS = {
     MIN_WIDTH: 100,
@@ -66,10 +70,28 @@ renderer.image = function (href, title, text) {
     return `<a target="_blank" rel="noopener noreferrer" href="${href}">${text} (attached img)</a>`;
 };
 
-const prepareSvgObject = (content: string) =>
+const invalidMarkupError: NodeValidationError = {
+    description: "Could not parse markdown content",
+    details: null,
+    errorType: "SaveNotAllowed",
+    fieldName: null,
+    message: "Could not parse markdown content",
+    typ: "",
+};
+
+const prepareSvgObject = (content: string, errors?: NodeValidationError[]) =>
     util.svg/* xml */ `
             <foreignObject @selector="foreignObject">
                 <div @selector="sticky-note-content" class="sticky-note-content">
+                    ${
+                        errors
+                            ? `<div class="sticky-note-errors">${errors
+                                  .map((e) => {
+                                      return `<div class="sticky-note-error">${e.description}</div> `;
+                                  })
+                                  .join(" ")}</div>`
+                            : ""
+                    }
                     <textarea @selector="${MARKDOWN_EDITOR_NAME}" class="sticky-note-markdown-editor" name="${MARKDOWN_EDITOR_NAME}" autocomplete="off" disabled="disabled"></textarea>
                     <div @selector="markdown" class="sticky-note-markdown">${content}</div>
                 </div>
@@ -79,15 +101,15 @@ const prepareSvgObject = (content: string) =>
 const escapeHtmlContent = (content: string) =>
     content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 
-const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
+const foreignObject = (stickyNote: StickyNoteNodeType): MarkupNodeJSON => {
     try {
         const contentWithHtmlTagsSanitized = escapeHtmlContent(stickyNote.content);
         let parsed = DOMPurify.sanitize(marked.parse(contentWithHtmlTagsSanitized, { renderer }), { ADD_ATTR: ["target"] });
         parsed = parsed.replace(/<br\s*\/?>/g, "<br/>"); // SVG does not allow tag without closing and DOMPurify always remove closing tag.
-        return prepareSvgObject(parsed);
+        return prepareSvgObject(parsed, stickyNote.errors);
     } catch (error) {
         console.error("Error: Could not parse markdown:", error);
-        return prepareSvgObject("<b>[!] Could not parse markdown content [!]\n</b><br></br>" + escapeHtmlContent(stickyNote.content));
+        return prepareSvgObject(escapeHtmlContent(stickyNote.content), [...stickyNote.errors, invalidMarkupError]);
     }
 };
 
@@ -130,11 +152,11 @@ const defaults = (theme: Theme) =>
         shapes.devs.Model.prototype.defaults,
     );
 
-const protoProps = (theme: Theme, stickyNote: StickyNote) => {
+const protoProps = (theme: Theme, stickyNote: StickyNoteNodeType) => {
     return {
         markup: [body, border, foreignObject(stickyNote), icon],
     };
 };
 
-export const StickyNoteShape = (theme: Theme, stickyNote: StickyNote) =>
+export const StickyNoteShape = (theme: Theme, stickyNote: StickyNoteNodeType) =>
     StickyNoteElement(defaults(theme), protoProps(theme, stickyNote)) as typeof shapes.devs.Model;

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.generics
 
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
 object MethodTypeInfo {
   private val arrayClass = classOf[Array[Object]]

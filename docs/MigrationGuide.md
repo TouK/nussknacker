@@ -31,6 +31,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * For KafkaFlinkSource it is possible to provide optional deployment parameter, e.g. `{"comment": "example text", "nodesDeploymentData": {"my_source_node_id": {"offsetResetStrategy": "ToLatest"}}}`.
 * [#7658](https://github.com/TouK/nussknacker/pull/7658) `/app/processingtype/reload` endpoint doesn't reload Deployment Managers
 * [#7693](https://github.com/TouK/nussknacker/pull/7693) Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. To provide username use impersonation mechanism.
+* [#7871](https://github.com/TouK/nussknacker/pull/7871) `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`.
+* [#7959](https://github.com/TouK/nussknacker/pull/7959) Scenario testing API changes:
+    * Scenario testing API (on path prefix `/scenarioTesting`) is refactored, with modified endpoint paths and request/response format
+    * 2 endpoints moved from `/processManagement` API to `/scenarioTesting` API - `/test` (test with form) and `/generateAndTest` (test with generated data) and merged into a single endpoints `/performTest`
+`   * introduced` new representation of test results, grouped per transition between nodes (toggleable in on API request level)
 
 ### Code API changes
 
@@ -115,6 +120,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Renamed a `SimpleEditor` to the `Editor` in components API.
     * For now on, you can add multiple editors on a single param. The first editor annotation is treated as a default
       editor.
+* [#7711](https://github.com/TouK/nussknacker/pull/7711) [#7984](https://github.com/TouK/nussknacker/pull/7984) `TypingResult` API changes:
+  * `TypedNull.wihoutValue` returns `Unknown` type instead of `TypedNull`
+  * `canBeConvertedTo` renamed to `canBeLooselyAssignedTo`
+  * `canBeStrictlyConvertedTo` renamed to `canBeStrictlyAssignedTo`
+* [#7768](https://github.com/TouK/nussknacker/pull/7768)
+  * `ModelData.withThisAsContextClassLoader` was renamed to `withModelClassloaderAsContextClassLoader`
+  * New, `DeploymentManager.scenarioCompilationDependenciesResource` method was added. For flink-based DMs it should be
+    implemented as `miniClusterWithServices.createDetachedStreamExecutionEnvironment[SyncIO].map(new FlinkScenarioCompilationDependencies(_))`
+* [#7824](https://github.com/TouK/nussknacker/pull/7824) Introduced Json display for `Unknown` type.
+  * `Unknown` is a case class now and it has `DisplayStrategy` field. It affects how the type is displayed.
+  * There is `Unknown` object which extends the case class with `DefaultDisplayStrategy` for compatibility.
+  * When introducing new pattern matches regarding types `Unknown(_)` should be used so all display strategies are targeted.
 
 ### Other changes
 
@@ -163,8 +180,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     ```
 * [#7335](https://github.com/TouK/nussknacker/pull/7335) Deployment managers are loaded using separate class loader (not the Application ClassLoader - `/opt/nussknacker/managers/*` should be removed from CLASSPATH definition). The default location for deployment managers jars is the `managers` folder inside the working directory.
 * [#7458](https://github.com/TouK/nussknacker/pull/7458) [#7534](https://github.com/TouK/nussknacker/pull/7534) Flink scenario testing mechanism and scenario state verification mechanism changes
-    * By default, shared mini cluster is created once and reused each time. To revert previous behaviour (creating minicluster each time),
-      switch `deploymentConfig.scenarioTesting.reuseSharedMiniCluster` or/and `deploymentConfig.scenarioStateVerification.reuseSharedMiniCluster` to `false`
     * Scenario testing and scenario state verification is now limited by a timeout to ensure proper resources cleaning. In some cases it might be needed to change the timeout
       value. To do that, set `deploymentConfig.scenarioTesting.timeout` or/and `deploymentConfig.scenarioStateVerification.timeout` to desired values. Notice that this properties should be configured along with `akka.http.server.request-timeout`
 * [#7468](https://github.com/TouK/nussknacker/pull/7468) When a namespace is configured, Kafka consumer groups are also namespaced.
@@ -172,6 +187,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   was removed to temporarily disable consumer group namespacing.
 * [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels will be auto-generated for all components that don't have `label` defined in `ComponentDefinition`. Labels will be visible in components palette and in components list.
   Auto-generated label is created by formating component's name into Title Case, e.g. for component with name `aggregate-session`, label will be `Aggregate Session`. If component provider has `componentPrefix` set, it'll be included in auto-generated label.
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) [#8011](https://github.com/TouK/nussknacker/pull/8011) `#key` variable created in window components won't be a list in a string, but it'll have provided types, e.g. instead of `"[12.0, ab]"` it'll now be `[12.0, "ab"]`.
+  To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`. 
+  Also, if you provide one element in `groupBy` expression, it will be presented as one element list instead of scalar.
+* [#8011](https://github.com/TouK/nussknacker/pull/8011) During scenario compilation, redundant parameters used in node are treated only as warning now. They are skipped and compilation passes.
 
 ## In version 1.18.0
 

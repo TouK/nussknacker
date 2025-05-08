@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.factory
 
 import cats.effect.{IO, Resource}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoader, DeploymentManagersClassLoaderFactory}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentService, DefaultComponentService}
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeListenerLoader}
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.notifications.Notification
@@ -28,6 +29,7 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
 }
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.newdeployment
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
@@ -57,7 +59,8 @@ import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 import java.time.{Clock, Duration}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 final class DomainServices(
     val futureProcessRepository: FetchingProcessRepository[Future],
@@ -81,9 +84,10 @@ final class DomainServices(
     val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
     val reloadModelData: IO[Unit],
     val processAuthorizer: AuthorizeProcess,
+    val limitsService: LimitsService
 )
 
-object DomainServices {
+object DomainServices extends LazyLogging {
 
   def create(
       designerConfigLoader: DesignerConfigLoader,
@@ -128,10 +132,7 @@ object DomainServices {
         deploymentManagersClassLoader,
         modelClassLoaderProvider,
         modelDataProvider.mapValues(_.modelData),
-        getDeploymentManagerDependencies(
-          infrastructureServices,
-          _
-        ),
+        infrastructureServices.deploymentManagerDependencies,
         Some(
           getSchedulingDependencies(
             infrastructureServices,
@@ -173,9 +174,9 @@ object DomainServices {
         new EngineSideDeploymentStatusesProvider(
           dmDispatcher,
           alreadyLoadedConfig.scenarioStateTimeout
-        )(actorSystem)
+        )
       processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
-      scenarioStatusProvider = new ScenarioStatusProvider(
+      oldApproachScenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
         processRepository,
@@ -187,7 +188,7 @@ object DomainServices {
         actionRepository,
         dbioRunner,
         processChangeListener,
-        scenarioStatusProvider,
+        oldApproachScenarioStatusProvider,
         alreadyLoadedConfig.deploymentCommentSettings,
         clock
       )
@@ -264,7 +265,7 @@ object DomainServices {
         ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
 
       processService = new DBProcessService(
-        scenarioStatusProvider,
+        oldApproachScenarioStatusProvider,
         scenarioStatusPresenter,
         processingTypeServicesProvider.mapValues(_.newProcessPreparer),
         processingTypeDataProvider.mapCombined(_.parametersService),
@@ -298,13 +299,21 @@ object DomainServices {
         futureProcessRepository,
         dbioRunner
       )
-      _ <- Resource.eval(
-        IO.fromFuture(IO(reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart)))
-      )
+      _ = {
+        // We don't wait for recovery because it may take a while, and we don't want health check to detect that we have problem with application starting
+        recoverNotRunningDeploymentsThatShouldBeRunning(reconciler)
+      }
       _ <- FinishedDeploymentsStatusesSynchronizationScheduler.resource(
         actorSystem,
         reconciler,
         alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
+      )
+      limitsService = createLimitsService(
+        alreadyLoadedConfig,
+        processingTypeServicesProvider,
+        oldApproachScenarioStatusProvider,
+        deploymentRepository,
+        dbioRunner
       )
       _ = Initialization.init(
         migrations,
@@ -331,12 +340,13 @@ object DomainServices {
       countsReporter = countsReporter,
       counter = counter,
       fingerprintService = fingerprintService,
-      scenarioStatusProvider = scenarioStatusProvider,
+      scenarioStatusProvider = oldApproachScenarioStatusProvider,
       scenarioStatusPresenter = scenarioStatusPresenter,
       dmDispatcher = dmDispatcher,
       processingTypeServicesProvider = processingTypeServicesProvider,
       reloadModelData = modelDataProvider.reloadAll,
       processAuthorizer = processAuthorizer,
+      limitsService = limitsService
     )
   }
 
@@ -395,18 +405,6 @@ object DomainServices {
       )
   }
 
-  private def getDeploymentManagerDependencies(
-      infrastructureServices: InfrastructureServices,
-      processingType: ProcessingType
-  )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime) = {
-    new DeploymentManagerDependencies(
-      executionContextWithIORuntime,
-      executionContextWithIORuntime.ioRuntime,
-      infrastructureServices.actorSystem,
-      infrastructureServices.futureSttpBackend
-    )
-  }
-
   private def getSchedulingDependencies(
       infrastructureServices: InfrastructureServices,
       actionServiceProvider: Supplier[ActionService],
@@ -437,6 +435,37 @@ object DomainServices {
     )
   }
 
+  private def recoverNotRunningDeploymentsThatShouldBeRunning(
+      reconciler: ScenarioDeploymentReconciler
+  )(implicit ec: ExecutionContext): Unit = {
+    reconciler.recoverNotRunningDeploymentsThatShouldBeRunning(_.recoverJobsOnStart).onComplete {
+      case Success(_) =>
+      case Failure(
+            exception
+          ) => // It is done jus in case, it rather shouldn't happen because we have exception handling for each recovered deployment
+        logger.error("Error while deployments recovery", exception)
+    }
+  }
+
+  private def createLimitsService(
+      designerConfig: DesignerConfig,
+      processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
+      scenarioStatusProvider: ScenarioStatusProvider,
+      deploymentRepository: DeploymentRepository,
+      dbioRunner: DBIOActionRunner
+  ) = {
+    new LimitsService(
+      globalLimitsConfig = designerConfig.globalLimitsConfig,
+      perProcessingTypesLimitsProvider = processingTypeServicesProvider.mapValues(_.limitsConfig),
+      oldDeploymentsApproachScenarioStatusProvider = scenarioStatusProvider,
+      newDeploymentsApproachScenarioStatusProvider = new newdeployment.ScenarioStatusProvider(
+        processingTypeChecker = processingTypeServicesProvider,
+        deploymentRepository = deploymentRepository,
+        dbioRunner = dbioRunner
+      )
+    )
+  }
+
   // This hack with delayed init is needed because we have a cycle of dependencies:
   // DeploymentManagerDispatcher -> DeploymentData -> PeriodicDeploymentManagerDecorator -> ProcessingTypeActionService.markActionExecutionFinished ->
   // ActionService -> ProcessChangeListener -> FetchScenarioActivityService ->
@@ -455,6 +484,19 @@ object DomainServices {
     }
 
     def set(actionService: ActionService): Unit = actionServiceRef.set(Some(actionService))
+  }
+
+  private implicit class InfrastructureServicesOps(infrastructureServices: InfrastructureServices) {
+
+    lazy val deploymentManagerDependencies: DeploymentManagerDependencies = {
+      new DeploymentManagerDependencies(
+        infrastructureServices.executionContextWithIORuntime,
+        infrastructureServices.executionContextWithIORuntime.ioRuntime,
+        infrastructureServices.actorSystem,
+        infrastructureServices.futureSttpBackend
+      )
+    }
+
   }
 
 }

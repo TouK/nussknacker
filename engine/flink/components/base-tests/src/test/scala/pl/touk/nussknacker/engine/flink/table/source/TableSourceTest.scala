@@ -13,9 +13,10 @@ import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.table.definition.StubbedCatalogFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSource.SQL_EXPRESSION_PARAMETER_NAME
+import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
 class TableSourceTest
@@ -24,7 +25,8 @@ class TableSourceTest
     with PatientScalaFutures
     with LoneElement
     with ValidatedValuesDetailedMessage
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll
+    with ModelClassLoaderSimulationSuite {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -74,6 +76,41 @@ class TableSourceTest
       .validValue
     result.errors shouldBe empty
     result.successes.loneElement
+  }
+
+  private def evaluateExpression(expression: String) = {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`test_table`'".spel)
+      .buildSimpleVariable("sth", "someVariable", expression.spel)
+      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#someVariable".spel)
+
+    val result = runner
+      .runWithoutData[Row](
+        scenario,
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
+      )
+      .validValue
+    result
+  }
+
+  test("be possible to use merge") {
+    val result = evaluateExpression("#COLLECTION.merge(#input, #input).get('quantity')")
+    result.errors shouldBe empty
+    result.successes(0) shouldBe a[Int]
+  }
+
+  test("be possible to use selection") {
+    val result = evaluateExpression("#input.?[(#this.value / 10 + 42 - #this.value / 10) == 42].quantity")
+    result.errors shouldBe empty
+    result.successes(0) shouldBe a[Int]
+  }
+
+  test("be possible to use projection") {
+    import scala.jdk.CollectionConverters._
+    val result = evaluateExpression("#input.![#this.value / 10 + 42 - #this.value / 10]")
+    result.errors shouldBe empty
+    result.successes(0) shouldBe List(42).asJava
   }
 
   test("be possible combine nodes deployment data with catalogs configuration") {

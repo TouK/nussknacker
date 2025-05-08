@@ -117,10 +117,14 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val processCompilerData =
       prepareCompilerData(jobData, additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts       = failOnErrors(processCompilerData.compile(scenario))
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+    val parts = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
 
     val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
@@ -192,7 +196,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
-      ClassExtractionSettings.Default
+      ClassExtractionSettings.Default,
+      allowEndingScenarioWithoutSink = false,
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
@@ -431,6 +436,19 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
         nodeResults = nodeResults :+ nodeId
       }
+
+      override def transitionToNextNode(
+          nodeId: String,
+          nextNodeId: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = ()
+
+      override def processingFinishedInNode(
+          nodeId: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = ()
 
       override def endEncountered(
           nodeId: String,
@@ -948,7 +966,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,ParameterName(expression),customNode)"
+    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,expression,customNode)"
   }
 
   test("not accept blank expression for not blank parameter") {
@@ -961,7 +979,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,ParameterName(expression),customNode)"
+    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
   }
 
   test("use eager service") {

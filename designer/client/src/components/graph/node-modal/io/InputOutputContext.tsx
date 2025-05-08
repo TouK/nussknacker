@@ -1,9 +1,12 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useReducer } from "react";
+import type { PropsWithChildren } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useReducer } from "react";
 import { useSelector } from "react-redux";
+
+import type { TransitionResults } from "../../../../common/TestResultUtils";
 import TestResultUtils from "../../../../common/TestResultUtils";
-import { getProcessName, getScenarioGraph, getTestResults } from "../../../../reducers/selectors/graph";
+import { getScenarioGraph, getTestResults } from "../../../../reducers/selectors/graph";
 import NodeUtils from "../../NodeUtils";
-import { VariableContextType } from "./VariableContextTree";
+import type { VariableContextType } from "./VariableContextTree";
 
 export type InputOutputState = {
     inputDataSetId?: string | null;
@@ -23,13 +26,13 @@ type Action =
           context: VariableContextType;
       };
 
+type Created = TransitionResults & { id: string };
 type ContextType = {
     state: InputOutputState;
     dispatch: React.Dispatch<Action>;
-    getAvailableContexts: (nodeIds: string[], direction?: "input" | "output") => VariableContextType[];
-    prevNodes: string[];
-    inputNodes: string[];
-    outputNodes: string[];
+    getAvailableContexts: (direction?: "input" | "output") => VariableContextType[];
+    inputNodesIds: Created[];
+    outputNodesIds: Created[];
 };
 
 const InputOutputContext = createContext<ContextType>(null);
@@ -67,18 +70,33 @@ export const InputOutputContextProvider = ({
 }: PropsWithChildren<{
     nodeId: string;
 }>) => {
+    const scenario = useSelector(getScenarioGraph);
+    const testResults = useSelector(getTestResults);
+
     const [state, dispatch] = useReducer(reducer, initialState);
 
-    const scenario = useSelector(getScenarioGraph);
-
-    const [inputNodes, outputNodes, prevNodes] = useMemo(() => {
-        if (!nodeId) throw "no NodeId provided!";
-        return [
-            [nodeId],
-            NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map((n) => n.id),
-            NodeUtils.getNodesConnectedToInput(nodeId, scenario).map((n) => n.id),
-        ];
-    }, [nodeId, scenario]);
+    const nodeTransitionResults = useMemo(
+        () => testResults?.nodeTransitionResults?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId),
+        [nodeId, testResults?.nodeTransitionResults],
+    );
+    const inputs = useMemo(() => {
+        return NodeUtils.getNodesConnectedToInput(nodeId, scenario).map(({ id }) => {
+            const transitionResults = nodeTransitionResults?.find((r) => r.destinationNodeId === nodeId && r.sourceNodeId === id);
+            return {
+                id,
+                ...transitionResults,
+            };
+        });
+    }, [nodeId, nodeTransitionResults, scenario]);
+    const outputs = useMemo(() => {
+        return NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map(({ id }) => {
+            const transitionResults = nodeTransitionResults?.find((r) => r.sourceNodeId === nodeId && r.destinationNodeId === id);
+            return {
+                id,
+                ...transitionResults,
+            };
+        });
+    }, [nodeId, nodeTransitionResults, scenario]);
 
     const isContextDisabled = useCallback(
         (id: string, direction: "input" | "output" = "input") => {
@@ -92,46 +110,49 @@ export const InputOutputContextProvider = ({
         [state.inputDataSetId],
     );
 
-    const results = useSelector(getTestResults);
-    const getAvailableContexts = useCallback(
-        (nodeIds: string[], direction: "input" | "output" = "input") => {
-            const contexts: VariableContextType[] = [];
+    const getError = useCallback(
+        (destinationNodeId: string, contextId: string) =>
+            TestResultUtils.resultsForNode(testResults, destinationNodeId)?.errors?.find(({ context }) => context.id === contextId),
+        [testResults],
+    );
 
-            nodeIds.forEach((nodeId) => {
-                const testResults = TestResultUtils.resultsForNode(results, nodeId);
-                testResults.nodeResults.forEach(({ id, variables }) => {
+    const getAvailableContexts = useCallback(
+        (direction: "input" | "output" = "input") => {
+            const transitionResults = direction === "input" ? inputs : outputs;
+            const contexts: VariableContextType[] = [];
+            transitionResults.forEach(({ id: contextNodeId, destinationNodeId, results }) => {
+                results?.forEach(({ id, variables }) => {
                     const foundContext = contexts.find((context) => context.id === id);
                     if (foundContext) {
-                        foundContext.nodeIds.push(nodeId);
+                        foundContext.nodeIds.push(contextNodeId);
                         return;
                     }
 
-                    const error = testResults.errors?.find(({ context }) => context.id === id);
+                    const error = direction === "input" && getError(destinationNodeId, id);
 
                     contexts.push({
                         id,
                         variables,
                         disabled: isContextDisabled(id, direction),
-                        nodeIds: [nodeId],
+                        nodeIds: [contextNodeId],
                         error: error?.throwable,
                     });
                 });
             });
             return contexts;
         },
-        [isContextDisabled, results],
+        [inputs, outputs, getError, isContextDisabled],
     );
 
-    const value = useMemo(
+    const value = useMemo<ContextType>(
         () => ({
             state,
             dispatch,
             getAvailableContexts,
-            prevNodes,
-            inputNodes,
-            outputNodes,
+            inputNodesIds: inputs,
+            outputNodesIds: outputs,
         }),
-        [getAvailableContexts, inputNodes, outputNodes, prevNodes, state],
+        [getAvailableContexts, inputs, outputs, state],
     );
     return <InputOutputContext.Provider value={value}>{children}</InputOutputContext.Provider>;
 };

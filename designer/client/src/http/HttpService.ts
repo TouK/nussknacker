@@ -1,37 +1,37 @@
 /* eslint-disable i18next/no-literal-string */
-import { AxiosError, AxiosResponse } from "axios";
+import type { TextContentPart } from "@assistant-ui/react";
+import type { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
-import { Moment } from "moment";
-import { Position, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
-import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
+import type { Moment } from "moment";
+
+import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import type { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
-import { UserData } from "../common/models/User";
-import { TestResults } from "../common/TestResultUtils";
+import type { UserData } from "../common/models/User";
+import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
+import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
-import {
-    ActivitiesResponse,
-    ActivityMetadataResponse,
-    ActivityType,
-    ActivityTypesRelatedToExecutions,
-} from "../components/toolbars/activities/types";
-import { ToolbarsConfig } from "../components/toolbarSettings/types";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
-import { BackendNotification } from "../containers/Notifications";
-import { ProcessCounts } from "../reducers/graph";
-import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
-import { Instant, WithId } from "../types/common";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
+import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
+import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
+import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
+import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
+import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
+import type { ToolbarsConfig } from "../components/toolbarSettings/types";
+import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
+import { API_URL } from "../config";
+import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
+import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
-import { Dimensions, StickyNote } from "../common/StickyNote";
-import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
-import { ScenarioActionResult, ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
-import { ProcessVersionValidationResponse } from "../components/versionControl/types";
+import type { ProcessCounts } from "../reducers/graph";
+import type { AuthenticationSettings } from "../reducers/settings";
+import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import type { Instant, WithId } from "../types/common";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -174,6 +174,7 @@ type ResponseStatus = { status: "success"; data?: any } | { status: "error"; err
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
+    #skipResultsPerTransition = null;
 
     setNotificationActions(na: NotificationActions) {
         this.#notificationActions = na;
@@ -572,10 +573,13 @@ class HttpService {
         scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<ValidationData>> {
         const validationRequest: TestAdhocValidationRequest = {
-            sourceParameters,
+            testData: {
+                type: "WITH_PARAMETERS",
+                sourceParameters: sourceParameters,
+            },
             scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
         };
-        const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/adhoc/validate`, validationRequest);
+        const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToValidateAdhocTestParameters", "Failed to validate parameters"),
@@ -683,21 +687,6 @@ class HttpService {
         return promise;
     }
 
-    getTestFormParameters(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(
-            `/scenarioTesting/${encodeURIComponent(processName)}/parameters`,
-            this.#sanitizeScenarioGraph(scenarioGraph),
-        );
-        promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
     getActionParameters(processName: string) {
         const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
         promise.catch((error) =>
@@ -710,10 +699,13 @@ class HttpService {
         return promise;
     }
 
-    generateTestData(processName: string, testSampleSize: string, scenarioGraph: ScenarioGraph): Promise<AxiosResponse> {
+    generateTestData(processName: string, scenarioGraph: ScenarioGraph, numberOfSamples: number): Promise<AxiosResponse> {
         const promise = api.post(
-            `/scenarioTesting/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
-            this.#sanitizeScenarioGraph(scenarioGraph),
+            `/scenarioTesting/${encodeURIComponent(processName)}/generatedTestData`,
+            {
+                scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
+                numberOfSamples,
+            },
             {
                 responseType: "blob",
             },
@@ -729,57 +721,6 @@ class HttpService {
                     true,
                 ),
             );
-        return promise;
-    }
-
-    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions) {
-        const promise = api.post(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
-            scenarioVersionId,
-            content: "",
-            layoutData: position,
-            color: STICKY_NOTE_DEFAULT_COLOR, //TODO add config for default sticky note color? For now this is default.
-            dimensions: dimensions,
-        });
-        promise.catch((error) => {
-            const errorMsg: string = error?.response?.data;
-            this.#addError("Failed to add sticky note" + (errorMsg ? ": " + errorMsg : ""), error, true);
-        });
-        return promise;
-    }
-
-    deleteStickyNote(scenarioName: string, stickyNoteId: number) {
-        const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNoteId}`);
-        promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToDeleteStickyNote", `Failed to delete sticky note with id: ${stickyNoteId}`),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
-    updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
-        const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
-            noteId: stickyNote.noteId,
-            scenarioVersionId,
-            content: stickyNote.content,
-            layoutData: stickyNote.layoutData,
-            color: stickyNote.color,
-            dimensions: stickyNote.dimensions,
-        });
-        promise.catch((error) => {
-            const errorMsg = error?.response?.data;
-            this.#addError("Failed to update sticky note" + errorMsg ? ": " + errorMsg : "", error, true);
-        });
-        return promise;
-    }
-
-    getStickyNotes(scenarioName: string, scenarioVersionId: number): Promise<AxiosResponse<StickyNote[]>> {
-        const promise = api.get(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes?scenarioVersionId=${scenarioVersionId}`);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToGetStickyNotes", "Failed to get sticky notes"), error, true),
-        );
         return promise;
     }
 
@@ -850,14 +791,18 @@ class HttpService {
         return promise;
     }
 
-    testProcess(processName: ProcessName, file: File, scenarioGraph: ScenarioGraph): Promise<AxiosResponse<TestProcessResponse>> {
+    testScenarioWithFile(processName: ProcessName, scenarioGraph: ScenarioGraph, file: File) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const data = new FormData();
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data);
+        const promise = api.post<TestProcessResponse>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+            params: {
+                skipResultsPerTransition: this.#skipResultsPerTransition,
+            },
+        });
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
@@ -870,42 +815,35 @@ class HttpService {
         return promise;
     }
 
-    testProcessWithParameters(
-        processName: ProcessName,
-        testData: SourceWithParametersTest,
+    testScenario(
+        processName: string,
         scenarioGraph: ScenarioGraph,
-    ): Promise<AxiosResponse<TestProcessResponse>> {
+        testData:
+            | {
+                  type: "WITH_PARAMETERS";
+                  sourceParameters: SourceWithParametersTest;
+              }
+            | {
+                  type: "WITH_GENERATED_DATA";
+                  numberOfSamples: number;
+              },
+    ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const request = {
-            sourceParameters: testData,
-            scenarioGraph: sanitized,
-        };
-
-        const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);
+        const promise = api.post<TestProcessResponse>(
+            `/scenarioTesting/${encodeURIComponent(processName)}/performTest`,
+            {
+                testData,
+                scenarioGraph: sanitized,
+            },
+            {
+                params: {
+                    skipResultsPerTransition: this.#skipResultsPerTransition,
+                },
+            },
+        );
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
-                    axiosError: handleAxiosError(error),
-                }),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
-    testScenarioWithGeneratedData(
-        processName: ProcessName,
-        testSampleSize: string,
-        scenarioGraph: ScenarioGraph,
-    ): Promise<AxiosResponse<TestProcessResponse>> {
-        const promise = api.post(
-            `/processManagement/generateAndTest/${processName}/${testSampleSize}`,
-            this.#sanitizeScenarioGraph(scenarioGraph),
-        );
-        promise.catch((error: AxiosError) =>
-            this.#addError(
-                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test due to: {{axiosError}}", {
                     axiosError: handleAxiosError(error),
                 }),
                 error,
@@ -1020,6 +958,29 @@ class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
+    sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
+        const headers = {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+        };
+
+        if (SystemUtils.hasAccessToken()) {
+            headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
+        }
+
+        const PATHNAME = "custom/assistant/chat";
+
+        /**
+         * Axios doesn't support stream response, even with fetch adapter, there are problems in safari https://github.com/axios/axios/issues/5806
+         */
+        return fetch(`${API_URL}/${PATHNAME}`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ message, threadId }),
+            signal: abortSignal,
+        });
+    }
+
     #addInfo(message: string) {
         if (this.#notificationActions) {
             this.#notificationActions.success(message);
@@ -1052,7 +1013,8 @@ class HttpService {
     }
 
     #sanitizeScenarioGraph(scenarioGraph: ScenarioGraph) {
-        return withoutHackOfEmptyEdges(scenarioGraph);
+        const nodeStickyNoteSortedGraph = extractStickyNotesFromNodes(scenarioGraph);
+        return withoutHackOfEmptyEdges(nodeStickyNoteSortedGraph);
     }
 
     #requestCanceled(error: AxiosError<unknown>) {

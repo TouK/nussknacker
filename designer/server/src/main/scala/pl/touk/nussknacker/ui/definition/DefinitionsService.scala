@@ -84,7 +84,7 @@ class DefinitionsService(
       }
 
       import net.ceedubs.ficus.Ficus._
-      val scenarioPropertiesDocsUrl = modelData.modelConfig.getAs[String]("scenarioPropertiesDocsUrl")
+      val scenarioPropertiesDocsUrl = modelData.modelConfig.underlyingConfig.getAs[String]("scenarioPropertiesDocsUrl")
 
       prepareUIDefinitions(
         withStaticDefinition,

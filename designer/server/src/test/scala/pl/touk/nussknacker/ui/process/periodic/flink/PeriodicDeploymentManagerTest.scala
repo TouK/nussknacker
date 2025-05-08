@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.periodic.flink
 
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -20,6 +19,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
@@ -68,7 +68,7 @@ class PeriodicDeploymentManagerTest
 
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
     val repository =
-      new InMemPeriodicProcessesRepository(processingType = TestDeploymentServiceFactory.processingType.stringify)
+      new InMemPeriodicProcessesRepository(processingType = Streaming.stringify)
     val delegateDeploymentManagerStub          = new DeploymentManagerStub
     val scheduledExecutionPerformerStub        = new ScheduledExecutionPerformerStub
     val preparedDeploymentData: DeploymentData = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
@@ -98,7 +98,7 @@ class PeriodicDeploymentManagerTest
         processName = processName,
         category = "Category1",
         canonicalProcess = scenario,
-        processingType = TestDeploymentServiceFactory.processingType.stringify,
+        processingType = Streaming.stringify,
         isFragment = false,
       )
       val ProcessCreated(processId, versionId) =
@@ -125,7 +125,10 @@ class PeriodicDeploymentManagerTest
     )
 
     private val deploymentServiceFactory = new TestDeploymentServiceFactory(testDbRef)
-    private val services                 = deploymentServiceFactory.create(periodicDeploymentManager)
+
+    private val services = deploymentServiceFactory.create(
+      Map(Streaming.stringify -> periodicDeploymentManager)
+    )
 
     def schedule(id: ProcessId): Unit = services.deploymentService
       .processCommand(
@@ -195,7 +198,7 @@ class PeriodicDeploymentManagerTest
     state shouldEqual SimpleStateStatus.NotDeployed
   }
 
-  test("getScenarioStatuss - should be scheduled when scenario scheduled and no job on Flink") {
+  test("getScenarioStatus - should be scheduled when scenario scheduled and no job on Flink") {
     val f = new Fixture
 
     val version = f.saveScenario()

@@ -1,9 +1,10 @@
-import React, { PropsWithChildren } from "react";
 import { useTheme } from "@mui/material";
 import { WindowManagerProvider } from "@touk/window-manager";
-import { ContentGetter } from "./ContentGetter";
+import type { PropsWithChildren } from "react";
+import React from "react";
 
 import { blendDarken } from "../containers/theme/helpers";
+import { ContentGetter } from "./ContentGetter";
 
 export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     const {
@@ -27,7 +28,7 @@ export function WindowManager(props: PropsWithChildren<{ className: string }>) {
                     primaryBackground: palette.background.paper,
                     secondaryBackground: palette.background.paper,
                 },
-                zIndex: zIndex.modal,
+                zIndex: zIndex.modal - 5, // elements using mui modal zIndex (e.g. menu, click outside mask) should be over our modals
             }}
             contentGetter={ContentGetter}
             {...props}

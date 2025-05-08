@@ -11,15 +11,15 @@ object CompiledNodesCollector {
       case n: Processor       => collectNodes(n.next)
       case n: Enricher        => collectNodes(n.next)
       case n: Filter =>
-        n.nextTrue.toList.flatMap(collectNodes) ::: n.nextFalse.toList.flatMap(collectNodes)
+        collectNodes(n.nextTrue) ::: collectNodes(n.nextFalse)
       case n: Switch =>
         n.nexts.flatMap { case Case(_, ch) =>
           collectNodes(ch)
-        } ::: n.defaultNext.toList.flatMap(collectNodes)
+        } ::: collectNodes(n.defaultNext)
       case n: CustomNode                => collectNodes(n.next)
       case n: FragmentUsageStart        => collectNodes(n.next)
       case n: FragmentUsageEnd          => collectNodes(n.next)
-      case SplitNode(_, nextsWithParts) => nextsWithParts.flatMap(collectNodes)
+      case SplitNode(_, nextsWithParts) => nextsWithParts.flatMap(next => collectNodes(Some(next)))
       case _: Sink                      => List.empty
       case _: BranchEnd                 => List.empty
       case _: EndingCustomNode          => List.empty
@@ -29,10 +29,11 @@ object CompiledNodesCollector {
     node :: children
   }
 
-  private def collectNodes(next: Next): List[Node] =
+  private def collectNodes(next: Option[Next]): List[Node] =
     next match {
-      case NextNode(node) => collectAllNodes(node)
-      case _: PartRef     => List.empty
+      case Some(NextNode(node)) => collectAllNodes(node)
+      case Some(_: PartRef)     => List.empty
+      case None                 => List.empty
     }
 
 }

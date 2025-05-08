@@ -44,7 +44,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
       case s: SingleTypingResult => Right(NonEmptyList.one(s))
       case u: TypedUnion         => Right(u.possibleTypes)
       case TypedNull             => Left(Unknown)
-      case Unknown               => Left(Unknown)
+      case Unknown(_)            => Left(Unknown)
     }
 
   final def promoteClasses(left: Class[_], right: Class[_]): ReturnedType = {
@@ -85,7 +85,7 @@ object NumberTypesPromotionStrategy {
     classOf[java.lang.Byte]
   )
 
-  val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
+  private val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
 
   def isDecimalNumber(clazz: Class[_]): Boolean = DecimalNumbers.contains(clazz)
 

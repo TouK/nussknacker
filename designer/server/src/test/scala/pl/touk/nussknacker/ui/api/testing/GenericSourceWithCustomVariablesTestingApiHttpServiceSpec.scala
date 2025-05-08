@@ -5,10 +5,14 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{AdhocTestParametersRequest, TestSourceParameters}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
-class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingApiHttpServiceSpec {
+class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec
+    extends ScenarioTestingApiHttpServiceSpec
+    with WithAdHocInvalidParametersTestsLogic {
 
   override protected def exampleScenarioSourceId = "sourceId"
 
@@ -19,8 +23,8 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
       .emptySink("end", "monitor")
 
   override protected def parametersProvidedForDryRun: String =
-    AdhocTestParametersRequest(
-      sourceParameters = validParameters,
+    ScenarioTestValidationRequest(
+      testData = ScenarioTestData.WithParameters(validParameters),
       scenarioGraph = toScenarioGraph(exampleScenario)
     ).asJson.toString()
 
@@ -86,5 +90,49 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec extends TestingA
        |    "details": null
        |  }
        |]""".stripMargin
+
+  override protected def expectedTestParametersJson: String = {
+    s"""
+       |[
+       |  {
+       |    "sourceId": "$exampleScenarioSourceId",
+       |    "parameters": [
+       |      {
+       |        "name": "elements",
+       |        "typ": {
+       |          "display": "List[String]",
+       |          "type": "TypedClass",
+       |          "refClazzName": "java.util.List",
+       |          "params": [
+       |            {
+       |              "display": "String",
+       |              "type": "TypedClass",
+       |              "refClazzName": "java.lang.String",
+       |              "params": []
+       |            }
+       |          ]
+       |        },
+       |        "editors": [
+       |          {
+       |            "type": "SpelParameterEditor"
+       |          }
+       |        ],
+       |        "defaultValue": {
+       |          "language":"spel",
+       |          "expression":"{}"
+       |        },
+       |        "additionalVariables": {},
+       |        "variablesToHide": [],
+       |        "branchParam": false,
+       |        "hintText": null,
+       |        "label": "elements",
+       |        "requiredParam": true,
+       |        "category": "Standard"
+       |      }
+       |    ]
+       |  }
+       |]
+       |""".stripMargin
+  }
 
 }

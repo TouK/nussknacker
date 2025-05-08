@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.dict.LabelsDictTyper
 import pl.touk.nussknacker.engine.extension.CastOrConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
@@ -158,13 +159,13 @@ class SpelExpressionSuggester(
         .collect {
           case TypingResultWithContext(tc: TypedClass, staticContext) =>
             Future.successful(
-              clssDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+              clssDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext, tc)).getOrElse(Nil)
             )
           case TypingResultWithContext(to: TypedObjectWithValue, staticContext) =>
             Future.successful(
               clssDefinitions
                 .get(to.underlying.klass)
-                .map(c => filterClassMethods(c, p.getName, staticContext))
+                .map(c => filterClassMethods(c, p.getName, staticContext, to))
                 .getOrElse(Nil)
             )
           case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
@@ -182,7 +183,7 @@ class SpelExpressionSuggester(
               }
             val suggestionsFromClass = clssDefinitions
               .get(to.runtimeObjType.klass)
-              .map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = true))
+              .map(c => filterClassMethods(c, p.getName, staticContext = false, to, fromClass = true))
               .getOrElse(Nil)
             val applicableSuggestions = if (collectSuggestionsFromClass) {
               suggestionsFromFields
@@ -196,7 +197,10 @@ class SpelExpressionSuggester(
                 .map(_.runtimeObjType.klass)
                 .toList
                 .flatMap(klass =>
-                  clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+                  clssDefinitions
+                    .get(klass)
+                    .map(c => filterClassMethods(c, p.getName, staticContext, tu))
+                    .getOrElse(Nil)
                 )
                 .distinct
             )
@@ -205,10 +209,10 @@ class SpelExpressionSuggester(
               .queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
               .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil))))
               .getOrElse(successfulNil)
-          case TypingResultWithContext(Unknown, staticContext) =>
+          case TypingResultWithContext(u: Unknown, staticContext) =>
             Future.successful(
               clssDefinitions.unknown
-                .map(c => filterClassMethods(c, p.getName, staticContext))
+                .map(c => filterClassMethods(c, p.getName, staticContext, u))
                 .getOrElse(Nil)
             )
         }
@@ -219,6 +223,7 @@ class SpelExpressionSuggester(
         classDefinition: ClassDefinition,
         name: String,
         staticContext: Boolean,
+        invocationTarget: TypingResult,
         fromClass: Boolean = false
     ): List[ExpressionSuggestion] = {
       val methods = filterMapByName(if (staticContext) classDefinition.staticMethods else classDefinition.methods, name)
@@ -226,9 +231,14 @@ class SpelExpressionSuggester(
       methods.values.flatten.map { method =>
         // TODO: present all overloaded methods, not only one with most parameters.
         val signature = method.signatures.toList.maxBy(_.parametersToList.length)
+        // We need to compute method result type as signature.result comes from ClassDefinition
+        // where we don't have information enough information to type the result of a method
+        val typing = method
+          .computeResultType(invocationTarget, signature.noVarArgs.map(_.refClazz))
+          .getOrElse(signature.result)
         ExpressionSuggestion(
           method.name,
-          signature.result,
+          typing,
           fromClass = fromClass,
           method.description,
           (signature.noVarArgs ::: signature.varArg.toList).map(p => Parameter(p.name, p.refClazz))
@@ -296,7 +306,7 @@ class SpelExpressionSuggester(
                 }
               case m: MethodReference if CastOrConversionExt.isCastOrConversionMethod(m.getName) =>
                 parentPrevNodeTyping.withoutValue match {
-                  case t @ Unknown =>
+                  case t @ Unknown(_) =>
                     castOrConversionMethodsSuggestions(classOf[Object], t)
                   case t @ TypedClass(klass, _) =>
                     castOrConversionMethodsSuggestions(klass, t)
@@ -418,9 +428,9 @@ class SpelExpressionSuggester(
 
   private def determineIterableElementTypingResult(parent: TypingResult): TypingResult = {
     parent match {
-      case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) =>
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeLooselyAssignedTo(Typed[java.util.Collection[_]]) =>
         tc.runtimeObjType.params.headOption.getOrElse(Unknown)
-      case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeLooselyAssignedTo(Typed[java.util.Map[_, _]]) =>
         Typed.record(
           Map(
             "key"   -> tc.runtimeObjType.params.headOption.getOrElse(Unknown),
@@ -443,8 +453,8 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
       validationContext: ValidationContext
   ): Try[Option[(NuSpelNode, Int)]] = {
     val rawExpression = language match {
-      case Language.Spel         => Try(parser.parseExpression(input, null))
-      case Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
+      case Language.Spel                        => Try(parser.parseExpression(input, null))
+      case Language.SpelTemplate | JsonTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
       case Language.DictKeyWithLabel | Language.TabularDataDefinition | Language.Json =>
         Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }

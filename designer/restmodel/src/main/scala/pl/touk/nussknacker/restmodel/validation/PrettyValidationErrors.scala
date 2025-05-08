@@ -93,6 +93,23 @@ object PrettyValidationErrors {
           description,
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
+      case StickyNoteContentTooLong(_, length, max) =>
+        val message     = "Sticky note content too Long"
+        val description = s"Maximum allowed length of sticky note is: $max - found: $length"
+        node(
+          message,
+          description,
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
+      case StickyNotesLimitExceeded(_, count, limit) =>
+        val message = "Number of sticky notes exceeded"
+        val description =
+          s"Too many sticky notes. Limit is set to: $limit, but found $count sticky note${if (count > 1) "s" else ""}"
+        node(
+          message,
+          description,
+          errorType = NodeValidationErrorType.SaveNotAllowed
+        )
       case DisabledNode(nodeId) =>
         node(
           message = s"Node $nodeId is disabled",
@@ -117,8 +134,6 @@ object PrettyValidationErrors {
         node(s"Missing sink: $id", s"Please check the name of sink, $id is not available")
       case MissingSourceFactory(id, _) =>
         node(s"Missing source: $id", s"Please check the name of source, $id is not available")
-      case RedundantParameters(params, _) =>
-        node(s"Redundant parameters", s"Please omit redundant parameters: ${params.mkString(", ")}")
       case WrongParameters(requiredParameters, passedParameters, _) =>
         node(
           message = s"Wrong parameters",

@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.development.manager
 
 import cats.data.{Validated, ValidatedNel}
+import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -53,7 +55,7 @@ class DevelopmentDeploymentManager(
   private lazy val flinkTestRunner =
     new FlinkMiniClusterScenarioTestRunner(
       modelDataProvider,
-      Some(miniClusterWithServices),
+      miniClusterWithServices,
       parallelism = 1,
       waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
     )
@@ -194,6 +196,10 @@ class DevelopmentDeploymentManager(
     NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
+
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
