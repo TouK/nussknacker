@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 import pl.touk.nussknacker.openapi.OpenAPIServicesConfig._
 import pl.touk.nussknacker.openapi.discovery.{CachingOpenApiDefinitionDiscovery, SwaggerOpenApiDefinitionDiscovery}
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherFactory
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory
 
 class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
 
@@ -21,7 +21,7 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
       new CachingOpenApiDefinitionDiscovery(SwaggerOpenApiDefinitionDiscovery, openAPIsConfig)
     ComponentDefinition(
       "openAPI",
-      SwaggerEnricherFactory(openAPIsConfig, openApiDefinitionDiscovery),
+      OpenAPIEnricherFactory(openAPIsConfig, openApiDefinitionDiscovery),
       label = Some("OpenAPI")
     ) :: Nil
   }
