@@ -31,10 +31,6 @@ object ExtendedWindowOperator {
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
 
-  private def overrideResultEventTime(timestamp: Long): Unit = {
-    //    overriddenResultEventTimeHolder.set(timestamp)
-  }
-
   def fireOnEachEventTriggerWrapper[T, W <: Window](delegate: Trigger[_ >: T, W]): FireOnEachEvent[T, W] = {
     FireOnEachEvent(delegate)
   }
@@ -43,7 +39,7 @@ object ExtendedWindowOperator {
       delegate: Trigger[_ >: T, W],
       endFunction: T => Boolean
   ): ClosingEndEventTrigger[T, W] = {
-    ClosingEndEventTrigger(delegate, endFunction, timestamp => overrideResultEventTime(timestamp))
+    ClosingEndEventTrigger(delegate, endFunction)
   }
 
   implicit class OnEventOperatorKeyedStream[A](stream: KeyedStream[Input[A], String])(
