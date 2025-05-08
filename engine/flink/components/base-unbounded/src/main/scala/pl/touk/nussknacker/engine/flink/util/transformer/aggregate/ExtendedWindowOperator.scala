@@ -18,44 +18,25 @@ import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{
-  elementHolder,
-  overriddenResultEventTimeHolder,
-  stateDescriptorName,
-  Input
-}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{stateDescriptorName, Input}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
 
 import java.lang
+import java.util.concurrent.atomic.AtomicReference
 
 object ExtendedWindowOperator {
   type Input[A] = ValueWithContext[StringKeyedValue[A]]
-
-  // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
-  // without modifying too much Flink code. This assumes that window is triggered only on event
-  val elementHolder = new ThreadLocal[api.Context]
-
-  // If we fire window prematurely using org.apache.flink.streaming.api.windowing.triggers.Trigger.Trigger class (that is when
-  // method onElement in trigger returns TriggerResult satisfying _.isFire() condition)
-  // we want the resulting flink event to have timestamp equal to the timestamp of the event which triggered the firing of window.
-  // However, normally in flink resulting event would have the timestamp equal to window end time, which may be far ahead in the future if window is large.
-  // To override timestamp of this event we use this ThreadLocal, which is set if window was evaluated prematurely.
-  // SessionWindowAggregateTransformer will emit events both at the end of window and prematurely, so there really is a need to
-  // pass this boolean information about premature window firing for each event.
-  // Also, we need to react differently in case when window ended naturally, in that case we would not want to override
-  // the timestamp of resulting event.
-  val overriddenResultEventTimeHolder = new ThreadLocal[Long]
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
 
   private def overrideResultEventTime(timestamp: Long): Unit = {
-    overriddenResultEventTimeHolder.set(timestamp)
+    //    overriddenResultEventTimeHolder.set(timestamp)
   }
 
   def fireOnEachEventTriggerWrapper[T, W <: Window](delegate: Trigger[_ >: T, W]): FireOnEachEvent[T, W] = {
-    FireOnEachEvent(delegate, timestamp => overrideResultEventTime(timestamp))
+    FireOnEachEvent(delegate)
   }
 
   def closingEndEventTriggerWrapper[T, W <: Window](
@@ -98,8 +79,17 @@ object ExtendedWindowOperator {
 
 }
 
+private[aggregate] sealed trait NuWindowContext
+
+private[aggregate] final case class OnElementWindowContext(
+    contextToPreserve: Option[pl.touk.nussknacker.engine.api.Context],
+    timestampToOverride: Long
+) extends NuWindowContext
+
+private[aggregate] case object OnTimerWindowContext extends NuWindowContext
+
 @silent("deprecated")
-class ExtendedWindowOperator[A](
+private[aggregate] class ExtendedWindowOperator[A](
     stream: KeyedStream[Input[A], String],
     fctx: FlinkCustomNodeContext,
     assigner: WindowAssigner[_ >: Input[A], TimeWindow],
@@ -107,6 +97,7 @@ class ExtendedWindowOperator[A](
     aggregateFunction: AggregateFunction[Input[A], AnyRef, AnyRef],
     trigger: Trigger[_ >: Input[A], TimeWindow],
     preserveContext: Boolean,
+    private val contextHolderRef: AtomicReference[NuWindowContext] = new AtomicReference(OnTimerWindowContext)
 ) extends WindowOperator[String, Input[A], AnyRef, ValueWithContext[AnyRef], TimeWindow](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
@@ -118,7 +109,7 @@ class ExtendedWindowOperator[A](
         types.storedTypeInfo.createSerializer(stream.getExecutionConfig)
       ),
       new InternalSingleValueProcessWindowFunction(
-        new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId)
+        new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId, contextHolderRef)
       ),
       trigger,
       0L,  // lateness,
@@ -126,14 +117,13 @@ class ExtendedWindowOperator[A](
     ) {
 
   override def processElement(element: StreamRecord[ValueWithContext[StringKeyedValue[A]]]): Unit = {
-    if (preserveContext) {
-      elementHolder.set(element.getValue.context)
-    }
+    contextHolderRef.set(
+      OnElementWindowContext(if (preserveContext) Some(element.getValue.context) else None, element.getTimestamp)
+    )
     try {
       super.processElement(element)
     } finally {
-      elementHolder.remove()
-      overriddenResultEventTimeHolder.remove()
+      contextHolderRef.set(OnTimerWindowContext)
     }
   }
 
@@ -141,7 +131,8 @@ class ExtendedWindowOperator[A](
 
 private class ValueEmittingWindowFunction(
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
-    nodeId: String
+    nodeId: String,
+    private val contextHolderRef: AtomicReference[NuWindowContext]
 ) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow] {
 
   @transient
@@ -158,19 +149,24 @@ private class ValueEmittingWindowFunction(
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     elements.forEach { element =>
-      val ctx = Option(elementHolder.get()).getOrElse(api.Context(contextIdGenerator.nextContextId()))
+      contextHolderRef.get match {
+        case OnElementWindowContext(contextToPreserve, timestampToOverride) =>
+          out.asInstanceOf[TimestampedCollector[_]].setAbsoluteTimestamp(timestampToOverride)
+          out.collect(
+            ValueWithContext(
+              element,
+              KeyEnricher.enrichWithKey(
+                contextToPreserve.getOrElse(api.Context(contextIdGenerator.nextContextId())),
+                key
+              )
+            )
+          )
 
-      out match {
-        // it should always be an instance of this class
-        case timedOut: TimestampedCollector[_] =>
-          Option(overriddenResultEventTimeHolder.get()).foreach(timestamp => timedOut.setAbsoluteTimestamp(timestamp))
-        case _ =>
-          throw new IllegalStateException(
-            "Cast to TimestampedCollector did not succeed, we are based here on flink implementation so probably it was changed"
+        case OnTimerWindowContext =>
+          out.collect(
+            ValueWithContext(element, KeyEnricher.enrichWithKey(api.Context(contextIdGenerator.nextContextId()), key))
           )
       }
-
-      out.collect(ValueWithContext(element, KeyEnricher.enrichWithKey(ctx, key)))
     }
   }
 
