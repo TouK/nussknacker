@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.openapi.{ApiKeySecret, OpenAPIServicesConfig, SecuritySchemeName}
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -54,7 +54,7 @@ class OpenAPIServiceSpec
           service
         }
 
-        val enricher = SwaggerEnricher(
+        val enricher = OpenAPIEnricher(
           service = services.head,
           config = config,
           clientProvider = new FixedAsyncHttpClientBackendProvider(client),
