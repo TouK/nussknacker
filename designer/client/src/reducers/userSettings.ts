@@ -13,6 +13,7 @@ type SettingsNames =
     | "node.showInputsAndOutputs"
     | "node.showFragmentCreator"
     | "node.autoApply"
+    | "node.showMockFieldOnEnrichers"
     | "cloud.showIntegrationsCreators"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
@@ -30,6 +31,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "node.showInputsAndOutputs": getInitialUserFlag("node.showInputsAndOutputs"),
     "node.showFragmentCreator": getInitialUserFlag("node.showFragmentCreator"),
     "node.autoApply": getInitialUserFlag("node.autoApply"),
+    "node.showMockFieldOnEnrichers": getInitialUserFlag("node.showMockFieldOnEnrichers"),
     "cloud.showIntegrationsCreators": getInitialUserFlag("cloud.showIntegrationsCreators"),
     "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
     "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
