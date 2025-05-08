@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.{stateDescriptorName, Input}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.AggregatorTypeInformations
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
 
 import java.lang
 import java.util.concurrent.atomic.AtomicReference
@@ -30,17 +30,6 @@ object ExtendedWindowOperator {
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
-
-  def fireOnEachEventTriggerWrapper[T, W <: Window](delegate: Trigger[_ >: T, W]): FireOnEachEvent[T, W] = {
-    FireOnEachEvent(delegate)
-  }
-
-  def closingEndEventTriggerWrapper[T, W <: Window](
-      delegate: Trigger[_ >: T, W],
-      endFunction: T => Boolean
-  ): ClosingEndEventTrigger[T, W] = {
-    ClosingEndEventTrigger(delegate, endFunction)
-  }
 
   implicit class OnEventOperatorKeyedStream[A](stream: KeyedStream[Input[A], String])(
       implicit fctx: FlinkCustomNodeContext
@@ -55,7 +44,7 @@ object ExtendedWindowOperator {
       assigner,
       types,
       aggregateFunction,
-      fireOnEachEventTriggerWrapper[ValueWithContext[StringKeyedValue[A]], TimeWindow](trigger),
+      FireOnEachEvent(trigger),
       preserveContext = true
     )
 
@@ -145,24 +134,25 @@ private class ValueEmittingWindowFunction(
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     elements.forEach { element =>
-      contextHolderRef.get match {
+      val contextOpt = contextHolderRef.get match {
         case OnElementWindowContext(contextToPreserve, timestampToOverride) =>
+          // in current flink implementation out is always of type TimestampedCollector
           out.asInstanceOf[TimestampedCollector[_]].setAbsoluteTimestamp(timestampToOverride)
-          out.collect(
-            ValueWithContext(
-              element,
-              KeyEnricher.enrichWithKey(
-                contextToPreserve.getOrElse(api.Context(contextIdGenerator.nextContextId())),
-                key
-              )
-            )
-          )
+          contextToPreserve
 
         case OnTimerWindowContext =>
-          out.collect(
-            ValueWithContext(element, KeyEnricher.enrichWithKey(api.Context(contextIdGenerator.nextContextId()), key))
-          )
+          None
       }
+
+      out.collect(
+        ValueWithContext(
+          element,
+          KeyEnricher.enrichWithKey(
+            contextOpt.getOrElse(api.Context(contextIdGenerator.nextContextId())),
+            key
+          )
+        )
+      )
     }
   }
 

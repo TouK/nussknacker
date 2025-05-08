@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.OnEventOperatorKeyedStream
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.collection.immutable.SortedMap
@@ -176,11 +177,11 @@ object transformers {
           implicit val fctx: FlinkCustomNodeContext = ctx
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
-          val baseTrigger = {
-            ExtendedWindowOperator.closingEndEventTriggerWrapper[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
+          val baseTrigger =
+            ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
               EventTimeTrigger.create(),
-              _.value.value._2)
-          }
+              _.value.value._2
+            )
           val groupByValue = aggregateBy.product(endSessionCondition)
 
           val keyedStream = start
@@ -193,7 +194,8 @@ object transformers {
             case SessionWindowTrigger.OnEvent =>
               keyedStream.extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
-              keyedStream.extendedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext = false)
+              keyedStream
+                .extendedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext = false)
           }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         })
       )

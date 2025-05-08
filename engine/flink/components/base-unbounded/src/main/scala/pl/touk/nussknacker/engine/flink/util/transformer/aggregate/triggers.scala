@@ -30,13 +30,12 @@ object triggers {
   case class FireOnEachEvent[T, W <: Window](delegate: Trigger[_ >: T, W]) extends DelegatingTrigger[T, W](delegate) {
 
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
-      val previousResult = super.onElement(element, timestamp, window, ctx)
-      val result = previousResult match {
+      val result = super.onElement(element, timestamp, window, ctx)
+      result match {
         case TriggerResult.CONTINUE => TriggerResult.FIRE
         case TriggerResult.PURGE    => TriggerResult.FIRE_AND_PURGE
         case fire                   => fire
       }
-      result
     }
 
     override def onProcessingTime(time: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
@@ -51,10 +50,8 @@ object triggers {
 
   }
 
-  case class ClosingEndEventTrigger[T, W <: Window](
-      delegate: Trigger[_ >: T, W],
-      endFunction: T => Boolean
-  ) extends DelegatingTrigger[T, W](delegate) {
+  case class ClosingEndEventTrigger[T, W <: Window](delegate: Trigger[_ >: T, W], endFunction: T => Boolean)
+      extends DelegatingTrigger[T, W](delegate) {
 
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
       if (endFunction(element)) {
