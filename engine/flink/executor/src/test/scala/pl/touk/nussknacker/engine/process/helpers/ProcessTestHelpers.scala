@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.helpers
 import com.typesafe.config.Config
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.scalatest.Suite
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.dict.DictInstance
@@ -19,8 +20,6 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
@@ -103,10 +102,10 @@ object ProcessTestHelpers extends Serializable {
 }
 
 object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
-  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelConfig: ModelConfig): Seq[ProcessListener] =
     List(CountingNodesListener, new LifecycleCheckingListener)
 
-  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+  override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {
     val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
     val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
     val globalProcessVariables = Map(

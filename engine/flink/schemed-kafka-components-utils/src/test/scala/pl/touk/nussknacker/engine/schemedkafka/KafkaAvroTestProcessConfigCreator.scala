@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -19,18 +20,18 @@ abstract class KafkaAvroTestProcessConfigCreator(
   private val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
   override def sourceFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
     val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
     val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     ) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
@@ -43,20 +44,20 @@ abstract class KafkaAvroTestProcessConfigCreator(
   }
 
   override def customStreamTransformers(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map("extractAndTransformTimestamp" -> defaultCategory(ExtractAndTransformTimestamp))
   }
 
   override def sinkFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "kafka" -> defaultCategory(
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalPayload,
-          modelDependencies,
+          modelConfig,
           FlinkKafkaUniversalSinkImplFactory
         )
       ),

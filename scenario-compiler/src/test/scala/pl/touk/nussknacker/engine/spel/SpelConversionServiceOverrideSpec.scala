@@ -10,16 +10,15 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, RuntimeMode, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.{
+  CustomProcessValidatorLoader,
+  ModelConfig,
+  RuntimeMode,
+  ScenarioCompilationDependencies
+}
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentDefinition,
-  ComponentId,
-  ComponentType,
-  NodeComponentInfo,
-  NodesDeploymentData
-}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
@@ -58,7 +57,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
   class WithConvUtilConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider])
       extends EmptyProcessConfigCreator {
 
-    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {
       ExpressionConfig(
         globalProcessVariables = Map("CONV" -> WithCategories.anyCategory(ConversionUtils)),
         globalImports = List.empty,

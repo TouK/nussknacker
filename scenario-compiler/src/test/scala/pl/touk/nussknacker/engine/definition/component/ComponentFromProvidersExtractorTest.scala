@@ -5,10 +5,10 @@ import net.ceedubs.ficus.Ficus._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.semver4j.Semver
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ModelConfig}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractorTest.largeMajorVersion
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, DefaultModelConfigLoader}
@@ -164,7 +164,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(componentsConfig.toSeq: _*)), cl)
       extractor.extractComponents(
-        ProcessObjectDependencies.withConfig(resolved.config),
+        ModelConfig.parse(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
@@ -179,7 +179,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(
-        ProcessObjectDependencies.withConfig(resolved.config),
+        ModelConfig.parse(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
@@ -205,8 +205,8 @@ class DynamicProvider extends ComponentProvider {
     config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
   }
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    config.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    componentProviderConfig.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
       ComponentDefinition(s"component-$value", DynamicService(value))
     }
   }
@@ -232,7 +232,7 @@ class SameNameSameComponentTypeProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
     List(
       ComponentDefinition(s"component", DynamicService("component")),
       ComponentDefinition(s"component", DynamicService("component"))
@@ -250,7 +250,7 @@ class SameNameDifferentComponentTypeProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
     List(
       ComponentDefinition(s"component", DynamicService("component")),
       ComponentDefinition(s"component", SinkFactory.noParam(new Sink {}))
@@ -276,7 +276,7 @@ class AutoLoadedProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = List(
     ComponentDefinition("auto-component", AutoService)
   )
 

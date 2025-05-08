@@ -9,6 +9,7 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -42,7 +43,7 @@ import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleT
 class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    val modelDependencies: ProcessObjectDependencies,
+    val modelConfig: ModelConfig,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
     with SourceFactory
@@ -196,7 +197,7 @@ class UniversalKafkaSourceFactory(
       OutputVariableNameDependency.extract(dependencies),
       keyTypingResult,
       valueTypingResult,
-      modelDependencies.namingStrategy
+      modelConfig.namingStrategy
     )
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
@@ -247,7 +248,7 @@ class UniversalKafkaSourceFactory(
       recordFormatter,
       kafkaContextInitializer,
       prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original, defaultValuesForTestParameters),
-      modelDependencies.namingStrategy
+      modelConfig.namingStrategy
     )
   }
 
@@ -360,7 +361,7 @@ class UniversalKafkaSourceFactory(
   protected lazy val enableSchemaDerivationFromDataSampleForSchemalessJsonTopics: Boolean = {
     val paramPath =
       s"${KafkaConfig.DefaultGlobalKafkaConfigPath}.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource"
-    modelDependencies.config.hasPath(paramPath) && modelDependencies.config.getBoolean(paramPath)
+    modelConfig.underlyingConfig.hasPath(paramPath) && modelConfig.underlyingConfig.getBoolean(paramPath)
   }
 
   override def nodeDependencies: List[NodeDependency] =

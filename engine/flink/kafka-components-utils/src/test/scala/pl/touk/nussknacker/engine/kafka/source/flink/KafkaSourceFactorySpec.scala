@@ -50,7 +50,7 @@ class KafkaSourceFactorySpec
         VariableConstants.InputVariableName,
         Typed[Any],
         Typed[Any],
-        modelDependencies.namingStrategy
+        modelConfig.namingStrategy
       )
     )
     val source = sourceFactory
