@@ -64,8 +64,15 @@
     {
       "id" : "Get Customer Profile from API",
       "service" : {
-        "id" : "getCustomerProfile",
+        "id" : "openAPI",
         "parameters" : [
+          {
+            "name" : "Service",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'getCustomerProfile'"
+            }
+          },
           {
             "name" : "customerId",
             "expression" : {
@@ -106,8 +113,15 @@
     {
       "id" : "Get Offers for a given Customer Type from API",
       "service" : {
-        "id" : "getOffersForCustomerType",
+        "id" : "openAPI",
         "parameters" : [
+          {
+            "name" : "Service",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'getOffersForCustomerType'"
+            }
+          },
           {
             "name" : "customerType",
             "expression" : {
