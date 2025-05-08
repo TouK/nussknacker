@@ -193,7 +193,7 @@ export const UserDefinedListInput = ({
                             setTemporaryListItem(value.expression.trim());
                             setTemporaryValuesTyping(true);
                             setTemporaryValueErrors([]);
-                            validateTemporaryListItem(value.expression);
+                            validateTemporaryListItem(value.expression.trim());
                             setIsEnterPressed(false);
                         }}
                         variableTypes={variableTypes}
