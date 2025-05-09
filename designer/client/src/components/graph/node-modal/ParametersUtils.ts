@@ -1,6 +1,7 @@
-import { cloneDeep, get, set } from "lodash";
+import { get } from "lodash";
 
 import type { NodeType, UIParameter } from "../../../types";
+import { setImmutable } from "./setImmutable";
 
 const parametersPath = (node) => {
     switch (node.type) {
@@ -23,15 +24,14 @@ const parametersPath = (node) => {
 
 //We want to change parameters in node based on current node definition. This function can be used in
 //two cases: dynamic parameters handling and automatic node migrations (e.g. in fragments)
-export function adjustParameters(node: NodeType, parameterDefinitions: UIParameter[]): NodeType {
+export function adjustParameters(node: Readonly<NodeType>, parameterDefinitions: Readonly<UIParameter[]>): NodeType {
     const path = parametersPath(node);
 
     if (!path || !parameterDefinitions) {
         return node;
     }
 
-    const currentNode = cloneDeep(node);
-    const currentParameters = get(currentNode, path);
+    const currentParameters = get(node, path);
     //TODO: currently dynamic branch parameters are *not* supported...
     const adjustedParameters = parameterDefinitions
         .filter((def) => !def.branchParam)
@@ -43,5 +43,5 @@ export function adjustParameters(node: NodeType, parameterDefinitions: UIParamet
             };
             return currentParam || parameterFromDefinition;
         });
-    return set(currentNode, path, adjustedParameters);
+    return setImmutable(node, path, adjustedParameters);
 }

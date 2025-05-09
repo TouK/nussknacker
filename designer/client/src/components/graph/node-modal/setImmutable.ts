@@ -1,4 +1,4 @@
-import { toPath } from "lodash";
+import { isArray, isNumber, toPath } from "lodash";
 
 import type { NormalizePath, Paths, PathValue } from "./typeHelpers";
 
@@ -23,7 +23,18 @@ function setImpl<T, P extends string, V>(object: T, path: P, value: V): T {
     const indexKey = isNaN(Number(key)) ? key : Number(key);
     const currentVal = (object as any)?.[indexKey];
 
-    const nextVal = rest.length === 0 ? value : setImpl(currentVal ?? (isNaN(Number(rest[0])) ? {} : []), rest.join("."), value);
+    let nextVal: any;
+    if (rest.length === 0) {
+        nextVal = value;
+    } else {
+        nextVal = setImpl(currentVal ?? (isNaN(Number(rest[0])) ? {} : []), rest.join("."), value);
+    }
+
+    if (isArray(object) && isNumber(indexKey)) {
+        const res = [...object];
+        res.splice(indexKey, 1, nextVal);
+        return res as T;
+    }
 
     return {
         ...object,
@@ -32,7 +43,7 @@ function setImpl<T, P extends string, V>(object: T, path: P, value: V): T {
 }
 
 function normalizePathString<P extends string>(path: P): NormalizePath<P> {
-    if (path.match(/\[]./) || path.includes(".#")) {
+    if (path.match(/\[]./) || path.match(/\.\[\d+]/g) || path.includes(".#")) {
         throw "Invalid path: " + path;
     }
     return path.replace(/\[(\d+)]/g, ".$1").replace(/\[]$/g, "") as NormalizePath<P>;

@@ -34,8 +34,17 @@ describe("setImmutable", () => {
     it("works correctly with array index", () => {
         const updated = setImmutable(data, "user.posts[1].text", "updated");
         expect(updated.user.posts).not.toBe(data.user.posts);
+        expect(updated.user.posts).toHaveProperty("map");
         expect(updated.user.posts[1].text).toBe("updated");
         expect(updated.user.posts[0]).toBe(data.user.posts[0]);
+
+        const updated2 = setImmutable(data, "user.posts.1.text", "updated");
+        expect(updated2.user.posts).not.toBe(data.user.posts);
+        expect(updated2.user.posts).toHaveProperty("map");
+        expect(updated2.user.posts[1].text).toBe("updated");
+        expect(updated2.user.posts[0]).toBe(data.user.posts[0]);
+
+        expect(updated).toEqual(updated2);
     });
 
     it("respects deep types", () => {
@@ -52,8 +61,8 @@ describe("setImmutable", () => {
         expect(updated).toBe(data);
         let updated2: Data;
         tstyche.expect((updated2 = setImmutable(data, "user.posts[]", []))).type.toRaiseError();
-        expect(updated2).not.toBe(data);
-        expect(updated2.user.posts).toBe([]);
+        expect(updated2).not.toEqual(data);
+        expect(updated2.user.posts).toEqual([]);
         expect(updated2.user.profile).toBe(data.user.profile);
     });
 });

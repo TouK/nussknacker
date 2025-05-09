@@ -63,6 +63,7 @@ export function Map<F extends Field>({
     );
 
     const changeOrder = useCallback((value) => setProperty(namespace, value), [namespace, setProperty]);
+    const changeValue = useCallback((path, value) => setProperty(`${namespace}${path}`, value), [namespace, setProperty]);
 
     const items = useMemo(
         () =>
@@ -83,7 +84,7 @@ export function Map<F extends Field>({
                 value={{
                     readOnly,
                     isMarked: (path) => isMarked(`${namespace}.${path}`),
-                    setProperty: (path, value) => setProperty(`${namespace}.${path}`, value),
+                    setProperty: changeValue,
                     showValidation,
                     errors,
                     variableTypes,
