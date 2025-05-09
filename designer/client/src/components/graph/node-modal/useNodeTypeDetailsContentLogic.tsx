@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { identity, isEqual } from "lodash";
 import React, { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -75,14 +75,14 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
                 if (isEqual(current, nextNode)) {
                     return current;
                 }
-                change(nextNode, edges);
+                change(nextNode, identity);
                 return nextNode;
             });
         },
-        [edges, change],
+        [change],
     );
 
-    const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => change(node, e), [node, change]);
+    const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => change(identity, e), [change]);
 
     const parameterDefinitions = useMemo(() => getParameterDefinitions(node), [getParameterDefinitions, node]);
 
