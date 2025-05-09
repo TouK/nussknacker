@@ -241,9 +241,15 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
     const { processVersionId } = scenario || {};
     const { t } = useTranslation();
 
-    const actionsWithVersionChange: ActivityType[] = ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_DEPLOYED", "SCENARIO_MODIFIED"];
+    const actionsWithVersionChange: ActivityType[] = [
+        "AUTOMATIC_UPDATE",
+        "INCOMING_MIGRATION",
+        "SCENARIO_DEPLOYED",
+        "SCENARIO_REDEPLOYED",
+        "SCENARIO_MODIFIED",
+    ];
 
-    const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
+    const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_REDEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
     const openVersionEnable = actionsWithVersionChange.includes(activity.type) && activity.scenarioVersionId !== processVersionId;
     const isVersionSelected =
         ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_MODIFIED"].includes(activity.type) &&

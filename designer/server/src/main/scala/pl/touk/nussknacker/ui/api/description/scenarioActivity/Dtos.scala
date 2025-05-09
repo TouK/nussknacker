@@ -154,7 +154,7 @@ object Dtos {
     }
 
     case object ScenarioRedeployed extends ScenarioActivityType {
-      private val displayableName: String             = "Deployment"
+      private val displayableName: String             = "Redeploy"
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
       override def icon: String                       = "/assets/activities/deployed.svg"
