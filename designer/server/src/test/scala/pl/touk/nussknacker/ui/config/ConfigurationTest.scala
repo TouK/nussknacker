@@ -28,7 +28,7 @@ class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassL
     )
   }
 
-  private lazy val modelDataConfig = modelData.modelConfig
+  private lazy val modelDataConfig = modelData.modelConfig.underlyingConfig
 
   private def classLoader = {
     getClass.getClassLoader

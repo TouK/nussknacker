@@ -47,7 +47,7 @@ class ProcessesExportImportResourcesSpec
     futureFetchingScenarioRepository,
     processService,
     scenarioActivityRepository,
-    processResolverByProcessingType,
+    processResolverByProcessingType(),
     dbioRunner,
   )
 

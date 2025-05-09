@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import play.api.libs.json.{Format, Json}
@@ -56,7 +57,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     )
     state shouldBe Some(
       DeploymentStatusDetails(
-        status = ProblemStateStatus(
+        status = GeneralProblemStateStatus(
           "There are some problems with scenario.",
           tooltip = Some(
             "Errors: Deployment does not have minimum availability., ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing."
@@ -90,7 +91,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
 
     state shouldBe Some(
       DeploymentStatusDetails(
-        status = ProblemStateStatus(
+        status = GeneralProblemStateStatus(
           description = "More than one deployment is running.",
           allowedActions = Set(ScenarioActionName.Cancel),
           tooltip = Some("Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName")

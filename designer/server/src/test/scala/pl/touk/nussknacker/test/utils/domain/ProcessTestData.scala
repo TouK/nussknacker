@@ -190,7 +190,7 @@ object ProcessTestData {
 
   val sampleScenarioLabels: List[String] = List("tag1", "tag2")
 
-  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName)
+  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName.value)
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
@@ -207,7 +207,7 @@ object ProcessTestData {
 
   // TODO: merge with this below
   val sampleScenario: CanonicalProcess = {
-    def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
+    def endWithMessage(idSuffix: String, message: String): Option[SubsequentNode] = {
       GraphBuilder
         .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'".spel)
         .emptySink(
@@ -225,8 +225,11 @@ object ProcessTestData {
       .to(endWithMessage("suffix", "message"))
   }
 
-  def validProcessWithName(name: ProcessName): CanonicalProcess = ScenarioBuilder
-    .streaming(name.value)
+  def validProcessWithName(name: ProcessName): CanonicalProcess =
+    validProcessWithName(name.value)
+
+  def validProcessWithName(name: String): CanonicalProcess = ScenarioBuilder
+    .streaming(name)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)
@@ -493,7 +496,7 @@ object ProcessTestData {
       .to(endWithMessage)
   }
 
-  private def endWithMessage: SubsequentNode = {
+  private def endWithMessage: Option[SubsequentNode] = {
     val idSuffix   = "suffix"
     val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
 

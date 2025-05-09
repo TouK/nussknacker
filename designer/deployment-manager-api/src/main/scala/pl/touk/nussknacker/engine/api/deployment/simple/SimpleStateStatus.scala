@@ -2,7 +2,11 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.{
+  GeneralProblemStateStatus,
+  MultipleJobsRunning,
+  ShouldNotBeRunning
+}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
@@ -12,23 +16,56 @@ object SimpleStateStatus {
 
   def fromDeploymentStatus(deploymentStatus: DeploymentStatus): StateStatus = {
     deploymentStatus match {
-      case noAttributes: NoAttributesDeploymentStatus => NoAttributesStateStatus(noAttributes.name.value)
+      case status: NoAttributesDeploymentStatus => NoAttributesStateStatus(status.name.value)
       // We assume that all deployment status have default allowedActions. Non-default allowedActions have only
       // statuses that are not deployment statuses but scenario statuses.
-      case problem: ProblemDeploymentStatus => ProblemStateStatus(problem.description)
+      case status: ProblemDeploymentStatus => GeneralProblemStateStatus(status.problemDescription)
     }
   }
 
-  // Represents general problem.
-  final case class ProblemStateStatus(
-      description: String,
-      allowedActions: Set[ScenarioActionName] = defaultActions,
-      tooltip: Option[String] = None
-  ) extends StateStatus {
+  sealed trait ProblemStateStatus extends StateStatus {
     override def name: StatusName = ProblemStateStatus.name
+
+    def description: String
+    def allowedActions: Set[ScenarioActionName]
+    def tooltip: Option[String]
   }
 
   object ProblemStateStatus {
+
+    final case class ShouldNotBeRunning(deployed: Boolean) extends ProblemStateStatus {
+
+      override val description: String =
+        if (deployed) "Scenario has been canceled but still is running."
+        else "Scenario has been never deployed but now is running."
+
+      override val allowedActions: Set[ScenarioActionName] = defaultActions
+      override val tooltip: Option[String]                 = None
+    }
+
+    final case class MultipleJobsRunning(
+        firstNonFinalDeployment: (DeploymentId, StateStatus),
+        secondNonFinalDeployment: (DeploymentId, StateStatus),
+        otherNonFinalDeployments: (DeploymentId, StateStatus)*
+    ) extends ProblemStateStatus {
+
+      override val allowedActions: Set[ScenarioActionName] = Set(ScenarioActionName.Cancel)
+      override val description: String                     = "More than one deployment is running."
+
+      override val tooltip: Option[StatusName] = Some {
+        (firstNonFinalDeployment :: secondNonFinalDeployment :: otherNonFinalDeployments.toList)
+          .map { case (deploymentId, deploymentStatus) => s"$deploymentId - $deploymentStatus" }
+          .mkString("Expected one job, instead: ", ", ", "")
+      }
+
+    }
+
+    final case class GeneralProblemStateStatus(
+        override val description: String,
+        override val allowedActions: Set[ScenarioActionName] = defaultActions,
+        override val tooltip: Option[String] = None
+    ) extends ProblemStateStatus
+
     val name: String = "PROBLEM"
 
     def isProblemStatus(status: StateStatus): Boolean = status.name == name
@@ -40,48 +77,54 @@ object SimpleStateStatus {
 
     // Problem factory methods
 
-    val Failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
+    val Failed: ProblemStateStatus = GeneralProblemStateStatus(defaultDescription)
 
     val ArchivedShouldBeCanceled: ProblemStateStatus =
-      ProblemStateStatus("Archived scenario should be canceled.", Set(ScenarioActionName.Cancel))
+      GeneralProblemStateStatus("Archived scenario should be canceled.", Set(ScenarioActionName.Cancel))
 
     val FailedToGet: ProblemStateStatus =
-      ProblemStateStatus(s"Failed to get a state of the scenario.")
+      GeneralProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user is not running.")
+      GeneralProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user is not running.")
 
     def mismatchDeployedVersion(
         deployedVersionId: VersionId,
         exceptedVersionId: VersionId,
         user: String
     ): ProblemStateStatus =
-      ProblemStateStatus(
+      GeneralProblemStateStatus(
         s"Scenario deployed in version $deployedVersionId by $user, expected version $exceptedVersionId."
       )
 
-    def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus = {
-      val shouldNotBeRunningMessage =
-        if (deployed) "Scenario has been canceled but still is running."
-        else "Scenario has been never deployed but now is running."
-      ProblemStateStatus(shouldNotBeRunningMessage)
-    }
+    def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus =
+      ShouldNotBeRunning(deployed)
 
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
+      GeneralProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
-    def multipleJobsRunning(nonFinalDeploymentIds: List[(DeploymentId, StateStatus)]): ProblemStateStatus =
-      ProblemStateStatus(
-        description = "More than one deployment is running.",
-        allowedActions = Set(ScenarioActionName.Cancel),
-        tooltip = Some(
-          nonFinalDeploymentIds
-            .map { case (deploymentId, deploymentStatus) =>
-              s"$deploymentId - $deploymentStatus"
-            }
-            .mkString("Expected one job, instead: ", ", ", "")
-        )
-      )
+    def multipleJobsRunning(
+        first: (DeploymentId, StateStatus),
+        second: (DeploymentId, StateStatus),
+        others: (DeploymentId, StateStatus)*
+    ): ProblemStateStatus =
+      MultipleJobsRunning(first, second, others: _*)
+
+  }
+
+  implicit class CanBeConsideredAsActiveStatus(val status: StateStatus) extends AnyVal {
+
+    def isActive: Boolean = {
+      status match {
+        case problemStatus: ProblemStateStatus =>
+          problemStatus match {
+            case _: ShouldNotBeRunning | _: MultipleJobsRunning => true
+            case _: GeneralProblemStateStatus                   => false
+          }
+        case `Restarting` => true
+        case status       => DefaultFollowingDeployStatuses.contains(status)
+      }
+    }
 
   }
 
@@ -119,7 +162,8 @@ object SimpleStateStatus {
       Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
-    case SimpleStateStatus.ProblemStateStatus(_, allowedActions, _) => allowedActions
+    case s: ShouldNotBeRunning                           => s.allowedActions
+    case GeneralProblemStateStatus(_, allowedActions, _) => allowedActions
   }
 
   val definitions: Map[StatusName, StateDefinitionDetails] = Map(

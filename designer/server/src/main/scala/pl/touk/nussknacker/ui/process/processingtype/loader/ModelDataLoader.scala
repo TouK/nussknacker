@@ -62,6 +62,7 @@ object ModelDataLoader extends LazyLogging {
     val modelDataWithInput = new ModelDataWithProcessingTypeDataInput(
       modelData,
       processingTypeConfig.category,
+      processingTypeConfig.limits,
       modelDependencies.componentDefinitionExtractionMode
     )
     modelDataWithInput

@@ -96,7 +96,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       runAndVerifyResultSingleEvent(process, topicConfig, "fooBar", "fooBar")
     }.getMessage
 
-    message should include("InvalidPropertyFixedValue(ParameterName(Topic),None,'invalid-topic',")
+    message should include("InvalidPropertyFixedValue(Topic,None,'invalid-topic',")
   }
 
   test("should handle null value for mandatory parameter") {
@@ -110,7 +110,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     }.getMessage
 
     message should include(
-      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,ParameterName(Topic),start"
+      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,Topic,start"
     )
   }
 

@@ -8,15 +8,9 @@ import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 // Currently DeploymentStatus are limited set of allowed statuses. Only ProblemDeploymentStatus can have different
 // descriptions depending on DM implementation. It makes implementation of logic based on statuses easier. In case
 // if we have requirement to make it more flexible, we can relax this restriction.
-sealed trait DeploymentStatus extends EnumEntry with UpperSnakecase {
-  def name: DeploymentStatusName = DeploymentStatusName(entryName)
-}
-
-sealed abstract class NoAttributesDeploymentStatus extends DeploymentStatus
-
-final case class ProblemDeploymentStatus(description: String) extends DeploymentStatus {
-  override def name: DeploymentStatusName = ProblemDeploymentStatus.name
-}
+sealed trait DeploymentStatus                                        extends EnumEntry with UpperSnakecase
+sealed abstract class NoAttributesDeploymentStatus                   extends DeploymentStatus
+final case class ProblemDeploymentStatus(problemDescription: String) extends DeploymentStatus
 
 object DeploymentStatus extends Enum[DeploymentStatus] {
 
@@ -41,18 +35,44 @@ object DeploymentStatus extends Enum[DeploymentStatus] {
   case object DuringCancel extends NoAttributesDeploymentStatus
   case object Canceled     extends NoAttributesDeploymentStatus
 
-}
+  implicit class IsActive(val status: DeploymentStatus) extends AnyVal {
 
-object ProblemDeploymentStatus {
-  def name: DeploymentStatusName = DeploymentStatusName("PROBLEM")
-
-  def extractDescription(status: DeploymentStatus): Option[String] =
-    status match {
-      case problem: ProblemDeploymentStatus =>
-        Some(problem.description)
-      case _: NoAttributesDeploymentStatus =>
-        None
+    def isActive: Boolean = {
+      status match {
+        case DuringDeploy | Running | Restarting                             => true
+        case Finished | DuringCancel | Canceled | ProblemDeploymentStatus(_) => false
+      }
     }
+
+  }
+
+  implicit class ProblemDescription(val status: DeploymentStatus) extends AnyVal {
+
+    def problemDescription: Option[String] = status match {
+      case _: NoAttributesDeploymentStatus             => None
+      case ProblemDeploymentStatus(problemDescription) => Some(problemDescription)
+    }
+
+  }
+
+  implicit class ToDeploymentStatusName(val status: DeploymentStatus) extends AnyVal {
+
+    def name: DeploymentStatusName = status match {
+      case status: NoAttributesDeploymentStatus => DeploymentStatusName(status.entryName)
+      case ProblemDeploymentStatus(_)           => DeploymentStatusName.problemStatusName
+    }
+
+  }
+
+  def from(name: DeploymentStatusName, description: Option[String]): DeploymentStatus = {
+    name match {
+      case DeploymentStatusName.problemStatusName =>
+        val desc = description.getOrElse(throw new IllegalStateException("No description for ProblemDeploymentStatus"))
+        ProblemDeploymentStatus(desc)
+      case other =>
+        DeploymentStatus.withName(other.value)
+    }
+  }
 
 }
 
@@ -64,4 +84,5 @@ object DeploymentStatusName {
 
   implicit val codec: Codec[DeploymentStatusName] = deriveUnwrappedCodec[DeploymentStatusName]
 
+  val problemStatusName: DeploymentStatusName = DeploymentStatusName("PROBLEM")
 }

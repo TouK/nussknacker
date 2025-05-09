@@ -1,30 +1,13 @@
 package pl.touk.nussknacker.engine.flink
 
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
-import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
-import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
-import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
-import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeTransition, TestResults}
-import pl.touk.nussknacker.engine.util.config.DocsConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-
-import java.time.{Duration, Instant}
-import scala.jdk.CollectionConverters._
 
 class ResultCollectingListenerSpec
     extends AnyFunSuite
@@ -32,12 +15,15 @@ class ResultCollectingListenerSpec
     with Matchers
     with LazyLogging
     with VeryPatientScalaFutures
-    with FlinkSpec {
+    with FlinkSpec
+    with FlinkMiniClusterTestRunner {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val data1 = List(10, 20, 30, 40)
-  private val data2 = List(100, 200, 300, 400)
+  override protected def sourcesWithMockedData: Map[String, List[Int]] = Map(
+    "start1" -> List(10, 20, 30, 40),
+    "start2" -> List(100, 200, 300, 400),
+  )
 
   test("union of two sources with additional variable in only one of the branches") {
     val scenario = ScenarioBuilder
@@ -277,57 +263,6 @@ class ResultCollectingListenerSpec
           Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),
         )
       }
-    )
-  }
-
-  private def transitionVariables(testResults: TestResults[Any], fromNodeId: String, toNodeId: Option[String]) =
-    testResults
-      .nodeTransitionResults(NodeTransition(fromNodeId, toNodeId))
-      .map(_.variables)
-      .toSet[Map[String, Any]]
-      .map(_.map { case (key, value) => (key, scalaMap(value)) })
-
-  private def scalaMap(value: Any): Any = {
-    value match {
-      case hashMap: java.util.HashMap[_, _] => hashMap.asScala.toMap
-      case other                            => other
-    }
-  }
-
-  private def assertNumberOfSamplesThatFinishedInNode(testResults: TestResults[Any], sinkId: String, expected: Int) =
-    testResults.nodeTransitionResults.get(NodeTransition(sinkId, None)).map(_.length) shouldBe Some(expected)
-
-  private def withCollectingTestResults(
-      canonicalProcess: CanonicalProcess,
-      assertions: TestResults[Any] => Unit
-  ): Unit = {
-    ResultsCollectingListenerHolder.withListener { collectingListener =>
-      val model = modelData(collectingListener)
-      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-        val executionResult = new FlinkScenarioUnitTestJob(model).run(canonicalProcess, env)
-        flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
-        assertions(collectingListener.results)
-      }
-    }
-  }
-
-  private def modelData(
-      collectingListener: => ResultsCollectingListener[Any],
-      aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
-  ): LocalModelData = {
-    def sourceComponent(data: List[Int]) = SourceFactory.noParamUnboundedStreamFactory[Int](
-      EmitWatermarkAfterEachElementCollectionSource
-        .create[Int](data, _ => Instant.now.toEpochMilli, Duration.ofHours(1))
-    )
-    LocalModelData(
-      ConfigFactory.empty(),
-      ComponentDefinition("start1", sourceComponent(data1)) ::
-        ComponentDefinition("start2", sourceComponent(data2)) ::
-        FlinkBaseUnboundedComponentProvider.create(
-          DocsConfig.Default,
-          aggregateWindowsConfig
-        ) ::: FlinkBaseComponentProvider.Components,
-      configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
 

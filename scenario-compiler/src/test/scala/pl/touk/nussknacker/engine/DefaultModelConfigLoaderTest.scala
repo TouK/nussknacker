@@ -26,7 +26,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should load model.conf and override with given") {
-    val config = LocalModelData(inputConfig, List.empty).modelConfig
+    val config = LocalModelData(inputConfig, List.empty).modelConfig.underlyingConfig
 
     config.getString("property1") shouldBe "value1"
     config.getString("property2") shouldBe "value1Suffix"
@@ -45,7 +45,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should resolve environment variables") {
-    val config  = LocalModelData(ConfigFactory.empty(), List.empty).modelConfig
+    val config  = LocalModelData(ConfigFactory.empty(), List.empty).modelConfig.underlyingConfig
     val envPath = System.getenv("PATH")
 
     envPath shouldNot be(null)
@@ -53,13 +53,13 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should not load application.conf") {
-    val config = LocalModelData(inputConfig, List.empty).modelConfig
+    val config = LocalModelData(inputConfig, List.empty).modelConfig.underlyingConfig
 
     config.hasPath("shouldNotLoad") shouldBe false
   }
 
   test("should not contain java.class.path") {
-    val config = LocalModelData(inputConfig, List.empty).modelConfig
+    val config = LocalModelData(inputConfig, List.empty).modelConfig.underlyingConfig
 
     // classpath can grow very long and there's a 65 KB limit on a single String value in Configuration
     // that we already hit in CI, see: https://github.com/lightbend/config/issues/627

@@ -117,7 +117,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
 
   private val sourceMetrics = new SourceMetrics(interpreter.sources.keys)
 
-  private val interpreterConfig = modelData.modelConfig.as[KafkaInterpreterConfig]
+  private val interpreterConfig = modelData.modelConfig.underlyingConfig.as[KafkaInterpreterConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(
     scenario.name.value,
