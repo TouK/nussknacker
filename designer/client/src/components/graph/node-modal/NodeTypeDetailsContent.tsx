@@ -58,6 +58,23 @@ export function useNodeAdjust() {
     );
 }
 
+function useWaitForNodeStateSynchronization(node: NodeType) {
+    const [isDynamicParametersLoading, setIsDynamicParametersLoading] = useState(false);
+
+    const withNodeLoadingState = useCallback((changedNode: NodeType, isLoading: boolean) => {
+        return { ...changedNode, isLoading };
+    }, []);
+
+    const handleSetIsDynamicParametersLoading = (isLoading: boolean) => {
+        console.log(node);
+        if (node.changesCanReloadParameters || node.id === "Webhook") {
+            setIsDynamicParametersLoading(isLoading);
+        } else {
+            setIsDynamicParametersLoading(false);
+        }
+    };
+    return { isDynamicParametersLoading, handleSetIsDynamicParametersLoading, withNodeLoadingState };
+}
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
     const { onChange, node, edges, showValidation } = props;
     const dispatch = useDispatch();
@@ -66,29 +83,35 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
-    const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables);
+    const branchVariableTypes = useSelector((s: RootState) => getFindAvailableBranchVariables(s)?.(node.id), isEqual);
     const processName = useSelector(getProcessName);
     const processProperties = useSelector(getProcessProperties);
-
+    const { isDynamicParametersLoading, handleSetIsDynamicParametersLoading, withNodeLoadingState } =
+        useWaitForNodeStateSynchronization(node);
     const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
 
     const adjustNode = useNodeAdjust();
-    const [proxyNode, setProxyNode] = useState(() => adjustNode(node));
+    const [proxyNode, setProxyNode] = useState(() => adjustNode(withNodeLoadingState(node, false)));
 
     useEffect(() => {
         setProxyNode((currentNode) => {
             const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, currentNode) ? currentNode : adjustedNode;
+            return isEqual(adjustedNode, currentNode)
+                ? withNodeLoadingState(currentNode, isDynamicParametersLoading)
+                : withNodeLoadingState(adjustedNode, isDynamicParametersLoading);
         });
-    }, [adjustNode, node]);
+    }, [adjustNode, node, isDynamicParametersLoading, withNodeLoadingState]);
 
     const change = useCallback(
         (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
             if (isEditMode) {
+                if (showValidation) {
+                    handleSetIsDynamicParametersLoading(true);
+                }
                 onChange(node, edges);
             }
         },
-        [isEditMode, onChange],
+        [isEditMode, onChange, handleSetIsDynamicParametersLoading, showValidation],
     );
 
     const setEditedNode = useCallback(
@@ -96,13 +119,14 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
             setProxyNode((current) => {
                 const nextNode = typeof n === "function" ? n(current) : n;
                 if (isEqual(current, nextNode)) {
-                    return current;
+                    return withNodeLoadingState(current, isDynamicParametersLoading);
                 }
-                change(nextNode, edges);
-                return nextNode;
+                change(withNodeLoadingState(nextNode, isDynamicParametersLoading), edges);
+                return withNodeLoadingState(nextNode, isDynamicParametersLoading);
             });
         },
-        [edges, change],
+
+        [change, edges, isDynamicParametersLoading, withNodeLoadingState],
     );
 
     const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => change(node, e), [node, change]);
@@ -150,17 +174,33 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     useEffect(() => {
         if (showValidation) {
             dispatch(
-                validateNodeData(processName, {
-                    //see NODES_CONNECTED/NODES_DISCONNECTED
-                    outgoingEdges: edges.filter((e) => e.to != ""),
-                    nodeData: node,
-                    processProperties,
-                    branchVariableTypes: getBranchVariableTypes(node.id),
-                    variableTypes,
-                }),
+                validateNodeData(
+                    processName,
+                    {
+                        //see NODES_CONNECTED/NODES_DISCONNECTED
+                        outgoingEdges: edges.filter((e) => e.to != ""),
+                        nodeData: node,
+                        processProperties,
+                        branchVariableTypes,
+                        variableTypes,
+                    },
+                    () => {
+                        handleSetIsDynamicParametersLoading(false);
+                    },
+                ),
             );
         }
-    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
+    }, [
+        dispatch,
+        branchVariableTypes,
+        edges,
+        node,
+        processName,
+        processProperties,
+        showValidation,
+        variableTypes,
+        handleSetIsDynamicParametersLoading,
+    ]);
 
     return {
         ...props,

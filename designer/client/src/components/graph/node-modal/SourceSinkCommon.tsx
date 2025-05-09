@@ -8,6 +8,8 @@ import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 
+const getListFieldPath = (index: number) => `ref.parameters[${index}]`;
+
 interface SourceSinkCommonProps {
     errors: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
@@ -53,7 +55,7 @@ export const SourceSinkCommon = ({
                 errors={errors}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                getListFieldPath={(index: number) => `ref.parameters[${index}]`}
+                getListFieldPath={getListFieldPath}
             >
                 {children}
                 <DescriptionField

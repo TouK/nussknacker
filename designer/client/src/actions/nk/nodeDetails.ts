@@ -27,20 +27,11 @@ export interface ValidationRequest {
     outgoingEdges: Edge[];
 }
 
-export function nodeValidationDataUpdating(nodeId: string): any {
-    return {
-        type: "NODE_VALIDATION_UPDATING",
-        nodeId,
-        loading: true,
-    };
-}
-
 export function nodeValidationDataUpdated(nodeId: string, validationData: ValidationData): NodeValidationUpdated {
     return {
         type: "NODE_VALIDATION_UPDATED",
         validationData,
         nodeId,
-        loading: false,
     };
 }
 
@@ -78,14 +69,14 @@ const validate = debounce(
     500,
 );
 
-export function validateNodeData(processName: string, validationRequestData: ValidationRequest): ThunkAction {
+export function validateNodeData(processName: string, validationRequestData: ValidationRequest, callback: () => void): ThunkAction {
     return (dispatch, getState) => {
-        dispatch(nodeValidationDataUpdating(validationRequestData.nodeData.id));
         validate(processName, validationRequestData, (nodeId, data) => {
             // node details view creates this on open and removes after close
             if (data && getNodeDetails(getState())(nodeId)) {
                 dispatch(nodeValidationDataUpdated(nodeId, data));
             }
+            callback();
         });
     };
 }

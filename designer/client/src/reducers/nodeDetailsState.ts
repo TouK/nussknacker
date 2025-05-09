@@ -25,24 +25,14 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 },
             };
         }
-        case "NODE_VALIDATION_UPDATING": {
-            const { loading, nodeId } = action;
-            return {
-                ...state,
-                [nodeId]: {
-                    ...state[nodeId],
-                    loading,
-                },
-            };
-        }
+
         case "NODE_VALIDATION_UPDATED": {
-            const { validationData, nodeId, loading } = action;
+            const { validationData, nodeId } = action;
             return {
                 ...state,
                 [nodeId]: {
                     ...state[nodeId],
                     ...validationData,
-                    loading,
                 },
             };
         }

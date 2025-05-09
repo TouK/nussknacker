@@ -1,9 +1,7 @@
 import { Box, Skeleton } from "@mui/material";
-import React, { Fragment } from "react";
-import { useSelector } from "react-redux";
+import React, { Fragment, useCallback } from "react";
 
 import type { Parameter } from "../../../types";
-import { getNodeDetails } from "./NodeDetailsContent/selectors";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 
@@ -19,19 +17,25 @@ export type ParametersListProps = ParametersListItemProps & {
     getListFieldPath: (index: number) => string;
 };
 
-export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: ParametersListProps) => {
+export const ParametersList = (ppp: ParametersListProps) => {
+    const { parameters = [], getListFieldPath, ...props } = ppp;
     const { node } = props;
-    const nodeDetails = useSelector(getNodeDetails);
-    const isDynamicParametersLoading = nodeDetails(node.id)?.loading;
+    const isDynamicParametersLoading = node.isLoading;
 
-    console.log(parameters);
+    const handleGetListFieldPath = useCallback(
+        (index: number) => {
+            return getListFieldPath(index);
+        },
+        [getListFieldPath],
+    );
+
     return (
         <>
             {parameters.map((paramWithIndex) => (
                 <Fragment key={node.id + paramWithIndex.param.name + paramWithIndex.index}>
                     {paramWithIndex.param.name === "Endpoint" ? (
                         <ParameterExpressionField
-                            listFieldPath={getListFieldPath(paramWithIndex.index)}
+                            listFieldPath={handleGetListFieldPath(paramWithIndex.index)}
                             parameter={paramWithIndex.param}
                             {...props}
                         />
@@ -44,7 +48,7 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                                 </Box>
                             ) : (
                                 <ParameterExpressionField
-                                    listFieldPath={getListFieldPath(paramWithIndex.index)}
+                                    listFieldPath={handleGetListFieldPath(paramWithIndex.index)}
                                     parameter={paramWithIndex.param}
                                     {...props}
                                 />

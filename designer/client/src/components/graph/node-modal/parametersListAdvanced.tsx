@@ -25,7 +25,6 @@ export const ParametersListAdvanced = ({
     const { t } = useTranslation();
     const { parameterDefinitions } = props;
 
-    console.log("parameters", parameters);
     const getParamCategory = useCallback(
         (name: string) => {
             const paramDef = parameterDefinitions.find((paramDef) => paramDef.name === name);

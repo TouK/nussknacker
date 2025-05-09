@@ -57,7 +57,7 @@ export const getCurrentErrors = createSelector(
         (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) =>
             validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors,
 );
-export const getDynamicParameterDefinitions = createSelector(
+export const getDynamicParameterDefinitions = createDeepEqualSelector(
     getValidationPerformed,
     getDetailsParameters,
     getResultParameters,
