@@ -258,7 +258,7 @@ describe("Fragment", () => {
 
             cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find("[role=tab]").contains("fixed values");
             cy.get('[title="name_string_fixed"]').siblings().eq(0).contains("#meta.processName");
-            cy.get('[title="name_string_fixed"]').find('[title="Hint text test"]').should("be.visible");
+            cy.get('[title="name_string_fixed"]').find('[data-testid="InfoIcon"]').should("be.visible");
             cy.get('[title="non_boolean_or_string"]').siblings().eq(0).contains("1");
 
             // any value with suggestions preset verification
@@ -307,6 +307,7 @@ describe("Fragment", () => {
                 .find('[title="Value"]')
                 .siblings()
                 .eq(0)
+                .find("#ace-editor")
                 .should("be.visible")
                 .type("{selectall}#fragmentResult.");
             // We wait for validation result to be sure that red message below the form field will be visible
