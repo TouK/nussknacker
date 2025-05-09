@@ -1,11 +1,13 @@
-import React, { PropsWithChildren, useRef, useState } from "react";
-import InfoIcon from "@mui/icons-material/Info";
-import NodeTip from "../NodeTip";
-import TestValue from "./TestValue";
-import { NodeResultsForContext } from "../../../../common/TestResultUtils";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import InfoIcon from "@mui/icons-material/Info";
 import { FormControl, FormLabel } from "@mui/material";
+import React, { useRef, useState } from "react";
+import type { PropsWithChildren } from "react";
+
+import type { NodeResultsForContext } from "../../../../common/TestResultUtils";
+import { InfoTooltip } from "../editors/InfoTooltip";
 import { HIDDEN_TEXTAREA_PIXEL_HEIGHT } from "../NodeDetailsContent/NodeTableStyled";
+import TestValue from "./TestValue";
 
 interface ExpressionTestResultsProps {
     fieldName: string;
@@ -25,7 +27,9 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
             {props.children}
             <FormControl>
                 <FormLabel>
-                    <NodeTip title={"Value evaluated in test case"} icon={<InfoIcon sx={(theme) => ({ alignSelf: "center" })} />} />
+                    <InfoTooltip title={"Value evaluated in test case"} variant={"hover"}>
+                        <InfoIcon sx={() => ({ alignSelf: "center" })} />
+                    </InfoTooltip>
                     {testValue.pretty && !fitsMaxHeight ? (
                         <PrettyIconComponent sx={{ cursor: "pointer" }} onClick={() => setCollapsedTestResults((s) => !s)} />
                     ) : null}

@@ -198,6 +198,12 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                                     ".MuiFormLabel-root:has(+ .MuiBox-root [role='tablist'])": {
                                         marginTop: "27px",
                                     },
+                                    ".MuiFormLabel-root:has([aria-label='Data type']):has(+ .MuiBox-root [role='tablist'])": {
+                                        marginTop: "18px",
+                                    },
+                                    ".MuiFormLabel-root:has([aria-label='Data type'])": {
+                                        marginTop: 0,
+                                    },
                                 };
                             }
                         },
