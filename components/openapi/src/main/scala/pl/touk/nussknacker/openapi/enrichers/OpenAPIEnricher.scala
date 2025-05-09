@@ -3,10 +3,12 @@ package pl.touk.nussknacker.openapi.enrichers
 import pl.touk.nussknacker.engine.api.{Context, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
-import pl.touk.nussknacker.http.backend.HttpBackendProvider
+import pl.touk.nussknacker.http.backend.{HttpBackendProvider, LoggingAndCollectingSttpBackend}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import pl.touk.nussknacker.openapi.enrichers.InvocationBaseUrl.determineInvocationBaseUrl
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricher.packageName
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
 import sttp.client3.SttpBackend
@@ -25,28 +27,37 @@ class OpenAPIEnricher(
   private val baseUrl                 = determineInvocationBaseUrl(config.url, config.rootUrl, service.servers)
   private val codesToInterpretAsEmpty = config.codesToInterpretAsEmpty.map(StatusCode(_))
   private val swaggerHttpService      = new SwaggerSttpService(baseUrl, service, codesToInterpretAsEmpty)
-  private val tags = Map(AsyncExecutionTimeMeasurement.serviceNameTagKey -> service.name.value)
+  private val serviceName             = service.name.value
+  private val tags                    = Map(AsyncExecutionTimeMeasurement.serviceNameTagKey -> serviceName)
 
   override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
       componentUseContext: ComponentUseContext
   ): Future[AnyRef] = getTimeMeasurement().measuring(tags) {
-    implicit val httpClient: SttpBackend[Future, Any] = clientProvider.httpBackendForEc
     val fixedOrEvaluatedParams = extractor.parameterDefinition
       .map { p => p.name.value -> params.extractOrEvaluateLazyParam[AnyRef](p.name, context) }
       .collect {
         case (name, Some(value)) => name -> value
-        case (name, None) => name -> null
+        case (name, None)        => name -> null
       }
       .toMap
     val preparedParams = extractor.prepareParams(fixedOrEvaluatedParams)
     swaggerHttpService.invoke(preparedParams)
   }
 
+  implicit protected def httpBackendForEc(
+      implicit ec: ExecutionContext,
+      collector: ServiceInvocationCollector
+  ): SttpBackend[Future, Any] = {
+    val originalBackend: SttpBackend[Future, Any] = clientProvider.httpBackendForEc
+    new LoggingAndCollectingSttpBackend(originalBackend, s"$packageName.$serviceName")
+  }
+
 }
 
 object OpenAPIEnricher {
+  private[enrichers] val packageName: String = getClass.getPackage.getName
 
   def apply(
       service: SwaggerService,
