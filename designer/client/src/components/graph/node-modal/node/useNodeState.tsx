@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { identity, isEqual } from "lodash";
 import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -101,29 +101,33 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
 
     const onChange = useCallback(
-        (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = (e) => e) => {
+        (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = identity) => {
             const editedNode$ = new PendingPromise<[EditedNode, boolean]>();
             const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
 
-            setEditedNode((currentEditedNode) => {
-                let nextEditedNode = typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange;
-                const equal = isEqual(currentEditedNode, nextEditedNode);
-                if (equal) {
-                    nextEditedNode = currentEditedNode;
-                }
-                editedNode$.resolve([nextEditedNode, !equal]);
-                return nextEditedNode;
-            });
+            if (nodeChange !== identity) {
+                setEditedNode((currentEditedNode) => {
+                    let nextEditedNode = typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange;
+                    const equal = isEqual(currentEditedNode, nextEditedNode);
+                    if (equal) {
+                        nextEditedNode = currentEditedNode;
+                    }
+                    editedNode$.resolve([nextEditedNode, !equal]);
+                    return nextEditedNode;
+                });
+            }
 
-            setOutputEdges((currentOutputEdges) => {
-                let nextOutputEdges = typeof edgesChange === "function" ? edgesChange(currentOutputEdges) : edgesChange;
-                const equal = isEqual(currentOutputEdges, nextOutputEdges);
-                if (equal) {
-                    nextOutputEdges = currentOutputEdges;
-                }
-                outputEdges$.resolve([nextOutputEdges, !equal]);
-                return nextOutputEdges;
-            });
+            if (edgesChange !== identity) {
+                setOutputEdges((currentOutputEdges) => {
+                    let nextOutputEdges = typeof edgesChange === "function" ? edgesChange(currentOutputEdges) : edgesChange;
+                    const equal = isEqual(currentOutputEdges, nextOutputEdges);
+                    if (equal) {
+                        nextOutputEdges = currentOutputEdges;
+                    }
+                    outputEdges$.resolve([nextOutputEdges, !equal]);
+                    return nextOutputEdges;
+                });
+            }
 
             Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
                 if (!autoApply) return;
