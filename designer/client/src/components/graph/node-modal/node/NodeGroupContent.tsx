@@ -1,4 +1,5 @@
 import { css } from "@emotion/css";
+import { isEqual } from "lodash";
 import type { SetStateAction } from "react";
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
@@ -14,13 +15,13 @@ import { getNodeErrors } from "./selectors";
 export interface NodeGroupContentProps {
     node: NodeType;
     edges: Edge[];
-    onChange?: (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => void;
+    onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void;
 }
 
 export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): JSX.Element {
     const errors = useSelector((state: RootState) => {
         return getNodeErrors(state, node.id);
-    });
+    }, isEqual);
 
     return (
         <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
