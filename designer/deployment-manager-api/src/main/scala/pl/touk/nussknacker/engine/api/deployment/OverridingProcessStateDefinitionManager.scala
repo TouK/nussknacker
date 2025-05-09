@@ -31,6 +31,7 @@ class OverridingProcessStateDefinitionManager(
     customActionTooltips: Option[ScenarioStatusWithScenarioContext => Map[ScenarioActionName, String]] = None,
 ) extends ProcessStateDefinitionManager {
 
+  // statusActionsPF may introduce different workflow which is not avialable in customVisibleActions
   override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
     delegate.visibleActions(input) ++ customVisibleActions.getOrElse(Set.empty)
 

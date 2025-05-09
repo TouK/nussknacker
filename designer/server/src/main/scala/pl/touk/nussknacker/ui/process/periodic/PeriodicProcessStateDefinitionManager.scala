@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{
   PeriodicDeploymentStatus,
   PeriodicScenarioStatus
 }
+import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.ScheduledStatus
 
 import java.net.URI
 
@@ -25,6 +26,21 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       customActionTooltips = Some(PeriodicStateStatus.customActionTooltips),
       delegate = delegate
     ) {
+
+  override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
+    input.scenarioStatus match {
+      case _: ScheduledStatus =>
+        Set(
+          ScenarioActionName.Cancel,
+          ScenarioActionName.Redeploy,
+          ScenarioActionName.Pause,
+          ScenarioActionName.Archive,
+          ScenarioActionName.UnArchive,
+          ScenarioActionName.Rename,
+        ) ++ PeriodicStateStatus.customVisibleActions
+      case _ => super.visibleActions(input)
+    }
+  }
 
   override def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
     super.allowedActions(
