@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
-import { migrate } from "../../../../common/DialogMessages";
+import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";
@@ -31,7 +31,7 @@ function MigrateButton(props: Props) {
     const onClick = useCallback(
         () =>
             confirm({
-                text: migrate(processName, targetEnvironmentId),
+                text: DialogMessages.migrate(processName, targetEnvironmentId),
                 onConfirmCallback: (confirmed) =>
                     confirmed &&
                     HttpService.migrateProcess(processName, versionId).then(async () => {

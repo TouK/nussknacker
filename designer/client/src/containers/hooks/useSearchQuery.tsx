@@ -1,6 +1,7 @@
 import { isEqual, omitBy, uniq, without } from "lodash";
-import { parse } from "query-string";
 import type { ParsedQuery, ParseOptions } from "query-string";
+import { parse } from "query-string";
+import { stringify } from "query-string";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -21,7 +22,7 @@ function parseQuery(searchString = window.location.search): QueryRecord {
 
 function stringifyQuery(params: QueryRecord): string {
     const resultParams = omitBy(params, (value) => value === undefined || isEqual(value, []));
-    return queryString.stringify(resultParams, {
+    return stringify(resultParams, {
         arrayFormat: DEFAULT_ARRAY_FORMAT,
         encode: true,
     });

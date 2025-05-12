@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { valueAlreadyTaken, valueAlreadyTakenDescription } from "../../common/DialogMessages";
+import DialogMessages from "../../common/DialogMessages";
 import type { Validator } from "../../components/graph/node-modal/editors/Validators";
 import { HandledErrorType, mandatoryValueValidator } from "../../components/graph/node-modal/editors/Validators";
 import { useClashedNames } from "./useClashedNames";
@@ -12,8 +12,8 @@ export function useProcessNameValidators(): Validator[] {
     const alreadyExistsValidator = useMemo(
         (): Validator => ({
             isValid: (name) => !clashedNames.includes(name),
-            message: valueAlreadyTaken,
-            description: valueAlreadyTakenDescription,
+            message: DialogMessages.valueAlreadyTaken,
+            description: DialogMessages.valueAlreadyTakenDescription,
             handledErrorType: HandledErrorType.AlreadyExists,
         }),
         [clashedNames],
