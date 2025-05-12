@@ -39,7 +39,6 @@ trait DeploymentManager extends AutoCloseable {
 
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())
-
 }
 
 trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>

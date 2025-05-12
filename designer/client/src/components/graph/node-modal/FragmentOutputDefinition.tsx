@@ -1,13 +1,14 @@
 import React, { useCallback } from "react";
-import { Field } from "../../../types";
+import { useSelector } from "react-redux";
+import { v4 as uuid4 } from "uuid";
+
+import type { RootState } from "../../../reducers";
+import type { Field } from "../../../types";
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
-import { MapVariableProps } from "./MapVariable";
+import type { MapVariableProps } from "./MapVariable";
 import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
-import { useSelector } from "react-redux";
-import { RootState } from "../../../reducers";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
-import { v4 as uuid4 } from "uuid";
 
 interface Props<F extends Field> extends Omit<MapVariableProps<F>, "expressionType" | "readOnly"> {
     isEditMode?: boolean;

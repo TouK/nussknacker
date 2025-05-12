@@ -1,6 +1,7 @@
 import React from "react";
-import { CustomTabPage } from "./CustomTabPage";
 import { Navigate, useLocation, useParams } from "react-router-dom";
+
+import { CustomTabPage } from "./CustomTabPage";
 
 // redirect passing all params
 export function StarRedirect({ to, push }: { to: string; push?: boolean }) {

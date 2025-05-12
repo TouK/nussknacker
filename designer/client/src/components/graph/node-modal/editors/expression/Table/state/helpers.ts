@@ -1,5 +1,5 @@
-import { TableData } from "./tableState";
-import { SupportedType } from "../TableEditor";
+import type { SupportedType } from "../TableEditor";
+import type { TableData } from "./tableState";
 
 type MatrixElement<M> = M extends Matrix<infer T> ? T : never;
 type Matrix<I> = readonly (readonly I[])[];

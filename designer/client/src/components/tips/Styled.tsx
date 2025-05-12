@@ -1,7 +1,7 @@
-import { ComponentType, SVGProps } from "react";
 import { alpha, lighten, styled } from "@mui/material";
-import { Link } from "react-router-dom";
 import { SvgIconOwnProps } from "@mui/material/SvgIcon/SvgIcon";
+import type { ComponentType, SVGProps } from "react";
+import { Link } from "react-router-dom";
 
 export const LinkStyled = styled(Link)(({ theme }) => ({
     color: theme.palette.warning.main,

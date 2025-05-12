@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.config
 
 import cats.data.Validated.{Invalid, Valid}
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigException, ConfigFactory, ConfigRenderOptions}
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -18,6 +18,8 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.{
 }
 import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigs
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbConfig
+import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig
+import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig.MaxActiveScenariosCount
 import pl.touk.nussknacker.ui.notifications.NotificationConfig
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.FinishedDeploymentsStatusesSynchronizationConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
@@ -28,6 +30,7 @@ import java.nio.file.{Path, Paths}
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 final class DesignerConfig private (
     // unresolved version is only needed for deployment where we want to pass to engine unresolved version and resolve it on the engine side
@@ -66,6 +69,7 @@ final class DesignerConfig private (
     val http: HttpConfig,
     val attachments: AttachmentsConfig,
     val assistantSettings: AssistantSettings,
+    val globalLimitsConfig: GlobalLimitsConfig
 ) {
 
   // TODO: We should parse configuration options to fields instead of accessing rawConfig. Thank to that:
@@ -157,6 +161,19 @@ object DesignerConfig {
     val assistantSettings =
       resolvedConfig.getAs[AssistantSettings]("assistantSettings").getOrElse(AssistantSettings.disabled)
 
+    val limitsConfig = if (resolvedConfig.hasPath("globalLimits")) {
+      Try(resolvedConfig.getConfig("globalLimits").getInt("maxActiveScenariosCount")) match {
+        case Success(maxActiveScenariosCount) =>
+          GlobalLimitsConfig(maxActiveScenariosCount = Some(MaxActiveScenariosCount(maxActiveScenariosCount)))
+        case Failure(_: ConfigException.Missing) =>
+          GlobalLimitsConfig(maxActiveScenariosCount = None)
+        case Failure(exception) =>
+          throw exception
+      }
+    } else {
+      GlobalLimitsConfig.default
+    }
+
     new DesignerConfig(
       rawConfigWithUnresolvedVersion = rawConfig,
       managersDir = managersDir,
@@ -193,6 +210,7 @@ object DesignerConfig {
       http = http,
       attachments = attachments,
       assistantSettings = assistantSettings,
+      globalLimitsConfig = limitsConfig
     )
   }
 

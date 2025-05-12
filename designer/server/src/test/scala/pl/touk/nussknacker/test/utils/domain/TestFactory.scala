@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser}
@@ -65,57 +65,73 @@ object TestFactory {
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
 
-  val processValidator: UIProcessValidator = ProcessTestData.testProcessValidator(fragmentResolver = sampleResolver)
+  def processValidator(processingTypes: List[String] = List(Streaming.stringify)): UIProcessValidator =
+    ProcessTestData.testProcessValidator(fragmentResolver = sampleResolver(processingTypes))
 
-  val flinkProcessValidator: UIProcessValidator = ProcessTestData.testProcessValidator(
-    fragmentResolver = sampleResolver,
-    scenarioProperties = FlinkStreamingPropertiesConfig.properties
-  )
+  def flinkProcessValidator(processingTypes: List[String] = List(Streaming.stringify)): UIProcessValidator =
+    ProcessTestData.testProcessValidator(
+      fragmentResolver = sampleResolver(processingTypes),
+      scenarioProperties = FlinkStreamingPropertiesConfig.properties
+    )
 
-  val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
-    mapProcessingTypeDataProvider(Streaming.stringify -> flinkProcessValidator)
+  def processValidatorByProcessingType(
+      processingTypes: List[String] = List(Streaming.stringify)
+  ): ProcessingTypeDataProvider[UIProcessValidator, _] = {
+    val validator = flinkProcessValidator(processingTypes)
+    mapProcessingTypeDataProvider(processingTypes.map(pt => (pt, validator)): _*)
+  }
 
-  val processResolver = new UIProcessResolver(
-    processValidator,
+  def processResolver(processingTypes: List[String] = List(Streaming.stringify)) = new UIProcessResolver(
+    processValidator(processingTypes),
     ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
   )
 
-  val processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _] =
-    mapProcessingTypeDataProvider(Streaming.stringify -> processResolver)
+  def processResolverByProcessingType(
+      processingTypes: List[String] = List(Streaming.stringify)
+  ): ProcessingTypeDataProvider[UIProcessResolver, _] = {
+    val resolver = processResolver(processingTypes)
+    mapProcessingTypeDataProvider(processingTypes.map(pt => (pt, resolver)): _*)
+  }
 
-  val scenarioParametersService: ScenarioParametersService = {
-    val combinations = Map(
-      TestProcessingType.Streaming.stringify ->
-        ScenarioParametersWithEngineSetupErrors(
-          ScenarioParameters(
-            ProcessingMode.UnboundedStream,
-            TestCategory.Category1.stringify,
-            EngineSetupName("Flink")
-          ),
-          List.empty
-        )
+  def scenarioParametersService(
+      processingTypes: List[String] = List(Streaming.stringify)
+  ): ScenarioParametersService = {
+    val scenarioParameters = ScenarioParametersWithEngineSetupErrors(
+      ScenarioParameters(
+        ProcessingMode.UnboundedStream,
+        TestCategory.Category1.stringify,
+        EngineSetupName("Flink")
+      ),
+      List.empty
     )
+    val combinations = processingTypes.map(pt => (pt, scenarioParameters)).toMap
     ScenarioParametersService.createUnsafe(combinations)
   }
 
-  val scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService] =
-    TestProcessingTypeDataProviderFactory.create(Map.empty, scenarioParametersService)
+  def scenarioParametersServiceProvider(
+      processingTypes: List[String] = List(Streaming.stringify)
+  ): ProcessingTypeDataProvider[_, ScenarioParametersService] =
+    TestProcessingTypeDataProviderFactory.create(Map.empty, scenarioParametersService(processingTypes))
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
-  def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
-    Map(
-      Streaming.stringify -> List(ProcessTestData.sampleFragment)
+  def prepareSampleFragmentRepository(
+      processingTypes: List[String] = List(Streaming.stringify)
+  ): StubFragmentRepository =
+    new StubFragmentRepository(
+      processingTypes.map(pt => (pt, List(ProcessTestData.sampleFragment))).toMap
     )
-  )
 
-  def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
+  def sampleResolver(processingTypes: List[String] = List(Streaming.stringify)) =
+    new FragmentResolver(prepareSampleFragmentRepository(processingTypes))
 
-  val scenarioResolver = new ScenarioResolver(sampleResolver, Streaming.stringify)
+  def scenarioResolver(processingType: String = Streaming.stringify) =
+    new ScenarioResolver(sampleResolver(processingType :: Nil), processingType)
 
-  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] =
-    mapProcessingTypeDataProvider(
-      Streaming.stringify -> scenarioResolver
-    )
+  def scenarioResolverByProcessingType(
+      processingTypes: List[String] = List(Streaming.stringify)
+  ): ProcessingTypeDataProvider[ScenarioResolver, _] = {
+    mapProcessingTypeDataProvider(processingTypes.map(pt => (pt, scenarioResolver(pt))): _*)
+  }
 
   def additionalComponentConfigsByProcessingType
       : ProcessingTypeDataProvider[Map[DesignerWideComponentId, ComponentAdditionalConfig], _] =
@@ -160,24 +176,32 @@ object TestFactory {
     new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef), newScenarioLabelsRepository(dbRef))
       with DbioRepository
 
-  def newWriteProcessRepository(dbRef: DbRef, clock: Clock, modelVersions: Option[Int] = Some(1)) =
+  def newWriteProcessRepository(
+      dbRef: DbRef,
+      clock: Clock,
+      processingTypes: List[String] = List(Streaming.stringify),
+      modelVersions: Option[Int] = Some(1)
+  ) =
     new DBProcessRepository(
       dbRef,
       clock,
       newScenarioActivityRepository(dbRef, clock),
       newScenarioLabelsRepository(dbRef),
-      mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*),
+      mapProcessingTypeDataProvider(modelVersions.map(mv => processingTypes.map(pt => (pt, mv))).toList.flatten: _*),
     )
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDbRef, Clock.systemUTC())
 
-  def newScenarioGraphVersionService(dbRef: DbRef) = new ScenarioGraphVersionService(
-    newScenarioGraphVersionRepository(dbRef),
-    mapProcessingTypeDataProvider(Streaming.stringify -> processValidator),
-    scenarioResolverByProcessingType,
-    newDBIOActionRunner(dbRef)
-  )
+  def newScenarioGraphVersionService(dbRef: DbRef, processingTypes: List[String] = List(Streaming.stringify)) = {
+    val validator = processValidator(processingTypes)
+    new ScenarioGraphVersionService(
+      newScenarioGraphVersionRepository(dbRef),
+      mapProcessingTypeDataProvider(processingTypes.map(pt => (pt, validator)): _*),
+      scenarioResolverByProcessingType(processingTypes),
+      newDBIOActionRunner(dbRef)
+    )
+  }
 
   def newScenarioGraphVersionRepository(dbRef: DbRef) = new ScenarioGraphVersionRepository(dbRef)
 
@@ -197,17 +221,17 @@ object TestFactory {
   def asAdmin(route: RouteWithUser): Route =
     route.securedRouteWithErrorHandling(adminUser())
 
-  val newProcessPreparer: NewProcessPreparer =
+  def newProcessPreparer(processingType: String = Streaming.stringify): NewProcessPreparer =
     new NewProcessPreparer(
       ProcessTestData.streamingTypeSpecificInitialData,
       FlinkStreamingPropertiesConfig.properties,
-      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify)
+      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType)
     )
 
-  val newProcessPreparerByProcessingType: ProcessingTypeDataProvider[NewProcessPreparer, _] =
-    mapProcessingTypeDataProvider(
-      Streaming.stringify -> newProcessPreparer
-    )
+  def newProcessPreparerByProcessingType(
+      processingTypes: List[String] = List(Streaming.stringify)
+  ): ProcessingTypeDataProvider[NewProcessPreparer, _] =
+    mapProcessingTypeDataProvider(processingTypes.map(pt => (pt, newProcessPreparer(pt))): _*)
 
   def withPermissions(route: RouteWithUser, permissions: Permission.Permission*): Route =
     route.securedRouteWithErrorHandling(user(permissions = permissions))

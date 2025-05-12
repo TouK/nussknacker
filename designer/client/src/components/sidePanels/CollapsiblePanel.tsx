@@ -1,7 +1,9 @@
 import { styled } from "@mui/material";
-import React, { forwardRef, PropsWithChildren, useState } from "react";
-import { PANEL_WIDTH, SCROLL_THUMB_SIZE, SIDEBAR_WIDTH } from "../../stylesheets/variables";
+import type { PropsWithChildren } from "react";
+import React, { forwardRef, useState } from "react";
+
 import { PanelSide } from "../../actions/nk";
+import { PANEL_WIDTH, SCROLL_THUMB_SIZE, SIDEBAR_WIDTH } from "../../stylesheets/variables";
 import { useGraphViewportAdjustment } from "./graphViewportAdjustment";
 
 type CollapsiblePanelProps = PropsWithChildren<{

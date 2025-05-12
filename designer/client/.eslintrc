@@ -63,7 +63,7 @@
     "react/prop-types": "off",
     "react-hooks/exhaustive-deps": "error",
     "import/order": [
-      "warn",
+      "error",
       {
         "groups": ["builtin", "external", ["internal", "parent", "sibling", "index"]],
         "newlines-between": "always",
@@ -74,14 +74,14 @@
       }
     ],
     "no-restricted-syntax": [
-      "warn",
+      "error",
       {
         "selector": "ImportNamespaceSpecifier",
         "message": "Wildcard imports are not allowed."
       }
     ],
     "@typescript-eslint/consistent-type-imports": [
-      "warn",
+      "error",
       {
         "prefer": "type-imports",
         "disallowTypeAnnotations": false

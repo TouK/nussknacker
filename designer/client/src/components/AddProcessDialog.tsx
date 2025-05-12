@@ -1,18 +1,20 @@
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { flow, isEmpty, transform } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+
 import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
 import HttpService, { ProcessingMode } from "../http/HttpService";
+import type { NodeValidationError } from "../types";
 import { WindowContent } from "../windowManager";
-import { AddProcessForm, FormValue, TouchedValue } from "./AddProcessForm";
-import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editors/Validators";
-import { useNavigate } from "react-router-dom";
-import { NodeValidationError } from "../types";
-import { flow, isEmpty, transform } from "lodash";
-import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 import { LoadingButtonTypes } from "../windowManager/LoadingButton";
+import type { FormValue, TouchedValue } from "./AddProcessForm";
+import { AddProcessForm } from "./AddProcessForm";
+import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editors/Validators";
 import { useGetAllCombinations } from "./useGetAllCombinations";
+import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;

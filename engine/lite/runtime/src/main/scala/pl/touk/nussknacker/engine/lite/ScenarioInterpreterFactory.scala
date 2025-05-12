@@ -69,7 +69,7 @@ object ScenarioInterpreterFactory {
     modelData.withModelClassloaderAsContextClassLoader {
 
       val creator           = modelData.configCreator
-      val modelDependencies = ProcessObjectDependencies.withConfig(modelData.modelConfig)
+      val modelDependencies = ProcessObjectDependencies.withConfig(modelData.modelConfig.underlyingConfig)
 
       val allNodes = process.collectAllNodes
       val countingListeners = List(

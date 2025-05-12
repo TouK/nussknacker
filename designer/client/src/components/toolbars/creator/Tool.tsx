@@ -5,7 +5,7 @@ import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
 import type { NodeType } from "../../../types";
-import { InfoTooltip } from "../../graph/node-modal/editors/expression/InfoTooltip";
+import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
 import { ComponentIcon } from "./ComponentIcon";
 import { SearchHighlighter } from "./SearchHighlighter";
 
@@ -43,7 +43,7 @@ export default function Tool(props: OwnProps): JSX.Element {
             <div className="toolWrapper">
                 <ComponentIcon node={nodeModel} className="toolIcon" />
                 <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
-                {tooltip ? <InfoTooltip text={tooltip} /> : ""}
+                {tooltip ? <InfoTooltip variant={"hover"} title={tooltip} /> : ""}
             </div>
         </div>
     );

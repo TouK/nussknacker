@@ -1,6 +1,7 @@
 import { FormControl } from "@mui/material";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
 import { createUniqueName } from "../../../reducers/graph/utils";
@@ -8,9 +9,10 @@ import { getNodes } from "../../../reducers/selectors/graph";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import { editors } from "./editors/expression/Editor";
-import { EditorType, ExpressionLang, ExpressionObj } from "./editors/expression/types";
+import type { ExpressionObj } from "./editors/expression/types";
+import { EditorType, ExpressionLang } from "./editors/expression/types";
 import { FieldLabel } from "./FieldLabel";
-import { NodeGroupContentProps } from "./node/NodeGroupContent";
+import type { NodeGroupContentProps } from "./node/NodeGroupContent";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 import { replaceNodeData } from "./NodeSwitcherUtils";
 

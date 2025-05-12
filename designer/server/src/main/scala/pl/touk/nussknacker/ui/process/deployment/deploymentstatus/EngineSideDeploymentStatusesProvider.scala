@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.ui.process.deployment.deploymentstatus
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.DeploymentManagerReliableStatusesWrapper.Ops
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NonFatal
 
@@ -30,10 +30,8 @@ class EngineSideDeploymentStatusesProvider(
     dispatcher: DeploymentManagerDispatcher,
     scenarioStateTimeout: Option[FiniteDuration]
 )(
-    implicit system: ActorSystem
+    implicit executionContextWithIORuntime: ExecutionContextWithIORuntime
 ) extends LazyLogging {
-
-  private implicit val ec: ExecutionContext = system.dispatcher
 
   // DeploymentManager's may support fetching state of all scenarios at once
   // State is prefetched only when:
@@ -76,9 +74,9 @@ class EngineSideDeploymentStatusesProvider(
       .flatMap(_.getDeploymentStatuses(scenarioIdData))
       .map { prefetchedStatusDetails =>
         logger.whenWarnEnabled(prefetchedStatusDetails.value.foreach {
-          case DeploymentStatusDetails(ProblemStateStatus(description, _, _), deploymentId, version) =>
+          case DeploymentStatusDetails(status: ProblemStateStatus, deploymentId, version) =>
             logger.warn(
-              s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. $description"
+              s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. ${status.description}"
             )
           case _ => ()
         })
@@ -104,9 +102,9 @@ class EngineSideDeploymentStatusesProvider(
         logger.whenWarnEnabled(
           withDataFreshnessStatus.value.values.foreach { deploymentStatusDetails =>
             deploymentStatusDetails.foreach {
-              case DeploymentStatusDetails(ProblemStateStatus(description, _, _), deploymentId, version) =>
+              case DeploymentStatusDetails(status: ProblemStateStatus, deploymentId, version) =>
                 logger.warn(
-                  s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. $description"
+                  s"Deployment with problem state status, deploymentId: $deploymentId and version: $version. ${status.description}"
                 )
               case _ => ()
             }
@@ -131,11 +129,14 @@ class BulkQueriedDeploymentStatuses(
     ]]
 ) {
 
-  def getAllDeploymentStatuses: Iterable[DeploymentStatusDetails] = for {
+  def getAllDeploymentScenarioNamesAndStatuses: Iterable[(ProcessName, DeploymentStatusDetails)] = for {
     processingTypeStatusesWithFreshness <- statusesByProcessingType.values
-    (_, deploymentStatuses)             <- processingTypeStatusesWithFreshness.value
+    (scenarioName, deploymentStatuses)  <- processingTypeStatusesWithFreshness.value
     deploymentStatus                    <- deploymentStatuses
-  } yield deploymentStatus
+  } yield (scenarioName, deploymentStatus)
+
+  def getAllDeploymentStatuses: Iterable[DeploymentStatusDetails] =
+    getAllDeploymentScenarioNamesAndStatuses.map { case (_, status) => status }
 
   def getDeploymentStatusesUnsafe(
       scenarioIdData: ScenarioIdData

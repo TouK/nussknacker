@@ -207,9 +207,9 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     new DBProcessService(
       scenarioStatusProvider = mock[ScenarioStatusProvider],
       scenarioStatusPresenter = mock[ScenarioStatusPresenter],
-      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
-      scenarioParametersServiceProvider = TestFactory.scenarioParametersServiceProvider,
-      processResolverByProcessingType = TestFactory.processResolverByProcessingType,
+      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType(),
+      scenarioParametersServiceProvider = TestFactory.scenarioParametersServiceProvider(),
+      processResolverByProcessingType = TestFactory.processResolverByProcessingType(),
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       scenarioActionRepository = TestFactory.newDummyActionRepository(),

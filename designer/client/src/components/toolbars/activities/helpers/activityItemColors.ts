@@ -1,5 +1,6 @@
-import { Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
 import { blend } from "@mui/system";
+
 import { getBorderColor } from "../../../../containers/theme/helpers";
 
 const defaultBorder = (theme: Theme) => `0.5px solid ${getBorderColor(theme)}`;

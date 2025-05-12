@@ -1,9 +1,10 @@
 import { createSelector } from "reselect";
-import { getCapabilities } from "../../../../reducers/selectors/other";
-import { RootState } from "../../../../reducers";
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { NodeId } from "../../../../types";
+
 import ProcessUtils from "../../../../common/ProcessUtils";
+import type { RootState } from "../../../../reducers";
+import { getScenario } from "../../../../reducers/selectors/graph";
+import { getCapabilities } from "../../../../reducers/selectors/other";
+import type { NodeId } from "../../../../types";
 
 export const getNodeErrors = createSelector(
     getScenario,

@@ -1,33 +1,9 @@
 import { CopyAll, Done } from "@mui/icons-material";
 import { Button, Tooltip } from "@mui/material";
-import copy from "copy-to-clipboard";
 import type { PropsWithChildren } from "react";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-export function useCopyClipboard(): [boolean, (value: string) => void] {
-    const [isCopied, setIsCopied] = useState<boolean>();
-    const [text, setText] = useState<string>();
-
-    useEffect(() => {
-        if (isCopied) {
-            const id = setTimeout(() => {
-                setIsCopied(false);
-            }, 1000);
-
-            return () => {
-                clearTimeout(id);
-            };
-        }
-    }, [isCopied, text]);
-
-    return [
-        isCopied,
-        (value: string) => {
-            setText(value);
-            setIsCopied(copy(value));
-        },
-    ];
-}
+import { useCopyClipboard } from "../../common/copyToClipboard";
 
 export function CopyTooltip({
     children,

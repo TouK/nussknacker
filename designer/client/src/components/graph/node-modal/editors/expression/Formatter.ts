@@ -1,8 +1,9 @@
 import { startsWith } from "lodash";
 import moment from "moment";
-import { Duration } from "./Duration/DurationEditor";
-import { Period } from "./Duration/PeriodEditor";
-import { CronExpression } from "./Cron/CronEditor";
+
+import type { CronExpression } from "./Cron/CronEditor";
+import type { Duration } from "./Duration/DurationEditor";
+import type { Period } from "./Duration/PeriodEditor";
 
 type FormatterValueType = string | Duration | Period | moment.Moment | null;
 export type Formatter = {

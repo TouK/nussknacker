@@ -1,5 +1,6 @@
-import { UNSAFE_RouteContext, useLocation, useParams } from "react-router-dom";
 import { useContext, useMemo } from "react";
+import type { useParams } from "react-router-dom";
+import { UNSAFE_RouteContext, useLocation } from "react-router-dom";
 
 export const useDecodedParams: typeof useParams = () => {
     const { pathname } = useLocation();

@@ -1,13 +1,15 @@
-import React, { HTMLProps, useCallback, useState } from "react";
-import CreatableSelect from "react-select/creatable";
-import { NodeValue } from "../node";
-import { selectStyled } from "../../../../stylesheets/SelectStyled";
-import { useTheme } from "@mui/material";
-import ValidationLabels from "../../../modals/ValidationLabels";
-import { FieldError } from "../editors/Validators";
 import { cx } from "@emotion/css";
-import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { useTheme } from "@mui/material";
 import { isEmpty } from "lodash";
+import type { HTMLProps } from "react";
+import React, { useCallback, useState } from "react";
+import CreatableSelect from "react-select/creatable";
+
+import { selectStyled } from "../../../../stylesheets/SelectStyled";
+import ValidationLabels from "../../../modals/ValidationLabels";
+import type { FieldError } from "../editors/Validators";
+import { NodeValue } from "../node";
+import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 function useCaptureEsc() {
     const [captureEsc, setCaptureEsc] = useState(false);

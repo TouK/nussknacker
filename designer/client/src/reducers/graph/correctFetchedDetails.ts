@@ -1,6 +1,6 @@
 import NodeUtils from "../../components/graph/NodeUtils";
-import { Scenario } from "../../components/Process/types";
-import { Edge, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import type { Scenario } from "../../components/Process/types";
+import type { Edge, ProcessDefinitionData, ScenarioGraph } from "../../types";
 
 function getOutputEdgeValidator(scenarioGraph: ScenarioGraph, processDefinitionData: ProcessDefinitionData) {
     return ({ from }: Edge) => NodeUtils.hasOutputs(NodeUtils.getNodeById(from, scenarioGraph), processDefinitionData);

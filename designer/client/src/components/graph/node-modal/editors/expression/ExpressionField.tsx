@@ -1,13 +1,16 @@
-import React, { ReactNode, useCallback } from "react";
-import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
+import { get } from "lodash";
+import type { ReactNode } from "react";
+import React, { useCallback } from "react";
+
+import type { NodeResultsForContext } from "../../../../../common/TestResultUtils";
+import type { NodeType, UIParameter, VariableTypes } from "../../../../../types";
+import { useDiffMark } from "../../PathsToMark";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
-import { OnValueChange } from "./Editor";
-import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
-import { useDiffMark } from "../../PathsToMark";
-import { get } from "lodash";
-import { FieldError } from "../Validators";
-import { EditorType, ExpressionObj } from "./types";
+import type { FieldError } from "../Validators";
+import type { OnValueChange } from "./Editor";
+import type { ExpressionObj } from "./types";
+import { EditorType } from "./types";
 
 type Props = {
     fieldName: string;
@@ -23,6 +26,7 @@ type Props = {
     renderFieldLabel: (paramName: string) => ReactNode;
     variableTypes: VariableTypes;
     fieldErrors: FieldError[];
+    endAdornment?: ReactNode;
 };
 
 function ExpressionField(props: Props): JSX.Element {
@@ -40,6 +44,7 @@ function ExpressionField(props: Props): JSX.Element {
         renderFieldLabel,
         variableTypes,
         fieldErrors,
+        endAdornment,
     } = props;
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
@@ -76,6 +81,7 @@ function ExpressionField(props: Props): JSX.Element {
                 variableTypes={variableTypes}
                 showValidation={showValidation}
                 fieldErrors={fieldErrors}
+                endAdornment={endAdornment}
             />
         );
     }
@@ -94,6 +100,7 @@ function ExpressionField(props: Props): JSX.Element {
                 variableTypes={variableTypes}
                 onValueChange={onValueChange}
                 fieldErrors={fieldErrors}
+                endAdornment={endAdornment}
             />
         </ExpressionTestResults>
     );

@@ -1,14 +1,15 @@
-import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
+import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import { unsavedProcessChanges } from "../../../../common/DialogMessages";
+import ProcessUtils from "../../../../common/ProcessUtils";
 import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService";
-import { useWindows } from "../../../../windowManager";
-import ProcessUtils from "../../../../common/ProcessUtils";
-import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
-import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
-import { useCallback } from "react";
-import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import { useWindows } from "../../../../windowManager";
 
 export const useArchiveHelper = (processName: string) => {
     const dispatch = useDispatch();

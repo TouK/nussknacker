@@ -1,8 +1,9 @@
-import React from "react";
-import { ProcessStateType, Scenario } from "./types";
-import ProcessStateUtils from "./ProcessStateUtils";
-import UrlIcon from "../UrlIcon";
 import { Box, Divider, Popover, styled, Typography } from "@mui/material";
+import React from "react";
+
+import UrlIcon from "../UrlIcon";
+import ProcessStateUtils from "./ProcessStateUtils";
+import type { ProcessStateType, Scenario } from "./types";
 
 const StyledUrlIcon = styled(UrlIcon)(({ theme }) => ({
     width: theme.spacing(2.5),

@@ -54,6 +54,10 @@ export type TestsActions =
     | {
           type: "UPDATE_TEST_TYPE";
           testType: string;
+      }
+    | {
+          type: "SET_TEST_DATA";
+          testData: SourceWithParametersTest;
       };
 
 function wrapWithTestAction(
@@ -95,5 +99,12 @@ function displayTestResults({ counts, results }: TestProcessResponse, testData?:
     return (dispatch) => {
         dispatch(displayTestResultsDetails(results, testData));
         dispatch(displayProcessCounts(counts));
+    };
+}
+
+export function setTestData(testData: SourceWithParametersTest): Action {
+    return {
+        type: "SET_TEST_DATA",
+        testData,
     };
 }

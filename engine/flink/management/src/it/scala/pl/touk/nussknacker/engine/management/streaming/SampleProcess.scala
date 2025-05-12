@@ -26,7 +26,7 @@ object SampleProcess {
       .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'".spel, "Value" -> "#input".spel)
   }
 
-  private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
+  private def endWithMessage(idSuffix: String, message: String): Option[SubsequentNode] = {
     GraphBuilder
       .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'".spel)
       .emptySink("end" + idSuffix, "monitor")

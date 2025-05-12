@@ -1,10 +1,11 @@
 import { css, cx } from "@emotion/css";
-import React from "react";
-import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./graph/EspNode/esp";
-import { PreloadedIcon, stickyNoteIconSrc } from "./toolbars/creator/ComponentIcon";
 import { alpha, useTheme } from "@mui/material";
+import React from "react";
+
 import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
+import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./graph/EspNode/esp";
 import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "./graph/EspNode/stickyNote";
+import { PreloadedIcon, stickyNoteIconSrc } from "./toolbars/creator/ComponentIcon";
 
 const PREVIEW_SCALE = 0.9;
 const ACTIVE_ROTATION = 2;

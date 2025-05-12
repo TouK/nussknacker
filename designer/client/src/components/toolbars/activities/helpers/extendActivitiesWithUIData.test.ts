@@ -1,8 +1,8 @@
+import { sampleActivitiesResponse, sampleActivitiesWithRepetiveResponse } from "../../../../../__mocks__/fixtures/sampleActivitiesResponse";
+import { sampleMetadataResponse } from "../../../../../__mocks__/fixtures/sampleMetadataResponse";
+import type { ActivitiesResponse } from "../types";
 import { extendActivitiesWithUIData } from "./extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "./mergeActivityDataWithMetadata";
-import { sampleMetadataResponse } from "../../../../../__mocks__/fixtures/sampleMetadataResponse";
-import { sampleActivitiesResponse, sampleActivitiesWithRepetiveResponse } from "../../../../../__mocks__/fixtures/sampleActivitiesResponse";
-import { ActivitiesResponse } from "../types";
 
 describe("extendActivitiesWithUIData", () => {
     it("should render activities with metadata when items are not grouped", () => {

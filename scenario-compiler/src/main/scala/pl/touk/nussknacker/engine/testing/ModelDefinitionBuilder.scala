@@ -205,7 +205,8 @@ final case class ModelDefinitionBuilder(
     ModelDefinition(
       Components.empty(componentDefinitionExtractionMode).withComponents(components),
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
-      ClassExtractionSettings.Default
+      ClassExtractionSettings.Default,
+      allowEndingScenarioWithoutSink = false,
     )
   }
 

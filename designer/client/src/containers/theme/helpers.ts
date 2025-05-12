@@ -1,6 +1,8 @@
-import { rgbToHex, Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
+import { rgbToHex } from "@mui/material";
 import { blend } from "@mui/system";
 import { getLuminance } from "@mui/system/colorManipulator";
+
 import { STICKY_NOTE_DEFAULT_COLOR } from "../../components/graph/EspNode/stickyNote";
 
 export const blendDarken = (color: string, opacity: number) => rgbToHex(blend(color, "#000000", opacity));

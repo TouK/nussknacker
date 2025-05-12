@@ -11,7 +11,7 @@ object node {
     def id: String
   }
 
-  case class Source(id: String, ref: Option[String], next: Next) extends Node
+  case class Source(id: String, ref: Option[String], next: Option[Next]) extends Node
 
   case class Sink(id: String, ref: String, isDisabled: Boolean) extends Node
 
@@ -19,14 +19,18 @@ object node {
     override def id: String = definition.artificialNodeId
   }
 
-  case class VariableBuilder(id: String, varName: String, value: Either[CompiledExpression, List[Field]], next: Next)
-      extends Node
+  case class VariableBuilder(
+      id: String,
+      varName: String,
+      value: Either[CompiledExpression, List[Field]],
+      next: Option[Next]
+  ) extends Node
 
-  case class Processor(id: String, service: ServiceRef, next: Next, isDisabled: Boolean) extends Node
+  case class Processor(id: String, service: ServiceRef, next: Option[Next], isDisabled: Boolean) extends Node
 
   case class EndingProcessor(id: String, service: ServiceRef, isDisabled: Boolean) extends Node
 
-  case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends Node
+  case class Enricher(id: String, service: ServiceRef, output: String, next: Option[Next]) extends Node
 
   case class Filter(
       id: String,
@@ -43,18 +47,18 @@ object node {
       defaultNext: Option[Next]
   ) extends Node
 
-  case class Case(expression: CompiledExpression, node: Next)
+  case class Case(expression: CompiledExpression, next: Option[Next])
 
-  case class CustomNode(id: String, ref: String, next: Next) extends Node
+  case class CustomNode(id: String, ref: String, next: Option[Next]) extends Node
 
   case class EndingCustomNode(id: String, ref: String) extends Node
 
   case class FragmentOutput(id: String, fieldsWithExpression: Map[String, TypedExpression], isDisabled: Boolean)
       extends Node
 
-  case class FragmentUsageStart(id: String, params: List[CompiledParameter], next: Next) extends Node
+  case class FragmentUsageStart(id: String, params: List[CompiledParameter], next: Option[Next]) extends Node
 
-  case class FragmentUsageEnd(id: String, outputVarDefinition: Option[FragmentOutputVarDefinition], next: Next)
+  case class FragmentUsageEnd(id: String, outputVarDefinition: Option[FragmentOutputVarDefinition], next: Option[Next])
       extends Node
 
   case class FragmentOutputVarDefinition(name: String, fields: List[Field])

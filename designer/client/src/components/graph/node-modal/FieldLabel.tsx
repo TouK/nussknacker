@@ -1,20 +1,15 @@
-import InfoIcon from "@mui/icons-material/Info";
-import { Box, FormLabel, styled } from "@mui/material";
+import { Box, FormLabel, styled, Typography } from "@mui/material";
 import React from "react";
 import { ErrorBoundary } from "react-error-boundary";
+
 import ProcessUtils from "../../../common/ProcessUtils";
-import { UIParameter } from "../../../types";
+import type { UIParameter } from "../../../types";
 import { PlaceholderIconFallbackComponent } from "../../common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
-import NodeTip from "./NodeTip";
+import { InfoTooltip } from "./editors/InfoTooltip";
 import { findParamDefinitionByName } from "./parameterHelpers";
 
-export const StyledNodeTip = styled(NodeTip)({
+export const StyledNodeTip = styled(InfoTooltip)({
     margin: "0 8px",
-    flex: 1,
-    "& svg": {
-        width: 16,
-        height: 16,
-    },
 });
 
 type FieldLabelProps = {
@@ -27,11 +22,13 @@ type FieldLabelProps = {
 export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): JSX.Element {
     return (
         <>
-            <FormLabel title={title || label}>
+            <FormLabel sx={{ lineHeight: "15px" }} title={title || label}>
                 <Box>
                     {label ? <Box sx={{ "::after": { content: "':'" } }}>{label}</Box> : null}
                     {type ? (
-                        <Box
+                        <Typography
+                            variant={"caption"}
+                            aria-label="Data type"
                             sx={{
                                 fontWeight: 500,
                                 opacity: 0.7,
@@ -43,10 +40,10 @@ export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): J
                             title={type}
                         >
                             {type}
-                        </Box>
+                        </Typography>
                     ) : null}
                 </Box>
-                {hintText ? <StyledNodeTip title={hintText} icon={<InfoIcon />} /> : null}
+                {hintText ? <StyledNodeTip variant={"hover"} title={hintText} /> : null}
             </FormLabel>
         </>
     );

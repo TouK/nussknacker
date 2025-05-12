@@ -1,17 +1,18 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import { WindowKind, useWindows } from "../../../../windowManager";
-import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { ToolbarButtonProps } from "../../types";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
-import { ProcessName, ProcessVersionId } from "../../../Process/types";
+import { WindowKind, useWindows } from "../../../../windowManager";
+import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
+import type { ProcessName, ProcessVersionId } from "../../../Process/types";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import type { ToolbarButtonProps } from "../../types";
 
 export default function CancelDeployButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();

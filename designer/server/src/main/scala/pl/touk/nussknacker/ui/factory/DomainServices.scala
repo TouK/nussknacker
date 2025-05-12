@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, Des
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoader, DeploymentManagersClassLoaderFactory}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.processCounts.CountsReporter
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioStatusPresenter}
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentService, DefaultComponentService}
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeListenerLoader}
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.notifications.Notification
@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
 }
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.newdeployment
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
@@ -83,6 +84,7 @@ final class DomainServices(
     val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
     val reloadModelData: IO[Unit],
     val processAuthorizer: AuthorizeProcess,
+    val limitsService: LimitsService
 )
 
 object DomainServices extends LazyLogging {
@@ -172,9 +174,9 @@ object DomainServices extends LazyLogging {
         new EngineSideDeploymentStatusesProvider(
           dmDispatcher,
           alreadyLoadedConfig.scenarioStateTimeout
-        )(actorSystem)
+        )
       processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
-      scenarioStatusProvider = new ScenarioStatusProvider(
+      oldApproachScenarioStatusProvider = new ScenarioStatusProvider(
         deploymentsStatusesProvider,
         dmDispatcher,
         processRepository,
@@ -186,7 +188,7 @@ object DomainServices extends LazyLogging {
         actionRepository,
         dbioRunner,
         processChangeListener,
-        scenarioStatusProvider,
+        oldApproachScenarioStatusProvider,
         alreadyLoadedConfig.deploymentCommentSettings,
         clock
       )
@@ -263,7 +265,7 @@ object DomainServices extends LazyLogging {
         ProcessRepository.create(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
 
       processService = new DBProcessService(
-        scenarioStatusProvider,
+        oldApproachScenarioStatusProvider,
         scenarioStatusPresenter,
         processingTypeServicesProvider.mapValues(_.newProcessPreparer),
         processingTypeDataProvider.mapCombined(_.parametersService),
@@ -306,6 +308,13 @@ object DomainServices extends LazyLogging {
         reconciler,
         alreadyLoadedConfig.finishedDeploymentStatusesSynchronization
       )
+      limitsService = createLimitsService(
+        alreadyLoadedConfig,
+        processingTypeServicesProvider,
+        oldApproachScenarioStatusProvider,
+        deploymentRepository,
+        dbioRunner
+      )
       _ = Initialization.init(
         migrations,
         dbRef,
@@ -331,12 +340,13 @@ object DomainServices extends LazyLogging {
       countsReporter = countsReporter,
       counter = counter,
       fingerprintService = fingerprintService,
-      scenarioStatusProvider = scenarioStatusProvider,
+      scenarioStatusProvider = oldApproachScenarioStatusProvider,
       scenarioStatusPresenter = scenarioStatusPresenter,
       dmDispatcher = dmDispatcher,
       processingTypeServicesProvider = processingTypeServicesProvider,
       reloadModelData = modelDataProvider.reloadAll,
       processAuthorizer = processAuthorizer,
+      limitsService = limitsService
     )
   }
 
@@ -435,6 +445,25 @@ object DomainServices extends LazyLogging {
           ) => // It is done jus in case, it rather shouldn't happen because we have exception handling for each recovered deployment
         logger.error("Error while deployments recovery", exception)
     }
+  }
+
+  private def createLimitsService(
+      designerConfig: DesignerConfig,
+      processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
+      scenarioStatusProvider: ScenarioStatusProvider,
+      deploymentRepository: DeploymentRepository,
+      dbioRunner: DBIOActionRunner
+  ) = {
+    new LimitsService(
+      globalLimitsConfig = designerConfig.globalLimitsConfig,
+      perProcessingTypesLimitsProvider = processingTypeServicesProvider.mapValues(_.limitsConfig),
+      oldDeploymentsApproachScenarioStatusProvider = scenarioStatusProvider,
+      newDeploymentsApproachScenarioStatusProvider = new newdeployment.ScenarioStatusProvider(
+        processingTypeChecker = processingTypeServicesProvider,
+        deploymentRepository = deploymentRepository,
+        dbioRunner = dbioRunner
+      )
+    )
   }
 
   // This hack with delayed init is needed because we have a cycle of dependencies:

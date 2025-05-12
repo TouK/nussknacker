@@ -4,6 +4,7 @@ import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.configuration.Configuration
 import org.apache.pekko.actor.ActorSystem
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.ScenarioStat
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JobOverview, JobTasksOverview}
-import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.MockDeploymentManager.{sampleDeploymentId, sampleDeploymentStatusDetails}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
@@ -29,7 +29,7 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success}
+import scala.util.Success
 import scala.util.control.NonFatal
 
 // DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
@@ -58,7 +58,7 @@ class MockDeploymentManager private (
 
   private[mock] def cleanCancelResult(): Unit = cancelResult = defaultCancelResult
 
-  val managerProcessStates = new ConcurrentHashMap[ProcessName, List[DeploymentStatusDetails]]
+  val managerScenariosStates = new ConcurrentHashMap[ProcessName, List[DeploymentStatusDetails]]
 
   @volatile
   var delayBeforeStateReturn: FiniteDuration = 0 seconds
@@ -79,7 +79,7 @@ class MockDeploymentManager private (
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
       WithDataFreshnessStatus.fresh(
-        managerProcessStates
+        managerScenariosStates
           .getOrDefault(scenarioName, List.empty)
           .map { deploymentStatus =>
             val tasksOverview = JobTasksOverview(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, None)
@@ -101,7 +101,6 @@ class MockDeploymentManager private (
 
   override protected def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
-
     deployResult
       .getOrDefault(
         processVersion.processName,
@@ -127,7 +126,7 @@ class MockDeploymentManager private (
           implicit freshnessPolicy: DataFreshnessPolicy
       ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
         Future {
-          WithDataFreshnessStatus.fresh(managerProcessStates.asScala.toMap)
+          WithDataFreshnessStatus.fresh(managerScenariosStates.asScala.toMap)
         }
       }
 
@@ -157,6 +156,7 @@ object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
 object MockDeploymentManager {
 
   def create(
+      config: ConfigWithUnresolvedVersion,
       customProcessStateDefinitionManager: Option[ProcessStateDefinitionManager] = None,
       defaultDeployResult: Future[Option[ExternalDeploymentId]] = Future.failed(
         new IllegalAccessException(
@@ -170,12 +170,12 @@ object MockDeploymentManager {
     val (deploymentManagersClassLoader, closeDeploymentManagerClassLoader) =
       DeploymentManagersClassLoaderFactory.create(List.empty).allocated.unsafeRunSync()(IORuntime.global)
     val modelData = ModelData(
-      ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
+      ProcessingTypeConfig.read(config),
       TestFactory.modelDependencies,
       ModelClassLoaderFactory.create(
-        ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig).classPath,
-        None,
-        deploymentManagersClassLoader
+        urls = ProcessingTypeConfig.read(config).classPath,
+        workingDirectoryOpt = None,
+        deploymentManagersClassLoader = deploymentManagersClassLoader
       )
     )
     val deploymentManagerDependencies = new DeploymentManagerDependencies(
@@ -184,10 +184,12 @@ object MockDeploymentManager {
       actorSystem,
       SttpBackendStub.asynchronousFuture
     )
+
     def closeCreatedDeps(): Unit = {
       closeDeploymentManagerClassLoader.unsafeRunSync()(IORuntime.global)
       actorSystem.terminate()
     }
+
     new MockDeploymentManager(
       modelData,
       deploymentManagerDependencies,
@@ -210,12 +212,12 @@ object MockDeploymentManager {
 
 }
 
-object MockDeploymentManagerSyntaxSugar {
+object MockDeploymentManagerSyntaxSugar extends LazyLogging {
 
   implicit class Ops(deploymentManager: MockDeploymentManager) {
 
-    def withStubbedDeployResult[T](name: ProcessName)(action: => T): T = {
-      val future = Future.successful(Option.empty[ExternalDeploymentId])
+    def withStubbedDeployResult[T](name: ProcessName, result: Option[ExternalDeploymentId] = None)(action: => T): T = {
+      val future = Future.successful(result)
       deploymentManager.deployResult.put(name, future)
       try {
         action
@@ -224,14 +226,14 @@ object MockDeploymentManagerSyntaxSugar {
       }
     }
 
-    def withWaitForDeployFinish[T](name: ProcessName)(action: => T): T = {
+    def withWaitForDeployFinish[T](name: ProcessName, result: Option[ExternalDeploymentId] = None)(action: => T): T = {
       val promise = Promise[Option[ExternalDeploymentId]]()
       val future  = promise.future
       deploymentManager.deployResult.put(name, future)
       try {
         action
       } finally {
-        promise.complete(Success(None))
+        promise.complete(Success(result))
         deploymentManager.deployResult.remove(name, future)
       }
     }
@@ -266,41 +268,41 @@ object MockDeploymentManagerSyntaxSugar {
       }
     }
 
-    def withProcessStates[T](processName: ProcessName, statuses: List[DeploymentStatusDetails])(action: => T): T = {
+    def withScenarioStates[T](scenarioName: ProcessName, statuses: List[DeploymentStatusDetails])(action: => T): T = {
       try {
-        deploymentManager.managerProcessStates.put(processName, statuses)
+        deploymentManager.managerScenariosStates.put(scenarioName, statuses)
         action
       } finally {
-        deploymentManager.managerProcessStates.remove(processName)
+        deploymentManager.managerScenariosStates.remove(scenarioName)
       }
     }
 
-    def withProcessRunning[T](processName: ProcessName)(action: => T): T = {
-      withProcessStateStatus(processName, SimpleStateStatus.Running)(action)
+    def withScenarioRunning[T](scenarioName: ProcessName)(action: => T): T = {
+      withScenarioStateStatus(scenarioName, SimpleStateStatus.Running)(action)
     }
 
-    def withProcessFinished[T](processName: ProcessName, deploymentId: DeploymentId = sampleDeploymentId)(
+    def withScenarioFinished[T](scenarioName: ProcessName, deploymentId: DeploymentId = sampleDeploymentId)(
         action: => T
     ): T = {
-      withProcessStateStatus(processName, SimpleStateStatus.Finished, deploymentId)(action)
+      withScenarioStateStatus(scenarioName, SimpleStateStatus.Finished, deploymentId)(action)
     }
 
-    def withProcessStateStatus[T](
-        processName: ProcessName,
+    def withScenarioStateStatus[T](
+        scenarioName: ProcessName,
         status: StateStatus,
         deploymentId: DeploymentId = sampleDeploymentId
     )(action: => T): T = {
-      withProcessStates(processName, List(sampleDeploymentStatusDetails(status, deploymentId)))(action)
+      withScenarioStates(scenarioName, List(sampleDeploymentStatusDetails(status, deploymentId)))(action)
     }
 
-    def withProcessStateVersion[T](processName: ProcessName, status: StateStatus, version: Option[VersionId])(
+    def withScenarioStateVersion[T](scenarioName: ProcessName, status: StateStatus, version: Option[VersionId])(
         action: => T
     ): T = {
-      withProcessStates(processName, List(sampleDeploymentStatusDetails(status, sampleDeploymentId, version)))(action)
+      withScenarioStates(scenarioName, List(sampleDeploymentStatusDetails(status, sampleDeploymentId, version)))(action)
     }
 
-    def withEmptyProcessState[T](processName: ProcessName)(action: => T): T = {
-      withProcessStates(processName, List.empty)(action)
+    def withEmptyScenarioState[T](scenarioName: ProcessName)(action: => T): T = {
+      withScenarioStates(scenarioName, List.empty)(action)
     }
 
   }
@@ -315,8 +317,7 @@ object MockDeploymentManagerSyntaxSugar {
 
 }
 
-class MockManagerProvider(deploymentManager: DeploymentManager = MockDeploymentManager.create())
-    extends FlinkDeploymentManagerProvider {
+class MockManagerProvider(deploymentManager: DeploymentManager) extends FlinkDeploymentManagerProvider {
 
   override def createDeploymentManager(
       modelDataProvider: BaseModelDataProvider,

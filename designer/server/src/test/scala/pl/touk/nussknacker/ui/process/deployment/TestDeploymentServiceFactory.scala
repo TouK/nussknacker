@@ -1,31 +1,39 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import cats.effect.unsafe.IORuntime
 import db.util.DBIOActionInstances.DB
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{actorSystem, clock, ec, processingType}
+import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
+import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{
+  actorSystem,
+  clock,
+  executionContextWithIORuntime
+}
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeploymentReconciler
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldApproachScenarioStatusProvider
+}
+import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ScenarioActionRepository}
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import sttp.client3.testing.SttpBackendStub
 
 import java.time.Clock
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 class TestDeploymentServiceFactory(dbRef: DbRef) {
@@ -38,20 +46,26 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
   val listener                                       = new TestProcessChangeListener
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = new DeploymentManagerDependencies(
-    ec,
-    IORuntime.global,
+    executionContextWithIORuntime,
+    executionContextWithIORuntime.ioRuntime,
     actorSystem,
     SttpBackendStub.asynchronousFuture
   )
 
   def create(
-      deploymentManager: DeploymentManager,
+      deploymentManagers: Map[ProcessingType, DeploymentManager],
       modelData: ModelData = new StubModelDataWithModelDefinition(modelDefinition()),
       scenarioStateTimeout: Option[FiniteDuration] = None,
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None
+      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
+      globalLimitsConfig: GlobalLimitsConfig = GlobalLimitsConfig.default,
+      processingTypeLimits: LimitsConfig = LimitsConfig.default,
   ): TestDeploymentServiceServices = {
+
     val deploymentManagerProvider = TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
-      Map(processingType.stringify -> ValueWithRestriction.anyUser(deploymentManager))
+      deploymentManagers
+        .map { case (processingType, deploymentManager) =>
+          processingType -> ValueWithRestriction.anyUser(deploymentManager)
+        }
     )
 
     val dmDispatcher = {
@@ -59,44 +73,45 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       new DeploymentManagerDispatcher(deploymentManagerProvider, futureFetchingProcessRepository)
     }
 
-    val deploymentsStatusesProvider =
-      new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout)
+    val deploymentsStatusesProvider = new EngineSideDeploymentStatusesProvider(dmDispatcher, scenarioStateTimeout)
+    val oldApproachScenarioStatusProvider = new OldApproachScenarioStatusProvider(
+      deploymentsStatusesProvider,
+      dmDispatcher,
+      fetchingScenarioDBIORepository,
+      actionRepository,
+      dbioRunner
+    )
 
-    val scenarioStatusProvider = {
-      new ScenarioStatusProvider(
-        deploymentsStatusesProvider,
-        dmDispatcher,
-        fetchingScenarioDBIORepository,
-        actionRepository,
-        dbioRunner
-      )
-    }
+    val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
+      deploymentManagerProvider,
+      TestFactory.newDeploymentRepository(dbRef, clock),
+      dbioRunner
+    )
 
-    val actionService = {
-      new ActionService(
-        fetchingScenarioDBIORepository,
-        actionRepository,
-        dbioRunner,
-        listener,
-        scenarioStatusProvider,
-        deploymentCommentSettings,
-        clock
-      )
-    }
+    val actionService = new ActionService(
+      fetchingScenarioDBIORepository,
+      actionRepository,
+      dbioRunner,
+      listener,
+      oldApproachScenarioStatusProvider,
+      deploymentCommentSettings,
+      clock
+    )
 
     val deploymentsReconciler =
       new ScenarioDeploymentReconciler(
         TestProcessingTypeDataProviderFactory.createWithEmptyCombinedData(
-          Map(
-            processingType.stringify -> ValueWithRestriction.anyUser(
-              new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
-                deploymentManager,
-                EngineSetupName("mock"),
-                JobsRecoverySettings.noRecovery,
-                TestFactory.scenarioResolver
+          deploymentManagers
+            .map { case (processingType, deploymentManager) =>
+              processingType -> ValueWithRestriction.anyUser(
+                new ScenarioDeploymentReconciler.ProcessingTypeServicesDeps(
+                  deploymentManager,
+                  EngineSetupName("mock"),
+                  JobsRecoverySettings.noRecovery,
+                  TestFactory.scenarioResolver(processingType)
+                )
               )
-            )
-          )
+            }
         ),
         deploymentsStatusesProvider,
         actionRepository,
@@ -104,22 +119,36 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         dbioRunner
       )
 
+    val validator = ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData))
     val deploymentService = new DeploymentService(
       dmDispatcher,
       TestFactory.mapProcessingTypeDataProvider(
-        Streaming.stringify -> ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData))
+        deploymentManagers.map { case (processingType, _) => processingType -> validator }.toList: _*
       ),
-      TestFactory.scenarioResolverByProcessingType,
+      TestFactory.scenarioResolverByProcessingType(deploymentManagers.keys.toList),
       actionService,
       additionalComponentConfigsByProcessingType,
+      new LimitsService(
+        globalLimitsConfig = globalLimitsConfig,
+        perProcessingTypesLimitsProvider = TestFactory.mapProcessingTypeDataProvider(
+          deploymentManagers.map { case (processingType, _) => processingType -> processingTypeLimits }.toList: _*
+        ),
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
+      )
     )
-    TestDeploymentServiceServices(scenarioStatusProvider, actionService, deploymentService, deploymentsReconciler)
+    TestDeploymentServiceServices(
+      oldApproachScenarioStatusProvider,
+      actionService,
+      deploymentService,
+      deploymentsReconciler
+    )
   }
 
 }
 
 case class TestDeploymentServiceServices(
-    scenarioStatusProvider: ScenarioStatusProvider,
+    scenarioStatusProvider: OldApproachScenarioStatusProvider,
     actionService: ActionService,
     deploymentService: DeploymentService,
     scenarioDeploymentReconciler: ScenarioDeploymentReconciler
@@ -128,9 +157,9 @@ case class TestDeploymentServiceServices(
 object TestDeploymentServiceFactory {
 
   implicit val actorSystem: ActorSystem = ActorSystem("TestDeploymentServiceFactory")
-  implicit val ec: ExecutionContext     = actorSystem.dispatcher
-  val clock: Clock                      = Clock.systemUTC()
+  implicit val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
+    ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(actorSystem.dispatcher)
 
-  val processingType: TestProcessingType = TestProcessingType.Streaming
+  val clock: Clock = Clock.systemUTC()
 
 }

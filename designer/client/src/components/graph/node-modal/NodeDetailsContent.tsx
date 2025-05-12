@@ -1,14 +1,16 @@
 import { partition } from "lodash";
-import React, { SetStateAction, useCallback, useMemo } from "react";
+import type { SetStateAction } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useUserSettings } from "../../../common/userSettings";
 import HttpService from "../../../http/HttpService";
-import { RootState } from "../../../reducers";
+import type { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
-import { Edge, NodeType, NodeValidationError } from "../../../types";
+import type { Edge, NodeType, NodeValidationError } from "../../../types";
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";

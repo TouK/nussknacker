@@ -1,8 +1,9 @@
-import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import { SourceSinkCommon } from "./SourceSinkCommon";
-import { DisableField } from "./DisableField";
 import React from "react";
-import ProcessUtils from "../../../common/ProcessUtils";
+
+import type ProcessUtils from "../../../common/ProcessUtils";
+import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
+import { DisableField } from "./DisableField";
+import { SourceSinkCommon } from "./SourceSinkCommon";
 
 interface SinkProps {
     errors: NodeValidationError[];

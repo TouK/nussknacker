@@ -1,5 +1,5 @@
+import type { Moment } from "moment";
 import moment from "moment/moment";
-import { Moment } from "moment";
 
 export function formatUiDate(date: string) {
     const now = moment(); // Current date and time

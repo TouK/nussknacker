@@ -5,6 +5,8 @@ import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrapped
 
 final case class ParameterName(value: String) {
   def withBranchId(branchId: String): ParameterName = ParameterName(s"$value for branch $branchId")
+
+  override def toString: String = value
 }
 
 object ParameterName {

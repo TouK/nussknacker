@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.processingtype.loader
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -33,6 +34,7 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
             modelDataWithInput.modelData,
             deploymentData,
             modelDataWithInput.category,
+            modelDataWithInput.limitsConfig,
             modelDataWithInput.componentDefinitionExtractionMode,
           )
           processingTypeData
@@ -64,6 +66,7 @@ object ProcessingTypeDataStateFactory extends LazyLogging {
   final class ModelDataWithProcessingTypeDataInput(
       val modelData: ModelData,
       val category: String,
+      val limitsConfig: LimitsConfig,
       val componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) extends AutoCloseable {
 

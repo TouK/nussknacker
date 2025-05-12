@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
@@ -195,8 +195,7 @@ class DynamicNodeValidator(
             validatorsCompilationResult.andThen { validators =>
               expressionCompiler
                 .compileBranchParam(branchParams, branchContexts, parameter)
-                .map((_, None))
-                .andThen(Validations.validate(validators, _))
+                .andThen(typedParam => Validations.validate(validators, typedParam).map(_ => (typedParam, None)))
             }
           }
       } else {
@@ -220,8 +219,9 @@ class DynamicNodeValidator(
         validatorsCompilationResult.andThen { validators =>
           expressionCompiler
             .compileParam(singleParam, ctxToUse, parameter)
-            .map((_, extraNodeParamOpt))
-            .andThen(Validations.validate(validators, _))
+            .andThen(typedParam =>
+              Validations.validate(validators, typedParam).map(_ => (typedParam, extraNodeParamOpt))
+            )
         }
       }
     }

@@ -1,8 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-import { Theme } from "@mui/material";
-import { dia, shapes, util } from "jointjs";
+import type { Theme } from "@mui/material";
+import type { dia } from "jointjs";
+import { shapes, util } from "jointjs";
+
 import { blendLighten, getBorderColor, getNodeBorderColor } from "../../../containers/theme/helpers";
-import { NodeType } from "../../../types";
+import type { NodeType } from "../../../types";
 import { getStringWidth } from "./element";
 import { getRoundedRectPath } from "./getRoundedRectPath";
 

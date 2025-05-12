@@ -1,4 +1,5 @@
 import { styled } from "@mui/material";
+
 import { InputWithIcon } from "./InputWithIcon";
 
 export const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({

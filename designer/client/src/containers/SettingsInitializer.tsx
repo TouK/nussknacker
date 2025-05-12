@@ -1,10 +1,13 @@
-import React, { PropsWithChildren, useEffect, useState } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { assignSettings, SettingsData } from "../actions/nk";
+
+import type { SettingsData } from "../actions/nk";
+import { assignSettings } from "../actions/nk";
 import { useUserSettings } from "../common/userSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
 import HttpService from "../http/HttpService";
-import { UserSettings } from "../reducers/userSettings";
+import type { UserSettings } from "../reducers/userSettings";
 
 export function SettingsProvider({ children }: PropsWithChildren<unknown>): JSX.Element {
     const [data, setData] = useState<SettingsData>(null);

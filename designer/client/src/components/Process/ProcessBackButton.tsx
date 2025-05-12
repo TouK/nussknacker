@@ -1,11 +1,11 @@
+import { styled, Typography } from "@mui/material";
 import React, { useMemo } from "react";
-import { ProcessLink } from "../../containers/processLink";
-import ProcessBackIcon from "../../assets/img/arrows/back-process.svg";
 import { useTranslation } from "react-i18next";
 import { matchPath, useLocation } from "react-router-dom";
-import { MetricsBasePath } from "../../containers/paths";
-import { styled, Typography } from "@mui/material";
 
+import ProcessBackIcon from "../../assets/img/arrows/back-process.svg";
+import { MetricsBasePath } from "../../containers/paths";
+import { ProcessLink } from "../../containers/processLink";
 import { blendLighten } from "../../containers/theme/helpers";
 
 const BackIcon = styled(ProcessBackIcon)(() => ({

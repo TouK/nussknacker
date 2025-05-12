@@ -1,8 +1,11 @@
-import React, { ReactElement } from "react";
+import type { PropsOf } from "@emotion/react";
+import type { ReactElement } from "react";
+import React from "react";
+
+import type { MarkdownStyledProps } from "../../graph/node-modal/MarkdownStyled";
+import { MarkdownStyled } from "../../graph/node-modal/MarkdownStyled";
 import { FormField } from "./FormField";
 import { FormFields } from "./FormFields";
-import { MarkdownStyled, MarkdownStyledProps } from "../../graph/node-modal/MarkdownStyled";
-import { PropsOf } from "@emotion/react";
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace

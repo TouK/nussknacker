@@ -3,13 +3,14 @@ import { uniq } from "lodash";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import NodeUtils from "../../graph/NodeUtils";
 import { SearchLabel } from "../../sidePanels/SearchLabel";
 import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
 import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
-import { SearchQuery } from "./SearchResults";
+import type { SearchQuery } from "./SearchResults";
 import { resolveSearchQuery, searchQueryToString, selectorByName } from "./utils";
 
 export function AdvancedSearchFilters({

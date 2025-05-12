@@ -1,21 +1,22 @@
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
+import i18next from "i18next";
 import React, { useCallback, useEffect } from "react";
 import { default as ReactNotifications } from "react-notification-system-redux";
 import { useDispatch, useSelector } from "react-redux";
-import HttpService from "../http/HttpService";
-import * as NotificationActions from "../actions/notificationActions";
 import { bindActionCreators } from "redux";
-import { getBackendNotifications, getNotifications } from "../reducers/selectors/other";
-import { useInterval } from "./Interval";
-import Notification from "../components/notifications/Notification";
-import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
-import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
-import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
+
 import { fetchProcessDefinition, loadProcessState } from "../actions/nk";
-import { getProcessingType, getProcessName, getProcessVersionId, isFragment } from "../reducers/selectors/graph";
-import { useChangeConnectionError } from "./connectionErrorProvider";
-import i18next from "i18next";
-import { ThunkAction } from "../actions/reduxTypes";
+import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
 import { getScenarioActivities } from "../actions/nk/scenarioActivities";
+import NotificationActions from "../actions/notificationActions";
+import type { ThunkAction } from "../actions/reduxTypes";
+import Notification from "../components/notifications/Notification";
+import HttpService from "../http/HttpService";
+import { getProcessingType, getProcessName, getProcessVersionId, isFragment } from "../reducers/selectors/graph";
+import { getBackendNotifications, getNotifications } from "../reducers/selectors/other";
+import { useChangeConnectionError } from "./connectionErrorProvider";
+import { useInterval } from "./Interval";
 
 const prepareNotification =
     ({ id, message, type }: BackendNotification): ThunkAction =>

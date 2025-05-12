@@ -1,4 +1,4 @@
-import { UserSettings } from "../../reducers/userSettings";
+import type { UserSettings } from "../../reducers/userSettings";
 
 type ToggleSettingsAction = { type: "TOGGLE_SETTINGS"; settings: Array<keyof UserSettings> };
 type SetSettingsAction = { type: "SET_SETTINGS"; settings: UserSettings };

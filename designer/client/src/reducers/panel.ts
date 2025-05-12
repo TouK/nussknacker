@@ -1,5 +1,5 @@
-import { PanelSide } from "../actions/nk";
-import { Reducer } from "../actions/reduxTypes";
+import type { PanelSide } from "../actions/nk";
+import type { Reducer } from "../actions/reduxTypes";
 
 export type Panels = Record<PanelSide, boolean>;
 

@@ -1,5 +1,6 @@
-import { ActionName, PredefinedActionName, ProcessStateType, Scenario } from "./types";
 import { descriptionProcessArchived, unknownDescription, unknownTooltip } from "./messages";
+import type { ActionName, ProcessStateType, Scenario } from "./types";
+import { PredefinedActionName } from "./types";
 
 export const unknownIcon = "/assets/states/status-unknown.svg";
 const archivedIcon = "/assets/process/archived.svg";

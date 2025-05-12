@@ -1,5 +1,5 @@
-const { repeat, padEnd, padStart, throttle } = require("lodash");
 const chalk = require("chalk");
+const { repeat, padEnd, padStart, throttle } = require("lodash");
 
 let interval;
 let startTime = Date.now();

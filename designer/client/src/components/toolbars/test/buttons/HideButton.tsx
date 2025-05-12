@@ -1,11 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
 import { hideRunProcessDetails } from "../../../../actions/nk";
-import { getShowRunProcessDetails } from "../../../../reducers/selectors/graph";
 import Icon from "../../../../assets/img/toolbarButtons/hide.svg";
+import { getShowRunProcessDetails } from "../../../../reducers/selectors/graph";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { ToolbarButtonProps } from "../../types";
+import type { ToolbarButtonProps } from "../../types";
 
 function HideButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;

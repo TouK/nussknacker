@@ -1,17 +1,19 @@
-import { Edge, EdgeKind, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
-import { getValidationErrorsForField } from "./editors/Validators";
 import { isEmpty, isEqual } from "lodash";
-import { useDiffMark } from "./PathsToMark";
-import { useSelector } from "react-redux";
-import { RootState } from "../../../reducers";
-import { IdField } from "./IdField";
-import { StaticExpressionField } from "./StaticExpressionField";
-import { NodeField } from "./NodeField";
-import { FieldType } from "./editors/field/Field";
-import { EdgesDndComponent } from "./EdgesDndComponent";
-import { DescriptionField } from "./DescriptionField";
 import React, { memo, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
+
+import { RootState } from "../../../reducers";
+import type { Edge, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
+import { EdgeKind } from "../../../types";
+import { DescriptionField } from "./DescriptionField";
+import { EdgesDndComponent } from "./EdgesDndComponent";
+import { FieldType } from "./editors/field/Field";
+import { getValidationErrorsForField } from "./editors/Validators";
+import { IdField } from "./IdField";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
+import { NodeField } from "./NodeField";
+import { useDiffMark } from "./PathsToMark";
+import { StaticExpressionField } from "./StaticExpressionField";
 
 interface Props {
     edges: Edge[];

@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService";
-import { ThunkAction } from "../reduxTypes";
+import type { ThunkAction } from "../reduxTypes";
 
 export function loadProcessToolbarsConfiguration(processName: string): ThunkAction {
     return (dispatch) =>

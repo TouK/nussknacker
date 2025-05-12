@@ -600,6 +600,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
+
     def validate(scenarioGraph: ScenarioGraph) =
       processValidator.validate(
         scenarioGraph,
@@ -2186,7 +2187,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("should validate invalid scenario id") {
     val blankValue = ProcessName(" ")
-    val result = TestFactory.flinkProcessValidator
+    val result = TestFactory
+      .flinkProcessValidator()
       .validate(UIProcessValidatorSpec.validFlinkScenarioGraph, blankValue, isFragment = false, labels = List.empty)
       .errors
       .processPropertiesErrors
@@ -2204,7 +2206,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       ),
       List(Edge(blankValue, "out", None))
     )
-    val result = TestFactory.flinkProcessValidator
+    val result = TestFactory
+      .flinkProcessValidator()
       .validate(testedScenario, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
       .errors
       .invalidNodes
@@ -2215,13 +2218,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("should validate scenario id with error preventing canonized form") {
     val incompleteScenarioWithBlankIds = createGraph(
-      List(
-        Variable(id = " ", varName = "var", value = "".spel)
-      ),
+      List(Variable(id = " ", varName = "var", value = "".spel)),
       List.empty
     )
-    val result =
-      TestFactory.flinkProcessValidator.validate(
+    val result = TestFactory
+      .flinkProcessValidator()
+      .validate(
         incompleteScenarioWithBlankIds,
         ProcessName(" "),
         isFragment = false,
@@ -2250,12 +2252,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentOutput("outNode2", duplicatedOutputName),
       )
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(fragment)
-    val result = TestFactory.flinkProcessValidator.validate(
-      scenarioGraph,
-      ProcessName(" "),
-      isFragment = true,
-      labels = List.empty
-    )
+    val result = TestFactory
+      .flinkProcessValidator()
+      .validate(
+        scenarioGraph,
+        ProcessName(" "),
+        isFragment = true,
+        labels = List.empty
+      )
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         PrettyValidationErrors.formatErrorMessage(
@@ -2410,12 +2414,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   private def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
-    TestFactory.processValidator.validate(
-      scenarioGraph,
-      ProcessTestData.sampleProcessName,
-      isFragment = false,
-      labels = List.empty
-    )
+    TestFactory
+      .processValidator()
+      .validate(
+        scenarioGraph,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = List.empty
+      )
   }
 
 }
@@ -2774,8 +2780,8 @@ private object UIProcessValidatorSpec {
     override def apply(left: ValidationResult): MatchResult = {
       MatchResult(
         !left.hasErrors && !left.hasWarnings,
-        s"ValidationResult should has neither errors nor warnings but was: ${left}",
-        s"ValidationResult should has either errors or warnings but was:${left}"
+        s"ValidationResult should has neither errors nor warnings but was: $left",
+        s"ValidationResult should has either errors or warnings but was:$left"
       )
     }
 

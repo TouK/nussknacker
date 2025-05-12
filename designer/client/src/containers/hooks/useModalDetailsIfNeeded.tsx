@@ -1,8 +1,9 @@
-import { useWindows } from "../../windowManager";
 import { useCallback } from "react";
-import { Scenario } from "src/components/Process/types";
-import { parseWindowsQueryParams } from "./useSearchQuery";
+import type { Scenario } from "src/components/Process/types";
+
 import NodeUtils from "../../components/graph/NodeUtils";
+import { useWindows } from "../../windowManager";
+import { parseWindowsQueryParams } from "./useSearchQuery";
 
 export function getFragmentNodesPrefix(fragmentContent: Scenario) {
     return fragmentContent ? `${fragmentContent.name}-` : "";

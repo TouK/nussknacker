@@ -1,15 +1,14 @@
-import { ContentCopy, Done } from "@mui/icons-material";
 import type { Theme } from "@mui/material";
 import { darken, Typography } from "@mui/material";
 import { styled } from "@mui/material";
 import { useTheme } from "@mui/material";
-import { IconButton, Tooltip } from "@mui/material";
+import { Tooltip } from "@mui/material";
 import type { JSX } from "react";
 import React from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
-import { useCopyClipboard } from "../components/notifications/copyTooltip";
 import { getBorderColor } from "../containers/theme/helpers";
+import { CopyIconButton, useCopyClipboard } from "./copyToClipboard";
 
 type NodePosition = {
     start: { line: number };
@@ -165,14 +164,6 @@ const LanguageLabel = styled(Typography)(({ theme }) => ({
     letterSpacing: 1,
 }));
 
-const CopyIconButton = styled(IconButton)(({ theme }) => ({
-    color: theme.palette.common.white,
-    padding: theme.spacing(0.5),
-    "&:hover": {
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-    },
-}));
-
 export const CodeBlock = ({ className, children, node }: Props) => {
     const { start, end } = node.position;
     const singleLineCode = start.line === end.line;
@@ -194,9 +185,7 @@ export const CodeBlock = ({ className, children, node }: Props) => {
             <CodeBlockHeader>
                 <LanguageLabel>{language}</LanguageLabel>
                 <Tooltip title={isCopied ? "Copied!" : "Copy code"}>
-                    <CopyIconButton size="small" onClick={handleCopy} aria-label="copy code" className={"copy-button"}>
-                        {isCopied ? <Done fontSize="small" /> : <ContentCopy fontSize="small" />}
-                    </CopyIconButton>
+                    <CopyIconButton onClick={handleCopy} isCopied={isCopied} />
                 </Tooltip>
             </CodeBlockHeader>
             <SyntaxHighlighter language={language} style={syntaxHighlighterStyle(theme)}>

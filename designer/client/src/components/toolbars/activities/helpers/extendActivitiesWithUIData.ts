@@ -1,6 +1,7 @@
 import moment from "moment/moment";
 import { v4 as uuid4 } from "uuid";
-import { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
+
+import type { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
 import { formatDate } from "./date";
 
 const createUiActivity = (activity: Activity) => {

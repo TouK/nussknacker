@@ -1,5 +1,6 @@
 import { isNil } from "lodash";
-import { Expression, ReturnedType } from "../../../../../types";
+
+import type { Expression, ReturnedType } from "../../../../../types";
 import { resolveRefClazzName } from "./utils";
 
 export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation | ValueEditor;

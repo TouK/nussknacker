@@ -1,7 +1,9 @@
-import React, { createContext, PropsWithChildren, useContext, useMemo, useState } from "react";
+import type { PropsWithChildren } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { panelsState } from "../../reducers/selectors/panel";
+
 import { PanelSide } from "../../actions/nk";
+import { panelsState } from "../../reducers/selectors/panel";
 
 const SideContext = createContext<PanelSide>(null);
 

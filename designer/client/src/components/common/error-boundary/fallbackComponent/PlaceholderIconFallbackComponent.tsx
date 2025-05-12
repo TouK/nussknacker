@@ -1,8 +1,9 @@
 import { Box, styled } from "@mui/material";
 import { getLuminance } from "@mui/system/colorManipulator";
+import React from "react";
+
 import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
 import PlaceholderIcon from "../images/placeholder-icon.svg";
-import React from "react";
 
 const PlaceholderIconWrapper = styled(Box)(({ theme }) => ({
     padding: theme.spacing(1),

@@ -20,12 +20,12 @@ object SplittedNodesCollector {
   def collectNodes(node: SplittedNode[_ <: NodeData]): List[SplittedNode[_ <: NodeData]] = {
     val children = node match {
       case n: OneOutputNode[_] =>
-        collectNodes(n.next)
+        n.next.toList.flatMap(collectNodes)
       case n: FilterNode =>
         n.nextTrue.toList.flatMap(collectNodes) ::: n.nextFalse.toList.flatMap(collectNodes)
       case n: SwitchNode =>
         n.nexts.flatMap { case Case(_, ch) =>
-          collectNodes(ch)
+          ch.toList.flatMap(collectNodes)
         } ::: n.defaultNext.toList.flatMap(collectNodes)
       case SplitNode(_, nextsWithParts) =>
         nextsWithParts.flatMap(collectNodes)

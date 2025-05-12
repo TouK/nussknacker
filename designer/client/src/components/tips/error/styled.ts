@@ -1,6 +1,7 @@
+import type { TypographyProps } from "@mui/material";
+import { styled, Typography } from "@mui/material";
 import Color from "color";
-import { styled, Typography, TypographyProps } from "@mui/material";
-import { NavLink } from "react-router-dom";
+import type { NavLink } from "react-router-dom";
 
 export const ErrorLinkStyle = styled(Typography)<TypographyProps<"span" | typeof NavLink>>(({ theme }) => ({
     whiteSpace: "normal",

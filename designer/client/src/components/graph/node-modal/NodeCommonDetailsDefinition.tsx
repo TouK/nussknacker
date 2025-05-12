@@ -1,10 +1,12 @@
-import React, { PropsWithChildren, useCallback } from "react";
-import { Field, NodeType, NodeValidationError } from "../../../types";
+import type { PropsWithChildren } from "react";
+import React, { useCallback } from "react";
+
+import type { Field, NodeType, NodeValidationError } from "../../../types";
+import { DescriptionField } from "./DescriptionField";
 import LabeledInput from "./editors/field/LabeledInput";
-import { useDiffMark } from "./PathsToMark";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
-import { DescriptionField } from "./DescriptionField";
+import { useDiffMark } from "./PathsToMark";
 
 export interface NodeDetailsProps<F extends Field> {
     node: NodeType<F>;

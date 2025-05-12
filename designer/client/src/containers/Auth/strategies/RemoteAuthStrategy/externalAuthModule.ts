@@ -1,5 +1,5 @@
-import { ForwardRefExoticComponent, PropsWithChildren, PropsWithoutRef, RefAttributes } from "react";
-import { Module } from "@touk/federated-component";
+import type { Module } from "@touk/federated-component";
+import type { ForwardRefExoticComponent, PropsWithChildren, PropsWithoutRef, RefAttributes } from "react";
 
 interface RedirectState {
     targetPath: string;

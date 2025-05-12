@@ -1,8 +1,9 @@
-import React from "react";
-import TestingMode from "../../assets/img/icons/testingMode.svg";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ValidTip from "./ValidTip";
 import { Box, CircularProgress, useTheme } from "@mui/material";
+import React from "react";
+
+import TestingMode from "../../assets/img/icons/testingMode.svg";
+import ValidTip from "./ValidTip";
 
 export default function ValidTips(props: { loading: boolean; hasNeitherErrorsNorWarnings?: boolean; testing?: boolean }): JSX.Element {
     const { loading, hasNeitherErrorsNorWarnings, testing } = props;

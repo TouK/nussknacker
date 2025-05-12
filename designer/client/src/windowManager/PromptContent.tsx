@@ -1,10 +1,13 @@
 import { css } from "@emotion/css";
-import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
-import React, { PropsWithChildren, useMemo } from "react";
-import { LoadingButton } from "./LoadingButton";
-import { isTouchDevice } from "../helpers/detectDevice";
 import { useTheme } from "@mui/material";
+import type { DefaultContentProps } from "@touk/window-manager";
+import { DefaultContent } from "@touk/window-manager";
+import type { PropsWithChildren } from "react";
+import React, { useMemo } from "react";
+
 import { DialogErrorFallbackComponent, ErrorBoundary } from "../components/common/error-boundary";
+import { isTouchDevice } from "../helpers/detectDevice";
+import { LoadingButton } from "./LoadingButton";
 
 const HeaderPlaceholder = () => <header>{/*grid placeholder*/}</header>;
 

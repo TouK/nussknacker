@@ -38,7 +38,7 @@ import { prepareSvg } from "./svg-export/prepareSvg";
 import type { GraphProps } from "./types";
 import { Events } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
-import * as GraphUtils from "./utils/graphUtils";
+import { canInjectNode as graphUtilsCanInjectNode } from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";
 
@@ -422,7 +422,7 @@ export class Graph extends React.Component<Props> {
             const nodeData = getNodeData(cell, scenario.scenarioGraph);
             const { sourceNode, targetNode } = getLinkNodes(cellBelow);
 
-            const canInjectNode = GraphUtils.canInjectNode(
+            const canInjectNode = graphUtilsCanInjectNode(
                 scenario.scenarioGraph,
                 sourceNode.id,
                 nodeData?.id,

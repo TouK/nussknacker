@@ -1,6 +1,6 @@
+import type { Action, AnyAction } from "redux";
+import type { GroupByFunction } from "redux-undo";
 import { v4 as uuid4 } from "uuid";
-import { GroupByFunction } from "redux-undo";
-import { Action, AnyAction } from "redux";
 
 class BatchGroupBy<S = any, A extends Action = AnyAction> {
     private group: string = null;

@@ -1,9 +1,10 @@
-import React from "react";
-import { AttachmentDetails, AttachHeader } from "./StyledAttach";
-import { Typography } from "@mui/material";
-import { Attachment } from "./AddAttachment";
 import { DeleteOutline } from "@mui/icons-material";
+import { Typography } from "@mui/material";
+import React from "react";
+
 import { StyledIconButton } from "../toolbars/activities/ActivitiesSearch";
+import type { Attachment } from "./AddAttachment";
+import { AttachmentDetails, AttachHeader } from "./StyledAttach";
 
 export function AttachmentEl({
     attachment,

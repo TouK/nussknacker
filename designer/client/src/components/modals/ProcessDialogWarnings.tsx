@@ -1,9 +1,10 @@
+import WarningIcon from "@mui/icons-material/Warning";
+import { Typography } from "@mui/material";
 import React from "react";
 import { useSelector } from "react-redux";
-import WarningIcon from "@mui/icons-material/Warning";
+
 import { hasWarnings } from "../../reducers/selectors/graph";
 import { IconWithLabel } from "../tips/IconWithLabel";
-import { Typography } from "@mui/material";
 
 function ProcessDialogWarnings(): JSX.Element {
     const processHasWarnings = useSelector(hasWarnings);

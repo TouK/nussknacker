@@ -1,4 +1,5 @@
 import React from "react";
+
 import { MarkdownStyled } from "../components/graph/node-modal/MarkdownStyled";
 
 export const DescriptionView = ({ children }: { children: string }) => {

@@ -9,7 +9,6 @@ import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { ValidationResult } from "../../types";
-import * as LayoutUtils from "../layoutUtils";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
@@ -347,6 +346,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
                 scenarioLoading: false,
                 testResultsLoading: false,
+            };
+        }
+        case "SET_TEST_DATA": {
+            return {
+                ...state,
+                testData: {
+                    ...state.testData,
+                    [action.testData?.sourceId]: action.testData?.parameterExpressions,
+                },
             };
         }
         case "HIDE_RUN_PROCESS_DETAILS": {
