@@ -1,6 +1,6 @@
+import childProcess from "child_process";
 import fs from "fs";
 import path from "path";
-import childProcess from "child_process";
 
 export let version;
 

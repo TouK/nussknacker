@@ -1,4 +1,4 @@
-import { RootState } from "../index";
-import { UiState } from "../ui";
+import type { RootState } from "../index";
+import type { UiState } from "../ui";
 
 export const getUi = (state: RootState): UiState => state.ui;

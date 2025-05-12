@@ -2,10 +2,11 @@ import { lighten, styled } from "@mui/material";
 import { getLuminance } from "@mui/system/colorManipulator";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+
 import "react-treeview/react-treeview.css";
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
-import { ComponentGroup } from "../../../types";
+import type { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 

@@ -1,6 +1,8 @@
 import { dia } from "jointjs";
-import { Events } from "./types";
+
 import { MARKDOWN_EDITOR_NAME } from "./EspNode/stickyNote";
+import { Events } from "./types";
+
 import MarkupNodeJSON = dia.MarkupNodeJSON;
 
 export interface StickyNoteDefaults {

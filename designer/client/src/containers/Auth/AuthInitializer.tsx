@@ -1,9 +1,11 @@
-import React, { PropsWithChildren, useState } from "react";
-import { AuthenticationSettings } from "../../reducers/settings";
-import { Strategy } from "./Strategy";
+import type { PropsWithChildren } from "react";
+import React, { useState } from "react";
+
+import type { AuthenticationSettings } from "../../reducers/settings";
+import type { InitErrorComponentProps } from "./InitErrorComponent";
+import type { Strategy } from "./Strategy";
 import { StrategyInitializer } from "./StrategyInitializer";
 import { StrategySelector } from "./StrategySelector";
-import { InitErrorComponentProps } from "./InitErrorComponent";
 
 interface Props {
     onAuthFulfilled: () => Promise<void>;

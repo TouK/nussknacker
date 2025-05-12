@@ -1,21 +1,22 @@
+import { Box } from "@mui/material";
 import React, { useState } from "react";
-import CommentContent from "../../../comment/CommentContent";
-import { ActionMetadata, ActivityComment, ActivityType } from "../types";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
-import { getFeatureSettings, getLoggedUser } from "../../../../reducers/selectors/settings";
-import { Box } from "@mui/material";
-import { StyledActionIcon } from "./StyledActionIcon";
-import { useActivityItemInfo } from "./ActivityItemProvider";
-import * as DialogMessages from "../../../../common/DialogMessages";
-import HttpService from "../../../../http/HttpService";
-import { useTranslation } from "react-i18next";
-import { useWindows } from "../../../../windowManager";
-import { getProcessName } from "../../../../reducers/selectors/graph";
+
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
-import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import DialogMessages from "../../../../common/DialogMessages";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import HttpService from "../../../../http/HttpService";
+import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
+import { getFeatureSettings, getLoggedUser } from "../../../../reducers/selectors/settings";
+import { useWindows } from "../../../../windowManager";
+import CommentContent from "../../../comment/CommentContent";
+import type { ActionMetadata, ActivityComment, ActivityType } from "../types";
+import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import { useActivityItemInfo } from "./ActivityItemProvider";
+import { StyledActionIcon } from "./StyledActionIcon";
 
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
 

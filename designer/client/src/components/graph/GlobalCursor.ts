@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
 export class GlobalCursor {
     private cursorMask: HTMLElement;

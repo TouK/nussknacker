@@ -1,4 +1,5 @@
 import React from "react";
+
 import PlaceholderIcon from "../../../components/common/error-boundary/images/placeholder-icon.svg";
 
 type IconProps = {

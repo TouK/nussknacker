@@ -1,8 +1,9 @@
 import React, { useContext } from "react";
+
 import { AggregateContext } from "./aggregate/aggregateContext";
 import { AggregatorField } from "./aggregate/aggregatorField";
 import { GroupByField } from "./aggregate/groupBy/groupByField";
-import { FieldWrapperProps } from "./ParameterExpressionField";
+import type { FieldWrapperProps } from "./ParameterExpressionField";
 
 export const AggregateFieldOverrideWrapper = function AggregateFieldOverrideWrapper({ children, ...props }: FieldWrapperProps) {
     const { aggregator, groupBy } = useContext(AggregateContext);

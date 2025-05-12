@@ -1,19 +1,22 @@
 import { css } from "@emotion/css";
 import { Edit } from "@mui/icons-material";
-import { DefaultComponents, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { DefaultComponents } from "@touk/window-manager";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { NodeType } from "../../../../types";
-import { WindowContent, WindowKind } from "../../../../windowManager";
+
+import { editProperties } from "../../../../actions/nk";
+import { getScenario } from "../../../../reducers/selectors/graph";
+import type { NodeType } from "../../../../types";
+import type { WindowKind } from "../../../../windowManager";
+import { WindowContent } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
-import { Scenario } from "../../../Process/types";
+import { usePropertiesState } from "../../../modals/PropertiesDialog";
+import type { Scenario } from "../../../Process/types";
 import { DescriptionOnlyContent } from "../DescriptionOnlyContent";
 import { getReadOnly } from "./selectors";
 import { StyledHeader } from "./StyledHeader";
-import { editProperties } from "../../../../actions/nk";
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { usePropertiesState } from "../../../modals/PropertiesDialog";
 
 interface DescriptionDialogProps extends WindowContentProps<WindowKind, { node: NodeType; scenario: Scenario }> {
     editMode?: boolean;

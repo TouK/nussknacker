@@ -1,5 +1,8 @@
-import React, { forwardRef, MouseEventHandler, useCallback } from "react";
-import { StyledDiv, StyledDivProps } from "./styledDiv";
+import type { MouseEventHandler } from "react";
+import React, { forwardRef, useCallback } from "react";
+
+import type { StyledDivProps } from "./styledDiv";
+import { StyledDiv } from "./styledDiv";
 
 export type FocusableDivProps = StyledDivProps;
 

@@ -1,6 +1,8 @@
-import { TFunction } from "i18next";
-import { Range } from "./CountsRangesButtons";
-import moment, { Moment } from "moment";
+import type { TFunction } from "i18next";
+import type { Moment } from "moment";
+import moment from "moment";
+
+import type { Range } from "./CountsRangesButtons";
 
 export function predefinedRanges(t: TFunction<string>): Range[] {
     const forDay = (name: string, moment: () => Moment): Range => ({

@@ -1,15 +1,17 @@
-import { ExpressionObj } from "../types";
+import "react-cron-generator/dist/cron-builder.css";
+import i18next from "i18next";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Cron from "react-cron-generator";
-import "react-cron-generator/dist/cron-builder.css";
-import Input from "../../field/Input";
-import i18next from "i18next";
-import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
-import { CronEditorStyled } from "./CronEditorStyled";
-import { ExtendedEditor, OnValueChange } from "../Editor";
-import { FieldError } from "../../Validators";
+
 import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import Input from "../../field/Input";
+import type { FieldError } from "../../Validators";
+import type { ExtendedEditor, OnValueChange } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
+import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
+import type { Formatter } from "../Formatter";
+import type { ExpressionObj } from "../types";
+import { CronEditorStyled } from "./CronEditorStyled";
 
 export type CronExpression = string;
 

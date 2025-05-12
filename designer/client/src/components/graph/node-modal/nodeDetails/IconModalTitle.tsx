@@ -1,6 +1,6 @@
-import React from "react";
+import type { PropsOf } from "@emotion/react";
 import { styled, Typography } from "@mui/material";
-import { PropsOf } from "@emotion/react";
+import React from "react";
 
 const ModalTitle = styled("div")({
     display: "flex",

@@ -1,9 +1,10 @@
-import React from "react";
 import { cx } from "@emotion/css";
-import { UnknownFunction } from "../../../../../../types/common";
-import { Duration } from "./DurationEditor";
-import { Period } from "./PeriodEditor";
+import React from "react";
+
+import type { UnknownFunction } from "../../../../../../types/common";
 import { nodeInput, nodeInputWithError } from "../../../NodeDetailsContent/NodeTableStyled";
+import type { Duration } from "./DurationEditor";
+import type { Period } from "./PeriodEditor";
 
 export type TimeRangeComponentType = {
     label: string;

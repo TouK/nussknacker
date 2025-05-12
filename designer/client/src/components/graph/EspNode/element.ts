@@ -1,13 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
-import { Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
 import { blend } from "@mui/system";
-import { attributes, dia, shapes } from "jointjs";
+import type { attributes, dia, shapes } from "jointjs";
 import { after, cloneDeepWith, isEmpty, toString } from "lodash";
 import millify from "millify";
+
 import { blendLighten, getNodeBorderColor } from "../../../containers/theme/helpers";
-import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
-import { UserSettings } from "../../../reducers/userSettings";
-import { NodeType, ProcessDefinitionData } from "../../../types";
+import type { NodeCounts, ProcessCounts } from "../../../reducers/graph";
+import type { UserSettings } from "../../../reducers/userSettings";
+import type { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
 import NodeUtils from "../NodeUtils";

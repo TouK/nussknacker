@@ -1,6 +1,7 @@
-import { TableData } from "./tableState";
+import type { Action } from "./action";
+import { ActionTypes } from "./action";
 import { expandTable, getNextColumnName, longestRow, normalizeValue, reorderArray } from "./helpers";
-import { Action, ActionTypes } from "./action";
+import type { TableData } from "./tableState";
 
 export function reducer(state: TableData, action: Action): TableData {
     switch (action.type) {

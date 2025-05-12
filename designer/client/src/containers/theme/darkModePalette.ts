@@ -1,5 +1,6 @@
 import { alpha } from "@mui/material";
-import { PaletteOptions } from "@mui/material/styles/createPalette";
+import type { PaletteOptions } from "@mui/material/styles/createPalette";
+
 import { EnvironmentTagColor } from "../EnvironmentTag";
 
 const standardPalette: PaletteOptions = {

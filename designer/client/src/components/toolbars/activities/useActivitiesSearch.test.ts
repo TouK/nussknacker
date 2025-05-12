@@ -1,9 +1,10 @@
-import { useActivitiesSearch } from "./useActivitiesSearch";
 import { act, renderHook } from "@testing-library/react";
-import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
-import { ActivitiesResponse } from "./types";
-import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
+
 import { sampleMetadataResponse } from "../../../../__mocks__/fixtures/sampleMetadataResponse";
+import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
+import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
+import type { ActivitiesResponse } from "./types";
+import { useActivitiesSearch } from "./useActivitiesSearch";
 
 const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
     {

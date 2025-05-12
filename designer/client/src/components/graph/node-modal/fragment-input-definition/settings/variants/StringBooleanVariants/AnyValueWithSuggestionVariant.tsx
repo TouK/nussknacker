@@ -1,16 +1,17 @@
+import { FormControl } from "@mui/material";
 import React from "react";
+import { useTranslation } from "react-i18next";
+
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { TextAreaNode } from "../../../../../../FormElements";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
+import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
+import type { AnyValueWithSuggestionsParameterVariant, onChangeType } from "../../../item";
+import { FixedValuesGroup } from "../fields/FixedValuesGroup";
+import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
-import { TextAreaNode } from "../../../../../../FormElements";
-import { AnyValueWithSuggestionsParameterVariant, onChangeType } from "../../../item";
-import { useTranslation } from "react-i18next";
-import { FixedValuesSetting } from "../fields/FixedValuesSetting";
-import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { ValidationsFields } from "../fields/validation";
-import { getValidationErrorsForField } from "../../../../editors/Validators";
-import { FormControl } from "@mui/material";
-import { FixedValuesGroup } from "../fields/FixedValuesGroup";
-import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;

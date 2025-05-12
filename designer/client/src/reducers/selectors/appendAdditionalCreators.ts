@@ -1,4 +1,5 @@
 import { curryRight } from "lodash";
+
 import type { Component, ComponentGroup } from "../../types";
 import { getFakeVarName } from "./getCreator";
 

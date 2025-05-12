@@ -1,5 +1,5 @@
-import { dia } from "jointjs";
 import { eventFrom } from "event-from";
+import type { dia } from "jointjs";
 
 export function isTouchDevice() {
     return (

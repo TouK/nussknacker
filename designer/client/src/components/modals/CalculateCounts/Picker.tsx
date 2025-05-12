@@ -1,10 +1,11 @@
-import { Moment } from "moment";
-import React, { useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { DTPicker } from "../../common/DTPicker";
-import moment from "moment/moment";
 import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
+import type { Moment } from "moment";
+import moment from "moment/moment";
+import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
+import { DTPicker } from "../../common/DTPicker";
 import { nodeInput, nodeInputWithError } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 const dateFormat = "YYYY-MM-DD";

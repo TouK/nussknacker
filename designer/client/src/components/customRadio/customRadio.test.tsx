@@ -1,8 +1,9 @@
-import React from "react";
-import { render, fireEvent, screen } from "@testing-library/react";
-import { CustomRadio } from "./CustomRadio";
-import { NuThemeProvider } from "../../containers/theme/nuThemeProvider";
 import { FormGroup } from "@mui/material";
+import { render, fireEvent, screen } from "@testing-library/react";
+import React from "react";
+
+import { NuThemeProvider } from "../../containers/theme/nuThemeProvider";
+import { CustomRadio } from "./CustomRadio";
 
 describe("CustomRadio component", () => {
     const defaultProps = {

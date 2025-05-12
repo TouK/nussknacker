@@ -1,7 +1,8 @@
-import { DataEditorProps } from "@glideapps/glide-data-grid";
+import type { DataEditorProps } from "@glideapps/glide-data-grid";
 import { alpha, darken, getLuminance, lighten, useTheme } from "@mui/material";
-import { blendDarken, getBorderColor } from "../../../../../../containers/theme/helpers";
 import { useMemo } from "react";
+
+import { blendDarken, getBorderColor } from "../../../../../../containers/theme/helpers";
 
 export const useTableTheme = (): DataEditorProps["theme"] => {
     const theme = useTheme();

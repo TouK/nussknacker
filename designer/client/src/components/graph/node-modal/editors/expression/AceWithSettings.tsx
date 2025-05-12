@@ -1,11 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
 import { throttle } from "lodash";
-import React, { ForwardedRef, forwardRef, useEffect, useMemo, useRef } from "react";
-import ReactAce from "react-ace/lib/ace";
+import type { ForwardedRef } from "react";
+import React, { forwardRef, useEffect, useMemo, useRef } from "react";
+import type ReactAce from "react-ace/lib/ace";
 import { useMergeRefs } from "rooks";
+
 import { useUserSettings } from "../../../../../common/userSettings";
-import { UserSettings } from "../../../../../reducers/userSettings";
-import AceWrapper, { AceKeyCommand, AceWrapperProps } from "./AceWrapper";
+import type { UserSettings } from "../../../../../reducers/userSettings";
+import type { AceKeyCommand, AceWrapperProps } from "./AceWrapper";
+import AceWrapper from "./AceWrapper";
 
 export default forwardRef(function AceWithSettings(
     props: Omit<AceWrapperProps, "noWrap" | "showLines">,

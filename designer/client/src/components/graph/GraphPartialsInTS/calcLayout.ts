@@ -1,8 +1,8 @@
-import * as dagre from "dagre";
+import dagre from "dagre";
 import type { dia } from "jointjs";
 import { layout, util } from "jointjs";
 
-import { isCellSelected, isModelElement, isModelOrStickyNote } from "./cellUtils";
+import { isCellSelected, isModelOrStickyNote } from "./cellUtils";
 
 export function getCellsToLayout(graph: dia.Graph, selectedItems: string[]): dia.Cell[] {
     const cells = graph.getCells();

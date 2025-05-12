@@ -1,4 +1,6 @@
-import React, { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
+import React from "react";
+
 import { useSearchQuery } from "../../containers/hooks/useSearchQuery";
 
 export function HideIfEmbedded({ children }: PropsWithChildren<unknown>) {

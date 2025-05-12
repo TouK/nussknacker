@@ -1,8 +1,10 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
-import { FieldsControl } from "./FieldsControl";
-import { NodeRow, NodeValue } from "../node";
-import { FieldError } from "../editors/Validators";
+import type { PropsWithChildren } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+
 import ValidationLabels from "../../../modals/ValidationLabels";
+import type { FieldError } from "../editors/Validators";
+import { NodeRow, NodeValue } from "../node";
+import { FieldsControl } from "./FieldsControl";
 
 interface FieldsContext {
     add?: () => void;

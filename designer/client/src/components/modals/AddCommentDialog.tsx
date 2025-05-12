@@ -1,15 +1,16 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import { PromptContent } from "../../windowManager";
 import { css, cx } from "@emotion/css";
-import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { useTranslation } from "react-i18next";
-import CommentInput from "../comment/CommentInput";
 import { Typography } from "@mui/material";
-import httpService from "../../http/HttpService";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import React, { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
+import httpService from "../../http/HttpService";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { PromptContent } from "../../windowManager";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import CommentInput from "../comment/CommentInput";
 
 const AddCommentDialog = (props: WindowContentProps) => {
     const [comment, setState] = useState("");

@@ -1,6 +1,6 @@
 import HttpService from "../../http/HttpService";
-import { ProcessDefinitionData } from "../../types";
-import { ThunkAction } from "../reduxTypes";
+import type { ProcessDefinitionData } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 
 export type ProcessDefinitionDataAction = {
     type: "PROCESS_DEFINITION_DATA";

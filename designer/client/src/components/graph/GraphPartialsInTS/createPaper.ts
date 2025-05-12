@@ -1,5 +1,6 @@
 import { dia } from "jointjs";
 import { defaults } from "lodash";
+
 import { defaultRouter } from "../EspNode/link";
 
 export function createPaper(options: dia.Paper.Options): dia.Paper {

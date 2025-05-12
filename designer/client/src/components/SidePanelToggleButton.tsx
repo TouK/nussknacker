@@ -1,9 +1,10 @@
 import { Fade, IconButton, styled } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
+
+import { PanelSide } from "../actions/nk";
 import LeftIcon from "../assets/img/arrows/arrow-left.svg";
 import RightIcon from "../assets/img/arrows/arrow-right.svg";
-import { PanelSide } from "../actions/nk";
 import { useSidePanel } from "./sidePanels/SidePanelsContext";
 
 const IconWrapper = styled(IconButton)(({ theme }) => ({

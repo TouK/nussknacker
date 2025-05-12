@@ -1,4 +1,5 @@
 import Moment from "moment";
+
 import { DATE_FORMAT, DISPLAY_DATE_FORMAT } from "../config";
 
 export const formatRelatively = (date: string): string => Moment(date).calendar(null, { sameElse: DISPLAY_DATE_FORMAT });

@@ -1,6 +1,7 @@
+import React, { forwardRef, useState } from "react";
+
 import { FocusableDiv } from "./focusableDiv";
 import { ResizeObserver } from "./resizeObserver";
-import React, { forwardRef, useState } from "react";
 
 type PaperComponentProps = {
     id: string;

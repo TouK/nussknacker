@@ -1,14 +1,15 @@
 import React from "react";
-import { RootState } from "../../../../reducers";
-import ProcessUtils from "../../../../common/ProcessUtils";
-import { connect } from "react-redux";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { useTranslation } from "react-i18next";
-import { useGraph } from "../../../graph/GraphContext";
+import { connect } from "react-redux";
+
 import Icon from "../../../../assets/img/toolbarButtons/PDF.svg";
-import { ToolbarButtonProps } from "../../types";
+import ProcessUtils from "../../../../common/ProcessUtils";
 import HttpService from "../../../../http/HttpService";
+import type { RootState } from "../../../../reducers";
+import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
+import { useGraph } from "../../../graph/GraphContext";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import type { ToolbarButtonProps } from "../../types";
 
 type Props = StateProps & ToolbarButtonProps;
 

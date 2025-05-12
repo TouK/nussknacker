@@ -1,10 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
-import { dia, g, shapes } from "jointjs";
+import type { Theme } from "@mui/material";
+import { alpha } from "@mui/material";
+import type { Selection } from "d3-selection";
+import { pointers, select } from "d3-selection";
+import type { dia } from "jointjs";
+import { g, shapes } from "jointjs";
+
+import { isTouchEvent } from "../../helpers/detectDevice";
 import { GlobalCursor } from "./GlobalCursor";
 import { pressedKeys } from "./KeysObserver";
-import { isTouchEvent } from "../../helpers/detectDevice";
-import { pointers, select, Selection } from "d3-selection";
-import { alpha, Theme } from "@mui/material";
 
 export enum SelectionMode {
     replace = "replace",

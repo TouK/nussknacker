@@ -1,6 +1,7 @@
 import React from "react";
-import { Subtype } from "./Subtype";
+
 import { Docs } from "./Docs";
+import { Subtype } from "./Subtype";
 
 enum HeaderType {
     SUBTYPE_DOCS,

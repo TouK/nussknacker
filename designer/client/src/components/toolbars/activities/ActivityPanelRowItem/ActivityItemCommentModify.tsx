@@ -1,8 +1,9 @@
 import React, { useCallback } from "react";
-import { ActionMetadata, ActivityComment, ActivityType, ModifyActivityCommentMeta } from "../types";
-import { useWindows, WindowKind } from "../../../../windowManager";
 import { useSelector } from "react-redux";
+
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
+import { useWindows, WindowKind } from "../../../../windowManager";
+import type { ActionMetadata, ActivityComment, ActivityType, ModifyActivityCommentMeta } from "../types";
 import { StyledActionIcon } from "./StyledActionIcon";
 
 interface Props {

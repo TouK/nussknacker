@@ -1,11 +1,14 @@
-import React from "react";
-import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { ExtendedEditor, OnValueChange } from "./Editor";
 import i18next from "i18next";
+import React from "react";
+
 import { Textarea } from "../field/Textarea";
-import { EditorType, ExpressionLang } from "./types";
-import { FieldError } from "../Validators";
+import type { FieldError } from "../Validators";
+import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import { FormatterType, typeFormatters } from "./Formatter";
+import type { Formatter } from "./Formatter";
+import { ExpressionLang } from "./types";
+import type { EditorType } from "./types";
 
 type Props = {
     expressionObj: $TodoType;

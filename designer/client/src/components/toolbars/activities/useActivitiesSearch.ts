@@ -1,10 +1,11 @@
-import { useCallback, useState } from "react";
-import { Activity, UIActivity } from "./ActivitiesPanel";
-import { Align } from "react-window";
-import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get, uniq } from "lodash";
-import { ActivityAdditionalFields } from "./types";
+import { useCallback, useState } from "react";
+import type { Align } from "react-window";
+
+import type { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
+import type { Activity, UIActivity } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
+import type { ActivityAdditionalFields } from "./types";
 
 interface Props {
     activities: UIActivity[];

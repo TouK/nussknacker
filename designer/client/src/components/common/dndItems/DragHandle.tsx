@@ -1,8 +1,10 @@
 import { css, cx } from "@emotion/css";
-import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
-import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
-import Handlebars from "./handlebars.svg";
+import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { styled, useTheme } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+
+import Handlebars from "./handlebars.svg";
 
 const StyledHandleBars = styled(Handlebars)`
     height: 35px;

@@ -1,7 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
-import { dia, V } from "jointjs";
+import type { Theme } from "@mui/material";
+import type { dia } from "jointjs";
+import { V } from "jointjs";
+
 import arrow from "!raw-loader!./arrow.svg";
-import { Theme } from "@mui/material";
 
 export function createUniqueArrowMarker(paper: dia.Paper, theme: Theme) {
     return paper.defineMarker({

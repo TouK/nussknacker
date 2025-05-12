@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import HttpService, { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
+
+import type { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
+import HttpService from "../http/HttpService";
 import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 
 interface Props {

@@ -1,5 +1,7 @@
 import staticHighlight from "ace-builds/src-noconflict/ext-static_highlight";
-import React, { PropsWithChildren, useEffect, useRef } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useEffect, useRef } from "react";
+
 import { EditorMode } from "../../editors/expression/types";
 
 export const HighlightedSpel = ({ children }: PropsWithChildren<unknown>) => {

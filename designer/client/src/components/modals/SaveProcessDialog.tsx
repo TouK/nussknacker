@@ -1,12 +1,17 @@
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { Typography } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
+
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../actions/nk";
-import { PromptContent } from "../../windowManager";
-import { CommentInput } from "../comment/CommentInput";
-import { ThunkAction } from "../../actions/reduxTypes";
+import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
+import type { ThunkAction } from "../../actions/reduxTypes";
+import { visualizationUrl } from "../../common/VisualizationUrl";
+import HttpService from "../../http/HttpService";
 import {
     getScenarioGraph,
     getProcessName,
@@ -14,13 +19,9 @@ import {
     isProcessRenamed,
     getScenarioLabels,
 } from "../../reducers/selectors/graph";
-import HttpService from "../../http/HttpService";
-import { ActionCreators as UndoActionCreators } from "redux-undo";
-import { visualizationUrl } from "../../common/VisualizationUrl";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Typography } from "@mui/material";
+import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
+import { CommentInput } from "../comment/CommentInput";
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const location = useLocation();

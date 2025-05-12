@@ -1,8 +1,9 @@
 import { isEqual, omitBy, uniq, without } from "lodash";
-import * as queryString from "query-string";
-import { ParsedQuery, ParseOptions } from "query-string";
+import { parse } from "query-string";
+import type { ParsedQuery, ParseOptions } from "query-string";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+
 import { ensureArray } from "../../common/arrayUtils";
 
 type QueryRecord = ParsedQuery<string | boolean | number>;
@@ -10,7 +11,7 @@ type QueryRecord = ParsedQuery<string | boolean | number>;
 const DEFAULT_ARRAY_FORMAT: ParseOptions["arrayFormat"] = "comma";
 
 function parseQuery(searchString = window.location.search): QueryRecord {
-    return queryString.parse(searchString, {
+    return parse(searchString, {
         arrayFormat: DEFAULT_ARRAY_FORMAT,
         parseNumbers: true,
         parseBooleans: true,

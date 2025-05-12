@@ -1,8 +1,10 @@
-import React, { createContext, FC, PropsWithChildren, useContext, useMemo, useState } from "react";
-import { Dialog } from "@mui/material";
-import { ConnectionErrorContent } from "./ConnectionErrorContent";
 import { CloudOff, WifiOff } from "@mui/icons-material";
+import { Dialog } from "@mui/material";
 import i18next from "i18next";
+import type { FC, PropsWithChildren } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
+
+import { ConnectionErrorContent } from "./ConnectionErrorContent";
 import { useCancelRequestsIfConnectionProblem } from "./useCancelRequestsIfConnectionProblem";
 
 const ConnectionErrorContext = createContext<{ handleChangeConnectionError: (connectionError: ConnectionError) => void | null }>(null);

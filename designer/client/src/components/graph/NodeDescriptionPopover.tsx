@@ -1,10 +1,14 @@
-import { Grow, Paper, PopoverProps, Popper } from "@mui/material";
-import { dia } from "jointjs";
-import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
+import type { PopoverProps } from "@mui/material";
+import { Grow, Paper, Popper } from "@mui/material";
+import type { dia } from "jointjs";
+import type { MutableRefObject } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
 import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { getNodeData, Graph } from "./Graph";
+import type { Graph } from "./Graph";
+import { getNodeData } from "./Graph";
 import { isStickyNoteElement } from "./GraphPartialsInTS";
 import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 import { Events } from "./types";

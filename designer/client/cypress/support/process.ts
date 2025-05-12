@@ -1,6 +1,6 @@
-import Chainable = Cypress.Chainable;
-
 import { padStart } from "lodash";
+
+import Chainable = Cypress.Chainable;
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace

@@ -1,6 +1,7 @@
-import { Reducer } from "../actions/reduxTypes";
-import reduceReducers from "reduce-reducers";
 import { isFunction } from "lodash";
+import reduceReducers from "reduce-reducers";
+
+import type { Reducer } from "../actions/reduxTypes";
 
 export type ReducersMapObject<S> = {
     [K in keyof S]: Reducer<S[K]> | ReducersObj<S[K]>;

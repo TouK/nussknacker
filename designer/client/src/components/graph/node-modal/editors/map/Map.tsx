@@ -1,10 +1,11 @@
 import React, { createContext, useCallback, useMemo } from "react";
-import { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+
+import type { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+import { DndItems } from "../../../../common/dndItems/DndItems";
+import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
 import { useDiffMark } from "../../PathsToMark";
-import { DndItems } from "../../../../common/dndItems/DndItems";
 import MapRow from "./MapRow";
-import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 
 interface MapProps<F extends Field> {
     setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;

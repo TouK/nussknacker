@@ -1,6 +1,7 @@
 import { css } from "@emotion/css";
-import React, { useCallback, useEffect, useRef, useState } from "react";
 import { alpha, Box } from "@mui/material";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
 import NuLogoIcon from "../assets/img/nussknacker-logo-icon.svg";
 import { useBuildInfo } from "../containers/BuildInfoProvider";
 

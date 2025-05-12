@@ -1,7 +1,10 @@
 import React, { forwardRef } from "react";
-import ReactAce from "react-ace/lib/ace";
-import { SpelEditor, SpelEditorProps } from "../../editors/expression/SpelEditor";
-import { ExpressionLang, ExpressionObj } from "../../editors/expression/types";
+import type ReactAce from "react-ace/lib/ace";
+
+import type { SpelEditorProps } from "../../editors/expression/SpelEditor";
+import { SpelEditor } from "../../editors/expression/SpelEditor";
+import type { ExpressionObj } from "../../editors/expression/types";
+import { ExpressionLang } from "../../editors/expression/types";
 
 type EditorProps = Omit<SpelEditorProps, "expressionObj" | "onValueChange" | "fieldErrors"> & {
     value: string;

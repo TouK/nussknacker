@@ -1,14 +1,17 @@
+import { FormControl, FormLabel } from "@mui/material";
 import PropTypes from "prop-types";
-import React, { PropsWithChildren } from "react";
-import { UnknownFunction } from "../../../types/common";
+import type { PropsWithChildren } from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import type { NodeValidationError } from "../../../types";
+import { EdgeKind } from "../../../types";
+import type { UnknownFunction } from "../../../types/common";
 import { NodeInput } from "../../FormElements";
-import NodeErrors from "./NodeErrors";
-import { EdgeKind, NodeValidationError } from "../../../types";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";
-import { FormControl, FormLabel } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
+import NodeErrors from "./NodeErrors";
 
 interface Props {
     edge?;

@@ -1,9 +1,9 @@
+import type { Toolbar } from "../../components/toolbarComponents/toolbar";
+import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
 import { getToolbarsInitData } from "../../reducers/selectors/toolbars";
-import { ToolbarsSide } from "../../reducers/toolbars";
-import { ThunkAction } from "../reduxTypes";
-import { Toolbar } from "../../components/toolbarComponents/toolbar";
-import { WithId } from "../../types/common";
-import { ToolbarsConfig } from "../../components/toolbarSettings/types";
+import type { ToolbarsSide } from "../../reducers/toolbars";
+import type { WithId } from "../../types/common";
+import type { ThunkAction } from "../reduxTypes";
 
 export type ToolbarPosition = [ToolbarsSide | string, number];
 

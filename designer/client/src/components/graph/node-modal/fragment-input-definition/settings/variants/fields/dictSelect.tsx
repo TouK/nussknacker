@@ -1,12 +1,13 @@
-import React from "react";
-import { useGetAllDicts } from "../StringBooleanVariants/useGetAllDicts";
-import { NodeValidationError, ReturnedType } from "../../../../../../../types";
 import { FormControl } from "@mui/material";
-import { SettingLabelStyled } from "./StyledSettingsComponnets";
-import { TypeSelect } from "../../../TypeSelect";
-import { getValidationErrorsForField } from "../../../../editors/Validators";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { onChangeType } from "../../../item";
+
+import type { NodeValidationError, ReturnedType } from "../../../../../../../types";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
+import type { onChangeType } from "../../../item";
+import { TypeSelect } from "../../../TypeSelect";
+import { useGetAllDicts } from "../StringBooleanVariants/useGetAllDicts";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
 interface Props {
     typ: ReturnedType;

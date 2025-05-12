@@ -1,6 +1,8 @@
-import React, { ComponentType, SVGProps } from "react";
-import { styledIcon } from "./Styled";
 import { Box, Typography } from "@mui/material";
+import type { ComponentType, SVGProps } from "react";
+import React from "react";
+
+import { styledIcon } from "./Styled";
 
 export default function ValidTip({
     icon: Icon,

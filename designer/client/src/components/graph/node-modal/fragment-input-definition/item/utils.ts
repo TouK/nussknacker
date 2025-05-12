@@ -1,6 +1,7 @@
-import { FragmentInputParameter } from ".";
-import { ReturnedType } from "../../../../../types";
 import { v4 as uuid4 } from "uuid";
+
+import type { FragmentInputParameter } from ".";
+import type { ReturnedType } from "../../../../../types";
 
 //This projection is used for backward-compatibility reasons, since previously fragment input definition type options display part contained full class name
 export function resolveRefClazzName(refClazzName: string): string {

@@ -1,9 +1,11 @@
 import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
-import { getTabs } from "../reducers/selectors/settings";
-import { BaseTab, DynamicTab } from "./DynamicTab";
-import { Page } from "./Page";
 import { Navigate } from "react-router-dom";
+
+import { getTabs } from "../reducers/selectors/settings";
+import type { BaseTab } from "./DynamicTab";
+import { DynamicTab } from "./DynamicTab";
+import { Page } from "./Page";
 
 export function CustomTabWrapper<P extends BaseTab>(props: P) {
     return (

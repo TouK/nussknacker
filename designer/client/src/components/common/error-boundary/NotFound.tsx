@@ -1,7 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import WarningNotFound from "./images/warning-occurred.svg";
+
 import { DefaultFullScreenMessage } from "./DefaultFullScreenMessage";
+import WarningNotFound from "./images/warning-occurred.svg";
 
 export function NotFound(props: { message?: string }): JSX.Element {
     const { t } = useTranslation();

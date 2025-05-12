@@ -1,5 +1,7 @@
 import { Stack } from "@mui/material";
-import React, { UIEvent, useCallback } from "react";
+import type { UIEvent } from "react";
+import React, { useCallback } from "react";
+
 import { getTabindexedElements } from "../../editors/expression/AceWrapper";
 import { SpelChip } from "./spelChip";
 

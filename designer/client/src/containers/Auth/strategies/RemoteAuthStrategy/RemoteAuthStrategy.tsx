@@ -1,13 +1,15 @@
-import { ModuleUrl } from "@touk/federated-component";
-import React, { FunctionComponent, PropsWithChildren } from "react";
+import type { ModuleUrl } from "@touk/federated-component";
+import type { FunctionComponent, PropsWithChildren } from "react";
+import React from "react";
+
 import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
 import { ErrorBoundary } from "../../../../components/common/error-boundary";
 import { PlainRemoteComponent } from "../../../../components/RemoteComponent";
-import { RemoteAuthenticationSettings } from "../../../../reducers/settings";
+import type { RemoteAuthenticationSettings } from "../../../../reducers/settings";
 import { AuthErrorCodes } from "../../AuthErrorCodes";
-import { Strategy, StrategyConstructor } from "../../Strategy";
-import { AuthClient } from "./externalAuthModule";
+import type { Strategy, StrategyConstructor } from "../../Strategy";
+import type { AuthClient } from "./externalAuthModule";
 
 type AuthLibCallback = (a: AuthClient) => void;
 type RemoteAuthProviderProps = PropsWithChildren<{

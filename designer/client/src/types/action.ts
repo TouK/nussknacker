@@ -1,6 +1,6 @@
-import { NodeId } from "./node";
-import { ActionName } from "../components/Process/types";
-import { EditorMode } from "../components/graph/node-modal/editors/expression/types";
+import type { EditorMode } from "../components/graph/node-modal/editors/expression/types";
+import type { ActionName } from "../components/Process/types";
+import type { NodeId } from "./node";
 
 export interface ActionParameterConfig {
     editor: any;

@@ -1,10 +1,11 @@
-import React from "react";
-import ExpressionField from "./editors/expression/ExpressionField";
-import ProcessUtils from "../../../common/ProcessUtils";
-import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import { NodeResultsForContext } from "../../../common/TestResultUtils";
-import { getValidationErrorsForField } from "./editors/Validators";
 import { FormControl, FormLabel, styled } from "@mui/material";
+import React from "react";
+
+import ProcessUtils from "../../../common/ProcessUtils";
+import type { NodeResultsForContext } from "../../../common/TestResultUtils";
+import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
+import ExpressionField from "./editors/expression/ExpressionField";
+import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 const StyledFieldControl = styled("div")(() => ({

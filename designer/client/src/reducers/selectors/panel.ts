@@ -1,4 +1,5 @@
 import { createSelector } from "reselect";
+
 import { defaultState } from "../panel";
 import { getToolbars } from "./toolbars";
 
