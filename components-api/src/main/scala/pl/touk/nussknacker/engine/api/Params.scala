@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-final class Params private (val nameToRawValueMap: Map[ParameterName, Any]) {
+final class Params private (val nameToRawValueMap: Map[ParameterName, Any]) extends Serializable {
 
   def isPresent(name: ParameterName): Boolean = nameToRawValueMap.contains(name)
 

@@ -88,6 +88,13 @@ object Implicits {
       case _   => list
     }
 
+    def transformLast(f: T => T): List[T] = {
+      list match {
+        case Nil => Nil
+        case _   => list.init ::: f(list.last) :: Nil
+      }
+    }
+
   }
 
 }

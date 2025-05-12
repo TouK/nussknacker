@@ -222,7 +222,8 @@ trait ScenarioTestingApiHttpServiceSpec
              |                "hintText": null,
              |                "label": "paramFixedString",
              |                "requiredParam": false,
-             |                "category": "Standard"
+             |                "category": "Standard",
+             |                "changesCanReloadParameters": false
              |            }
              |        ]
              |    }
@@ -290,7 +291,8 @@ trait ScenarioTestingApiHttpServiceSpec
            |                "hintText": null,
            |                "label": "paramRawString",
            |                "requiredParam": false,
-           |                "category": "Standard"
+           |                "category": "Standard",
+           |                "changesCanReloadParameters": false
            |            }
            |        ]
            |    }

@@ -1590,7 +1590,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         defaultValue = Some("realDefault".spelTemplate),
         labelOpt = Some("Parameter 1")
       ),
-    Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
+    Parameter[Long](ParameterName("lazyPar1"))
+      .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
     Parameter[Any](ParameterName("a")),
     Parameter[Any](ParameterName("b"))
   )

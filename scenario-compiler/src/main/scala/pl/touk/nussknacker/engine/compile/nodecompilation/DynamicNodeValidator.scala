@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.Implicits.{RichIterable, RichScalaMap}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -115,10 +115,13 @@ class DynamicNodeValidator(
             case component.FinalResults(finalContext, errors, state) =>
               // we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
               val allErrors = (errorsCombined ++ errors).distinct
+              // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
+              val finalParametersDefinition =
+                evaluatedNodeParametersSoFar.map(_._1).transformLast(_.copy(changesCanReloadParameters = false))
               Valid(
                 TransformationResult(
                   allErrors,
-                  evaluatedNodeParametersSoFar.map(_._1),
+                  finalParametersDefinition,
                   finalContext,
                   state,
                   nodeParameters
@@ -129,13 +132,10 @@ class DynamicNodeValidator(
             case component.NextParameters(newParametersDefinitions, newParameterErrors, state) =>
               val enrichedParametersDefinitions =
                 StandardParameterEnrichment.enrichParameterDefinitions(newParametersDefinitions, parametersConfig)
-              val newParametersDefinition = enrichedParametersDefinitions.reverse match {
-                case last :: rest =>
-                  rest.reverse :::
-                    last.copy(changesCanReloadParameters = true) ::
-                    Nil
-                case _ => throw new IllegalStateException("NextParameters with empty parameters list")
-              }
+              // We assume that the developer of component split parameter transformation steps this way because
+              // the last parameter in the step can cause changes in parameter definitions for the next step
+              val newParametersDefinition =
+                enrichedParametersDefinitions.transformLast(_.copy(changesCanReloadParameters = true))
               val (evaluatedParametersCombinedWithDefinition, newErrorsCombined, newNodeParameters) =
                 newParametersDefinition.foldLeft(
                   (evaluatedNodeParametersSoFar, errorsCombined ++ newParameterErrors, nodeParameters)
