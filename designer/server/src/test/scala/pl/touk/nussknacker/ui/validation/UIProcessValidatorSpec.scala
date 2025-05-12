@@ -10,7 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelConfig}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -2704,9 +2704,9 @@ private object UIProcessValidatorSpec {
         additionalConfigsFromProvider = additionalConfigsFromProvider,
         configCreator = new EmptyProcessConfigCreator {
 
-          override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
+          override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
             super
-              .expressionConfig(modelDependencies)
+              .expressionConfig(modelConfig)
               .copy(
                 globalProcessVariables = Map("COLLECTION" -> WithCategories.anyCategory(collection))
               )

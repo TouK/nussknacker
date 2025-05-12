@@ -6,7 +6,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
-import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.{ModelConfig, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ExpressionConfig, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ExpressionConfig}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -104,7 +104,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       ),
       configCreator = new EmptyProcessConfigCreator {
         override def expressionConfig(
-            modelDependencies: ProcessObjectDependencies
+            modelConfig: ModelConfig
         ): ExpressionConfig =
           ExpressionConfig(Map.empty, List.empty, dictionaries = Map("someDictId" -> EmbeddedDictDefinition(Map.empty)))
       }

@@ -4,16 +4,10 @@ import cats.Monad
 import cats.data.{State, StateT, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
+import pl.touk.nussknacker.engine.{ModelConfig, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.RuntimeMode
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentDefinition,
-  ComponentType,
-  NodeComponentInfo,
-  NodesDeploymentData,
-  UnboundedStreamComponent
-}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -148,7 +142,7 @@ object sample {
 
   object WithUtilConfigCreator extends EmptyProcessConfigCreator {
 
-    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
+    override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
       ExpressionConfig(
         Map("UTIL" -> WithCategories.anyCategory(new UtilHelpers)),
         List.empty

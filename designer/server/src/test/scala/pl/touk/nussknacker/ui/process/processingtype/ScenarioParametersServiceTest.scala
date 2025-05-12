@@ -293,7 +293,7 @@ class ScenarioParametersServiceTest
             managersPath.resolve("lite-embedded-manager.jar"),
           )
         )
-      modelDependencies = ModelDependencies(
+      modelConfig = ModelDependencies(
         Map.empty,
         componentId => DesignerWideComponentId(componentId.toString),
         Some(workPath),
@@ -308,7 +308,7 @@ class ScenarioParametersServiceTest
             .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
           deploymentManagersClassLoader
         ),
-        modelDependencies,
+        modelConfig,
         deploymentManagersClassLoader,
         TestFactory.deploymentManagerDependencies,
       )

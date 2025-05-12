@@ -132,6 +132,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `Unknown` is a case class now and it has `DisplayStrategy` field. It affects how the type is displayed.
   * There is `Unknown` object which extends the case class with `DefaultDisplayStrategy` for compatibility.
   * When introducing new pattern matches regarding types `Unknown(_)` should be used so all display strategies are targeted.
+* [#8054](https://github.com/TouK/nussknacker/pull/8054) `ProcessObjectDependencies` class was replaced by `ModelConfig`
 
 ### Other changes
 

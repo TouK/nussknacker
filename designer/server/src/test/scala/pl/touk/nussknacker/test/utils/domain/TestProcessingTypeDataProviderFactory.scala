@@ -46,12 +46,12 @@ object TestProcessingTypeDataProviderFactory {
   def create(
       processingTypeConfigs: ProcessingTypeConfigs,
       modelClassLoaderProvider: ModelClassLoaderProvider,
-      modelDependencies: ModelDependencies,
+      modelConfig: ModelDependencies,
       deploymentManagersClassLoader: DeploymentManagersClassLoader,
       deploymentManagerDependencies: DeploymentManagerDependencies,
   ): Resource[IO, ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]] = {
 
-    val modelDataProvider = loadModelData(processingTypeConfigs, modelClassLoaderProvider, modelDependencies)
+    val modelDataProvider = loadModelData(processingTypeConfigs, modelClassLoaderProvider, modelConfig)
     for {
       deploymentDatas <- loadDeploymentManagers(
         processingTypeConfigs,
@@ -70,14 +70,14 @@ object TestProcessingTypeDataProviderFactory {
   private def loadModelData(
       processingTypeConfigs: ProcessingTypeConfigs,
       modelClassLoaderProvider: ModelClassLoaderProvider,
-      modelDependencies: ModelDependencies
+      modelConfig: ModelDependencies
   ) = {
     ProcessingTypeDataProvider
       .fromState(
         ModelDataLoader
           .load(
             processingTypeConfigs,
-            _ => modelDependencies,
+            _ => modelConfig,
             modelClassLoaderProvider
           )
       )
