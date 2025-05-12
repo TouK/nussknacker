@@ -1,10 +1,11 @@
-import { Box, styled, Typography } from "@mui/material";
-import { PropsOf } from "@emotion/react";
-import React from "react";
-import { Subtype } from "./Subtype";
-import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import type { PropsOf } from "@emotion/react";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { Box, styled, Typography } from "@mui/material";
+import React from "react";
 import { useTranslation } from "react-i18next";
+
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { Subtype } from "./Subtype";
 
 const LinkStyled = styled("a")({
     display: "flex",

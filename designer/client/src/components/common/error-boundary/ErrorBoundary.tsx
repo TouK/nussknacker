@@ -1,6 +1,9 @@
-import React, { PropsWithChildren } from "react";
-import { ErrorBoundary as ErrorBoundaryLibrary, ErrorBoundaryProps } from "react-error-boundary";
 import i18next from "i18next";
+import type { PropsWithChildren } from "react";
+import React from "react";
+import type { ErrorBoundaryProps } from "react-error-boundary";
+import { ErrorBoundary as ErrorBoundaryLibrary } from "react-error-boundary";
+
 import { FullPageErrorBoundaryFallbackComponent } from "./fallbackComponent";
 
 export const messages = {

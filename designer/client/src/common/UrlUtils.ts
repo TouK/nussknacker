@@ -1,5 +1,6 @@
-import { BACKEND_STATIC_URL } from "../config";
 import urljoin from "url-join";
+
+import { BACKEND_STATIC_URL } from "../config";
 
 const absoluteIconPatternRegexp = /^((http|https|ftp):\/\/)/;
 

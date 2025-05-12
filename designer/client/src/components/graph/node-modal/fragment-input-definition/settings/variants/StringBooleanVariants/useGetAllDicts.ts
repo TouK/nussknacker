@@ -1,9 +1,10 @@
-import { useSelector } from "react-redux";
-import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+
 import httpService from "../../../../../../../http/HttpService";
-import { Option } from "../../../FieldsSelect";
-import { ReturnedType } from "../../../../../../../types";
+import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
+import type { ReturnedType } from "../../../../../../../types";
+import type { Option } from "../../../FieldsSelect";
 
 interface Props {
     typ: ReturnedType;

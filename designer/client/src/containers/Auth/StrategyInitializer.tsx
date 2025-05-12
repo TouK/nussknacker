@@ -1,9 +1,12 @@
-import React, { PropsWithChildren, useCallback, useEffect, useRef, useState } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
 import api from "../../api";
 import LoaderSpinner from "../../components/spinner/Spinner";
 import { AuthErrorCodes } from "./AuthErrorCodes";
-import { Strategy } from "./Strategy";
-import { InitErrorComponent, InitErrorComponentProps } from "./InitErrorComponent";
+import type { InitErrorComponentProps } from "./InitErrorComponent";
+import { InitErrorComponent } from "./InitErrorComponent";
+import type { Strategy } from "./Strategy";
 
 interface Props {
     onAuthFulfilled: () => Promise<void>;

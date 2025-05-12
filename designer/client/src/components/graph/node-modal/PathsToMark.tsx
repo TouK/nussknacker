@@ -1,5 +1,6 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext } from "react";
 import { startsWith } from "lodash";
+import type { PropsWithChildren } from "react";
+import React, { createContext, useCallback, useContext } from "react";
 
 const PathsToMarkContext = createContext<string[] | null>(null);
 

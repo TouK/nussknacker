@@ -1,9 +1,11 @@
-import { ModuleUrl } from "@touk/federated-component";
-import { WindowContentProps } from "@touk/window-manager";
+import type { ModuleUrl } from "@touk/federated-component";
+import type { WindowContentProps } from "@touk/window-manager";
 import type { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer";
 import React, { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { WindowContent, WindowKind } from "../windowManager";
+
+import type { WindowKind } from "../windowManager";
+import { WindowContent } from "../windowManager";
 import { LoadingButtonTypes } from "../windowManager/LoadingButton";
 import { RemoteComponent } from "./RemoteComponent";
 

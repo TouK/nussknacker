@@ -1,10 +1,11 @@
 import { Collapse, Stack } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactAce from "react-ace/lib/ace";
+import type ReactAce from "react-ace/lib/ace";
 import { useArrayState, useFocusWithin } from "rooks";
+
 import { getBorderColor } from "../../../../../containers/theme/helpers";
-import { VariableTypes } from "../../../../../types";
-import { ValueFieldProps } from "../../../../valueField";
+import type { VariableTypes } from "../../../../../types";
+import type { ValueFieldProps } from "../../../../valueField";
 import { rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import { Editor } from "./editor";
 import { ValuesList } from "./valuesList";

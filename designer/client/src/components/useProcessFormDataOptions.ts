@@ -1,7 +1,9 @@
-import { FormValue } from "./AddProcessForm";
-import { useMemo } from "react";
 import { every, groupBy, map, some, uniq, uniqBy } from "lodash";
-import { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
+import { useMemo } from "react";
+
+import type { ScenarioParametersCombination } from "../http/HttpService";
+import { ProcessingMode } from "../http/HttpService";
+import type { FormValue } from "./AddProcessForm";
 
 const getFilteredValues = (allCombinations: ScenarioParametersCombination[], value: Partial<FormValue>) => {
     let availableCombinations = allCombinations;

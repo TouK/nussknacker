@@ -1,11 +1,13 @@
-import React, { useMemo } from "react";
+import type { Theme } from "@mui/material";
+import { Link, ThemeProvider, Typography, useTheme } from "@mui/material";
+import type { Variant } from "@mui/material/styles/createTypography";
 import { isEmpty } from "lodash";
-import xss from "xss";
-import { PanelComment } from "./StyledComment";
-import { Link, Theme, ThemeProvider, Typography, useTheme } from "@mui/material";
+import React, { useMemo } from "react";
 import ReactDOMServer, { renderToString } from "react-dom/server";
 import Highlighter from "react-highlight-words";
-import { Variant } from "@mui/material/styles/createTypography";
+import xss from "xss";
+
+import { PanelComment } from "./StyledComment";
 
 interface Props {
     content: string;

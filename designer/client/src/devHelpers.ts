@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import i18next from "i18next";
 
 export const isProd = process.env.NODE_ENV === "production";

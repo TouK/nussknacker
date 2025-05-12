@@ -1,8 +1,11 @@
 import { css } from "@emotion/css";
-import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
-import { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer";
-import React, { PropsWithChildren, ReactElement, useMemo, useState } from "react";
+import type { DefaultContentProps } from "@touk/window-manager";
+import { DefaultContent } from "@touk/window-manager";
+import type { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer";
+import type { PropsWithChildren, ReactElement } from "react";
+import React, { useMemo, useState } from "react";
 import { useKey } from "rooks";
+
 import { ErrorBoundary, DialogErrorFallbackComponent } from "../components/common/error-boundary";
 import { StyledContent, StyledHeader } from "../components/graph/node-modal/node/StyledHeader";
 import { IconModalHeader } from "../components/graph/node-modal/nodeDetails/NodeDetailsModalHeader";

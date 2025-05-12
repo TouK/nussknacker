@@ -1,6 +1,6 @@
-import { PopoverPosition } from "@mui/material/Popover/Popover";
-import React, { useMemo } from "react";
 import { Menu, MenuItem } from "@mui/material";
+import type { PopoverPosition } from "@mui/material/Popover/Popover";
+import React, { useMemo } from "react";
 
 interface TypesMenuParams {
     anchorPosition: PopoverPosition | null;

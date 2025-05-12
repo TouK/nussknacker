@@ -1,5 +1,6 @@
-import { dia } from "jointjs";
-import { Layout } from "../../../actions/nk";
+import type { dia } from "jointjs";
+
+import type { Layout } from "../../../actions/nk";
 import { isElement } from "./cellUtils";
 
 export const updateLayout = (graph: dia.Graph, layout: Layout): void => {

@@ -1,11 +1,13 @@
-import { Edge, EdgeKind, NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
-import { useDiffMark } from "./PathsToMark";
-import { IdField } from "./IdField";
-import { StaticExpressionField } from "./StaticExpressionField";
+import React from "react";
+
+import type { Edge, NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
+import { EdgeKind } from "../../../types";
+import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
-import { DescriptionField } from "./DescriptionField";
-import React from "react";
+import { IdField } from "./IdField";
+import { useDiffMark } from "./PathsToMark";
+import { StaticExpressionField } from "./StaticExpressionField";
 
 export function Filter({
     edges,

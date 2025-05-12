@@ -4,11 +4,12 @@ import { blend } from "@mui/system";
 import React from "react";
 import { useSelector } from "react-redux";
 import { usePreviousDifferent } from "rooks";
+
 import { blendLighten, getBorderColor } from "../containers/theme/helpers";
-import { RootState } from "../reducers";
+import type { RootState } from "../reducers";
 import { getIdMapping } from "../reducers/graph/utils";
 import { getNodes } from "../reducers/selectors/graph";
-import { NodeType } from "../types";
+import type { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";

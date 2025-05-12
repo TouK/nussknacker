@@ -1,17 +1,19 @@
-import React, { ComponentProps, useMemo } from "react";
-import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
-import { FieldType } from "../graph/node-modal/editors/field/Field";
 import { sortBy } from "lodash";
-import { FieldLabel } from "../graph/node-modal/FieldLabel";
-import ScenarioProperty from "./ScenarioProperty";
-import { DescriptionField } from "../graph/node-modal/DescriptionField";
-import { NodeField } from "../graph/node-modal/NodeField";
-import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
-import HttpService from "../../http/HttpService";
-import { NodeValidationError, PropertiesType } from "../../types";
+import type { ComponentProps } from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
+
+import HttpService from "../../http/HttpService";
+import type { NodeValidationError, PropertiesType } from "../../types";
+import { DescriptionField } from "../graph/node-modal/DescriptionField";
+import { FieldType } from "../graph/node-modal/editors/field/Field";
+import { FieldLabel } from "../graph/node-modal/FieldLabel";
+import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
+import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { NodeField } from "../graph/node-modal/NodeField";
 import { NameField } from "./NameField";
+import ScenarioProperty from "./ScenarioProperty";
 
 interface Props {
     errors?: NodeValidationError[];

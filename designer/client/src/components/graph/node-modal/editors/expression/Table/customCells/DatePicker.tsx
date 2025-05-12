@@ -1,10 +1,11 @@
-import { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
-import React, { useMemo } from "react";
+import type { CustomCell, EditableGridCell } from "@glideapps/glide-data-grid";
+import type { ProvideEditorComponent } from "@glideapps/glide-data-grid/src/internal/data-grid/data-grid-types";
 import moment from "moment";
-import { DTPicker } from "../../../../../../common/DTPicker";
-import { SupportedType } from "../TableEditor";
-import { CustomCell, EditableGridCell } from "@glideapps/glide-data-grid";
+import React, { useMemo } from "react";
 import { useWindowSize } from "rooks";
+
+import { DTPicker } from "../../../../../../common/DTPicker";
+import type { SupportedType } from "../TableEditor";
 
 export type DatePickerCellData = { date: string; kind: "date-picker-cell"; format: SupportedType };
 export type DatePickerCell = CustomCell<DatePickerCellData>;

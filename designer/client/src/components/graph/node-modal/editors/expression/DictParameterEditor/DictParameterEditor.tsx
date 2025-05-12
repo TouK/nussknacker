@@ -1,21 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Autocomplete, Box, SxProps, Theme, useTheme } from "@mui/material";
-import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
-import { getScenario } from "../../../../../../reducers/selectors/graph";
-import { useSelector } from "react-redux";
-import { debounce } from "@mui/material/utils";
-import { ExtendedEditor, OnValueChange } from "../Editor";
-import { ExpressionLang, ExpressionObj } from "../types";
-import { FieldError } from "../../Validators";
-import { NodeInput } from "../../../../../FormElements";
-import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
-import i18next from "i18next";
-import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { cx } from "@emotion/css";
+import type { SxProps, Theme } from "@mui/material";
+import { Autocomplete, Box, useTheme } from "@mui/material";
+import { debounce } from "@mui/material/utils";
+import i18next from "i18next";
 import { isEmpty } from "lodash";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
+import type { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
+import HttpService from "../../../../../../http/HttpService";
+import { getScenario } from "../../../../../../reducers/selectors/graph";
+import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
+import { NodeInput } from "../../../../../FormElements";
+import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import type { FieldError } from "../../Validators";
+import type { ExtendedEditor, OnValueChange } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
+import type { ExpressionObj } from "../types";
+import { ExpressionLang } from "../types";
 
 interface Props {
     expressionObj: ExpressionObj;

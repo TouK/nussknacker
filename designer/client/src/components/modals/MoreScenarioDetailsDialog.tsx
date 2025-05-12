@@ -1,17 +1,19 @@
 import { Box, Skeleton, styled, Typography } from "@mui/material";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { WindowContent, WindowKind } from "../../windowManager";
-import { ProcessStateType, Scenario } from "../Process/types";
-import { DATE_FORMAT } from "../../config";
-import moment from "moment";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
-import { getProcessingModeVariantName } from "../toolbars/scenarioDetails/getProcessingModeVariantName";
+import moment from "moment";
+import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
 import NuLogoIcon from "../../assets/img/nussknacker-logo-icon.svg";
-import { useGetAllCombinations } from "../useGetAllCombinations";
+import { DATE_FORMAT } from "../../config";
+import type { WindowKind } from "../../windowManager";
+import { WindowContent } from "../../windowManager";
+import type { ProcessStateType, Scenario } from "../Process/types";
 import LoaderSpinner from "../spinner/Spinner";
+import { getProcessingModeVariantName } from "../toolbars/scenarioDetails/getProcessingModeVariantName";
+import { useGetAllCombinations } from "../useGetAllCombinations";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 

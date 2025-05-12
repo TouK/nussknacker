@@ -17,7 +17,7 @@ import {
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
-import * as ClipboardUtils from "../../common/ClipboardUtils";
+import { readText, writeText } from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
 import { useInterval } from "../../containers/Interval";
@@ -147,7 +147,7 @@ export default function SelectionContextProvider(
             }
 
             if (canModifySelected) {
-                await ClipboardUtils.writeText(JSON.stringify(selection));
+                await writeText(JSON.stringify(selection));
                 return selection.nodes;
             } else {
                 dispatch(error(t("userActions.copy.failed", "Can not copy selected content. It should contain only plain nodes")));
@@ -213,7 +213,7 @@ export default function SelectionContextProvider(
                 return;
             }
             try {
-                const clipboardText = await ClipboardUtils.readText(event);
+                const clipboardText = await readText(event);
                 parseInsertNodes(clipboardText);
             } catch {
                 dispatch(error(t("userActions.paste.notAvailable", "Paste button is not available. Try Ctrl+V")));

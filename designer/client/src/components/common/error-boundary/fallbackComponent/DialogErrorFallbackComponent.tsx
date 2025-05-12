@@ -1,6 +1,7 @@
 import { Button, styled, Typography } from "@mui/material";
 import i18next from "i18next";
 import React from "react";
+
 import { messages } from "../ErrorBoundary";
 import ErrorOccurred from "../images/error-occurred.svg";
 

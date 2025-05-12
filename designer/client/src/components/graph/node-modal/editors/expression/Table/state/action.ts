@@ -1,6 +1,7 @@
-import { TableData } from "./tableState";
-import { TaggedUnion } from "type-fest";
-import { SupportedType } from "../TableEditor";
+import type { TaggedUnion } from "type-fest";
+
+import type { SupportedType } from "../TableEditor";
+import type { TableData } from "./tableState";
 
 export const ActionTypes = {
     expand: "expand",

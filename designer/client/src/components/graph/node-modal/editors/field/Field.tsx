@@ -1,11 +1,13 @@
-import React, { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
+import React from "react";
+
+import type { FieldError } from "../Validators";
 import Checkbox from "./Checkbox";
 import Input from "./Input";
 import LabeledInput from "./LabeledInput";
 import LabeledTextarea from "./LabeledTextarea";
-import UnknownField from "./UnknownField";
-import { FieldError } from "../Validators";
 import { MarkdownFormControl } from "./MarkdownFormControl";
+import UnknownField from "./UnknownField";
 
 export enum FieldType {
     input = "input",

@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import type { ProcessName } from "src/components/Process/types";
+
 import HttpService from "../http/HttpService";
 import { getMetricsSettings } from "../reducers/selectors/settings";
 import { CustomTabWrapper } from "./CustomTabPage";
-import { ProcessName } from "src/components/Process/types";
 
 function useMetricsUrl(processName?: ProcessName): string {
     const [processingType, setProcessingType] = useState("");

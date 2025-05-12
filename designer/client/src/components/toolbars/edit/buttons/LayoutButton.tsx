@@ -1,11 +1,12 @@
 import React from "react";
-import { useThunkDispatch } from "../../../../store/configureStore";
-import { layout } from "../../../../actions/nk";
-import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { useTranslation } from "react-i18next";
-import { useGraph } from "../../../graph/GraphContext";
+
+import { layout } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/layout.svg";
-import { ToolbarButtonProps } from "../../types";
+import { useThunkDispatch } from "../../../../store/configureStore";
+import { useGraph } from "../../../graph/GraphContext";
+import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
+import type { ToolbarButtonProps } from "../../types";
 
 function LayoutButton(props: ToolbarButtonProps) {
     const dispatch = useThunkDispatch();

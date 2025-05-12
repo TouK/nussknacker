@@ -1,18 +1,19 @@
-import React, { useCallback } from "react";
 import { isEqual } from "lodash";
-import { TypeSelect } from "../TypeSelect";
+import React, { useCallback } from "react";
+
+import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
+import Input from "../../editors/field/Input";
 import { getValidationErrorsForField } from "../../editors/Validators";
-import { Option } from "../FieldsSelect";
-import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
+import { NodeValue } from "../../node";
+import { useFieldsContext } from "../../node-row-fields-provider";
+import { useDiffMark } from "../../PathsToMark";
 import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
+import type { Option } from "../FieldsSelect";
 import { Settings } from "../settings/Settings";
-import { useDiffMark } from "../../PathsToMark";
-import { onChangeType, FragmentInputParameter } from "./types";
-import { useFieldsContext } from "../../node-row-fields-provider";
-import Input from "../../editors/field/Input";
-import { NodeValue } from "../../node";
 import { SettingsProvider } from "../settings/SettingsProvider";
+import { TypeSelect } from "../TypeSelect";
+import type { onChangeType, FragmentInputParameter } from "./types";
 import { resolveRefClazzName } from "./utils";
 
 interface ItemProps {

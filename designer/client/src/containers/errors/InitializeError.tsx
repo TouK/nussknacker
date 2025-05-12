@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
-import { InitErrorComponentProps } from "../Auth/InitErrorComponent";
+
 import { DefaultFullScreenMessage } from "../../components/common/error-boundary";
 import { LoadingButton } from "../../windowManager/LoadingButton";
+import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
+import type { InitErrorComponentProps } from "../Auth/InitErrorComponent";
 
 interface ErrorProps {
     message: string;

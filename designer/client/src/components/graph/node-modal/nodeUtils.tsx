@@ -1,7 +1,8 @@
-import { NodeType } from "../../../types";
 import { cloneDeep, get, has } from "lodash";
+import type { Scenario } from "src/components/Process/types";
 import { v4 as uuid4 } from "uuid";
-import { Scenario } from "src/components/Process/types";
+
+import type { NodeType } from "../../../types";
 
 export function generateUUIDs(editedNode: NodeType, properties: string[]): NodeType {
     const node = cloneDeep(editedNode);

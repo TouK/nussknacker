@@ -1,9 +1,10 @@
-import { useSelector } from "react-redux";
-import { getFeatureSettings } from "../reducers/selectors/settings";
-import { useCallback, useEffect, useState } from "react";
-import httpService from "../http/HttpService";
-import { useLocalstorageState } from "rooks";
 import moment from "moment";
+import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { useLocalstorageState } from "rooks";
+
+import httpService from "../http/HttpService";
+import { getFeatureSettings } from "../reducers/selectors/settings";
 
 const getLockReleaseDate = (createdAt: number | null, statisticLockReleaseTime: number) =>
     moment(createdAt).add(statisticLockReleaseTime, "minute");

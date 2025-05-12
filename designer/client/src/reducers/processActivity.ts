@@ -1,7 +1,7 @@
-import { Action } from "../actions/reduxTypes";
-import { Instant } from "../types/common";
-import { ProcessVersionId } from "../components/Process/types";
-import { UIActivity } from "../components/toolbars/activities";
+import type { Action } from "../actions/reduxTypes";
+import type { ProcessVersionId } from "../components/Process/types";
+import type { UIActivity } from "../components/toolbars/activities";
+import type { Instant } from "../types/common";
 
 export type User = string;
 

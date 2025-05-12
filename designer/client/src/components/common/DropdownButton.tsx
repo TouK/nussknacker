@@ -1,11 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { CSSProperties, MouseEventHandler, PropsWithChildren, ReactNode, useCallback, useState } from "react";
-import { createPortal } from "react-dom";
-
-import Select from "react-select";
-import { ButtonProps, Button } from "../FormElements";
-import { selectStyled } from "../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
+import type { CSSProperties, MouseEventHandler, PropsWithChildren, ReactNode } from "react";
+import React, { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
+import Select from "react-select";
+
+import { selectStyled } from "../../stylesheets/SelectStyled";
+import type { ButtonProps } from "../FormElements";
+import { Button } from "../FormElements";
 
 interface Option<T> {
     label: string;

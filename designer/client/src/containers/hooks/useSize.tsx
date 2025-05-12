@@ -1,5 +1,7 @@
-import { ForwardedRef, useCallback, useMemo } from "react";
-import useDimensions, { Options } from "react-cool-dimensions";
+import type { ForwardedRef } from "react";
+import { useCallback, useMemo } from "react";
+import type { Options } from "react-cool-dimensions";
+import useDimensions from "react-cool-dimensions";
 
 (async () => {
     if (!self.ResizeObserver) {

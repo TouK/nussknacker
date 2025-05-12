@@ -1,15 +1,16 @@
+import { FormControl } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FixedListParameterVariant, onChangeType } from "../../../item";
-import InitialValue from "../fields/InitialValue";
-import { FixedValuesSetting } from "../fields/FixedValuesSetting";
-import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
+
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { TextAreaNode } from "../../../../../../FormElements";
-import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
-import { FormControl } from "@mui/material";
-import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
+import type { FixedListParameterVariant, onChangeType } from "../../../item";
+import { FixedValuesGroup } from "../fields/FixedValuesGroup";
+import { FixedValuesSetting } from "../fields/FixedValuesSetting";
+import InitialValue from "../fields/InitialValue";
+import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
 
 interface Props {
     item: FixedListParameterVariant;

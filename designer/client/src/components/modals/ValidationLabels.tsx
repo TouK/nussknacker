@@ -1,7 +1,9 @@
 import { FormHelperText } from "@mui/material";
-import React, { ReactNode } from "react";
 import { isEmpty } from "lodash";
-import { FieldError } from "../graph/node-modal/editors/Validators";
+import type { ReactNode } from "react";
+import React from "react";
+
+import type { FieldError } from "../graph/node-modal/editors/Validators";
 
 type Props = {
     fieldErrors: FieldError[];

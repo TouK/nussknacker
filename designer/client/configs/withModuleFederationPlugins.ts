@@ -1,10 +1,13 @@
 /* eslint-disable max-len */
 import childProcess from "child_process";
-import { mapValues, omitBy, pickBy } from "lodash";
 import path from "path";
-import { Configuration, container, WatchIgnorePlugin } from "webpack";
+
+import { mapValues, omitBy, pickBy } from "lodash";
+import type { Configuration } from "webpack";
+import { container, WatchIgnorePlugin } from "webpack";
 import WebpackRemoteTypesPlugin from "webpack-remote-types-plugin";
 import extractUrlAndGlobal from "webpack/lib/util/extractUrlAndGlobal";
+
 import { SimpleScriptPlugin } from "./simpleScriptPlugin";
 
 // ModuleFederationPluginOptions is not exported, have to find another way

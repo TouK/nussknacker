@@ -1,6 +1,7 @@
 import { Collapse, styled } from "@mui/material";
-import { blendDarken, blendLighten } from "../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
+
+import { blendDarken, blendLighten } from "../../containers/theme/helpers";
 
 export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) => ({
     display: "flex",

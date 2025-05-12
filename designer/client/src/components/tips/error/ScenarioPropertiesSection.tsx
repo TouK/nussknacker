@@ -1,10 +1,11 @@
-import React from "react";
-import { ErrorHeader } from "./ErrorHeader";
 import i18next from "i18next";
-import { ErrorLinkStyle } from "./styled";
-import { NavLink } from "react-router-dom";
-import { useOpenProperties } from "../../toolbars/scenarioActions/buttons/PropertiesButton";
+import React from "react";
 import { useTranslation } from "react-i18next";
+import { NavLink } from "react-router-dom";
+
+import { useOpenProperties } from "../../toolbars/scenarioActions/buttons/PropertiesButton";
+import { ErrorHeader } from "./ErrorHeader";
+import { ErrorLinkStyle } from "./styled";
 
 export const ScenarioPropertiesSection = () => {
     const { t } = useTranslation();

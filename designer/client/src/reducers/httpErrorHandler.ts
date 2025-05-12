@@ -1,4 +1,4 @@
-import { Reducer } from "../actions/reduxTypes";
+import type { Reducer } from "../actions/reduxTypes";
 
 export interface ErrorType {
     response: { data: unknown; status: number };

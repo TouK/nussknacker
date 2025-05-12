@@ -1,14 +1,15 @@
-import { NodeType } from "../../../types";
-import { useDispatch, useSelector } from "react-redux";
-import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
 import { MenuItem, MenuList } from "@mui/material";
-import { FoundNode } from "./FoundNode";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { resolveSearchQuery, useFilteredNodes } from "./utils";
+import { useDispatch, useSelector } from "react-redux";
+
+import { resetSelection } from "../../../actions/nk";
+import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
+import type { NodeType } from "../../../types";
+import { useWindows } from "../../../windowManager";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
-import { resetSelection } from "../../../actions/nk";
-import { useWindows } from "../../../windowManager";
+import { FoundNode } from "./FoundNode";
+import { resolveSearchQuery, useFilteredNodes } from "./utils";
 
 export type SearchQuery = {
     name?: string[];

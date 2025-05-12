@@ -1,10 +1,12 @@
 /* eslint-disable i18next/no-literal-string */
-import { PopoverPosition } from "@mui/material/Popover/Popover";
-import { ClickAwayListener, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { AutoAwesome, DeleteForever } from "@mui/icons-material";
-import React, { PropsWithChildren, useMemo } from "react";
-import { useTableTheme } from "./tableTheme";
+import { ClickAwayListener, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
+import type { PopoverPosition } from "@mui/material/Popover/Popover";
+import type { PropsWithChildren } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+
+import { useTableTheme } from "./tableTheme";
 
 interface ColumnMenuParams {
     anchorPosition: PopoverPosition | null;

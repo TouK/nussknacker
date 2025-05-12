@@ -1,4 +1,5 @@
 import { curryRight } from "lodash";
+
 import type { ComponentGroup } from "../../types";
 
 function replaceOrAdd<T>(collection: T[] = [], predicate: (item: T) => boolean, replaceOrAddFn: (item?: T) => T): T[] {

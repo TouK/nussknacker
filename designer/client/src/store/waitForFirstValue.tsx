@@ -1,4 +1,4 @@
-import { Store, Unsubscribe } from "redux";
+import type { Store, Unsubscribe } from "redux";
 
 // resolve first truthy value selected from store
 export const waitForFirstValue = <S, T>(store: Store<S>, select: (state: S) => T) => {

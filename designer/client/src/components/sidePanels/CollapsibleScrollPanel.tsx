@@ -1,12 +1,14 @@
-import React, { forwardRef, PropsWithChildren, useCallback, useState } from "react";
-import { CollapsiblePanel } from "./CollapsiblePanel";
-import { ScrollbarsExtended } from "./ScrollbarsExtended";
-import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../common/error-boundary";
-import { ScrollPanelContent } from "./SidePanelStyled";
 import { styled } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React, { forwardRef, useCallback, useState } from "react";
+
+import { PanelSide } from "../../actions/nk";
+import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../common/error-boundary";
 import { DRAGGABLE_CLASSNAME, DRAGGABLE_LIST_CLASSNAME } from "../toolbarComponents/ToolbarsContainer";
 import { TOOLBAR_WRAPPER_CLASSNAME } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { PanelSide } from "../../actions/nk";
+import { CollapsiblePanel } from "./CollapsiblePanel";
+import { ScrollbarsExtended } from "./ScrollbarsExtended";
+import { ScrollPanelContent } from "./SidePanelStyled";
 
 export type CollapsibleScrollPanelProps = PropsWithChildren<{
     isExpanded?: boolean;

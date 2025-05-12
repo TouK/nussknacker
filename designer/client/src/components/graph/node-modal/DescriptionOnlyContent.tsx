@@ -1,11 +1,12 @@
 import { Box } from "@mui/material";
 import { get } from "lodash";
 import React from "react";
+
 import { DescriptionView } from "../../../containers/DescriptionView";
+import type { NodeType, PropertiesType } from "../../../types";
 import { FieldType } from "./editors/field/Field";
 import { rowAceEditor } from "./NodeDetailsContent/NodeTableStyled";
 import { NodeField } from "./NodeField";
-import { NodeType, PropertiesType } from "../../../types";
 
 type DescriptionOnlyContentProps = {
     onChange: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;

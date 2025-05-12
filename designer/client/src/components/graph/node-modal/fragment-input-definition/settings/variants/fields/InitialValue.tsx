@@ -1,14 +1,17 @@
-import React from "react";
-import { SettingLabelStyled } from "./StyledSettingsComponnets";
-import { useTranslation } from "react-i18next";
-import { FixedValuesOption, FixedValuesType, FragmentInputParameter, onChangeType } from "../../../item";
-import { Option, TypeSelect } from "../../../TypeSelect";
-import { ExpressionLang } from "../../../../editors/expression/types";
-import { VariableTypes } from "../../../../../../../types";
-import { FieldError } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import type { VariableTypes } from "../../../../../../../types";
 import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
+import { ExpressionLang } from "../../../../editors/expression/types";
+import type { FieldError } from "../../../../editors/Validators";
+import { FixedValuesType } from "../../../item";
+import type { FixedValuesOption, FragmentInputParameter, onChangeType } from "../../../item";
+import { TypeSelect } from "../../../TypeSelect";
+import type { Option } from "../../../TypeSelect";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
 interface InitialValue {
     item: FragmentInputParameter;
