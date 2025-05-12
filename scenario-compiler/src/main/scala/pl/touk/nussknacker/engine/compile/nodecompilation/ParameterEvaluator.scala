@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
   PostponedEvaluatorLazyParameterStrategy
@@ -25,52 +23,46 @@ class ParameterEvaluator(
 
   private val contextToUse: Context = Context("objectCreate")
 
-  def prepareParameter(
+  def evaluateParameterToRawValue(
+      context: Context,
+      p: CompiledParameter
+  )(implicit nodeId: NodeId, jobData: JobData): AnyRef = {
+    runtimeExpressionEvaluator.evaluateParameter(p, context).value
+  }
+
+  def evaluateParameter(
       typedParameter: TypedParameter,
       definition: ParameterDef
   )(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
-  ): (AnyRef, BaseDefinedParameter) = {
+  ): ParameterEvaluationResult = {
     if (definition.isLazyParameter) {
-      prepareLazyParameter(typedParameter, definition)
+      evaluateLazyParameter(typedParameter, definition)
     } else {
-      evaluateParam(typedParameter, definition)
+      prepareEagerParameter(typedParameter, definition)
     }
   }
 
-  def evaluate(
-      parameters: Iterable[CompiledParameter],
-      context: Context
-  )(implicit nodeId: NodeId, jobData: JobData): Map[ParameterName, AnyRef] = {
-    parameters
-      .map(p => p.name -> runtimeExpressionEvaluator.evaluateParameter(p, context).value)
-      .toMap
-  }
-
-  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
+  private def evaluateLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
-  ): (AnyRef, BaseDefinedParameter) = {
+  ): LazyParameterEvaluationResult = {
     param.typedValue match {
       case e: TypedExpression if !definition.branchParam =>
-        (prepareLazyParameterExpression(definition, e), DefinedLazyParameter(e.returnType))
+        SingleLazyParameterEvaluationResult(prepareLazyParameterExpression(definition, e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        (
-          valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)),
-          DefinedLazyBranchParameter(valueByKey.mapValuesNow(_.returnType))
-        )
+        BranchLazyParameterEvaluationResult(valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)))
       case _ => throw new IllegalStateException()
     }
   }
 
-  private def evaluateParam[T](
+  private def prepareEagerParameter[T](
       param: TypedParameter,
       definition: ParameterDef
-  )(implicit jobData: JobData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
-
+  )(implicit jobData: JobData, nodeId: NodeId): EagerParameterEvaluationResult = {
     val additionalDefinitions = definition.additionalVariables.collect {
       case (name, AdditionalVariableWithFixedValue(value, _)) =>
         name -> value
@@ -79,11 +71,12 @@ class ParameterEvaluator(
 
     param.typedValue match {
       case e: TypedExpression if !definition.branchParam =>
-        val evaluated = evaluateSync(CompiledParameter(e, definition), augumentedCtx)
-        (evaluated, DefinedEagerParameter(evaluated, e.returnType))
+        val evaluatedValue = evaluateSync(CompiledParameter(e, definition), augumentedCtx)
+        SingleEagerParameterEvaluationResult(evaluatedValue, e.returnType)
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(CompiledParameter(exp, definition), augumentedCtx))
-        (evaluated, DefinedEagerBranchParameter(evaluated, valueByKey.mapValuesNow(_.returnType)))
+        val evaluatedValuesByBranchId =
+          valueByKey.mapValuesNow(exp => evaluateSync(CompiledParameter(exp, definition), augumentedCtx))
+        BranchEagerParameterEvaluationResult(evaluatedValuesByBranchId, valueByKey.mapValuesNow(_.returnType))
       case _ => throw new IllegalStateException()
     }
   }

@@ -50,6 +50,7 @@ package object definition {
       // The option can be removed in future releases
       requiredParam: Option[Boolean],
       category: ParameterCategory,
+      changesCanReloadParameters: Boolean,
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(

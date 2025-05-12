@@ -59,8 +59,8 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         case _: Service => LazyParameterCreationStrategy.default
         case _          => nonServicesLazyParamStrategy
       }
-    val paramsMap = Params(
-      params.map { case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1 }.toMap
+    val paramsMap = Params.fromParameterEvaluationResultMap(
+      params.map { case (tp, p) => p.name -> parameterEvaluator.evaluateParameter(tp, p) }.toMap
     )
     // TODO: refactor implementationInvoker's to not use AnyRefs
     val nodeDependenciesRaw = scenarioCompilationDependencies.nodeDependencies.map {

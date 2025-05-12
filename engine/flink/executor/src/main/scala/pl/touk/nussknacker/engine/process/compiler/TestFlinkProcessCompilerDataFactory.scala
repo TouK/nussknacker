@@ -75,7 +75,9 @@ object TestFlinkProcessCompilerDataFactory {
           ): Any = {
             // Transform EvaluableLazyParameterCreator's into EvaluableLazyParameter's
             // in order to have them available for resolving when executing tests
-            val resolvedParams = Params(params.nameToValueMap.map { case (name, value) => name -> resolveParam(value) })
+            val resolvedParams = Params.fromRawValuesMap(params.nameToRawValueMap.map { case (name, value) =>
+              name -> resolveParam(value)
+            })
             original.invokeMethod(resolvedParams, outputVariableNameOpt, additional)
           }
 
