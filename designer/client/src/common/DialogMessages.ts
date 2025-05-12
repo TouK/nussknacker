@@ -1,3 +1,7 @@
+import i18next from "i18next";
+
+import type { ProcessName } from "../components/Process/types";
+
 export const unsavedProcessChanges = () => {
     return i18next.t("dialogMessages.unsavedProcessChanges", "There are some unsaved scenario changes. Discard unsaved changes?");
 };
