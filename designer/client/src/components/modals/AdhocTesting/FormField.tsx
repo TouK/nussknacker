@@ -1,14 +1,16 @@
-import React, { useCallback, useContext } from "react";
-import { AdhocTestingFormContext } from "./AdhocTestingFormContext";
-import { ExpressionLang, ExpressionObj } from "../../graph/node-modal/editors/expression/types";
-import { spelFormatters } from "../../graph/node-modal/editors/expression/Formatter";
-import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { FormControl } from "@mui/material";
-import { ParamFieldLabel } from "../../graph/node-modal/FieldLabel";
-import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
-import { FieldSwitch } from "../../graph/node-modal/editors/field/FieldSwitch";
+import React, { useCallback, useContext } from "react";
+
 import { editors } from "../../graph/node-modal/editors/expression/Editor";
+import { spelFormatters } from "../../graph/node-modal/editors/expression/Formatter";
+import type { ExpressionObj } from "../../graph/node-modal/editors/expression/types";
+import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
+import { FieldSwitch } from "../../graph/node-modal/editors/field/FieldSwitch";
+import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
+import { ParamFieldLabel } from "../../graph/node-modal/FieldLabel";
+import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
+import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { AdhocTestingFormContext } from "./AdhocTestingFormContext";
 
 export function FormField({ name }: { name: string }) {
     const { value, setValue, variableTypes, parameters = [], errors } = useContext(AdhocTestingFormContext);

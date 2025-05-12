@@ -1,28 +1,27 @@
-import { useDispatch, useSelector } from "react-redux";
-import { getScenarioLabels, getScenarioLabelsErrors } from "../../../reducers/selectors/graph";
+import type { AutocompleteInputChangeReason, SxProps, Theme } from "@mui/material";
 import {
     Autocomplete,
-    AutocompleteInputChangeReason,
     Box,
     Chip,
     CircularProgress,
     createFilterOptions,
     Link,
     styled,
-    SxProps,
     TextField,
-    Theme,
     Typography,
     useTheme,
 } from "@mui/material";
-import { selectStyled } from "../../../stylesheets/SelectStyled";
-import React, { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import HttpService from "../../../http/HttpService";
 import i18next from "i18next";
-import { editScenarioLabels } from "../../../actions/nk";
 import { debounce } from "lodash";
-import { ScenarioLabelValidationError } from "../../Labels/types";
+import React, { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+
+import { editScenarioLabels } from "../../../actions/nk";
+import HttpService from "../../../http/HttpService";
+import { getScenarioLabels, getScenarioLabelsErrors } from "../../../reducers/selectors/graph";
+import { selectStyled } from "../../../stylesheets/SelectStyled";
+import type { ScenarioLabelValidationError } from "../../Labels/types";
 import { useDelayedEnterAction } from "./useDelayedEnterAction";
 
 interface AddLabelProps {

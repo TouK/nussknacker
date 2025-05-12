@@ -1,8 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-import { dia, V, Vectorizer } from "jointjs";
+import type { Theme } from "@mui/material";
+import type { Vectorizer } from "jointjs";
+import { dia, V } from "jointjs";
+
 import { toXml } from "../../../common/SVGUtils";
 import { exportStyled } from "./ExportStyled";
-import { Theme } from "@mui/material";
 
 function createStyle(theme: Theme) {
     const style = V("style").node;

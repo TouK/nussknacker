@@ -5,8 +5,9 @@ import intervalPlural from "i18next-intervalplural-postprocessor";
 import Backend from "i18next-xhr-backend";
 import moment from "moment";
 import { initReactI18next } from "react-i18next";
-import { BACKEND_STATIC_URL } from "./config";
 import urlJoin from "url-join";
+
+import { BACKEND_STATIC_URL } from "./config";
 
 const i18n = i18next.use(intervalPlural).use(Backend).use(LanguageDetector).use(initReactI18next);
 

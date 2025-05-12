@@ -1,9 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+
 import Icon from "../../../../assets/img/toolbarButtons/copy.svg";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { ToolbarButtonProps } from "../../types";
+import type { ToolbarButtonProps } from "../../types";
 
 function CopyButton(props: ToolbarButtonProps): JSX.Element {
     const { copy } = useSelectionActions();

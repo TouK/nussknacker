@@ -1,8 +1,10 @@
+import { FormControl, FormControlLabel, Radio, RadioGroup, Typography, useTheme } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
+
+import type { AnyValueWithSuggestionsParameterVariant, FixedListParameterVariant, onChangeType } from "../../../item";
+import { FixedValuesType } from "../../../item";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
-import { FormControl, FormControlLabel, Radio, RadioGroup, Typography, useTheme } from "@mui/material";
-import { AnyValueWithSuggestionsParameterVariant, FixedListParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 
 interface FixedValuesGroup {
     item: AnyValueWithSuggestionsParameterVariant | FixedListParameterVariant;

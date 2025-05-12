@@ -1,12 +1,14 @@
+import type { DraggableChildrenFn } from "@hello-pangea/dnd";
+import { Draggable } from "@hello-pangea/dnd";
+import { alpha, Box } from "@mui/material";
 import update from "immutability-helper";
 import { cloneDeep } from "lodash";
 import React, { useCallback, useRef } from "react";
-import { Draggable, DraggableChildrenFn } from "@hello-pangea/dnd";
+
 import { DragHandle, DragHandlerContext } from "./DragHandle";
 import { DropTarget } from "./DropTarget";
 import { FakeFormWindow } from "./FakeFormWindow";
-import { ItemsProps } from "./Items";
-import { alpha, Box } from "@mui/material";
+import type { ItemsProps } from "./Items";
 
 interface DndListProps<I> extends ItemsProps<I> {
     disabled?: boolean;

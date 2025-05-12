@@ -1,4 +1,4 @@
-import { TypingInfo, TypingResult, UIParameter } from "./definition";
+import type { TypingInfo, TypingResult, UIParameter } from "./definition";
 
 export type ValidationResult = {
     validationErrors?: ValidationErrors[];

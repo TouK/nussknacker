@@ -1,6 +1,7 @@
+import { recurse } from "cypress-recurse";
 import { defaultsDeep } from "lodash";
 import UAParser from "ua-parser-js";
-import { recurse } from "cypress-recurse";
+
 import JQueryWithSelector = Cypress.JQueryWithSelector;
 
 declare global {

@@ -1,6 +1,7 @@
-import React from "react";
-import { formatAbsolutely, formatRelatively } from "../../common/DateUtils";
 import { Typography } from "@mui/material";
+import React from "react";
+
+import { formatAbsolutely, formatRelatively } from "../../common/DateUtils";
 
 export default function Date({ date }: { date: string }): JSX.Element {
     return (

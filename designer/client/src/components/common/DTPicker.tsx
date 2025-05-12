@@ -1,7 +1,9 @@
+import type { SxProps } from "@mui/material";
+import { styled } from "@mui/material";
 import React from "react";
 import DateTimePicker from "react-datetime";
 import { useTranslation } from "react-i18next";
-import { styled, SxProps } from "@mui/material";
+
 import { nodeInputCss } from "../NodeInput";
 
 const DTPickerStyled = styled(DateTimePicker)(nodeInputCss, { padding: 0 });

@@ -1,5 +1,5 @@
 import { ExpressionLang } from "../../types";
-import { TableData } from "./tableState";
+import type { TableData } from "./tableState";
 
 const parseWithDefault =
     (parse: (text: string) => TableData) =>

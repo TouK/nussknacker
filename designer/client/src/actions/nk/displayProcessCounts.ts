@@ -1,10 +1,12 @@
-import moment, { Moment } from "moment";
+import type { Moment } from "moment";
+import moment from "moment";
+
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
-import { ProcessCounts } from "../../reducers/graph";
+import type { ProcessCounts } from "../../reducers/graph";
 import { getProcessCountsRefresh } from "../../reducers/selectors/graph";
-import { ScenarioGraph } from "../../types";
-import { ThunkAction } from "../reduxTypes";
+import type { ScenarioGraph } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 
 export type RefreshData = {
     last: number;

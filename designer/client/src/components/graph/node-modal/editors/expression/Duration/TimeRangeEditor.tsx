@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Period } from "./PeriodEditor";
+
+import type { FieldError } from "../../Validators";
+import type { OnValueChange } from "../Editor";
+import type { ExpressionLang } from "../types";
+import { ExpressionObj } from "../types";
+import type { Duration } from "./DurationEditor";
+import type { Period } from "./PeriodEditor";
+import type { TimeRange } from "./TimeRangeComponent";
 import TimeRangeSection from "./TimeRangeSection";
-import { TimeRange } from "./TimeRangeComponent";
-import { Duration } from "./DurationEditor";
-import { FieldError } from "../../Validators";
-import { ExpressionLang, ExpressionObj } from "../types";
-import { OnValueChange } from "../Editor";
 
 type Props = {
     encode: (value: Duration | Period) => string;

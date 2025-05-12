@@ -1,8 +1,9 @@
-import React, { useMemo } from "react";
-import { isEmpty } from "lodash";
-import { Props } from "./Errors";
-import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
+import { isEmpty } from "lodash";
+import React, { useMemo } from "react";
+
+import type { Props } from "./Errors";
+import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import { ScenarioPropertiesSection } from "./ScenarioPropertiesSection";
 
 export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {

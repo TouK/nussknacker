@@ -1,9 +1,10 @@
-import { useTestResults } from "./TestResultsWrapper";
-import ExpressionField from "./editors/expression/ExpressionField";
 import React from "react";
-import { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
+
+import type { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
+import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { findParamDefinitionByName } from "./parameterHelpers";
+import { useTestResults } from "./TestResultsWrapper";
 
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({

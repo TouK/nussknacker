@@ -1,10 +1,12 @@
 import { cx } from "@emotion/css";
-import ValidationLabels from "../../../../modals/ValidationLabels";
-import React, { ChangeEvent } from "react";
-import { TextArea } from "../../../../FormElements";
-import { FieldError } from "../Validators";
 import { isEmpty } from "lodash";
+import type { ChangeEvent } from "react";
+import React from "react";
+
+import { TextArea } from "../../../../FormElements";
+import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInput, nodeInputWithError } from "../../NodeDetailsContent/NodeTableStyled";
+import type { FieldError } from "../Validators";
 
 interface Props {
     isMarked: boolean;

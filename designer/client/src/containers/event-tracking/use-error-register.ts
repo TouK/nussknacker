@@ -1,8 +1,9 @@
-import { useEffect } from "react";
 import { init as initApm } from "@elastic/apm-rum";
-import { useBuildInfo } from "../BuildInfoProvider";
+import { useEffect } from "react";
 import { useSelector } from "react-redux";
+
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { useBuildInfo } from "../BuildInfoProvider";
 
 export const useErrorRegister = () => {
     const buildInfo = useBuildInfo();

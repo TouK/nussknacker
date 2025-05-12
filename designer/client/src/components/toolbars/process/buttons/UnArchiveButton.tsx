@@ -1,15 +1,16 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
+import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
-import * as DialogMessages from "../../../../common/DialogMessages";
+import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { ToolbarButtonProps } from "../../types";
-import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
-import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import type { ToolbarButtonProps } from "../../types";
 
 function UnArchiveButton({ disabled, type }: ToolbarButtonProps) {
     const processName = useSelector(getProcessName);

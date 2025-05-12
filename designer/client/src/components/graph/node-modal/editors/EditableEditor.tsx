@@ -1,5 +1,5 @@
 import { cx } from "@emotion/css";
-import { FormControl, FormLabel } from "@mui/material";
+import { Box, FormControl, FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
@@ -31,6 +31,7 @@ interface Props {
     variableTypes: VariableTypes;
     validationLabelInfo?: ReactNode;
     placeholder?: string;
+    endAdornment?: ReactNode;
 }
 
 export const EditableEditor = forwardRef((props: Props, ref) => {
@@ -79,6 +80,7 @@ function EditableEditorRow({
     rowClassName,
     renderFieldLabel,
     fieldLabel,
+    endAdornment,
     ...props
 }: Props & {
     rowClassName?: string;
@@ -95,6 +97,11 @@ function EditableEditorRow({
             <>
                 {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
                 <EditableEditor {...props} />
+                {endAdornment && (
+                    <Box display={"flex"} alignItems={"center"} justifyContent={"center"} ml={0.5} sx={{ cursor: "pointer" }}>
+                        {endAdornment}
+                    </Box>
+                )}
             </>
         </FormControl>
     );

@@ -1,13 +1,15 @@
 import { isEmpty } from "lodash";
-import React, { SyntheticEvent } from "react";
+import type { SyntheticEvent } from "react";
+import React from "react";
+import { NavLink } from "react-router-dom";
+
+import { visualizationUrl } from "../../../common/VisualizationUrl";
+import type { NodeId, NodeType } from "../../../types";
 import NodeUtils from "../../graph/NodeUtils";
-import { NodeId, NodeType } from "../../../types";
+import type { Scenario } from "../../Process/types";
 import { ErrorHeader } from "./ErrorHeader";
 import { NodeErrorLink } from "./NodeErrorLink";
-import { Scenario } from "../../Process/types";
-import { NavLink } from "react-router-dom";
 import { ErrorLinkStyle } from "./styled";
-import { visualizationUrl } from "../../../common/VisualizationUrl";
 
 interface NodeErrorsLinkSectionProps {
     nodeIds: NodeId[];

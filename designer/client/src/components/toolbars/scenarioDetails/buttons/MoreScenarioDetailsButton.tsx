@@ -1,9 +1,10 @@
-import React from "react";
 import { Link, Typography } from "@mui/material";
-import { useWindows, WindowKind } from "../../../../windowManager";
 import i18next from "i18next";
-import { ProcessStateType, Scenario } from "../../../Process/types";
+import React from "react";
+
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { useWindows, WindowKind } from "../../../../windowManager";
+import type { ProcessStateType, Scenario } from "../../../Process/types";
 
 interface Props {
     scenario: Scenario;

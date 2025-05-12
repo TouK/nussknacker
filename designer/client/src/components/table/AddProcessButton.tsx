@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useWindows, WindowKind } from "../../windowManager";
 
 export function useAddProcessButtonProps(isFragment?: boolean): { action: () => void; title: string } {

@@ -1,10 +1,12 @@
 import React from "react";
+
 import Input from "../field/Input";
-import { OnValueChange, SimpleEditor } from "./Editor";
-import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { ExpressionObj } from "./types";
-import { FieldError } from "../Validators";
+import type { FieldError } from "../Validators";
+import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import type { Formatter } from "./Formatter";
+import { FormatterType, typeFormatters } from "./Formatter";
+import type { ExpressionObj } from "./types";
 
 type Props = {
     expressionObj: ExpressionObj;

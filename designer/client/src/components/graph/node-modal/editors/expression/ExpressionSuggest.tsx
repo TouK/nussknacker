@@ -2,12 +2,14 @@ import "ace-builds/src-noconflict/ace";
 import { isEmpty, isEqual } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+
 import HttpService from "../../../../../http/HttpService";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/processDefinitionData";
-import { VariableTypes } from "../../../../../types";
+import type { VariableTypes } from "../../../../../types";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
-import { CustomCompleterAceEditor, CustomCompleterAceEditorProps } from "./CustomCompleterAceEditor";
+import type { CustomCompleterAceEditorProps } from "./CustomCompleterAceEditor";
+import { CustomCompleterAceEditor } from "./CustomCompleterAceEditor";
 import { BackendExpressionSuggester } from "./ExpressionSuggester";
 
 export type ExpressionSuggestProps = Omit<CustomCompleterAceEditorProps, "completer" | "isLoading"> & {

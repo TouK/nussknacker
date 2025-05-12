@@ -1,9 +1,8 @@
-import React from "react";
 import { alpha, css, FormLabel, styled, Switch } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
-import { StyledNodeTip } from "../../../../FieldLabel";
+import React from "react";
 
 import { blendLighten } from "../../../../../../../containers/theme/helpers";
+import { StyledNodeTip } from "../../../../FieldLabel";
 
 export const SettingsWrapper = styled("div")(({ theme }) => ({
     padding: "10px",
@@ -70,6 +69,6 @@ export const CustomSwitch = styled(Switch)`
 export const fieldLabel = ({ label, required = false, hintText }: { label: string; required?: boolean; hintText?: string }) => (
     <SettingLabelStyled required={required}>
         {label}
-        {hintText && <StyledNodeTip title={hintText} icon={<InfoIcon />} />}
+        {hintText && <StyledNodeTip variant={"hover"} title={hintText} />}
     </SettingLabelStyled>
 );

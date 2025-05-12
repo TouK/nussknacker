@@ -1,4 +1,4 @@
-import { dia } from "jointjs";
+import type { dia } from "jointjs";
 
 export const updateChangedCells = (graph: dia.Graph, changedCells: dia.Cell[]): void => {
     changedCells.forEach((cell) => {

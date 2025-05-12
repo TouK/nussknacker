@@ -1,14 +1,16 @@
-import React from "react";
-import { isNil } from "lodash";
-import { Option } from "../../../FieldsSelect";
-import { TypeSelect } from "../../../TypeSelect";
-import { useTranslation } from "react-i18next";
-import { FixedValuesType, InputMode, onChangeType, PermittedTypeParameterVariant, ValueEditor } from "../../../item";
-import { SettingLabelStyled } from "./StyledSettingsComponnets";
-import { useSettings } from "../../SettingsProvider";
-import { NodeValidationError } from "../../../../../../../types";
-import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
+import { isNil } from "lodash";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import type { NodeValidationError } from "../../../../../../../types";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
+import type { Option } from "../../../FieldsSelect";
+import type { onChangeType, PermittedTypeParameterVariant, ValueEditor } from "../../../item";
+import { FixedValuesType, InputMode } from "../../../item";
+import { TypeSelect } from "../../../TypeSelect";
+import { useSettings } from "../../SettingsProvider";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;

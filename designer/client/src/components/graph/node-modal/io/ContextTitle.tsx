@@ -2,10 +2,11 @@ import { NearbyError as Warning } from "@mui/icons-material";
 import { alpha, Stack, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getShadow } from "../../graphStyledWrapper";
 import { NextNodes } from "./CountsForNodes";
-import { VariableContextType } from "./VariableContextTree";
+import type { VariableContextType } from "./VariableContextTree";
 
 export function ContextTitle({ context, showNodes }: { context: VariableContextType; showNodes?: boolean }) {
     const scenarioName = useSelector(getProcessName);

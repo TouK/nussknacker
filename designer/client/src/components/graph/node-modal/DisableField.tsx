@@ -1,7 +1,8 @@
-import { FieldType } from "./editors/field/Field";
 import React from "react";
+
+import type { NodeType, NodeValidationError } from "../../../types";
+import { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
-import { NodeType, NodeValidationError } from "../../../types";
 
 interface DisableFieldProps {
     autoFocus?: boolean;

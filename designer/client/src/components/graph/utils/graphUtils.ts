@@ -1,12 +1,13 @@
-import { dia } from "jointjs";
+import type { dia } from "jointjs";
 import { cloneDeep, isEqual, map, reject } from "lodash";
+
 import { isTouchEvent } from "../../../helpers/detectDevice";
 import {
     adjustBranchParametersAfterDisconnect,
     enrichNodeWithProcessDependentData,
     removeBranchParameter,
 } from "../../../reducers/graph/utils";
-import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
+import type { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
 import NodeUtils from "../NodeUtils";
 
 export function mapProcessWithNewNode(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType): ScenarioGraph {

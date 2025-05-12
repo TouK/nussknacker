@@ -1,13 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
-import Field, { FieldType } from "./editors/field/Field";
-import { FieldError, getValidationErrorsForField } from "./editors/Validators";
-import { ComponentDefinition, NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
-import { useDiffMark } from "./PathsToMark";
-import { useTranslation } from "react-i18next";
-import { isEmpty } from "lodash";
 import { FormControl, FormLabel } from "@mui/material";
+import { isEmpty } from "lodash";
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import ProcessUtils from "../../../common/ProcessUtils";
+import type { ComponentDefinition, NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
+import Field, { FieldType } from "./editors/field/Field";
+import type { FieldError } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeInput, nodeInputWithError, nodeValue } from "./NodeDetailsContent/NodeTableStyled";
+import { useDiffMark } from "./PathsToMark";
 
 type OutputFieldProps = {
     autoFocus?: boolean;

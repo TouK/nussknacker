@@ -1,12 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
 import Icon from "../../../../assets/img/toolbarButtons/compare.svg";
 import { hasOneVersion } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { ToolbarButtonProps } from "../../types";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
+import type { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;
 

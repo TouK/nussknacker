@@ -1,7 +1,9 @@
-import React, { PropsWithChildren, useEffect, useMemo } from "react";
-import { AuthenticationSettings } from "../../reducers/settings";
+import type { PropsWithChildren } from "react";
+import React, { useEffect, useMemo } from "react";
+
+import type { AuthenticationSettings } from "../../reducers/settings";
 import { STRATEGIES } from "./strategies";
-import { Strategy } from "./Strategy";
+import type { Strategy } from "./Strategy";
 
 interface Props {
     onChange: (strategy: Strategy) => void;

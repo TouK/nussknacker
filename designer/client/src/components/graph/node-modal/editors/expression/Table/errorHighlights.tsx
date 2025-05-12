@@ -1,10 +1,12 @@
-import { DataEditorRef, DrawCellCallback, GridSelection } from "@glideapps/glide-data-grid";
+import type { DataEditorRef, DrawCellCallback, GridSelection } from "@glideapps/glide-data-grid";
 import type { GridMouseEventArgs } from "@glideapps/glide-data-grid/src/internal/data-grid/event-args";
 import type { Highlight } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
-import { alpha, styled, Tooltip, tooltipClasses, TooltipProps, useTheme } from "@mui/material";
+import type { TooltipProps } from "@mui/material";
+import { alpha, styled, Tooltip, tooltipClasses, useTheme } from "@mui/material";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { FieldError } from "../../Validators";
-import { DataColumn } from "./state/tableState";
+
+import type { FieldError } from "../../Validators";
+import type { DataColumn } from "./state/tableState";
 
 // it's easier to fake children than creating something new
 const StyledTooltip = styled(({ className, ...props }: Omit<TooltipProps, "children">) => (

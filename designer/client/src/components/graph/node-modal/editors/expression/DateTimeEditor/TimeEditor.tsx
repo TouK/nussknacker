@@ -1,12 +1,14 @@
 import i18next from "i18next";
-import { ExpressionObj } from "../types";
-import React from "react";
 import { isEmpty } from "lodash";
-import { DatepickerEditor, DatepickerEditorProps } from "./DatepickerEditor";
-import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import moment from "moment";
-import { ExtendedEditor } from "../Editor";
+import React from "react";
+
+import type { ExtendedEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
+import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
+import type { ExpressionObj } from "../types";
+import { DatepickerEditor } from "./DatepickerEditor";
+import type { DatepickerEditorProps } from "./DatepickerEditor";
 
 const timeFormat = "HH:mm:ss";
 const isParseable = (expression: ExpressionObj): boolean => {

@@ -1,8 +1,9 @@
-import { SurveySettings } from "../../actions/nk";
-import { useSelector } from "react-redux";
-import { getSurveySettings } from "../../reducers/selectors/settings";
-import { useUserSettings } from "../../common/userSettings";
 import { useCallback } from "react";
+import { useSelector } from "react-redux";
+
+import type { SurveySettings } from "../../actions/nk";
+import { useUserSettings } from "../../common/userSettings";
+import { getSurveySettings } from "../../reducers/selectors/settings";
 
 export function useSurvey(): [SurveySettings | false, () => void] {
     const survey = useSelector(getSurveySettings);

@@ -1,5 +1,6 @@
-import React, { forwardRef, HTMLAttributes } from "react";
 import { FormControl, FormLabel } from "@mui/material";
+import type { HTMLAttributes } from "react";
+import React, { forwardRef } from "react";
 
 interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
     label?: string;

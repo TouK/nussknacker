@@ -1,7 +1,8 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../reducers";
-import { NodeType, NodeValidationError, VariableTypes } from "../../../types";
+
+import type { RootState } from "../../../reducers";
+import type { NodeType, NodeValidationError, VariableTypes } from "../../../types";
 import MapVariable from "./MapVariable";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 

@@ -1,10 +1,12 @@
 import { get } from "lodash";
-import EditableEditor from "../graph/node-modal/editors/EditableEditor";
 import React, { useCallback } from "react";
-import { ExpressionLang, ExpressionObj } from "../graph/node-modal/editors/expression/types";
+
+import type { NodeValidationError, PropertiesType } from "../../types";
+import EditableEditor from "../graph/node-modal/editors/EditableEditor";
+import type { ExpressionObj } from "../graph/node-modal/editors/expression/types";
+import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
+import type { ParamType } from "../graph/node-modal/editors/types";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
-import { NodeValidationError, PropertiesType } from "../../types";
-import { ParamType } from "../graph/node-modal/editors/types";
 
 interface Props {
     showSwitch: boolean;

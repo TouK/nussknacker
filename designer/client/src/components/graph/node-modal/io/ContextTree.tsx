@@ -1,8 +1,10 @@
 import { Box, styled } from "@mui/material";
 import { mapValues } from "lodash";
 import React from "react";
-import Inspector, { chromeDark, InspectorNodeParams, ObjectLabel, ObjectName } from "react-inspector";
-import { Context } from "../../../../common/TestResultUtils";
+import type { InspectorNodeParams } from "react-inspector";
+import Inspector, { chromeDark, ObjectLabel, ObjectName } from "react-inspector";
+
+import type { Context } from "../../../../common/TestResultUtils";
 
 export function ContextTree({ context, oldFields = [] }: { context: Context; oldFields?: string[] }): JSX.Element {
     const data = mapValues(context?.variables, (v) => v?.pretty);

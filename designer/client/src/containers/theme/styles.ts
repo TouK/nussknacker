@@ -1,4 +1,5 @@
-import { Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
+
 import "react-datetime/css/react-datetime.css";
 import { nodeInput, rowAceEditor } from "../../components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { blendDarken, blendLighten, getBorderColor } from "./helpers";

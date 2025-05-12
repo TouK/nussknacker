@@ -1,6 +1,8 @@
-import React, { FC } from "react";
-import { Box, SvgIconTypeMap, Typography } from "@mui/material";
-import { OverridableComponent } from "@mui/material/OverridableComponent";
+import type { SvgIconTypeMap } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+import type { OverridableComponent } from "@mui/material/OverridableComponent";
+import React from "react";
+import type { FC } from "react";
 
 interface Props {
     Icon: OverridableComponent<SvgIconTypeMap>;

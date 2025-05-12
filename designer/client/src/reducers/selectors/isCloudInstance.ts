@@ -1,6 +1,7 @@
 import { createSelector } from "reselect";
+
 import { isDev } from "../../devHelpers";
-import { RootState } from "../index";
+import type { RootState } from "../index";
 import { AuthStrategy } from "../settings";
 import { getAuthenticationSettings, getFeatureSettings } from "./settings";
 import { getUserSettings } from "./userSettings";

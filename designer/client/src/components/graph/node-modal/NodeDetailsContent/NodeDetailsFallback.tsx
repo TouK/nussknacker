@@ -1,5 +1,6 @@
 import React from "react";
-import { NodeType, NodeValidationError } from "../../../../types";
+
+import type { NodeType, NodeValidationError } from "../../../../types";
 import { IdField } from "../IdField";
 
 export function NodeDetailsFallback(props: {

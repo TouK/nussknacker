@@ -1,12 +1,13 @@
+import { Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import Dropzone from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+
 import ButtonUpload from "../../assets/img/icons/buttonUpload.svg";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import { NodeInput } from "../FormElements";
 import { AddAttachmentsWrapper, AttachmentButton, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
-import { Typography } from "@mui/material";
 
 export interface Attachment {
     processName: string;

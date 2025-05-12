@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from "react";
+
 import { useSelectionActions } from "../components/graph/SelectionContextProvider";
-import { EventTrackingSelector, EventTrackingType, TrackEventParams, useEventTracking } from "./event-tracking";
+import type { TrackEventParams } from "./event-tracking";
+import { EventTrackingSelector, EventTrackingType, useEventTracking } from "./event-tracking";
 import { useDocumentListeners } from "./useDocumentListeners";
 
 export const isInputTarget = (target: EventTarget): boolean => ["INPUT", "SELECT", "TEXTAREA"].includes(target?.["tagName"]);

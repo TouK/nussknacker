@@ -1,5 +1,5 @@
 import { ExpressionLang } from "../../types";
-import { TableData } from "./tableState";
+import type { TableData } from "./tableState";
 
 export const getStringifier: (language: ExpressionLang | string) => (data: TableData) => string = (language: ExpressionLang | string) => {
     switch (language) {

@@ -1097,7 +1097,7 @@
 * [#3412](https://github.com/TouK/nussknacker/pull/3412) Corrected filtering disallowed types in methods
 * [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. Instead, Kafka client will use default Kafka value which is `latest`
 * [#3371](https://github.com/TouK/nussknacker/pull/3371) Fix for: Indexing on arrays wasn't possible
-* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling Kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/installation_configuration_guide/model/Flink#configuring-exception-handling)
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling Kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/configuration/model/Flink/#configuring-exception-handling)
 
 ## 1.4
 
@@ -1211,7 +1211,7 @@
   * `FinalResults.forValidation` utility method added to easily handle situation when you need to make some validation on context of variables (e.g. add variable checking if it already exists)
 * [#2245](https://github.com/TouK/nussknacker/pull/2245) Periodic process scheduler retries failed scenario deployments based on PeriodicBatchConfig.
   Breaking change in PeriodicProcessListener FailedEvent. Failed event is split into FailedOnDeployEvent and FailedOnRunEvent.
-  Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://docs.nussknacker.io/docs/installation_configuration_guide/ModelConfiguration#configuring-restart-strategies-flink-only)
+  Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://nussknacker.io/documentation/docs/configuration/model/Flink/#configuring-restart-strategies)
 * [#2304](https://github.com/TouK/nussknacker/pull/2304) Upgrade to Flink 1.14
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` has additional methods to handle exceptions during evaluation gracefully
 * [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group

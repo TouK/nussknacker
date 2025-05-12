@@ -1,7 +1,9 @@
-import React, { forwardRef, useMemo } from "react";
 import { debounce } from "lodash";
+import React, { forwardRef, useMemo } from "react";
+
 import { useSizeWithRef } from "../../containers/hooks/useSize";
-import { StyledDiv, StyledDivProps } from "./styledDiv";
+import type { StyledDivProps } from "./styledDiv";
+import { StyledDiv } from "./styledDiv";
 
 export type ResizeObserverProps = StyledDivProps & {
     onResize?: (current: DOMRectReadOnly) => void;

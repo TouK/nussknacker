@@ -1,6 +1,7 @@
-import { NodeType } from "../../../../types";
-import { chromeDark, Inspector } from "react-inspector";
 import React from "react";
+import { chromeDark, Inspector } from "react-inspector";
+
+import type { NodeType } from "../../../../types";
 
 export function DebugNodeInspector({ node }: { node: NodeType }) {
     return (

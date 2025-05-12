@@ -1,5 +1,7 @@
-import { createContext, Dispatch, SetStateAction } from "react";
-import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
+import type { Dispatch, SetStateAction } from "react";
+import { createContext } from "react";
+
+import type { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
 
 export type ActionValues = Record<string, Expression>;
 

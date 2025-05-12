@@ -1,9 +1,10 @@
 import React, { useContext } from "react";
-import { Field } from "../../../../../types";
+
+import type { Field } from "../../../../../types";
+import { getValidationErrorsForField } from "../Validators";
 import { MapItemsCtx } from "./Map";
 import MapKey from "./MapKey";
 import MapValue from "./MapValue";
-import { getValidationErrorsForField } from "../Validators";
 
 interface MapRowProps<F extends Field> {
     index: number;

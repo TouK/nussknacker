@@ -1,7 +1,8 @@
-import { isFunction } from "lodash";
-import React, { ReactNode, useCallback, useMemo } from "react";
-import { CSSTransition } from "react-transition-group";
 import { styled } from "@mui/material";
+import { isFunction } from "lodash";
+import type { ReactNode } from "react";
+import React, { useCallback, useMemo } from "react";
+import { CSSTransition } from "react-transition-group";
 
 const CSSFadeStyled = styled(CSSTransition)`
     opacity: inherit;

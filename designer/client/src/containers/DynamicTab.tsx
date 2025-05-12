@@ -1,11 +1,13 @@
-import * as queryString from "query-string";
-import React, { memo, useMemo } from "react";
-import { ErrorBoundary } from "../components/common/error-boundary";
-import { ModuleUrl, splitUrl } from "@touk/federated-component";
-import { NotFound } from "../components/common/error-boundary/NotFound";
-import SystemUtils from "../common/SystemUtils";
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
+import type { ModuleUrl } from "@touk/federated-component";
+import { splitUrl } from "@touk/federated-component";
+import { stringifyUrl } from "query-string";
+import React, { memo, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
+import SystemUtils from "../common/SystemUtils";
+import { ErrorBoundary } from "../components/common/error-boundary";
+import { NotFound } from "../components/common/error-boundary/NotFound";
 import { RemoteComponent } from "../components/RemoteComponent";
 
 export type BaseTab = {
@@ -74,7 +76,7 @@ export const IframeTab = ({ tab }: BaseTab) => {
     }
     return (
         <iframe
-            src={queryString.stringifyUrl({
+            src={stringifyUrl({
                 url,
                 query: { iframe: true, ...accessTokenParam },
             })}

@@ -1,15 +1,17 @@
 import { Typography, useTheme } from "@mui/material";
-import React, { PropsWithChildren, useCallback, useEffect, useState } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { toggleToolbar } from "../../../actions/nk/toolbars";
-import { RootState } from "../../../reducers";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import type { RootState } from "../../../reducers";
 import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { SIDEBAR_WIDTH } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
 import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../../common/error-boundary";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
-import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id: string;

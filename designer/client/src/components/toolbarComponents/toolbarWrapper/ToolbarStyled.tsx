@@ -1,4 +1,5 @@
 import { styled } from "@mui/material";
+
 import CollapseIcon from "../../../assets/img/arrows/panel-hide-arrow.svg";
 import CloseIcon from "../../../assets/img/close.svg";
 

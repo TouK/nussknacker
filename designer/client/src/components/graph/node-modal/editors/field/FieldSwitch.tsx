@@ -8,9 +8,9 @@ import { blendDarken, getBorderColor } from "../../../../../containers/theme/hel
 import type { Option } from "../../fragment-input-definition/TypeSelect";
 import { editors, isExtendedEditor } from "../expression/Editor";
 import { editorsParameters } from "../expression/editorsParameters";
-import { InfoTooltip } from "../expression/InfoTooltip";
 import type { ExpressionObj } from "../expression/types";
 import { EditorType } from "../expression/types";
+import { InfoTooltip } from "../InfoTooltip";
 import type { Editor, ParamType } from "../types";
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -173,7 +173,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             icon={
                                 option.hint && (
                                     <div>
-                                        <InfoTooltip text={option.hint} />
+                                        <InfoTooltip title={option.hint} />
                                     </div>
                                 )
                             }

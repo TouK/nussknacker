@@ -1,13 +1,15 @@
-import { ExpressionObj } from "../types";
-import React, { useCallback, useMemo } from "react";
-import moment from "moment";
-import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
-import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import { isEmpty } from "lodash";
-import { ExtendedEditor, OnValueChange } from "../Editor";
-import { FieldError } from "../../Validators";
+import moment from "moment";
+import React, { useCallback, useMemo } from "react";
+
+import type { FieldError } from "../../Validators";
+import type { ExtendedEditor, OnValueChange } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
+import { FormatterType, typeFormatters } from "../Formatter";
+import type { Formatter } from "../Formatter";
+import type { ExpressionObj } from "../types";
+import TimeRangeEditor from "./TimeRangeEditor";
 
 export type Period = {
     years: number;

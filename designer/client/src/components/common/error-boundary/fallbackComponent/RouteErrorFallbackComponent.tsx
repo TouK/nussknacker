@@ -1,6 +1,7 @@
+import { AxiosError } from "axios";
 import React from "react";
 import { useRouteError } from "react-router-dom";
-import { AxiosError } from "axios";
+
 import { NotFound } from "../NotFound";
 import { FullPageErrorBoundaryFallbackComponent } from "./FullPageErrorBoundaryFallbackComponent";
 

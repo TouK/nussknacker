@@ -1,5 +1,7 @@
-import React, { PropsWithChildren, useCallback } from "react";
+import type { PropsWithChildren } from "react";
+import React, { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { assignUser } from "../actions/nk";
 import HttpService from "../http/HttpService";
 import { getAuthenticationSettings } from "../reducers/selectors/settings";

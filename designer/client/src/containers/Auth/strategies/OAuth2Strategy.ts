@@ -1,13 +1,15 @@
-import { AxiosResponse } from "axios";
-import * as jwt from "jsonwebtoken";
+import type { AxiosResponse } from "axios";
+import type { JsonWebTokenError } from "jsonwebtoken";
+import { verify } from "jsonwebtoken";
 import { nanoid } from "nanoid";
-import * as queryString from "query-string";
+import { parse } from "query-string";
+
 import SystemUtils from "../../../common/SystemUtils";
-import HttpService from "../../../http/HttpService";
-import { OAuth2Settings } from "../../../reducers/settings";
-import { AuthErrorCodes } from "../AuthErrorCodes";
-import { Strategy, StrategyConstructor } from "../Strategy";
 import { BASE_PATH } from "../../../config";
+import HttpService from "../../../http/HttpService";
+import type { OAuth2Settings } from "../../../reducers/settings";
+import { AuthErrorCodes } from "../AuthErrorCodes";
+import type { Strategy, StrategyConstructor } from "../Strategy";
 
 export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implements Strategy {
     private onError?: (error: AuthErrorCodes) => void;
@@ -43,7 +45,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
 
     handleAuth(): Promise<AxiosResponse<unknown> | void> {
         const { hash, search } = window.location;
-        const queryParams = queryString.parse(search);
+        const queryParams = parse(search);
         if (queryParams.code) {
             return HttpService.fetchOAuth2AccessToken<{ accessToken: string }>(this.settings.provider, queryParams.code, this.redirectUri)
                 .then((response) => {
@@ -59,7 +61,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
                 });
         }
 
-        const queryHashParams = queryString.parse(hash);
+        const queryHashParams = parse(hash);
         if (queryHashParams.access_token && this.settings.implicitGrantEnabled) {
             if (!this.verifyTokens(queryHashParams)) {
                 return Promise.reject("token not verified");
@@ -92,7 +94,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
         if (this.settings.jwtAuthServerPublicKey) {
             const verifyAccessToken = () => {
                 try {
-                    return jwt.verify(queryHashParams.access_token, this.settings.jwtAuthServerPublicKey) !== null;
+                    return verify(queryHashParams.access_token, this.settings.jwtAuthServerPublicKey) !== null;
                 } catch (error) {
                     this.handleJwtError(error);
                     return false;
@@ -103,7 +105,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
                 if (queryHashParams.id_token) {
                     try {
                         return (
-                            jwt.verify(queryHashParams.id_token, this.settings.jwtAuthServerPublicKey, {
+                            verify(queryHashParams.id_token, this.settings.jwtAuthServerPublicKey, {
                                 nonce: SystemUtils.getNonce(),
                             }) !== null
                         );
@@ -124,7 +126,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
         }
     }
 
-    private handleJwtError(error: jwt.JsonWebTokenError) {
+    private handleJwtError(error: JsonWebTokenError) {
         if (error.name === "TokenExpiredError") {
             this.redirectToAuthorizeUrl();
         } else {

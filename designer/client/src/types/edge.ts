@@ -1,5 +1,5 @@
-import { ExpressionObj } from "../components/graph/node-modal/editors/expression/types";
-import { NodeId } from "./node";
+import type { ExpressionObj } from "../components/graph/node-modal/editors/expression/types";
+import type { NodeId } from "./node";
 
 export enum EdgeKind {
     filterFalse = "FilterFalse",

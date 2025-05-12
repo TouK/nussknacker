@@ -1,7 +1,8 @@
-import { DynamicTabData } from "../../containers/DynamicTab";
-import { NavLink } from "react-router-dom";
-import React from "react";
 import { styled } from "@mui/material";
+import React from "react";
+import { NavLink } from "react-router-dom";
+
+import type { DynamicTabData } from "../../containers/DynamicTab";
 
 function UnstyledTabElement({ tab, ...props }: { tab: DynamicTabData; className?: string }): JSX.Element {
     const { id, type, url, title } = tab;

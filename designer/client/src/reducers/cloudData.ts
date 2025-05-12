@@ -1,4 +1,4 @@
-import { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
+import type { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
 import api from "../api";
 import { getRemoteAppId, getRemoteApiHost, getRemoteTenantId } from "./selectors/isCloudInstance";
 

@@ -1,19 +1,20 @@
-import React from "react";
-import { t } from "i18next";
 import { Box, FormControl, FormControlLabel, Typography } from "@mui/material";
-import ValidationFields from "./ValidationFields";
-import {
+import { t } from "i18next";
+import React from "react";
+
+import type { NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { ExpressionLang } from "../../../../editors/expression/types";
+import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
+import type {
     onChangeType,
     AnyValueWithSuggestionsParameterVariant,
     AnyValueParameterVariant,
     DefaultParameterVariant,
     ValueCompileTimeValidation,
 } from "../../../item";
-import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
-import { NodeValidationError, VariableTypes } from "../../../../../../../types";
-import { ExpressionLang } from "../../../../editors/expression/types";
 import { useSettings } from "../../SettingsProvider";
-import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
+import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
+import ValidationFields from "./ValidationFields";
 
 interface Validation {
     item: AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant | DefaultParameterVariant;
