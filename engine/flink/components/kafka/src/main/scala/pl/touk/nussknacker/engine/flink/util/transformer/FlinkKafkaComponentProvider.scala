@@ -85,9 +85,9 @@ private[transformer] object TemporaryKafkaConfigMapping {
 
   def prepareModelConfig(config: Config, modelConfig: ModelConfig): ModelConfig = {
     val kafkaConfig = config.getConfig("config")
-    val kafkaConfigMergedWithGlobalConfig =
-      modelConfig.underlyingConfig.withValue(KafkaConfig.DefaultGlobalKafkaConfigPath, fromAnyRef(kafkaConfig.root()))
-    ModelConfig.parse(kafkaConfigMergedWithGlobalConfig)
+    modelConfig.transformUnderlyingConfig(
+      _.withValue(KafkaConfig.DefaultGlobalKafkaConfigPath, fromAnyRef(kafkaConfig.root()))
+    )
   }
 
 }

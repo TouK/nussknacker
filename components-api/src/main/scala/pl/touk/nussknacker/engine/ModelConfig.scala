@@ -11,7 +11,11 @@ final case class ModelConfig(
     namingStrategy: NamingStrategy,
     // TODO: we should parse this underlying config as ModelConfig class fields instead of passing raw config
     underlyingConfig: Config,
-)
+) {
+
+  def transformUnderlyingConfig(f: Config => Config): ModelConfig = ModelConfig.parse(f(underlyingConfig))
+
+}
 
 object ModelConfig {
 
