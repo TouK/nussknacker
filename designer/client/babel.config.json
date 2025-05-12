@@ -1,6 +1,12 @@
 {
     "presets": ["@babel/preset-env", "@babel/preset-typescript", "@babel/preset-react"],
     "plugins": [
+        [
+            "@babel/plugin-proposal-decorators",
+            {
+                "legacy": true
+            }
+        ],
         "@babel/plugin-transform-dotall-regex",
         "@babel/plugin-transform-runtime",
         "@babel/plugin-syntax-dynamic-import",
@@ -8,12 +14,6 @@
         "@babel/plugin-proposal-class-properties",
         "@babel/proposal-object-rest-spread",
         "@babel/plugin-proposal-json-strings",
-        [
-            "@babel/plugin-proposal-decorators",
-            {
-                "legacy": true
-            }
-        ],
         "@babel/plugin-proposal-function-sent",
         "@babel/plugin-proposal-export-namespace-from",
         "@babel/plugin-proposal-numeric-separator",
