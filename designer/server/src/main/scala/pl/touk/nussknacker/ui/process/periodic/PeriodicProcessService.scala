@@ -366,10 +366,10 @@ class PeriodicProcessService(
 
     if (scheduleActions.forall(_.isEmpty)) {
       logger.info(s"No scheduled deployments for periodic process: ${process.id.value}. Deactivating")
-      deactivateAction(process).flatMap { _ =>
-        markProcessActionExecutionFinished(processScheduleData.process.processActionId)
-      }
-
+      for {
+        markExecutionFinishedCallback <- markProcessActionExecutionFinished(processScheduleData.process.processActionId)
+        deactivateActionCallback      <- deactivateAction(process)
+      } yield () => markExecutionFinishedCallback().flatMap(_ => deactivateActionCallback())
     } else
       scheduleActions.flatten.sequence.as(emptyCallback)
   }
