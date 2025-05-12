@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   CustomComponentSpecificData
@@ -985,17 +986,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     inside(validate(process, definitionWithTypedSource).result) {
       case Invalid(
-      NonEmptyList(
-      ExpressionParserCompilationError(
-      "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String(abc)}",
-      "enricher1",
-      Some(ParameterName("mockExpression")),
-      _,
-      None
-      ),
-      Nil
-      )
-      ) =>
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String(abc)}",
+                "enricher1",
+                Some(NodeCompiler.MockExpressionParameterName),
+                _,
+                None
+              ),
+              Nil
+            )
+          ) =>
     }
   }
 

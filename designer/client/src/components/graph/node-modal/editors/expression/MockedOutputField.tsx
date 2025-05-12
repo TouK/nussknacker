@@ -15,12 +15,11 @@ import type { ExpressionObj } from "./types";
 import { EditorType } from "./types";
 
 const MOCKED_OUTPUT_IN_NODE_FIELD_NAME = "mockedOutput";
-const MOCK_EXPRESSION_PARAMETER_NAME = "mockExpression";
-const EXPRESSION_TEXT_PATH = `${MOCKED_OUTPUT_IN_NODE_FIELD_NAME}.${MOCK_EXPRESSION_PARAMETER_NAME}.expression`;
+const MOCK_EXPRESSION_PARAMETER_NAME = "$mockExpression";
+const EXPRESSION_TEXT_PATH = `${MOCKED_OUTPUT_IN_NODE_FIELD_NAME}.mockExpression.expression`;
 
 const MOCK_EXPRESSION_HINT_TEXT =
-    "If provided the expression will be evaluated in tests instead of invoking real enricher behaviour (e.g. instead of calling a service/database).\n\n" +
-    "Evaluated value will be placed under output variable name during tests.";
+    "If you provide this expression, the real service won't be invoked during tests. Instead, the result of the evaluation will be used.";
 
 const UnknownTypingResult = {
     params: [],
