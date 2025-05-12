@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.process.periodic.flink
 
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import org.mockito.Mockito
+import org.mockito.Mockito.{times, verify}
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
@@ -9,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId}
-import pl.touk.nussknacker.engine.api.deployment.scheduler.model.ScheduledDeploymentDetails
+import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{RuntimeParams, ScheduledDeploymentDetails}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.ProcessConfigEnricher.EnrichedProcessConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -66,7 +68,7 @@ class PeriodicProcessServiceTest
   class Fixture {
     val repository                      = new InMemPeriodicProcessesRepository(processingType = "testProcessingType")
     val delegateDeploymentManagerStub   = new DeploymentManagerStub
-    val scheduledExecutionPerformerStub = new ScheduledExecutionPerformerStub
+    val scheduledExecutionPerformerStub = Mockito.spy(new ScheduledExecutionPerformerStub)
     val events                          = new ArrayBuffer[ScheduledProcessEvent]()
     val additionalData                  = Map("testMap" -> "testValue")
 
@@ -281,6 +283,8 @@ class PeriodicProcessServiceTest
     f.periodicProcessService.handleFinished.futureValue
 
     f.actionService.sentActionIds shouldBe List(processActionId)
+
+    verify(f.scheduledExecutionPerformerStub, times(1)).cleanAfterDeployment(RuntimeParams(Map("jarFileName" -> "")))
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe false
