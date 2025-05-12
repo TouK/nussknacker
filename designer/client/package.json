@@ -191,6 +191,7 @@
         "husky": "8.0.3",
         "i18next-intervalplural-postprocessor": "3.0.0",
         "i18next-parser": "8.0.0",
+        "immer": "10.1.1",
         "jest": "29.7.0",
         "jest-css-modules": "2.1.0",
         "jest-environment-jsdom": "29.7.0",

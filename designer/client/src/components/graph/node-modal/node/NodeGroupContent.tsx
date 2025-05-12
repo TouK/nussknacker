@@ -8,6 +8,7 @@ import type { RootState } from "../../../../reducers";
 import type { Edge, NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
 import { NodeDetailsContent } from "../NodeDetailsContent";
+import { useNodeAdjust } from "../useNodeTypeDetailsContentLogic";
 import { ContentSize } from "./ContentSize";
 import { FragmentContent } from "./FragmentContent";
 import { getNodeErrors } from "./selectors";
@@ -23,11 +24,13 @@ export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, on
         return getNodeErrors(state, node.id);
     }, isEqual);
 
+    const adjustNode = useNodeAdjust();
+
     return (
         <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
             <ContentSize>
                 <NodeDetailsContent
-                    node={node}
+                    node={adjustNode(node)}
                     edges={edges}
                     onChange={onChange}
                     nodeErrors={errors}

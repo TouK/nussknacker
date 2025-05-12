@@ -105,37 +105,34 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
             const editedNode$ = new PendingPromise<[EditedNode, boolean]>();
             const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
 
-            if (nodeChange !== identity) {
-                setEditedNode((currentEditedNode) => {
-                    let nextEditedNode = typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange;
-                    const equal = isEqual(currentEditedNode, nextEditedNode);
-                    if (equal) {
-                        nextEditedNode = currentEditedNode;
-                    }
-                    editedNode$.resolve([nextEditedNode, !equal]);
-                    return nextEditedNode;
-                });
-            }
-
-            if (edgesChange !== identity) {
-                setOutputEdges((currentOutputEdges) => {
-                    let nextOutputEdges = typeof edgesChange === "function" ? edgesChange(currentOutputEdges) : edgesChange;
-                    const equal = isEqual(currentOutputEdges, nextOutputEdges);
-                    if (equal) {
-                        nextOutputEdges = currentOutputEdges;
-                    }
-                    outputEdges$.resolve([nextOutputEdges, !equal]);
-                    return nextOutputEdges;
-                });
-            }
-
-            Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
-                if (!autoApply) return;
-                if (!nodeChanged && !edgesChanged) return;
-
-                setStatus("pending");
-                performNodeEditDebounced(node, edges);
+            setEditedNode((currentEditedNode) => {
+                let nextEditedNode = typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange;
+                const equal = isEqual(currentEditedNode, nextEditedNode);
+                if (equal) {
+                    nextEditedNode = currentEditedNode;
+                }
+                editedNode$.resolve([nextEditedNode, !equal]);
+                return nextEditedNode;
             });
+
+            setOutputEdges((currentOutputEdges) => {
+                let nextOutputEdges = typeof edgesChange === "function" ? edgesChange(currentOutputEdges) : edgesChange;
+                const equal = isEqual(currentOutputEdges, nextOutputEdges);
+                if (equal) {
+                    nextOutputEdges = currentOutputEdges;
+                }
+                outputEdges$.resolve([nextOutputEdges, !equal]);
+                return nextOutputEdges;
+            });
+
+            if (autoApply) {
+                Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
+                    if (!nodeChanged && !edgesChanged) return;
+
+                    setStatus("pending");
+                    performNodeEditDebounced(node, edges);
+                });
+            }
         },
         [autoApply, performNodeEditDebounced, setStatus],
     );

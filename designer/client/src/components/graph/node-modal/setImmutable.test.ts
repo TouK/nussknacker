@@ -34,12 +34,14 @@ describe("setImmutable", () => {
     it("works correctly with array index", () => {
         const updated = setImmutable(data, "user.posts[1].text", "updated");
         expect(updated.user.posts).not.toBe(data.user.posts);
+        expect(updated.user.posts[1]).not.toBe(data.user.posts[1]);
         expect(updated.user.posts).toHaveProperty("map");
         expect(updated.user.posts[1].text).toBe("updated");
         expect(updated.user.posts[0]).toBe(data.user.posts[0]);
 
         const updated2 = setImmutable(data, "user.posts.1.text", "updated");
         expect(updated2.user.posts).not.toBe(data.user.posts);
+        expect(updated2.user.posts[1]).not.toBe(data.user.posts[1]);
         expect(updated2.user.posts).toHaveProperty("map");
         expect(updated2.user.posts[1].text).toBe("updated");
         expect(updated2.user.posts[0]).toBe(data.user.posts[0]);

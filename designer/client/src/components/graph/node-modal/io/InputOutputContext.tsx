@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import React, { createContext, useCallback, useContext, useMemo, useReducer } from "react";
+import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
 import { useSelector } from "react-redux";
 
 import type { TransitionResults } from "../../../../common/TestResultUtils";
@@ -64,12 +64,12 @@ const reducer = (state: InputOutputState, action: Action) => {
     }
 };
 
-export const InputOutputContextProvider = ({
+export const InputOutputContextProvider = memo(function InputOutputContextProvider({
     nodeId,
     children,
 }: PropsWithChildren<{
     nodeId: string;
-}>) => {
+}>) {
     const scenario = useSelector(getScenarioGraph);
     const testResults = useSelector(getTestResults);
 
@@ -79,6 +79,7 @@ export const InputOutputContextProvider = ({
         () => testResults?.nodeTransitionResults?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId),
         [nodeId, testResults?.nodeTransitionResults],
     );
+
     const inputs = useMemo(() => {
         return NodeUtils.getNodesConnectedToInput(nodeId, scenario).map(({ id }) => {
             const transitionResults = nodeTransitionResults?.find((r) => r.destinationNodeId === nodeId && r.sourceNodeId === id);
@@ -88,6 +89,7 @@ export const InputOutputContextProvider = ({
             };
         });
     }, [nodeId, nodeTransitionResults, scenario]);
+
     const outputs = useMemo(() => {
         return NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map(({ id }) => {
             const transitionResults = nodeTransitionResults?.find((r) => r.sourceNodeId === nodeId && r.destinationNodeId === id);
@@ -155,4 +157,4 @@ export const InputOutputContextProvider = ({
         [getAvailableContexts, inputs, outputs, state],
     );
     return <InputOutputContext.Provider value={value}>{children}</InputOutputContext.Provider>;
-};
+});

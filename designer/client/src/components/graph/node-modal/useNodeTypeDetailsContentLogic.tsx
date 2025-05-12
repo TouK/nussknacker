@@ -1,5 +1,5 @@
 import { identity, isEqual } from "lodash";
-import React, { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import React, { type SetStateAction, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { validateNodeData } from "../../../actions/nk";
@@ -49,40 +49,8 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
 
     const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
 
-    const adjustNode = useNodeAdjust();
-    const [proxyNode, setProxyNode] = useState(() => adjustNode(node));
-
-    useEffect(() => {
-        setProxyNode((currentNode) => {
-            const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, currentNode) ? currentNode : adjustedNode;
-        });
-    }, [adjustNode, node]);
-
-    const change = useCallback(
-        (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
-            if (isEditMode) {
-                onChange(node, edges);
-            }
-        },
-        [isEditMode, onChange],
-    );
-
-    const setEditedNode = useCallback(
-        (n: SetStateAction<NodeType>) => {
-            setProxyNode((current) => {
-                const nextNode = typeof n === "function" ? n(current) : n;
-                if (isEqual(current, nextNode)) {
-                    return current;
-                }
-                change(nextNode, identity);
-                return nextNode;
-            });
-        },
-        [change],
-    );
-
-    const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => change(identity, e), [change]);
+    const setEditedNode = useCallback((n: SetStateAction<NodeType>) => onChange?.(n, identity), [onChange]);
+    const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => onChange?.(identity, e), [onChange]);
 
     const parameterDefinitions = useMemo(() => getParameterDefinitions(node), [getParameterDefinitions, node]);
 
@@ -148,6 +116,6 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         removeElement,
         addElement,
         setProperty,
-        node: proxyNode,
+        node,
     };
 }
