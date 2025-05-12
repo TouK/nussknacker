@@ -1022,22 +1022,34 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     result shouldBe Collections.singletonMap("bool", false)
   }
 
-  test("invokes enricher with mocked output in live mode") {
+  test("should invoke enricher in case of live mode even if mocked output is configured") {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
-      .enricherWithMockExpression("ex", "out", "withExplicitMethod", "'2222'".spel, "param1" -> "1111".spel)
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = "'2222'".spel,
+        params = "param1" -> "1111".spel
+      )
       .buildSimpleVariable("result-end", resultVariable, "#out".spel)
       .emptySink("end-end", "dummySink")
 
     interpretProcess(process, Transaction(), runtimeMode = Live) should equal("1111")
   }
 
-  test("invokes enricher with mocked output in test mode") {
+  test("should use configured mocked output as output instead of invoking enricher in case of test mode") {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
-      .enricherWithMockExpression("ex", "out", "withExplicitMethod", "'2222'".spel, "param1" -> "1111".spel)
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = "'2222'".spel,
+        params = "param1" -> "1111".spel
+      )
       .buildSimpleVariable("result-end", resultVariable, "#out".spel)
       .emptySink("end-end", "dummySink")
 

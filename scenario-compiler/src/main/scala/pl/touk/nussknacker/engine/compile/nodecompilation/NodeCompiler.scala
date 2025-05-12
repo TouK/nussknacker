@@ -48,7 +48,7 @@ import shapeless.syntax.typeable._
 
 object NodeCompiler {
 
-  val MockExpressionParameterName: ParameterName = ParameterName("mockExpression")
+  val MockExpressionParameterName: ParameterName = ParameterName("$mockExpression")
 
   case class NodeCompilationResult[T](
       expressionTypingInfo: Map[String, ExpressionTypingInfo],
