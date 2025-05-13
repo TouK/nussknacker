@@ -26,6 +26,7 @@ trait WithCachedTopicsExistenceValidator extends TopicsExistenceValidator {
 
 }
 
+// TODO NU-2021: pass kafkaAdminClient: Admin
 class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExistenceValidator with LazyLogging {
 
   private val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig

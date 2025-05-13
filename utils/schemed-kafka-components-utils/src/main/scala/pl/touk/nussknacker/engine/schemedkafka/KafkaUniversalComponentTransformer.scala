@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component
@@ -13,12 +14,6 @@ import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedV
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
-import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
-import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
-import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{
   KafkaComponentsUtils,
   KafkaConfig,
@@ -26,6 +21,10 @@ import pl.touk.nussknacker.engine.kafka.{
   PreparedKafkaTopic,
   UnspecializedTopicName
 }
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
+import pl.touk.nussknacker.engine.kafka.admin.CreatedKafkaAdminClient
+import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
+import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
@@ -47,7 +46,8 @@ object KafkaUniversalComponentTransformer {
 
 abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValidationType]
     extends SingleInputDynamicComponent[T]
-    with WithCachedTopicsExistenceValidator {
+    with WithCachedTopicsExistenceValidator
+    with LazyLogging {
   self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
@@ -61,11 +61,17 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {
-      new AllNonHiddenTopicsSelectionStrategy(
-        schemaRegistryClient,
-        KafkaUtils.createKafkaAdminClient(kafkaConfig),
-        kafkaConfig.topicsWithoutSchemaFetchTimeout
-      )
+      KafkaUtils.createKafkaAdminClient(kafkaConfig) match {
+        case CreatedKafkaAdminClient.Value(admin) =>
+          new AllNonHiddenTopicsSelectionStrategy(
+            schemaRegistryClient,
+            admin,
+            kafkaConfig.topicsWithoutSchemaFetchTimeout
+          )
+        case CreatedKafkaAdminClient.Failed(_) =>
+          logger.warn("Kafka admin client creation failed, using topics with existing subjects strategy")
+          new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
+      }
     } else new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
   }
 

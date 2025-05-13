@@ -4,8 +4,6 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, ListTopicsOptions}
 import org.apache.kafka.common.KafkaException
-import org.apache.kafka.common.errors.TimeoutException
-import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
@@ -33,7 +31,8 @@ class AllNonHiddenTopicsSelectionStrategy(
     schemaRegistryClient: SchemaRegistryClient,
     kafkaAdminClient: Admin,
     fetchTimeout: FiniteDuration
-) extends TopicSelectionStrategy with LazyLogging {
+) extends TopicSelectionStrategy
+    with LazyLogging {
 
   override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     val topicsFromSchemaRegistry = schemaRegistryClient.getAllTopics
@@ -50,9 +49,6 @@ class AllNonHiddenTopicsSelectionStrategy(
           .filterNot(topic => topic.name.startsWith("_"))
           .toList
       } catch {
-        // In some tests we pass dummy kafka address, so when we try to get topics from kafka it fails
-        case err if ExceptionUtils.unwrapCommonWrappingExceptions(err).isInstanceOf[TimeoutException] =>
-          List.empty
         case ex: KafkaException =>
           logger.error("Kafka exception while getting topics", ex)
           List.empty

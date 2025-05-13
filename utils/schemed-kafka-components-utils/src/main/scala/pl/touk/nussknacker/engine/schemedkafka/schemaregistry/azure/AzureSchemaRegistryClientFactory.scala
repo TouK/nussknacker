@@ -45,7 +45,8 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     .buildClient()
 
   // TODO: close it
-  private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(config.kafkaProperties), None))
+  private lazy val kafkaAdminClient =
+    KafkaUtils.createKafkaAdminClientUnsafe(KafkaConfig(Some(config.kafkaProperties), None))
 
   // We need to create our own schemas service because some operations like schema listing are not exposed by default client
   // or even its Schemas inner class. Others like listing of versions are implemented incorrectly (it has wrong json field name in model)

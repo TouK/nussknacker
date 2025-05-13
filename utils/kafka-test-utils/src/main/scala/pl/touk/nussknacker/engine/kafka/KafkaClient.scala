@@ -14,7 +14,6 @@ import java.util.{Collections, UUID}
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
@@ -27,7 +26,7 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
   private lazy val adminClient =
-    KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(Map("bootstrap.servers" -> kafkaAddress)), None))
+    KafkaUtils.createKafkaAdminClientUnsafe(KafkaConfig(Some(Map("bootstrap.servers" -> kafkaAddress)), None))
 
   def createTopic(name: String, partitions: Int = 5): Unit = {
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()

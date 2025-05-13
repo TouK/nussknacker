@@ -8,6 +8,7 @@ import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, Re
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.admin.CreatedKafkaAdminClient
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.time
@@ -32,7 +33,17 @@ trait KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
+  def createKafkaAdminClient(kafkaConfig: KafkaConfig): CreatedKafkaAdminClient = {
+    try {
+      CreatedKafkaAdminClient.Value(createKafkaAdminClientUnsafe(kafkaConfig))
+    } catch {
+      case e: Exception =>
+        logger.error(s"Failed to create Kafka admin client for config: $kafkaConfig", e)
+        CreatedKafkaAdminClient.Failed(e)
+    }
+  }
+
+  def createKafkaAdminClientUnsafe(kafkaConfig: KafkaConfig): Admin = {
     AdminClient.create(withPropertiesFromConfig(new Properties, kafkaConfig))
   }
 
@@ -41,7 +52,7 @@ trait KafkaUtils extends LazyLogging {
     val releasable = new Releasable[Admin] {
       override def release(resource: Admin): Unit = resource.close(time.Duration.ofMillis(defaultTimeoutMillis))
     }
-    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)(releasable)
+    Using.resource(createKafkaAdminClientUnsafe(kafkaConfig))(adminClientOperation)(releasable)
   }
 
   def sanitizeClientId(originalId: String): String =
