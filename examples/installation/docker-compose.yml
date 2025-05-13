@@ -203,12 +203,19 @@ services:
     command: jobmanager
     environment:
       JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
+      JVM_ARGS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost"
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
       interval: 10s
       retries: 10
+    ports:
+      - 9010:9010
     volumes:
       - nussknacker_flink_data:/opt/flink/data
+#    deploy:
+#      resources:
+#        limits:
+#          memory: 2000M
 
   flink-taskmanager:
     build:
@@ -230,6 +237,7 @@ services:
       resources:
         limits:
           memory: 1500M
+#          memory: 2000M
 
   telegraf:
     image: telegraf:1.30.2
