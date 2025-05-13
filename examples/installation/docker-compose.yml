@@ -209,6 +209,10 @@ services:
       retries: 10
     volumes:
       - nussknacker_flink_data:/opt/flink/data
+    deploy:
+      resources:
+        limits:
+          memory: 2000M
 
   flink-taskmanager:
     build:
@@ -229,7 +233,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1500M
+          memory: 2000M
 
   telegraf:
     image: telegraf:1.30.2
