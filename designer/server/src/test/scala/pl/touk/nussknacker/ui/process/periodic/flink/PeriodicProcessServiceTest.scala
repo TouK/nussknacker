@@ -66,11 +66,12 @@ class PeriodicProcessServiceTest
   )
 
   class Fixture {
-    val repository                      = new InMemPeriodicProcessesRepository(processingType = "testProcessingType")
-    val delegateDeploymentManagerStub   = new DeploymentManagerStub
-    val scheduledExecutionPerformerStub = Mockito.spy(new ScheduledExecutionPerformerStub)
-    val events                          = new ArrayBuffer[ScheduledProcessEvent]()
-    val additionalData                  = Map("testMap" -> "testValue")
+    val repository                    = new InMemPeriodicProcessesRepository(processingType = "testProcessingType")
+    val delegateDeploymentManagerStub = new DeploymentManagerStub
+    val scheduledExecutionPerformerStub =
+      Mockito.spy[ScheduledExecutionPerformerStub](new ScheduledExecutionPerformerStub)
+    val events         = new ArrayBuffer[ScheduledProcessEvent]()
+    val additionalData = Map("testMap" -> "testValue")
 
     val actionService: ProcessingTypeActionServiceStub = new ProcessingTypeActionServiceStub
 
