@@ -162,7 +162,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     return (
         <InputOutputContextProvider nodeId={editedNode.id}>
             {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
-            <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
+            <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
                 <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
             </WindowContent>
         </InputOutputContextProvider>
