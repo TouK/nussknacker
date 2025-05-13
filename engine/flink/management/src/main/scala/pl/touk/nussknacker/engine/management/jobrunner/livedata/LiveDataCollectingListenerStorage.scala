@@ -7,11 +7,10 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.jdk.CollectionConverters._
 
-private[livedata] class LiveDataCollectingListenerStorage {
+private[livedata] class LiveDataCollectingListenerStorage(maxSize: Int) {
 
   private type K = Context
   private type V = TestResults[Json]
-  private val maxSize = 10
 
   private val map   = new ConcurrentHashMap[K, V]()
   private val order = new ConcurrentLinkedQueue[K]()

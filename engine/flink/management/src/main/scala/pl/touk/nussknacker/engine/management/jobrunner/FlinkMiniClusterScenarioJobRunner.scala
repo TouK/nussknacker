@@ -5,6 +5,7 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelDataProvider
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataCollectingMode
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
   LiveDataPreviewSupport,
@@ -51,6 +52,13 @@ class FlinkMiniClusterScenarioJobRunner(
           conf.set(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID, jobId.toHexString)
         }
         env.configure(conf)
+        val liveDataCollectingListener =
+          modelDataProvider.getCurrentModelData().modelConfig.liveDataCollectingMode match {
+            case LiveDataCollectingMode.Disabled =>
+              None
+            case LiveDataCollectingMode.Enabled(maxSize) =>
+              Some(new LiveDataCollectingListener(command.processVersion.processName, maxSize))
+          }
         val jobID = jobInvoker
           .invokeStaticMethod(
             modelDataProvider.getCurrentModelData(),
@@ -58,7 +66,7 @@ class FlinkMiniClusterScenarioJobRunner(
             command.processVersion,
             command.deploymentData,
             env,
-            List(LiveDataCollectingListener.forProcess(command.processVersion.processName)),
+            liveDataCollectingListener.toList,
           )
           .getJobID
         Some(jobID)
@@ -67,7 +75,7 @@ class FlinkMiniClusterScenarioJobRunner(
   }
 
   override def liveDataPreviewSupport: LiveDataPreviewSupport = new LiveDataPreviewSupported {
-    override def getLiveData(processIdWithName: ProcessIdWithName): Future[TestResults[Json]] =
+    override def getLiveData(processIdWithName: ProcessIdWithName): Future[Option[TestResults[Json]]] =
       Future(LiveDataCollectingListenerHolder.results(processIdWithName.name))
   }
 

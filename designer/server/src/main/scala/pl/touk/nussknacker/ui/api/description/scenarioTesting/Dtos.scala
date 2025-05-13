@@ -24,7 +24,6 @@ import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
 import sttp.tapir.derevo.schema
 
-import scala.collection.compat._
 import scala.collection.immutable
 
 object Dtos {
@@ -205,22 +204,8 @@ object Dtos {
         skipResultsPerNode: SkipResultsPerNode,
         skipResultsPerTransition: SkipResultsPerTransition
     ): ResultsWithCountsDto = {
-      lazy val nodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
-        case (nodeTransition, results) =>
-          NodeTransitionResult(
-            sourceNodeId = nodeTransition.sourceNodeId,
-            destinationNodeId = nodeTransition.destinationNodeId,
-            results = results,
-          )
-      }.toList
       ResultsWithCountsDto(
-        results = TestResultsDto(
-          nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
-          nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
-          invocationResults = resultsWithCounts.results.invocationResults,
-          externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
-          exceptions = resultsWithCounts.results.exceptions,
-        ),
+        results = TestResultsDto.from(resultsWithCounts.results, skipResultsPerNode, skipResultsPerTransition),
         counts = resultsWithCounts.counts,
       )
     }
@@ -234,6 +219,31 @@ object Dtos {
       externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
       exceptions: List[ExceptionResult[Json]]
   )
+
+  object TestResultsDto {
+
+    def from(
+        testResults: TestResults[Json],
+        skipResultsPerNode: SkipResultsPerNode,
+        skipResultsPerTransition: SkipResultsPerTransition
+    ): TestResultsDto = {
+      lazy val nodeTransitionResults = testResults.nodeTransitionResults.map { case (nodeTransition, results) =>
+        NodeTransitionResult(
+          sourceNodeId = nodeTransition.sourceNodeId,
+          destinationNodeId = nodeTransition.destinationNodeId,
+          results = results,
+        )
+      }.toList
+      TestResultsDto(
+        nodeResults = Option.when(!skipResultsPerNode.value)(testResults.nodeResults),
+        nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
+        invocationResults = testResults.invocationResults,
+        externalInvocationResults = testResults.externalInvocationResults,
+        exceptions = testResults.exceptions,
+      )
+    }
+
+  }
 
   final case class NodeTransitionResult(
       sourceNodeId: String,

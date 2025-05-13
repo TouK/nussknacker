@@ -22,7 +22,11 @@ import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError._
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.NotFoundTestingError._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ResultsWithCountsDto, ScenarioTestData}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{
+  ResultsWithCountsDto,
+  ScenarioTestData,
+  TestResultsDto
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
@@ -193,15 +197,20 @@ class ScenarioTestingApiHttpService(
             testResults <- EitherT[Future, TestingError, TestResults[Json]] {
               deploymentManager.liveDataPreviewSupport match {
                 case supported: LiveDataPreviewSupported =>
-                  supported.getLiveData(processIdWithName).map(Right(_))
+                  supported.getLiveData(processIdWithName).map {
+                    case Some(results) =>
+                      Right(results)
+                    case None =>
+                      Left(TestingError.UnsupportedOperation("This scenario does not support live data preview 1"))
+                  }
                 case NoLiveDataPreviewSupport =>
                   Future.successful(
-                    Left(TestingError.UnsupportedOperation("This scenario does not support live data preview"))
+                    Left(TestingError.UnsupportedOperation("This scenario does not support live data preview 2"))
                   )
               }
             }
-          } yield ResultsWithCountsDto.from(
-            ResultsWithCounts(testResults, Map.empty),
+          } yield TestResultsDto.from(
+            testResults,
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
             skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
           )

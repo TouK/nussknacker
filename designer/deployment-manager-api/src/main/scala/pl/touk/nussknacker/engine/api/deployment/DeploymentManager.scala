@@ -100,7 +100,7 @@ trait LiveDataPreviewSupported extends LiveDataPreviewSupport {
 
   def getLiveData(
       processIdWithName: ProcessIdWithName,
-  ): Future[TestResults[Json]]
+  ): Future[Option[TestResults[Json]]]
 
 }
 

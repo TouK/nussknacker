@@ -9,11 +9,11 @@ import scala.util.Try
 
 // This class must be serializable. It means, that when deserializing, we lose the reference to it.
 // The actual data is stored in the LiveDataCollectingListenerHolder, and all instances of LiveDataCollectingListener can access the data.
-class LiveDataCollectingListener(processName: ProcessName) extends ProcessListener with Serializable {
+class LiveDataCollectingListener(processName: ProcessName, maxSize: Int) extends ProcessListener with Serializable {
 
   private val variableEncoder: Any => io.circe.Json = TestInterpreterRunner.testResultsVariableEncoder
 
-  private def storage = LiveDataCollectingListenerHolder.storage(processName)
+  private def storage = LiveDataCollectingListenerHolder.storage(processName, maxSize)
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
     storage.updateResults(context, _.updateNodeResult(nodeId, context, variableEncoder))
@@ -74,8 +74,4 @@ class LiveDataCollectingListener(processName: ProcessName) extends ProcessListen
 
   override final def close(): Unit = ()
 
-}
-
-object LiveDataCollectingListener {
-  def forProcess(processName: ProcessName) = new LiveDataCollectingListener(processName)
 }

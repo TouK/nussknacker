@@ -15,13 +15,13 @@ object LiveDataCollectingListenerHolder {
       .expireAfterAccess(java.time.Duration.ofMinutes(30))
       .build[String, LiveDataCollectingListenerStorage]()
 
-  def results(processName: ProcessName): TestResults[Json] = {
-    val values = storage(processName).values
-    TestResults.aggregate(values)
+  def results(processName: ProcessName): Option[TestResults[Json]] = {
+    Option(listeners.getIfPresent(processName.value))
+      .map(storage => TestResults.aggregate(storage.values))
   }
 
-  private[livedata] def storage(processName: ProcessName): LiveDataCollectingListenerStorage = {
-    listeners.get(processName.value, asJavaFunction((_: String) => new LiveDataCollectingListenerStorage))
+  private[livedata] def storage(processName: ProcessName, maxSize: Int): LiveDataCollectingListenerStorage = {
+    listeners.get(processName.value, asJavaFunction((_: String) => new LiveDataCollectingListenerStorage(maxSize)))
   }
 
 }
