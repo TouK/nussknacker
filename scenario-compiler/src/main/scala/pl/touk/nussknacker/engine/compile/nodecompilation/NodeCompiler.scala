@@ -41,6 +41,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.EnricherMockedOutput.SingleMockExpression
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import shapeless.Typeable
@@ -422,8 +423,27 @@ class NodeCompiler(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
     expressionCompiler
-      .compile(expression, Some(MockExpressionParameterName), ctx, expectedType)
-      .map(_.expression)
+      .compile(expression, Some(MockExpressionParameterName), ctx, expectedType) match {
+      case Valid(typedExpression) =>
+        // todo: this verification probably should be moved to JsonTemplateParser
+        if (typedExpression.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType)) {
+          Valid(typedExpression.expression)
+        } else {
+          val message = ExpressionTypeError(expectedType, typedExpression.typingInfo.typingResult).message
+          Invalid(
+            NonEmptyList.one(
+              ExpressionParserCompilationError(
+                message,
+                nodeId.id,
+                Some(MockExpressionParameterName),
+                expression.expression,
+                None
+              )
+            )
+          )
+        }
+      case invalid @ Invalid(_) => invalid
+    }
   }
 
   private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
