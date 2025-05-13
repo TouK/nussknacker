@@ -61,9 +61,7 @@ object ScenarioWithDetailsConversions {
     def skipProcessActionOptionalFields(processAction: Option[ProcessAction]) = processAction.map(
       _.copy(
         failureMessage = None,
-        commentId = None,
         comment = None,
-        buildInfo = Map.empty
       )
     )
     def getProcessAction(processAction: Option[ProcessAction]) =
@@ -78,7 +76,8 @@ object ScenarioWithDetailsConversions {
 
   implicit class Ops(scenarioWithDetails: ScenarioWithDetails) {
 
-    // TODO: Instead of doing these conversions below, wee should pass around ScenarioWithDetails
+    // TODO: Instead of doing these conversions below, wee should transform ScenarioWithDetailsEntity with some additional context
+    //       and build DTO at the end
     def toEntity: ScenarioWithDetailsEntity[Unit] = {
       toEntity(())
     }

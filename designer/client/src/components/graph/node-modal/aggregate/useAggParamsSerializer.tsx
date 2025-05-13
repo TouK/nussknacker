@@ -1,15 +1,12 @@
 import { padStart } from "lodash";
-import { useCallback, useMemo } from "react";
-import { AggMapLikeParser } from "./aggMapLikeParser";
+import { useCallback } from "react";
+
+import { parseToList, parseToObject } from "./pareserHelpers";
 
 export function useAggParamsSerializer(): [
     (text: string) => Record<string, string>,
     (paramName: string, map: Record<string, string>) => string,
 ] {
-    const parser = useMemo(() => new AggMapLikeParser(), []);
-
-    const deserialize = useCallback((input: string) => parser.parseObject(input), [parser]);
-
     const serialize = useCallback((paramName: string, map: Record<string, string>): string => {
         const entries = Object.entries(map || {}).map(([key, value]) => {
             const trimmedKey = key.trim();
@@ -27,27 +24,25 @@ export function useAggParamsSerializer(): [
         }
     }, []);
 
-    return [deserialize, serialize];
+    return [parseToObject, serialize];
 }
 
-export function useGroupByParamsSerializer(): [(text: string) => string[], (paramName: string, arr: string[]) => string] {
-    const parser = useMemo(() => new AggMapLikeParser(), []);
-
-    const deserialize = useCallback((input: string) => parser.parseList(input), [parser]);
-
-    const serialize = useCallback((paramName: string, arr: string[]): string => {
+export function useGroupByParamsSerializer(): [(text: string) => string[], (arr: string[]) => string] {
+    const serialize = useCallback((arr: string[]): string => {
         const entries = arr.map((value) => {
             return value?.trim();
         });
-
         const content = entries.join(", ");
 
         if (!content) return "";
 
-        switch (paramName) {
-            case "groupBy":
-                return `{ ${content} }.toString`;
-        }
+        return `{ ${content} }`;
+    }, []);
+
+    const deserialize = useCallback((input: string) => {
+        const parsed = parseToList(input);
+        if (parsed !== null) return parsed;
+        return [input];
     }, []);
 
     return [deserialize, serialize];

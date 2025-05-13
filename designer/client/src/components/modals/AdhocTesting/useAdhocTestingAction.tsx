@@ -1,12 +1,13 @@
-import { AdhocTestingParameters } from "./AdhocTestingDialog";
-import { useCallback, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
-import { getProcessingType, getProcessName, getScenarioGraph, getTestParameters } from "../../../reducers/selectors/graph";
-import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
-import { UIParameter } from "../../../types";
 import { head } from "lodash";
-import { ActionValues } from "./AdhocTestingFormContext";
+import { useCallback, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
+import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
+import { getProcessingType, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
+import type { UIParameter } from "../../../types";
+import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
+import type { AdhocTestingParameters } from "./AdhocTestingDialog";
+import type { ActionValues } from "./AdhocTestingFormContext";
 
 export type SourceParameters = {
     [key: string]: { parameters: UIParameter[] };
@@ -24,6 +25,7 @@ export function paramsListToRecord(parameters: UIParameter[]): ActionValues {
 
 export function useSourceParameters() {
     const testFormParameters = useSelector(getTestParameters);
+    const testData = useSelector(getTestData);
 
     //For now, we select first source and don't provide way to change it
     //Add support for multiple sources in next iteration (?)
@@ -44,14 +46,17 @@ export function useSourceParameters() {
         [testFormParameters],
     );
 
+    const lastUsedTestData = useMemo(() => testData[sourceId], [sourceId, testData]);
+
     return {
         sourceId,
         sourceParameters,
+        lastUsedTestData,
     };
 }
 
 export function useAdhocTestingAction(): AdhocTestingParameters {
-    const { sourceId, sourceParameters } = useSourceParameters();
+    const { sourceId, sourceParameters, lastUsedTestData: storedValues } = useSourceParameters();
 
     const parameters = useMemo<UIParameter[]>(() => sourceParameters[sourceId]?.parameters || [], [sourceId, sourceParameters]);
 
@@ -60,27 +65,20 @@ export function useAdhocTestingAction(): AdhocTestingParameters {
 
     const processingType = useSelector(getProcessingType);
 
-    const [storedValues, setStoredValues] = useState<ActionValues>();
     const initialValues = useMemo(() => storedValues || paramsListToRecord(parameters), [parameters, storedValues]);
 
     const dispatch = useDispatch();
-    const scenarioName = useSelector(getProcessName);
-    const scenarioGraph = useSelector(getScenarioGraph);
+
     const onConfirmAction = useCallback(
         (parameterExpressions: ActionValues) => {
-            setStoredValues(parameterExpressions);
             dispatch(
-                testProcessWithParameters(
-                    scenarioName,
-                    {
-                        sourceId,
-                        parameterExpressions,
-                    },
-                    scenarioGraph,
-                ),
+                testProcessWithParameters({
+                    sourceId,
+                    parameterExpressions,
+                }),
             );
         },
-        [sourceId, dispatch, scenarioName, scenarioGraph],
+        [dispatch, sourceId],
     );
 
     return useMemo<AdhocTestingParameters>(
@@ -88,12 +86,11 @@ export function useAdhocTestingAction(): AdhocTestingParameters {
             parameters,
             variableTypes,
             processingType,
-            scenarioName,
             initialValues,
             onConfirmAction,
             sourceId,
-            scenarioGraph,
+            previousTestData: storedValues,
         }),
-        [initialValues, onConfirmAction, parameters, sourceId, scenarioGraph, processingType, scenarioName, variableTypes],
+        [parameters, variableTypes, processingType, initialValues, onConfirmAction, sourceId, storedValues],
     );
 }

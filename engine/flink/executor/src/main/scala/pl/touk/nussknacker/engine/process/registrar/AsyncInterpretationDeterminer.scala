@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, De
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.flink.api.ConfigGlobalParameters
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData, Processor}
-import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splittednode}
+import pl.touk.nussknacker.engine.splittedgraph.{splittednode, SplittedNodesCollector}
 
 private[registrar] case class AsyncInterpretationDeterminer(
     configParameters: Option[ConfigGlobalParameters],

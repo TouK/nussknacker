@@ -1,9 +1,10 @@
-import { FormControl, FormLabel } from "@mui/material";
-import TestValue from "./TestValue";
-import React, { useRef, useState } from "react";
-import { HIDDEN_TEXTAREA_PIXEL_HEIGHT } from "../NodeDetailsContent/NodeTableStyled";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { Variable } from "../../../../common/TestResultUtils";
+import { FormControl, FormLabel } from "@mui/material";
+import React, { useRef, useState } from "react";
+
+import type { Variable } from "../../../../common/TestResultUtils";
+import { HIDDEN_TEXTAREA_PIXEL_HEIGHT } from "../NodeDetailsContent/NodeTableStyled";
+import TestValue from "./TestValue";
 
 interface TestResultsVariablesProps {
     labelText: string;

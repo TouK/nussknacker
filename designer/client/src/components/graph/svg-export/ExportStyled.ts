@@ -1,4 +1,5 @@
-import { css, Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
+import { css } from "@mui/material";
 
 export const exportStyled = (theme: Theme) => css`
     .graph-export {

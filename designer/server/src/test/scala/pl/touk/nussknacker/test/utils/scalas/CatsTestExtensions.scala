@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.test.utils.scalas
 
-import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.implicits.global
 
 trait CatsTestExtensions {
 

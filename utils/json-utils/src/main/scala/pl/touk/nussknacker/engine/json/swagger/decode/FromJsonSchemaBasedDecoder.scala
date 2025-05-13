@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.json.swagger.decode
 
 import io.circe.{Json, JsonNumber, JsonObject}
-import pl.touk.nussknacker.engine.api.json.FromJsonDecoder
+import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
 
-import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import scala.util.Try
 
 // TODO: Validated
@@ -50,7 +50,7 @@ object FromJsonSchemaBasedDecoder {
                   case add: AdditionalPropertiesEnabled =>
                     key -> FromJsonSchemaBasedDecoder.decode(value, add.value, addPath(key))
                   case _ =>
-                    key -> FromJsonDecoder.jsonToAny(value)
+                    key -> FromJsonSimpleDecoder.jsonToAny(value)
                 }
             }
           )
@@ -65,13 +65,12 @@ object FromJsonSchemaBasedDecoder {
         case SwaggerString =>
           extract(_.asString)
         case SwaggerEnum(_) =>
-          extract[AnyRef](j => Option(FromJsonDecoder.jsonToAny(j).asInstanceOf[AnyRef]))
+          extract[AnyRef](j => Option(FromJsonSimpleDecoder.jsonToAny(j).asInstanceOf[AnyRef]))
         case SwaggerBool =>
           extract(_.asBoolean, boolean2Boolean)
         case SwaggerInteger =>
           extract[JsonNumber](_.asNumber, n => int2Integer(n.toDouble.toInt))
         case SwaggerLong =>
-          // FIXME: to ok?
           extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
         case SwaggerBigInteger =>
           extract[JsonNumber](_.asNumber, _.toBigInt.map(_.bigInteger).orNull)
@@ -98,7 +97,7 @@ object FromJsonSchemaBasedDecoder {
             .flatMap(aType => Try(decode(json, aType)).toOption)
             .headOption
             .getOrElse(throw JsonToObjectError(json, u, path))
-        case SwaggerAny => extract[AnyRef](j => Option(FromJsonDecoder.jsonToAny(j).asInstanceOf[AnyRef]))
+        case SwaggerAny => extract[AnyRef](j => Option(FromJsonSimpleDecoder.jsonToAny(j).asInstanceOf[AnyRef]))
         // should not happen as we handle null above
         case SwaggerNull => throw JsonToObjectError(json, definition, path)
       }

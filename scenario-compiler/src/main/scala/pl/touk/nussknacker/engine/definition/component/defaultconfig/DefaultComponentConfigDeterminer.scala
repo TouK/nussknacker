@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.definition.component.defaultconfig
 
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.definition.component._
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 object DefaultComponentConfigDeterminer {
 
@@ -38,7 +39,8 @@ object DefaultComponentConfigDeterminer {
       icon = Some(configData.icon),
       docsUrl = None,
       componentGroup = Some(configData.componentGroup),
-      componentId = None
+      componentId = None,
+      label = None
     )
   }
 
@@ -54,7 +56,8 @@ object DefaultComponentConfigDeterminer {
       // TODO: move from defaultModelConfig.conf to here + convention instead of code
       docsUrl = None,
       componentGroup = Some(componentGroup),
-      componentId = Some(DesignerWideComponentId.forBuiltInComponent(id))
+      componentId = Some(DesignerWideComponentId.forBuiltInComponent(id)),
+      label = None
     )
   }
 
@@ -66,6 +69,7 @@ object DefaultComponentConfigDeterminer {
       icon: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
+      name: String
   ): ComponentUiDefinition = {
     val beforeTranslationGroupName = componentGroupName.getOrElse(DefaultsComponentGroupName.FragmentsGroupName)
 
@@ -75,7 +79,9 @@ object DefaultComponentConfigDeterminer {
         .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
       icon = icon.getOrElse(DefaultsComponentIcon.FragmentIcon),
       docsUrl = docsUrl,
-      designerWideId = designerWideId
+      designerWideId = designerWideId,
+      // Fragment's name is also it's id and label so should not be formatted, e.g. to Title Case
+      label = name
     )
   }
 

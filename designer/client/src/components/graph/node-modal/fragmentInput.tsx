@@ -1,11 +1,12 @@
-import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
 import React, { useCallback } from "react";
-import { IdField } from "./IdField";
-import { DisableField } from "./DisableField";
-import { ParameterExpressionField } from "./ParameterExpressionField";
+
+import type ProcessUtils from "../../../common/ProcessUtils";
+import type { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
+import { DisableField } from "./DisableField";
+import { IdField } from "./IdField";
 import OutputParametersList from "./OutputParametersList";
+import { ParameterExpressionField } from "./ParameterExpressionField";
 import { useParametersList } from "./useParametersList";
 
 interface FragmentInput {

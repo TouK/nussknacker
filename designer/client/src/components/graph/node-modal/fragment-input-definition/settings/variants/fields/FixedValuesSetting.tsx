@@ -1,8 +1,10 @@
 import React from "react";
-import { FixedValuesType, onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item";
-import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
-import { UserDefinedListInput } from "./UserDefinedListInput";
+
+import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
+import type { onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item";
+import { FixedValuesType } from "../../../item";
 import { DictSelect } from "./dictSelect";
+import { UserDefinedListInput } from "./UserDefinedListInput";
 
 interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
@@ -70,9 +69,10 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
           GenericFunctionTypingError.OtherError("List element must contain 'key' and 'value' fields").invalidNel
         case TypedClass(_, List(TypedClass(klass, _))) if klass.isAOrChildOf(mapClass) =>
           Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case TypedClass(_, List(Unknown)) => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case Unknown                      => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case _                            => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+        case TypedClass(_, List(u: Unknown)) => Typed.genericTypeClass[JMap[_, _]](List(u, u)).validNel
+        case Typed.json => Typed.genericTypeClass[JMap[_, _]](List(Typed[String], Typed.json)).validNel
+        case Unknown(_) => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case _          => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
 
   @tailrec

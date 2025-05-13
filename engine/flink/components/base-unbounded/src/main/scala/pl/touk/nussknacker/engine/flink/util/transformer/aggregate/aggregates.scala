@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.list._
 import org.apache.flink.api.common.typeinfo.TypeInfo
+import pl.touk.nussknacker.engine.api.typed.{typing, NumberTypeUtils}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.{
-  ForLargeFloatingNumbersOperation,
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.median.MedianHelper
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -17,7 +15,6 @@ import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import java.util
-import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
 /*
@@ -81,7 +78,8 @@ object aggregates {
 
     override def zero: Aggregate = new java.util.ArrayList[Number]()
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg else {
+    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg
+    else {
       agg.add(el)
       agg
     }
@@ -95,7 +93,8 @@ object aggregates {
       result
     }
 
-    override def result(finalAggregate: Aggregate): AnyRef = MedianHelper.calculateMedian(finalAggregate.asScala.toList).orNull
+    override def result(finalAggregate: Aggregate): AnyRef =
+      MedianHelper.calculateMedian(finalAggregate.asScala.toList).orNull
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
       Typed.genericTypeClass[java.util.ArrayList[_]](List(input))
@@ -224,7 +223,7 @@ object aggregates {
     override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
-      if (input.canBeConvertedTo(Typed[Boolean])) {
+      if (input.canBeLooselyAssignedTo(Typed[Boolean])) {
         Valid(Typed[Long])
       } else {
         Invalid(s"Invalid aggregate type: ${input.display}, should be: ${Typed[Boolean].display}")
@@ -484,7 +483,7 @@ object aggregates {
     ): Validated[String, TypedObjectTypingResult] = {
       input match {
         case TypedObjectTypingResult(inputFields, klass, _)
-            if inputFields.keySet == scalaFields.keySet && klass.canBeConvertedTo(
+            if inputFields.keySet == scalaFields.keySet && klass.canBeLooselyAssignedTo(
               Typed[java.util.Map[String, _]]
             ) =>
           val validationRes = scalaFields
@@ -570,7 +569,7 @@ object aggregates {
   trait MathAggregator { self: ReducingAggregator =>
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
-      if (input.canBeConvertedTo(Typed[Number])) {
+      if (input.canBeLooselyAssignedTo(Typed[Number])) {
         // In some cases type can be promoted to other class e.g. Byte is promoted to Int for sum
         Valid(promotionStrategy.promoteSingle(input))
       } else {
@@ -598,7 +597,7 @@ object aggregates {
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
 
-      if (!input.canBeConvertedTo(Typed[Number])) {
+      if (!input.canBeLooselyAssignedTo(Typed[Number])) {
         Invalid(s"Invalid aggregate type: ${input.display}, should be: ${Typed[Number].display}")
       } else {
         Valid(ForLargeFloatingNumbersOperation.promoteSingle(input))

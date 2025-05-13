@@ -3,27 +3,27 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.so
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.everit.json.schema.{CombinedSchema, Schema}
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
 import pl.touk.nussknacker.engine.util.json.{JsonSchemaUtils, ToJsonEncoder}
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
-import scala.jdk.CollectionConverters._
 import java.nio.charset.StandardCharsets
+import scala.jdk.CollectionConverters._
 
 class JsonSchemaRequestResponseSource(
     val definition: String,

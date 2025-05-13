@@ -1,8 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import Moment from "moment";
-import * as queryString from "query-string";
-import { NodeId } from "../types";
+import { stringifyUrl } from "query-string";
+
 import { VisualizationBasePath } from "../containers/paths";
+import type { NodeId } from "../types";
 
 function fromTimestampOrDate(tsOrDate): Moment.Moment {
     const asInt = parseInt(tsOrDate);
@@ -16,7 +17,7 @@ function fromTimestampOrDate(tsOrDate): Moment.Moment {
 
 export function visualizationUrl(processName: string, nodeId?: NodeId): string {
     const baseUrl = `${VisualizationBasePath}/${encodeURIComponent(processName)}`;
-    return queryString.stringifyUrl({ url: baseUrl, query: { nodeId } });
+    return stringifyUrl({ url: baseUrl, query: { nodeId } });
 }
 
 export function extractCountParams(queryParams: { from?: string; to?: string; refresh?: string }): {

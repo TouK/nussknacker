@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
-import cats.data.Validated.{Invalid, condNel}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{condNel, Invalid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -52,7 +52,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       path: Option[String]
   ): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
-      case (Unknown, _) if validationMode == ValidationMode.lax =>
+      case (Unknown(_), _) if validationMode == ValidationMode.lax =>
         valid
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
@@ -68,6 +68,10 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (TypedNull, _) if !schema.isNullable =>
         invalid(typingResult, schema, path)
       case (TypedNull, _) if schema.isNullable =>
+        valid
+      case (Unknown(_), Type.NULL) if !schema.isNullable =>
+        invalid(typingResult, schema, path)
+      case (Unknown(_), Type.NULL) if schema.isNullable =>
         valid
       case (typingResult, Type.ENUM) =>
         validateEnum(typingResult, schema, path)
@@ -153,7 +157,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case _ @TypedClass(klass, key :: value :: Nil) if isMap(klass) =>
         // Map keys are assumed to be strings: https://avro.apache.org/docs/current/spec.html#Maps
         condNel(
-          key.canBeConvertedTo(Typed.apply[java.lang.String]),
+          key.canBeLooselyAssignedTo(Typed.apply[java.lang.String]),
           (),
           typeError(typingResult, schema, path)
         ).andThen(_ => validateTypingResult(value, schema.getValueType, buildPath("*", path, useIndexer = true)))

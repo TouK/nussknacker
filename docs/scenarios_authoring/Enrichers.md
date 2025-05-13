@@ -167,4 +167,5 @@ The following ML models are supported:
 - [H2O](https://h2o.ai/)
 - models fetched from [MLflow](https://mlflow.org/) models registry
 
-Please check [ML integration](../integration/MachineLearning.md) page for more details on how models are inferred by Nussknacker.
+You can read [this blogpost](https://nussknacker.io/blog/ml-models-inference-in-fraud-detection/) for the end-to-end example of how to use ML enricher. 
+The [integration](../integration/MachineLearning.md) section of the documentation has additional information on how to enable ML enricher. 

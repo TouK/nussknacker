@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.cache
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.Duration.{Inf, Undefined}
 import scala.concurrent.duration.{Deadline, Duration, FiniteDuration}
+import scala.concurrent.duration.Duration.{Inf, Undefined}
 
 trait Cache[K, V] {
   def getOrCreate(key: K)(value: => V): V

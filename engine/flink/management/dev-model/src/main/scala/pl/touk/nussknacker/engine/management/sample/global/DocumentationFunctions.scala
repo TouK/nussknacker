@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.management.sample.global
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.{ArgumentTypeError, OtherError}
 import pl.touk.nussknacker.engine.api.generics._
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.{ArgumentTypeError, OtherError}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing._
 
@@ -62,7 +62,7 @@ object DocumentationFunctions {
         (left.withoutValue, right.withoutValue) match {
           case (`intType`, `intType`)       => intType.validNel
           case (`doubleType`, `doubleType`) => doubleType.validNel
-          case (l, r) if List(l, r).forall(_.canBeConvertedTo(numberType)) =>
+          case (l, r) if List(l, r).forall(_.canBeLooselyAssignedTo(numberType)) =>
             OtherError(s"Addition of ${l.display} and ${r.display} is not supported").invalidNel
           case (`stringType`, `stringType`) => stringType.validNel
           case _                            => ArgumentTypeError.invalidNel
@@ -110,7 +110,7 @@ object DocumentationFunctions {
           case Some(v) => v.validNel
           case None    => OtherError("No field with given name").invalidNel
         }
-      case TypedObjectTypingResult(_, _, _) :: x :: Nil if x.canBeConvertedTo(stringType) =>
+      case TypedObjectTypingResult(_, _, _) :: x :: Nil if x.canBeLooselyAssignedTo(stringType) =>
         OtherError("Expected string with known value").invalidNel
       case _ =>
         ArgumentTypeError.invalidNel

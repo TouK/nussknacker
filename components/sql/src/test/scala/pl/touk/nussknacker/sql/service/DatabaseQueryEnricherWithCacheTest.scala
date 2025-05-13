@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{Context, Params}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
@@ -12,8 +12,8 @@ import scala.concurrent.Await
 
 class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
 
-  import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
+  import scala.jdk.CollectionConverters._
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",

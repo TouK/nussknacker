@@ -3,10 +3,10 @@ package pl.touk.nussknacker.engine
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
+import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
@@ -14,10 +14,11 @@ import scala.concurrent.duration.FiniteDuration
 
 // If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
+// If you are adding some method with default value, mind that it should be override in DeploymentManagerProviderCorrectClassloaderHandler
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
@@ -42,6 +43,8 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   // TODO: remove the default value
   // TODO: replace scenario types by the separate lists of deployments and of models
   def engineSetupIdentity(config: Config): Any = ()
+
+  def jobsRecoverySettings(config: Config): JobsRecoverySettings = JobsRecoverySettings.noRecovery
 
 }
 
@@ -69,4 +72,12 @@ object MetaDataInitializer {
   type MetadataType = String
   def apply(metadataType: MetadataType, overridingProperties: Map[String, String]): MetaDataInitializer =
     MetaDataInitializer(metadataType, _ => overridingProperties)
+}
+
+case class JobsRecoverySettings(recoverJobsOnStart: Boolean)
+
+object JobsRecoverySettings {
+
+  val noRecovery: JobsRecoverySettings = JobsRecoverySettings(recoverJobsOnStart = false)
+
 }

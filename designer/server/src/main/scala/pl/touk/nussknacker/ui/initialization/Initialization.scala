@@ -6,8 +6,8 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
+import pl.touk.nussknacker.ui.db.{DbRef, NuJdbcProfile, NuTables}
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
@@ -16,11 +16,10 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
-import slick.jdbc.JdbcProfile
 
 import java.time.Clock
-import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration._
 
 object Initialization {
 
@@ -56,7 +55,7 @@ object Initialization {
       implicit ec: ExecutionContext
   ): List[Unit] = {
 
-    import db.profile.api._
+    import db.profile.apiWithEnforcedSchema._
 
     val result    = operations.map(_.runOperation).sequence[DB, Unit]
     val runFuture = DBIOActionRunner(db).run(result.transactionally)
@@ -77,9 +76,9 @@ class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOp
 
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     // `insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
-    import dbRef.profile.api._
+    import dbRef.profile.apiWithEnforcedSchema._
     val nuTables = new NuTables {
-      override implicit val profile: JdbcProfile = dbRef.profile
+      override implicit val profile: NuJdbcProfile = dbRef.profile
     }
     val uppsertEnvironmentAction = for {
       alreadyExists <- nuTables.environmentsTable.filter(_.name === environmentName).exists.result

@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.security
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
+import java.security.{KeyFactory, PublicKey}
 import java.security.cert.CertificateFactory
 import java.security.spec.X509EncodedKeySpec
-import java.security.{KeyFactory, PublicKey}
 import java.util.Base64
 
 object CertificatesAndKeys {

@@ -1,25 +1,30 @@
 package pl.touk.nussknacker.engine.flink.api
 
-import com.typesafe.config.Config
+import _root_.java.util
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
 
-import _root_.java.util
 import scala.jdk.CollectionConverters._
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
 //Also, those configuration properties will be exposed via Flink REST API/webconsole
 case class NkGlobalParameters(
-    buildInfo: String,
+    // This field is not used anywhere. We should consider if we still need it for example for some diagnosis purpose,
+    // or we should remove it from here
+    modelInfo: ModelInfo,
+    deploymentId: String, // TODO: Pass here DeploymentId?
+    // Currently only versionId is used in DeploymentStatusDetails, other fields are redundant. We should consider
+    // if we still need them for example for some diagnosis purpose, or we should remove them from here
     processVersion: ProcessVersion,
     configParameters: Option[ConfigGlobalParameters],
-    namespaceParameters: Option[NamespaceMetricsTags],
     additionalInformation: Map[String, String]
 ) extends GlobalJobParameters {
 
@@ -39,37 +44,23 @@ case class ConfigGlobalParameters(
     forceSyncInterpretationForSyncScenarioPart: Option[Boolean],
 )
 
-case class NamespaceMetricsTags(tags: Map[String, String])
-
-object NamespaceMetricsTags {
-
-  private val originalNameTag = "originalProcessName"
-  private val namespaceTag    = "namespace"
-
-  def apply(scenarioName: String, namingStrategy: NamingStrategy): Option[NamespaceMetricsTags] = {
-    namingStrategy.namespace.map { namespace =>
-      NamespaceMetricsTags(
-        Map(
-          originalNameTag -> scenarioName,
-          namespaceTag    -> namespace
-        )
-      )
-    }
-  }
-
-}
-
-object NkGlobalParameters {
+object NkGlobalParameters extends LazyLogging {
 
   def create(
-      buildInfo: String,
+      modelInfo: ModelInfo,
+      deploymentId: String, // TODO: Pass here DeploymentId?
       processVersion: ProcessVersion,
-      modelConfig: Config,
-      namespaceTags: Option[NamespaceMetricsTags],
+      modelConfig: ModelConfig,
       additionalInformation: Map[String, String]
   ): NkGlobalParameters = {
-    val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
-    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namespaceTags, additionalInformation)
+    val configGlobalParameters = modelConfig.underlyingConfig.getAs[ConfigGlobalParameters]("globalParameters")
+    NkGlobalParameters(
+      modelInfo,
+      deploymentId,
+      processVersion,
+      configGlobalParameters,
+      additionalInformation
+    )
   }
 
   def fromMap(jobParameters: java.util.Map[String, String]): Option[NkGlobalParameters] =
@@ -79,11 +70,13 @@ object NkGlobalParameters {
 
     def encode(parameters: NkGlobalParameters): Map[String, String] = {
       def encodeWithKeyPrefix(map: Map[String, String], prefix: String): Map[String, String] = {
-        map.map { case (key, value) => s"$prefix$key" -> value }
+        map.map { case (key, value) => s"$prefix.$key" -> value }
       }
 
       val baseProperties = Map[String, String](
-        "buildInfo"    -> parameters.buildInfo,
+        // TODO: rename to modelInfo
+        "buildInfo"    -> parameters.modelInfo.asJsonString,
+        "deploymentId" -> parameters.deploymentId,
         "versionId"    -> parameters.processVersion.versionId.value.toString,
         "processId"    -> parameters.processVersion.processId.value.toString,
         "modelVersion" -> parameters.processVersion.modelVersion.map(_.toString).orNull,
@@ -95,20 +88,18 @@ object NkGlobalParameters {
       val configMap = parameters.configParameters
         .map(ConfigGlobalParametersToMapEncoder.encode)
         .getOrElse(Map.empty)
-      val namespaceTagsMap = parameters.namespaceParameters
-        .map(p => encodeWithKeyPrefix(p.tags, namespaceTagsMapPrefix))
-        .getOrElse(Map.empty)
+
       val additionalInformationMap =
         encodeWithKeyPrefix(parameters.additionalInformation, additionalInformationMapPrefix)
 
-      baseProperties ++ additionalInformationMap ++ configMap ++ namespaceTagsMap
+      baseProperties ++ additionalInformationMap ++ configMap
     }
 
     def decode(map: Map[String, String]): Option[NkGlobalParameters] = {
       def decodeWithKeyPrefix(map: Map[String, String], prefix: String): Map[String, String] = {
         map.view
-          .filter { case (key, _) => key.startsWith(prefix) }
-          .map { case (key, value) => key.stripPrefix(prefix) -> value }
+          .filter { case (key, _) => key.startsWith(s"$prefix.") }
+          .map { case (key, value) => key.stripPrefix(s"$prefix.") -> value }
           .toMap
       }
 
@@ -122,19 +113,33 @@ object NkGlobalParameters {
         val modelVersion = map.get("modelVersion").map(_.toInt)
         ProcessVersion(versionId, processName, processId, labels, user, modelVersion)
       }
-      val buildInfoOpt = map.get("buildInfo")
+      val modelInfoOpt = map
+        .get("buildInfo")
+        .map(ModelInfo.parseJsonString)
+        .map(
+          _.fold(
+            { err =>
+              logger.warn(s"Saved model info is not a json's object: ${err.getMessage}. Empty map will be returned")
+              ModelInfo.empty
+            },
+            identity
+          )
+        )
 
-      val configParameters = ConfigGlobalParametersToMapEncoder.decode(map)
-      val namespaceTags = {
-        val namespaceTagsMap = decodeWithKeyPrefix(map, namespaceTagsMapPrefix)
-        if (namespaceTagsMap.isEmpty) None else Some(NamespaceMetricsTags(namespaceTagsMap))
-      }
+      val configParameters      = ConfigGlobalParametersToMapEncoder.decode(map)
       val additionalInformation = decodeWithKeyPrefix(map, additionalInformationMapPrefix)
 
       for {
         processVersion <- processVersionOpt
-        buildInfo      <- buildInfoOpt
-      } yield NkGlobalParameters(buildInfo, processVersion, configParameters, namespaceTags, additionalInformation)
+        modelInfo      <- modelInfoOpt
+        deploymentId   <- map.get("deploymentId")
+      } yield NkGlobalParameters(
+        modelInfo,
+        deploymentId,
+        processVersion,
+        configParameters,
+        additionalInformation
+      )
     }
 
     private object ConfigGlobalParametersToMapEncoder {
@@ -172,7 +177,6 @@ object NkGlobalParameters {
       private val prefix = "configParameters"
     }
 
-    private val namespaceTagsMapPrefix         = "namespaceTags"
     private val additionalInformationMapPrefix = "additionalInformation"
   }
 

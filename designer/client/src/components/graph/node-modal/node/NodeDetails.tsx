@@ -1,145 +1,160 @@
-import { css } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { DefaultComponents as Window } from "@touk/window-manager";
+import React, { createContext, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import urljoin from "url-join";
-import { editNode } from "../../../../actions/nk";
+
+import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk";
+import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
-import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
-import { RootState } from "../../../../reducers";
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { Edge, NodeType } from "../../../../types";
-import { WindowContent, WindowKind } from "../../../../windowManager";
+import { parseWindowsQueryParams } from "../../../../containers/hooks/useSearchQuery";
+import type { RootState } from "../../../../reducers";
+import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
+import { getCreatorType } from "../../../../reducers/selectors/getCreator";
+import type { Edge, NodeType } from "../../../../types";
+import type { WindowKind } from "../../../../windowManager";
+import { WindowContent } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
-import { Scenario } from "../../../Process/types";
+import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
-import { applyIdFromFakeName } from "../IdField";
+import type { EditedNode } from "../IdField";
+import { InputOutputContent } from "../io/InputOutputContent";
+import { InputOutputContextProvider } from "../io/InputOutputContext";
+import { usePortal } from "../io/usePortal";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
+import { EditStateFeedback } from "./EditStateFeedback";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
+import { mergeQuery, useNodeState } from "./useNodeState";
 
-function mergeQuery(changes: Record<string, string[]>) {
-    return replaceSearchQuery((current) => ({ ...current, ...changes }));
-}
+export type NodeDetailsMeta = {
+    node: NodeType;
+    scenario: Scenario;
+};
 
-type NodeDetailsMeta = { node: NodeType; scenario: Scenario };
-type NodeDetailsProps = WindowContentProps<WindowKind, NodeDetailsMeta> & {
+export type NodeDetailsProps = WindowContentProps<WindowKind, NodeDetailsMeta> & {
     readOnly?: boolean;
 };
 
-type NodeState = {
-    scenario: Scenario;
-    node: NodeType;
-    editedNode: NodeType;
-    outputEdges: Edge[];
-    onChange: (node: React.SetStateAction<NodeType>, edges?: React.SetStateAction<Edge[]>) => void;
-    performNodeEdit: () => Promise<void>;
-    isTouched: boolean;
-};
-
-export function useNodeState(data: NodeDetailsMeta): NodeState {
-    const dispatch = useDispatch();
-    const scenarioFromGlobalStore = useSelector(getScenario);
-
-    const { node, scenario = scenarioFromGlobalStore } = data;
-    const [editedNode, setEditedNode] = useState<NodeType>(node);
-    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => scenario.scenarioGraph.edges.filter(({ from }) => from === node.id));
-
-    const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]> = (v) => v) => {
-        setEditedNode(node);
-        setOutputEdges(edges);
-    }, []);
-
-    const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
-
-    const performNodeEdit = useCallback(async () => {
-        try {
-            //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
-            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-
-            // Webpack yield that awaits is unnecessary,
-            // but in fact without this await,
-            // we don't wait to editNode finish and the dialog is closed before resolve of the call,
-            // which causes a bug with a form update
-            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-        } catch (e) {
-            console.error(e);
-            //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
-            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
-        }
-    }, [node, dispatch, scenario, editedNode, outputEdges]);
-
-    return {
-        scenario,
-        node,
-        editedNode,
-        outputEdges,
-        onChange,
-        performNodeEdit,
-        isTouched,
-    };
-}
-
 export function useNodeDetailsButtons({
     editedNode,
+    outputEdges,
     performNodeEdit,
     close,
     readOnly,
 }: {
-    editedNode: NodeType;
-    performNodeEdit: () => Promise<void>;
+    editedNode: EditedNode;
+    outputEdges: Edge[];
+    performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
     close: () => void;
     readOnly?: boolean;
 }) {
     const { t } = useTranslation();
+    const [settings] = useUserSettings();
+
+    const autoApply = settings["node.autoApply"];
+    const showInputsAndOutputs = settings["node.showInputsAndOutputs"];
 
     const apply = useMemo<WindowButtonProps | false>(() => {
         if (readOnly) return false;
+        if (autoApply) return false;
         return {
             title: t("dialog.button.apply", "apply"),
-            action: () => performNodeEdit().then(() => close()),
-            disabled: !editedNode.id?.length,
+            action: () =>
+                performNodeEdit(editedNode, outputEdges).then(() => {
+                    mergeQuery(parseWindowsQueryParams({}, { nodeId: editedNode.id }));
+                    close();
+                }),
+            disabled: !editedNode["$id" in editedNode ? "$id" : "id"]?.length,
         };
-    }, [close, editedNode.id?.length, performNodeEdit, readOnly, t]);
+    }, [autoApply, close, editedNode, outputEdges, performNodeEdit, readOnly, t]);
 
     const cancel = useMemo<WindowButtonProps | false>(() => {
+        if (autoApply && showInputsAndOutputs) return false;
         return {
-            title: t("dialog.button.cancel", "cancel"),
+            title: autoApply ? t("dialog.button.close", "close") : t("dialog.button.cancel", "cancel"),
             action: () => close(),
             className: LoadingButtonTypes.secondaryButton,
         };
-    }, [close, t]);
+    }, [autoApply, close, showInputsAndOutputs, t]);
 
     return { apply, cancel };
 }
+
+function useTitleData(node: NodeType) {
+    const creatorType = node.type === "VariableBuilder" ? getCreatorType(node) : null;
+    if (creatorType) {
+        return {
+            title: `${creatorType} creator`,
+            icon: <NodeDetailsModalIcon node={node} />,
+        };
+    }
+    return {
+        title: getNodeDetailsModalTitle(node),
+        icon: <NodeDetailsModalIcon node={node} />,
+        subheader: <NodeDetailsModalSubheader node={node} />,
+    };
+}
+
+export const NodeContext = createContext<EditedNode>(null);
 
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
-    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit } = useNodeState(data.meta);
-    const { cancel, apply } = useNodeDetailsButtons({ editedNode, performNodeEdit, close, readOnly });
+    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
+    const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
-    useEffect(() => {
-        mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
-        return () => {
-            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-        };
-    }, [node.id]);
+    const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);
 
     const openFragment = useMemo<WindowButtonProps | false>(() => {
-        if (!NodeUtils.nodeIsFragment(editedNode)) return false;
+        if (!nodeIsFragment) return false;
         return {
             title: t("dialog.button.fragment.edit", "edit fragment"),
             action: () => {
-                window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
+                window.open(urljoin(BASE_PATH, visualizationUrl(editedNode?.ref?.id)));
             },
             className: "tertiary-button",
         };
-    }, [editedNode, t]);
+    }, [editedNode?.ref?.id, nodeIsFragment, t]);
+
+    const titleData = useTitleData(node);
+    const buttons = useMemo(() => [openFragment, cancel, apply].filter(Boolean) as WindowButtonProps[], [apply, cancel, openFragment]);
+
+    const [settings] = useUserSettings();
+    const [PortalWrapper, portalRef] = usePortal();
+    const components = useMemo(
+        () =>
+            settings["node.showInputsAndOutputs"]
+                ? {
+                      Content: (props) => <InputOutputContent {...props} ref={portalRef} />,
+                      Footer: (props) => (
+                          <PortalWrapper>
+                              <Window.Footer {...props} />
+                          </PortalWrapper>
+                      ),
+                  }
+                : undefined,
+        [settings, portalRef, PortalWrapper],
+    );
+
+    const dispatch = useDispatch();
+    useEffect(() => {
+        dispatch(nodeDetailsOpened(node.id, data.id));
+        return () => {
+            dispatch(nodeDetailsClosed(node.id, data.id));
+        };
+    }, [data.id, dispatch, node.id]);
+
+    useEffect(() => {
+        dispatch(takeHistorySnapshot());
+        return () => {
+            dispatch(removeHistorySnapshot());
+        };
+    }, [dispatch]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenario?.scenarioGraph.nodes) {
@@ -147,19 +162,14 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }
 
     return (
-        <WindowContent
-            {...props}
-            closeWithEsc
-            buttons={[openFragment, cancel, apply]}
-            title={getNodeDetailsModalTitle(node)}
-            icon={<NodeDetailsModalIcon node={node} />}
-            subheader={<NodeDetailsModalSubheader node={node} />}
-            classnames={{
-                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
-            }}
-        >
-            <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
-        </WindowContent>
+        <NodeContext.Provider value={editedNode}>
+            <InputOutputContextProvider nodeId={editedNode.id}>
+                {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
+                <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
+                    <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+                </WindowContent>
+            </InputOutputContextProvider>
+        </NodeContext.Provider>
     );
 }
 

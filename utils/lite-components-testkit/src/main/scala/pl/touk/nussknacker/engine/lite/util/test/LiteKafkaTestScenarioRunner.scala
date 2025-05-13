@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
@@ -12,13 +12,20 @@ import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.{ModelConfig, RuntimeMode}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, TopicName}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.confluent.{AzureKafkaAvroElementSerde, ConfluentKafkaAvroElementSerde}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaId,
+  SchemaIdFromMessageExtractor,
+  SchemaRegistryClientFactoryWithRegistration,
+  SchemaRegistryClientWithRegistration
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -26,14 +33,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockSchemaRegistryClient
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  SchemaId,
-  SchemaIdFromMessageExtractor,
-  SchemaRegistryClientFactoryWithRegistration,
-  SchemaRegistryClientWithRegistration
-}
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
@@ -93,9 +94,9 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(schemaRegistryClientFactor = schemaRegistryClientFactor)
 
   override def build(): LiteKafkaTestScenarioRunner = {
-    val modelDependencies             = ProcessObjectDependencies.withConfig(config)
+    val modelConfig                   = ModelConfig.parse(config)
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
-    val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelDependencies)
+    val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelConfig)
     val schemaRegistryClient          = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde
@@ -111,7 +112,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
       globalVariables,
       config,
       schemaRegistryClient,
-      componentUseCase(testRuntimeMode),
+      runtimeMode(testRuntimeMode),
       serde
     )
   }
@@ -123,7 +124,7 @@ class LiteKafkaTestScenarioRunner(
     globalVariables: Map[String, AnyRef],
     config: Config,
     schemaRegistryClient: SchemaRegistryClientWithRegistration,
-    componentUseCase: ComponentUseCase,
+    runtimeMode: RuntimeMode,
     serde: KafkaAvroElementSerde
 ) extends TestScenarioRunner {
 
@@ -134,7 +135,7 @@ class LiteKafkaTestScenarioRunner(
   type AvroInput   = ConsumerRecord[Any, KafkaAvroElement]
 
   private val delegate: LiteTestScenarioRunner =
-    new LiteTestScenarioRunner(components, globalVariables, config, componentUseCase)
+    new LiteTestScenarioRunner(components, globalVariables, config, runtimeMode)
   private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
   private val keyStringDeserializer    = new StringDeserializer
 

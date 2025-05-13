@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.graph.node.{Filter, FragmentInput, NodeData, S
 
 object ProcessMarshaller {
 
-  import pl.touk.nussknacker.engine.api.CirceUtil._
   import io.circe.generic.extras.semiauto._
+  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   private implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
 

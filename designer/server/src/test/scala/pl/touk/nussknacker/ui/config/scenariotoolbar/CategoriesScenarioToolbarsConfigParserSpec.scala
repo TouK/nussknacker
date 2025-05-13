@@ -8,9 +8,10 @@ import java.util.UUID
 
 class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matchers {
 
+  import org.scalatest.prop.TableDrivenPropertyChecks._
+
   import ToolbarButtonsConfigVariant._
   import ToolbarPanelTypeConfig._
-  import org.scalatest.prop.TableDrivenPropertyChecks._
 
   private val scenarioToolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(
     ConfigFactory.parseString("""
@@ -55,8 +56,8 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
 
   it should "properly create scenario toolbar configuration" in {
     val defaultToolbarConfig = ScenarioToolbarsConfig(
-      None,
-      List(
+      uuid = None,
+      topLeft = List(
         ToolbarPanelConfig(
           TipsPanel,
           None,
@@ -67,8 +68,8 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           Some(Map("customParam1" -> "value1"))
         )
       ),
-      Nil,
-      List(
+      bottomLeft = Nil,
+      topRight = List(
         ToolbarPanelConfig(
           ProcessActionsPanel,
           None,
@@ -109,12 +110,14 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           None
         )
       ),
-      Nil
+      bottomRight = List.empty,
+      topCenter = List.empty,
+      bottomCenter = List.empty,
     )
 
     val categoryToolbarConfig = ScenarioToolbarsConfig(
-      Some(UUID.fromString("58f1acff-d864-4d66-9f86-0fa7319f7043")),
-      List(
+      uuid = Some(UUID.fromString("58f1acff-d864-4d66-9f86-0fa7319f7043")),
+      topLeft = List(
         ToolbarPanelConfig(
           TipsPanel,
           None,
@@ -125,8 +128,8 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           Some(Map("customParam1" -> "value1"))
         )
       ),
-      Nil,
-      List(
+      bottomLeft = Nil,
+      topRight = List(
         ToolbarPanelConfig(
           ProcessActionsPanel,
           None,
@@ -141,7 +144,9 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           None
         )
       ),
-      List(ToolbarPanelConfig(ActivitiesPanel, None, None, None, None, None, None))
+      bottomRight = List(ToolbarPanelConfig(ActivitiesPanel, None, None, None, None, None, None)),
+      topCenter = List.empty,
+      bottomCenter = List.empty,
     )
 
     val testingConfigs = Table(

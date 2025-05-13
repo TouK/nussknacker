@@ -2,13 +2,12 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.{Counter, Gauge, Histogram}
+import org.scalatest.{BeforeAndAfterEach, Outcome}
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
@@ -239,7 +238,7 @@ class MetricsSpec
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {
-    TestReporterUtil.configWithTestMetrics(reporterName, FlinkTestConfiguration.configuration())
+    TestReporterUtil.configWithTestMetrics(reporterName, new Configuration())
   }
 
 }

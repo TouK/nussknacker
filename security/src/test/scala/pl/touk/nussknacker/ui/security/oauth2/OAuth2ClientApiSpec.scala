@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfter, Suite}
+import org.scalatest.Inside.inside
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
+import pl.touk.nussknacker.ui.security.oidc.DefaultOidcAuthorizationData
 import sttp.client3.StringBody
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
-import org.scalatest.flatspec.AnyFlatSpec
-import pl.touk.nussknacker.ui.security.oidc.DefaultOidcAuthorizationData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

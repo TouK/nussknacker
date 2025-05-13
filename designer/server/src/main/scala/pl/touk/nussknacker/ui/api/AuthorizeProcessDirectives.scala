@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directive0, Directives}
+import org.apache.pekko.http.scaladsl.server.{Directive0, Directives}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
@@ -27,21 +26,6 @@ trait AuthorizeProcessDirectives {
 
   def canWrite(processIdAndUser: (ProcessId, LoggedUser)): Directive0 = {
     hasUserPermissionInProcess(processIdAndUser, Permission.Write)
-  }
-
-  def canOverrideUsername(category: String, remoteUserName: Option[RemoteUserName])(
-      implicit loggedUser: LoggedUser
-  ): Directive0 = {
-    Directives.authorize(remoteUserName.isEmpty || loggedUser.can(category, Permission.Impersonate))
-  }
-
-  def canOverrideUsername(
-      processId: ProcessId,
-      remoteUserName: Option[RemoteUserName]
-  )(implicit executionContext: ExecutionContext, loggedUser: LoggedUser): Directive0 = {
-    Directives.authorizeAsync(
-      processAuthorizer.check(processId, Permission.Impersonate, loggedUser).map(_ || remoteUserName.isEmpty)
-    )
   }
 
   private def canInProcess(processId: ProcessId, permission: Permission, user: LoggedUser): Directive0 = {

@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.lite.manager
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer}
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   LiteralIntegerValidator,
   MinimalNumberValidator,
-  StringParameterEditor
+  StaticStringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer}
 
 trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
@@ -48,7 +48,7 @@ object LitePropertiesConfig {
   private val parallelismConfig: (String, ScenarioPropertyConfig) = LiteStreamMetaData.parallelismName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      editor = Some(StaticStringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"),
       hintText = None
@@ -57,7 +57,7 @@ object LitePropertiesConfig {
   private val slugConfig: (String, ScenarioPropertyConfig) = RequestResponseMetaData.slugName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(StringParameterEditor),
+      editor = Some(StaticStringParameterEditor),
       validators = None,
       label = Some("Slug"),
       hintText = None

@@ -1,10 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
-import { Scenario } from "src/components/Process/types";
-import { ScenarioLabelValidationError } from "../components/Labels/types";
-import { RootState } from "../reducers";
-import { isProcessRenamed } from "../reducers/selectors/graph";
-import {
+import type { Scenario } from "src/components/Process/types";
+
+import { StickyNoteDefinition, StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
+import type { ScenarioLabelValidationError } from "../components/Labels/types";
+import type { RootState } from "../reducers";
+import { getHistoryPast } from "../reducers/selectors/getHistory";
+import { getScenario, isProcessRenamed } from "../reducers/selectors/graph";
+import type {
     ComponentDefinition,
     NodeId,
     NodeResults,
@@ -20,8 +23,8 @@ import {
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
-        const scenario = state.graphReducer.scenario;
-        const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
+        const scenario: Scenario = getScenario(state);
+        const savedProcessState: Scenario = getHistoryPast(state)?.[0]?.scenario || scenario;
         const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 
@@ -44,13 +47,17 @@ class ProcessUtils {
     };
 
     canExport = (state: RootState): boolean => {
-        const scenario = state.graphReducer.scenario;
+        const scenario = getScenario(state);
         return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
+    };
+
+    isValidationResultPresent = (scenario: Scenario) => {
+        return Boolean(scenario.validationResult);
     };
 
     //fixme maybe return hasErrors flag from backend?
     hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
-        return this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
+        return this.isValidationResultPresent(scenario) && this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
     };
 
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
@@ -205,7 +212,7 @@ class ProcessUtils {
     };
 
     extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
-        return components?.[this.determineComponentId(node)];
+        return node.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
     };
 
     determineComponentId = (node?: NodeType): string | null => {

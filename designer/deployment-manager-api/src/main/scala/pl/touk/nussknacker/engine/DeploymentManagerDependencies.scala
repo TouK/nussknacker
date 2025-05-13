@@ -1,26 +1,19 @@
 package pl.touk.nussknacker.engine
 
-import akka.actor.ActorSystem
-import pl.touk.nussknacker.engine.api.deployment.{
-  ProcessingTypeActionService,
-  ProcessingTypeDeployedScenariosProvider,
-  ScenarioActivityManager
-}
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
+import cats.effect.unsafe.IORuntime
+import org.apache.pekko.actor.ActorSystem
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DeploymentManagerDependencies(
-    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
-    actionService: ProcessingTypeActionService,
-    scenarioActivityManager: ScenarioActivityManager,
-    executionContext: ExecutionContext,
-    actorSystem: ActorSystem,
-    sttpBackend: SttpBackend[Future, Any],
-    configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
+final class DeploymentManagerDependencies(
+    val executionContext: ExecutionContext,
+    val ioRuntime: IORuntime,
+    val actorSystem: ActorSystem,
+    val sttpBackend: SttpBackend[Future, Any]
 ) {
   implicit def implicitExecutionContext: ExecutionContext    = executionContext
+  implicit def implicitIORuntime: IORuntime                  = ioRuntime
   implicit def implicitActorSystem: ActorSystem              = actorSystem
   implicit def implicitSttpBackend: SttpBackend[Future, Any] = sttpBackend
 }

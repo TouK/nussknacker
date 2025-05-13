@@ -4,14 +4,14 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
@@ -38,14 +38,17 @@ class DynamicNodeValidator(
       parametersConfig: Map[ParameterName, ParameterConfig]
   )(
       inputContext: component.InputContext
-  )(implicit nodeId: NodeId, jobData: JobData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
       val processor =
         new TransformationStepsProcessor(component, branchParametersFromNode, outputVariable, parametersConfig)(
           inputContext
         )
       processor.processRemainingTransformationSteps(Nil, None, Nil, parametersFromNode)
-    }(nodeId, jobData.metaData)
+    }(nodeId, scenarioCompilationDependencies.metaData)
   }
 
   private class TransformationStepsProcessor(
@@ -53,16 +56,20 @@ class DynamicNodeValidator(
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       parametersConfig: Map[ParameterName, ParameterConfig],
-  )(inputContextRaw: Any)(implicit nodeId: NodeId, jobData: JobData)
+  )(inputContextRaw: Any)(implicit nodeId: NodeId, scenarioCompilationDependencies: ScenarioCompilationDependencies)
       extends LazyLogging {
+
+    import scenarioCompilationDependencies._
 
     private val inputContext = inputContextRaw.asInstanceOf[component.InputContext]
 
+    private val outputVariableDependency = outputVariable.map(OutputVariableNameValue)
+
     private val definition = component.contextTransformation(
       inputContext,
-      List(TypedNodeDependencyValue(nodeId), TypedNodeDependencyValue(jobData.metaData)) ++ outputVariable
-        .map(OutputVariableNameValue)
-        .toList
+      TypedNodeDependencyValue(nodeId) ::
+        scenarioCompilationDependencies.nodeDependencies :::
+        outputVariableDependency.toList
     )
 
     @tailrec
@@ -131,7 +138,7 @@ class DynamicNodeValidator(
               processRemainingTransformationSteps(parametersCombined, state, newErrorsCombined, newNodeParameters)
           }
         case Failure(ex) =>
-          logger.debug(
+          logger.warn(
             s"Exception thrown during handling of transformation step: $transformationStep. " +
               s"Will be returned fallback results with fallback context and errors collected during parameters validation.",
             ex
@@ -188,8 +195,7 @@ class DynamicNodeValidator(
             validatorsCompilationResult.andThen { validators =>
               expressionCompiler
                 .compileBranchParam(branchParams, branchContexts, parameter)
-                .map((_, None))
-                .andThen(Validations.validate(validators, _))
+                .andThen(typedParam => Validations.validate(validators, typedParam).map(_ => (typedParam, None)))
             }
           }
       } else {
@@ -200,7 +206,10 @@ class DynamicNodeValidator(
         }
         val ctxToUse = inputContext match {
           case e: ValidationContext => e
-          case _                    => globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
+          case _ =>
+            globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(
+              scenarioCompilationDependencies.jobData
+            )
         }
 
         val validatorsCompilationResult = parameter.validators
@@ -210,8 +219,9 @@ class DynamicNodeValidator(
         validatorsCompilationResult.andThen { validators =>
           expressionCompiler
             .compileParam(singleParam, ctxToUse, parameter)
-            .map((_, extraNodeParamOpt))
-            .andThen(Validations.validate(validators, _))
+            .andThen(typedParam =>
+              Validations.validate(validators, typedParam).map(_ => (typedParam, extraNodeParamOpt))
+            )
         }
       }
     }

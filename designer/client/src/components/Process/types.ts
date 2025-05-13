@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
-import { UnknownRecord, Instant } from "../../types/common";
-import { ScenarioGraph, ValidationResult } from "../../types";
-import { ProcessingMode } from "../../http/HttpService";
+import type { ProcessingMode } from "../../http/HttpService";
+import type { ScenarioGraph, ValidationResult } from "../../types";
+import type { Instant } from "../../types/common";
 
 export enum PredefinedActionName {
     Deploy = "DEPLOY",
@@ -16,28 +16,9 @@ export type ActionName = string;
 
 export type ProcessVersionId = number;
 
-export type BuildInfoType = {
-    buildTime: string;
-    gitCommit: string;
-    name: string;
-    version: string;
-};
-
-export type ProcessActionType = {
-    performedAt: Instant;
-    user: string;
-    actionName: ActionName;
-    commentId?: number;
-    comment?: string;
-    buildInfo?: BuildInfoType;
-    processVersionId: ProcessVersionId;
-};
-
 export type ProcessVersionType = {
     createDate: string;
     user: string;
-    actions: Array<ProcessActionType>;
-    modelVersion: number;
     processVersionId: ProcessVersionId;
 };
 
@@ -54,8 +35,6 @@ export interface Scenario {
     modifiedAt: Instant;
     createdBy: string;
     labels: string[];
-    lastAction?: ProcessActionType;
-    lastDeployedAction?: ProcessActionType;
     state: ProcessStateType;
     history?: ProcessVersionType[];
     scenarioGraph: ScenarioGraph;
@@ -69,17 +48,12 @@ export type ProcessName = Scenario["name"];
 
 export type ProcessStateType = {
     status: StatusType;
-    externalDeploymentId?: string;
     visibleActions: Array<ActionName>;
     allowedActions: Array<ActionName>;
     actionTooltips: Record<ActionName, string>;
     icon: string;
     tooltip: string;
     description: string;
-    startTime?: Date;
-    attributes?: UnknownRecord;
-    errors?: Array<string>;
-    version?: number | null;
 };
 
 export type StatusType = {

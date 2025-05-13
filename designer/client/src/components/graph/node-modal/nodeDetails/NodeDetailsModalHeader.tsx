@@ -1,25 +1,21 @@
-import { get, has, isEmpty } from "lodash";
-import React, { PropsWithChildren, ReactElement, useMemo } from "react";
+import { styled } from "@mui/material";
+import { isEmpty } from "lodash";
+import type { PropsWithChildren, ReactElement } from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
-import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { NodeType } from "../../../../types";
 import ProcessUtils from "../../../../common/ProcessUtils";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
+import type { NodeType } from "../../../../types";
+import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
+import { IconModalTitle } from "./IconModalTitle";
 import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";
 import { NodeDocs } from "./SubHeader";
-import { IconModalTitle } from "./IconModalTitle";
-import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
-import { styled } from "@mui/material";
 
-const nodeClassProperties = [`service.id`, `ref.typ`, `nodeType`, `ref.id`];
-
-const findNodeClass = (node: NodeType) =>
-    get(
-        node,
-        nodeClassProperties.find((property) => has(node, property)),
-    );
-
-const getNodeAttributes = (node: NodeType) => nodeAttributes[node.type];
+const getNodeAttributes = (node: NodeType) => {
+    return nodeAttributes[node.type] || node;
+};
 
 type IconModalHeaderProps = PropsWithChildren<{
     startIcon?: React.ReactElement;
@@ -55,10 +51,11 @@ export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactEl
     const docsUrl = useMemo(() => {
         return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
     }, [components, node]);
+    const label = useMemo(() => {
+        return ProcessUtils.extractComponentDefinition(node, components)?.label;
+    }, [components, node]);
 
-    const nodeClass = findNodeClass(node);
-
-    return <NodeDocs name={nodeClass} href={docsUrl} />;
+    return <NodeDocs name={label} href={docsUrl} />;
 };
 
 export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(ComponentIcon))(({ node, theme }) => ({

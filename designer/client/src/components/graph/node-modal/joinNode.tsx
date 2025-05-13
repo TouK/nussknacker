@@ -1,7 +1,9 @@
-import { useTestResults } from "./TestResultsWrapper";
 import React from "react";
+
 import BranchParameters from "./BranchParameters";
-import { CustomNode, CustomNodeProps } from "./customNode";
+import type { CustomNodeProps } from "./customNode";
+import { CustomNode } from "./customNode";
+import { useTestResults } from "./TestResultsWrapper";
 
 export function JoinNode(props: CustomNodeProps): JSX.Element {
     const { errors, findAvailableVariables, isEditMode, node, parameterDefinitions, setProperty, showSwitch, showValidation } = props;

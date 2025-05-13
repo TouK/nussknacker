@@ -1,25 +1,27 @@
-import React, { PropsWithChildren, useCallback, useMemo } from "react";
-import { Button, styled, Typography } from "@mui/material";
-import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import HttpService from "../../../../http/HttpService";
-import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
-import UrlIcon from "../../../UrlIcon";
-import { unsavedProcessChanges } from "../../../../common/DialogMessages";
-import { useDispatch, useSelector } from "react-redux";
-import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
-import { useWindows } from "../../../../windowManager";
-import { displayScenarioVersion } from "../../../../actions/nk";
-import { ItemActivity } from "../ActivitiesPanel";
-import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
-import { getHeaderColors } from "../helpers/activityItemColors";
+import CircleIcon from "@mui/icons-material/Circle";
+import { Button, styled, Tooltip, Typography } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import * as DialogMessages from "../../../../common/DialogMessages";
-import { StyledActionIcon } from "./StyledActionIcon";
+import { useDispatch, useSelector } from "react-redux";
+
+import { displayScenarioVersion } from "../../../../actions/nk";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
-import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
-import { getLoggedUser } from "../../../../reducers/selectors/settings";
-import { getCapabilities } from "../../../../reducers/selectors/other";
+import DialogMessages from "../../../../common/DialogMessages";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import HttpService from "../../../../http/HttpService";
+import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import { getCapabilities } from "../../../../reducers/selectors/other";
+import { getLoggedUser } from "../../../../reducers/selectors/settings";
+import { useWindows } from "../../../../windowManager";
+import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
+import UrlIcon from "../../../UrlIcon";
+import { SearchHighlighter } from "../../creator/SearchHighlighter";
+import type { ItemActivity } from "../ActivitiesPanel";
+import { getHeaderColors } from "../helpers/activityItemColors";
+import type { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
+import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import { StyledActionIcon } from "./StyledActionIcon";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -37,15 +39,18 @@ const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
     gap: theme.spacing(0.5),
 }));
 
-const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isDeploymentActive: boolean; isActiveFound: boolean }>(
-    ({ theme, isHighlighted, isDeploymentActive, isActiveFound }) => ({
-        display: "flex",
-        alignItems: "center",
-        padding: theme.spacing(0.5, 0.5, 0.5, 0.75),
-        borderRadius: theme.spacing(0.5),
-        ...getHeaderColors(theme, isHighlighted, isDeploymentActive, isActiveFound),
-    }),
-);
+const StyledActivityItemHeader = styled("div")<{
+    isHighlighted: boolean;
+    isDeploymentActive: boolean;
+    isActiveFound: boolean;
+    isVersionSelected: boolean;
+}>(({ theme, isHighlighted, isDeploymentActive, isActiveFound, isVersionSelected }) => ({
+    display: "flex",
+    alignItems: "center",
+    padding: theme.spacing(0.5, 0.5, 0.5, 0.75),
+    borderRadius: theme.spacing(0.5),
+    ...getHeaderColors(theme, isHighlighted, isDeploymentActive, isActiveFound, isVersionSelected),
+}));
 
 const HeaderActivity = ({
     activityAction,
@@ -201,7 +206,7 @@ const WithOpenVersion = ({
             nothingToSave
                 ? doChangeVersion(scenarioId)
                 : confirm({
-                      text: unsavedProcessChanges(),
+                      text: DialogMessages.unsavedProcessChanges(),
                       onConfirmCallback: (confirmed) => confirmed && doChangeVersion(scenarioId),
                       confirmText: "DISCARD",
                       denyText: "CANCEL",
@@ -223,6 +228,7 @@ const WithOpenVersion = ({
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
+            title={"Switch to version " + scenarioVersion}
             {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesOpenVersion })}
         >
             {children}
@@ -233,30 +239,47 @@ const WithOpenVersion = ({
 const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFound, searchQuery }: Props) => {
     const scenario = useSelector(getScenario);
     const { processVersionId } = scenario || {};
+    const { t } = useTranslation();
+
+    const actionsWithVersionChange: ActivityType[] = ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_DEPLOYED", "SCENARIO_MODIFIED"];
 
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
-    const openVersionEnable =
-        ["SCENARIO_MODIFIED", "SCENARIO_DEPLOYED"].includes(activity.type) && activity.scenarioVersionId !== processVersionId;
+    const openVersionEnable = actionsWithVersionChange.includes(activity.type) && activity.scenarioVersionId !== processVersionId;
+    const isVersionSelected =
+        ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_MODIFIED"].includes(activity.type) &&
+        activity.scenarioVersionId === processVersionId;
 
     const getHeaderTitle = useMemo(() => {
         const text = activity.overrideDisplayableName || activity.activities.displayableName;
 
+        const activeItemIndicatorText = isDeploymentActive
+            ? t("activityItem.currentlyDeployedVersionText", "Currently deployed version")
+            : isVersionSelected
+            ? t("activityItem.currentlySelectedVersionText", "Currently selected version")
+            : undefined;
+
         const headerTitle = (
-            <Typography
-                variant={"caption"}
-                component={SearchHighlighter}
-                title={text}
-                highlights={[searchQuery]}
-                sx={(theme) => ({
-                    color: theme.palette.text.primary,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    textWrap: "noWrap",
-                    padding: !openVersionEnable && theme.spacing(0, 1),
-                })}
-            >
-                {text}
-            </Typography>
+            <>
+                <Typography
+                    variant={"caption"}
+                    component={SearchHighlighter}
+                    highlights={[searchQuery]}
+                    sx={(theme) => ({
+                        color: theme.palette.text.primary,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        textWrap: "noWrap",
+                        padding: !openVersionEnable && theme.spacing(0, 1),
+                    })}
+                >
+                    {text}
+                </Typography>
+                {activeItemIndicatorText && (
+                    <Tooltip title={activeItemIndicatorText}>
+                        <CircleIcon sx={{ fontSize: "10px", mx: openVersionEnable && 1 }} color={"primary"} />
+                    </Tooltip>
+                )}
+            </>
         );
 
         if (openVersionEnable) {
@@ -273,13 +296,21 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
         activity.overrideDisplayableName,
         activity.scenarioVersionId,
         activity.type,
+        isDeploymentActive,
         isFound,
+        isVersionSelected,
         openVersionEnable,
         searchQuery,
+        t,
     ]);
 
     return (
-        <StyledActivityItemHeader isHighlighted={isHighlighted} isDeploymentActive={isDeploymentActive} isActiveFound={isActiveFound}>
+        <StyledActivityItemHeader
+            isHighlighted={isHighlighted}
+            isDeploymentActive={isDeploymentActive}
+            isActiveFound={isActiveFound}
+            isVersionSelected={isVersionSelected}
+        >
             <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
             <StyledHeaderActionRoot>

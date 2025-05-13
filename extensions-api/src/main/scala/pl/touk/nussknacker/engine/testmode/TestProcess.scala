@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.testmode
 
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 object TestProcess {
 
   case class TestResults[T](
       nodeResults: Map[String, List[ResultContext[T]]],
+      nodeTransitionResults: Map[NodeTransition, List[ResultContext[T]]],
       invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
       exceptions: List[ExceptionResult[T]]
@@ -17,6 +18,20 @@ object TestProcess {
         nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
           .fromContext(context, variableEncoder)))
       )
+
+    def updateNodeOutputResult(
+        nodeId: String,
+        nextNodeIdOpt: Option[String],
+        context: Context,
+        variableEncoder: Any => T
+    ): TestResults[T] = {
+      copy(nodeTransitionResults =
+        nodeTransitionResults + (NodeTransition(nodeId, nextNodeIdOpt) ->
+          (nodeTransitionResults
+            .getOrElse(NodeTransition(nodeId, nextNodeIdOpt), List()) :+ ResultContext
+            .fromContext(context, variableEncoder)))
+      )
+    }
 
     def updateExpressionResult(
         nodeId: String,
@@ -45,7 +60,7 @@ object TestProcess {
     }
 
     def updateExceptionResult(
-        exceptionInfo: NuExceptionInfo[_ <: Throwable],
+        exceptionInfo: NuExceptionInfo,
         variableEncoder: Any => T
     ): TestResults[T] =
       copy(exceptions = exceptions :+ ExceptionResult.fromNuExceptionInfo(exceptionInfo, variableEncoder))
@@ -61,6 +76,8 @@ object TestProcess {
 
   }
 
+  final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
+
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
   case class ExternalInvocationResult[T](contextId: String, name: String, value: T)
@@ -68,7 +85,7 @@ object TestProcess {
   object ExceptionResult {
 
     def fromNuExceptionInfo[T](
-        exceptionInfo: NuExceptionInfo[_ <: Throwable],
+        exceptionInfo: NuExceptionInfo,
         variableEncoder: Any => T
     ): ExceptionResult[T] =
       ExceptionResult(

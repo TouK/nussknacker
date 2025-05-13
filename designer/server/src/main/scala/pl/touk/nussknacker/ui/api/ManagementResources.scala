@@ -1,66 +1,35 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode, StatusCodes}
-import akka.http.scaladsl.server._
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import io.circe.{Decoder, Encoder, Json, parser}
+import io.circe.{parser, Decoder, Encoder}
 import io.dropwizard.metrics5.MetricRegistry
-import pl.touk.nussknacker.engine.ModelData
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode, StatusCodes}
+import org.apache.pekko.http.scaladsl.server._
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.restmodel.{RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ResultsWithCountsDto
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
-
-  import pl.touk.nussknacker.engine.api.CirceUtil._
-
-  import io.circe.syntax._
-
-  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
-
-  private implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
-
-    implicit val nodeResult: Encoder[ResultContext[Json]]                              = deriveConfiguredEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
-
-    // TODO: do we want more information here?
-    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-    implicit val exceptionResultEncoder: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
-
-    override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions) =>
-        Json.obj(
-          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.id) }.asJson,
-          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId)
-          }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id).asJson
-        )
-    }
-
-  }
-
+  final case class PerformTestDesignerError(message: String) extends BadRequestError(message)
 }
 
 class ManagementResources(
@@ -70,7 +39,6 @@ class ManagementResources(
     dispatcher: DeploymentManagerDispatcher,
     metricRegistry: MetricRegistry,
     scenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
-    typeToConfig: ProcessingTypeDataProvider[ModelData, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
     with LazyLogging
@@ -79,11 +47,63 @@ class ManagementResources(
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
+  import pl.touk.nussknacker.ui.api.description.scenarioTesting.TestResultsCodecs._
+
   import ManagementResources._
 
   // TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
+
+  // TODO: This (deployRequestEntity and cancelRequestEntity) is used as a transition from comment-as-plain-text-body to json.
+  //  e.g. touk/nussknacker-example-scenarios-library, that is used in e2e tests, uses plain text comment.
+  // https://github.com/TouK/nussknacker-scenario-examples-library/pull/7
+  // To be replaced by `entity(as[DeployRequest]))` and `entity(as[CancelRequest]))`.
+  private def deployRequestEntity: Directive1[DeployRequest] = {
+    entity(as[Option[String]]).flatMap { optStr =>
+      {
+        optStr match {
+          case None => provide(DeployRequest(None, None))
+          case Some(body) =>
+            io.circe.parser.parse(body) match {
+              case Right(json) =>
+                json.as[DeployRequest] match {
+                  case Right(request) =>
+                    provide(request)
+                  case Left(notValidDeployRequest) =>
+                    reject(MalformedRequestContentRejection("Invalid deploy request", notValidDeployRequest))
+                }
+              case Left(notJson) =>
+                // assume deployment request contains plaintext comment only
+                provide(DeployRequest(Some(body), None))
+            }
+        }
+      }
+    }
+  }
+
+  private def cancelRequestEntity: Directive1[CancelRequest] = {
+    entity(as[Option[String]]).flatMap { optStr =>
+      {
+        optStr match {
+          case None => provide(CancelRequest(None))
+          case Some(body) =>
+            io.circe.parser.parse(body) match {
+              case Right(json) =>
+                json.as[CancelRequest] match {
+                  case Right(request) =>
+                    provide(request)
+                  case Left(notValidRequest) =>
+                    reject(MalformedRequestContentRejection("Invalid cancel request", notValidRequest))
+                }
+              case Left(notJson) =>
+                // assume cancel request contains plaintext comment only
+                provide(CancelRequest(Some(body)))
+            }
+        }
+      }
+    }
+  }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("adminProcessManagement") {
@@ -114,16 +134,16 @@ class ManagementResources(
           }
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) {
-            (processIdWithName, comment, savepointPath) =>
+          (post & processId(processName) & deployRequestEntity & parameters(Symbol("savepointPath"))) {
+            (processIdWithName, request, savepointPath) =>
               canDeploy(processIdWithName) {
                 complete {
                   deploymentService
                     .processCommand(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
-                        nodesDeploymentData = NodesDeploymentData.empty,
+                        commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
+                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
                     )
@@ -137,15 +157,15 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+        (post & processId(processName) & deployRequestEntity) { (processIdWithName, request) =>
           canDeploy(processIdWithName) {
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
-                      nodesDeploymentData = NodesDeploymentData.empty,
+                      commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
+                      nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
                   )
@@ -156,13 +176,13 @@ class ManagementResources(
         }
       } ~
         path("cancel" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+          (post & processId(processName) & cancelRequestEntity) { (processIdWithName, request) =>
             canDeploy(processIdWithName) {
               complete {
                 measureTime("cancel", metricRegistry) {
                   deploymentService.processCommand(
                     CancelScenarioCommand(commonData =
-                      CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user)
+                      CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user)
                     )
                   )
                 }
@@ -172,86 +192,43 @@ class ManagementResources(
         } ~
         // TODO: maybe Write permission is enough here?
         path("test" / ProcessNameSegment) { processName =>
-          (post & processDetailsForName(processName)) { details =>
-            canDeploy(details.idWithNameUnsafe) {
-              formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, scenarioGraphJson) =>
-                complete {
-                  measureTime("test", metricRegistry) {
-                    parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
-                      case Right(scenarioGraph) =>
-                        scenarioTestServices
-                          .forProcessingTypeUnsafe(details.processingType)
-                          .performTest(
-                            scenarioGraph,
-                            details.processVersionUnsafe,
-                            details.isFragment,
-                            RawScenarioTestData(testDataContent)
-                          )
-                          .flatMap(mapResultsToHttpResponse)
-                      case Left(error) =>
-                        Future.failed(ProcessUnmarshallingError(error.toString))
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } ~
-        path("generateAndTest" / ProcessNameSegment / IntNumber) { (processName, testSampleSize) =>
-          {
-            (post & entity(as[ScenarioGraph])) { scenarioGraph =>
-              {
-                processDetailsForName(processName)(user) { details =>
-                  canDeploy(details.idWithNameUnsafe) {
-                    complete {
-                      measureTime("generateAndTest", metricRegistry) {
-                        val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(details.processingType)
-                        scenarioTestService.generateData(
-                          scenarioGraph,
-                          details.processVersionUnsafe,
-                          details.isFragment,
-                          testSampleSize
-                        ) match {
-                          case Left(error) => Future.failed(ProcessUnmarshallingError(error))
-                          case Right(rawScenarioTestData) =>
-                            scenarioTestService
-                              .performTest(
-                                scenarioGraph,
-                                details.processVersionUnsafe,
-                                details.isFragment,
-                                rawScenarioTestData
-                              )
-                              .flatMap(mapResultsToHttpResponse)
-                        }
+          (post & processDetailsForName(
+            processName
+          ) & skipResultsPerTransitionQueryParam & skipResultsPerNodeQueryParam) {
+            (details, skipResultsPerTransition, skipResultsPerNode) =>
+              canDeploy(details.idWithNameUnsafe) {
+                formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, scenarioGraphJson) =>
+                  complete {
+                    measureTime("test", metricRegistry) {
+                      parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
+                        case Right(scenarioGraph) =>
+                          scenarioTestServices
+                            .forProcessingTypeUnsafe(details.processingType)
+                            .performTest(
+                              scenarioGraph,
+                              details.processVersionUnsafe,
+                              details.isFragment,
+                              RawScenarioTestData(testDataContent)
+                            )
+                            .flatMap {
+                              case Left(error) =>
+                                Future.failed(PerformTestDesignerError(TestingApiErrorMessages.from(error)))
+                              case Right(value) =>
+                                mapResultsToHttpResponse(
+                                  ResultsWithCountsDto.from(
+                                    resultsWithCounts = value,
+                                    skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
+                                    skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition)
+                                  )
+                                )
+                            }
+                        case Left(error) =>
+                          Future.failed(ProcessUnmarshallingError(error.toString))
                       }
                     }
                   }
                 }
               }
-            }
-          }
-        } ~
-        path("testWithParameters" / ProcessNameSegment) { processName =>
-          {
-            (post & processDetailsForName(processName)) { process =>
-              (post & entity(as[AdhocTestParametersRequest])) { testParametersRequest =>
-                {
-                  canDeploy(process.idWithNameUnsafe) {
-                    complete {
-                      scenarioTestServices
-                        .forProcessingTypeUnsafe(process.processingType)
-                        .performTest(
-                          testParametersRequest.scenarioGraph,
-                          process.processVersionUnsafe,
-                          process.isFragment,
-                          testParametersRequest.sourceParameters
-                        )
-                        .flatMap(mapResultsToHttpResponse)
-                    }
-                  }
-                }
-              }
-            }
           }
         } ~ path(("runOffSchedule" | "performSingleExecution") / ProcessNameSegment) {
           processName => // backward compatibility purpose
@@ -275,12 +252,18 @@ class ManagementResources(
         }
     }
 
-  private def mapResultsToHttpResponse: ResultsWithCounts => Future[HttpResponse] = { results =>
+  private def mapResultsToHttpResponse: ResultsWithCountsDto => Future[HttpResponse] = { results =>
     Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
   }
 
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
+
+  private def skipResultsPerNodeQueryParam =
+    parameters(Symbol("skipResultsPerNode").as[Boolean].withDefault(false))
+
+  private def skipResultsPerTransitionQueryParam =
+    parameters(Symbol("skipResultsPerTransition").as[Boolean].withDefault(false))
 
   private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
     future

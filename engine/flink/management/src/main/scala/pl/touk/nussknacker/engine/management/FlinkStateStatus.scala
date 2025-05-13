@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
   */
 object FlinkStateStatus {
 
-  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = _.stateStatus match {
-    case SimpleStateStatus.DuringDeploy => List(ScenarioActionName.Cancel)
-    case SimpleStateStatus.Restarting   => List(ScenarioActionName.Cancel)
+  val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] = {
+    case input if input.scenarioStatus == SimpleStateStatus.DuringDeploy => Set(ScenarioActionName.Cancel)
+    case input if input.scenarioStatus == SimpleStateStatus.Restarting   => Set(ScenarioActionName.Cancel)
   }
 
 }

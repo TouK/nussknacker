@@ -1,7 +1,8 @@
 import { useCallback, useEffect } from "react";
+import { useBlocker } from "react-router-dom";
+
 import { unsavedProcessChanges } from "../common/DialogMessages";
 import { useWindows } from "../windowManager";
-import { unstable_useBlocker as useBlocker } from "react-router-dom";
 
 export function useRouteLeavingGuard(when: boolean) {
     const { confirm } = useWindows();

@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
-import java.time.temporal.ChronoUnit
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
+
+import java.time.temporal.ChronoUnit
 
 class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEditorDeterminer {
 
-  override def determine(): Option[ParameterEditor] = {
+  override def determine(): List[ParameterEditor] = {
     Option(typ)
       .collect { case s: SingleTypingResult =>
         s.runtimeObjType
@@ -15,50 +15,50 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
       .map(_.klass)
       .collect {
         case klazz if klazz.isEnum =>
-          DualParameterEditor(
+          List(
             FixedValuesParameterEditor(
               possibleValues = klazz.getEnumConstants.toList.map(ParameterTypeEditorDeterminer.extractEnumValue(klazz))
             ),
-            DualEditorMode.SIMPLE
+            SpelParameterEditor
           )
         case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
-          DualParameterEditor(
-            simpleEditor = StringParameterEditor,
-            // For compatibility reasons we choose raw editor - otherwise users could write expressions in simple mode
-            defaultMode = DualEditorMode.RAW
+          List(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor,
           )
         case klazz if klazz == classOf[java.time.LocalDateTime] =>
-          DualParameterEditor(
-            simpleEditor = DateTimeParameterEditor,
-            defaultMode = DualEditorMode.SIMPLE
+          List(
+            DateTimeParameterEditor,
+            SpelParameterEditor,
           )
         case klazz if klazz == classOf[java.time.LocalTime] =>
-          DualParameterEditor(
-            simpleEditor = TimeParameterEditor,
-            defaultMode = DualEditorMode.SIMPLE
+          List(
+            TimeParameterEditor,
+            SpelParameterEditor
           )
         case klazz if klazz == classOf[java.time.LocalDate] =>
-          DualParameterEditor(
-            simpleEditor = DateParameterEditor,
-            defaultMode = DualEditorMode.SIMPLE
+          List(
+            DateParameterEditor,
+            SpelParameterEditor
           )
         case klazz if klazz == classOf[java.time.Duration] =>
-          DualParameterEditor(
-            simpleEditor = DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
-            defaultMode = DualEditorMode.SIMPLE
+          List(
+            DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
+            SpelParameterEditor
           )
         case klazz if klazz == classOf[java.time.Period] =>
-          DualParameterEditor(
-            simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
-            defaultMode = DualEditorMode.SIMPLE
+          List(
+            PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
+            SpelParameterEditor
           )
         // we use class name to avoid introducing dependency on cronutils in interpreter
         case klazz if klazz.getName == "com.cronutils.model.Cron" =>
-          DualParameterEditor(
-            simpleEditor = CronParameterEditor,
-            defaultMode = DualEditorMode.SIMPLE
+          List(
+            CronParameterEditor,
+            SpelParameterEditor
           )
       }
+      .getOrElse(Nil)
   }
 
 }

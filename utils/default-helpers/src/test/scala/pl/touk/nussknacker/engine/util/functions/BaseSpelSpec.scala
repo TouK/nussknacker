@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.text.ParseException
-import java.time.{Clock, ZoneOffset, ZonedDateTime}
+import java.time.{Clock, ZonedDateTime, ZoneOffset}
 import java.util.Locale
 import scala.reflect.runtime.universe._
 
@@ -21,7 +21,7 @@ trait BaseSpelSpec {
 
   protected val fixedZoned: ZonedDateTime = ZonedDateTime.of(2020, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
 
-  private val globalVariables = Map[String, Any](
+  protected val globalVariables = Map[String, Any](
     "COLLECTION"  -> collection,
     "DATE"        -> new DateUtils(Clock.fixed(fixedZoned.toInstant, ZoneOffset.UTC)),
     "DATE_FORMAT" -> new DateFormatUtils(Locale.US),
@@ -31,7 +31,7 @@ trait BaseSpelSpec {
     "BASE64"      -> base64
   )
 
-  private val parser = SpelExpressionParser.default(
+  protected val parser = SpelExpressionParser.default(
     getClass.getClassLoader,
     ModelDefinitionBuilder.emptyExpressionConfig,
     new SimpleDictRegistry(Map.empty),

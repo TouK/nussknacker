@@ -6,23 +6,25 @@ import { DndProvider } from "react-dnd-multi-backend";
 import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
+
+import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import ProcessUtils from "../common/ProcessUtils";
 import { useDecodedParams } from "../common/routerUtils";
-import * as VisualizationUrl from "../common/VisualizationUrl";
-import { Graph } from "../components/graph/Graph";
+import { extractCountParams } from "../common/VisualizationUrl";
+import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
+import { usePortal } from "../components/graph/node-modal/io/usePortal";
 import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
 import SelectionContextProvider from "../components/graph/SelectionContextProvider";
-import { Scenario } from "../components/Process/types";
+import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
-import { RootState } from "../reducers";
+import type { RootState } from "../reducers";
 import { getGraph, getProcessVersionId, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
-import { getProcessDefinitionData } from "../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../reducers/selectors/processDefinitionData";
 import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
@@ -75,7 +77,7 @@ function useCountsIfNeeded() {
     useEffect(() => {
         if (!scenario?.name || scenario.isFragment) return;
 
-        const countParams = VisualizationUrl.extractCountParams({ from, to, refresh });
+        const countParams = extractCountParams({ from, to, refresh });
         if (!countParams) return;
 
         dispatch(
@@ -148,7 +150,7 @@ function Visualization() {
     const openAndHighlightNodes = useCallback(
         async (scenario: Scenario) => {
             const windows = await Promise.all(openNodes(scenario));
-            windows.map((w) => dispatch(toggleSelection(w.meta.node.id)));
+            windows.map((w) => dispatch(expandSelection(w.meta.node.id, true)));
         },
         [dispatch, openNodes],
     );
@@ -162,6 +164,7 @@ function Visualization() {
     useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
 
     const { windows } = useWindowManager();
+    const [Portal, portalRef] = usePortal();
 
     return (
         <DndProvider options={HTML5toTouch}>
@@ -173,12 +176,13 @@ function Visualization() {
                 <GraphProvider graph={getGraphInstance}>
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
-                        <Toolbars isReady={dataResolved}>
+                        <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
                             <ScenarioDescription />
                         </Toolbars>
                     </SelectionContextProvider>
                 </GraphProvider>
             </GraphPage>
+            <div data-testid="toolbar-portal" ref={portalRef} />
         </DndProvider>
     );
 }

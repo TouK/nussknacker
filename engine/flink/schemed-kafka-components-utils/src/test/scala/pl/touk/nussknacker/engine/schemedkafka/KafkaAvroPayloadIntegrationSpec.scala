@@ -24,17 +24,17 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import scala.jdk.CollectionConverters._
 
 import java.nio.charset.StandardCharsets
 
 class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
-  import KafkaAvroIntegrationMockSchemaRegistry._
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   import scala.jdk.CollectionConverters._
+
+  import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator(
     sinkForInputMetaResultsHolder
@@ -96,7 +96,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       runAndVerifyResultSingleEvent(process, topicConfig, "fooBar", "fooBar")
     }.getMessage
 
-    message should include("InvalidPropertyFixedValue(ParameterName(Topic),None,'invalid-topic',")
+    message should include("InvalidPropertyFixedValue(Topic,None,'invalid-topic',")
   }
 
   test("should handle null value for mandatory parameter") {
@@ -110,7 +110,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     }.getMessage
 
     message should include(
-      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,ParameterName(Topic),start"
+      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,Topic,start"
     )
   }
 
@@ -245,10 +245,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
           espExceptionInfo.nodeComponentInfo shouldBe Some(
             NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
           )
-          espExceptionInfo.throwable shouldBe a[NonTransientException]
-          val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
-          cause shouldBe a[AvroRuntimeException]
-          cause.getMessage should include("Not expected null for field: Some(street)")
+          espExceptionInfo.throwable shouldBe a[AvroRuntimeException]
+          espExceptionInfo.throwable.getMessage should include("Not expected null for field: Some(street)")
         }
       }
     )

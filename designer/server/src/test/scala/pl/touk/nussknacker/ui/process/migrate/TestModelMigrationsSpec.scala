@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingService, MissingSourceFactory}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -12,10 +12,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult,
   ValidationWarnings
 }
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{multipleSourcesValidScenarioGraph, validScenarioGraph}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapWithDetailsForMigration
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
@@ -61,7 +61,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
+    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[MissingService].getSimpleName))
   }
 
   test("should detect failed migration on multiple sources scenario") {
@@ -71,18 +71,9 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val results = testMigration.testMigrations(List(scenarioGraph), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map(
-      "source1" -> List(classOf[RedundantParameters].getSimpleName),
-      "source2" -> List(classOf[RedundantParameters].getSimpleName)
+      "source1" -> List(classOf[MissingSourceFactory].getSimpleName),
+      "source2" -> List(classOf[MissingSourceFactory].getSimpleName)
     )
-  }
-
-  test("should ignore failed migration when it may fail") {
-    val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
-    val process       = wrapWithDetailsForMigration(validScenarioGraph)
-
-    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
-
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
   }
 
   test("should report only new errors") {
@@ -98,18 +89,17 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
           .emptySink("sink", ProcessTestData.existingSinkFactory)
       )
 
-    val validationResult =
-      flinkProcessValidator.validate(
-        invalidGraph,
-        ProcessTestData.sampleProcessName,
-        isFragment = false,
-        labels = List.empty
-      )
+    val validationResult = flinkProcessValidator().validate(
+      invalidGraph,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
     val process = wrapWithDetailsForMigration(invalidGraph, validationResult = validationResult)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
-    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
+    errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[MissingService].getSimpleName))
   }
 
   test("should migrate fragment and its usage within scenario") {
@@ -144,7 +134,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider("streaming" -> new ProcessModelMigrator(new TestMigrations(8))),
-      mapProcessingTypeDataProvider("streaming" -> TestFactory.flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> TestFactory.flinkProcessValidator("streaming" :: Nil))
     )
 
     val process =
@@ -186,7 +176,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
     new TestModelMigrations(
       mapProcessingTypeDataProvider("streaming" -> new ProcessModelMigrator(testMigrations)),
-      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator("streaming" :: Nil))
     )
 
 }

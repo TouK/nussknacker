@@ -1,22 +1,26 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.{ModelConfig, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentType, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentType,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker
 }
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
@@ -28,26 +32,29 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     process: CanonicalProcess,
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
-    modelConfig: Config,
-    namingStrategy: NamingStrategy,
-    componentUseCase: ComponentUseCase,
-    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    modelConfig: ModelConfig,
+    runtimeMode: RuntimeMode,
+    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    nodesDeploymentData: NodesDeploymentData,
 ) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
-      namingStrategy,
-      componentUseCase,
-      configsFromProviderWithDictionaryEditor
+      runtimeMode,
+      configsFromProviderWithDictionaryEditor,
+      nodesDeploymentData,
     ) {
 
   override protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
       definitionContext: ComponentDefinitionContext,
-      classDefinitions: Set[ClassDefinition]
+      classDefinitions: ClassDefinitionSet,
   ): ModelDefinition = {
-    val usedSourceIds = process.allStartNodes
-      .map(_.head.data)
+    val allStartNodesData = process.allStartNodes.toList
+      .flatMap(_.headOption)
+      .map(_.data)
+
+    val usedSourceIds = allStartNodesData
       .collect { case source: Source =>
         ComponentIdExtractor.fromScenarioNode(source)
       }
@@ -64,14 +71,14 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
 
     val fragmentParametersDefinitionExtractor = new FragmentParametersDefinitionExtractor(
       definitionContext.userCodeClassLoader,
-      classDefinitions
+      classDefinitions,
     )
     val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
       fragmentParametersDefinitionExtractor
     )
 
     val stubbedSourceForFragments =
-      process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
+      allStartNodesData.collect { case frag: FragmentInputDefinition =>
         // We create source definition only to reuse prepareSourceFactory method.
         // Source will have fragment component type to avoid collisions with normal sources
         val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
@@ -127,13 +134,22 @@ abstract class StubbedComponentImplementationInvoker(
       handleInvoke(impl, typingResult, nodeId)
     }
 
-    val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
+    val originalValue = create(original, params, outputVariableNameOpt, additional)
     originalValue match {
       case contextTransformation: ContextTransformation =>
         contextTransformation.copy(implementation = transform(contextTransformation.implementation))
-      case componentExecutor => transform(componentExecutor)
+      case componentExecutor =>
+        transform(componentExecutor)
     }
   }
+
+  def create(
+      original: ComponentImplementationInvoker,
+      params: Params,
+      outputVariableNameOpt: Option[String],
+      additional: Seq[AnyRef]
+  ): Any =
+    original.invokeMethod(params, outputVariableNameOpt, additional)
 
   def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
 }

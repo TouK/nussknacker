@@ -91,10 +91,11 @@ In model configuration you can also define some UI attributes of components. Thi
 in most cases you should not need to defined these settings. The settings you can configure include:
 * icons - `icon` property
 * documentation - `docsUrl` property
+* label - `label` property
 * should component be disabled - `disabled` property
 * in which toolbox panel the component should appear (`componentGroup` property)  
 * `params` configuration (allows to override default component settings):
-  * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc. 
+  * `editor` - `BoolParameterEditor`, `SpelTemplateParameterEditor`, `DateParameterEditor` etc. 
   * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
   * `defaultValue`
   * `label`
@@ -107,7 +108,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
       params {
         serviceIdParameter {
             defaultValue: "customerId-10"
-            editor: "StringParameterEditor"
+            editor: "SpelTemplateParameterEditor"
             validators: [ 
               {
                 type: "RegExpParameterValidator"
@@ -122,6 +123,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
       }
       docsUrl: "https://en.wikipedia.org/wiki/Customer_service"
       icon: "icon_file.svg"
+      label: "Customer Service"
     }
   }
 ```
@@ -171,7 +173,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
 ```
 scenarioPropertiesConfig {
   campaignType: {
-    editor: { type: "StringParameterEditor" }
+    editor: { type: "SpelTemplateParameterEditor" }
     validators: [ { type: "MandatoryParameterValidator" } ]
     label: "Campaign type"
     defaultValue: "Generic campaign"
@@ -186,3 +188,26 @@ The docs button which is displayed in the scenario properties modal window is by
 ``` scenarioPropertiesDocsUrl: "http://custom-configurable-link"```
 
 in the config. 
+
+## Multitenancy support
+
+Nussknacker supports multitenancy, allowing multiple Nussknacker designer instances to operate on shared infrastructure components,
+such as Kafka, Flink, or InfluxDB. This is achieved by using configured namespaces to isolate resources:
+- Kafka Topics: Prefixed with a namespace
+- Kafka Consumer Groups: Prefixed with a namespace
+- Flink Jobs: Prefixed with a namespace
+- InfluxDB Metrics: Tagged with an additional namespace tag
+
+A namespace configuration can be defined as follows:
+
+```
+modelConfig: {
+  ...
+  namespace: customer1
+  namespaceSeparator: "_"
+}
+```
+
+Notes:
+- The `namespaceSeparator` is optional and defaults to `_` if not specified.
+- This configuration applies a uniform namespace to all resources.

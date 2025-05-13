@@ -17,13 +17,13 @@ import pl.touk.nussknacker.engine.language.dictWithLabel.{
   DictKeyWithLabelExpressionTypingInfo
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.{
   OptionallyTypedNode,
   ReplacingStrategy,
   SpelSubstitutionsCollector,
   TypedTreeLevel
 }
+import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 
 class ProcessDictSubstitutor(
     dictRegistry: DictRegistry,

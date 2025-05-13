@@ -12,17 +12,17 @@ The default Designer configuration can be found in [defaultDesignerConfig.conf](
 
 ## Web interface configuration
 
-| Parameter name                              | Importance | Type     | Default value | Description                                                                                                                                                                    |
-|---------------------------------------------|------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| http.port                                   | High       | int      | 8080          | HTTP Port of Designer app                                                                                                                                                      |
-| http.interface                              | High       | string   | "0.0.0.0"     | HTTP interface for Designer app                                                                                                                                                |
-| http.publicPath                             | Medium     | string   | ""            | if Designer used with reverse proxy and custom path, use this configuration to generate links in Designer properly (Designer app is always served from root path)              |
-| ssl.enabled                                 | Medium     | boolean  | false         | Should Designer app be served with SSL                                                                                                                                         |
-| ssl.keyStore.location                       | Medium     | string   |               | Keystore file location (required if SSL enabled)                                                                                                                               |
-| ssl.keyStore.password                       | Medium     | string   |               | Keystore file password (required if SSL enabled)                                                                                                                               |
-| akka.*                                      | Medium     |          |               | [Akka HTTP](https://doc.akka.io/docs/akka-http/current/index.html) is used for HTTP serving, you can configure it in standard way. Below we give Nussknacker-specific defaults |
-| akka.http.server.parsing.max-content-length | Low        | int      | 300000000     | Requests (e.g. with test data) can be quite large, so we increase the limit                                                                                                    |
-| akka.http.server.request-timeout            | Low        | duration | 1 minute      | Consider increasing the value if you have large test data or long savepoint times during deploy                                                                                |
+| Parameter name                               | Importance | Type     | Default value | Description                                                                                                                                                                 |
+|----------------------------------------------|------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| http.port                                    | High       | int      | 8080          | HTTP Port of Designer app                                                                                                                                                   |
+| http.interface                               | High       | string   | "0.0.0.0"     | HTTP interface for Designer app                                                                                                                                             |
+| http.publicPath                              | Medium     | string   | ""            | if Designer used with reverse proxy and custom path, use this configuration to generate links in Designer properly (Designer app is always served from root path)           |
+| ssl.enabled                                  | Medium     | boolean  | false         | Should Designer app be served with SSL                                                                                                                                      |
+| ssl.keyStore.location                        | Medium     | string   |               | Keystore file location (required if SSL enabled)                                                                                                                            |
+| ssl.keyStore.password                        | Medium     | string   |               | Keystore file password (required if SSL enabled)                                                                                                                            |
+| pekko.*                                      | Medium     |          |               | [Pekko HTTP](https://pekko.apache.org/docs/pekko-http/current/) is used for HTTP serving, you can configure it in standard way. Below we give Nussknacker-specific defaults |
+| pekko.http.server.parsing.max-content-length | Low        | int      | 300000000     | Requests (e.g. with test data) can be quite large, so we increase the limit                                                                                                 |
+| pekko.http.server.request-timeout            | Low        | duration | 1 minute      | Consider increasing the value if you have large test data or long savepoint times during deploy                                                                             |
 
 ## Database configuration
 
@@ -277,7 +277,7 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                                                                                                                                                                     |
 | authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                                                                                                                                                               |
 | authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                                                                                                                                                              |
-| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile`                                                                                                                             |
+| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. These roles must correspond to those defined in the `usersFile`.                                                                                                                   |
 | authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                                                                                                                                                              |
 | authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                                                                                                                                                             |
 | authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider                                                                                                                                                       |
@@ -508,8 +508,10 @@ Toolbars and buttons at process window are configurable, you can configure param
 * uuid - optional uuid identifier which determines unique code for FE localstorage cache, default: null - we generate
   uuid from hashcode config
 * topLeft - optional top left panel, default: empty list
-* bottomLeft - optional bottom left panel, default: empty list
+* topCenter - optional center top panel, default: empty list
 * topRight - optional top right panel, default: empty list
+* bottomLeft - optional bottom left panel, default: empty list
+* bottomCenter - optional center bottom panel, default: empty list
 * bottomRight - optional bottom right panel, default: empty list
 
 Example configuration:
@@ -640,7 +642,7 @@ processToolbarConfig {
           { type: "process-compare" }
           { type: "process-migrate", disabled: { archived: true } }
           { type: "process-import", disabled: { archived: true } }
-          { type: "process-json" }
+          { type: "process-export" }
           { type: "process-pdf" }
           { type: "process-archive", hidden: { archived: true } }
           { type: "process-unarchive", hidden: { archived: false } }
@@ -727,19 +729,19 @@ You can configure `secondaryEnvironment` to allow for
 | environment                                 | Medium     | string                                                              |               | Used mainly for metrics configuration. Please note: it **has** to be consistent with [tag configuration of metrics](https://github.com/TouK/nussknacker-quickstart/blob/main/telegraf/telegraf.conf#L6) |
 | environmentAlert.content                    | Low        | string                                                              |               | Human readable name of environment, to display in UI                                                                                                                                                    |
 | environmentAlert.color                      | Low        | indicator-green / indicator-blue / indicator-yellow / indicator-red |               | Color of environment indicator                                                                                                                                                                          |
-| secondaryEnvironment.remoteConfig.uri       | Medium     | string                                                              |               | URL of Nussknacker REST API e.g. `http://secondary.host:8080/api`                                                                                                                                       |
-| secondaryEnvironment.remoteConfig.batchSize | Low        | int                                                                 | 10            | For testing compatibility we have to load all scenarios, we do it in batches to optimize                                                                                                                |
+| secondaryEnvironment.uri                    | Medium     | string                                                              |               | URL of Nussknacker REST API e.g. `http://secondary.host:8080/api`                                                                                                                                       |
 | secondaryEnvironment.user                   | Medium     | string                                                              |               | User that should be used for migration/comparison                                                                                                                                                       |
 | secondaryEnvironment.password               | Medium     | string                                                              |               | Password of the user that should be used for migration/comparison                                                                                                                                       |
+| secondaryEnvironment.remoteConfig.batchSize | Low        | int                                                                 | 10            | For testing compatibility we have to load all scenarios, we do it in batches to optimize                                                                                                                |
 | secondaryEnvironment.targetEnvironmentId    | Low        | string                                                              |               | Name of the secondary environment (used mainly for messages for user)                                                                                                                                   |
 
 ## Testing
 
-| Parameter name                     | Importance | Type | Default value | Description                                                   |
-|------------------------------------|------------|------|---------------|---------------------------------------------------------------|
-| testDataSettings.maxSampleCount    | Medium     | int  | 20            | Limits number of samples for tests from file                  |
-| testDataSettings.testDataMaxLength | Low        | int  | 200000        | Limits size (in characters) of test input for tests from file |
-| testDataSettings.resultsMaxBytes   | Low        | int  | 50000000      | Limits size of returned test data for tests from file         |
+| Parameter name                     | Importance | Type | Default value | Description                                                                                                       |
+|------------------------------------|------------|------|---------------|-------------------------------------------------------------------------------------------------------------------|
+| testDataSettings.maxSamplesCount   | Medium     | int  | 20            | Limits the number of samples to be generated and received from a file                                             |
+| testDataSettings.testDataMaxLength | Low        | int  | 200000        | Limits the size (in characters) of the test data generated and received in tests from a file                      |
+| testDataSettings.resultsMaxBytes   | Low        | long | 50000000      | Limits the size (in bytes) of returned test results (i.e. variables for each node, invocation results and errors) |
 
 
 ## Other configuration options
@@ -761,6 +763,7 @@ You can configure `secondaryEnvironment` to allow for
 | scenarioStateTimeout                                       | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
 | usageStatisticsReports.enabled                             | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
 | usageStatisticsReports.errorReportsEnabled                 | Low        | boolean  | true          | When enabled browser will send anonymous errors reports to `stats.nussknacker.io`                                                                                                                                           |
+| assistantSettings.enabled                                  | Low        | boolean  | false         | Whether the assistant should be enabled. If enabled, the FE can make requests to the assistant API extension, which should be exposed as a `CustomHttpServiceProvider`                                                      |
 
 ## Scenario type, categories
 

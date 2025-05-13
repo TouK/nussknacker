@@ -3,15 +3,17 @@ import React, { forwardRef, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useForkRef } from "rooks";
+
 import { useEventTracking } from "../../containers/event-tracking";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
-import { getLoggedUser, getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
+import { getLoggedUser } from "../../reducers/selectors/settings";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useWindows } from "../../windowManager";
 import { Graph } from "./Graph";
 import { GraphStyledWrapper } from "./graphStyledWrapper";
 import { NodeDescriptionPopover } from "./NodeDescriptionPopover";
-import { GraphProps } from "./types";
+import type { GraphProps } from "./types";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
@@ -25,7 +27,6 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const theme = useTheme();
     const translation = useTranslation();
     const { trackEvent } = useEventTracking();
-
     const graphRef = useRef<Graph>();
     const ref = useForkRef(graphRef, forwardedRef);
 

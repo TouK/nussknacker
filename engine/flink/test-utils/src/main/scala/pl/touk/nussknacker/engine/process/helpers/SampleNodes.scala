@@ -9,6 +9,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
+import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
@@ -16,20 +17,21 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, StreamRecord}
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType, TypedMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -43,8 +45,8 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
+import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -199,7 +201,7 @@ object SampleNodes {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseContext: ComponentUseContext,
         ): Future[Any] = {
           if (!opened) {
             throw new IllegalArgumentException
@@ -225,7 +227,7 @@ object SampleNodes {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         collector.collect(s"static-$static-dynamic-${dynamic.evaluate(context)}", Option(())) {
           Future.successful(())
@@ -250,7 +252,7 @@ object SampleNodes {
     def execute(
         @ParamName("stringVal") stringVal: String,
         @ParamName("groupBy") groupBy: LazyParameter[String]
-    )(implicit nodeId: NodeId, metaData: MetaData, componentUseCase: ComponentUseCase) =
+    )(implicit nodeId: NodeId, metaData: MetaData, componentUseContext: ComponentUseContext) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         setUidToNodeIdIfNeed(
           context,
@@ -307,6 +309,33 @@ object SampleNodes {
                   override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
                 }
               )
+              .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
+        })
+    }
+
+  }
+
+  object CustomTimestampExtractingTransformation extends CustomStreamTransformer with Serializable {
+    val timestampVariableName = "eventTimeTimestamp"
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): ContextTransformation = {
+      ContextTransformation
+        .definedBy(Valid(_))
+        .implementedBy(FlinkCustomStreamTransformation {
+          (start: DataStream[Context], context: FlinkCustomNodeContext) =>
+            start
+              .process(new ProcessFunction[Context, Context] {
+                override def processElement(
+                    value: api.Context,
+                    ctx: ProcessFunction[api.Context, api.Context]#Context,
+                    out: Collector[api.Context]
+                ): Unit = {
+                  out.collect(
+                    value.withVariable(timestampVariableName, ctx.timestamp())
+                  )
+                }
+              })
               .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
         })
     }
@@ -437,7 +466,7 @@ object SampleNodes {
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseContext: ComponentUseContext,
           ): Future[Any] = {
             val result = (1 to count)
               .map(_ => definition.asScala.map(_ -> toFill.evaluate(context)).toMap)
@@ -520,16 +549,35 @@ object SampleNodes {
 
   }
 
-  object TransformerAddingComponentUseCase extends CustomStreamTransformer with Serializable {
+  object TransformerAddingComponentUseContext extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke
     def execute = {
       FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
-        val componentUseCase = flinkCustomNodeContext.componentUseCase
+        val componentUseContext = flinkCustomNodeContext.componentUseContext
         start
           .map(
-            (ctx: Context) => ValueWithContext[AnyRef](componentUseCase, ctx),
+            (ctx: Context) => ValueWithContext[AnyRef](componentUseContext, ctx),
             flinkCustomNodeContext.valueWithContextInfo.forUnknown
+          )
+      })
+    }
+
+  }
+
+  object SimpleSleepTransformer extends CustomStreamTransformer with Serializable {
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(@ParamName("seconds") seconds: Int) = {
+      FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
+        start
+          .map(
+            { (ctx: Context) =>
+              // In production-ready implementation, here we would use timers
+              Thread.sleep(seconds * 1000)
+              ValueWithContext[AnyRef](null, ctx)
+            },
+            flinkCustomNodeContext.valueWithContextInfo.forNull
           )
       })
     }
@@ -735,8 +783,8 @@ object SampleNodes {
     private val aTypeDeclaration = ParameterDeclaration
       .mandatory[String](aTypeParamName)
       .withCreator(modify =
-        _.copy(editor =
-          Some(
+        _.copy(editors =
+          List(
             FixedValuesParameterEditor(
               List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
             )
@@ -750,8 +798,8 @@ object SampleNodes {
       .mandatory[Int](versionParamName)
       .withAdvancedCreator[List[Int]](
         create = versions =>
-          _.copy(editor =
-            Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
+          _.copy(editors =
+            List(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
           )
       )
 
@@ -893,7 +941,7 @@ object SampleNodes {
       with SingleInputDynamicComponent[Sink]
       with Serializable {
 
-    private val componentUseCaseDependency = TypedNodeDependency[ComponentUseCase]
+    private val componentUseContextProviderDependency = TypedNodeDependency[ComponentUseContext]
 
     override type State = Nothing
 
@@ -905,8 +953,8 @@ object SampleNodes {
     private val aTypeParamDeclaration = ParameterDeclaration
       .mandatory[String](aTypeParamName)
       .withCreator(
-        modify = _.copy(editor =
-          Some(
+        modify = _.copy(editors =
+          List(
             FixedValuesParameterEditor(
               List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
             )
@@ -920,8 +968,8 @@ object SampleNodes {
       .mandatory[Int](versionParamName)
       .withAdvancedCreator[List[Int]](
         create = versions =>
-          _.copy(editor =
-            Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
+          _.copy(editors =
+            List(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
           )
       )
 
@@ -968,7 +1016,7 @@ object SampleNodes {
           .map(
             (v: ValueWithContext[String]) =>
               v.copy(value =
-                s"${v.value}+$typeValue-$versionValue+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"
+                s"${v.value}+$typeValue-$versionValue+componentUseContext:${componentUseContextProviderDependency.extract(dependencies)}"
               ),
             flinkNodeContext.valueWithContextInfo.forType(TypeInformation.of(classOf[String]))
           )
@@ -982,7 +1030,7 @@ object SampleNodes {
 
     }
 
-    override def nodeDependencies: List[NodeDependency] = List(componentUseCaseDependency)
+    override def nodeDependencies: List[NodeDependency] = List(componentUseContextProviderDependency)
   }
 
   object ProcessHelper {
@@ -1049,7 +1097,7 @@ object SampleNodes {
     @MethodToInvoke
     def create(
         processMetaData: MetaData,
-        componentUseCase: ComponentUseCase,
+        componentUseContext: ComponentUseContext,
         @ParamName("type") definition: java.util.Map[String, _]
     ): Source = {
       new CollectionSource[TypedMap](List(), None, Typed[TypedMap])
@@ -1072,11 +1120,11 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  object ReturningComponentUseCaseService extends Service with Serializable {
+  object ReturningComponentUseContextService extends Service with Serializable {
 
     @MethodToInvoke
-    def invoke(implicit componentUseCase: ComponentUseCase): Future[ComponentUseCase] = {
-      Future.successful(componentUseCase)
+    def invoke(implicit componentUseContext: ComponentUseContext): Future[ComponentUseContext] = {
+      Future.successful(componentUseContext)
     }
 
   }
@@ -1115,6 +1163,21 @@ object SampleNodes {
     override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit =
       checkValidState("nodeEntered")
 
+    override def transitionToNextNode(
+        nodeId: String,
+        nextNodeId: String,
+        context: Context,
+        processMetaData: MetaData
+    ): Unit =
+      checkValidState("transitionToNextNode")
+
+    override def processingFinishedInNode(
+        nodeId: String,
+        context: Context,
+        processMetaData: MetaData,
+    ): Unit =
+      checkValidState("processingFinishedInNode")
+
     override def endEncountered(
         nodeId: String,
         ref: String,
@@ -1145,7 +1208,7 @@ object SampleNodes {
     ): Unit =
       checkValidState("serviceInvoked")
 
-    override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
+    override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit =
       checkValidState("exceptionThrown")
 
     private def checkValidState(operation: String): Unit = {

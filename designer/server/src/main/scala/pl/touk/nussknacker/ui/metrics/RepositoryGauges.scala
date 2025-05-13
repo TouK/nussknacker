@@ -3,19 +3,19 @@ package pl.touk.nussknacker.ui.metrics
 import io.dropwizard.metrics5.{CachedGauge, Gauge, MetricName, MetricRegistry}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.repository.DBFetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
 
 class RepositoryGauges(
     metricRegistry: MetricRegistry,
     repositoryGaugesCacheDuration: Duration,
-    processRepository: DBFetchingProcessRepository[Future]
+    processRepository: FetchingProcessRepository[Future]
 ) {
 
   private val awaitTime = 5 seconds

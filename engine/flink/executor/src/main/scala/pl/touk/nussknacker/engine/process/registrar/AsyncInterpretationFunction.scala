@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -31,7 +32,13 @@ private[registrar] class AsyncInterpretationFunction(
     with LazyLogging
     with ProcessPartFunction {
 
-  private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
+  private lazy val compiledNode =
+    compilerData.compileSubPart(
+      node = node,
+      validationContext = validationContext,
+      // nodes compiled for interpreter purpose don't have access to stream execution environment
+      engineCompilationDeps = EngineScenarioCompilationDependencies.empty
+    )
 
   private var serviceExecutionContext: ServiceExecutionContext = _
 
@@ -70,7 +77,7 @@ private[registrar] class AsyncInterpretationFunction(
 
   private def invokeInterpreter(
       input: Context
-  )(callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
+  )(callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo]]] => Unit): Unit = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.syncIoRuntime
@@ -93,7 +100,7 @@ private[registrar] class AsyncInterpretationFunction(
   private def handleResults(
       collector: ResultFuture[InterpretationResult],
       results: List[InterpretationResult],
-      exceptions: List[NuExceptionInfo[_ <: Throwable]]
+      exceptions: List[NuExceptionInfo]
   ): Unit = {
     try {
       exceptions.foreach(exceptionHandler.handle)

@@ -3,12 +3,12 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
 import db.migration.V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition.Migration
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.ast.Library.JdbcFunction
-import slick.jdbc.JdbcProfile
-import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
+import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   override def migrateActions: DBIOAction[Any, NoStream, Effect.All] =
     createGenerateRandomUuidFunction().flatMap[Any, NoStream, Effect.All](_ => new Migration(profile).migrate)
@@ -28,9 +28,9 @@ trait V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends Sl
 
 object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends LazyLogging {
 
-  class Migration(val profile: JdbcProfile) extends ScenarioActivityEntityFactory {
+  class Migration(val profile: NuJdbcProfile) extends ScenarioActivityEntityFactory {
 
-    import profile.api._
+    import profile.apiWithEnforcedSchema._
 
     private val scenarioActivitiesDefinitions = new ScenarioActivitiesDefinitions(profile)
     private val processActionsDefinitions     = new ProcessActionsDefinitions(profile)
@@ -101,7 +101,7 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
               comment.createDate.?,                                    // finishedAt
               None: Option[String],                                    // state
               None: Option[String],                                    // errorMessage
-              None: Option[String],                                    // buildInfo - always absent in old actions
+              None: Option[String],                                    // modelInfo - always absent in old actions
               "{}" // additionalProperties always empty in old actions
             )
           }
@@ -147,12 +147,13 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
 
   }
 
-  class ProcessActionsDefinitions(val profile: JdbcProfile) {
-    import profile.api._
+  class ProcessActionsDefinitions(val profile: NuJdbcProfile) {
+    import profile.apiWithEnforcedSchema._
 
     val table: LTableQuery[ProcessActionEntity] = LTableQuery(new ProcessActionEntity(_))
 
-    class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
+    class ProcessActionEntity(tag: Tag) extends TableWithSchema[ProcessActionEntityData](tag, "process_actions") {
+
       def id: Rep[UUID] = column[UUID]("id", O.PrimaryKey)
 
       def processId: Rep[Long] = column[Long]("process_id")
@@ -194,7 +195,8 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
         commentId,
         buildInfo
       ) <> (
-        ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
+        ProcessActionEntityData.apply _ tupled,
+        ProcessActionEntityData.unapply
       )
 
     }
@@ -217,11 +219,11 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
       buildInfo: Option[String]
   )
 
-  class CommentsDefinitions(val profile: JdbcProfile) {
-    import profile.api._
+  class CommentsDefinitions(val profile: NuJdbcProfile) {
+    import profile.apiWithEnforcedSchema._
     val table: LTableQuery[CommentEntity] = LTableQuery(new CommentEntity(_))
 
-    class CommentEntity(tag: Tag) extends Table[CommentEntityData](tag, "process_comments") {
+    class CommentEntity(tag: Tag) extends TableWithSchema[CommentEntityData](tag, "process_comments") {
 
       def id: Rep[Long] = column[Long]("id", O.PrimaryKey)
 
@@ -250,7 +252,8 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
           impersonatedByUsername,
           createDate
         ) <> (
-          CommentEntityData.apply _ tupled, CommentEntityData.unapply
+          CommentEntityData.apply _ tupled,
+          CommentEntityData.unapply
         )
 
     }

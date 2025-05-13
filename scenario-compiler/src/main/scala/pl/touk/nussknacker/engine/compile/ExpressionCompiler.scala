@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid, invalid, invalidNel, valid}
 import cats.data.{Ior, IorNel, NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalid, invalidNel, valid, Invalid, Valid}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -26,7 +25,9 @@ import pl.touk.nussknacker.engine.expression.parse.{
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
+import pl.touk.nussknacker.engine.language.json.{JsonParser, JsonTemplateParser}
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -70,7 +71,7 @@ object ExpressionCompiler {
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       modelData.designerDictServices.dictRegistry,
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithClasses.classDefinitions,
@@ -98,12 +99,16 @@ object ExpressionCompiler {
         classDefinitionSet
       )
 
+    val spelStandardParser = spelParser(SpelExpressionParser.Standard)
+    val spelTemplateParser = spelParser(SpelExpressionParser.Template)
     val defaultParsers =
       Seq(
-        spelParser(SpelExpressionParser.Standard),
-        spelParser(SpelExpressionParser.Template),
+        spelStandardParser,
+        spelTemplateParser,
         DictKeyWithLabelExpressionParser,
-        TabularDataDefinitionParser
+        TabularDataDefinitionParser,
+        JsonParser,
+        new JsonTemplateParser(spelTemplateParser = spelTemplateParser, spelParser = spelStandardParser),
       )
     val parsers = defaultParsers.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers, dictRegistry, expressionEvaluator)
@@ -155,14 +160,14 @@ class ExpressionCompiler(
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
-    val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
+    val adjustedParameters = NodeParametersAdjuster.adjustNonBranchParameters(
       parameterDefinitions,
-      nodeParameters ++ nodeBranchParameters.flatMap(_.parameters)
+      nodeParameters
     )
     val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, ctx.globalVariables)
     val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
-    val compiledParams = nodeParameters
+    val compiledParams = adjustedParameters
       .flatMap { nodeParam =>
         paramDefMap
           .get(nodeParam.name)
@@ -181,13 +186,11 @@ class ExpressionCompiler(
 
     for {
       compiledParams <- allCompiledParams.toIor
-      paramsAfterValidation = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap) match {
-        case Valid(a) => Ior.right(a)
-        // We want to preserve typing information from allCompiledParams even if custom validators give us some errors
-        case Invalid(e) => Ior.both(e, compiledParams)
-      }
-      combinedParams <- redundantMissingValidation.map(_ => List()).toIor.combine(paramsAfterValidation)
-    } yield combinedParams
+      customValidatorsResult = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap)
+      // We want to accumulate errors from custom validators, but also preserve typing information from allCompiledParams
+      // even if custom validators return some errors
+      _ <- customValidatorsResult.toIor.addRight(())
+    } yield compiledParams
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(
@@ -208,7 +211,7 @@ class ExpressionCompiler(
   ): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     val ctxToUse = if (definition.isLazyParameter || treatEagerParametersAsLazy) ctx else ctx.clearVariables
 
-    substituteDictKeyExpression(nodeParam.expression, definition.editor, nodeParam.name).andThen { finalExpr =>
+    substituteDictKeyExpression(nodeParam.expression, definition.editors, nodeParam.name).andThen { finalExpr =>
       enrichContext(ctxToUse, definition).andThen { finalCtx =>
         compile(finalExpr, Some(nodeParam.name), finalCtx, definition.typ)
           .map(TypedParameter(nodeParam.name, _))
@@ -224,7 +227,7 @@ class ExpressionCompiler(
     branchIdAndExpressions
       .map { case (branchId, expression) =>
         val paramName = definition.name.withBranchId(branchId)
-        substituteDictKeyExpression(expression, definition.editor, paramName).andThen { finalExpr =>
+        substituteDictKeyExpression(expression, definition.editors, paramName).andThen { finalExpr =>
           enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
             // TODO JOIN: branch id on error field level
             compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(branchId -> _)
@@ -237,11 +240,11 @@ class ExpressionCompiler(
 
   private def substituteDictKeyExpression(
       expression: Expression,
-      editor: Option[ParameterEditor],
+      editors: List[ParameterEditor],
       paramName: ParameterName
   )(
       implicit nodeId: NodeId
-  ) = {
+  ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
     def substitute(dictId: String) = {
       DictKeyWithLabelExpressionParser
         .parseDictKeyWithLabelExpression(expression.expression)
@@ -263,18 +266,27 @@ class ExpressionCompiler(
         )
     }
 
-    if (expression.language == Language.DictKeyWithLabel && !expression.expression.isBlank)
-      editor match {
-        case Some(DictParameterEditor(dictId)) => substitute(dictId)
-        case Some(DualParameterEditor(DictParameterEditor(dictId), _)) =>
-          substitute(dictId) // in `RAW` mode, expression.language is SpEL, and no substitution/validation is done
-        case editor =>
-          throw new IllegalStateException(
-            s"DictKeyWithLabel expression can only be used with DictParameterEditor, got $editor"
-          )
+    def isDictKeyWithLabel(expression: Expression): Boolean =
+      expression.language == DictKeyWithLabel
+
+    val incompatibleChangeToParameterDefinitionDetected: ValidatedNel[PartSubGraphCompilationError, Expression] =
+      invalidNel(IncompatibleParameterDefinitionModification(paramName, expression.language, editors, nodeId.id))
+
+    def validateAndSubstitute(expression: Expression): ValidatedNel[PartSubGraphCompilationError, Expression] = {
+      editors match {
+        case DictParameterEditor(dictId) :: Nil if isDictKeyWithLabel(expression) =>
+          if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
+        case DictParameterEditor(dictId) :: _ :: Nil if isDictKeyWithLabel(expression) =>
+          if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
+        case _ :: DictParameterEditor(dictId) :: Nil if isDictKeyWithLabel(expression) =>
+          if (expression.expression.isBlank) Valid(expression) else substitute(dictId)
+        case DictParameterEditor(_) :: Nil if !isDictKeyWithLabel(expression) =>
+          incompatibleChangeToParameterDefinitionDetected
+        case _ if isDictKeyWithLabel(expression) => incompatibleChangeToParameterDefinitionDetected
+        case _                                   => Valid(expression)
       }
-    else
-      Valid(expression)
+    }
+    validateAndSubstitute(expression)
   }
 
   def compileValidator(
@@ -407,6 +419,12 @@ class ExpressionCompiler(
     ) { case (acc, (name, typingResult)) =>
       acc.andThen(_.withVariable(name, typingResult.typingResult, None))
     }
+  }
+
+  def withExpressionParsers(
+      modify: Map[Language, ExpressionParser] => Map[Language, ExpressionParser]
+  ): ExpressionCompiler = {
+    new ExpressionCompiler(modify(expressionParsers), dictRegistry, expressionEvaluator)
   }
 
 }

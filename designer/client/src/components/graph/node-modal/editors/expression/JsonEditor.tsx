@@ -2,17 +2,19 @@ import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { useState } from "react";
+
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
-import { FieldError } from "../Validators";
+import type { FieldError } from "../Validators";
 import AceEditor from "./ace";
 import { DEFAULT_OPTIONS } from "./AceWrapper";
-import { SimpleEditor } from "./Editor";
-import { ExpressionObj } from "./types";
+import type { OnValueChange, SimpleEditor } from "./Editor";
+import { editorsParameters } from "./editorsParameters";
+import type { ExpressionObj } from "./types";
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     className: string;
     showValidation?: boolean;
     fieldErrors: FieldError[];
@@ -35,7 +37,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     const onChange = (newValue: string) => {
         setValue(newValue);
 
-        onValueChange(newValue);
+        onValueChange({ expression: newValue, language: editorsParameters.JsonParameterEditor.language });
     };
 
     const THEME = "nussknacker";
@@ -70,6 +72,8 @@ export const JsonEditor: SimpleEditor<Props> = ({
                         enableBasicAutocompletion: false,
                         showLineNumbers: true,
                         tabSize: 2,
+                        // We don't want to check syntax correctness with ace
+                        useWorker: false,
                     }}
                 />
             </Box>

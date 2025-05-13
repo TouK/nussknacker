@@ -1,12 +1,14 @@
-import { UnknownFunction } from "../../../../../../types/common";
-import TimeRangeComponent, { TimeRange } from "./TimeRangeComponent";
-import ValidationLabels from "../../../../../modals/ValidationLabels";
-import React from "react";
-import { Duration } from "./DurationEditor";
-import { Period } from "./PeriodEditor";
-import { TimeRangeStyled } from "./TimeRangeStyled";
-import { FieldError } from "../../Validators";
 import { isEmpty } from "lodash";
+import React from "react";
+
+import type { UnknownFunction } from "../../../../../../types/common";
+import ValidationLabels from "../../../../../modals/ValidationLabels";
+import type { FieldError } from "../../Validators";
+import type { Duration } from "./DurationEditor";
+import type { Period } from "./PeriodEditor";
+import type { TimeRange } from "./TimeRangeComponent";
+import TimeRangeComponent from "./TimeRangeComponent";
+import { TimeRangeStyled } from "./TimeRangeStyled";
 
 type Props = {
     components: Array<TimeRange>;

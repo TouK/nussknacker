@@ -10,16 +10,16 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelDependencies
-import pl.touk.nussknacker.engine.api.component.{ComponentProvider, DesignerWideComponentId, ProcessingMode}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.classloader.DeploymentManagersClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.nio.file.Path
@@ -284,31 +284,53 @@ class ScenarioParametersServiceTest
 
     val designerConfig =
       DesignerConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
-    val processingTypeData =
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
-        .loadProcessingTypeData(
-          processingType =>
-            ModelDependencies(
-              Map.empty,
-              componentId => DesignerWideComponentId(componentId.toString),
-              Some(workPath),
-              shouldIncludeComponentProvider(processingType, _),
-              ComponentDefinitionExtractionMode.FinalDefinition
-            ),
-          _ => TestFactory.deploymentManagerDependencies,
+    val managersPath = workPath.resolve("managers")
+    val parameterServiceResource = for {
+      deploymentManagersClassLoader <- DeploymentManagersClassLoaderFactory
+        .create(
+          List(
+            managersPath.resolve("nussknacker-flink-manager.jar"),
+            managersPath.resolve("lite-embedded-manager.jar"),
+          )
         )
-        .unsafeRunSync()
-    val parametersService = processingTypeData.getCombined().parametersService
-
-    parametersService.scenarioParametersCombinationsWithWritePermission(TestFactory.adminUser()) shouldEqual List(
-      ScenarioParameters(ProcessingMode.UnboundedStream, "Default", EngineSetupName("Flink")),
-      ScenarioParameters(ProcessingMode.UnboundedStream, "Default", EngineSetupName("Lite Embedded")),
-      ScenarioParameters(ProcessingMode.RequestResponse, "Default", EngineSetupName("Lite Embedded"))
-    )
-    parametersService.engineSetupErrorsWithWritePermission(TestFactory.adminUser()) shouldEqual Map(
-      EngineSetupName("Flink")         -> List("Invalid configuration: missing restUrl"),
-      EngineSetupName("Lite Embedded") -> List.empty
-    )
+      modelConfig = ModelDependencies(
+        Map.empty,
+        componentId => DesignerWideComponentId(componentId.toString),
+        Some(workPath),
+        ComponentDefinitionExtractionMode.FinalDefinition
+      )
+      processingTypeData <- TestProcessingTypeDataProviderFactory.create(
+        designerConfig.processingTypeConfigs(),
+        ModelClassLoaderProvider(
+          designerConfig
+            .processingTypeConfigs()
+            .configByProcessingType
+            .mapValuesNow(config => ModelClassLoaderDependencies(config.classPath, Some(workPath))),
+          deploymentManagersClassLoader
+        ),
+        modelConfig,
+        deploymentManagersClassLoader,
+        TestFactory.deploymentManagerDependencies,
+      )
+      parametersService = processingTypeData.combined.parametersService
+    } yield parametersService
+    parameterServiceResource
+      .use { parametersService =>
+        IO {
+          parametersService.scenarioParametersCombinationsWithWritePermission(
+            TestFactory.adminUser()
+          ) should contain theSameElementsAs List(
+            ScenarioParameters(ProcessingMode.UnboundedStream, "Default", EngineSetupName("Flink")),
+            ScenarioParameters(ProcessingMode.UnboundedStream, "Default", EngineSetupName("Lite Embedded")),
+            ScenarioParameters(ProcessingMode.RequestResponse, "Default", EngineSetupName("Lite Embedded"))
+          )
+          parametersService.engineSetupErrorsWithWritePermission(TestFactory.adminUser()) shouldEqual Map(
+            EngineSetupName("Flink")         -> List("Invalid configuration: missing restUrl"),
+            EngineSetupName("Lite Embedded") -> List.empty
+          )
+        }
+      }
+      .unsafeRunSync()
   }
 
   private def logDirectoryStructure(workPath: Path): Unit = {
@@ -322,22 +344,8 @@ class ScenarioParametersServiceTest
       workPath.resolve("components/lite"),
       workPath.resolve("components/common"),
       workPath.resolve("model"),
+      workPath.resolve("managers"),
     ).foreach(listFiles)
-  }
-
-  // This ugly hack is because of Idea classloader issue, see comment in ClassLoaderModelData
-  private def shouldIncludeComponentProvider(processingType: ProcessingType, componentProvider: ComponentProvider) = {
-    (
-      processingType,
-      componentProvider.providerName,
-      componentProvider.getClass.getClassLoader.getName == "app"
-    ) match {
-      case (_, "test", _)                                    => false
-      case ("streaming", _, true)                            => false
-      case ("streaming-lite-embedded", "requestResponse", _) => false
-      case ("request-response-embedded", "kafka", _)         => false
-      case _                                                 => true
-    }
   }
 
   private def parametersWithCategory(category: String, errors: List[String] = List.empty) =

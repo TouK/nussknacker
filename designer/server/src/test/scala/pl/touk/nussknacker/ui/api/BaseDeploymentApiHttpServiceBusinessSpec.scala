@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
@@ -24,13 +24,13 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.containers.FileSystemBind
 
 import java.io.File
-import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
+import java.nio.file.attribute.PosixFilePermissions
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: NuItTest
     with Suite
-    with LazyLogging
+    with StrictLogging
     with Matchers
     with Eventually
     with LoneElement
@@ -86,13 +86,6 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   private lazy val outputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
 
-  // TODO: use DECIMAL(15, 2) type instead of INT after adding support for all primitive types
-  private lazy val tablesDefinitionBind = FileSystemBind(
-    "designer/server/src/test/resources/config/business-cases/tables-definition.sql",
-    "/opt/flink/designer/server/src/test/resources/config/business-cases/tables-definition.sql",
-    BindMode.READ_ONLY
-  )
-
   private lazy val inputTransactionsBind = FileSystemBind(
     inputDirectory.toString,
     "/transactions",
@@ -107,7 +100,6 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
 
   override protected def jobManagerExtraFSBinds: List[FileSystemBind] =
     List(
-      tablesDefinitionBind,
       // input must be also available on the JM side to allow their to split work into multiple subtasks
       inputTransactionsBind,
       // output directory has to be available on JM to allow writing the final output file and deleting the temp files
@@ -116,9 +108,6 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
 
   override protected def taskManagerExtraFSBinds: List[FileSystemBind] = {
     List(
-      // table definitions must be also on the TM side. This is necessary because we create full model definition for the purpose of
-      // interpreter used in scenario parts using built-in components - TODO: it shouldn't be needed
-      tablesDefinitionBind,
       inputTransactionsBind,
       outputTransactionsSummaryBind
     )

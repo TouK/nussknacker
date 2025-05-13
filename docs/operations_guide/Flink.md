@@ -138,7 +138,7 @@ For Nussknacker there are additional tips/things to consider:
 #### Other
 
 * `cluster.evenly-spread-out-slots: true` - this setting is important, because with many jobs deployed on cluster it may happen that nodes (taskmanagers) will be unevenly loaded, which can lead to performance degradation. If this happens, sometimes the easiest solution is to restart jobmanager, so that all the jobs will be partitioned again (this usually happens after restarts of some of the taskmanagers).
-* `akka.framesize` - consider increasing the value if you experience frequent timeouts on deployment (for large scenario and complex components > 100 MB can be necessary)
+* `pekko.framesize` - consider increasing the value if you experience frequent timeouts on deployment (for large scenario and complex components > 100 MB can be necessary)
 * `classloader.resolve-order` - Nussknacker has some problems with child-first classloading, it can happen especially when 
   using custom components. Sometimes it can be necessary to set this setting to `parent-first` (see [Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#inverted-class-loading-and-classloader-resolution-order) for in-depth explanation)
 
@@ -272,6 +272,7 @@ Diagnosing most of the problems below requires access to:
 | Redeploy of scenario times out                                                              | Check jobmanager logs and/or Flink console                                                                                                                                                              |
 | `State is incompatible, please stop process and start again with clean state` during deploy | <ul><li>Check if Nussknacker has access to savepoints</li><li>Analyze if new state was added - if this is the case probably cancel before deploy is needed (to get rid of incompatible state)</li></ul> |
 | Aggregate events are not emitted by aggregate in time windows nodes                         | Idle source (Kafka topic) or idle Kafka partition confuse Flink's watermark mechanism. To avoid this problem ensure that each Kafka source partition continually gets events. Alternatively change [idleTimeout](../integration/KafkaIntegration.md#configuration-for-flink-engine) configuration to ensure that idle source emits watermarks at acceptable intervals.  |
+| The way events are assigned to time windows seems to be erratic and the aggregate functions do not yield correct results | This happens if window length is smaller than slice length; more details are [here](../scenarios_authoring/AggregatesInTimeWindows.md#some-closing-fine-points) |
 
 ### Nussknacker metrics
 

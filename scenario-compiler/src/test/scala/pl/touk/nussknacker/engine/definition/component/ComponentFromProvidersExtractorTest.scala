@@ -5,10 +5,10 @@ import net.ceedubs.ficus.Ficus._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.semver4j.Semver
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ModelConfig}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
+import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractorTest.largeMajorVersion
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, DefaultModelConfigLoader}
@@ -27,7 +27,7 @@ object ComponentFromProvidersExtractorTest {
 
 class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
-  private val loader = new DefaultModelConfigLoader(_ => true)
+  private val loader = DefaultModelConfigLoader
 
   test("should discover services") {
     val components = extractComponents(
@@ -89,12 +89,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents(
         Map("components.dynamicTest.valueCount" -> 7),
-        (cl: ClassLoader) =>
-          new ComponentsFromProvidersExtractor(
-            cl,
-            _ => true,
-            NussknackerVersion(largeVersionNumber)
-          )
+        (cl: ClassLoader) => new ComponentsFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
       )
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
@@ -113,7 +108,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents(
         Map.empty[String, Any],
-        (cl: ClassLoader) => new ComponentsFromProvidersExtractor(cl, _ => true, NussknackerVersion(largeVersionNumber))
+        (cl: ClassLoader) => new ComponentsFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
       )
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
@@ -149,7 +144,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
   ): List[ComponentDefinitionWithImplementation] =
     extractComponents(
       componentsConfig.toMap,
-      ComponentsFromProvidersExtractor(_, _ => true)
+      ComponentsFromProvidersExtractor(_)
     ).components
 
   private def extractComponents(
@@ -169,7 +164,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(componentsConfig.toSeq: _*)), cl)
       extractor.extractComponents(
-        ProcessObjectDependencies.withConfig(resolved.config),
+        ModelConfig.parse(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
@@ -180,11 +175,11 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
   private def extractProvider(providers: List[(Class[_], Class[_])], config: Map[String, Any] = Map()) = {
     ClassLoaderWithServices.withCustomServices(providers, getClass.getClassLoader) { cl =>
-      val extractor = ComponentsFromProvidersExtractor(cl, _ => true)
+      val extractor = ComponentsFromProvidersExtractor(cl)
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(
-        ProcessObjectDependencies.withConfig(resolved.config),
+        ModelConfig.parse(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
@@ -210,8 +205,8 @@ class DynamicProvider extends ComponentProvider {
     config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
   }
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    config.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    componentProviderConfig.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
       ComponentDefinition(s"component-$value", DynamicService(value))
     }
   }
@@ -237,7 +232,7 @@ class SameNameSameComponentTypeProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
     List(
       ComponentDefinition(s"component", DynamicService("component")),
       ComponentDefinition(s"component", DynamicService("component"))
@@ -255,7 +250,7 @@ class SameNameDifferentComponentTypeProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
     List(
       ComponentDefinition(s"component", DynamicService("component")),
       ComponentDefinition(s"component", SinkFactory.noParam(new Sink {}))
@@ -281,7 +276,7 @@ class AutoLoadedProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = List(
     ComponentDefinition("auto-component", AutoService)
   )
 

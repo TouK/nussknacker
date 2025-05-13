@@ -36,12 +36,12 @@ object DatabaseQueryEnricher {
       .optional[Duration](cacheTTLParamName)
       .withCreator(
         modify =
-          _.copy(editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
+          _.copy(editors = List(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
       )
 
   final val queryParamName: ParameterName = ParameterName("Query")
 
-  final val queryParam = Parameter[String](queryParamName).copy(editor = Some(SqlParameterEditor))
+  final val queryParam = Parameter[String](queryParamName).copy(editors = List(SqlParameterEditor))
 
   final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
@@ -49,8 +49,8 @@ object DatabaseQueryEnricher {
     ParameterDeclaration
       .mandatory[String](resultStrategyParamName)
       .withCreator(
-        modify = _.copy(editor =
-          Some(
+        modify = _.copy(editors =
+          List(
             FixedValuesParameterEditor(
               List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name)
                 .map { strategyName => FixedExpressionValue(s"'$strategyName'", strategyName) }
@@ -111,10 +111,11 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   }
 
   override def close(): Unit = {
-    try
-      dataSource.close()
-    finally
+    try {
+      Option(dataSource).foreach(_.close())
+    } finally {
       super.close()
+    }
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -139,11 +140,10 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   ): ContextTransformationDefinition = {
     case TransformationStep(
           (`resultStrategyParamName`, DefinedEagerParameter(strategyName: String, _)) ::
-          (`queryParamName`, DefinedEagerParameter(query: TemplateEvaluationResult, _)) ::
+          (`queryParamName`, DefinedEagerParameter(renderedQuery: String, _)) ::
           (`cacheTTLParamName`, _) :: Nil,
           None
         ) =>
-      val renderedQuery = query.renderedTemplate
       if (renderedQuery.isEmpty) {
         FinalResults(context, errors = CustomNodeError("Query is missing", Some(queryParamName)) :: Nil, state = None)
       } else {

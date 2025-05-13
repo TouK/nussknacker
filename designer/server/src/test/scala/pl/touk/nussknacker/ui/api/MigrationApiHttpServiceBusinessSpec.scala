@@ -10,16 +10,16 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
-import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails,
   StandardPatientScalaFutures
 }
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
+import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 // FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
@@ -45,7 +45,7 @@ class MigrationApiHttpServiceBusinessSpec
         .statusCode(200)
         .body(
           "version",
-          equalTo[Int](2)
+          equalTo[Int](3)
         )
     }
   }
@@ -56,6 +56,7 @@ class MigrationApiHttpServiceBusinessSpec
         given()
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(validRequestData)
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
@@ -65,9 +66,7 @@ class MigrationApiHttpServiceBusinessSpec
               verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
               verifyIncomingMigrationActivityExists(
                 scenarioName = exampleProcessName.value,
-                sourceEnvironment = "DEV",
-                sourceUser = "remoteUser",
-                targetEnvironment = "test",
+                migrateFrom = "DEV"
               )
               verifyScenarioAfterMigration(
                 exampleProcessName.value,
@@ -87,6 +86,7 @@ class MigrationApiHttpServiceBusinessSpec
         given()
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(prepareRequestJsonDataV1(exampleProcessName.value, exampleGraph, isFragment = false))
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
@@ -117,6 +117,7 @@ class MigrationApiHttpServiceBusinessSpec
           )
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(validRequestDataV2)
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
@@ -145,6 +146,7 @@ class MigrationApiHttpServiceBusinessSpec
           )
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(prepareRequestJsonDataV1(exampleProcessName.value, exampleGraphV2, isFragment = false))
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
@@ -171,6 +173,7 @@ class MigrationApiHttpServiceBusinessSpec
       given()
         .when()
         .basicAuthAllPermUser()
+        .impersonateRemoteUser()
         .jsonBody(requestDataWithInvalidScenarioName)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
@@ -186,6 +189,7 @@ class MigrationApiHttpServiceBusinessSpec
         )
         .when()
         .basicAuthAllPermUser()
+        .impersonateRemoteUser()
         .jsonBody(validRequestData)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
@@ -202,6 +206,7 @@ class MigrationApiHttpServiceBusinessSpec
           )
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(validRequestDataForFragmentV2)
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
@@ -230,6 +235,7 @@ class MigrationApiHttpServiceBusinessSpec
           )
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(prepareRequestJsonDataV1(validFragment.name.value, exampleFragmentGraphV2, isFragment = true))
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
@@ -258,6 +264,7 @@ class MigrationApiHttpServiceBusinessSpec
         given()
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(validRequestDataForFragment)
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
@@ -283,6 +290,7 @@ class MigrationApiHttpServiceBusinessSpec
         given()
           .when()
           .basicAuthAllPermUser()
+          .impersonateRemoteUser()
           .jsonBody(prepareRequestJsonDataV1(validFragment.name.value, exampleFragmentGraph, isFragment = true))
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()

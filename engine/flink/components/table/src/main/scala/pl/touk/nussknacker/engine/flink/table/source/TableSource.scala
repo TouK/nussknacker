@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.flink.table.source;
+package pl.touk.nussknacker.engine.flink.table.source
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{
@@ -27,7 +27,10 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestD
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
 import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
-import pl.touk.nussknacker.engine.flink.table.source.TableSource._
+import pl.touk.nussknacker.engine.flink.table.source.TableSource.{
+  filteringInternalViewName,
+  SQL_EXPRESSION_PARAMETER_NAME
+}
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
 
@@ -36,11 +39,13 @@ import scala.jdk.CollectionConverters._
 class TableSource(
     tableDefinition: TableDefinition,
     flinkDataDefinition: FlinkDataDefinition,
-    testDataGenerationMode: TestDataGenerationMode
+    testDataGenerationMode: TestDataGenerationMode,
+    environmentForTestingPurposes: StreamTableEnvironment
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
     with FlinkSourceTestSupport[Row]
-    with TestDataGenerator {
+    with TestDataGenerator
+    with LazyLogging {
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -51,8 +56,9 @@ class TableSource(
 
     val selectQuery = tableEnv.from(tableDefinition.tableId.toString)
 
-    val finalQuery = flinkNodeContext.nodeDeploymentData
-      .map { case SqlFilteringExpression(sqlExpression) =>
+    val finalQuery = flinkNodeContext.componentUseContext.deploymentData
+      .flatMap(_.get(SQL_EXPRESSION_PARAMETER_NAME))
+      .collect { case sqlExpression =>
         tableEnv.executeSql(
           s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM ${tableDefinition.tableId} WHERE $sqlExpression"
         )
@@ -95,7 +101,8 @@ class TableSource(
         .build()
     }
     (testRecords: List[TestRecord]) =>
-      FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDataParserSchema)
+      new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
+        .parseTestRecords(testRecords, tableDataParserSchema)
   }
 
   override def generateTestData(size: Int): TestData = {
@@ -103,17 +110,17 @@ class TableSource(
       val dataType = DataTypes.ROW(fieldsWithoutComputedColumns: _*)
       Schema.newBuilder().fromRowDataType(dataType).build()
     }
+    val tableOps = new FlinkMiniClusterTableOperations(environmentForTestingPurposes)
     testDataGenerationMode match {
       case TestDataGenerationMode.Random =>
-        FlinkMiniClusterTableOperations.generateRandomTestData(
+        tableOps.generateRandomTestData(
           amount = size,
           schema = generateDataSchema
         )
       case TestDataGenerationMode.Live =>
-        FlinkMiniClusterTableOperations.generateLiveTestData(
+        tableOps.generateLiveTestData(
           limit = size,
           schema = generateDataSchema,
-          flinkDataDefinition = flinkDataDefinition,
           tableId = tableDefinition.tableId
         )
     }
@@ -127,4 +134,5 @@ class TableSource(
 
 object TableSource {
   private val filteringInternalViewName = "filteringView"
+  val SQL_EXPRESSION_PARAMETER_NAME     = "sqlExpression"
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test.docker
 
 import com.dimafeng.testcontainers.{GenericContainer, LazyContainer}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.Suite
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
@@ -10,11 +10,11 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.containers.{FileSystemBind, WithDockerContainers}
 
-import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
+import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import scala.jdk.CollectionConverters._
 
-trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLogging =>
+trait WithFlinkContainers extends WithDockerContainers { self: Suite with StrictLogging =>
 
   protected val FlinkJobManagerRestPort = 8081
 
@@ -31,15 +31,18 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
 
   protected lazy val savepointDir: Path = prepareSavepointVolumeDir()
 
-  protected lazy val jobManagerContainer: GenericContainer = {
+  private lazy val jobManagerContainer: GenericContainer = {
     logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
     new GenericContainer(
       dockerImage = prepareFlinkImage(),
       command = "jobmanager" :: Nil,
       exposedPorts = FlinkJobManagerRestPort :: Nil,
       env = Map(
-        "SAVEPOINT_DIR_NAME"                -> savepointDir.getFileName.toString,
-        "FLINK_PROPERTIES"                  -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
+        "SAVEPOINT_DIR_NAME" -> savepointDir.getFileName.toString,
+        //  Nu requires a little bit more metaspace than Flink default allocate based on process size
+        "FLINK_PROPERTIES" ->
+          s"""jobmanager.memory.jvm-metaspace.size: 400m
+             |state.savepoints.dir: ${savepointDir.toFile.toURI.toString}""".stripMargin,
         "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString
       ),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
@@ -53,7 +56,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
     }
   }
 
-  protected lazy val taskManagerContainer: GenericContainer = {
+  private lazy val taskManagerContainer: GenericContainer = {
     new GenericContainer(
       dockerImage = prepareFlinkImage(),
       command = "taskmanager" :: Nil,

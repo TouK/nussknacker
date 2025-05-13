@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.component.Component._
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, VariableConstants}
 import shapeless.=:!=
 
 import scala.reflect.runtime.universe._

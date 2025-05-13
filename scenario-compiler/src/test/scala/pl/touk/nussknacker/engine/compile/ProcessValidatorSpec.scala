@@ -1,21 +1,22 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data._
+import cats.data.Validated.{Invalid, Valid}
 import cats.instances.string._
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.{Inside, OptionValues}
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -32,8 +33,8 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
@@ -727,23 +728,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("find redundant service parameters") {
-    val serviceId  = "serviceId"
-    val definition = baseDefinitionBuilder.withService(serviceId).build
-
-    val redundantServiceParameter = "foo"
-
-    val processWithInvalidServiceInvocation =
-      ScenarioBuilder
-        .streaming("process1")
-        .source("id1", "source")
-        .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'".spel)
-
-    validate(processWithInvalidServiceInvocation, definition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(_, _), _)) =>
-    }
-  }
-
   test("find missing source") {
     val serviceId = "serviceId"
     val processWithRefToMissingService =
@@ -969,19 +953,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
               _
             )
           ) =>
-    }
-  }
-
-  test("validate service params") {
-    val process = ScenarioBuilder
-      .streaming("process1")
-      .source("id1", "typed-source")
-      .enricher("enricher1", "out", "withParamsService")
-      .emptySink("id2", "sink")
-
-    inside(validate(process, definitionWithTypedSource).result) {
-      case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) =>
-        missingParam shouldBe Set(ParameterName("par1"))
     }
   }
 
@@ -1230,8 +1201,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("not allow customNode outputVar when no return type in definition") {
-    val processWithInvalidExpresssion =
+  test("allow customNode outputVar when no return type in definition - it will be reported only as a warning in logs") {
+    val processWithOutputWhenNoOutputNeeded =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
@@ -1239,9 +1210,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
-    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set(ParameterName("OutputVariable")) =>
-    }
+    validate(processWithOutputWhenNoOutputNeeded, baseDefinition).result shouldBe Symbol("valid")
   }
 
   test("require customNode outputVar when return type in definition") {
@@ -1738,8 +1707,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       definitions: ModelDefinition,
       isFragment: Boolean = false
   ): CompilationResult[Unit] = {
-    implicit val jobData: JobData =
-      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val jobData: JobData = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     ProcessValidator
       .default(
         ModelDefinitionWithClasses(definitions),
@@ -1804,7 +1774,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseContext: ComponentUseContext,
           ): Future[Any] = Future.successful(null)
 
         }
@@ -1841,7 +1811,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = Future.successful(null)
 
     }
@@ -1889,7 +1859,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseContext: ComponentUseContext,
           ): Future[Any] =
             Future.successful(
               s"name: ${fields.evaluate(context).get("name")}, age: $age"

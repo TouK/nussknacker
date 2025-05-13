@@ -1,25 +1,28 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import org.apache.pekko.testkit.TestDuration
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{asAdmin, processResolverByProcessingType, withAllPermissions}
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{asAdmin, processResolverByProcessingType, withAllPermissions}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils
+
+import scala.concurrent.duration.DurationInt
 
 class ProcessesExportImportResourcesSpec
     extends AnyFunSuite
@@ -33,7 +36,9 @@ class ProcessesExportImportResourcesSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import akka.http.scaladsl.server.RouteConcatenation._
+  import org.apache.pekko.http.scaladsl.server.RouteConcatenation._
+
+  private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
@@ -42,7 +47,7 @@ class ProcessesExportImportResourcesSpec
     futureFetchingScenarioRepository,
     processService,
     scenarioActivityRepository,
-    processResolverByProcessingType,
+    processResolverByProcessingType(),
     dbioRunner,
   )
 

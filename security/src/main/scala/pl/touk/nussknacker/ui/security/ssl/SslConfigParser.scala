@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.security.ssl
 
-import java.io.File
-
 import com.typesafe.config.Config
+
+import java.io.File
 
 object SslConfigParser {
 
@@ -12,7 +12,7 @@ object SslConfigParser {
   private val LocationKey  = "location"
   private val PasswordKey  = "password"
 
-  def sslEnabled(config: Config): Option[KeyStoreConfig] = {
+  def parseSslConfig(config: Config): Option[KeyStoreConfig] = {
     for {
       _ <- Some(())
       if config.hasPath(SslPath)

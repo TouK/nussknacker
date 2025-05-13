@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.util.parameters
 
 import cats.data.{NonEmptyList, ValidatedNel}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.transformation.BaseDefinedParameter
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.RecordFieldName
@@ -38,10 +38,9 @@ case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultV
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
     val paramName       = value.name
     val paramResultType = resultTypes(paramName)
-    val converter       = new OutputValidatorErrorsConverter(paramName)
     validator
       .validate(paramResultType.returnType)
-      .leftMap(converter.convertValidationErrors)
+      .leftMap(errors => new OutputValidatorErrorsConverter(paramName).convertValidationErrors(errors))
       .leftMap(NonEmptyList.one)
       .map(_ => ())
   }

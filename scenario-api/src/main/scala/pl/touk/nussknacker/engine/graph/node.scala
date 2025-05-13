@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ParameterValueCompileTimeValidation,
   ParameterValueInput
 }
-import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
@@ -38,14 +38,14 @@ object node {
   }
 
   sealed trait OneOutputNode extends NodeWithData {
-    def next: SubsequentNode
+    def next: Option[SubsequentNode]
   }
 
-  case class SourceNode(data: StartingNodeData, next: SubsequentNode) extends OneOutputNode
+  case class SourceNode(data: StartingNodeData, next: Option[SubsequentNode]) extends OneOutputNode
 
   sealed trait SubsequentNode extends Node
 
-  case class OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next: SubsequentNode)
+  case class OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next: Option[SubsequentNode])
       extends OneOutputNode
       with SubsequentNode
 
@@ -53,7 +53,7 @@ object node {
       extends SubsequentNode
 
   // this should never occur in process to be run (unresolved)
-  case class FragmentNode(data: FragmentInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode
+  case class FragmentNode(data: FragmentInput, nexts: Map[String, Option[SubsequentNode]]) extends SubsequentNode
 
   // defaultNext is deprecated, will be removed in future versions
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None)
@@ -61,7 +61,11 @@ object node {
 
   case class SplitNode(data: Split, nextParts: List[SubsequentNode]) extends SubsequentNode
 
-  case class Case(expression: Expression, node: SubsequentNode)
+  case class Case(expression: Expression, node: Option[SubsequentNode])
+
+  object Case {
+    def apply(expression: Expression, node: SubsequentNode): Case = Case(expression, Some(node))
+  }
 
   case class EndingNode(data: EndingNodeData) extends SubsequentNode
 
@@ -283,6 +287,16 @@ object node {
     override val componentId: String = ref.id
   }
 
+  @JsonCodec final case class Dimensions(width: Long, height: Long)
+
+  @JsonCodec final case class StickyNote(
+      id: String,
+      content: String,
+      color: String,
+      dimensions: Dimensions,
+      additionalFields: Option[UserDefinedAdditionalNodeFields]
+  )
+
   // this is used after resolving fragment, used for detecting when fragment ends and context should change
   case class FragmentUsageOutput(
       id: String,
@@ -325,7 +339,7 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         valueEditor: Option[ParameterValueInput],
-        valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
+        valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation]
     )
 
     object FragmentParameter {

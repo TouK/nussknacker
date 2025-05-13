@@ -5,9 +5,9 @@ describe("Process", () => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
-    after(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
-    });
+    // after(() => {
+    //     cy.deleteAllTestProcesses({ filter: seed, force: true });
+    // });
 
     beforeEach(() => {
         cy.mockWindowDate();
@@ -32,10 +32,10 @@ describe("Process", () => {
             cy.contains(/^save/i).should("be.enabled").click();
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
-            cy.contains(/^ok$/i).should("not.exist");
             cy.get('[role="alert"]')
                 .contains(/scenario name changed/i)
                 .should("be.visible");
+            cy.contains(/^ok$/i).should("not.exist");
             cy.location("href").should("contain", "-renamed");
         });
 
@@ -55,11 +55,11 @@ describe("Process", () => {
             cy.contains(/^save/i).should("be.enabled").click();
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
-
-            cy.contains(/^ok$/i).should("not.exist");
             cy.get('[role="alert"]')
                 .contains(/scenario name changed/i)
                 .should("be.visible");
+
+            cy.contains(/^ok$/i).should("not.exist");
             cy.location("href").should("contain", "-renamed");
             cy.contains(/^properties/i)
                 .should("be.enabled")
@@ -78,7 +78,7 @@ describe("Process", () => {
             cy.contains(/scenario was archived/i).should("be.visible");
         });
 
-        it("should open properites from tips panel", () => {
+        it("should open properties from tips panel", () => {
             cy.viewport("macbook-15");
             cy.contains(/^properties/i)
                 .should("be.enabled")
@@ -111,7 +111,9 @@ describe("Process", () => {
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
             cy.contains(/^ok$/i).should("not.exist");
-            cy.get("#nk-graph-main").wait(200).matchImage();
+
+            cy.contains(/^counts/i).scrollIntoView();
+            cy.get("#nk-graph-main").matchImage();
         });
     });
 
@@ -139,7 +141,7 @@ describe("Process", () => {
                 .should("exist")
                 .scrollIntoView();
             cy.layoutScenario();
-            cy.get("[data-testid='component:customFilter']")
+            cy.get("[data-testid='component:Customfilter']")
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
@@ -161,7 +163,8 @@ describe("Process", () => {
             cy.viewport("macbook-15");
             cy.contains(/^deploy$/i).click();
             cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
-            cy.contains(/^ok$/i).should("be.enabled").click();
+            cy.contains(/^ok$/i).should("be.enabled").as("okButton");
+            cy.get("@okButton").click();
             cy.wait("@deploy", { timeout: 20000 }).its("response.statusCode").should("eq", 400);
             cy.contains(/^Comment is required.$/i).should("exist");
         });
@@ -176,19 +179,19 @@ describe("Process", () => {
 
         it("should display some node details in modal", () => {
             cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("dynamicService").should("be.visible");
+            cy.get("[data-testid=window]").contains("Dynamicservice").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
             cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("boundedSource").should("be.visible");
+            cy.get("[data-testid=window]").contains("Boundedsource").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
             cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("sendSms").should("be.visible");
+            cy.get("[data-testid=window]").contains("Sendsms").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
         });
     });
@@ -213,7 +216,7 @@ describe("Process", () => {
             .scrollIntoView();
         const x = 900;
         const y = 630;
-        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
+        cy.get("[data-testid='component:Dead End']").should("be.visible").drag("#nk-graph-main", {
             target: {
                 x,
                 y,
@@ -268,7 +271,7 @@ describe("Process", () => {
             .scrollIntoView();
         const x = 700;
         const y = 600;
-        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
+        cy.get("[data-testid='component:Dead End']").should("be.visible").drag("#nk-graph-main", {
             target: {
                 x,
                 y,
@@ -332,7 +335,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("button", "ad hoc").should("be.enabled").click();
+        cy.contains("button", "test").should("be.enabled").click();
         cy.get("[data-testid=window]").should("be.visible").find("#ace-editor").type("10");
         cy.get("[data-testid=window]")
             .contains(/^test$/i)
@@ -363,12 +366,14 @@ describe("Process", () => {
 
     it("should open more scenario details", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
-        cy.viewport(1500, 800);
-        cy.layoutScenario();
-
-        cy.contains("a", "More details").click();
-        cy.get("[data-testid=window]").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.contains(/^More details$/i).click();
+        cy.get("[data-testid=window]")
+            .should("be.visible")
+            .within(() => {
+                cy.contains(/^last modified$/i).should("be.visible");
+            })
+            .matchImage({
+                maxDiffThreshold: 0.02,
+            });
     });
 });

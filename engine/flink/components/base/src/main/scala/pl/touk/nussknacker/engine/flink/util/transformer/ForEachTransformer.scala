@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 
@@ -45,7 +45,7 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
   private def returnType(elements: LazyParameter[util.Collection[AnyRef]]): typing.TypingResult =
     elements.returnType match {
       case tc: SingleTypingResult
-          if tc.runtimeObjType.canBeConvertedTo(
+          if tc.runtimeObjType.canBeLooselyAssignedTo(
             Typed[util.Collection[_]]
           ) && tc.runtimeObjType.params.nonEmpty =>
         tc.runtimeObjType.params.head

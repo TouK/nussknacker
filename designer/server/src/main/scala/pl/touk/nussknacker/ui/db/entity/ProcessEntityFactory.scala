@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType, ProcessName}
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -8,11 +8,11 @@ import java.sql.Timestamp
 
 trait ProcessEntityFactory extends BaseEntityFactory {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity] = LTableQuery(new ProcessEntity(_))
 
-  class ProcessEntity(tag: Tag) extends Table[ProcessEntityData](tag, "processes") {
+  class ProcessEntity(tag: Tag) extends TableWithSchema[ProcessEntityData](tag, "processes") {
 
     def id: Rep[ProcessId] = column[ProcessId]("id", O.PrimaryKey, O.AutoInc)
 
@@ -52,7 +52,8 @@ trait ProcessEntityFactory extends BaseEntityFactory {
         impersonatedByIdentity,
         impersonatedByUsername
       ) <> (
-        ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
+        ProcessEntityData.apply _ tupled,
+        ProcessEntityData.unapply
       )
 
   }

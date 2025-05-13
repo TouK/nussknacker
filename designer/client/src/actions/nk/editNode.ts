@@ -1,9 +1,14 @@
+import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
+import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
+import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
-import { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
-import { ThunkAction } from "../reduxTypes";
+import { updateAfterNodeDelete } from "../../reducers/graph/utils";
+import { getGraph } from "../../reducers/selectors/graph";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
+import type { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { clearProcessCounts } from "./displayProcessCounts";
-import { Scenario } from "../../components/Process/types";
 
 export type EditNodeAction = {
     type: "EDIT_NODE";
@@ -26,8 +31,8 @@ export function editScenarioLabels(scenarioLabels: string[]) {
 
 export function editNode(scenarioBefore: Scenario, before: NodeType, after: NodeType, outputEdges?: Edge[]): ThunkAction {
     return async (dispatch) => {
-        const { processName, scenarioGraph } = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
-        const response = await HttpService.validateProcess(scenarioBefore.name, processName, scenarioGraph);
+        const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
+        const response = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph);
 
         dispatch(clearProcessCounts());
         dispatch({
@@ -37,5 +42,21 @@ export function editNode(scenarioBefore: Scenario, before: NodeType, after: Node
             validationResult: response.data,
             scenarioGraphAfterChange: scenarioGraph,
         });
+    };
+}
+
+export function replaceNode(before: NodeType, after: NodeType): ThunkAction {
+    return async (dispatch, getState) => {
+        const state = getState();
+        const graph = getGraph(state);
+        const { scenario } = before.id === after.id ? graph : updateAfterNodeDelete(graph, after.id);
+        const { nextEdges: outputEdges, nextNode } = replaceNodeData(
+            before,
+            after,
+            getProcessDefinitionData(state),
+            getEdgesForNode(scenario, before),
+        );
+
+        dispatch(editNode(scenario, before, nextNode, outputEdges));
     };
 }

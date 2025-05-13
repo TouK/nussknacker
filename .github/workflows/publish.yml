@@ -1,0 +1,106 @@
+name: Publish
+on:
+  workflow_call:
+    inputs:
+      should_run:
+        description: "Indicates if the job should be run"
+        required: true
+        type: boolean
+      nussknacker_version:
+        description: "Version that will be published"
+        required: true
+        type: string
+      git_source_branch:
+        description: "Source branch"
+        required: true
+        type: string
+    secrets:
+      sonatype_user:
+        required: true
+      sonatype_password:
+        required: true
+      github__token:
+        required: true
+      dockerhub_user:
+        required: true
+      dockerhub_token:
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.should_run }}
+    env:
+      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
+      addDevArtifacts: true
+      NUSSKNACKER_VERSION: ${{ inputs.nussknacker_version }}
+      GIT_SOURCE_BRANCH: ${{ inputs.git_source_branch }}
+      SONATYPE_USERNAME: ${{ secrets.sonatype_user }}
+      SONATYPE_PASSWORD: ${{ secrets.sonatype_password }}
+    steps:
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ secrets.github__token }}
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: temurin:1.11.0.17
+      - name: Cache ivy packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            ~/.sbt
+          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+          restore-keys: sbt
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run: tar xfz target.tgz
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-fe-dist
+      - name: Untar fe artifacts
+        shell: bash
+        run: tar xfz fe-dist.tgz
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.dockerhub_user }}
+          password: ${{ secrets.dockerhub_token }}
+      - name: Setup buildx builder
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+          config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+      - name: Try to free space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/local/lib/android
+      - uses: sbt/setup-sbt@v1
+      - name: Publish with scaladocs
+        if: ${{ inputs.ref == 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
+        shell: bash
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+      - name: Publish without scaladocs
+        if: ${{ inputs.ref != 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
+        shell: bash
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish

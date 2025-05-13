@@ -1,16 +1,25 @@
 package pl.touk.nussknacker.ui
 
 import cats.effect.{ExitCode, IO, IOApp}
-import pl.touk.nussknacker.ui.config.{AlwaysLoadingFileBasedDesignerConfigLoader, DesignerConfigLoader}
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.ui.config.AlwaysLoadingFileBasedDesignerConfigLoader
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 
-object NussknackerApp extends IOApp {
+object NussknackerApp extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
-    for {
-      appFactory <- IO(NussknackerAppFactory(AlwaysLoadingFileBasedDesignerConfigLoader(getClass.getClassLoader)))
-      _          <- appFactory.createApp().use { _ => IO.never }
-    } yield ExitCode.Success
+    program.useForever
+      .handleErrorWith((t: Throwable) => {
+        IO {
+          logger.error("Application failed", t)
+        }
+      })
+      .as(ExitCode.Success)
+  }
+
+  private def program = {
+    val appFactory = new NussknackerAppFactory(AlwaysLoadingFileBasedDesignerConfigLoader(getClass.getClassLoader))
+    appFactory.createApp()
   }
 
 }

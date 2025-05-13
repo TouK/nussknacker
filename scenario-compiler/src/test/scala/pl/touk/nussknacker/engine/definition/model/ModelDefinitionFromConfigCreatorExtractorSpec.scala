@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
@@ -16,7 +17,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   Parameter,
   RegExpParameterValidator
 }
-import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType, LabeledExpression}
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -202,12 +204,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   }
 
   private def modelDefinitionWithTypes(category: Option[String]) = {
-    val modelConfig = new DefaultModelConfigLoader(_ => true)
+    val modelConfig = DefaultModelConfigLoader
       .resolveConfig(InputConfigDuringExecution(ConfigFactory.empty()), getClass.getClassLoader)
     val modelDefinition = ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
       TestCreator,
       category,
-      ProcessObjectDependencies.withConfig(modelConfig),
+      ModelConfig.parse(modelConfig),
       ComponentsUiConfigParser.parse(modelConfig),
       id => DesignerWideComponentId(id.toString),
       Map.empty,
@@ -219,7 +221,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   object TestCreator extends ProcessConfigCreator {
 
     override def customStreamTransformers(
-        modelDependencies: ProcessObjectDependencies
+        modelConfig: ModelConfig
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "transformer1"                -> WithCategories.anyCategory(Transformer1),
@@ -242,7 +244,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         "transformedInSomeOtherCategory" -> WithCategories(Transformer1, SomeOtherCategory),
       )
 
-    override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+    override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
       Map(
         "configurable1" -> WithCategories.anyCategory(
           EmptyExplicitMethodToInvoke(
@@ -253,16 +255,16 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       )
 
     override def sourceFactories(
-        modelDependencies: ProcessObjectDependencies
+        modelConfig: ModelConfig
     ): Map[String, WithCategories[SourceFactory]] = Map()
 
     override def sinkFactories(
-        modelDependencies: ProcessObjectDependencies
+        modelConfig: ModelConfig
     ): Map[String, WithCategories[SinkFactory]] = Map()
 
-    override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
+    override def listeners(modelConfig: ModelConfig): Seq[ProcessListener] = List()
 
-    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
+    override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
       ExpressionConfig(
         globalProcessVariables = Map(
           "helper"      -> WithCategories.anyCategory(SampleHelper),
@@ -274,7 +276,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         )
       )
 
-    override def buildInfo(): Map[String, String] = Map()
+    override def modelInfo(): ModelInfo = ModelInfo.empty
   }
 
   object Transformer1 extends CustomStreamTransformer {
@@ -334,8 +336,8 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     @MethodToInvoke
     def invoke(
         @ParamName("param1")
-        @SimpleEditor(
-          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+        @Editor(
+          `type` = EditorType.FIXED_VALUES_EDITOR,
           possibleValues = Array(
             new LabeledExpression(expression = "'foo'", label = "foo"),
             new LabeledExpression(expression = "'bar'", label = "bar")
@@ -380,7 +382,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[Any] = ???
 
   }

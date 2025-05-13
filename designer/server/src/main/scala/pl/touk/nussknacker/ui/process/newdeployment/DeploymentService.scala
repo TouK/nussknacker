@@ -2,27 +2,30 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.Applicative
 import cats.data.{EitherT, NonEmptyList}
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
   NodesDeploymentData
 }
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
-import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.{
   AdditionalModelConfigs,
   DeploymentData,
   DeploymentId => LegacyDeploymentId
 }
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
+import pl.touk.nussknacker.engine.util.{AdditionalComponentConfigsForRuntimeExtractor, ExecutionContextWithIORuntime}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.limits.LimitsService
+import pl.touk.nussknacker.ui.limits.LimitsService.LimitError
 import pl.touk.nussknacker.ui.process.ScenarioMetadata
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -35,17 +38,15 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.sql.Timestamp
 import java.time.Clock
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.language.higherKinds
 import scala.util.control.NonFatal
 
 // TODO: This class is a new version of deployment.DeploymentService. The problem with the old one is that
-//       it joins multiple responsibilities like activity log (currently called "actions") and deployments management.
-//       Also, because of the fact that periodic mechanism is build as a plug-in (DeploymentManager), some deployment related
-//       operations (run now operation) is modeled as a CustomAction. Eventually, we should:
-//       - Move periodic mechanism into to the designer's core
-//       - Remove CustomAction
-//       After we do this, we can remove legacy classes and fully switch to the new once.
+//       it has assumption, that scenario can have only one deployment. This is reasonable for streaming
+//       scenarios but not for batch scenarios which can have many invocation done concurrently.
+//       We should extract the logic related with streaming scenarios lifecycle to some separated class
+//       and use this class for deployment management for both streaming and batch cases
 class DeploymentService(
     scenarioMetadataRepository: ScenarioMetadataRepository,
     scenarioGraphVersionService: ScenarioGraphVersionService,
@@ -57,8 +58,11 @@ class DeploymentService(
       Map[DesignerWideComponentId, ComponentAdditionalConfig],
       _
     ],
-)(implicit ec: ExecutionContext)
+    limitsService: LimitsService
+)(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime)
     extends LazyLogging {
+
+  import executionContextWithIORuntime.ioRuntime
 
   def getDeploymentStatus(
       id: DeploymentId
@@ -80,19 +84,46 @@ class DeploymentService(
         category = scenarioMetadata.processCategory,
         permission = Permission.Deploy
       )
+      scenarioGraphVersion <- getScenarioGraphVersion(scenarioMetadata, command.user)
+      deploymentUpdateStrategy = DeploymentUpdateStrategy.DontReplaceDeployment
+      _ <- checkActiveScenariosLimits(scenarioMetadata, command.user, deploymentUpdateStrategy) {
+        IO.fromFuture(IO {
+          val result = for {
+            _ <- validateDeployment(scenarioMetadata, scenarioGraphVersion, command.user)
+            // We keep deployments metrics (used by counts mechanism) keyed by scenario name.
+            // Because of that we can't run more than one deployment for scenario in a time.
+            // TODO: We should key metrics by deployment id and remove this limitation
+            // Saving of deployment is the final step before deployment request because we want to store only requested deployments
+            _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
+            _ <- runDeploymentUsingDeploymentManagerAsync(
+              scenarioMetadata,
+              scenarioGraphVersion,
+              command,
+              deploymentUpdateStrategy
+            )
+          } yield ()
+          result.value
+        })
+      }
+    } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
+
+  private def validateDeployment(
+      scenarioMetadata: ScenarioMetadata,
+      scenarioGraphVersion: ProcessVersionEntityData,
+      deployer: LoggedUser
+  ) = {
+    for {
       _ <- EitherT.cond[Future](!scenarioMetadata.isFragment, (), DeploymentOfFragmentError)
       _ <- EitherT.cond[Future](!scenarioMetadata.isArchived, (), DeploymentOfArchivedScenarioError)
-      scenarioGraphVersion <- EitherT(
-        scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, command.user)
-      ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
-      _ <- validateUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command.user)
-      // We keep deployments metrics (used by counts mechanism) keyed by scenario name.
-      // Because of that we can't run more than one deployment for scenario in a time.
-      // TODO: We should key metrics by deployment id and remove this limitation
-      // Saving of deployment is the final step before deployment request because we want to store only requested deployments
-      _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
-      _ <- runDeploymentUsingDeploymentManagerAsync(scenarioMetadata, scenarioGraphVersion, command)
-    } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
+      _ <- runDeploymentManagerSpecificValidations(scenarioMetadata, scenarioGraphVersion, deployer)
+    } yield ()
+  }
+
+  private def getScenarioGraphVersion(scenarioMetadata: ScenarioMetadata, deployer: LoggedUser) = {
+    EitherT(
+      scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, deployer)
+    ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
+  }
 
   private def getScenarioMetadata(
       command: RunDeploymentCommand
@@ -109,16 +140,14 @@ class DeploymentService(
     EitherT(dbioRunner.runInSerializableTransactionWithRetry((for {
       nonFinishedDeployments <- getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata)
       _                      <- checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments, scenarioMetadata.name)
-      _ = {
-        logger.debug(s"Saving deployment: ${command.id}")
-      }
+      _ = logger.debug(s"Saving deployment: ${command.id}")
       _ <- saveDeployment(command, scenarioMetadata)
     } yield ()).value))
   }
 
   private def getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata: ScenarioMetadata) = {
     val nonPerformingDeploymentStatuses =
-      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
+      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, DeploymentStatusName.problemStatusName)
     EitherT.right(
       deploymentRepository.getScenarioDeploymentsInNotMatchingStatus(
         scenarioMetadata.id,
@@ -159,7 +188,27 @@ class DeploymentService(
     ).leftMap(e => ConflictingDeploymentIdError(e.id))
   }
 
-  private def validateUsingDeploymentManager(
+  private def checkActiveScenariosLimits(
+      scenarioMetadata: ScenarioMetadata,
+      deployer: LoggedUser,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy
+  )(action: IO[Either[RunDeploymentError, Unit]]): EitherT[Future, RunDeploymentError, Unit] = EitherT {
+    implicit val loggedUser: LoggedUser = deployer
+    limitsService
+      .checkActiveScenarioLimitsBeforeDeployment(
+        scenarioMetadata.name,
+        scenarioMetadata.processingType,
+        deploymentUpdateStrategy
+      )(action)
+      .map {
+        case Left(LimitError.MaxActiveScenariosCountExceededError(limit)) =>
+          Left(MaxActiveScenariosCountExceededError(limit))
+        case Right(result) => result
+      }
+      .unsafeToFuture()
+  }
+
+  private def runDeploymentManagerSpecificValidations(
       scenarioMetadata: ScenarioMetadata,
       scenarioGraphVersion: ProcessVersionEntityData,
       user: LoggedUser
@@ -196,7 +245,8 @@ class DeploymentService(
   private def runDeploymentUsingDeploymentManagerAsync(
       scenarioMetadata: ScenarioMetadata,
       scenarioGraphVersion: ProcessVersionEntityData,
-      command: RunDeploymentCommand
+      command: RunDeploymentCommand,
+      deploymentUpdateStrategy: DeploymentUpdateStrategy
   ): EitherT[Future, RunDeploymentError, Unit] = {
     val runtimeVersionData = processVersionFor(scenarioMetadata, scenarioGraphVersion)
     val deploymentData = createDeploymentData(
@@ -212,7 +262,7 @@ class DeploymentService(
           runtimeVersionData,
           deploymentData,
           scenarioGraphVersion.jsonUnsafe,
-          DeploymentUpdateStrategy.DontReplaceDeployment
+          deploymentUpdateStrategy
         )
       )
       .map { externalDeploymentId =>
@@ -313,6 +363,8 @@ object DeploymentService {
   case object DeploymentOfFragmentError extends RunDeploymentError
 
   case object DeploymentOfArchivedScenarioError extends RunDeploymentError
+
+  final case class MaxActiveScenariosCountExceededError(maxActiveScenariosCount: Int) extends RunDeploymentError
 
   final case class DeploymentNotFoundError(id: DeploymentId) extends GetDeploymentStatusError
 

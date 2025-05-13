@@ -1,22 +1,25 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { Columns, FilterLinkCell, TableWrapper } from "../../components";
-import { ScenariosFiltersModel, ScenariosFiltersModelType } from "../filters/scenariosFiltersModel";
-import { ListPartProps, RowType } from "./listPart";
-import { useTranslation } from "react-i18next";
-import { createFilterRules, ExternalLink, Highlight, metricsHref, useFilterContext } from "../../common";
-import { ScenarioCell } from "../../components/usages/scenarioCell";
-import { useDebouncedValue } from "rooks";
-import { IconButton } from "@mui/material";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import { LastAction } from "./item";
-import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { IconButton } from "@mui/material";
 import { formatDateTime } from "nussknackerUi/DateUtils";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import React, { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useDebouncedValue } from "rooks";
+
+import { createFilterRules, ExternalLink, Highlight, metricsHref } from "../../common";
+import type { Columns } from "../../components";
+import { FilterLinkCell, TableWrapper } from "../../components";
+import { ScenarioCell } from "../../components/usages/scenarioCell";
+import { useScenariosFilterContext } from "../filters/common/useScenariosFilterContext";
+import type { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
+import { ScenariosFiltersModelType } from "../filters/scenariosFiltersModel";
 import { useScenariosWithCategoryVisible } from "../useScenariosQuery";
+import type { ListPartProps, RowType } from "./listPart";
 
 export function TablePart(props: ListPartProps<RowType>): JSX.Element {
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
-    const filtersContext = useFilterContext<ScenariosFiltersModel>();
+    const filtersContext = useScenariosFilterContext();
     const _filterText = useMemo(() => filtersContext.getFilter("NAME"), [filtersContext]);
     const [filterText] = useDebouncedValue(_filterText, 400);
     const { withCategoriesVisible } = useScenariosWithCategoryVisible();
@@ -80,17 +83,6 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} value={formatDateTime(props.value)} />,
                 sortingOrder: ["desc", "asc", null],
-            },
-            {
-                field: "lastAction",
-                headerName: t("table.scenarios.title.LAST_ACTION", "Last action"),
-                renderCell: (props) => <LastAction lastAction={props.value} />,
-                sortComparator: (v1, v2) =>
-                    (v1?.["action"] || "")
-                        .toString()
-                        .toLowerCase()
-                        .localeCompare((v2?.["action"] || "").toString().toLowerCase()),
-                flex: 1,
             },
             {
                 field: "metrics",

@@ -8,9 +8,10 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.{BoundedStreamComponent, Component}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
@@ -23,14 +24,15 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.utils.{RowConversions, ToTableTypeEncoder}
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.{TypeInformationDetectionExtension, rowToContext}
+import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.{rowToContext, TypeInformationDetectionExtension}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object TableJoinComponent
     extends CustomStreamTransformer
     with JoinDynamicComponent[FlinkCustomJoinTransformation]
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with BoundedStreamComponent {
 
   private val contextInternalColumnName   = "context"
   private val mainKeyInternalColumnName   = "mainKey"

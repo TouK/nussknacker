@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTo
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{SchemaRegistryMixin, SimpleKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ChainedSchemaIdFromMessageExtractor, SchemaId}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.DefaultConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalKafkaDeserializer,
   UniversalSchemaBasedSerdeProvider
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ChainedSchemaIdFromMessageExtractor, SchemaId}
 
 import java.io.OutputStream
 

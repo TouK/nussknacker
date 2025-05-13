@@ -5,11 +5,11 @@ import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientExcept
 import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.AvroPayloadDeserializer
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
 
 import java.io.IOException
 import java.nio.ByteBuffer

@@ -46,16 +46,6 @@ paths:
                     modifiedBy: admin
                     createdAt: '2023-11-14T11:09:28.078800Z'
                     createdBy: admin
-                    lastAction:
-                      id: 45c0f3f5-3ef7-4dc2-92d4-8bb826ec0ca9
-                      processId: 1
-                      processVersionId: 1
-                      user: admin
-                      createdAt: '2023-11-29T08:54:22.520866Z'
-                      performedAt: '2023-11-29T08:54:22.520866Z'
-                      actionName: DEPLOY
-                      state: FINISHED
-                      buildInfo: {}
                 Example1:
                   summary: List component usages with no last Action
                   value:
@@ -176,6 +166,7 @@ paths:
                     usageCount: 2
                     allowedProcessingModes:
                     - Request-Response
+                    label: collect
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: query parameter skipUsages, Invalid value for: query parameter
@@ -207,6 +198,95 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/actionInfo/{scenarioName}/parameters:
+    get:
+      tags:
+      - Deployments
+      summary: Get action parameters
+      operationId: getApiActioninfoScenarionameParameters
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UiActionParametersDto'
+              examples:
+                Example:
+                  summary: Valid action parameters for given scenario
+                  value:
+                    actionNameToParameters:
+                      DEPLOY: []
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot compile scenario
+                  value: Cannot compile scenario
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -265,6 +345,128 @@ paths:
                         process-version: '0.1'
                         engine-version: '0.2'
                         generation-time: '2023-09-25T09:26:30.402299'
+  /api/app/processingtype/reload:
+    post:
+      tags:
+      - App
+      summary: Deprecated processing type data reload service - use model reload service
+        instead
+      operationId: postApiAppProcessingtypeReload
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
+      security:
+      - {}
+      - httpAuth: []
+  /api/app/model/reload:
+    post:
+      tags:
+      - App
+      summary: Model reload service
+      operationId: postApiAppModelReload
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/app/healthCheck/process/deployment:
     get:
       tags:
@@ -419,66 +621,6 @@ paths:
                     processes:
                     - process2
                     - process3
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
-  /api/app/processingtype/reload:
-    post:
-      tags:
-      - App
-      summary: Processing type data reload service
-      operationId: postApiAppProcessingtypeReload
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      responses:
-        '204':
-          description: ''
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -828,6 +970,92 @@ paths:
                   summary: Deployment with id {deploymentId} already exists
                   value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
                     exists
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts/{dictId}/entryByKey:
+    get:
+      tags:
+      - Dictionary
+      summary: Get list of dictionary entries matching the label pattern
+      operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntrybykey
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dictId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DictEntry'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter key'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -1971,6 +2199,147 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/nodes/{scenarioName}/records:
+    post:
+      tags:
+      - Nodes
+      summary: Fetch records for specific node
+      operationId: postApiNodesScenarionameRecords
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Limit the number of records returned
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsRequestDto'
+            examples:
+              Example:
+                summary: Basic fetch request
+                value:
+                  processProperties:
+                    additionalFields:
+                      properties:
+                        parallelism: ''
+                        spillStateToDisk: 'true'
+                        useAsyncInterpretation: ''
+                        checkpointIntervalInSeconds: ''
+                      metaDataType: StreamMetaData
+                      showDescription: false
+                  nodeData:
+                    id: sourceId
+                    ref:
+                      typ: source
+                      parameters: []
+                    type: Source
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Simple scenario test data in json stringify form
+                  value: '{name: John}'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Source compilation error
+                  value: 'Cannot compile source ''sourceId''. Errors: Invalid source
+                    configuration'
+                Example1:
+                  summary: Unsupported source preview
+                  value: Source 'sourceId' doesn't support records preview
+                Example2:
+                  summary: Invalid node type
+                  value: 'Expected Filter but got: Source'
+                Example3:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (100)
+                Example4:
+                  summary: Too many characters generated
+                  value: Too many characters were found in the generated test data
+                    (1000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (500)
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No test data generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live sample data available'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/notifications:
     get:
       tags:
@@ -2452,476 +2821,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarioTesting/{scenarioName}/adhoc/validate:
-    post:
-      tags:
-      - Testing
-      summary: Validate adhoc parameters
-      operationId: postApiScenariotestingScenarionameAdhocValidate
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdhocTestParametersRequest'
-            examples:
-              Example:
-                summary: Valid example of minimalistic request
-                value:
-                  sourceParameters:
-                    sourceId: source
-                    parameterExpressions:
-                      name:
-                        language: spel
-                        expression: '''Amadeus'''
-                  scenarioGraph:
-                    properties:
-                      additionalFields:
-                        properties:
-                          parallelism: ''
-                          spillStateToDisk: 'true'
-                          useAsyncInterpretation: ''
-                          checkpointIntervalInSeconds: ''
-                        metaDataType: StreamMetaData
-                        showDescription: false
-                    nodes: []
-                    edges: []
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ParametersValidationResultDto'
-              examples:
-                Example0:
-                  summary: Validate correct parameters
-                  value:
-                    validationErrors: []
-                    validationPerformed: true
-                Example1:
-                  summary: Validate incorrect parameters
-                  value:
-                    validationErrors:
-                    - typ: ExpressionParserCompilationError
-                      message: 'Failed to parse expression: Bad expression type, expected:
-                        Boolean, found: Long(5)'
-                      description: There is problem with expression in field Some(condition)
-                        - it could not be parsed.
-                      fieldName: condition
-                      errorType: SaveAllowed
-                    validationPerformed: true
-        '400':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Malformed TypingResult sent in request
-                  value: |-
-                    The request content was malformed:
-                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
-  /api/scenarioTesting/{scenarioName}/capabilities:
-    post:
-      tags:
-      - Testing
-      summary: Describes available testing actions
-      operationId: postApiScenariotestingScenarionameCapabilities
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-            example:
-              properties:
-                additionalFields:
-                  properties:
-                    parallelism: ''
-                    spillStateToDisk: 'true'
-                    useAsyncInterpretation: ''
-                    checkpointIntervalInSeconds: ''
-                  metaDataType: StreamMetaData
-                  showDescription: false
-              nodes: []
-              edges: []
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TestingCapabilities'
-              examples:
-                Example:
-                  summary: Valid TestingCapabilities for given scenario
-                  value:
-                    canBeTested: false
-                    canGenerateTestData: false
-                    canTestWithForm: false
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
-  /api/scenarioTesting/{scenarioName}/generate/{testSampleSize}:
-    post:
-      tags:
-      - Testing
-      summary: Generate testing data for scenario
-      operationId: postApiScenariotestingScenarionameGenerateTestsamplesize
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: testSampleSize
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int32
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-            example:
-              properties:
-                additionalFields:
-                  properties:
-                    parallelism: ''
-                    spillStateToDisk: 'true'
-                    useAsyncInterpretation: ''
-                    checkpointIntervalInSeconds: ''
-                  metaDataType: StreamMetaData
-                  showDescription: false
-              nodes: []
-              edges: []
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Simple scenario test data in json stringify form
-                  value: '{name: John}'
-        '400':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: There was a problem with parsing test data
-                  value: "Error during generation of test data: \nParsing of data\
-                    \ failed"
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
-  /api/scenarioTesting/{scenarioName}/parameters:
-    post:
-      tags:
-      - Testing
-      summary: Prepare scenario input parameters
-      operationId: postApiScenariotestingScenarionameParameters
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-            example:
-              properties:
-                additionalFields:
-                  properties:
-                    parallelism: ''
-                    spillStateToDisk: 'true'
-                    useAsyncInterpretation: ''
-                    checkpointIntervalInSeconds: ''
-                  metaDataType: StreamMetaData
-                  showDescription: false
-              nodes: []
-              edges: []
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-              examples:
-                Example:
-                  summary: Valid TestingCapabilities for given scenario
-                  value:
-                  - sourceId: source
-                    parameters:
-                    - name: name
-                      typ:
-                        display: String
-                        type: TypedClass
-                        refClazzName: java.lang.String
-                        params: []
-                      editor:
-                        type: RawParameterEditor
-                      defaultValue:
-                        language: spel
-                        expression: ''
-                      additionalVariables: {}
-                      variablesToHide: []
-                      branchParam: false
-                      label: name
-                      requiredParam: true
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
   /api/user:
     get:
       tags:
@@ -2969,6 +2868,99 @@ paths:
                     globalPermissions: []
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/versionControl/{scenarioName}/versionValidation:
+    post:
+      tags:
+      - Version Control
+      summary: Checks if local scenario version is the newest one
+      operationId: postApiVersioncontrolScenarionameVersionvalidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessVersionValidationRequestDto'
+            example:
+              localVersion: 24
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessVersionValidationResponseDto'
+              examples:
+                Newer process version is available:
+                  value:
+                    processName: p1
+                    isLatest: false
+                    localVersion: 51
+                    latestVersion: 52
+                    modifiedBy: nussknacker
+                Process local version is the latest one:
+                  value:
+                    processName: p2
+                    isLatest: true
+                    localVersion: 52
+                    latestDeployedVersion: 48
+                    latestVersion: 52
+                    modifiedBy: nussknacker
+        '400':
+          description: ''
           content:
             text/plain:
               schema:
@@ -4114,12 +4106,8 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
                       additionalFields:
-                      - name: sourceEnvironment
+                      - name: migrateFrom
                         value: preprod
-                      - name: sourceUser
-                        value: user-preprod
-                      - name: targetEnvironment
-                        value: prod
                       - name: sourceScenarioVersionId
                         value: '23'
                       type: INCOMING_MIGRATION
@@ -4128,7 +4116,7 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
                       additionalFields:
-                      - name: destinationEnvironment
+                      - name: migrateTo
                         value: preprod
                       type: OUTGOING_MIGRATION
                     - id: 924dfcd3-fbc7-44ea-8763-813874382204
@@ -4181,8 +4169,6 @@ paths:
                         value: '2024-01-17 14:21:17'
                       - name: finished
                         value: '2024-01-17 14:21:17'
-                      - name: scheduleName
-                        value: main-schedule
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4197,8 +4183,6 @@ paths:
                         value: '2024-01-17 14:21:17'
                       - name: finished
                         value: '2024-01-17 14:21:17'
-                      - name: scheduleName
-                        value: main-schedule
                       - name: retriesLeft
                         value: '1'
                       - name: nextRetryAt
@@ -4386,8 +4370,8 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Processing data
-                      icon: /assets/activities/processingData.svg
+                      displayableName: Run now scheduling
+                      icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
@@ -4499,8 +4483,8 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Processing data
-                      icon: /assets/activities/processingData.svg
+                      displayableName: Run now scheduling
+                      icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
@@ -4590,6 +4574,476 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/capabilities:
+    post:
+      tags:
+      - Testing
+      summary: Describes available test modes
+      operationId: postApiScenariotestingScenarionameCapabilities
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              properties:
+                additionalFields:
+                  properties:
+                    parallelism: ''
+                    spillStateToDisk: 'true'
+                    useAsyncInterpretation: ''
+                    checkpointIntervalInSeconds: ''
+                  metaDataType: StreamMetaData
+                  showDescription: false
+              nodes: []
+              edges: []
+              stickyNotes: []
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioTestCapabilities'
+              examples:
+                Example:
+                  summary: Valid TestingCapabilities for given scenario
+                  value:
+                    testWithParameters:
+                      sourceParameters:
+                      - sourceId: source
+                        parameters:
+                        - name: name
+                          typ:
+                            display: String
+                            type: TypedClass
+                            refClazzName: java.lang.String
+                            params: []
+                          editors:
+                          - type: SpelParameterEditor
+                          defaultValue:
+                            language: spel
+                            expression: ''
+                          additionalVariables: {}
+                          variablesToHide: []
+                          branchParam: false
+                          label: name
+                          requiredParam: true
+                          category: Standard
+                      status: AVAILABLE
+                    testWithGeneratedData:
+                      status: AVAILABLE
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/performTest:
+    post:
+      tags:
+      - Testing
+      summary: Perform test
+      operationId: postApiScenariotestingScenarionamePerformtest
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: skipResultsPerNode
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
+      - name: skipResultsPerTransition
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformTestRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsWithCountsDto'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body, Invalid value for: query parameter skipResultsPerNode,
+            Invalid value for: query parameter skipResultsPerTransition'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/generatedTestData:
+    post:
+      tags:
+      - Testing
+      summary: Generate testing data for scenario
+      operationId: postApiScenariotestingScenarionameGeneratedtestdata
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratedTestDataRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Simple scenario test data in json stringify form
+                  value: '{name: John}'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live sample data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/scenarioTesting/{scenarioName}/validate:
+    post:
+      tags:
+      - Testing
+      summary: Validate adhoc parameters
+      operationId: postApiScenariotestingScenarionameValidate
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioTestValidationRequest'
+            examples:
+              Example:
+                summary: Valid example of minimalistic request
+                value:
+                  scenarioGraph:
+                    properties:
+                      additionalFields:
+                        properties:
+                          parallelism: ''
+                          spillStateToDisk: 'true'
+                          useAsyncInterpretation: ''
+                          checkpointIntervalInSeconds: ''
+                        metaDataType: StreamMetaData
+                        showDescription: false
+                    nodes: []
+                    edges: []
+                    stickyNotes: []
+                  testData:
+                    type: WITH_PARAMETERS
+                    sourceParameters:
+                      sourceId: source
+                      parameterExpressions:
+                        name:
+                          language: spel
+                          expression: '''Amadeus'''
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParametersValidationResultDto'
+              examples:
+                Example0:
+                  summary: Validate correct parameters
+                  value:
+                    validationErrors: []
+                    validationPerformed: true
+                Example1:
+                  summary: Validate incorrect parameters
+                  value:
+                    validationErrors:
+                    - typ: ExpressionParserCompilationError
+                      message: 'Failed to parse expression: Bad expression type, expected:
+                        Boolean, found: Long(5)'
+                      description: There is problem with expression in field Some(condition)
+                        - it could not be parsed.
+                      fieldName: condition
+                      errorType: SaveAllowed
+                    validationPerformed: true
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
 components:
   schemas:
     AdditionalField:
@@ -4607,17 +5061,9 @@ components:
       title: AdditionalInfo
       oneOf:
       - $ref: '#/components/schemas/MarkdownAdditionalInfo'
-    AdhocTestParametersRequest:
-      title: AdhocTestParametersRequest
+    Advanced:
+      title: Advanced
       type: object
-      required:
-      - sourceParameters
-      - scenarioGraph
-      properties:
-        sourceParameters:
-          $ref: '#/components/schemas/TestSourceParameters'
-        scenarioGraph:
-          type: object
     ApiVersion:
       title: ApiVersion
       type: object
@@ -4698,6 +5144,14 @@ components:
         status:
           type: string
           const: AVAILABLE
+    Available_T:
+      title: Available_T
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/TestWithParametersDetails'
     BoolParameterEditor:
       title: BoolParameterEditor
       type: object
@@ -4743,11 +5197,16 @@ components:
         version:
           type: string
         processingType:
-          $ref: '#/components/schemas/Map_Map_String_String'
+          $ref: '#/components/schemas/Map_ModelInfo'
         globalBuildInfo:
           anyOf:
           - $ref: '#/components/schemas/Map_String'
           - type: 'null'
+    CapabilityStatus_T:
+      title: CapabilityStatus_T
+      oneOf:
+      - $ref: '#/components/schemas/Available_T'
+      - $ref: '#/components/schemas/NotAvailable_T'
     CaretPosition2d:
       title: CaretPosition2d
       type: object
@@ -4838,6 +5297,7 @@ components:
       - componentGroupName
       - usageCount
       - allowedProcessingModes
+      - label
       properties:
         id:
           type: string
@@ -4864,6 +5324,8 @@ components:
           type: array
           items:
             type: string
+        label:
+          type: string
     ComponentType:
       title: ComponentType
       type: string
@@ -4910,10 +5372,6 @@ components:
           format: date-time
         createdBy:
           type: string
-        lastAction:
-          anyOf:
-          - $ref: '#/components/schemas/ProcessAction'
-          - type: 'null'
     CronParameterEditor:
       title: CronParameterEditor
       type: object
@@ -5012,17 +5470,6 @@ components:
           type: array
           items:
             type: string
-    DualParameterEditor:
-      title: DualParameterEditor
-      type: object
-      required:
-      - simpleEditor
-      - defaultMode
-      properties:
-        simpleEditor:
-          $ref: '#/components/schemas/SimpleParameterEditor'
-        defaultMode:
-          type: string
     DurationParameterEditor:
       title: DurationParameterEditor
       type: object
@@ -5062,10 +5509,28 @@ components:
       - $ref: '#/components/schemas/FragmentOutput'
       - $ref: '#/components/schemas/NextSwitch'
       - $ref: '#/components/schemas/SwitchDefault'
+    EmptyDetails:
+      title: EmptyDetails
+      type: object
     ErrorDetails:
       title: ErrorDetails
       oneOf:
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
+    ExceptionResult_Json:
+      title: ExceptionResult_Json
+      type: object
+      required:
+      - context
+      - throwable
+      properties:
+        context:
+          $ref: '#/components/schemas/ResultContext_Json'
+        nodeId:
+          type:
+          - string
+          - 'null'
+        throwable:
+          type: string
     Expression:
       title: Expression
       type: object
@@ -5077,6 +5542,19 @@ components:
           type: string
         expression:
           type: string
+    ExpressionInvocationResult_Json:
+      title: ExpressionInvocationResult_Json
+      type: object
+      required:
+      - contextId
+      - name
+      - value
+      properties:
+        contextId:
+          type: string
+        name:
+          type: string
+        value: {}
     ExpressionSuggestionDto:
       title: ExpressionSuggestionDto
       type: object
@@ -5121,6 +5599,19 @@ components:
           $ref: '#/components/schemas/CaretPosition2d'
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
+    ExternalInvocationResult_Json:
+      title: ExternalInvocationResult_Json
+      type: object
+      required:
+      - contextId
+      - name
+      - value
+      properties:
+        contextId:
+          type: string
+        name:
+          type: string
+        value: {}
     Field:
       title: Field
       type: object
@@ -5179,6 +5670,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValueWithIcon'
+    FixedValuesWithRadioParameterEditor:
+      title: FixedValuesWithRadioParameterEditor
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
     FragmentClazzRef:
       title: FragmentClazzRef
       type: object
@@ -5251,6 +5750,18 @@ components:
           type: string
         nodeId:
           type: string
+    GeneratedTestDataRequest:
+      title: GeneratedTestDataRequest
+      type: object
+      required:
+      - scenarioGraph
+      - numberOfSamples
+      properties:
+        scenarioGraph:
+          type: object
+        numberOfSamples:
+          type: integer
+          format: int32
     GetDeploymentStatusResponse:
       title: GetDeploymentStatusResponse
       type: object
@@ -5305,8 +5816,14 @@ components:
           uniqueItems: true
           items:
             type: string
+    InvalidScenario:
+      title: InvalidScenario
+      type: object
     JsonParameterEditor:
       title: JsonParameterEditor
+      type: object
+    JsonTemplateParameterEditor:
+      title: JsonTemplateParameterEditor
       type: object
     LayoutData:
       title: LayoutData
@@ -5342,6 +5859,31 @@ components:
         type: array
         items:
           type: string
+    Map_Json:
+      title: Map_Json
+      type: object
+      additionalProperties: {}
+    Map_List_ExpressionInvocationResult_Json:
+      title: Map_List_ExpressionInvocationResult_Json
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/ExpressionInvocationResult_Json'
+    Map_List_ExternalInvocationResult_Json:
+      title: Map_List_ExternalInvocationResult_Json
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/ExternalInvocationResult_Json'
+    Map_List_ResultContext_Json:
+      title: Map_List_ResultContext_Json
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/ResultContext_Json'
     Map_List_String:
       title: Map_List_String
       type: object
@@ -5349,18 +5891,23 @@ components:
         type: array
         items:
           type: string
-    Map_Map_String_String:
-      title: Map_Map_String_String
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/Map_String'
     Map_Map_String_TypingResultInJson:
       title: Map_Map_String_TypingResultInJson
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_NodeDeploymentData:
-      title: Map_NodeId_NodeDeploymentData
+    Map_ModelInfo:
+      title: Map_ModelInfo
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_String'
+    Map_NodeCount:
+      title: Map_NodeCount
+      type: object
+      additionalProperties:
+        type: object
+    Map_NodeId_String:
+      title: Map_NodeId_String
       type: object
       additionalProperties:
         type: string
@@ -5369,6 +5916,13 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Expression'
+    Map_ScenarioActionName_List_UiActionNodeParametersDto:
+      title: Map_ScenarioActionName_List_UiActionNodeParametersDto
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/UiActionNodeParametersDto'
     Map_String:
       title: Map_String
       type: object
@@ -5392,6 +5946,11 @@ components:
         - $ref: '#/components/schemas/TypedTaggedValue'
         - $ref: '#/components/schemas/TypedUnion'
         - $ref: '#/components/schemas/Unknown'
+    Map_UiActionParameterConfigDto:
+      title: Map_UiActionParameterConfigDto
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/UiActionParameterConfigDto'
     MarkdownAdditionalInfo:
       title: MarkdownAdditionalInfo
       type: object
@@ -5405,11 +5964,13 @@ components:
       oneOf:
       - $ref: '#/components/schemas/MigrateScenarioRequestDtoV1'
       - $ref: '#/components/schemas/MigrateScenarioRequestDtoV2'
+      - $ref: '#/components/schemas/MigrateScenarioRequestDtoV3'
       discriminator:
         propertyName: version
         mapping:
           '1': MigrateScenarioRequestDtoV1
           '2': MigrateScenarioRequestDtoV2
+          '3': MigrateScenarioRequestDtoV3
     MigrateScenarioRequestDtoV1:
       title: MigrateScenarioRequestDtoV1
       type: object
@@ -5485,6 +6046,45 @@ components:
           type: string
         isFragment:
           type: boolean
+    MigrateScenarioRequestDtoV3:
+      title: MigrateScenarioRequestDtoV3
+      type: object
+      required:
+      - version
+      - sourceEnvironmentId
+      - processingMode
+      - engineSetupName
+      - processCategory
+      - scenarioGraph
+      - processName
+      - isFragment
+      properties:
+        version:
+          type: integer
+          format: int32
+        sourceEnvironmentId:
+          type: string
+        sourceScenarioVersionId:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        processCategory:
+          type: string
+        scenarioLabels:
+          type: array
+          items:
+            type: string
+        scenarioGraph:
+          type: object
+        processName:
+          type: string
+        isFragment:
+          type: boolean
     NextSwitch:
       title: NextSwitch
       type: object
@@ -5495,6 +6095,9 @@ components:
           $ref: '#/components/schemas/Expression'
     Nil:
       title: Nil
+      type: object
+    NoSources:
+      title: NoSources
       type: object
     NodeData:
       title: NodeData
@@ -5801,6 +6404,22 @@ components:
             type: string
           type:
             $ref: '#/components/schemas/NodeTypes12'
+    NodeTransitionResult:
+      title: NodeTransitionResult
+      type: object
+      required:
+      - sourceNodeId
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultContext_Json'
     NodeTypes:
       title: NodeTypes
       type: string
@@ -5974,6 +6593,23 @@ components:
         status:
           type: string
           const: NOT_AVAILABLE
+    NotAvailableReason:
+      title: NotAvailableReason
+      oneOf:
+      - $ref: '#/components/schemas/InvalidScenario'
+      - $ref: '#/components/schemas/NoSources'
+      - $ref: '#/components/schemas/NotSupportedBySources'
+    NotAvailable_T:
+      title: NotAvailable_T
+      type: object
+      required:
+      - reason
+      properties:
+        reason:
+          $ref: '#/components/schemas/NotAvailableReason'
+    NotSupportedBySources:
+      title: NotSupportedBySources
+      type: object
     Notification:
       title: Notification
       type: object
@@ -6015,6 +6651,11 @@ components:
           type: string
         expression:
           $ref: '#/components/schemas/Expression'
+    ParameterCategory:
+      title: ParameterCategory
+      oneOf:
+      - $ref: '#/components/schemas/Advanced'
+      - $ref: '#/components/schemas/Standard'
     ParameterDto:
       title: ParameterDto
       type: object
@@ -6042,16 +6683,16 @@ components:
       - $ref: '#/components/schemas/DateParameterEditor'
       - $ref: '#/components/schemas/DateTimeParameterEditor'
       - $ref: '#/components/schemas/DictParameterEditor'
-      - $ref: '#/components/schemas/DualParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/JsonTemplateParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
-      - $ref: '#/components/schemas/RawParameterEditor'
+      - $ref: '#/components/schemas/SpelParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
-      - $ref: '#/components/schemas/StringParameterEditor'
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
@@ -6096,6 +6737,17 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+    PerformTestRequest:
+      title: PerformTestRequest
+      type: object
+      required:
+      - scenarioGraph
+      - testData
+      properties:
+        scenarioGraph:
+          type: object
+        testData:
+          $ref: '#/components/schemas/ScenarioTestData'
     PeriodParameterEditor:
       title: PeriodParameterEditor
       type: object
@@ -6112,64 +6764,6 @@ components:
                 type: string
               duration:
                 type: string
-    ProcessAction:
-      title: ProcessAction
-      type: object
-      required:
-      - id
-      - processId
-      - processVersionId
-      - user
-      - createdAt
-      - performedAt
-      - actionName
-      - state
-      - buildInfo
-      properties:
-        id:
-          type: string
-          format: uuid
-        processId:
-          type: integer
-          format: int64
-        processVersionId:
-          type: integer
-          format: int64
-        user:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        performedAt:
-          type: string
-          format: date-time
-        actionName:
-          type: string
-        state:
-          $ref: '#/components/schemas/ProcessActionState'
-        failureMessage:
-          type:
-          - string
-          - 'null'
-        commentId:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        buildInfo:
-          $ref: '#/components/schemas/Map_String'
-    ProcessActionState:
-      title: ProcessActionState
-      type: string
-      enum:
-      - IN_PROGRESS
-      - FINISHED
-      - FAILED
-      - EXECUTION_FINISHED
     ProcessActivity:
       title: ProcessActivity
       type: object
@@ -6208,6 +6802,42 @@ components:
       properties:
         additionalFields:
           $ref: '#/components/schemas/ProcessAdditionalFields'
+    ProcessVersionValidationRequestDto:
+      title: ProcessVersionValidationRequestDto
+      type: object
+      required:
+      - localVersion
+      properties:
+        localVersion:
+          type: integer
+          format: int32
+    ProcessVersionValidationResponseDto:
+      title: ProcessVersionValidationResponseDto
+      type: object
+      required:
+      - processName
+      - isLatest
+      - localVersion
+      - latestVersion
+      - modifiedBy
+      properties:
+        processName:
+          type: string
+        isLatest:
+          type: boolean
+        localVersion:
+          type: integer
+          format: int64
+        latestDeployedVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        latestVersion:
+          type: integer
+          format: int64
+        modifiedBy:
+          type: string
     PropertiesValidationRequestDto:
       title: PropertiesValidationRequestDto
       type: object
@@ -6219,9 +6849,15 @@ components:
           $ref: '#/components/schemas/ProcessAdditionalFields'
         name:
           type: string
-    RawParameterEditor:
-      title: RawParameterEditor
+    RecordsRequestDto:
+      title: RecordsRequestDto
       type: object
+      required:
+      - processProperties
+      - nodeData
+      properties:
+        nodeData:
+          $ref: '#/components/schemas/NodeData'
     RegisterStatisticsRequestDto:
       title: RegisterStatisticsRequestDto
       type: object
@@ -6230,6 +6866,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StatisticDto'
+    ResultContext_Json:
+      title: ResultContext_Json
+      type: object
+      required:
+      - id
+      - variables
+      properties:
+        id:
+          type: string
+        variables:
+          $ref: '#/components/schemas/Map_Json'
+    ResultsWithCountsDto:
+      title: ResultsWithCountsDto
+      type: object
+      required:
+      - results
+      - counts
+      properties:
+        results:
+          $ref: '#/components/schemas/TestResultsDto'
+        counts:
+          $ref: '#/components/schemas/Map_NodeCount'
     RunDeploymentRequest:
       title: RunDeploymentRequest
       type: object
@@ -6240,7 +6898,7 @@ components:
         scenarioName:
           type: string
         nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+          $ref: '#/components/schemas/Map_NodeId_String'
         comment:
           type:
           - string
@@ -6476,6 +7134,33 @@ components:
             $ref: '#/components/schemas/ScenarioParameters'
         engineSetupErrors:
           $ref: '#/components/schemas/Map_EngineSetupName_List_String'
+    ScenarioTestCapabilities:
+      title: ScenarioTestCapabilities
+      type: object
+      required:
+      - testWithParameters
+      - testWithGeneratedData
+      properties:
+        testWithParameters:
+          $ref: '#/components/schemas/CapabilityStatus_T'
+        testWithGeneratedData:
+          $ref: '#/components/schemas/CapabilityStatus_T'
+    ScenarioTestData:
+      title: ScenarioTestData
+      oneOf:
+      - $ref: '#/components/schemas/WithGeneratedData'
+      - $ref: '#/components/schemas/WithParameters'
+    ScenarioTestValidationRequest:
+      title: ScenarioTestValidationRequest
+      type: object
+      required:
+      - scenarioGraph
+      - testData
+      properties:
+        scenarioGraph:
+          type: object
+        testData:
+          $ref: '#/components/schemas/ScenarioTestData'
     ScenarioUsageData:
       title: ScenarioUsageData
       type: object
@@ -6496,25 +7181,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
-    SimpleParameterEditor:
-      title: SimpleParameterEditor
-      oneOf:
-      - $ref: '#/components/schemas/BoolParameterEditor'
-      - $ref: '#/components/schemas/CronParameterEditor'
-      - $ref: '#/components/schemas/DateParameterEditor'
-      - $ref: '#/components/schemas/DateTimeParameterEditor'
-      - $ref: '#/components/schemas/DictParameterEditor'
-      - $ref: '#/components/schemas/DurationParameterEditor'
-      - $ref: '#/components/schemas/FixedValuesParameterEditor'
-      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
-      - $ref: '#/components/schemas/JsonParameterEditor'
-      - $ref: '#/components/schemas/PeriodParameterEditor'
-      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
-      - $ref: '#/components/schemas/SqlParameterEditor'
-      - $ref: '#/components/schemas/StringParameterEditor'
-      - $ref: '#/components/schemas/TabularTypedDataEditor'
-      - $ref: '#/components/schemas/TextareaParameterEditor'
-      - $ref: '#/components/schemas/TimeParameterEditor'
     SingleTypingResult:
       title: SingleTypingResult
       oneOf:
@@ -6547,11 +7213,38 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
+    SpelParameterEditor:
+      title: SpelParameterEditor
+      type: object
     SpelTemplateParameterEditor:
       title: SpelTemplateParameterEditor
       type: object
     SqlParameterEditor:
       title: SqlParameterEditor
+      type: object
+    Standard:
+      title: Standard
+      type: object
+    StaticParameterEditor:
+      title: StaticParameterEditor
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithRadioParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/JsonTemplateParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/StaticStringParameterEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
+    StaticStringParameterEditor:
+      title: StaticStringParameterEditor
       type: object
     StatisticDto:
       title: StatisticDto
@@ -6601,11 +7294,12 @@ components:
       - CLICK_SCENARIO_COMPARE
       - CLICK_SCENARIO_MIGRATE
       - CLICK_SCENARIO_IMPORT
-      - CLICK_SCENARIO_JSON
+      - CLICK_SCENARIO_EXPORT
       - CLICK_SCENARIO_PDF
       - CLICK_SCENARIO_ARCHIVE
       - CLICK_TEST_GENERATED
       - CLICK_TEST_ADHOC
+      - CLICK_SCENARIO_TEST
       - CLICK_TEST_FROM_FILE
       - CLICK_TEST_GENERATE_FILE
       - CLICK_TEST_HIDE
@@ -6664,9 +7358,6 @@ components:
       type: string
       enum:
       - ERROR
-    StringParameterEditor:
-      title: StringParameterEditor
-      type: object
     SwitchDefault:
       title: SwitchDefault
       type: object
@@ -6685,6 +7376,31 @@ components:
     TabularTypedDataEditor:
       title: TabularTypedDataEditor
       type: object
+    TestResultsDto:
+      title: TestResultsDto
+      type: object
+      required:
+      - invocationResults
+      - externalInvocationResults
+      properties:
+        nodeResults:
+          anyOf:
+          - $ref: '#/components/schemas/Map_List_ResultContext_Json'
+          - type: 'null'
+        nodeTransitionResults:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/NodeTransitionResult'
+        invocationResults:
+          $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
+        externalInvocationResults:
+          $ref: '#/components/schemas/Map_List_ExternalInvocationResult_Json'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExceptionResult_Json'
     TestSourceParameters:
       title: TestSourceParameters
       type: object
@@ -6696,20 +7412,14 @@ components:
           type: string
         parameterExpressions:
           $ref: '#/components/schemas/Map_ParameterName_Expression'
-    TestingCapabilities:
-      title: TestingCapabilities
+    TestWithParametersDetails:
+      title: TestWithParametersDetails
       type: object
-      required:
-      - canBeTested
-      - canGenerateTestData
-      - canTestWithForm
       properties:
-        canBeTested:
-          type: boolean
-        canGenerateTestData:
-          type: boolean
-        canTestWithForm:
-          type: boolean
+        sourceParameters:
+          type: array
+          items:
+            type: object
     TextareaParameterEditor:
       title: TextareaParameterEditor
       type: object
@@ -6886,11 +7596,11 @@ components:
       required:
       - name
       - typ
-      - editor
       - defaultValue
       - additionalVariables
       - branchParam
       - label
+      - category
       properties:
         name:
           type: string
@@ -6904,8 +7614,10 @@ components:
           - $ref: '#/components/schemas/TypedTaggedValue'
           - $ref: '#/components/schemas/TypedUnion'
           - $ref: '#/components/schemas/Unknown'
-        editor:
-          $ref: '#/components/schemas/ParameterEditor'
+        editors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterEditor'
         defaultValue:
           $ref: '#/components/schemas/Expression'
         additionalVariables:
@@ -6927,6 +7639,8 @@ components:
           type:
           - boolean
           - 'null'
+        category:
+          $ref: '#/components/schemas/ParameterCategory'
     UIValueParameterDto:
       title: UIValueParameterDto
       type: object
@@ -6949,6 +7663,48 @@ components:
           - $ref: '#/components/schemas/Unknown'
         expression:
           $ref: '#/components/schemas/Expression'
+    UiActionNodeParametersDto:
+      title: UiActionNodeParametersDto
+      type: object
+      required:
+      - nodeId
+      - componentId
+      - parameters
+      properties:
+        nodeId:
+          type: string
+        componentId:
+          type: string
+        parameters:
+          $ref: '#/components/schemas/Map_UiActionParameterConfigDto'
+    UiActionParameterConfigDto:
+      title: UiActionParameterConfigDto
+      type: object
+      required:
+      - editor
+      properties:
+        defaultValue:
+          type:
+          - string
+          - 'null'
+        editor:
+          $ref: '#/components/schemas/StaticParameterEditor'
+        label:
+          type:
+          - string
+          - 'null'
+        hintText:
+          type:
+          - string
+          - 'null'
+    UiActionParametersDto:
+      title: UiActionParametersDto
+      type: object
+      required:
+      - actionNameToParameters
+      properties:
+        actionNameToParameters:
+          $ref: '#/components/schemas/Map_ScenarioActionName_List_UiActionNodeParametersDto'
     Unknown:
       title: Unknown
       type: object
@@ -7059,6 +7815,23 @@ components:
           $ref: '#/components/schemas/NodeTypes14'
         varName:
           type: string
+    WithGeneratedData:
+      title: WithGeneratedData
+      type: object
+      required:
+      - numberOfSamples
+      properties:
+        numberOfSamples:
+          type: integer
+          format: int32
+    WithParameters:
+      title: WithParameters
+      type: object
+      required:
+      - sourceParameters
+      properties:
+        sourceParameters:
+          $ref: '#/components/schemas/TestSourceParameters'
   securitySchemes:
     httpAuth:
       type: http

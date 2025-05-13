@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.{NodeId, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.RenderedLiteral
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{NodeId, TemplateEvaluationResult}
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
@@ -33,10 +33,8 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
         service.TransformationStep(
           List(
             DatabaseQueryEnricher.resultStrategyParamName -> eagerValueParameter(SingleResultStrategy.name),
-            DatabaseQueryEnricher.queryParamName -> eagerValueParameter(
-              TemplateEvaluationResult(List(RenderedLiteral("select from")))
-            ),
-            DatabaseQueryEnricher.cacheTTLParamName -> eagerValueParameter(Duration.ofMinutes(1)),
+            DatabaseQueryEnricher.queryParamName          -> eagerValueParameter("select from"),
+            DatabaseQueryEnricher.cacheTTLParamName       -> eagerValueParameter(Duration.ofMinutes(1)),
           ),
           None
         )
@@ -65,10 +63,8 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
         service.TransformationStep(
           List(
             DatabaseQueryEnricher.resultStrategyParamName -> eagerValueParameter(ResultSetStrategy.name),
-            DatabaseQueryEnricher.queryParamName -> eagerValueParameter(
-              TemplateEvaluationResult(List(RenderedLiteral("select * from persons")))
-            ),
-            DatabaseQueryEnricher.cacheTTLParamName -> eagerValueParameter(Duration.ofMinutes(1)),
+            DatabaseQueryEnricher.queryParamName          -> eagerValueParameter("select * from persons"),
+            DatabaseQueryEnricher.cacheTTLParamName       -> eagerValueParameter(Duration.ofMinutes(1)),
           ),
           None
         )

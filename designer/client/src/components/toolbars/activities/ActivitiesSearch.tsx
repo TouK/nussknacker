@@ -1,11 +1,12 @@
-import React from "react";
-import i18next from "i18next";
-import { Box, IconButton, styled, Typography } from "@mui/material";
-import { isEmpty } from "lodash";
-import { SearchIcon } from "../../table/SearchFilter";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { SearchInputWithIcon } from "../../themed/SearchInput";
+import { Box, IconButton, styled, Typography } from "@mui/material";
+import i18next from "i18next";
+import { isEmpty } from "lodash";
+import React from "react";
+
 import { getBorderColor } from "../../../containers/theme/helpers";
+import { SearchIcon } from "../../table/SearchFilter";
+import { SearchInputWithIcon } from "../../themed/SearchInput";
 
 export const StyledIconButton = styled(IconButton)(() => ({
     padding: 0,

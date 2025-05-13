@@ -1,42 +1,37 @@
 /* eslint-disable i18next/no-literal-string */
-import { AxiosError, AxiosResponse } from "axios";
+import type { TextContentPart } from "@assistant-ui/react";
+import type { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
-import { Moment } from "moment";
-import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
-import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
+import type { Moment } from "moment";
+
+import type { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import type { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
-import { UserData } from "../common/models/User";
-import { TestResults } from "../common/TestResultUtils";
+import type { UserData } from "../common/models/User";
+import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
+import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import {
-    ActionName,
-    PredefinedActionName,
-    ProcessActionType,
-    ProcessName,
-    ProcessStateType,
-    ProcessVersionId,
-    Scenario,
-    StatusDefinitionType,
-} from "../components/Process/types";
-import {
-    ActivitiesResponse,
-    ActivityMetadataResponse,
-    ActivityType,
-    ActivityTypesRelatedToExecutions,
-} from "../components/toolbars/activities/types";
-import { ToolbarsConfig } from "../components/toolbarSettings/types";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
-import { BackendNotification } from "../containers/Notifications";
-import { ProcessCounts } from "../reducers/graph";
-import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
-import { Instant, WithId } from "../types/common";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import { extractStickyNotesFromNodes } from "../components/graph/utils/stickyNotesUtils";
+import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
+import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
+import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
+import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
+import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
+import type { ToolbarsConfig } from "../components/toolbarSettings/types";
+import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
+import { API_URL } from "../config";
+import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
+import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
+import type { ProcessCounts } from "../reducers/graph";
+import type { AuthenticationSettings } from "../reducers/settings";
+import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import type { Instant, WithId } from "../types/common";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -96,6 +91,7 @@ export type ComponentType = {
         icon: string;
         url: string;
     }>;
+    label: string;
 };
 
 export type SourceWithParametersTest = {
@@ -104,6 +100,8 @@ export type SourceWithParametersTest = {
         [paramName: string]: Expression;
     };
 };
+
+export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 
 export type NodeUsageData = {
     fragmentNodeId?: string;
@@ -121,12 +119,12 @@ export type ComponentUsageType = {
     modifiedBy: string;
     createdAt: Instant;
     createdBy: string;
-    lastAction: ProcessActionType;
 };
 
-type NotificationActions = {
+export type NotificationActions = {
     success(message: string): void;
     error(message: string, error: string, showErrorText: boolean): void;
+    warn(message: string): void;
 };
 
 export interface TestProcessResponse {
@@ -171,11 +169,12 @@ type DictOption = {
     label: string;
 };
 
-type ResponseStatus = { status: "success" } | { status: "error"; error: AxiosError<string> };
+type ResponseStatus = { status: "success"; data?: any } | { status: "error"; error: AxiosError<string> };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
+    #skipResultsPerTransition = null;
 
     setNotificationActions(na: NotificationActions) {
         this.#notificationActions = na;
@@ -280,6 +279,14 @@ class HttpService {
         return api.get<Scenario>(url);
     }
 
+    fetchLatestProcessDetailsWithoutValidation(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
+        const id = encodeURIComponent(processName);
+        const url = versionId
+            ? `/processes/${id}/${versionId}?skipValidateAndResolve=true`
+            : `/processes/${id}?skipValidateAndResolve=true`;
+        return api.get<Scenario>(url);
+    }
+
     fetchProcessesStates() {
         return api
             .get<StatusesType>("/processes/status")
@@ -335,33 +342,39 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(
-        processName: string,
-        comment?: string,
-    ): Promise<{
-        isSuccess: boolean;
-    }> {
+    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = { nodesDeploymentData, comment };
         return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
+            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {
-                return { isSuccess: true };
+                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
                     return this.#addError(
-                        i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processName}}", { processName }),
+                        i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processName}} due to: {{axiosError}}", {
+                            processName,
+                            axiosError: handleAxiosError(error),
+                        }),
                         error,
                         true,
                     ).then(() => {
-                        return { isSuccess: false };
+                        return {
+                            scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                            msg: "Unknown error",
+                        };
                     });
                 } else {
-                    throw error;
+                    const msg = error.response.data;
+                    return {
+                        scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                        msg: msg.toString(),
+                    };
                 }
             });
     }
 
-    runOffSchedule(processName: string, comment?: string) {
+    runOffSchedule(processName: string, comment?: string): Promise<ScenarioActionResult> {
         const data = {
             comment: comment,
         };
@@ -371,35 +384,50 @@ class HttpService {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
                 return {
-                    isSuccess: res.data.isSuccess,
-                    msg: msg,
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: msg.toString(),
                 };
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
                 const result = {
-                    isSuccess: false,
-                    msg: msg,
+                    scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                    msg: msg.toString(),
                 };
                 if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-                return result;
+                return {
+                    scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                    msg: msg.toString(),
+                };
             });
     }
 
-    cancel(processName, comment?) {
-        return api.post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment).catch((error) => {
-            if (error?.response?.status != 400) {
-                return this.#addError(
-                    i18next.t("notification.error.failedToCancel", "Failed to cancel {{processName}}", { processName }),
-                    error,
-                    true,
-                ).then(() => {
-                    return { isSuccess: false };
-                });
-            } else {
-                throw error;
-            }
-        });
+    cancel(processName, comment?): Promise<ScenarioActionResult> {
+        return api
+            .post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment)
+            .then(() => {
+                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+            })
+            .catch((error) => {
+                if (error?.response?.status != 400) {
+                    return this.#addError(
+                        i18next.t("notification.error.failedToCancel", "Failed to cancel {{processName}}", { processName }),
+                        error,
+                        true,
+                    ).then(() => {
+                        return {
+                            scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                            msg: "Unknown error occured",
+                        };
+                    });
+                } else {
+                    const msg = error.response.data.msg || error.response.data;
+                    return {
+                        scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                        msg: msg.toString(),
+                    };
+                }
+            });
     }
 
     async addComment(processName: string, versionId: number, comment: string): Promise<ResponseStatus> {
@@ -545,10 +573,13 @@ class HttpService {
         scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<ValidationData>> {
         const validationRequest: TestAdhocValidationRequest = {
-            sourceParameters,
+            testData: {
+                type: "WITH_PARAMETERS",
+                sourceParameters: sourceParameters,
+            },
             scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
         };
-        const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/adhoc/validate`, validationRequest);
+        const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToValidateAdhocTestParameters", "Failed to validate parameters"),
@@ -566,6 +597,17 @@ class HttpService {
             .catch((error) =>
                 Promise.reject(
                     this.#addError(i18next.t("notification.error.cannotValidateScenarioLabels", "Cannot validate scenario labels"), error),
+                ),
+            );
+    }
+
+    validateProcessVersion(processName: string, localVersion: number): Promise<AxiosResponse<ProcessVersionValidationResponse>> {
+        const data = { localVersion: localVersion };
+        return api
+            .post<ProcessVersionValidationResponse>(`/versionControl/${processName}/versionValidation`, data)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotValidateProcessVersion", "Cannot validate process version"), error),
                 ),
             );
     }
@@ -645,14 +687,11 @@ class HttpService {
         return promise;
     }
 
-    getTestFormParameters(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(
-            `/scenarioTesting/${encodeURIComponent(processName)}/parameters`,
-            this.#sanitizeScenarioGraph(scenarioGraph),
-        );
+    getActionParameters(processName: string) {
+        const promise = api.get(`/actionInfo/${encodeURIComponent(processName)}/parameters`);
         promise.catch((error) =>
             this.#addError(
-                i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
+                i18next.t("notification.error.failedToGetActionParameters", "Failed to get action parameters definition"),
                 error,
                 true,
             ),
@@ -660,10 +699,13 @@ class HttpService {
         return promise;
     }
 
-    generateTestData(processName: string, testSampleSize: string, scenarioGraph: ScenarioGraph): Promise<AxiosResponse> {
+    generateTestData(processName: string, scenarioGraph: ScenarioGraph, numberOfSamples: number): Promise<AxiosResponse> {
         const promise = api.post(
-            `/scenarioTesting/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
-            this.#sanitizeScenarioGraph(scenarioGraph),
+            `/scenarioTesting/${encodeURIComponent(processName)}/generatedTestData`,
+            {
+                scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
+                numberOfSamples,
+            },
             {
                 responseType: "blob",
             },
@@ -749,14 +791,18 @@ class HttpService {
         return promise;
     }
 
-    testProcess(processName: ProcessName, file: File, scenarioGraph: ScenarioGraph): Promise<AxiosResponse<TestProcessResponse>> {
+    testScenarioWithFile(processName: ProcessName, scenarioGraph: ScenarioGraph, file: File) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
 
         const data = new FormData();
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data);
+        const promise = api.post<TestProcessResponse>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+            params: {
+                skipResultsPerTransition: this.#skipResultsPerTransition,
+            },
+        });
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
@@ -769,42 +815,35 @@ class HttpService {
         return promise;
     }
 
-    testProcessWithParameters(
-        processName: ProcessName,
-        testData: SourceWithParametersTest,
+    testScenario(
+        processName: string,
         scenarioGraph: ScenarioGraph,
-    ): Promise<AxiosResponse<TestProcessResponse>> {
+        testData:
+            | {
+                  type: "WITH_PARAMETERS";
+                  sourceParameters: SourceWithParametersTest;
+              }
+            | {
+                  type: "WITH_GENERATED_DATA";
+                  numberOfSamples: number;
+              },
+    ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const request = {
-            sourceParameters: testData,
-            scenarioGraph: sanitized,
-        };
-
-        const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);
+        const promise = api.post<TestProcessResponse>(
+            `/scenarioTesting/${encodeURIComponent(processName)}/performTest`,
+            {
+                testData,
+                scenarioGraph: sanitized,
+            },
+            {
+                params: {
+                    skipResultsPerTransition: this.#skipResultsPerTransition,
+                },
+            },
+        );
         promise.catch((error: AxiosError) =>
             this.#addError(
                 i18next.t("notification.error.failedToTest", "Failed to test due to: {{axiosError}}", {
-                    axiosError: handleAxiosError(error),
-                }),
-                error,
-                true,
-            ),
-        );
-        return promise;
-    }
-
-    testScenarioWithGeneratedData(
-        processName: ProcessName,
-        testSampleSize: string,
-        scenarioGraph: ScenarioGraph,
-    ): Promise<AxiosResponse<TestProcessResponse>> {
-        const promise = api.post(
-            `/processManagement/generateAndTest/${processName}/${testSampleSize}`,
-            this.#sanitizeScenarioGraph(scenarioGraph),
-        );
-        promise.catch((error: AxiosError) =>
-            this.#addError(
-                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test due to: {{axiosError}}", {
                     axiosError: handleAxiosError(error),
                 }),
                 error,
@@ -870,6 +909,18 @@ class HttpService {
             );
     }
 
+    async fetchProcessDefinitionDataDictByKey(processingType: ProcessingType, dictId: string, key: string): Promise<ResponseStatus> {
+        try {
+            const { data } = await api.get<ProcessDefinitionDataDictOption>(
+                `/processDefinitionData/${processingType}/dicts/${dictId}/entryByKey?key=${key}`,
+            );
+            return { status: "success", data };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"), error);
+            return { status: "error", error };
+        }
+    }
+
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
@@ -907,6 +958,39 @@ class HttpService {
         return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
+    sendChatMessage(message: TextContentPart, abortSignal: AbortSignal, threadId: string) {
+        const headers = {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+        };
+
+        if (SystemUtils.hasAccessToken()) {
+            headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
+        }
+
+        const PATHNAME = "custom/assistant/chat";
+
+        /**
+         * Axios doesn't support stream response, even with fetch adapter, there are problems in safari https://github.com/axios/axios/issues/5806
+         */
+        return fetch(`${API_URL}/${PATHNAME}`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ message, threadId }),
+            signal: abortSignal,
+        });
+    }
+
+    async nodeActions(scenarioName: string, actionName: "send-sample-request" | "generate-endpoint", nodeData: NodeType) {
+        try {
+            return await api.post(`/custom/nodes/${scenarioName}/actions`, { actionName, nodeData });
+        } catch (error) {
+            return await Promise.reject(
+                this.#addError(i18next.t("notification.error.failedToSendHttpRequest", `Failed to send ${actionName} action`), error),
+            );
+        }
+    }
+
     #addInfo(message: string) {
         if (this.#notificationActions) {
             this.#notificationActions.success(message);
@@ -939,7 +1023,8 @@ class HttpService {
     }
 
     #sanitizeScenarioGraph(scenarioGraph: ScenarioGraph) {
-        return withoutHackOfEmptyEdges(scenarioGraph);
+        const nodeStickyNoteSortedGraph = extractStickyNotesFromNodes(scenarioGraph);
+        return withoutHackOfEmptyEdges(nodeStickyNoteSortedGraph);
     }
 
     #requestCanceled(error: AxiosError<unknown>) {

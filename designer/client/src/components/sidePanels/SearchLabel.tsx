@@ -1,5 +1,6 @@
-import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import React from "react";
+
+import { FieldLabel } from "../graph/node-modal/FieldLabel";
 
 interface Props {
     label: string;

@@ -7,10 +7,10 @@ import pl.touk.nussknacker.engine.lite.requestresponse.sample.NuReqRespTestSampl
   jsonPongMessage,
   pingPongScenario
 }
-import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils.{saveScenarioToTmp, testCaseId}
 import pl.touk.nussknacker.engine.lite.utils.{BaseNuRuntimeBinTestMixin, NuRuntimeTestUtils}
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils.{saveScenarioToTmp, testCaseId}
 import pl.touk.nussknacker.test.AvailablePortFinder
-import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, UriContext, basicRequest}
+import sttp.client3.{basicRequest, HttpURLConnectionBackend, Identity, SttpBackend, UriContext}
 import sttp.model.StatusCode
 
 // depends on liteEngineRuntimeApp / Universal / stage sbt task
@@ -28,7 +28,7 @@ class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin
     val shellScriptEnvs = Array(
       "CONFIG_FORCE_http_interface=localhost",
       s"CONFIG_FORCE_http_port=$port",
-    ) ++ akkaManagementEnvs
+    ) ++ pekkoManagementEnvs
 
     withProcessExecutedInBackground(
       shellScriptArgs,

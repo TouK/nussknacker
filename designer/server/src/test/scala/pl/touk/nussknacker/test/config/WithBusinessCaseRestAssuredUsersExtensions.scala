@@ -25,4 +25,13 @@ trait WithBusinessCaseRestAssuredUsersExtensions extends NuRestAssureExtensions 
       requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
   }
 
+  implicit class UsersImpersonation[T <: RequestSpecification](requestSpecification: T) {
+
+    private val impersonationHeader = "Nu-Impersonate-User-Identity"
+
+    def impersonateRemoteUser(): RequestSpecification =
+      requestSpecification.header(impersonationHeader, "remoteUser")
+
+  }
+
 }

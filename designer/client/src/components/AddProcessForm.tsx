@@ -1,23 +1,25 @@
 import { css, cx } from "@emotion/css";
-import React, { useCallback } from "react";
-import { ChangeableValue } from "./ChangeableValue";
-import ValidationLabels from "./modals/ValidationLabels";
-import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
-import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
-import { Box, FormControl, FormGroup, FormLabel, Link, Typography } from "@mui/material";
-import { Trans, useTranslation } from "react-i18next";
-import StreamingIcon from "../assets/img/streaming.svg";
-import RequestResponseIcon from "../assets/img/request-response.svg";
-import BatchIcon from "../assets/img/batch.svg";
-import { CustomRadio } from "./customRadio/CustomRadio";
-import { ProcessingMode } from "../http/HttpService";
-import { NodeValidationError } from "../types";
-import { isEmpty } from "lodash";
-import { Option, TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";
-import { nodeValue } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { InfoOutlined } from "@mui/icons-material";
-import Input from "./graph/node-modal/editors/field/Input";
+import { Box, FormControl, FormGroup, FormLabel, Link, Typography } from "@mui/material";
+import { isEmpty } from "lodash";
+import React, { useCallback } from "react";
+import { Trans, useTranslation } from "react-i18next";
+
+import BatchIcon from "../assets/img/batch.svg";
+import RequestResponseIcon from "../assets/img/request-response.svg";
+import StreamingIcon from "../assets/img/streaming.svg";
 import { formLabelWidth } from "../containers/theme/styles";
+import { ProcessingMode } from "../http/HttpService";
+import type { NodeValidationError } from "../types";
+import type { ChangeableValue } from "./ChangeableValue";
+import { CustomRadio } from "./customRadio/CustomRadio";
+import Input from "./graph/node-modal/editors/field/Input";
+import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
+import type { Option } from "./graph/node-modal/fragment-input-definition/TypeSelect";
+import { TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";
+import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
+import { nodeValue } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import ValidationLabels from "./modals/ValidationLabels";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: ProcessingMode; processEngine: string };
 

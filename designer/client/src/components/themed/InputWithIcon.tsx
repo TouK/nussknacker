@@ -1,8 +1,11 @@
 import { css, cx } from "@emotion/css";
 import { useTheme } from "@mui/material";
-import React, { forwardRef, PropsWithChildren, ReactElement, ReactNode, useCallback, useImperativeHandle, useRef } from "react";
+import type { PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+
 import { ClearIcon } from "../table/SearchFilter";
-import { InputProps, ThemedInput } from "./ThemedInput";
+import type { InputProps } from "./ThemedInput";
+import { ThemedInput } from "./ThemedInput";
 
 type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;

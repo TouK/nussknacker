@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import java.util
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.management.sample.dto.{ComplexObject, RichObject}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType, LabeledExpression}
 import pl.touk.nussknacker.engine.management.sample.TariffType
+import pl.touk.nussknacker.engine.management.sample.dto.{ComplexObject, RichObject}
 import pl.touk.sample.JavaSampleEnum
 
+import java.util
 import java.util.Optional
-import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 case object EmptyService extends Service {
   @MethodToInvoke
@@ -20,8 +20,8 @@ case object OneParamService extends Service {
 
   @MethodToInvoke
   def invoke(
-      @SimpleEditor(
-        `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+      @Editor(
+        `type` = EditorType.FIXED_VALUES_EDITOR,
         possibleValues = Array(
           new LabeledExpression(expression = "'a'", label = "a"),
           new LabeledExpression(expression = "'b'", label = "b"),

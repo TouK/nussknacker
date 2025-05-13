@@ -8,11 +8,12 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaIdWithPositionedBuffer
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload._
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import scala.util.Try
+
+import SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload._
 
 object SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload {
 

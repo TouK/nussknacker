@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.event.Logging
-import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
-import akka.http.scaladsl.server.directives.{
-  AuthenticationDirective,
-  Credentials,
-  DebuggingDirectives,
-  SecurityDirectives
-}
-import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
+import org.apache.pekko.event.Logging
+import org.apache.pekko.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.model.MediaTypes.`application/json`
+import org.apache.pekko.http.scaladsl.server.{Directive0, Directives, Route}
+import org.apache.pekko.http.scaladsl.server.directives.{
+  AuthenticationDirective,
+  Credentials,
+  DebuggingDirectives,
+  SecurityDirectives
+}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
@@ -109,7 +109,7 @@ private[requestresponse] class ScenarioRoute(
   protected def logDirective: Directive0 =
     DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
-  private def logErrors(scenarioName: ProcessName, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
+  private def logErrors(scenarioName: ProcessName, errors: NonEmptyList[NuExceptionInfo]): Unit = {
     logger.info(s"Failed to invoke: $scenarioName with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
       logger.debug(

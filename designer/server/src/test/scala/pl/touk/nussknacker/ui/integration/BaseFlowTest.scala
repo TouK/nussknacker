@@ -1,26 +1,25 @@
 package pl.touk.nussknacker.ui.integration
 
-import io.circe.Json.{Null, arr, fromBoolean, fromFields, fromString, obj}
-import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json, JsonObject}
+import io.circe.Json.{arr, fromBoolean, fromFields, fromJsonObject, fromString, fromValues, obj, Null}
+import io.circe.syntax.EncoderOps
 import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Processor}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -31,6 +30,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
@@ -39,16 +39,15 @@ import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
+import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
+import sttp.client3.{quickRequest, UriContext}
 import sttp.client3.circe.asJson
-import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{Header, MediaType, StatusCode}
 
 import java.io.File
@@ -117,12 +116,18 @@ class BaseFlowTest
       "service-enricher" -> obj(
         "parameters" -> arr(
           obj(
-            "name"          -> fromString("param"),
-            "label"         -> fromString("param"),
-            "defaultValue"  -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
-            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "name"         -> fromString("param"),
+            "label"        -> fromString("param"),
+            "defaultValue" -> Expression.spelTemplate("default-from-additional-ui-config-provider").asJson,
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
+              )
+            ),
             "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
             "requiredParam" -> fromBoolean(true),
+            "category"      -> fromString("Standard"),
           ),
           obj(
             "name"  -> fromString("tariffType"),
@@ -130,19 +135,25 @@ class BaseFlowTest
             "defaultValue" -> Expression
               .spel("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL")
               .asJson,
-            "editor" -> encodeEditor(
-              DualParameterEditor(
-                FixedValuesParameterEditor(
-                  List(
-                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL", "normal"),
-                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).GOLD", "gold")
+            "editors" -> fromValues(
+              List(
+                encodeEditor(
+                  FixedValuesParameterEditor(
+                    List(
+                      FixedExpressionValue(
+                        "T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL",
+                        "normal"
+                      ),
+                      FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).GOLD", "gold")
+                    )
                   )
                 ),
-                DualEditorMode.SIMPLE
+                encodeEditor(SpelParameterEditor),
               )
             ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
+            "category"      -> fromString("Standard"),
           ),
         ),
         "icon"    -> fromString("/assets/components/Filter.svg"),
@@ -151,38 +162,59 @@ class BaseFlowTest
       "service-multipleParamsService" -> obj(
         "parameters" -> arr(
           obj(
-            "name"          -> fromString("foo"),
-            "label"         -> fromString("foo"),
-            "defaultValue"  -> Expression.spel("'test'").asJson,
-            "editor"        -> encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+            "name"         -> fromString("foo"),
+            "label"        -> fromString("foo"),
+            "defaultValue" -> Expression.spel("'test'").asJson,
+            "editors" -> fromValues(
+              List(
+                encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
+            "category"      -> fromString("Standard"),
           ),
           obj(
-            "name"          -> fromString("bar"),
-            "label"         -> fromString("bar"),
-            "defaultValue"  -> Expression.spel("''").asJson,
-            "editor"        -> encodeEditor(StringParameterEditor),
+            "name"         -> fromString("bar"),
+            "label"        -> fromString("bar"),
+            "defaultValue" -> Expression.spelTemplate("").asJson,
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelTemplateParameterEditor),
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
+            "category"      -> fromString("Standard"),
           ),
           obj(
             "name"         -> fromString("baz"),
             "label"        -> fromString("baz"),
             "defaultValue" -> Expression.spel("1").asJson,
-            "editor" -> encodeEditor(
-              FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))
+            "editors" -> fromValues(
+              List(
+                encodeEditor(
+                  FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))
+                )
+              )
             ),
             "hintText"      -> fromString("some hint text"),
             "requiredParam" -> fromBoolean(true),
+            "category"      -> fromString("Standard"),
           ),
           obj(
-            "name"          -> fromString("quax"),
-            "label"         -> fromString("quax"),
-            "defaultValue"  -> Expression.spel("''").asJson,
-            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "name"         -> fromString("quax"),
+            "label"        -> fromString("quax"),
+            "defaultValue" -> Expression.spelTemplate("").asJson,
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
+            "category"      -> fromString("Standard"),
           ),
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -196,12 +228,18 @@ class BaseFlowTest
       "service-providedComponent-component-v1" -> obj(
         "parameters" -> arr(
           obj(
-            "name"          -> fromString("fromConfig-v1"),
-            "label"         -> fromString("fromConfig-v1"),
-            "defaultValue"  -> Expression.spel("''").asJson,
-            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "name"         -> fromString("fromConfig-v1"),
+            "label"        -> fromString("fromConfig-v1"),
+            "defaultValue" -> Expression.spelTemplate("").asJson,
+            "editors" -> fromValues(
+              List(
+                encodeEditor(SpelTemplateParameterEditor),
+                encodeEditor(SpelParameterEditor),
+              )
+            ),
             "hintText"      -> Null,
             "requiredParam" -> fromBoolean(true),
+            "category"      -> fromString("Standard"),
           )
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -272,13 +310,13 @@ class BaseFlowTest
     val underTest = Map(
       "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
-        editor = StringParameterEditor,
+        editor = StaticStringParameterEditor,
         label = Some("Environment"),
         hintText = None
       ),
       "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
-        editor = StringParameterEditor,
+        editor = StaticStringParameterEditor,
         label = Some("Max events"),
         hintText = Some("Maximum number of events")
       ),
@@ -314,7 +352,6 @@ class BaseFlowTest
     validationResponse.code shouldEqual StatusCode.Ok
     validationResponse.body should include("Configured property environment (Environment) is missing")
     validationResponse.body should include("This field value has to be an integer number")
-    validationResponse.body should include("Unknown property unknown")
     validationResponse.body should include("Property numberOfThreads (Number of threads) has invalid value") //
   }
 
@@ -530,7 +567,6 @@ class BaseFlowTest
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
-      forwardedUserName = None
     )
     val response = httpClient.send(
       quickRequest

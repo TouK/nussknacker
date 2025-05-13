@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.benchmarks.spel
 
-import java.util.concurrent.TimeUnit
-
 import org.openjdk.jmh.annotations._
+
+import java.util.concurrent.TimeUnit
 
 @State(Scope.Thread)
 class ScalaAccessorBenchmark {

@@ -1,26 +1,24 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
+import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.{api, compiledgraph, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinDynamicComponent, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.canonize.MissingSinkHandler
+import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compile.{
-  ComponentExecutorFactory,
-  ExpressionCompiler,
-  FragmentSourceWithTestWithParametersSupportFactory,
-  NodeValidationExceptionHandler
-}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
@@ -33,13 +31,13 @@ import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDef
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -68,9 +66,20 @@ class NodeCompiler(
     classLoader: ClassLoader,
     listeners: Seq[ProcessListener],
     resultCollector: ResultCollector,
-    componentUseCase: ComponentUseCase,
-    nonServicesLazyParamStrategy: LazyParameterCreationStrategy
-) {
+    runtimeMode: RuntimeMode,
+    nodesDeploymentData: NodesDeploymentData,
+    nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
+) extends LazyLogging {
+
+  def missingSinkHandler(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): MissingSinkHandler = {
+    import scenarioCompilationDependencies._
+    lazy val allowEndingScenarioWithoutSink = definitions.allowEndingScenarioWithoutSink
+    lazy val isFragment                     = metaData.typeSpecificData.isFragment
+    if (allowEndingScenarioWithoutSink && !isFragment) MissingSinkHandler.AllowMissingSinkHandler
+    else MissingSinkHandler.DoNotAllowMissingSinkHandler
+  }
 
   def withLabelsDictTyper: NodeCompiler = {
     new NodeCompiler(
@@ -80,8 +89,9 @@ class NodeCompiler(
       classLoader,
       listeners,
       resultCollector,
-      componentUseCase,
-      nonServicesLazyParamStrategy
+      runtimeMode,
+      nodesDeploymentData,
+      nonServicesLazyParamStrategy,
     )
   }
 
@@ -103,87 +113,97 @@ class NodeCompiler(
 
   def compileSource(
       nodeData: SourceNodeData
-  )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[Source] = nodeData match {
-    case a @ Source(_, ref, _) =>
-      definitions.getComponent(ComponentType.Source, ref.typ) match {
-        case Some(definition) =>
-          def defaultCtxForMethodBasedCreatedComponentExecutor(
-              returnType: Option[TypingResult]
-          ) =
-            contextWithOnlyGlobalVariables.withVariable(
-              VariableConstants.InputVariableName,
-              returnType.getOrElse(Unknown),
-              paramName = None
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
+      nodeId: NodeId
+  ): NodeCompilationResult[Source] = {
+    import scenarioCompilationDependencies._
+    nodeData match {
+      case a @ Source(_, ref, _) =>
+        definitions.getComponent(ComponentType.Source, ref.typ) match {
+          case Some(definition) =>
+            def defaultCtxForMethodBasedCreatedComponentExecutor(
+                returnType: Option[TypingResult]
+            ) =
+              contextWithOnlyGlobalVariables.withVariable(
+                VariableConstants.InputVariableName,
+                returnType.getOrElse(Unknown),
+                paramName = None
+              )
+
+            compileComponentWithContextTransformation[Source](
+              a.parameters,
+              Nil,
+              Left(contextWithOnlyGlobalVariables),
+              Some(VariableConstants.InputVariableName),
+              definition,
+              defaultCtxForMethodBasedCreatedComponentExecutor
+            ).map(_._1)
+          case None =>
+            val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
+            // TODO: is this default behaviour ok?
+            val defaultCtx =
+              contextWithOnlyGlobalVariables.withVariable(
+                VariableConstants.InputVariableName,
+                Unknown,
+                paramName = None
+              )
+            NodeCompilationResult(Map.empty, None, defaultCtx, error)
+        }
+      case frag @ FragmentInputDefinition(id, _, _) =>
+        val parameterDefinitions                 = fragmentDefinitionExtractor.extractParametersDefinition(frag)
+        val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name.value -> a.typ).toMap
+        val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
+
+        val compilationResult = definitions.getComponent(ComponentType.Fragment, id) match {
+          // This case is when fragment is stubbed with test data
+          case Some(definition) =>
+            compileComponentWithContextTransformation[Source](
+              Nil,
+              Nil,
+              Left(contextWithOnlyGlobalVariables),
+              None,
+              definition,
+              _ => Valid(validationContext)
+            ).map(_._1)
+
+          // For default case, we creates source that support test with parameters
+          case None =>
+            val validatorsCompilationResult = parameterDefinitions.value.flatMap { paramDef =>
+              paramDef.validators.map(v =>
+                expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ, validationContext.globalVariables)
+              )
+            }.sequence
+
+            NodeCompilationResult(
+              Map.empty,
+              None,
+              Valid(validationContext),
+              validatorsCompilationResult.andThen(_ =>
+                Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
+              )
             )
+        }
 
-          compileComponentWithContextTransformation[Source](
-            a.parameters,
-            Nil,
-            Left(contextWithOnlyGlobalVariables),
-            Some(VariableConstants.InputVariableName),
-            definition,
-            defaultCtxForMethodBasedCreatedComponentExecutor
-          ).map(_._1)
-        case None =>
-          val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
-          // TODO: is this default behaviour ok?
-          val defaultCtx =
-            contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, Unknown, paramName = None)
-          NodeCompilationResult(Map.empty, None, defaultCtx, error)
-      }
-    case frag @ FragmentInputDefinition(id, _, _) =>
-      val parameterDefinitions                 = fragmentDefinitionExtractor.extractParametersDefinition(frag)
-      val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name.value -> a.typ).toMap
-      val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
+        val parameterNameValidation = fragmentParameterValidator.validateParameterNames(parameterDefinitions.value)
 
-      val compilationResult = definitions.getComponent(ComponentType.Fragment, id) match {
-        // This case is when fragment is stubbed with test data
-        case Some(definition) =>
-          compileComponentWithContextTransformation[Source](
-            Nil,
-            Nil,
-            Left(contextWithOnlyGlobalVariables),
-            None,
-            definition,
-            _ => Valid(validationContext)
-          ).map(_._1)
+        // by relying on name for the field names used on FE, we display the same errors under all fields with the
+        // duplicated name
+        // TODO: display all errors when switching to field name errors not reliant on parameter name
+        val displayUniqueNameReliantErrors = parameterNameValidation.fold(
+          errors => !errors.exists(_.isInstanceOf[DuplicateFragmentInputParameter]),
+          _ => true
+        )
 
-        // For default case, we creates source that support test with parameters
-        case None =>
-          val validatorsCompilationResult = parameterDefinitions.value.flatMap { paramDef =>
-            paramDef.validators.map(v =>
-              expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ, validationContext.globalVariables)
-            )
-          }.sequence
+        val displayableErrors = parameterNameValidation |+| {
+          if (displayUniqueNameReliantErrors)
+            uniqueNameReliantErrors(frag, parameterDefinitions, validationContext)
+          else
+            Valid(())
+        }
 
-          NodeCompilationResult(
-            Map.empty,
-            None,
-            Valid(validationContext),
-            validatorsCompilationResult.andThen(_ =>
-              Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
-            )
-          )
-      }
-
-      val parameterNameValidation = fragmentParameterValidator.validateParameterNames(parameterDefinitions.value)
-
-      // by relying on name for the field names used on FE, we display the same errors under all fields with the
-      // duplicated name
-      // TODO: display all errors when switching to field name errors not reliant on parameter name
-      val displayUniqueNameReliantErrors = parameterNameValidation.fold(
-        errors => !errors.exists(_.isInstanceOf[DuplicateFragmentInputParameter]),
-        _ => true
-      )
-
-      val displayableErrors = parameterNameValidation |+| {
-        if (displayUniqueNameReliantErrors)
-          uniqueNameReliantErrors(frag, parameterDefinitions, validationContext)
-        else
-          Valid(())
-      }
-
-      compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
+        compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
+    }
   }
 
   private def uniqueNameReliantErrors(
@@ -199,7 +219,13 @@ class NodeCompiler(
         fragmentParameterValidator.validateFixedExpressionValues(
           param,
           validationContext,
-          expressionCompiler
+          expressionCompiler.withExpressionParsers(expressionParsers =>
+            expressionParsers.map {
+              case (language, parser: SpelExpressionParser) =>
+                language -> parser.withValidator(v => v.withTyper(t => t.withAbsentVariableReferenceAllowed(true)))
+              case other => other
+            }
+          )
         )
       }
       .sequence
@@ -216,9 +242,10 @@ class NodeCompiler(
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(
-      implicit jobData: JobData,
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): NodeCompilationResult[AnyRef] = {
+    import scenarioCompilationDependencies._
 
     val outputVar       = data.outputVar.map(OutputVar.customNode)
     val defaultCtx      = ctx.fold(identity, _ => contextWithOnlyGlobalVariables)
@@ -248,7 +275,10 @@ class NodeCompiler(
   def compileSink(
       sink: Sink,
       ctx: ValidationContext
-  )(implicit nodeId: NodeId, jobData: JobData): NodeCompilationResult[api.process.Sink] = {
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
 
     definitions.getComponent(ComponentType.Sink, ref.typ) match {
@@ -341,21 +371,25 @@ class NodeCompiler(
   def compileProcessor(
       n: Processor,
       ctx: ValidationContext
-  )(implicit nodeId: NodeId, jobData: JobData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, None)
   }
 
   def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: OutputVar)(
       implicit nodeId: NodeId,
-      jobData: JobData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, Some(outputVar))
   }
 
   private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
       implicit nodeId: NodeId,
-      jobData: JobData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    import scenarioCompilationDependencies._
 
     definitions.getComponent(ComponentType.Service, n.id) match {
       case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
@@ -385,19 +419,27 @@ class NodeCompiler(
       componentDefinition: ComponentDefinitionWithImplementation,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
-  )(implicit nodeId: NodeId, jobData: JobData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     val defaultCtxForMethodBasedCreatedComponentExecutor
         : Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = returnTypeOpt =>
       outputVar match {
         case Some(out) =>
           returnTypeOpt
-            .map(Valid(_))
-            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable"))))))
-            .andThen(validationContext.withVariable(out, _))
+            .map(validationContext.withVariable(out, _))
+            .getOrElse {
+              logger.warn(
+                s"Scenario [${scenarioCompilationDependencies.metaData.name}] node [$nodeId] compilation warning. " +
+                  s"Found ${out.fieldName} = ${out.outputName} but service [${serviceRef.id}] used by the node doesn't need it. It will be skipped."
+              )
+              Valid(validationContext)
+            }
         case None => Valid(validationContext)
       }
 
-    def createService(invoker: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
+    def createService(invoker: ServiceInvoker) =
       compiledgraph.service.ServiceRef(
         id = serviceRef.id,
         invoker = invoker,
@@ -416,7 +458,7 @@ class NodeCompiler(
       // TODO: Currently in case of object compilation failures we prefer to create "dumb" service invoker, with empty parameters list
       //       instead of return Invalid - I assume that it is probably because of errors accumulation purpose.
       //       We should clean up this compilation process by some NodeCompilationResult refactor like introduction of WriterT monad transformer
-      createService(serviceInvoker, nodeParams, compilationResult.parameters.getOrElse(List.empty))
+      createService(serviceInvoker)
     }
   }
 
@@ -447,7 +489,12 @@ class NodeCompiler(
       (node.outputVar, returnTypeOpt) match {
         case (Some(varName), Some(typ)) => ctxWithVar(OutputVar.customNode(varName), typ)
         case (None, None)               => Valid(validationContext)
-        case (Some(_), None) => Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable")))))
+        case (Some(outputVarValue), None) =>
+          logger.warn(
+            s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
+              s"Found outputVar = ${outputVarValue} but custom node [${node.id}] used by the node doesn't need it. It will be skipped."
+          )
+          Valid(validationContext)
         case (None, Some(_)) if ending => Valid(validationContext)
         case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set(ParameterName("OutputVariable")))))
       }
@@ -464,9 +511,10 @@ class NodeCompiler(
         ValidationContext
       ]
   )(
-      implicit jobData: JobData,
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
+    import scenarioCompilationDependencies._
     componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
         val afterValidation =
@@ -548,8 +596,9 @@ class NodeCompiler(
       additionalDependencies: Seq[AnyRef]
   )(
       implicit nodeId: NodeId,
-      jobData: JobData
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ComponentExecutor]) = {
+    import scenarioCompilationDependencies._
     val ctx            = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
     val branchContexts = ctxOrBranches.getOrElse(Map.empty)
 
@@ -568,7 +617,7 @@ class NodeCompiler(
             compiledParameters,
             outputVariableNameOpt,
             additionalDependencies,
-            componentUseCase,
+            runtimeMode.createContext(nodesDeploymentData.get(nodeId)),
             nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>
@@ -625,7 +674,10 @@ class NodeCompiler(
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
       dynamicDefinition: DynamicComponentDefinitionWithImplementation
-  )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
+      nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (dynamicDefinition.component, eitherSingleOrJoin) match {
       case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
         dynamicNodeValidator.validateNode(
@@ -664,26 +716,31 @@ class NodeCompiler(
   object ServiceCompiler {
 
     def compile(
-        n: ServiceRef,
+        serviceRef: ServiceRef,
         outputVar: Option[OutputVar],
         objWithMethod: MethodBasedComponentDefinitionWithImplementation,
         ctx: ValidationContext
     )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters =
-        expressionCompiler.compileExecutorComponentNodeParameters(objWithMethod.parameters, n.parameters, ctx)
+        expressionCompiler.compileExecutorComponentNodeParameters(objWithMethod.parameters, serviceRef.parameters, ctx)
       val outputCtx = outputVar match {
         case Some(output) =>
           objWithMethod.returnType
-            .map(Valid(_))
-            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable"))))))
-            .andThen(ctx.withVariable(output, _))
+            .map(ctx.withVariable(output, _))
+            .getOrElse {
+              logger.warn(
+                s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
+                  s"Found ${output.fieldName} = ${output.outputName} but service [${serviceRef.id}] used by the node doesn't need it. It will be skipped."
+              )
+              Valid(ctx)
+            }
         case None => Valid(ctx)
       }
 
-      val serviceRef = computedParameters.map { params =>
+      val compiledServiceRef = computedParameters.map { params =>
         val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, jobData))
         compiledgraph.service.ServiceRef(
-          id = n.id,
+          id = serviceRef.id,
           invoker = new MethodBasedServiceInvoker(jobData.metaData, nodeId, outputVar, objWithMethod, evaluateParams),
           resultCollector = resultCollector
         )
@@ -693,7 +750,7 @@ class NodeCompiler(
         nodeTypingInfo,
         None,
         outputCtx,
-        serviceRef.fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
+        compiledServiceRef.fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
       )
     }
 

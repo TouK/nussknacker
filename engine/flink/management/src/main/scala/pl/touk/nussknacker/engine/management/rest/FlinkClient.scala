@@ -1,16 +1,13 @@
 package pl.touk.nussknacker.engine.management.rest
 
-import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobDetails, JobOverview}
 import sttp.client3.SttpBackend
 
 import java.io.File
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait FlinkClient {
@@ -21,15 +18,15 @@ trait FlinkClient {
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[JobOverview]]]
 
-  def getJobDetails(jobId: String): Future[Option[JobDetails]]
+  def getJobDetails(jobId: JobID): Future[Option[JobDetails]]
 
-  def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig]
+  def getJobConfig(jobId: JobID): Future[flinkRestModel.ExecutionConfig]
 
-  def cancel(deploymentId: ExternalDeploymentId): Future[Unit]
+  def cancel(jobId: JobID): Future[Unit]
 
-  def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
+  def makeSavepoint(jobId: JobID, savepointDir: Option[String]): Future[SavepointResult]
 
-  def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
+  def stop(jobId: JobID, savepointDir: Option[String]): Future[SavepointResult]
 
   def getClusterOverview: Future[ClusterOverview]
 
@@ -40,28 +37,30 @@ trait FlinkClient {
       mainClass: String,
       args: List[String],
       savepointPath: Option[String],
-      jobId: Option[String]
-  ): Future[Option[ExternalDeploymentId]]
+      jobId: Option[JobID]
+  ): Future[Option[JobID]]
 
 }
 
 object FlinkClient extends LazyLogging {
 
   def create(
-      config: FlinkConfig,
-      scenarioStateCacheTTL: Option[FiniteDuration]
-  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ValidatedNel[String, FlinkClient] = {
-    HttpFlinkClient.create(config).map { httpClient =>
-      scenarioStateCacheTTL
-        .map { cacheTTL =>
-          logger.debug(s"Wrapping FlinkRestManager's client: $httpClient with caching mechanism with TTL: $cacheTTL")
-          new CachedFlinkClient(httpClient, cacheTTL, config.jobConfigsCacheSize)
-        }
-        .getOrElse {
-          logger.debug(s"Skipping caching for FlinkRestManager's client: $httpClient")
-          httpClient
-        }
-    }
+      config: ParsedHttpFlinkClientConfig
+  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): FlinkClient = {
+    val httpClient = new HttpFlinkClient(
+      restUrl = config.restUrl,
+      scenarioStateRequestTimeout = config.scenarioStateRequestTimeout,
+      jobManagerTimeout = config.jobManagerTimeout
+    )
+    config.scenarioStateCacheTTL
+      .map { cacheTTL =>
+        logger.debug(s"Wrapping FlinkRestManager's client: $httpClient with caching mechanism with TTL: $cacheTTL")
+        new CachedFlinkClient(httpClient, cacheTTL, config.jobConfigsCacheSize)
+      }
+      .getOrElse {
+        logger.debug(s"Skipping caching for FlinkRestManager's client: $httpClient")
+        httpClient
+      }
   }
 
 }

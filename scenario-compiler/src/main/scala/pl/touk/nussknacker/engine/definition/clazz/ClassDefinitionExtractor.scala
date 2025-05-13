@@ -1,24 +1,24 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, StateT}
+import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
 import cats.implicits.catsSyntaxSemigroup
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, MethodTypeInfo, Parameter, TypingFunction}
-import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
-  AddPropertyNextToGetter,
-  DoNothing,
-  ReplaceGetterWithProperty
-}
 import pl.touk.nussknacker.engine.api.process.{
   ClassExtractionSettings,
   TypingFunctionForClassMember,
   VisibleMembersPredicate
 }
+import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
+  AddPropertyNextToGetter,
+  DoNothing,
+  ReplaceGetterWithProperty
+}
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.{
   extractClass,
   extractGenericReturnType,
@@ -107,7 +107,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
         !settings.isHidden(str.runtimeObjType.klass) && str.runtimeObjType.params.forall(typeResultVisible)
       case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
       case TypedNull         => true
-      case Unknown           => true
+      case Unknown(_)        => true
     }
     def filterOneMethod(method: MethodDefinition): Boolean = {
       val noVarArgTypes = method.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
@@ -141,7 +141,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
 
         methodsForParams
           .find { case (_, method) =>
-            methodsForParams.forall(mi => method.signature.result.canBeConvertedTo(mi._2.signature.result))
+            methodsForParams.forall(mi => method.signature.result.canBeLooselyAssignedTo(mi._2.signature.result))
           }
           .getOrElse(methodsForParams.minBy(_._2.signature.result.display))
       }
@@ -273,7 +273,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
               )
               reflectionBasedDefinition.result
             }
-            if (returnedResultType.canBeConvertedTo(returnedResultType)) {
+            if (returnedResultType.canBeLooselyAssignedTo(returnedResultType)) {
               returnedResultType
             } else {
               logger.warn(

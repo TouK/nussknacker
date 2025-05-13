@@ -2,9 +2,9 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import shapeless.syntax.std.tuple._
-import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait V1_056__CreateScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   private val definitions = new ScenarioActivitiesDefinitions(profile)
 
@@ -22,7 +22,7 @@ trait V1_056__CreateScenarioActivitiesDefinition extends SlickMigration with Laz
     for {
       _ <- definitions.scenarioActivitiesTable.schema.create
       _ <-
-        sqlu"""ALTER TABLE "scenario_activities" ADD CONSTRAINT scenario_id_fk FOREIGN KEY ("scenario_id") REFERENCES "processes" ("id") ON DELETE CASCADE;"""
+        sqlu"""ALTER TABLE "#${profile.schemaName}"."scenario_activities" ADD CONSTRAINT scenario_id_fk FOREIGN KEY ("scenario_id") REFERENCES "#${profile.schemaName}"."processes" ("id") ON DELETE CASCADE;"""
     } yield logger.info("Execution finished for migration V1_056__CreateScenarioActivitiesDefinition")
   }
 
@@ -30,12 +30,13 @@ trait V1_056__CreateScenarioActivitiesDefinition extends SlickMigration with Laz
 
 object V1_056__CreateScenarioActivitiesDefinition {
 
-  class ScenarioActivitiesDefinitions(val profile: JdbcProfile) {
-    import profile.api._
+  class ScenarioActivitiesDefinitions(val profile: NuJdbcProfile) {
+    import profile.apiWithEnforcedSchema._
 
     val scenarioActivitiesTable = TableQuery[ScenarioActivityEntity]
 
-    class ScenarioActivityEntity(tag: Tag) extends Table[ScenarioActivityEntityData](tag, "scenario_activities") {
+    class ScenarioActivityEntity(tag: Tag)
+        extends TableWithSchema[ScenarioActivityEntityData](tag, "scenario_activities") {
 
       def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
@@ -102,7 +103,8 @@ object V1_056__CreateScenarioActivitiesDefinition {
 
       override def * =
         (id :: tupleWithoutAutoIncId.productElements).tupled <> (
-          ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
+          ScenarioActivityEntityData.apply _ tupled,
+          ScenarioActivityEntityData.unapply
         )
 
     }

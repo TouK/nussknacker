@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.testcomponents
 
-import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   OutputVariableNameDependency,
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 
@@ -26,10 +26,10 @@ object SpelTemplatePartsService extends EagerService with SingleInputDynamicComp
   private val spelTemplateParameterName = ParameterName("template")
 
   private val spelTemplateParameter = Parameter
-    .optional[String](spelTemplateParameterName)
+    .optional[TemplateEvaluationResult](spelTemplateParameterName)
     .copy(
       isLazyParameter = true,
-      editor = Some(SpelTemplateParameterEditor)
+      editors = List(SpelTemplateParameterEditor)
     )
 
   override type State = Any
@@ -58,7 +58,7 @@ object SpelTemplatePartsService extends EagerService with SingleInputDynamicComp
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext,
     ): Future[Any] = {
       val templateResult =
         params.extractOrEvaluateLazyParamUnsafe[TemplateEvaluationResult](spelTemplateParameterName, context)

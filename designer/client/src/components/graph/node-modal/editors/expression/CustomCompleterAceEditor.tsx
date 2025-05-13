@@ -1,22 +1,25 @@
-import React, { useCallback, useState } from "react";
-import { Box, Fade, LinearProgress, styled } from "@mui/material";
 import { cx } from "@emotion/css";
-import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
+import { Box, Fade, IconButton, LinearProgress, styled } from "@mui/material";
 import { isEmpty } from "lodash";
-import AceEditor from "./AceWithSettings";
+import type { ReactNode } from "react";
+import React, { useCallback, useState } from "react";
+import type ReactAce from "react-ace/lib/ace";
+
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { AceWrapperInputProps } from "./AceWrapper";
-import { ExpressionLang } from "./types";
-import ReactAce from "react-ace/lib/ace";
-import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
-import { FieldError } from "../Validators";
 import { nodeInputCss } from "../../../../NodeInput";
+import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
+import type { FieldError } from "../Validators";
+import AceEditor from "./AceWithSettings";
+import type { AceWrapperInputProps } from "./AceWrapper";
+import type { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
+import type { ExpressionLang } from "./types";
 
 type InputProps = AceWrapperInputProps & {
     language: ExpressionLang | string;
     value: string;
     onValueChange: (value: string) => void;
     ref?: React.Ref<ReactAce>;
+    useAceWorker?: boolean;
 };
 
 export type CustomCompleterAceEditorProps = {
@@ -24,7 +27,7 @@ export type CustomCompleterAceEditorProps = {
     isLoading?: boolean;
     inputProps: InputProps;
     fieldErrors?: FieldError[];
-    validationLabelInfo?: string;
+    validationLabelInfo?: ReactNode;
     showValidation?: boolean;
     isMarked?: boolean;
     className?: string;

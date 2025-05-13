@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.test.mock
 
+import cats.data.OptionT
 import cats.instances.future._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
@@ -8,15 +10,15 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchCanonical,
   FetchComponentsUsages,
   FetchScenarioGraph,
   NotFetch
 }
-import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,6 +44,30 @@ class MockFetchingProcessRepository private (
 )(protected implicit val ec: ExecutionContext)
     extends FetchingProcessRepository[Future]
     with BasicRepository {
+
+  override def getProcessVersion(
+      processName: ProcessName,
+      versionId: VersionId
+  )(implicit user: LoggedUser): Future[Option[ProcessVersion]] = {
+    val result = for {
+      processId <- OptionT(fetchProcessId(processName))
+      details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
+    } yield details.toEngineProcessVersion
+    result.value
+  }
+
+  override def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
+      q: ScenarioQuery
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[PS]] =
+    fetchLatestProcessesDetails[PS](q).map(_.map(_.json))
+
+  override def fetchLatestVersionForProcesses(
+      query: ScenarioQuery,
+      scenarioVersionQuery: ScenarioVersionQuery
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Map[ProcessId, ScenarioVersionMetadata]] = Future.successful(Map.empty)
 
   override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
@@ -91,8 +117,8 @@ class MockFetchingProcessRepository private (
     val shapeStrategy: ScenarioShapeFetchStrategy[PS] = implicitly[ScenarioShapeFetchStrategy[PS]]
 
     shapeStrategy match {
-      case NotFetch       => process.copy(json = ().asInstanceOf[PS])
-      case FetchCanonical => process.asInstanceOf[ScenarioWithDetailsEntity[PS]]
+      case NotFetch       => process.copy(json = ())
+      case FetchCanonical => process
       case FetchScenarioGraph =>
         process
           .mapScenario(canonical => CanonicalProcessConverter.toScenarioGraph(canonical))
@@ -106,5 +132,5 @@ class MockFetchingProcessRepository private (
 
   private def check[T](condition: Option[T], value: T) = condition.forall(_ == value)
 
-  private def checkSeq[T](condition: Option[Seq[T]], value: T) = condition.forall(_.contains(value))
+  private def checkSeq[T](condition: Option[Iterable[T]], value: T) = condition.forall(_.toSeq.contains(value))
 }

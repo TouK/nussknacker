@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, ListTopicsOptions}
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
+import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
-import java.util.concurrent.ExecutionException
 import java.util.regex.Pattern
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
@@ -32,7 +33,7 @@ class AllNonHiddenTopicsSelectionStrategy(
     schemaRegistryClient: SchemaRegistryClient,
     kafkaAdminClient: Admin,
     fetchTimeout: FiniteDuration
-) extends TopicSelectionStrategy {
+) extends TopicSelectionStrategy with LazyLogging {
 
   override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     val topicsFromSchemaRegistry = schemaRegistryClient.getAllTopics
@@ -50,12 +51,10 @@ class AllNonHiddenTopicsSelectionStrategy(
           .toList
       } catch {
         // In some tests we pass dummy kafka address, so when we try to get topics from kafka it fails
-        case err: ExecutionException =>
-          err.getCause match {
-            case _: TimeoutException => List.empty
-            case _                   => throw err
-          }
-        case _: KafkaException =>
+        case err if ExceptionUtils.unwrapCommonWrappingExceptions(err).isInstanceOf[TimeoutException] =>
+          List.empty
+        case ex: KafkaException =>
+          logger.error("Kafka exception while getting topics", ex)
           List.empty
       }
     }

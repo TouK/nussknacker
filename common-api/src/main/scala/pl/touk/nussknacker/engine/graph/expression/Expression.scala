@@ -4,32 +4,50 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.{
+  DictKeyWithLabel,
+  Json,
+  JsonTemplate,
+  Spel,
+  SpelTemplate,
+  TabularDataDefinition
+}
 
 // TODO in the future 'expression' should be a dedicated type rather than String, it would for example make DictKeyWithLabelExpression handling prettier
 @JsonCodec case class Expression(language: Language, expression: String)
 
 object Expression {
 
-  sealed trait Language extends Serializable
+  sealed trait Language extends Serializable {
+
+    override def toString: String = this match {
+      case Spel                  => "spel"
+      case SpelTemplate          => "spelTemplate"
+      case DictKeyWithLabel      => "dictKeyWithLabel"
+      case TabularDataDefinition => "tabularDataDefinition"
+      case Json                  => "json"
+      case JsonTemplate          => "jsonTemplate"
+    }
+
+  }
 
   object Language {
     object Spel                  extends Language
     object SpelTemplate          extends Language
     object DictKeyWithLabel      extends Language
     object TabularDataDefinition extends Language
+    object Json                  extends Language
+    object JsonTemplate          extends Language
 
-    implicit val encoder: Encoder[Language] = Encoder.encodeString.contramap {
-      case Spel                  => "spel"
-      case SpelTemplate          => "spelTemplate"
-      case DictKeyWithLabel      => "dictKeyWithLabel"
-      case TabularDataDefinition => "tabularDataDefinition"
-    }
+    implicit val encoder: Encoder[Language] = Encoder.encodeString.contramap(_.toString)
 
     implicit val decoder: Decoder[Language] = Decoder.decodeString.emap {
       case "spel"                  => Right(Spel)
       case "spelTemplate"          => Right(SpelTemplate)
       case "dictKeyWithLabel"      => Right(DictKeyWithLabel)
       case "tabularDataDefinition" => Right(TabularDataDefinition)
+      case "json"                  => Right(Json)
+      case "jsonTemplate"          => Right(JsonTemplate)
       case unknown                 => Left(s"Unknown language [$unknown]")
     }
 
@@ -45,4 +63,8 @@ object Expression {
   )
 
   def tabularDataDefinition(definition: String): Expression = Expression(Language.TabularDataDefinition, definition)
+
+  def json(jsonString: String): Expression = Expression(Language.Json, jsonString)
+
+  def jsonTemplate(jsonTemplateString: String): Expression = Expression(Language.JsonTemplate, jsonTemplateString)
 }

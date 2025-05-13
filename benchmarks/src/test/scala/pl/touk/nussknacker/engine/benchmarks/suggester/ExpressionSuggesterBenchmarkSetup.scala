@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import java.time.{Duration, LocalDateTime}
-import scala.concurrent.duration.{Duration => ScalaDuration}
 import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.{Duration => ScalaDuration}
 
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class ExpressionSuggesterBenchmarkSetup() {

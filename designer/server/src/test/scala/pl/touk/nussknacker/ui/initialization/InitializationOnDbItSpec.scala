@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.ui.initialization
 
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.{DbTesting, WithHsqlDbTesting, WithPostgresDbTesting, WithTestDb}
 import pl.touk.nussknacker.test.base.it.WithClock
-import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -27,13 +28,13 @@ abstract class InitializationOnDbItSpec
     with BeforeAndAfterAll {
   this: DbTesting with WithTestDb with WithClock =>
 
-  import Initialization.nussknackerUser
-
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  import Initialization.nussknackerUser
 
   private val processName = ProcessName("proc1")
 
-  private val migrations = mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2))
+  private val migrations = mapProcessingTypeDataProvider[ProcessMigrations]("streaming" -> new TestMigrations(1, 2))
 
   private lazy val scenarioActivityRepository = TestFactory.newScenarioActivityRepository(testDbRef, clock)
 
@@ -128,7 +129,6 @@ abstract class InitializationOnDbItSpec
       canonicalProcess = sampleCanonicalProcess(processName),
       processingType = "streaming",
       isFragment = fragment,
-      forwardedUserName = None
     )
 
     dbioRunner

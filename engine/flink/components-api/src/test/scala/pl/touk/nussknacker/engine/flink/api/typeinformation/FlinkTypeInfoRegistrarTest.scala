@@ -5,8 +5,8 @@ import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
 import java.sql.{Date, Time, Timestamp}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
 
 class FlinkTypeInfoRegistrarTest extends AnyFunSuite with Matchers {
 

@@ -14,19 +14,19 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
+import pl.touk.nussknacker.ui.config.ComponentLinkConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
-  FetchAllWithUsages,
   FetchAllWithoutUsages,
-  FetchNonFragmentsWithUsages,
-  FetchNonFragmentsWithoutUsages
+  FetchAllWithUsages,
+  FetchNonFragmentsWithoutUsages,
+  FetchNonFragmentsWithUsages
 }
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,14 +63,13 @@ object DefaultComponentService {
       modifiedAt = process.modifiedAt,
       modifiedBy = process.modifiedBy,
       createdAt = process.createdAt,
-      createdBy = process.createdBy,
-      lastAction = process.lastAction
+      createdBy = process.createdBy
     )
 
 }
 
 class DefaultComponentService(
-    componentLinksConfig: ComponentLinksConfig,
+    componentLinksConfig: List[ComponentLinkConfig],
     processingTypeDataProvider: ProcessingTypeDataProvider[ComponentServiceProcessingTypeData, _],
     processService: ProcessService,
     fragmentsRepository: FragmentRepository
@@ -169,7 +168,8 @@ class DefaultComponentService(
           categories = List(category),
           links = links,
           usageCount = -1, // It will be enriched in the next step, after merge of components definitions
-          allowedProcessingModes = definition.allowedProcessingModes
+          allowedProcessingModes = definition.allowedProcessingModes,
+          label = definition.label
         )
       }
   }

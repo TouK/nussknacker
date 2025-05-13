@@ -1,33 +1,35 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
-import akka.http.scaladsl.server
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Json
+import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import org.apache.pekko.http.scaladsl.server
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.restmodel.DeployRequest
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
-import pl.touk.nussknacker.test.mock.MockDeploymentManager
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
+import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
@@ -73,7 +75,7 @@ class ManagementResourcesSpec
   test("process during deploy cannot be deployed again") {
     createDeployedExampleScenario(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
+    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -83,7 +85,7 @@ class ManagementResourcesSpec
   test("canceled process can't be canceled again") {
     createDeployedCanceledExampleScenario(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
+    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -93,7 +95,7 @@ class ManagementResourcesSpec
   test("can't deploy archived process") {
     createArchivedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
+    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.Canceled) {
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
         responseAs[String] shouldBe ProcessIllegalAction
@@ -125,15 +127,66 @@ class ManagementResourcesSpec
     }
   }
 
-  test("deploys and cancels with comment") {
+  // TODO: To be removed. See comment in ManagementResources.deployRequestEntity
+  test("deploys and cancels with plain text comment") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deployProcess(
+    deployProcessCommentDeprecated(
       ProcessTestData.sampleScenario.name,
       comment = Some("deployComment")
     ) ~> checkThatEventually {
       getProcess(processName) ~> check {
         val processDetails = responseAs[ScenarioWithDetails]
         processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+      }
+      cancelProcessCommentDeprecated(
+        ProcessTestData.sampleScenario.name,
+        comment = Some("cancelComment")
+      ) ~> checkThatEventually {
+        status shouldBe StatusCodes.OK
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ScenarioWithDetails]
+          processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+        }
+      }
+    }
+  }
+
+  // TODO: To be removed. See comment in ManagementResources.deployRequestEntity
+  test("deploys and cancels with plain text no comment") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+    deployProcessCommentDeprecated(
+      ProcessTestData.sampleScenario.name,
+      comment = None
+    ) ~> checkThatEventually {
+      status shouldBe StatusCodes.OK
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ScenarioWithDetails]
+        processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+      }
+      cancelProcessCommentDeprecated(
+        ProcessTestData.sampleScenario.name,
+        comment = None
+      ) ~> checkThatEventually {
+        status shouldBe StatusCodes.OK
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ScenarioWithDetails]
+          processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+        }
+      }
+    }
+  }
+
+  test("deploys and cancels with comment") {
+    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
+    deployProcess(
+      ProcessTestData.sampleScenario.name,
+      comment = Some("deployComment")
+    ) ~> check {
+      eventually {
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ScenarioWithDetails]
+          processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
+        }
       }
       cancelProcess(
         ProcessTestData.sampleScenario.name,
@@ -151,33 +204,6 @@ class ManagementResourcesSpec
             expectedDeployCommentInLegacyService,
             expectedStopCommentInLegacyService
           )
-          val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
-
-          Get(s"/processes/${ProcessTestData.sampleScenario.name}/deployments") ~> withAllPermissions(
-            processesRoute
-          ) ~> check {
-            val deploymentHistory = responseAs[List[ProcessAction]]
-            deploymentHistory.map(a =>
-              (a.processVersionId, a.user, a.actionName, a.commentId, a.comment, a.buildInfo)
-            ) shouldBe List(
-              (
-                VersionId(2),
-                TestFactory.user().username,
-                ScenarioActionName.Cancel,
-                Some(secondCommentId),
-                Some(expectedStopComment),
-                Map()
-              ),
-              (
-                VersionId(2),
-                TestFactory.user().username,
-                ScenarioActionName.Deploy,
-                Some(firstCommentId),
-                Some(expectedDeployComment),
-                TestFactory.buildInfo
-              )
-            )
-          }
         }
       }
     }
@@ -233,8 +259,15 @@ class ManagementResourcesSpec
   }
 
   test("not authorize user with write permission to deploy") {
+    import io.circe.syntax._
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    Post(s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}") ~> withPermissions(
+    Post(
+      s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        DeployRequest(None, None).asJson.noSpaces
+      )
+    ) ~> withPermissions(
       deployRoute(),
       Permission.Write
     ) ~> check {
@@ -274,22 +307,23 @@ class ManagementResourcesSpec
       )
     saveCanonicalProcessAndAssertSuccess(invalidScenario)
 
-    deploymentManager.withEmptyProcessState(invalidScenario.name) {
+    deploymentManager.withEmptyScenarioState(invalidScenario.name) {
       deployProcess(invalidScenario.name) ~> check {
         responseAs[String] shouldBe "Cannot deploy invalid scenario"
         status shouldBe StatusCodes.Conflict
       }
       getProcess(invalidScenario.name) ~> check {
-        decodeDetails.state.value.status shouldEqual SimpleStateStatus.NotDeployed
+        decodeDetails.state.value.status.name shouldEqual SimpleStateStatus.NotDeployed.name
       }
     }
   }
 
   test("should return failure for not validating deployment") {
+    val requestedParallelism = FlinkClientStub.maxParallelism + 1
     val largeParallelismScenario = ProcessTestData.sampleScenario.copy(metaData =
       MetaData(
         ProcessTestData.sampleScenario.name.value,
-        StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))
+        StreamMetaData(parallelism = Some(requestedParallelism))
       )
     )
     saveCanonicalProcessAndAssertSuccess(largeParallelismScenario)
@@ -297,7 +331,10 @@ class ManagementResourcesSpec
     deploymentManager.withFailingDeployment(largeParallelismScenario.name) {
       deployProcess(largeParallelismScenario.name) ~> check {
         status shouldBe StatusCodes.BadRequest
-        responseAs[String] shouldBe "Parallelism too large"
+        responseAs[
+          String
+        ] shouldBe s"Not enough free slots on Flink cluster. Available slots: ${FlinkClientStub.maxParallelism}, requested: ${requestedParallelism}. " +
+          s"Decrease scenario's parallelism or extend Flink cluster resources"
       }
     }
   }
@@ -314,20 +351,20 @@ class ManagementResourcesSpec
 
   test("snapshots process") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deploymentManager.withProcessRunning(ProcessTestData.sampleScenario.name) {
+    deploymentManager.withScenarioRunning(ProcessTestData.sampleScenario.name) {
       snapshot(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe MockDeploymentManager.savepointPath
+        responseAs[String] shouldBe FlinkClientStub.savepointPath
       }
     }
   }
 
   test("stops process") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deploymentManager.withProcessRunning(ProcessTestData.sampleScenario.name) {
+    deploymentManager.withScenarioRunning(ProcessTestData.sampleScenario.name) {
       stop(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe MockDeploymentManager.stopSavepointPath
+        responseAs[String] shouldBe FlinkClientStub.stopSavepointPath
       }
     }
   }
@@ -388,7 +425,7 @@ class ManagementResourcesSpec
     }
   }
 
-  test("refuses to test if too much data") {
+  test("refuses to test if too much data received") {
 
     import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -397,15 +434,66 @@ class ManagementResourcesSpec
         .streaming(processName.value)
         .parallelism(1)
         .source("startProcess", "csv-source")
-        .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'".spel)
+        .emptySink(
+          "end",
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "''".spel
+        )
     }
     saveCanonicalProcessAndAssertSuccess(process)
-    val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
 
-    tooLargeTestDataContentList.foreach { tooLargeData =>
-      testScenario(process, tooLargeData) ~> check {
-        status shouldEqual StatusCodes.BadRequest
-      }
+    val tooManySamples = List
+      .fill(50)("\"a json string\"")
+      .mkString("\n")
+    testScenario(process, tooManySamples) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Test data has too many samples (50). Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
+    }
+
+    val longString = "a long json string".repeat(50)
+    val tooManyCharacters = List
+      .fill(20)("\"" + longString + "\"")
+      .mkString("\n")
+    testScenario(process, tooManyCharacters) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[
+        String
+      ] shouldBe "Test data has too many characters (18059). Please configure 'testDataSettings.testDataMaxLength' to increase the limit (10000)"
+    }
+  }
+
+  test("refuses to test if too big test results generated") {
+
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+    val bigListExpression = (1 to 1000).mkString("{", ",", "}").spel
+    val process = {
+      ScenarioBuilder
+        .streaming(processName.value)
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .buildSimpleVariable("big list", "bigList", bigListExpression)
+        .emptySink(
+          "end",
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "''".spel
+        )
+    }
+    saveCanonicalProcessAndAssertSuccess(process)
+
+    val testDataContent = List
+      .fill(10)("\"a json string\"")
+      .mkString("\n")
+    testScenario(process, testDataContent) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      // Approximate size can differ slightly depending on test execution environment.
+      responseAs[
+        String
+      ] should fullyMatch regex "Test results size exceeded \\(approximate size in bytes: \\d+\\). Please configure 'testDataSettings.resultsMaxBytes' to increase the limit \\(500000\\)"
     }
   }
 
@@ -417,7 +505,7 @@ class ManagementResourcesSpec
 
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
-      responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
+      responseAs[String] shouldBe "Problem in sample 2 detected: source with id 'unknown' doesn't exist in the scenario"
     }
   }
 

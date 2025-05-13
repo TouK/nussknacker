@@ -3,13 +3,18 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.connector.source.Boundedness
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreator
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  ComponentImplementationInvoker
+}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{
   CustomizableContextInitializerSource,
@@ -34,14 +39,14 @@ object TestFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.namingStrategy,
-      ComponentUseCase.TestRuntime,
-      modelData.additionalConfigsFromProvider
+      RuntimeMode.Test,
+      modelData.additionalConfigsFromProvider,
+      NodesDeploymentData.empty,
     ) {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          modelDependencies: ProcessObjectDependencies
+          modelConfig: ModelConfig
       ): List[ProcessListener] = {
         collectingListener :: defaults
       }
@@ -62,6 +67,18 @@ object TestFlinkProcessCompilerDataFactory {
             scenarioTestData
           )
 
+          override def create(
+              original: ComponentImplementationInvoker,
+              params: Params,
+              outputVariableNameOpt: Option[String],
+              additional: Seq[AnyRef]
+          ): Any = {
+            // Transform EvaluableLazyParameterCreator's into EvaluableLazyParameter's
+            // in order to have them available for resolving when executing tests
+            val resolvedParams = Params(params.nameToValueMap.map { case (name, value) => name -> resolveParam(value) })
+            original.invokeMethod(resolvedParams, outputVariableNameOpt, additional)
+          }
+
           override def handleInvoke(
               originalSource: Any,
               typingResult: TypingResult,
@@ -75,6 +92,13 @@ object TestFlinkProcessCompilerDataFactory {
                 EmptySource(typingResult)
             }
           }
+
+          private def resolveParam(param: Any): Any = param match {
+            case lazyParameterCreator: EvaluableLazyParameterCreator[_] =>
+              sourcePreparer.resolveParam(lazyParameterCreator)
+            case other =>
+              other
+          }
         })
       }
 
@@ -85,11 +109,11 @@ object TestFlinkProcessCompilerDataFactory {
 
       override protected def exceptionHandler(
           metaData: MetaData,
-          modelDependencies: ProcessObjectDependencies,
+          modelConfig: ModelConfig,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
       ): FlinkExceptionHandler = {
-        new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
+        new TestFlinkExceptionHandler(metaData, modelConfig, listeners, classLoader)
       }
 
     }
@@ -101,6 +125,10 @@ class StubbedSourcePreparer(
     testDataPreparer: TestDataPreparer,
     scenarioTestData: ScenarioTestData
 ) {
+
+  def resolveParam[T <: AnyRef](lazyParameterCreator: EvaluableLazyParameterCreator[T]): LazyParameter[T] = {
+    testDataPreparer.resolveParam(lazyParameterCreator)
+  }
 
   def prepareStubbedSource(
       originalSource: Source with FlinkSourceTestSupport[Object],
@@ -137,10 +165,10 @@ class StubbedSourcePreparer(
 
 class TestFlinkExceptionHandler(
     metaData: MetaData,
-    modelDependencies: ProcessObjectDependencies,
+    modelConfig: ModelConfig,
     listeners: Seq[ProcessListener],
     classLoader: ClassLoader
-) extends FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader) {
+) extends FlinkExceptionHandler(metaData, modelConfig, listeners, classLoader) {
 
   @silent("deprecated")
   override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()

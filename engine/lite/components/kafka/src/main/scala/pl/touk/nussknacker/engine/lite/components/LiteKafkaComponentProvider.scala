@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
   ComponentProvider,
   ComponentType,
   NussknackerVersion
 }
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
@@ -33,14 +33,14 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig = DocsConfig(config)
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    val docsConfig = DocsConfig(componentProviderConfig)
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
-    validateConfiguration(dependencies.config)
+    validateConfiguration(modelConfig.underlyingConfig)
 
     List(
       ComponentDefinition(
@@ -48,7 +48,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          dependencies,
+          modelConfig,
           new LiteKafkaSourceImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
@@ -57,7 +57,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          dependencies,
+          modelConfig,
           LiteKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
+
 import api from "../../api";
-import { ConnectionError } from "./ConnectionErrorProvider";
+import type { ConnectionError } from "./ConnectionErrorProvider";
 
 export const useCancelRequestsIfConnectionProblem = (connectionError: ConnectionError) => {
     useEffect(() => {

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
 import cats.data.ValidatedNel
-import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{AvroRuntimeException, Schema}
+import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.validation.ValidationMode

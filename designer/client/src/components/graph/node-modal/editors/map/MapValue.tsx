@@ -1,15 +1,17 @@
 import { isEqual } from "lodash";
 import React from "react";
-import { Expression, VariableTypes } from "../../../../../types";
+
+import type { Expression, VariableTypes } from "../../../../../types";
 import { NodeValue } from "../../node";
 import { EditableEditor } from "../EditableEditor";
-import { FieldError } from "../Validators";
+import type { ExpressionObj } from "../expression/types";
+import type { FieldError } from "../Validators";
 
 interface MapValueProps {
     value: Expression;
     fieldErrors: FieldError[];
     variableTypes: VariableTypes;
-    onChange?: (value: unknown) => void;
+    onChange?: (value: ExpressionObj) => void;
     showValidation?: boolean;
     readOnly?: boolean;
     isMarked?: boolean;
@@ -31,6 +33,7 @@ export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
                 valueClassName={" "}
                 variableTypes={variableTypes}
                 validationLabelInfo={validationLabelInfo}
+                showSwitch={false}
             />
         </NodeValue>
     );

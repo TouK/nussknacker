@@ -15,34 +15,9 @@ trait ProcessMigration {
 
 }
 
-object ProcessMigrations {
-
-  def empty: ProcessMigrations = new ProcessMigrations {
-    override def processMigrations: Map[Int, ProcessMigration] = Map()
-  }
-
-  def listOf(migrations: ProcessMigration*): ProcessMigrations = new ProcessMigrations {
-
-    override def processMigrations: Map[Int, ProcessMigration] = migrations.zipWithIndex.map {
-      case (processMigration, index) => index + 1 -> processMigration
-    }.toMap
-
-  }
-
-}
-
-trait ProcessMigrations extends Serializable {
-
-  def processMigrations: Map[Int, ProcessMigration]
-
-  // we assume 0 is minimal version
-  def version: Int = (processMigrations.keys.toSet + 0).max
-
-}
-
 /**
-  * It migrates data of each node in process without changing the structure of process graph.
-  */
+ * It migrates data of each node in process without changing the structure of process graph.
+ */
 trait NodeMigration extends ProcessMigration {
 
   def migrateNode(metaData: MetaData): PartialFunction[NodeData, NodeData]

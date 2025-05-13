@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import cats.data.NonEmptyList
-
-import java.lang
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
+import java.lang
 import scala.util.Try
 
 /**
@@ -45,7 +44,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
       case s: SingleTypingResult => Right(NonEmptyList.one(s))
       case u: TypedUnion         => Right(u.possibleTypes)
       case TypedNull             => Left(Unknown)
-      case Unknown               => Left(Unknown)
+      case Unknown(_)            => Left(Unknown)
     }
 
   final def promoteClasses(left: Class[_], right: Class[_]): ReturnedType = {
@@ -86,7 +85,7 @@ object NumberTypesPromotionStrategy {
     classOf[java.lang.Byte]
   )
 
-  val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
+  private val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
 
   def isDecimalNumber(clazz: Class[_]): Boolean = DecimalNumbers.contains(clazz)
 

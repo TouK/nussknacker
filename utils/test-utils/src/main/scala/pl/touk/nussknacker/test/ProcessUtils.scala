@@ -5,8 +5,8 @@ import org.apache.commons.io.IOUtils
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
+import scala.concurrent.{blocking, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, blocking}
 import scala.util.control.NonFatal
 
 object ProcessUtils extends LazyLogging with Matchers with VeryPatientScalaFutures {

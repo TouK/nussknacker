@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.util
 
 import cats.arrow.FunctionK
 import cats.effect.IO
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import sttp.client3.SttpBackend
 import sttp.client3.impl.cats.implicits.sttpBackendToCatsMappableSttpBackend
 import sttp.monad.FutureMonad

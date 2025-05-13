@@ -5,18 +5,21 @@ import io.circe.Json
 import org.apache.commons.io.FileUtils
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.table.api.DataTypes
-import org.scalatest.LoneElement
+import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.utils.NotConvertibleResultOfAlignmentException
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.table.utils.{
+  ModelClassLoaderSimulationSuite,
+  NotConvertibleResultOfAlignmentException
+}
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -24,39 +27,39 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
-import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
 class TableFileSinkTest
     extends AnyFunSuite
-    with FlinkSpec
     with Matchers
     with PatientScalaFutures
     with LoneElement
-    with ValidatedValuesDetailedMessage {
+    with ValidatedValuesDetailedMessage
+    with BeforeAndAfterAll
+    with ModelClassLoaderSimulationSuite {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val basicPingPongInputTableName    = "basic-ping-pong-input"
-  private val basicPingPongOutputTableName   = "basic-ping-pong-output"
-  private val basicExpressionOutputTableName = "basic-expression-output"
+  private val basicPingPongInputTableName    = "basic_ping_pong_input"
+  private val basicPingPongOutputTableName   = "basic_ping_pong_output"
+  private val basicExpressionOutputTableName = "basic_expression_output"
 
-  private val advancedPingPongInputTableName    = "advanced-ping-pong-input"
-  private val advancedPingPongOutputTableName   = "advanced-ping-pong-output"
-  private val advancedExpressionOutputTableName = "advanced-expression-output"
+  private val advancedPingPongInputTableName    = "advanced_ping_pong_input"
+  private val advancedPingPongOutputTableName   = "advanced_ping_pong_output"
+  private val advancedExpressionOutputTableName = "advanced_expression_output"
 
-  private val datetimePingPongInputTableName    = "datetime-ping-pong-input"
-  private val datetimePingPongOutputTableName   = "datetime-ping-pong-output"
-  private val datetimeExpressionOutputTableName = "datetime-expression-output"
+  private val datetimePingPongInputTableName    = "datetime_ping_pong_input"
+  private val datetimePingPongOutputTableName   = "datetime_ping_pong_output"
+  private val datetimeExpressionOutputTableName = "datetime_expression_output"
 
-  private val virtualColumnInputTableName  = "virtual-column-input"
-  private val virtualColumnOutputTableName = "virtual-column-output"
+  private val virtualColumnInputTableName  = "virtual_column_input"
+  private val virtualColumnOutputTableName = "virtual_column_output"
 
-  private val oneColumnOutputTableName = "one-column-output"
-  private val genericsOutputTableName  = "generics-output"
+  private val oneColumnOutputTableName = "one_column_output"
+  private val genericsOutputTableName  = "generics_output"
 
   private lazy val basicPingPongInputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$basicPingPongInputTableName")
@@ -209,37 +212,23 @@ class TableFileSinkTest
       |      'path' = 'file:///$datetimeExpressionOutputDirectory',
       |      'format' = 'json'
       |) LIKE `$datetimePingPongInputTableName`;
-      |
-      |CREATE DATABASE testdb;
-      |
-      |CREATE TABLE testdb.tablewithqualifiedname (
-      |      `quantity` INT
-      |) WITH (
-      |    'connector' = 'datagen',
-      |    'number-of-rows' = '1'
-      |);
       |""".stripMargin
-
-  private lazy val sqlTablesDefinitionFilePath = {
-    val tempFile = File.createTempFile("tables-definition", ".sql")
-    tempFile.deleteOnExit()
-    FileUtils.writeStringToFile(tempFile, tablesDefinition, StandardCharsets.UTF_8)
-    tempFile.toPath
-  }
 
   private lazy val tableComponentsConfig: Config = ConfigFactory.parseString(s"""
        |{
-       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
+       |  tableDefinition: \"\"\" $tablesDefinition \"\"\"
        |}
        |""".stripMargin)
 
-  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
+  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
     tableComponentsConfig,
-    ProcessObjectDependencies.withConfig(tableComponentsConfig)
+    ModelConfig.parse(tableComponentsConfig)
   )
 
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(tableComponents)
     .build()
@@ -256,6 +245,7 @@ class TableFileSinkTest
     FileUtils.deleteQuietly(datetimeExpressionOutputDirectory.toFile)
     FileUtils.deleteQuietly(oneColumnOutputDirectory.toFile)
     FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
+    flinkMiniClusterWithServices.close()
     super.afterAll()
   }
 

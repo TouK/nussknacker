@@ -21,7 +21,7 @@ There is the risk that big decimals enter process in other ways (for instance fr
 and they may have small scales. This may again lead to unexpected
 behaviour when using division operator. This issue can be solved by using our own version of OpDivide class, but for now we decided
 not to do it.
-*/
+ */
 object BigDecimalScaleEnsurer {
   // visible for testing
   val DEFAULT_BIG_DECIMAL_SCALE = 18
@@ -29,4 +29,5 @@ object BigDecimalScaleEnsurer {
   def ensureBigDecimalScale(value: java.math.BigDecimal): java.math.BigDecimal = {
     value.setScale(Math.max(value.scale(), BigDecimalScaleEnsurer.DEFAULT_BIG_DECIMAL_SCALE), RoundingMode.UNNECESSARY)
   }
+
 }

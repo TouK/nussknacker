@@ -1,22 +1,16 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.TcpIdleTimeoutException
+import cats.effect.unsafe.IORuntime
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.TcpIdleTimeoutException
+import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  NoOpScenarioActivityManager,
-  ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProvider,
-  ProcessingTypeDeployedScenariosProviderStub,
-  ScenarioActivityManager
-}
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -68,14 +62,12 @@ class K8sDeploymentManagerOnMocksTest
     val clientIdleTimeout = 1.second
     val k8sConfig         = K8sDeploymentManagerConfig(scenarioStateIdleTimeout = clientIdleTimeout)
     val manager = new K8sDeploymentManager(
-      LocalModelData(ConfigFactory.empty, List.empty),
+      LocalModelData(ConfigFactory.empty, List.empty).toModelDataProvider,
       k8sConfig,
       ConfigFactory.empty(),
-      DeploymentManagerDependencies(
-        new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-        new ProcessingTypeActionServiceStub,
-        NoOpScenarioActivityManager,
+      new DeploymentManagerDependencies(
         system.dispatcher,
+        IORuntime.global,
         system,
         SttpBackendStub.asynchronousFuture
       )
@@ -87,13 +79,13 @@ class K8sDeploymentManagerOnMocksTest
     stubWithFixedDelay(durationLongerThanClientTimeout)
     a[TcpIdleTimeoutException] shouldBe thrownBy {
       manager
-        .getProcessStates(ProcessName("foo"))
+        .getScenarioDeploymentsStatuses(ProcessName("foo"))
         .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     }
 
     stubWithFixedDelay(0 seconds)
     val result = manager
-      .getProcessStates(ProcessName("foo"))
+      .getScenarioDeploymentsStatuses(ProcessName("foo"))
       .map(_.value)
       .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     result shouldEqual List.empty

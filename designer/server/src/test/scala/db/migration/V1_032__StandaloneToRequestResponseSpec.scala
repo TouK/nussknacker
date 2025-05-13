@@ -1,11 +1,11 @@
 package db.migration
 
 import io.circe.Json
+import io.circe.syntax._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import io.circe.syntax._
 
 class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers {
 

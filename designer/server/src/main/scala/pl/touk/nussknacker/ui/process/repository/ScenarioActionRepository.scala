@@ -4,19 +4,17 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.app.BuildInfo
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.db.entity.{
   AdditionalProperties,
   ScenarioActivityEntityData,
   ScenarioActivityEntityFactory,
   ScenarioActivityType
 }
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
@@ -32,21 +30,19 @@ import scala.concurrent.ExecutionContext
 // 2. At the moment, the old ScenarioActionRepository
 //   - handles those activities, which underlying operations may be long and may be in progress
 // 3. Eventually, the new ScenarioActivityRepository should be aware of the state of the underlying operation, and should replace this repository
-trait ScenarioActionRepository extends LockableTable {
+trait ScenarioActionRepository extends ScenarioActionReadOnlyRepository with LockableTable {
 
   def addInstantAction(
       processId: ProcessId,
       processVersion: VersionId,
       actionName: ScenarioActionName,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessAction]
 
   def addInProgressAction(
       processId: ProcessId,
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionId]
 
   def markActionAsFinished(
@@ -56,7 +52,6 @@ trait ScenarioActionRepository extends LockableTable {
       processVersion: VersionId,
       performedAt: Instant,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit]
 
   def markActionAsFailed(
@@ -67,7 +62,6 @@ trait ScenarioActionRepository extends LockableTable {
       performedAt: Instant,
       comment: Option[Comment],
       failureMessage: String,
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit]
 
   def markFinishedActionAsExecutionFinished(
@@ -79,6 +73,10 @@ trait ScenarioActionRepository extends LockableTable {
   ): DB[Unit]
 
   def deleteInProgressActions(): DB[Unit]
+
+}
+
+trait ScenarioActionReadOnlyRepository extends LockableTable {
 
   def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]]
 
@@ -109,17 +107,16 @@ trait ScenarioActionRepository extends LockableTable {
 
 }
 
-class DbScenarioActionRepository private (
-    protected val dbRef: DbRef,
-    buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
-)(override implicit val executionContext: ExecutionContext)
-    extends DbioRepository
+class DbScenarioActionRepository private (override protected val dbRef: DbRef)(
+    override implicit val executionContext: ExecutionContext
+) extends DbScenarioActionReadOnlyRepository(dbRef)
+    with DbioRepository
     with NuTables
     with DbLockableTable
     with ScenarioActionRepository
     with LazyLogging {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   override type ENTITY = ScenarioActivityEntityFactory#ScenarioActivityEntity
 
@@ -129,7 +126,6 @@ class DbScenarioActionRepository private (
       processId: ProcessId,
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionId] = {
     val now = Instant.now()
     run(
@@ -143,7 +139,6 @@ class DbScenarioActionRepository private (
         performedAt = None,
         failure = None,
         comment = None,
-        buildInfoProcessingType = buildInfoProcessingType
       ).map(_.activityId.value).map(ProcessActionId.apply)
     )
   }
@@ -157,7 +152,6 @@ class DbScenarioActionRepository private (
       processVersion: VersionId,
       performedAt: Instant,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
     run(for {
       updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment)
@@ -176,7 +170,6 @@ class DbScenarioActionRepository private (
             Some(performedAt),
             None,
             comment,
-            buildInfoProcessingType
           )
         }
     } yield ())
@@ -191,7 +184,6 @@ class DbScenarioActionRepository private (
       performedAt: Instant,
       comment: Option[Comment],
       failureMessage: String,
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
     val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
     run(for {
@@ -211,7 +203,6 @@ class DbScenarioActionRepository private (
             Some(performedAt),
             failureMessageOpt,
             comment,
-            buildInfoProcessingType
           )
         }
     } yield ())
@@ -240,7 +231,6 @@ class DbScenarioActionRepository private (
       processVersion: VersionId,
       actionName: ScenarioActionName,
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessAction] = {
     val now = Instant.now()
     run(
@@ -254,7 +244,6 @@ class DbScenarioActionRepository private (
         Some(now),
         None,
         comment,
-        buildInfoProcessingType
       ).map(
         toFinishedProcessAction(_)
           .getOrElse(throw new IllegalArgumentException(s"Could not insert ProcessAction as ScenarioActivity"))
@@ -272,10 +261,8 @@ class DbScenarioActionRepository private (
       performedAt: Option[Instant],
       failure: Option[String],
       comment: Option[Comment],
-      buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ScenarioActivityEntityData] = {
-    val actionId         = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
-    val buildInfoJsonOpt = buildInfoProcessingType.flatMap(buildInfos.forProcessingType).map(BuildInfo.writeAsJson)
+    val actionId = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
 
     val activityType = actionName match {
       case ScenarioActionName.Deploy =>
@@ -313,7 +300,6 @@ class DbScenarioActionRepository private (
       finishedAt = performedAt.map(Timestamp.from),
       state = Some(state),
       errorMessage = failure,
-      buildInfo = buildInfoJsonOpt,
       additionalProperties = AdditionalProperties(Map.empty)
     )
     (scenarioActivityTable += entity).map { insertCount =>
@@ -340,6 +326,42 @@ class DbScenarioActionRepository private (
     } yield updateCount == 1
   }
 
+  override def deleteInProgressActions(): DB[Unit] = {
+    run(scenarioActivityTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
+  }
+
+  private def activityId(actionId: ProcessActionId) =
+    ScenarioActivityId(actionId.value)
+
+}
+
+object DbScenarioActionRepository {
+
+  def create(dbRef: DbRef)(
+      implicit executionContext: ExecutionContext,
+  ): ScenarioActionRepository = {
+    new ScenarioActionRepositoryAuditLogDecorator(
+      new DbScenarioActionRepository(dbRef)
+    )
+  }
+
+}
+
+class DbScenarioActionReadOnlyRepository(
+    protected val dbRef: DbRef,
+)(override implicit val executionContext: ExecutionContext)
+    extends DbioRepository
+    with NuTables
+    with DbLockableTable
+    with ScenarioActionReadOnlyRepository
+    with LazyLogging {
+
+  import profile.apiWithEnforcedSchema._
+
+  override type ENTITY = ScenarioActivityEntityFactory#ScenarioActivityEntity
+
+  override protected def table: TableQuery[ScenarioActivityEntityFactory#ScenarioActivityEntity] = scenarioActivityTable
+
   override def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] = {
     val query = scenarioActivityTable
       .filter(action => action.scenarioId === processId && action.state === ProcessActionState.InProgress)
@@ -360,8 +382,10 @@ class DbScenarioActionRepository private (
       .map(pa => (pa.scenarioId, pa.activityType))
     run(
       query.result
-        .map(_.groupBy { case (process_id, _) => ProcessId(process_id.value) }
-          .mapValuesNow(_.map(_._2).toSet.flatMap(actionName)))
+        .map(
+          _.groupBy { case (process_id, _) => ProcessId(process_id.value) }
+            .mapValuesNow(_.map(_._2).toSet.flatMap(actionName))
+        )
     )
   }
 
@@ -389,10 +413,6 @@ class DbScenarioActionRepository private (
           toFinishedProcessAction(data).map((_, name))
         }.toList)
     )
-  }
-
-  override def deleteInProgressActions(): DB[Unit] = {
-    run(scenarioActivityTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
   override def getLastActionPerProcess(
@@ -456,7 +476,7 @@ class DbScenarioActionRepository private (
     )
   }
 
-  private def toFinishedProcessAction(
+  protected def toFinishedProcessAction(
       activityEntity: ScenarioActivityEntityData
   ): Option[ProcessAction] = actionName(activityEntity.activityType).flatMap { actionName =>
     (for {
@@ -471,25 +491,19 @@ class DbScenarioActionRepository private (
       id = ProcessActionId(activityEntity.activityId.value),
       processId = ProcessId(activityEntity.scenarioId.value),
       processVersionId = processVersionId,
-      createdAt = activityEntity.createdAt.toInstant,
       performedAt = performedAt,
       user = activityEntity.userName.value,
       actionName = actionName,
       state = state,
       failureMessage = activityEntity.errorMessage,
-      commentId = activityEntity.comment.map(_ => activityEntity.id),
       comment = activityEntity.comment.map(_.value),
-      buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )).left.map { error =>
       logger.error(s"Could not interpret ScenarioActivity entity as ProcessAction: [$error]")
       error
     }.toOption
   }
 
-  private def activityId(actionId: ProcessActionId) =
-    ScenarioActivityId(actionId.value)
-
-  private def actionName(activityType: ScenarioActivityType): Option[ScenarioActionName] = {
+  protected def actionName(activityType: ScenarioActivityType): Option[ScenarioActionName] = {
     activityType match {
       case ScenarioActivityType.ScenarioCreated =>
         None
@@ -553,14 +567,12 @@ class DbScenarioActionRepository private (
 
 }
 
-object DbScenarioActionRepository {
+object DbScenarioActionReadOnlyRepository {
 
-  def create(dbRef: DbRef, buildInfos: ProcessingTypeDataProvider[Map[String, String], _])(
+  def create(dbRef: DbRef)(
       implicit executionContext: ExecutionContext,
-  ): ScenarioActionRepository = {
-    new ScenarioActionRepositoryAuditLogDecorator(
-      new DbScenarioActionRepository(dbRef, buildInfos)
-    )
+  ): ScenarioActionReadOnlyRepository = {
+    new DbScenarioActionReadOnlyRepository(dbRef)
   }
 
 }

@@ -1,6 +1,7 @@
-import { ComponentType } from "react";
-import { AuthenticationSettings } from "../../reducers/settings";
-import { AuthErrorCodes } from "./AuthErrorCodes";
+import type { ComponentType } from "react";
+
+import type { AuthenticationSettings } from "../../reducers/settings";
+import type { AuthErrorCodes } from "./AuthErrorCodes";
 
 export interface StrategyConstructor {
     new (settings: AuthenticationSettings, onError?: (error: AuthErrorCodes) => void): Strategy;

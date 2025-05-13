@@ -1,106 +1,46 @@
 package pl.touk.nussknacker.ui.factory
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
-import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
-import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
-import pl.touk.nussknacker.ui.process.processingtype.loader.{
-  ProcessingTypeDataLoader,
-  ProcessingTypesConfigBasedProcessingTypeDataLoader
-}
-import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
-import pl.touk.nussknacker.ui.util.{ActorSystemBasedExecutionContextWithIORuntime, IOToFutureSttpBackendConverter}
-import sttp.client3.SttpBackend
-import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, PekkoHttpBasedRouteFactory}
 
 import java.time.Clock
+import scala.concurrent.Future
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
-    createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader
 ) extends LazyLogging {
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      designerConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
-      system         <- createActorSystem(designerConfig.rawConfig)
-      executionContextWithIORuntime = ActorSystemBasedExecutionContextWithIORuntime.createFrom(system)
-      ioSttpBackend <- AsyncHttpClientCatsBackend.resource[IO]()
-      processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
-        designerConfig,
-        ioSttpBackend
-      )(executionContextWithIORuntime.ioRuntime)
-      processingTypeDataLoader = createProcessingTypeDataLoader(processingTypeConfigsLoader)
-      materializer             = Materializer(system)
-      _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))
-      _                      <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
-      metricsRegistry        <- createGeneralPurposeMetricsRegistry()
-      db                     <- DbRef.create(designerConfig.rawConfig.resolved)
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, designerConfig.rawConfig.resolved)
-      server = new NussknackerHttpServer(
-        new AkkaHttpBasedRouteProvider(
-          db,
-          metricsRegistry,
-          IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime),
-          processingTypeDataLoader,
-          feStatisticsRepository,
-          clock
-        )(
-          system,
-          materializer,
-          executionContextWithIORuntime
-        ),
-        system
+      _ <- Resource.eval(IO(JavaClassVersionChecker.check()))
+      _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
+
+      alreadyLoadedConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
+
+      infrastructureServices <- InfrastructureServices.create(clock, alreadyLoadedConfig)
+      domainServices         <- DomainServices.create(designerConfigLoader, alreadyLoadedConfig, infrastructureServices)
+      _ = initMetrics(
+        infrastructureServices.metricsRegistry,
+        alreadyLoadedConfig,
+        domainServices.futureProcessRepository
       )
-      _ <- server.start(designerConfig, metricsRegistry)
-      _ <- startJmxReporter(metricsRegistry)
+
+      route <- PekkoHttpBasedRouteFactory.createRoute(
+        designerConfig = alreadyLoadedConfig,
+        infrastructureServices = infrastructureServices,
+        domainServices = domainServices
+      )
+      _ <- new NussknackerHttpServer(infrastructureServices, alreadyLoadedConfig).start(route)
+      _ <- startJmxReporter(infrastructureServices.metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
-  }
-
-  private def createProcessingTypeConfigsLoader(
-      designerConfig: DesignerConfig,
-      sttpBackend: SttpBackend[IO, Any]
-  )(implicit ioRuntime: IORuntime): ProcessingTypeConfigsLoader = {
-    ScalaServiceLoader
-      .loadOne[ProcessingTypeConfigsLoaderFactory](getClass.getClassLoader)
-      .map { factory =>
-        logger.debug(
-          s"Found custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName}: ${factory.getClass.getName}. Using it for configuration loading"
-        )
-        factory.create(designerConfig.configLoaderConfig, designerConfig.processingTypeConfigsRaw.resolved, sttpBackend)
-      }
-      .getOrElse {
-        logger.debug(
-          s"No custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName} found. Using the default implementation of loader"
-        )
-        () => designerConfigLoader.loadDesignerConfig().map(_.processingTypeConfigs)
-      }
-  }
-
-  private def createActorSystem(config: ConfigWithUnresolvedVersion) = {
-    Resource
-      .make(
-        acquire = IO(ActorSystem("nussknacker-designer", config.resolved))
-      )(
-        release = system => {
-          IO.fromFuture(IO(system.terminate())).map(_ => ())
-        }
-      )
-  }
-
-  private def createGeneralPurposeMetricsRegistry() = {
-    Resource.pure[IO, MetricRegistry](new MetricRegistry)
   }
 
   private def startJmxReporter(metricsRegistry: MetricRegistry) = {
@@ -116,15 +56,17 @@ class NussknackerAppFactory(
       )
   }
 
-}
-
-object NussknackerAppFactory {
-
-  def apply(designerConfigLoader: DesignerConfigLoader): NussknackerAppFactory = {
-    new NussknackerAppFactory(
-      designerConfigLoader,
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_)
+  private def initMetrics(
+      metricsRegistry: MetricRegistry,
+      designerConfig: DesignerConfig,
+      processRepository: FetchingProcessRepository[Future]
+  ): Unit = {
+    new RepositoryGauges(
+      metricsRegistry,
+      designerConfig.repositoryGaugesCacheDuration,
+      processRepository
     )
+      .prepareGauges()
   }
 
 }

@@ -4,6 +4,7 @@ import com.azure.core.credential.TokenCredential
 import com.azure.core.util.{Configuration, ConfigurationPropertyBuilder}
 import com.azure.identity.{ChainedTokenCredentialBuilder, ClientSecretCredentialBuilder, DefaultAzureCredentialBuilder}
 import com.typesafe.scalalogging.LazyLogging
+
 import scala.jdk.CollectionConverters._
 
 // This class create credential chain that in the first place uses properties from configuration

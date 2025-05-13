@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.BuiltInNodeCompiler._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionIdParamName
 import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionIdParamName
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 

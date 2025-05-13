@@ -4,8 +4,8 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.{IntrospectedAccessTokenData, OAuth2Configuration, UsernameClaim}
 
 import java.util.UUID

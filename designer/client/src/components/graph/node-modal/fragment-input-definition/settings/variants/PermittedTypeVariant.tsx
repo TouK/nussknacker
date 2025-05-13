@@ -1,17 +1,12 @@
-import React from "react";
 import { FormControl, FormControlLabel } from "@mui/material";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import type { NodeValidationError, VariableTypes } from "../../../../../../types";
+import type { onChangeType, PermittedTypeParameterVariant } from "../../item";
+import { InputMode, isAnyValueParameter, isAnyValueWithSuggestionsParameter, isFixedListParameter } from "../../item";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingsWrapper } from "./fields/StyledSettingsComponnets";
-import {
-    InputMode,
-    isAnyValueParameter,
-    isAnyValueWithSuggestionsParameter,
-    isFixedListParameter,
-    onChangeType,
-    PermittedTypeParameterVariant,
-} from "../../item";
-import { NodeValidationError, VariableTypes } from "../../../../../../types";
-import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
 
 interface Props {

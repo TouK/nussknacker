@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.JsonDefaultExpressionDeterminer.{InvalidValue, NullNotAllowed, TypeNotSupported}
 
-import scala.reflect.ClassTag
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 object JsonDefaultExpressionDeterminer {
 
@@ -36,11 +36,10 @@ object JsonDefaultExpressionDeterminer {
 }
 
 class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
-
-  private implicit def asSpelExpression(expression: String): Expression = Expression.spel(expression)
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val validatedNullExpression: ValidatedNel[CustomNodeError, Option[Expression]] =
-    Valid(Option(asSpelExpression("null")))
+    Valid(Option("null".spel))
 
   def determine(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
     if (schema.hasDefaultValue)
@@ -51,11 +50,11 @@ class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
   // TODO: Add support for others type: enum, const, combined, etc..
   private def doDetermine(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
     schema match {
-      case s: NumberSchema if s.requiresInteger() => withValidation[Number](schema, l => s"${l}L")
-      case _: NumberSchema                        => withValidation[Number](schema, _.toString)
-      case _: BooleanSchema                       => withValidation[java.lang.Boolean](schema, _.toString)
+      case s: NumberSchema if s.requiresInteger() => withValidation[Number](schema, l => s"${l}L".spel)
+      case _: NumberSchema                        => withValidation[Number](schema, _.toString.spel)
+      case _: BooleanSchema                       => withValidation[java.lang.Boolean](schema, _.toString.spel)
       case _: NullSchema                          => validatedNullExpression
-      case _: StringSchema                        => withValidation[String](schema, str => s"'$str'")
+      case _: StringSchema                        => withValidation[String](schema, str => s"$str".spelTemplate)
       case _: ObjectSchema                        => withNullValidation(schema)
       case _: ArraySchema                         => withNullValidation(schema)
       case _                                      => typeNotSupported(schema)

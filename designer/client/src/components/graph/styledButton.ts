@@ -1,4 +1,6 @@
-import { css, styled, Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
+import { css, styled } from "@mui/material";
+
 import { Button } from "../FormElements";
 
 const buttonBase = (theme: Theme) =>

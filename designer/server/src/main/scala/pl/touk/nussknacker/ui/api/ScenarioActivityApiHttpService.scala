@@ -7,6 +7,8 @@ import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, _}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{Comment => _, _}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   InvalidComment,
   NoActivity,
@@ -15,18 +17,16 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
   NoPermission,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{Comment => _, _}
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
   CommentModificationMetadata,
   DeleteAttachmentError,
   ModifyCommentError
 }
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
 import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
@@ -393,7 +393,6 @@ class ScenarioActivityApiHttpService(
             date,
             scenarioVersionId,
             sourceEnvironment,
-            sourceUser,
             sourceScenarioVersionId,
             targetEnvironment,
           ) =>
@@ -403,9 +402,7 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           sourceEnvironment = sourceEnvironment.name,
-          sourceUser = sourceUser.value,
           sourceScenarioVersionId = sourceScenarioVersionId.map(_.value),
-          targetEnvironment = targetEnvironment.map(_.name),
         )
       case ScenarioActivity.OutgoingMigration(
             _,
@@ -462,7 +459,6 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
-          scheduleName = scheduleName,
           scheduledExecutionStatus = scheduledExecutionStatus,
           createdAt = createdAt,
           retriesLeft = retriesLeft,

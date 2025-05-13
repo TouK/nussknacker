@@ -1,15 +1,17 @@
-import React from "react";
-import { SettingLabelStyled } from "./StyledSettingsComponnets";
-import { useTranslation } from "react-i18next";
-import { FixedValuesOption, FixedValuesType, FragmentInputParameter, onChangeType } from "../../../item";
-import { Option, TypeSelect } from "../../../TypeSelect";
-import { ExpressionLang } from "../../../../editors/expression/types";
-import { VariableTypes } from "../../../../../../../types";
-import { FieldError } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import type { VariableTypes } from "../../../../../../../types";
 import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor";
-import { EditorType } from "../../../../editors/expression/Editor";
-import { EditableEditor } from "../../../../editors/EditableEditor";
+import { SpelEditor } from "../../../../editors/expression/SpelEditor";
+import { ExpressionLang } from "../../../../editors/expression/types";
+import type { FieldError } from "../../../../editors/Validators";
+import { FixedValuesType } from "../../../item";
+import type { FixedValuesOption, FragmentInputParameter, onChangeType } from "../../../item";
+import { TypeSelect } from "../../../TypeSelect";
+import type { Option } from "../../../TypeSelect";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 
 interface InitialValue {
     item: FragmentInputParameter;
@@ -26,6 +28,8 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
 
     const emptyOption = { label: "", value: "" };
     const optionsToDisplay: Option[] = [emptyOption, ...(options ?? []).map(({ label }) => ({ label, value: label }))];
+
+    const validationEnabled = Boolean(item.valueCompileTimeValidation);
 
     return (
         <FormControl>
@@ -46,20 +50,21 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                 <DictParameterEditor
                     key={item.valueEditor.dictId}
                     fieldErrors={fieldErrors}
-                    showValidation
+                    showValidation={validationEnabled}
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.expression }}
-                    onValueChange={(value) => onChange(`${path}.initialValue`, { label: item.valueEditor.dictId, expression: value })}
-                    param={{ editor: { dictId: item.valueEditor.dictId } }}
+                    onValueChange={(value) =>
+                        onChange(`${path}.initialValue`, { label: item.valueEditor.dictId, expression: value.expression })
+                    }
+                    editorConfig={{ dictId: item.valueEditor.dictId }}
                     readOnly={!item.valueEditor.dictId}
                 />
             ) : (
-                <EditableEditor
+                <SpelEditor
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.label }}
-                    onValueChange={(value) => onChange(`${path}.initialValue`, { label: value, expression: value })}
+                    onValueChange={({ expression }) => onChange(`${path}.initialValue`, { label: expression, expression })}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
-                    param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
-                    showValidation
+                    showValidation={validationEnabled}
                     fieldErrors={fieldErrors}
                 />
             )}

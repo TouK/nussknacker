@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
@@ -58,8 +58,8 @@ object AlignedComponentsDefinitionProvider {
     new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(designerModelData.modelData.componentsUiConfig),
       new FragmentComponentDefinitionExtractor(
-        designerModelData.modelData.modelClassLoader.classLoader,
-        designerModelData.modelData.modelDefinitionWithClasses.classDefinitions.all,
+        designerModelData.modelData.modelClassLoader,
+        designerModelData.modelData.modelDefinitionWithClasses.classDefinitions,
         designerModelData.modelData.componentsUiConfig.groupName,
         designerModelData.modelData.determineDesignerWideId
       ),

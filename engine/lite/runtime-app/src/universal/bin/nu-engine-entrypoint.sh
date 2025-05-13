@@ -11,11 +11,12 @@ fi
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
+LOGBACK_FILE=${LOGBACK_FILE:-$CONF_DIR/logback.xml}
 
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*}
 CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}
 SCENARIO_FILE=${SCENARIO_FILE-"$CONF_DIR/scenario.json"}
-DEPLOYMENT_CONFIG_FILE=${DEPLOYMENT_CONFIG_FILE-"$CONF_DIR/deploymentConfig.conf"}
+DEPLOYMENT_DATA_FILE=${DEPLOYMENT_DATA_FILE-"$CONF_DIR/deploymentData.json"}
 
 if [ "$PROMETHEUS_METRICS_PORT" == "" ]; then
   JAVA_PROMETHEUS_OPTS=""
@@ -40,4 +41,4 @@ echo "Starting Nussknacker Lite Runtime"
 
 exec java $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
-          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.app.NuRuntimeApp" "$SCENARIO_FILE" "$DEPLOYMENT_CONFIG_FILE"
+          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.app.NuRuntimeApp" "$SCENARIO_FILE" "$DEPLOYMENT_DATA_FILE"

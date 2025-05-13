@@ -4,12 +4,12 @@ import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 
 class ScenarioStatisticsTest
     extends AnyFunSuite
@@ -23,7 +23,7 @@ class ScenarioStatisticsTest
       isFragment = false,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.Running),
+      Some(SimpleStateStatus.Running.name),
       nodesCount = 2,
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
@@ -139,7 +139,7 @@ class ScenarioStatisticsTest
       isFragment = false,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("foo"),
-      status,
+      status.map(_.name),
       nodesCount = 2,
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),

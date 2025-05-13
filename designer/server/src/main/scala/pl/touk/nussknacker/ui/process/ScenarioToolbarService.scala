@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.process
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.UriUtils
+import pl.touk.nussknacker.ui.config.scenariotoolbar._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.ToolbarButtonType
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
-import pl.touk.nussknacker.ui.config.scenariotoolbar._
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 trait ScenarioToolbarService {
@@ -31,17 +31,23 @@ object ScenarioToolbarSettings {
       scenario: ScenarioWithDetailsEntity[_]
   ): ScenarioToolbarSettings =
     ScenarioToolbarSettings(
-      createScenarioToolbarId(scenarioToolbarConfig, scenario),
-      scenarioToolbarConfig.topLeft
+      id = createScenarioToolbarId(scenarioToolbarConfig, scenario),
+      topLeft = scenarioToolbarConfig.topLeft
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      scenarioToolbarConfig.bottomLeft
+      topCenter = scenarioToolbarConfig.topCenter
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      scenarioToolbarConfig.topRight
+      topRight = scenarioToolbarConfig.topRight
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      scenarioToolbarConfig.bottomRight
+      bottomLeft = scenarioToolbarConfig.bottomLeft
+        .filterNot(tp => verifyCondition(tp.hidden, scenario))
+        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
+      bottomCenter = scenarioToolbarConfig.bottomCenter
+        .filterNot(tp => verifyCondition(tp.hidden, scenario))
+        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
+      bottomRight = scenarioToolbarConfig.bottomRight
         .filterNot(tp => verifyCondition(tp.hidden, scenario))
         .map(tp => ToolbarPanel.fromConfig(tp, scenario))
     )
@@ -52,8 +58,10 @@ object ScenarioToolbarSettings {
 final case class ScenarioToolbarSettings(
     id: String,
     topLeft: List[ToolbarPanel],
-    bottomLeft: List[ToolbarPanel],
+    topCenter: List[ToolbarPanel],
     topRight: List[ToolbarPanel],
+    bottomLeft: List[ToolbarPanel],
+    bottomCenter: List[ToolbarPanel],
     bottomRight: List[ToolbarPanel]
 )
 

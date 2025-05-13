@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -10,14 +10,10 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId
 }
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{
-  EmptyProcessConfigCreator,
-  ProcessConfigCreator,
-  ProcessObjectDependencies
-}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessConfigCreator}
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
+import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{
@@ -27,7 +23,6 @@ import pl.touk.nussknacker.engine.modelconfig.{
   ModelConfigLoader
 }
 import pl.touk.nussknacker.engine.testing.LocalModelData.ExtractDefinitionFunImpl
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 object LocalModelData {
 
@@ -39,7 +34,7 @@ object LocalModelData {
       configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator,
       category: Option[String] = None,
       migrations: ProcessMigrations = ProcessMigrations.empty,
-      modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader(_ => true),
+      modelConfigLoader: ModelConfigLoader = DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
       determineDesignerWideId: ComponentId => DesignerWideComponentId = DesignerWideComponentId.default("streaming", _),
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
@@ -71,11 +66,11 @@ object LocalModelData {
 
     override def apply(
         classLoader: ClassLoader,
-        modelDependencies: ProcessObjectDependencies,
+        modelConfig: ModelConfig,
         determineDesignerWideId: ComponentId => DesignerWideComponentId,
         additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ): ModelDefinition = {
-      val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
+      val componentsUiConfig = ComponentsUiConfigParser.parse(modelConfig.underlyingConfig)
       val componentDefs = Components.forList(
         components,
         componentsUiConfig,
@@ -88,7 +83,7 @@ object LocalModelData {
         .extractModelDefinition(
           configCreator,
           category,
-          modelDependencies,
+          modelConfig,
           componentsUiConfig,
           determineDesignerWideId,
           additionalConfigsFromProvider,

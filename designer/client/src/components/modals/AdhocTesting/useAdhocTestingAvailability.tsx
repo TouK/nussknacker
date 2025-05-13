@@ -1,4 +1,8 @@
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
+import { displayTestCapabilities } from "../../../actions/nk";
+import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import {
     getProcessName,
     getScenarioGraph,
@@ -6,8 +10,6 @@ import {
     isLatestProcessVersion,
     isProcessRenamed,
 } from "../../../reducers/selectors/graph";
-import { useEffect, useMemo } from "react";
-import { displayTestCapabilities, fetchTestFormParameters } from "../../../actions/nk";
 
 // TODO: fetch TestCapabilities and TestFormParameters in chain to avoid stupid errors
 export function useAdhocTestingAvailability(disabled: boolean) {
@@ -20,18 +22,13 @@ export function useAdhocTestingAvailability(disabled: boolean) {
     const scenarioGraph = useSelector(getScenarioGraph);
 
     const isAvailable = useMemo(() => {
-        return !disabled && processIsLatestVersion && testCapabilities?.canTestWithForm;
-    }, [disabled, processIsLatestVersion, testCapabilities?.canTestWithForm]);
+        return !disabled && processIsLatestVersion && testCapabilities?.testWithParameters.status === TestCapabilityStatus.AVAILABLE;
+    }, [disabled, processIsLatestVersion, testCapabilities?.testWithParameters.status]);
 
     useEffect(() => {
         if (isRenamed) return;
         dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
     }, [dispatch, isRenamed, scenarioGraph, scenarioName]);
-
-    useEffect(() => {
-        if (isRenamed || !isAvailable) return;
-        dispatch(fetchTestFormParameters(scenarioName, scenarioGraph));
-    }, [dispatch, isRenamed, scenarioName, scenarioGraph, isAvailable]);
 
     return isAvailable;
 }

@@ -4,6 +4,7 @@ import org.scalatest.OptionValues
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.Deploy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -15,11 +16,13 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.mock.MockFetchingProcessRepository
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
+import pl.touk.nussknacker.ui.api.ScenarioStatusPresenter
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -202,10 +205,11 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = Nil
   ): DBProcessService =
     new DBProcessService(
-      processStateProvider = TestFactory.processStateProvider(),
-      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
-      scenarioParametersServiceProvider = TestFactory.scenarioParametersServiceProvider,
-      processResolverByProcessingType = TestFactory.processResolverByProcessingType,
+      scenarioStatusProvider = mock[ScenarioStatusProvider],
+      scenarioStatusPresenter = mock[ScenarioStatusPresenter],
+      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType(),
+      scenarioParametersServiceProvider = TestFactory.scenarioParametersServiceProvider(),
+      processResolverByProcessingType = TestFactory.processResolverByProcessingType(),
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       scenarioActionRepository = TestFactory.newDummyActionRepository(),

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   InvalidComment,
   NoActivity,
@@ -9,7 +10,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
   NoComment,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import sttp.tapir.EndpointIO.Example
 
 import java.time.{Instant, ZoneId}
@@ -165,9 +165,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           sourceEnvironment = "preprod",
-          sourceUser = "user-preprod",
           sourceScenarioVersionId = Some(23L),
-          targetEnvironment = Some("prod"),
         ),
         ScenarioActivity.forOutgoingMigration(
           id = UUID.fromString("49fcd45d-3fa6-48d4-b8ed-b3055910c7ad"),
@@ -208,7 +206,6 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
-          scheduleName = "main-schedule",
           scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),
           retriesLeft = None,
@@ -220,7 +217,6 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
-          scheduleName = "main-schedule",
           scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),
           retriesLeft = Some(1),

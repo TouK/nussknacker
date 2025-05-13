@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management.sample.global
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.Documentation
-import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.generics.{
   GenericFunctionTypingError,
   GenericType,
@@ -11,6 +10,7 @@ import pl.touk.nussknacker.engine.api.generics.{
   Parameter,
   TypingFunction
 }
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.typed.typing.{
   Typed,
   TypedClass,
@@ -147,7 +147,7 @@ object ExampleFunctions {
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
-      if (arguments.exists(!_.canBeConvertedTo(Typed[Number]))) return ArgumentTypeError.invalidNel
+      if (arguments.exists(!_.canBeLooselyAssignedTo(Typed[Number]))) return ArgumentTypeError.invalidNel
       arguments match {
         case t :: Nil           => t.validNel
         case l :: r :: Nil      => Typed.record(Map("left" -> l, "right" -> r)).validNel

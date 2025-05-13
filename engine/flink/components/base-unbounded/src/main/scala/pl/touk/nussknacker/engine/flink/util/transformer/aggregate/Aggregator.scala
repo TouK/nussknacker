@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.functions.AggregateFunction
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Hidden, LazyParameter, NodeId}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 
 /*
@@ -70,7 +70,12 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
     mergeAggregates(a.asInstanceOf[Aggregate], b.asInstanceOf[Aggregate])
 
   @Hidden
-  final def toContextTransformation(variableName: String, emitContext: Boolean, aggregateBy: LazyParameter[_])(
+  final def toContextTransformation(
+      variableName: String,
+      emitContext: Boolean,
+      aggregateBy: LazyParameter[_],
+      groupBy: LazyParameter[_]
+  )(
       implicit nodeId: NodeId
   ): ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx =>
     computeOutputType(aggregateBy.returnType)
@@ -80,6 +85,6 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
         val ctx = if (emitContext) validationCtx else validationCtx.clearVariables
         ctx.withVariable(variableName, outputType, paramName = None)
       }
-      .andThen(KeyEnricher.contextTransformation)
+      .andThen(KeyEnricher.contextTransformation(_, groupBy.returnType.withoutValue))
 
 }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ProblemDeploymentStatus
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
@@ -30,7 +31,9 @@ class DeploymentApiHttpService(
               RunDeploymentCommand(
                 id = deploymentId,
                 scenarioName = request.scenarioName,
-                nodesDeploymentData = request.nodesDeploymentData,
+                nodesDeploymentData = NodesDeploymentData(request.nodesDeploymentData.map { case (nodeId, paramValue) =>
+                  (nodeId, Map("sqlExpression" -> paramValue))
+                }),
                 user = loggedUser
               ),
               request.comment.flatMap(Comment.from)
@@ -54,6 +57,10 @@ class DeploymentApiHttpService(
                     ScenarioGraphValidationError(errors)
                   case DeploymentService.DeployValidationError(message) =>
                     DeployValidationError(message)
+                  case DeploymentService.MaxActiveScenariosCountExceededError(maxCount) =>
+                    DeployValidationError(
+                      s"The limit of active scenarios has been reached. You can have a maximum of $maxCount active scenarios."
+                    )
                 }
               case ActivityService.CommentValidationError(message) => CommentValidationError(message)
             })
@@ -72,7 +79,7 @@ class DeploymentApiHttpService(
               _.map { statusWithModifiedAt =>
                 GetDeploymentStatusResponse(
                   statusWithModifiedAt.value.name,
-                  ProblemDeploymentStatus.extractDescription(statusWithModifiedAt.value),
+                  statusWithModifiedAt.value.problemDescription,
                   statusWithModifiedAt.modifiedAt.toInstant
                 )
               }.left.map {

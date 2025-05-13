@@ -23,6 +23,8 @@ sealed trait DMScenarioCommand[Result]
 
 /**
   * This command is invoked separately before deploy, to be able to give user quick feedback, as deploy (e.g. on Flink) may take long time
+  * TODO: Changed to DMValidateScenarioCommand(run: DMRunDeploymentCommand) meantime, during some other changes in the API
+  *       Thanks to that we avoid fields rewriting and it will be easier to move between logic done in one phase and another
   */
 case class DMValidateScenarioCommand(
     processVersion: ProcessVersion,
@@ -39,6 +41,7 @@ case class DMRunDeploymentCommand(
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     canonicalProcess: CanonicalProcess,
+    // TODO: job update strategy should be a part of deployment service logic, instead of DeploymentManager's
     updateStrategy: DeploymentUpdateStrategy
 ) extends DMScenarioCommand[Option[ExternalDeploymentId]]
 

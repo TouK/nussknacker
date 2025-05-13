@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.ui.process.fragment
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class FragmentRepositorySpec

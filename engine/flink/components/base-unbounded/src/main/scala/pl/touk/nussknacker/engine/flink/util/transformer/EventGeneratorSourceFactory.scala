@@ -1,0 +1,186 @@
+package pl.touk.nussknacker.engine.flink.util.transformer
+
+import com.github.ghik.silencer.silent
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.{HCursor, Json}
+import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.functions.source.SourceFunction
+import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
+import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoderWithFallback
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkCustomNodeContext,
+  FlinkSourceTestSupport,
+  StandardFlinkSource
+}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
+  StandardTimestampWatermarkHandler,
+  TimestampWatermarkHandler
+}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
+
+import java.{util => jul}
+import java.time.Duration
+import java.time.temporal.ChronoUnit
+import javax.annotation.Nullable
+import javax.validation.constraints.Min
+import scala.jdk.CollectionConverters._
+
+// TODO: add testing capabilities
+object EventGeneratorSourceFactory
+    extends EventGeneratorSourceFactory(
+      new StandardTimestampWatermarkHandler[AnyRef](
+        WatermarkStrategy
+          .forMonotonousTimestamps()
+          .withTimestampAssigner(
+            new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField)
+          )
+      )
+    )
+
+class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHandler[AnyRef])
+    extends SourceFactory
+    with UnboundedStreamComponent {
+
+  @silent("deprecated")
+  @MethodToInvoke
+  def create(
+      @ParamName("schedule")
+      @Editor(
+        `type` = EditorType.DURATION_EDITOR,
+        timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES, ChronoUnit.SECONDS)
+      )
+      @Editor(`type` = EditorType.SPEL_EDITOR)
+      @DefaultValue("T(java.time.Duration).parse('PT1M')")
+      schedule: Duration,
+      // TODO: @DefaultValue(1) instead of nullable
+      @ParamName("count")
+      @Nullable
+      @Min(1)
+      @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
+      nullableCount: Integer,
+      @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
+      @DefaultValue(
+        value =
+          "{\n\t\"sampleField\": \"#{#UTIL.uuid()}\",\n\t\"dateTime\": \"#{#DATE_FORMAT.format(#DATE.now)}\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
+        language = ExpressionLanguage.JSON_TEMPLATE
+      )
+      @ParamName("value")
+      value: LazyParameter[AnyRef]
+  ): Source = {
+    new StandardFlinkSource[AnyRef]
+      with ReturningType
+      with FlinkSourceTestSupport[AnyRef]
+      with TestDataGenerator
+      with TestWithParametersSupport[AnyRef]
+      with LazyLogging {
+
+      override protected def sourceStream(
+          env: StreamExecutionEnvironment,
+          flinkNodeContext: FlinkCustomNodeContext
+      ): DataStream[AnyRef] = {
+        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        // Parameter evaluation requires context, so here we create an empty context just to evaluate the `value` param.
+        // Later the evaluated value is extracted from this temporary context and proper context is initialized.
+        env
+          .addSource(new PeriodicFunction(schedule))
+          .flatMap(
+            (_: Unit, out: Collector[Context]) => {
+              val temporaryContextForEvaluation = Context(flinkNodeContext.metaData.name.value)
+              (1 to count).foreach(_ => out.collect(temporaryContextForEvaluation))
+            },
+            TypeInformationDetection.instance.forClass[Context]
+          )
+          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
+          .flatMap(
+            (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) => out.collect(value.value),
+            TypeInformationDetection.instance.forType[AnyRef](value.returnType)
+          )
+      }
+
+      override def timestampAssigner: Option[TimestampWatermarkHandler[AnyRef]] = Some(customTimestampAssigner)
+
+      override val returnType: typing.TypingResult = value.returnType
+
+      override def generateTestData(size: Int): TestData = {
+        val samples = List.fill(size)(encodeValueUnsafe(generateSample()))
+        TestData(samples.map(TestRecord(_, None)))
+      }
+
+      override def testRecordParser: TestRecordParser[AnyRef] =
+        _.map(_.json).map(decodeValueUnsafe)
+
+      override def testParametersDefinition: List[Parameter] = List.empty
+
+      override def parametersToTestData(
+          params: Map[ParameterName, AnyRef],
+      ): AnyRef = generateSample()
+
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
+
+      private def generateSample(): AnyRef = value.evaluate(Context("dummy_context"))
+
+      private def encodeValueUnsafe(value: AnyRef) =
+        ToJsonEncoderWithFallback
+          .encodeValue(value)
+          .getOrElse(throw new IllegalArgumentException(s"Failed to encode value: $value"))
+
+      private def decodeValueUnsafe(json: Json) =
+        FromJsonTypingResultBasedDecoder
+          .decodeValue(returnType, HCursor.fromJson(json))
+          .getOrElse(throw new IllegalArgumentException(s"Failed to decode value from json: $json"))
+          .asInstanceOf[AnyRef]
+    }
+  }
+
+}
+
+@silent("deprecated")
+class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
+
+  @volatile private var isRunning = true
+
+  override def run(ctx: SourceFunction.SourceContext[Unit]): Unit = {
+    while (isRunning) {
+      ctx.collect(())
+      Thread.sleep(period.toMillis)
+    }
+  }
+
+  override def cancel(): Unit = {
+    isRunning = false
+  }
+
+}
+
+class MapAscendingTimestampExtractor(timestampField: String) extends SerializableTimestampAssigner[AnyRef] {
+
+  override def extractTimestamp(element: scala.AnyRef, recordTimestamp: Long): Long = {
+    element match {
+      case m: jul.Map[String @unchecked, AnyRef @unchecked] =>
+        m.asScala
+          .get(timestampField)
+          .map(value => supportedTypeToMillis(value, timestampField))
+          .getOrElse(System.currentTimeMillis())
+      case _ =>
+        System.currentTimeMillis()
+    }
+  }
+
+}
+
+object MapAscendingTimestampExtractor {
+  val DefaultTimestampField = "timestamp"
+}

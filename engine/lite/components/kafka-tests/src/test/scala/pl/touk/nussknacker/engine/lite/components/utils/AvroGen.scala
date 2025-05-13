@@ -85,9 +85,8 @@ object AvroGen {
     case Type.RECORD =>
       Gen
         .sequence(
-          schema.getFields.asScala.map(field =>
-            genValueForSchema(field.schema()).flatMap(value => field.name() -> value)
-          )
+          schema.getFields.asScala
+            .map(field => genValueForSchema(field.schema()).flatMap(value => field.name() -> value))
         )
         .map(data => AvroUtils.createRecord(schema, data.asScala.toMap))
     case _ => throw new IllegalArgumentException(s"Unsupported schema: $schema")

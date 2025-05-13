@@ -1,10 +1,11 @@
 import { Collapse, Stack } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactAce from "react-ace/lib/ace";
+import type ReactAce from "react-ace/lib/ace";
 import { useArrayState, useFocusWithin } from "rooks";
+
 import { getBorderColor } from "../../../../../containers/theme/helpers";
-import { VariableTypes } from "../../../../../types";
-import { ValueFieldProps } from "../../../../valueField";
+import type { VariableTypes } from "../../../../../types";
+import type { ValueFieldProps } from "../../../../valueField";
 import { rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import { Editor } from "./editor";
 import { ValuesList } from "./valuesList";
@@ -115,7 +116,13 @@ export function CollectionField({ value, onChange, variableTypes, disabled }: Co
             }}
         >
             <Collapse in={editorVisible} unmountOnExit={false} mountOnEnter={false}>
-                <Editor ref={ref} variableTypes={variableTypes} value={expression} onChange={setExpression} readOnly={!disabled} />
+                <Editor
+                    ref={ref}
+                    variableTypes={variableTypes}
+                    value={expression}
+                    onChange={({ expression }) => setExpression(expression)}
+                    readOnly={!disabled}
+                />
             </Collapse>
             <Collapse in={itemsVisible}>
                 <ValuesList values={values} onRemove={onRemove} onEdit={onEdit} />

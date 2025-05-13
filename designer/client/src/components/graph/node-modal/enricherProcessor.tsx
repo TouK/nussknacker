@@ -1,14 +1,15 @@
-import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import type ProcessUtils from "../../../common/ProcessUtils";
+import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
+import { DescriptionField } from "./DescriptionField";
+import { DisableField } from "./DisableField";
+import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
 import { NodeField } from "./NodeField";
-import { FieldType } from "./editors/field/Field";
-import { DisableField } from "./DisableField";
-import { DescriptionField } from "./DescriptionField";
-import React from "react";
-import { ParametersList } from "./parametersList";
-import { useTranslation } from "react-i18next";
+import { ParametersListAdvanced } from "./parametersListAdvanced";
 
 export function EnricherProcessor({
     errors,
@@ -43,7 +44,7 @@ export function EnricherProcessor({
                 renderFieldLabel={renderFieldLabel}
                 errors={errors}
             />
-            <ParametersList
+            <ParametersListAdvanced
                 parameters={serviceParameters(node)}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -55,38 +56,39 @@ export function EnricherProcessor({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `service.parameters[${index}]`}
-            />
-            {node.type === "Enricher" ? (
-                <NodeField
+            >
+                {node.type === "Enricher" ? (
+                    <NodeField
+                        isEditMode={isEditMode}
+                        showValidation={showValidation}
+                        node={node}
+                        renderFieldLabel={renderFieldLabel}
+                        setProperty={setProperty}
+                        fieldType={FieldType.input}
+                        fieldLabel={t("nodes.enricher.output", "Output variable name")}
+                        fieldName={"output"}
+                        errors={errors}
+                    />
+                ) : null}
+                {node.type === "Processor" ? (
+                    <DisableField
+                        node={node}
+                        isEditMode={isEditMode}
+                        showValidation={showValidation}
+                        renderFieldLabel={renderFieldLabel}
+                        setProperty={setProperty}
+                        errors={errors}
+                    />
+                ) : null}
+                <DescriptionField
+                    node={node}
                     isEditMode={isEditMode}
                     showValidation={showValidation}
-                    node={node}
-                    renderFieldLabel={renderFieldLabel}
-                    setProperty={setProperty}
-                    fieldType={FieldType.input}
-                    fieldLabel={t("nodes.enricher.output", "Output variable name")}
-                    fieldName={"output"}
-                    errors={errors}
-                />
-            ) : null}
-            {node.type === "Processor" ? (
-                <DisableField
-                    node={node}
-                    isEditMode={isEditMode}
-                    showValidation={showValidation}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     errors={errors}
                 />
-            ) : null}
-            <DescriptionField
-                node={node}
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                errors={errors}
-            />
+            </ParametersListAdvanced>
         </>
     );
 }

@@ -21,17 +21,17 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
   private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]], _] =
     typeToConfig.mapValues(pt =>
       ScalaServiceLoader
-        .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader)
+        .load[AdditionalInfoProvider](pt.modelClassLoader)
         .headOption
-        .map(_.nodeAdditionalInfo(pt.modelConfig))
+        .map(_.nodeAdditionalInfo(pt.modelConfig.underlyingConfig))
     )
 
   private val propertiesProviders: ProcessingTypeDataProvider[Option[MetaData => Future[Option[AdditionalInfo]]], _] =
     typeToConfig.mapValues(pt =>
       ScalaServiceLoader
-        .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader)
+        .load[AdditionalInfoProvider](pt.modelClassLoader)
         .headOption
-        .map(_.propertiesAdditionalInfo(pt.modelConfig))
+        .map(_.propertiesAdditionalInfo(pt.modelConfig.underlyingConfig))
     )
 
   def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(

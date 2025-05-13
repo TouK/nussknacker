@@ -1,5 +1,7 @@
-import React, { ComponentType, PropsWithChildren, SVGProps } from "react";
 import { styled, Typography } from "@mui/material";
+import type { ComponentType, PropsWithChildren, SVGProps } from "react";
+import React from "react";
+
 import ErrorOccurredSvg from "./images/error-occurred.svg";
 
 interface Props {

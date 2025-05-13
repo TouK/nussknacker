@@ -2,12 +2,12 @@ package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import io.circe
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
-import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -21,8 +21,8 @@ import sttp.tapir.derevo.schema
 import sttp.tapir.generic.Configuration
 
 import java.io.InputStream
-import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.collection.immutable
 
@@ -224,10 +224,10 @@ object Dtos {
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
-      private val displayableName: String             = "Processing data"
+      private val displayableName: String             = "Run now scheduling"
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
-      override def icon: String                       = "/assets/activities/processingData.svg"
+      override def icon: String                       = "/assets/activities/deployed.svg"
       override def supportedActions: List[String]     = commentRelatedActions
     }
 
@@ -602,9 +602,7 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         sourceEnvironment: String,
-        sourceUser: String,
         sourceScenarioVersionId: Option[Long],
-        targetEnvironment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.IncomingMigration,
@@ -614,9 +612,7 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        Some(AdditionalField("sourceEnvironment", sourceEnvironment)),
-        Some(AdditionalField("sourceUser", sourceUser)),
-        targetEnvironment.map(v => AdditionalField("targetEnvironment", v)),
+        Some(AdditionalField("migrateFrom", sourceEnvironment)),
         sourceScenarioVersionId.map(v => AdditionalField("sourceScenarioVersionId", v.toString)),
       ).flatten
     )
@@ -636,7 +632,7 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        AdditionalField("destinationEnvironment", destinationEnvironment),
+        AdditionalField("migrateTo", destinationEnvironment),
       )
     )
 
@@ -675,7 +671,6 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         dateFinished: Instant,
-        scheduleName: String,
         scheduledExecutionStatus: ScheduledExecutionStatus,
         createdAt: Instant,
         nextRetryAt: Option[Instant],
@@ -700,7 +695,6 @@ object Dtos {
           Some(AdditionalField("created", format(createdAt))),
           Some(AdditionalField("started", format(date))),
           Some(AdditionalField("finished", format(dateFinished))),
-          Some(AdditionalField("scheduleName", scheduleName)),
           retriesLeft.map(rl => AdditionalField("retriesLeft", rl.toString)),
           nextRetryAt.map(nra => AdditionalField("nextRetryAt", format(nra))),
         ).flatten

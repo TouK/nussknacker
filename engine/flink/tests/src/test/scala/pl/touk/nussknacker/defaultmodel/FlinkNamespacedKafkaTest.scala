@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -24,7 +24,7 @@ abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
     .load()
     .withValue("namespace", fromAnyRef(namespaceName))
 
-  private val schema = new JsonSchema(
+  private val inputSchema = new JsonSchema(
     """{
       |  "type": "object",
       |  "properties": {
@@ -34,9 +34,26 @@ abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
       |""".stripMargin
   )
 
-  private val record =
+  private val outputSchema = new JsonSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "value" : { "type": "string" },
+      |    "inputTopic": { "type": "string" }
+      |  }
+      |}
+      |""".stripMargin
+  )
+
+  private val inputRecord =
     """{
       |  "value": "Jan"
+      |}""".stripMargin
+
+  private def outputRecord(topic: TopicName.ForSource) =
+    s"""{
+      |  "value": "Jan",
+      |  "inputTopic": "${topic.name}"
       |}""".stripMargin
 
   def runTest(
@@ -48,10 +65,10 @@ abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
     val inputSubject  = ConfluentUtils.topicSubject(externalInputTopicName.toUnspecialized, isKey = false)
     val outputSubject = ConfluentUtils.topicSubject(externalOutputTopicName.toUnspecialized, isKey = false)
 
-    schemaRegistryMockClient.register(inputSubject, schema)
-    schemaRegistryMockClient.register(outputSubject, schema)
+    schemaRegistryMockClient.register(inputSubject, inputSchema)
+    schemaRegistryMockClient.register(outputSubject, outputSchema)
 
-    sendAsJson(record, externalInputTopicName)
+    sendAsJson(inputRecord, externalInputTopicName)
 
     val scenarioId = "scenarioId"
     val sourceId   = "input"
@@ -67,9 +84,9 @@ abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
       .emptySink(
         "output",
         "kafka",
-        KafkaUniversalComponentTransformer.sinkKeyParamName.value   -> "".spel,
-        KafkaUniversalComponentTransformer.sinkValueParamName.value -> "#input".spel,
-        KafkaUniversalComponentTransformer.topicParamName.value     -> s"'${nuVisibleOutputTopic.name}'".spel,
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value -> "".spel,
+        KafkaUniversalComponentTransformer.sinkValueParamName.value -> "{value: #input.value, inputTopic: #inputMeta.topic}".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value -> s"'${nuVisibleOutputTopic.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true".spel,
       )
@@ -82,7 +99,7 @@ abstract class BaseFlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
           .take(1)
           .map(_.message())
           .toList
-      processed.head shouldBe parseJson(record)
+      processed.head shouldBe parseJson(outputRecord(nuVisibleInputTopic))
     }
   }
 

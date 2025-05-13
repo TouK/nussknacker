@@ -1,5 +1,6 @@
-import { Parameter, UIParameter } from "../../../types";
 import { useMemo } from "react";
+
+import type { Parameter, UIParameter } from "../../../types";
 
 export function getParamIndex(parameters: Parameter[], paramName: string) {
     return parameters?.findIndex((param) => param.name === paramName);

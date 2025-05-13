@@ -1,51 +1,55 @@
-import { cloneDeep, Dictionary, map, reject, zipObject, zipWith } from "lodash";
-import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
+import type { Dictionary } from "lodash";
+import { cloneDeep, mapValues, reject, snakeCase, zipObject } from "lodash";
+
+import type { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { BranchParams, Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
-import { GraphState } from "./types";
+import { deleteNode } from "../../components/graph/utils/graphUtils";
+import type { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
+import type { GraphState } from "./types";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
-    return map(layout, (n) => (oldId === n.id ? { ...n, id: newId } : n));
+    if (oldId === newId) return layout;
+    return layout.filter((n) => newId !== n.id).map((n) => (oldId === n.id ? { ...n, id: newId } : n));
 }
 
-export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
+export function updateAfterNodeDelete({ layout, scenario, ...state }: GraphState, idToDelete: NodeId) {
     return {
         ...state,
         scenario: {
-            ...state.scenario,
-            scenarioGraph: {
-                ...state.scenario.scenarioGraph,
-                nodes: state.scenario.scenarioGraph.nodes.filter((n) => n.id !== idToDelete),
-            },
+            ...scenario,
+            scenarioGraph: deleteNode(scenario.scenarioGraph, idToDelete),
         },
-        layout: state.layout.filter((n) => n.id !== idToDelete),
+        layout: layout.filter((n) => n.id !== idToDelete),
     };
 }
 
-function generateUniqueNodeId(initialId: NodeId, usedIds: NodeId[], nodeCounter: number, isCopy: boolean): NodeId {
-    const newId = isCopy ? `${initialId} (copy ${nodeCounter})` : `${initialId} ${nodeCounter}`;
-    return usedIds.includes(newId) ? generateUniqueNodeId(initialId, usedIds, nodeCounter + 1, isCopy) : newId;
+function generateUniqueName(name: string, usedNames: string[], counter: number, isCopy: boolean): string {
+    const newName = isCopy ? `${name} (copy ${counter})` : `${name} ${counter}`;
+    return usedNames.includes(newName) ? generateUniqueName(name, usedNames, counter + 1, isCopy) : newName;
 }
 
-function createUniqueNodeId(initialId: NodeId, usedIds: NodeId[], isCopy: boolean): NodeId {
-    return initialId && !usedIds.includes(initialId) ? initialId : generateUniqueNodeId(initialId, usedIds, 1, isCopy);
+export function createUniqueName(name: string, usedNames: string[], isCopy = false): string {
+    return name && !usedNames.includes(name) ? name : generateUniqueName(name, usedNames, 1, isCopy);
 }
 
-function getUniqueIds(initialIds: string[], alreadyUsedIds: string[], isCopy: boolean) {
+function getUniqueIds(initialIds: NodeId[], alreadyUsedIds: NodeId[], isCopy?: boolean): NodeId[] {
     return initialIds.reduce((uniqueIds, initialId) => {
         const reservedIds = alreadyUsedIds.concat(uniqueIds);
-        const uniqueId = createUniqueNodeId(initialId, reservedIds, isCopy);
+        const uniqueId = createUniqueName(initialId, reservedIds, isCopy);
         return uniqueIds.concat(uniqueId);
     }, []);
 }
 
-function adjustBranchParameters(branchParameters: BranchParams[], uniqueIds: string[]) {
-    return branchParameters?.map(({ branchId, ...branchParameter }: BranchParams) => ({
-        ...branchParameter,
-        branchId: uniqueIds.find((uniqueId) => uniqueId.includes(branchId)),
-    }));
+export function getIdMapping(currentNodes: Pick<NodeType, "id">[], newNodes: Pick<NodeType, "id">[], isCopy?: boolean) {
+    const alreadyUsedIds = currentNodes.map((node) => node.id);
+    const initialIds = newNodes.map(({ id }) => id);
+    const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
+    if (initialIds.length !== uniqueIds.length) {
+        console.warn("Duplicated ids for node id mapping");
+    }
+    return zipObject(initialIds, uniqueIds);
 }
 
 export function prepareNewNodesWithLayout(
@@ -57,23 +61,42 @@ export function prepareNewNodesWithLayout(
     nodes: NodeType[];
     idMapping: Dictionary<string>;
 } {
-    const newNodes = newNodesWithPositions.map(({ node }) => node);
-    const newPositions = newNodesWithPositions.map(({ position }) => position);
-    const alreadyUsedIds = currentNodes.map((node) => node.id);
-    const initialIds = newNodes.map(({ id }) => id);
-    const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
-
+    const idMapping = getIdMapping(
+        currentNodes,
+        newNodesWithPositions.map((p) => p.node),
+        isCopy,
+    );
     return {
-        nodes: zipWith(newNodes, uniqueIds, (node, id) => ({
-            ...node,
-            id,
-            branchParameters: adjustBranchParameters(node.branchParameters, uniqueIds),
-        })),
-        layout: zipWith(newPositions, uniqueIds, (position, id) => ({
-            id,
+        nodes: newNodesWithPositions.map(({ node }) =>
+            mapValues(node, (value, key) => {
+                switch (key) {
+                    case "id":
+                        return idMapping[value];
+                    case "ref":
+                        if (!value.outputVariableNames) return value;
+                        return {
+                            ...value,
+                            outputVariableNames: mapValues(value.outputVariableNames, (v, k) => snakeCase(`${idMapping[node.id]} ${k}`)),
+                        };
+                    case "branchParameters":
+                        return value?.map((parameter) => ({
+                            ...parameter,
+                            branchId: idMapping[parameter.branchId],
+                        }));
+                    case "output":
+                    case "varName":
+                    case "outputVar":
+                        return snakeCase(`${idMapping[node.id]} ${value}`);
+                    default:
+                        return value;
+                }
+            }),
+        ),
+        layout: newNodesWithPositions.map(({ position, node }) => ({
+            id: idMapping[node.id],
             position,
         })),
-        idMapping: zipObject(initialIds, uniqueIds),
+        idMapping,
     };
 }
 
@@ -126,14 +149,13 @@ export function removeBranchParameter(node: NodeType, branchId: NodeId) {
 export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removedEdges: Pick<Edge, "from" | "to">[]): NodeType[] {
     return removedEdges.reduce((resultNodes, { from, to }) => {
         const node = resultNodes.find((n) => n.id === to);
-        if (node && NodeUtils.nodeIsJoin(node)) {
+        if (NodeUtils.nodeIsJoin(node)) {
             const newToNode = removeBranchParameter(node, from);
             return resultNodes.map((n) => {
                 return n.id === to ? newToNode : n;
             });
-        } else {
-            return resultNodes;
         }
+        return resultNodes;
     }, nodes);
 }
 
@@ -144,39 +166,37 @@ export function enrichNodeWithProcessDependentData(
 ): NodeType {
     const node = cloneDeep(originalNode);
 
-    switch (node.type) {
-        case "Join": {
-            const parameters = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.parameters;
-            const declaredBranchParameters = parameters?.filter((p) => p.branchParam) || [];
-            const incomingEdges = edges.filter((e) => e.to === node.id);
-            const branchParameters = incomingEdges.map((edge) => {
-                const branchId = edge.from;
-                const existingBranchParams = node.branchParameters.find((p) => p.branchId === branchId);
-                const parameters = declaredBranchParameters.map((branchParamDef) => {
-                    const existingParamValue = existingBranchParams?.parameters?.find((p) => p.name === branchParamDef.name);
-                    if (!existingParamValue) {
-                        const templateParamValue = node.branchParametersTemplate?.find((p) => p.name === branchParamDef.name);
-                        if (!templateParamValue) {
-                            // We need to have this fallback to some template for situation when it is existing node and it has't got
-                            // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-                            return {
-                                name: branchParamDef.name,
-                                expression: {
-                                    expression: `#${branchParamDef.name}`,
-                                    language: ExpressionLang.SpEL,
-                                },
-                            };
-                        }
-                        return cloneDeep(templateParamValue);
+    if (NodeUtils.nodeIsJoin(node)) {
+        const parameters = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.parameters;
+        const declaredBranchParameters = parameters?.filter((p) => p.branchParam) || [];
+        const incomingEdges = edges.filter((e) => e.to === node.id);
+        const branchParameters = incomingEdges.map((edge) => {
+            const branchId = edge.from;
+            const existingBranchParams = node.branchParameters.find((p) => p.branchId === branchId);
+            const parameters = declaredBranchParameters.map((branchParamDef) => {
+                const existingParamValue = existingBranchParams?.parameters?.find((p) => p.name === branchParamDef.name);
+                if (!existingParamValue) {
+                    const templateParamValue = node.branchParametersTemplate?.find((p) => p.name === branchParamDef.name);
+                    if (!templateParamValue) {
+                        // We need to have this fallback to some template for situation when it is existing node and it has't got
+                        // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
+                        return {
+                            name: branchParamDef.name,
+                            expression: {
+                                expression: `#${branchParamDef.name}`,
+                                language: ExpressionLang.SpEL,
+                            },
+                        };
                     }
-                    return existingParamValue;
-                });
-
-                return { branchId, parameters };
+                    return cloneDeep(templateParamValue);
+                }
+                return existingParamValue;
             });
 
-            return { ...node, branchParameters };
-        }
+            return { branchId, parameters };
+        });
+
+        return { ...node, branchParameters };
     }
 
     return node;

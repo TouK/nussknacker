@@ -1,9 +1,10 @@
-import React, { useId } from "react";
-import { NodeInput } from "../../../../FormElements";
-import { LabeledInputProps } from "./LabeledInput";
-import { Box, FormControl } from "@mui/material";
-import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
 import { cx } from "@emotion/css";
+import { Box, FormControl } from "@mui/material";
+import React, { useId } from "react";
+
+import { NodeInput } from "../../../../FormElements";
+import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
+import type { LabeledInputProps } from "./LabeledInput";
 
 export interface CheckboxProps extends Pick<LabeledInputProps, "children" | "autoFocus" | "isMarked" | "onChange" | "readOnly"> {
     value?: boolean;

@@ -1,13 +1,14 @@
 import React from "react";
+
 import FallbackIcon from "../../../assets/img/toolbarButtons/link.svg";
 import { PlainStyleLink } from "../../../containers/plainStyleLink";
 import { ToolbarButton } from "../../toolbarComponents/toolbarButtons";
 import UrlIcon from "../../UrlIcon";
-import { CustomButtonTypes } from "./CustomButtonTypes";
+import type { CustomButtonTypes } from "./CustomButtonTypes";
 
 export interface LinkButtonProps {
     name: string;
-    type?: CustomButtonTypes;
+    type?: CustomButtonTypes.customLink;
     title?: string;
     url: string;
     icon?: string;

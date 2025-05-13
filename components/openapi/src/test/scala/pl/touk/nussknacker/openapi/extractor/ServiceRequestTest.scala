@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.openapi.extractor
 
-import java.lang
-import java.net.URL
-import java.util.Collections.singletonMap
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
@@ -11,6 +8,9 @@ import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import sttp.client3.StringBody
 import sttp.model.Uri
 
+import java.lang
+import java.net.URL
+import java.util.Collections.singletonMap
 import scala.jdk.CollectionConverters._
 
 class ServiceRequestTest extends AnyFunSuite with Matchers {

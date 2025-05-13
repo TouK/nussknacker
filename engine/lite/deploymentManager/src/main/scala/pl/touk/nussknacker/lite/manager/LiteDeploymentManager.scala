@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.lite.manager
 
+import cats.effect.{Resource, SyncIO}
 import io.circe.Json
-import pl.touk.nussknacker.engine.BaseModelData
+import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.{BaseDeploymentManager, DMTestScenarioCommand}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.testmode.TestProcess
@@ -12,16 +14,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait LiteDeploymentManager extends BaseDeploymentManager {
 
-  protected def modelData: BaseModelData
+  protected def modelDataProvider: BaseModelDataProvider
 
   protected implicit def executionContext: ExecutionContext
 
   protected def testScenario(command: DMTestScenarioCommand): Future[TestProcess.TestResults[Json]] = {
     Future {
-      modelData.asInvokableModelData.withThisAsContextClassLoader {
+      val currentModelData = modelDataProvider.getCurrentModelData().asInvokableModelData
+      currentModelData.withModelClassloaderAsContextClassLoader {
         // TODO: handle scenario testing in RR as well
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(
-          modelData.asInvokableModelData,
+          currentModelData,
           JobData(command.canonicalProcess.metaData, command.processVersion),
           command.scenarioTestData,
           command.canonicalProcess
@@ -29,5 +32,8 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
       }
     }
   }
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
 }

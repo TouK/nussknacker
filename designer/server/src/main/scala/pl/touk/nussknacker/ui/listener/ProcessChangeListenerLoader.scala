@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.listener
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 
 import scala.concurrent.ExecutionContext
@@ -11,13 +11,13 @@ object ProcessChangeListenerLoader extends LazyLogging {
 
   def loadListeners(
       classLoader: ClassLoader,
-      config: Config,
+      designerConfig: DesignerConfig,
       services: NussknackerServices,
       predefined: ProcessChangeListener*
   ): ProcessChangeListener = {
     val factories = ScalaServiceLoader.load[ProcessChangeListenerFactory](classLoader)
     logger.info(s"Loading listener factories: ${factories.map(_.getClass.getCanonicalName)}")
-    val listeners = factories.map(_.create(config, services))
+    val listeners = factories.map(_.create(designerConfig.rawConfig, services))
     new ProcessChangeListenerAggregate(predefined.toList ::: listeners)
   }
 

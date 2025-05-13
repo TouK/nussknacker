@@ -3,16 +3,19 @@ package pl.touk.nussknacker.engine.management.sample
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
-import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
+import io.circe.parser.decode
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentConfig, ComponentGroupName, ParameterConfig}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{
   EspDeserializationSchema,
@@ -31,12 +34,22 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.management.sample.dict._
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
-import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
+import pl.touk.nussknacker.engine.util.functions.{
+  base64,
+  collection,
+  conversion,
+  date,
+  dateFormat,
+  geo,
+  numeric,
+  random,
+  util
+}
 
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
@@ -59,7 +72,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     WithCategories(value, "Category1", "Category2", "DevelopmentTests", "Periodic")
 
   override def sinkFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "sendSms"           -> all(new SingleValueSinkFactory(new DiscardingSink)),
@@ -69,41 +82,42 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "kafka-string" -> all(
         new KafkaSinkFactory(
           new SimpleSerializationSchema[AnyRef](_, String.valueOf),
-          modelDependencies,
+          modelConfig,
           FlinkKafkaSinkImplFactory
         )
       )
     )
   }
 
-  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(LoggingListener)
+  override def listeners(modelConfig: ModelConfig): Seq[ProcessListener] = List(LoggingListener)
 
   override def sourceFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "real-kafka" -> all(fixedValueKafkaSource[String](modelDependencies, new SimpleStringSchema())),
+      "real-kafka" -> all(fixedValueKafkaSource[String](modelConfig, new SimpleStringSchema())),
       "real-kafka-json-SampleProduct" -> all(
         fixedValueKafkaSource(
-          modelDependencies,
+          modelConfig,
           new EspDeserializationSchema(bytes =>
             decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).toOption.get
           )(TypeInformation.of(classOf[SampleProduct]))
         )
       ),
-      "kafka-transaction"   -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource)),
-      "boundedSource"       -> all(BoundedSource),
-      "oneSource"           -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
-      "communicationSource" -> categories(DynamicParametersSource),
-      "csv-source"          -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new CsvSource)),
-      "csv-source-lite"     -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new LiteCsvSource(_))),
+      "kafka-transaction"       -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource)),
+      "boundedSource"           -> all(BoundedSource),
+      "boundedSourceWithOffset" -> all(BoundedSourceWithOffset),
+      "oneSource"               -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
+      "communicationSource"     -> categories(DynamicParametersSource),
+      "csv-source"              -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new CsvSource)),
+      "csv-source-lite" -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new LiteCsvSource(_))),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
       "sql-source"                       -> categories(SqlSource),
       "classInstanceSource"              -> all(new ReturningClassInstanceSource)
     )
   }
 
-  override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+  override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
     Map(
       "accountService" -> categories(EmptyService).withComponentConfig(
         ComponentConfig.zero.copy(docsUrl = Some("accountServiceDocs"))
@@ -123,13 +137,28 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
               Map(
                 ParameterName("foo") -> ParameterConfig(
                   defaultValue = None,
-                  editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+                  editors = Some(List(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))),
                   validators = None,
                   label = None,
-                  hintText = None
+                  hintText = None,
+                  category = None,
                 ),
-                ParameterName("bar") -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
-                ParameterName("baz") -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
+                ParameterName("bar") -> ParameterConfig(
+                  None,
+                  Some(List(SpelTemplateParameterEditor)),
+                  None,
+                  None,
+                  None,
+                  None,
+                ),
+                ParameterName("baz") -> ParameterConfig(
+                  None,
+                  Some(List(SpelTemplateParameterEditor)),
+                  None,
+                  None,
+                  None,
+                  None,
+                )
               )
             )
           )
@@ -139,7 +168,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           ComponentConfig.zero.copy(
             params = Some(
               Map(
-                ParameterName("bar") -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None, None)
               )
             )
           )
@@ -160,17 +189,19 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
               Map(
                 ParameterName("overriddenByDevConfigParam") -> ParameterConfig(
                   defaultValue = None,
-                  editor = None,
+                  editors = None,
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
-                  hintText = None
+                  hintText = None,
+                  category = None,
                 ),
                 ParameterName("overriddenByFileConfigParam") -> ParameterConfig(
                   defaultValue = None,
-                  editor = None,
+                  editors = None,
                   validators = Some(List(MandatoryParameterValidator)),
                   label = None,
-                  hintText = None
+                  hintText = None,
+                  category = None,
                 )
               )
             )
@@ -186,12 +217,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "dynamicService"                 -> categories(new DynamicService),
       "customValidatedService"         -> categories(new CustomValidatedService),
       "serviceWithDictParameterEditor" -> categories(new ServiceWithDictParameterEditor),
-      "modelConfigReader"              -> categories(new ModelConfigReaderService(modelDependencies.config)),
+      "modelConfigReader"              -> categories(new ModelConfigReaderService(modelConfig.underlyingConfig)),
       "log"                            -> all(LoggingService)
     )
 
   override def customStreamTransformers(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> categories(NoneReturnTypeTransformer),
     "stateful"                  -> categories(StatefulTransformer),
@@ -215,9 +246,17 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "hideVariables"            -> all(HidingVariablesTransformer)
   )
 
-  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+  override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {
     val globalProcessVariables = Map(
-      "DATE"           -> all(DateProcessHelper),
+      "GEO"            -> anyCategory(geo),
+      "NUMERIC"        -> anyCategory(numeric),
+      "CONV"           -> anyCategory(conversion),
+      "COLLECTION"     -> anyCategory(collection),
+      "DATE"           -> anyCategory(date),
+      "DATE_FORMAT"    -> anyCategory(dateFormat),
+      "UTIL"           -> anyCategory(util),
+      "RANDOM"         -> anyCategory(random),
+      "BASE64"         -> anyCategory(base64),
       "DICT"           -> categories(TestDictionary.instance),
       "RGB"            -> all(RGBDictionary.instance),
       "BusinessConfig" -> categories(BusinessConfigDictionary.instance),
@@ -248,16 +287,18 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   }
 
   // we generate static generation-time during ConfigCreator creation to test reload mechanisms
-  override val buildInfo: Map[String, String] = {
-    Map(
-      "process-version" -> "0.1",
-      "engine-version"  -> "0.1",
-      "generation-time" -> LocalDateTime.now().toString
+  override val modelInfo: ModelInfo = {
+    ModelInfo.fromMap(
+      Map(
+        "process-version" -> "0.1",
+        "engine-version"  -> "0.1",
+        "generation-time" -> LocalDateTime.now().toString
+      )
     )
   }
 
   private def fixedValueKafkaSource[T: ClassTag: Encoder: Decoder](
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       schema: DeserializationSchema[T]
   ): KafkaSourceFactory[String, T] = {
     val schemaFactory    = new FixedValueDeserializationSchemaFactory(schema)
@@ -265,7 +306,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     new KafkaSourceFactory[String, T](
       schemaFactory,
       formatterFactory,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
   }

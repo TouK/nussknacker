@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
-import cats.data.Validated.{invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.DuplicateFragmentOutputNamesInScenario

@@ -1,12 +1,14 @@
 import { memoize } from "lodash";
 import React, { useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
 import { useSelector } from "react-redux";
+
 import ProcessUtils from "../../../common/ProcessUtils";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { NodeType, ProcessDefinitionData } from "../../../types";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
+import type { NodeType, ProcessDefinitionData } from "../../../types";
+import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";
 import { InlineSvg } from "../../SvgDiv";
 import { Icon } from "./Icon";
-import { createRoot } from "react-dom/client";
 
 let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
@@ -21,6 +23,11 @@ const preloadBeImage = memoize((src: string): string | null => {
     document.body.appendChild(div);
     return `#${id}`;
 });
+
+export const stickyNoteIconSrc = `/assets/components/${StickyNoteType}.svg`;
+export function stickyNoteIcon(): string | null {
+    return preloadBeImage(stickyNoteIconSrc);
+}
 
 export function getComponentIconSrc(node: NodeType, { components }: ProcessDefinitionData): string | null {
     // missing type means that node is the fake properties component

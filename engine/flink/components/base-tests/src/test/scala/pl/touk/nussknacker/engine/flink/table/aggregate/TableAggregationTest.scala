@@ -2,24 +2,25 @@ package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.connector.source.Boundedness
-import org.scalatest.Inside
+import org.scalatest.{BeforeAndAfterAll, Inside}
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.table.FlinkTableOpsComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{
+  buildMultipleAggregationsScenario,
   AggregationParameters,
-  TestRecord,
-  buildMultipleAggregationsScenario
+  TestRecord
 }
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -32,13 +33,27 @@ import java.time.{LocalDate, OffsetDateTime, ZonedDateTime}
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
-class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks with FlinkSpec with Matchers with Inside {
+class TableAggregationTest
+    extends AnyFunSuite
+    with TableDrivenPropertyChecks
+    with Matchers
+    with Inside
+    with BeforeAndAfterAll {
 
-  private lazy val additionalComponents: List[ComponentDefinition] =
-    FlinkTableComponentProvider.configIndependentComponents
+  private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableOpsComponentProvider().create(
+    ConfigFactory.empty(),
+    ModelConfig.parse(ConfigFactory.empty())
+  )
+
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
+  }
 
   private lazy val runner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(additionalComponents)
     .build()

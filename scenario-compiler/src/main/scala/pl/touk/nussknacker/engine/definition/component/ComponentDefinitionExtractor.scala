@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import cats.implicits.catsSyntaxSemigroup
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.JoinContextTransformation
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,
@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.{
   MethodDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
+import pl.touk.nussknacker.engine.util.IdToTitleConverter
 
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
@@ -38,7 +39,8 @@ object ComponentDefinitionExtractor {
       .copy(
         docsUrl = inputComponentDefinition.docsUrl,
         icon = inputComponentDefinition.icon,
-        componentId = inputComponentDefinition.designerWideId
+        componentId = inputComponentDefinition.designerWideId,
+        label = inputComponentDefinition.label
       )
     ComponentDefinitionExtractor
       .extract(
@@ -105,7 +107,8 @@ object ComponentDefinitionExtractor {
           customCanBeEnding
         )
 
-      filterOutDisabledAndComputeFinalUiDefinition(configFor(defaultConfig), additionalConfigs.groupName).map(f.tupled)
+      filterOutDisabledAndComputeFinalUiDefinition(configFor(defaultConfig), additionalConfigs.groupName, componentName)
+        .map(f.tupled)
     }
 
     (component match {
@@ -207,7 +210,8 @@ object ComponentDefinitionExtractor {
 
   def filterOutDisabledAndComputeFinalUiDefinition(
       finalCombinedConfig: ComponentConfig,
-      translateGroupName: ComponentGroupName => Option[ComponentGroupName]
+      translateGroupName: ComponentGroupName => Option[ComponentGroupName],
+      name: String
   ): Option[(ComponentUiDefinition, Map[ParameterName, ParameterConfig])] = {
     // At this stage, after combining all properties with default config, we are sure that some properties are defined
     def getDefinedProperty[T](propertyName: String, getProperty: ComponentConfig => Option[T]) =
@@ -225,6 +229,7 @@ object ComponentDefinitionExtractor {
         getDefinedProperty("icon", _.icon),
         finalCombinedConfig.docsUrl,
         getDefinedProperty("componentId", _.componentId),
+        finalCombinedConfig.label.getOrElse(IdToTitleConverter.toTitle(name)),
       )
       (uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }

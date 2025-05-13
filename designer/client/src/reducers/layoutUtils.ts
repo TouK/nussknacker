@@ -1,7 +1,8 @@
 import { defaultsDeep } from "lodash";
-import { Layout } from "../actions/nk";
-import { NodeType, ScenarioGraph } from "../types";
-import { Reducer } from "../actions/reduxTypes";
+
+import type { Layout } from "../actions/nk";
+import type { Reducer } from "../actions/reduxTypes";
+import type { NodeType, ScenarioGraph } from "../types";
 
 export function fromMeta(scenarioGraph: ScenarioGraph): Layout {
     return scenarioGraph.nodes

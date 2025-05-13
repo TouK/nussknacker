@@ -1,5 +1,7 @@
-import React, { createContext, PropsWithChildren, useContext, useState } from "react";
-import { FixedValuesOption, ValueCompileTimeValidation } from "../item";
+import type { PropsWithChildren } from "react";
+import React, { createContext, useContext, useState } from "react";
+
+import type { FixedValuesOption, ValueCompileTimeValidation } from "../item";
 
 const SettingsContext = createContext<{
     temporaryUserDefinedList: FixedValuesOption[];

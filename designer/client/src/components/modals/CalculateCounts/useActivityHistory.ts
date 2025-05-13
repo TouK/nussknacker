@@ -1,10 +1,11 @@
+import moment from "moment";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import HttpService from "../../../http/HttpService";
+
 import { DATE_FORMAT } from "../../../config";
-import { Range } from "./CountsRangesButtons";
-import moment from "moment";
+import HttpService from "../../../http/HttpService";
 import { ActivityTypesRelatedToExecutions } from "../../toolbars/activities/types";
+import type { Range } from "./CountsRangesButtons";
 
 function displayableNameOfPredefinedActivityType(predefinedActivityType: ActivityTypesRelatedToExecutions) {
     switch (predefinedActivityType) {
@@ -62,7 +63,7 @@ export function useActivityHistory(processName: string, processingMode: string):
                 return res;
             })
             .then(setActivities);
-    }, [t, processName]);
+    }, [t, processName, processingMode]);
 
     return activities;
 }

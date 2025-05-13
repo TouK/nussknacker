@@ -1,19 +1,20 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{CustomProcessValidator, JobsRecoverySettings, MetaDataInitializer}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
-final case class DeploymentData(
+final class DeploymentData(
+    val deploymentManagerType: DeploymentManagerType,
     validDeploymentManager: ValidatedNel[String, DeploymentManager],
-    metaDataInitializer: MetaDataInitializer,
-    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    additionalValidators: List[CustomProcessValidator],
-    deploymentManagerType: DeploymentManagerType,
-    engineSetupName: EngineSetupName
+    val metaDataInitializer: MetaDataInitializer,
+    val deploymentScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    val additionalValidators: List[CustomProcessValidator],
+    val jobsRecoverySettings: JobsRecoverySettings,
+    val engineSetupName: EngineSetupName,
 ) {
 
   def validDeploymentManagerOrStub: DeploymentManager =
@@ -21,10 +22,4 @@ final case class DeploymentData(
 
   def engineSetupErrors: List[String] = validDeploymentManager.swap.map(_.toList).valueOr(_ => List.empty)
 
-  def close(): Unit = {
-    validDeploymentManager.foreach(_.close())
-  }
-
 }
-
-case class DeploymentManagerType(value: String)

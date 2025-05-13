@@ -1,6 +1,8 @@
 import { FormLabel } from "@mui/material";
 import React, { useCallback } from "react";
-import { Edge, EdgeKind, EdgeType } from "../../../../types";
+
+import type { Edge, EdgeType } from "../../../../types";
+import { EdgeKind } from "../../../../types";
 import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
 import { useDiffMark } from "../PathsToMark";
@@ -61,7 +63,7 @@ export default function EdgeDetailsContent({
                         isMarked={isMarked("edgeType.condition.expression")}
                         showValidation={showValidation}
                         showSwitch={showSwitch}
-                        onValueChange={changeEdgeTypeCondition}
+                        onValueChange={({ expression }) => changeEdgeTypeCondition(expression)}
                         fieldErrors={[]}
                     />
                 </BaseModalContent>

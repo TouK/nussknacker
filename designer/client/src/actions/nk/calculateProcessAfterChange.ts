@@ -1,33 +1,35 @@
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
-import { Edge, NodeType, ScenarioGraphWithName } from "../../types";
-import { ThunkAction } from "../reduxTypes";
-import { Scenario } from "../../components/Process/types";
+import { cleanupNodeInputEdges, mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
+import type { Scenario } from "../../components/Process/types";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
+import type { Edge, NodeType, ScenarioGraph } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 
+// FIXME: this is not an action,
 export function calculateProcessAfterChange(
     scenario: Scenario,
     before: NodeType,
     after: NodeType,
     outputEdges: Edge[],
-): ThunkAction<Promise<ScenarioGraphWithName>> {
+): ThunkAction<Promise<ScenarioGraph>> {
     return async (_, getState) => {
-        let changedProcess = scenario.scenarioGraph;
+        let changedGraph = scenario.scenarioGraph;
+
+        changedGraph = cleanupNodeInputEdges(changedGraph, before, after);
         if (outputEdges) {
             const processDefinitionData = getProcessDefinitionData(getState());
             const filtered = outputEdges.map(({ to, ...e }) =>
-                changedProcess.nodes.find((n) => n.id === to)
+                changedGraph.nodes.find((n) => n.id === to)
                     ? { ...e, to }
                     : {
                           ...e,
                           to: "",
                       },
             );
-            changedProcess = replaceNodeOutputEdges(scenario.scenarioGraph, processDefinitionData, filtered, before.id);
+            changedGraph = replaceNodeOutputEdges(changedGraph, processDefinitionData, filtered, before.id);
         }
 
-        return {
-            processName: scenario.name,
-            scenarioGraph: mapProcessWithNewNode(changedProcess, before, after),
-        };
+        changedGraph = mapProcessWithNewNode(changedGraph, before, after);
+
+        return changedGraph;
     };
 }

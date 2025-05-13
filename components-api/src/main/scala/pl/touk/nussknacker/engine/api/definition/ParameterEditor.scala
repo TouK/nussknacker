@@ -1,41 +1,45 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
 import java.time.temporal.ChronoUnit
 import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait ParameterEditor
 
-case object RawParameterEditor extends ParameterEditor
+// Editor with static values (without SpEL)
+@ConfiguredJsonCodec sealed trait StaticParameterEditor
 
-@ConfiguredJsonCodec sealed trait SimpleParameterEditor extends ParameterEditor
+case object SpelParameterEditor extends ParameterEditor
 
-case object BoolParameterEditor extends SimpleParameterEditor
+case object StaticStringParameterEditor extends StaticParameterEditor
 
-case object StringParameterEditor extends SimpleParameterEditor
+case object BoolParameterEditor extends ParameterEditor with StaticParameterEditor
 
-case object DateParameterEditor extends SimpleParameterEditor
+case object DateParameterEditor extends ParameterEditor with StaticParameterEditor
 
-case object TimeParameterEditor extends SimpleParameterEditor
+case object TimeParameterEditor extends ParameterEditor with StaticParameterEditor
 
-case object DateTimeParameterEditor extends SimpleParameterEditor
+case object DateTimeParameterEditor extends ParameterEditor with StaticParameterEditor
 
-case object TextareaParameterEditor extends SimpleParameterEditor
+case object TextareaParameterEditor extends ParameterEditor with StaticParameterEditor
 
-case object JsonParameterEditor extends SimpleParameterEditor
+case object JsonParameterEditor extends ParameterEditor with StaticParameterEditor
 
-case object SqlParameterEditor extends SimpleParameterEditor
+case object JsonTemplateParameterEditor extends ParameterEditor with StaticParameterEditor
 
-case object SpelTemplateParameterEditor extends SimpleParameterEditor
+case object SqlParameterEditor extends ParameterEditor
 
-case object TabularTypedDataEditor extends SimpleParameterEditor
+case object SpelTemplateParameterEditor extends ParameterEditor
 
-@JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
+case object TabularTypedDataEditor extends ParameterEditor
+
+@JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit])
+    extends ParameterEditor
+    with StaticParameterEditor
 
 object DurationParameterEditor {
 
@@ -51,7 +55,9 @@ object DurationParameterEditor {
 
 }
 
-@JsonCodec case class PeriodParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
+@JsonCodec case class PeriodParameterEditor(timeRangeComponents: List[ChronoUnit])
+    extends ParameterEditor
+    with StaticParameterEditor
 
 object PeriodParameterEditor {
 
@@ -71,32 +77,22 @@ object PeriodParameterEditor {
   - add https://github.com/jmrozanec/cron-utils to model classpath
   - add CronDefinitionBuilder, CronParser and CronType to additional classes in ExpressionConfig
  */
-case object CronParameterEditor extends SimpleParameterEditor
+case object CronParameterEditor extends ParameterEditor with StaticParameterEditor
 
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
-    extends SimpleParameterEditor
+    extends ParameterEditor
+    with StaticParameterEditor
 
 @JsonCodec case class FixedValuesWithIconParameterEditor(possibleValues: List[FixedExpressionValueWithIcon])
-    extends SimpleParameterEditor
+    extends ParameterEditor
+    with StaticParameterEditor
+
+@JsonCodec case class FixedValuesWithRadioParameterEditor(possibleValues: List[FixedExpressionValue])
+    extends ParameterEditor
+    with StaticParameterEditor
 
 // TODO: currently only supports String/Boolean/Long dictionaries (same set of supported types as AdditionalDataValue)
 @JsonCodec case class DictParameterEditor(
     dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
-) extends SimpleParameterEditor
-
-@JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode)
-    extends ParameterEditor
-
-object DualParameterEditor {
-
-  implicit val dualEditorModeEncoder: Encoder[DualEditorMode] = {
-    new Encoder[DualEditorMode] {
-      override def apply(editorMode: DualEditorMode): Json = Encoder.encodeString(editorMode.name())
-    }
-  }
-
-  implicit val decodeDualEditorMode: Decoder[DualEditorMode] = {
-    Decoder.decodeString.emapTry(name => Try(DualEditorMode.fromName(name)))
-  }
-
-}
+) extends ParameterEditor
+    with StaticParameterEditor

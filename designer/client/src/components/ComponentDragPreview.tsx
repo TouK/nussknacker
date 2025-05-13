@@ -3,8 +3,12 @@ import React, { forwardRef, useEffect, useMemo, useState } from "react";
 import { useDragDropManager, useDragLayer } from "react-dnd";
 import { createPortal } from "react-dom";
 import { useDebouncedValue } from "rooks";
-import { NodeType } from "../types";
+
+import type { NodeType } from "../types";
+import type { ComponentPreviewProps } from "./ComponentPreview";
 import { ComponentPreview } from "./ComponentPreview";
+import { StickyNoteType } from "./graph/utils/stickyNotesUtils";
+import { StickyNotePreview } from "./StickyNotePreview";
 import { DndTypes } from "./toolbars/creator/Tool";
 
 function useNotNull<T>(value: T) {
@@ -14,6 +18,13 @@ function useNotNull<T>(value: T) {
         setCurrent(value);
     }, [value]);
     return current;
+}
+
+function PreviewElement(props: ComponentPreviewProps) {
+    if (props.node.type === StickyNoteType) {
+        return <StickyNotePreview isActive={props.isActive} isOver={props.isOver} />;
+    }
+    return <ComponentPreview {...props} />;
 }
 
 export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: () => number }>(function ComponentDragPreview(
@@ -61,7 +72,7 @@ export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: () => nu
                     transform: `scale(${scale()})`,
                 }}
             >
-                <ComponentPreview node={node} isActive={active} isOver={isOver} />
+                <PreviewElement node={node} isActive={active} isOver={isOver} />
             </div>
         </div>,
         document.body,

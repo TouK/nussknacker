@@ -15,7 +15,7 @@ object ProcessSplitter {
   }
 
   private def split(node: SourceNode): SourcePart = {
-    val nextWithParts = traverse(node.next)
+    val nextWithParts = traverse(node.id, node.next)
     SourcePart(splittednode.SourceNode(node.data, nextWithParts.next), nextWithParts.nextParts, nextWithParts.ends)
   }
 
@@ -35,39 +35,53 @@ object ProcessSplitter {
     SinkPart(node)
   }
 
+  private def traverse(nodeId: String, nextNodeOpt: Option[SubsequentNode]): NextWithParts = {
+    nextNodeOpt match {
+      case Some(next) =>
+        traverse(next)
+      case None =>
+        NextWithParts.end(nodeId)
+    }
+  }
+
   private def traverse(node: SubsequentNode): NextWithParts =
     node match {
       case FilterNode(data, nextTrue, nextFalse) =>
         (nextTrue.map(traverse), nextFalse.map(traverse)) match {
           case (Some(nextTrueT), Some(nextFalseT)) =>
             NextWithParts(
-              NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), Some(nextFalseT.next))),
+              NextNode(splittednode.FilterNode(data, nextTrueT.next, nextFalseT.next)),
               nextTrueT.nextParts ::: nextFalseT.nextParts,
               nextTrueT.ends ::: nextFalseT.ends
             )
           case (None, Some(nextFalseT)) =>
             NextWithParts(
-              NextNode(splittednode.FilterNode(data, None, Some(nextFalseT.next))),
+              NextNode(splittednode.FilterNode(data, None, nextFalseT.next)),
               nextFalseT.nextParts,
               DeadEnd(data.id) :: nextFalseT.ends
             )
           case (Some(nextTrueT), None) =>
             NextWithParts(
-              NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), None)),
+              NextNode(splittednode.FilterNode(data, nextTrueT.next, None)),
               nextTrueT.nextParts,
               DeadEnd(data.id) :: nextTrueT.ends
             )
-          case (None, None) => throw new IllegalStateException("should not happen")
+          case (None, None) =>
+            NextWithParts(
+              NextNode(splittednode.FilterNode(data, None, None)),
+              List.empty,
+              DeadEnd(data.id) :: Nil,
+            )
         }
       case SwitchNode(data, nexts, defaultNext) =>
         val (nextsT, casesNextParts, casesEnds) = nexts.map { casee =>
-          val nextWithParts = traverse(casee.node)
+          val nextWithParts = traverse(data.id, casee.node)
           (splittednode.Case(casee.expression, nextWithParts.next), nextWithParts.nextParts, nextWithParts.ends)
         }.unzip3
         defaultNext.map(traverse) match {
           case Some(defaultNextT) =>
             NextWithParts(
-              NextNode(splittednode.SwitchNode(data, nextsT, Some(defaultNextT.next))),
+              NextNode(splittednode.SwitchNode(data, nextsT, defaultNextT.next)),
               defaultNextT.nextParts ::: casesNextParts.flatten,
               defaultNextT.ends ::: casesEnds.flatten
             )
@@ -79,15 +93,20 @@ object ProcessSplitter {
             )
         }
       case OneOutputSubsequentNode(custom: CustomNode, next) =>
-        val part = split(custom, next)
-        NextWithParts(PartRef(part.id), List(part), List.empty)
+        next match {
+          case Some(next) =>
+            val part = split(custom, next)
+            NextWithParts(PartRef(part.id), List(part), List.empty)
+          case None =>
+            NextWithParts.end(custom.id)
+        }
       case split: SplitNode =>
         val nextWithParts = split.nextParts.map(traverse)
-        val node          = splittednode.SplitNode(split.data, nextWithParts.map(_.next))
+        val node          = splittednode.SplitNode(split.data, nextWithParts.flatMap(_.next))
         NextWithParts(NextNode(node), nextWithParts.flatMap(_.nextParts), nextWithParts.flatMap(_.ends))
       case OneOutputSubsequentNode(other, next) =>
-        traverse(next).map { nextT =>
-          NextNode(splittednode.OneOutputSubsequentNode(other, nextT))
+        traverse(other.id, next).map { nextT =>
+          Some(NextNode(splittednode.OneOutputSubsequentNode(other, nextT)))
         }
       case EndingNode(sink: Sink) =>
         val part = split(sink)
@@ -108,12 +127,20 @@ object ProcessSplitter {
 
     }
 
-  case class NextWithParts(next: splittednode.Next, nextParts: List[SubsequentPart], ends: List[End]) {
+  case class NextWithParts(next: Option[splittednode.Next], nextParts: List[SubsequentPart], ends: List[End]) {
 
-    def map(f: splittednode.Next => splittednode.Next): NextWithParts = {
+    def map(f: Option[splittednode.Next] => Option[splittednode.Next]): NextWithParts = {
       copy(next = f(next))
     }
 
+  }
+
+  object NextWithParts {
+    def apply(next: splittednode.Next, nextParts: List[SubsequentPart], ends: List[End]): NextWithParts =
+      NextWithParts(Some(next), nextParts, ends)
+
+    def end(nodeId: String): NextWithParts =
+      NextWithParts(None, List.empty, List(NormalEnd(nodeId)))
   }
 
 }

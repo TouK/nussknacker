@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.test.utils.domain
 
+import cats.effect.Resource
 import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -19,8 +20,8 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.spelTemplate
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
@@ -32,18 +33,19 @@ import pl.touk.nussknacker.test.mock.{
   StubModelDataWithModelDefinition,
   TestAdditionalUIConfigProvider
 }
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessValidator}
 
 object ProcessTestData {
 
-  import KafkaFactory._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import KafkaFactory._
 
   val existingSourceFactory      = "barSource"
   val otherExistingSourceFactory = "fooSource"
@@ -93,7 +95,7 @@ object ProcessTestData {
       .withService(
         otherExistingServiceId4,
         Parameter[JavaSampleEnum](ParameterName("expression")).copy(
-          editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
+          editors = List(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
           validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a"))))
         )
       )
@@ -105,7 +107,7 @@ object ProcessTestData {
       .withService(
         dictParameterEditorServiceId,
         Parameter[String](ParameterName("expression"))
-          .copy(editor = Some(DictParameterEditor("someDictId")), validators = List.empty)
+          .copy(editors = List(DictParameterEditor("someDictId")), validators = List.empty)
       )
       .withCustom(
         otherExistingStreamTransformer,
@@ -140,7 +142,8 @@ object ProcessTestData {
   }
 
   private object ProcessValidatorDefaults {
-    val processingType: ProcessingType = Streaming.stringify
+    val processingType: ProcessingType           = Streaming.stringify
+    val stickyNotesSettings: StickyNotesSettings = StickyNotesSettings(5000, None, enabled = false)
     val processValidator: ProcessValidator =
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition()))
     val scenarioProperties: Map[String, ScenarioPropertyConfig] = Map.empty
@@ -159,15 +162,18 @@ object ProcessTestData {
         ProcessValidatorDefaults.scenarioPropertiesConfigFinalizer,
       scenarioLabelsValidator: ScenarioLabelsValidator = ProcessValidatorDefaults.scenarioLabelsValidator,
       additionalValidators: List[CustomProcessValidator] = ProcessValidatorDefaults.additionalValidators,
-      fragmentResolver: FragmentResolver = ProcessValidatorDefaults.fragmentResolver
+      fragmentResolver: FragmentResolver = ProcessValidatorDefaults.fragmentResolver,
+      stickyNotesSettings: StickyNotesSettings = ProcessValidatorDefaults.stickyNotesSettings
   ): UIProcessValidator = new UIProcessValidator(
     processingType = processingType,
     validator = validator,
     scenarioProperties = scenarioProperties,
     scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
+    engineScenarioCompilationDependenciesResource = Resource.pure(EngineScenarioCompilationDependencies.empty),
     scenarioLabelsValidator = scenarioLabelsValidator,
     additionalValidators = additionalValidators,
-    fragmentResolver = fragmentResolver
+    fragmentResolver = fragmentResolver,
+    stickyNotesSettings = stickyNotesSettings
   )
 
   def processValidator: UIProcessValidator = testProcessValidator()
@@ -184,7 +190,7 @@ object ProcessTestData {
 
   val sampleScenarioLabels: List[String] = List("tag1", "tag2")
 
-  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName)
+  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName.value)
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
@@ -201,7 +207,7 @@ object ProcessTestData {
 
   // TODO: merge with this below
   val sampleScenario: CanonicalProcess = {
-    def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
+    def endWithMessage(idSuffix: String, message: String): Option[SubsequentNode] = {
       GraphBuilder
         .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'".spel)
         .emptySink(
@@ -219,8 +225,11 @@ object ProcessTestData {
       .to(endWithMessage("suffix", "message"))
   }
 
-  def validProcessWithName(name: ProcessName): CanonicalProcess = ScenarioBuilder
-    .streaming(name.value)
+  def validProcessWithName(name: ProcessName): CanonicalProcess =
+    validProcessWithName(name.value)
+
+  def validProcessWithName(name: String): CanonicalProcess = ScenarioBuilder
+    .streaming(name)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)
@@ -365,6 +374,26 @@ object ProcessTestData {
     List.empty
   )
 
+  val sampleFragmentWithPreset: CanonicalProcess =
+    CanonicalProcess(
+      MetaData(sampleFragmentName.value, FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameter(
+                ParameterName("param1"),
+                FragmentClazzRef[String]
+              ).copy(valueEditor = Some(ValueInputWithDictEditor("rgb", allowOtherValue = false)))
+            )
+          )
+        ),
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
+
   val sampleFragment: CanonicalProcess = {
     CanonicalProcess(
       MetaData(sampleFragmentName.value, FragmentSpecificData()),
@@ -428,7 +457,7 @@ object ProcessTestData {
       edges = List.empty
     )
 
-    UpdateScenarioCommand(scenarioGraph, comment.map(_.content), Some(List.empty), None)
+    UpdateScenarioCommand(scenarioGraph, comment.map(_.content), Some(List.empty))
   }
 
   def validProcessWithFragment(
@@ -467,7 +496,7 @@ object ProcessTestData {
       .to(endWithMessage)
   }
 
-  private def endWithMessage: SubsequentNode = {
+  private def endWithMessage: Option[SubsequentNode] = {
     val idSuffix   = "suffix"
     val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
 

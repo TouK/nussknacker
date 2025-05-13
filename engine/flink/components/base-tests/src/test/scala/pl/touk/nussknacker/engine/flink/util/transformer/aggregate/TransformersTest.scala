@@ -8,30 +8,32 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  CannotCreateObjectError,
-  ExpressionParserCompilationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TestRecordHours.hoursToMillis
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.CustomTimestampExtractingTransformation
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
@@ -45,10 +47,12 @@ import scala.jdk.CollectionConverters._
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
+  private val eventTimeExtractionComponentName = "customTimestampExtractingTransformation"
+
   def modelData(
+      collectingListener: => ResultsCollectingListener[Any],
       list: List[TestRecord] = List(),
       aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
-      collectingListener: => ResultsCollectingListener[Any] = ResultsCollectingListenerHolder.registerListener
   ): LocalModelData = {
     val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[TestRecord](
       EmitWatermarkAfterEachElementCollectionSource.create[TestRecord](list, _.timestamp, Duration.ofHours(1))
@@ -58,12 +62,38 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       ComponentDefinition("start", sourceComponent) :: FlinkBaseUnboundedComponentProvider.create(
         DocsConfig.Default,
         aggregateWindowsConfig
-      ) ::: FlinkBaseComponentProvider.Components,
+      ) ::: FlinkBaseComponentProvider.Components
+        ::: List(ComponentDefinition(eventTimeExtractionComponentName, CustomTimestampExtractingTransformation)),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
 
-  private val processValidator: ProcessValidator = ProcessValidator.default(modelData())
+  private implicit class ResultsCollectingListenerOps(collectingListener: ResultsCollectingListener[Any]) {
+
+    def fragmentResultEndVariable[T <: AnyRef](key: String): List[T] = {
+      endVariablesForKey(key).map(_.variableTyped[T]("fragmentResult").get)
+    }
+
+    def fragmentResultEndVariable[K <: Any, T <: AnyRef](key: K): List[T] = {
+      endVariablesForKey(key).map(_.variableTyped[T]("fragmentResult").get)
+    }
+
+    def endVariablesForKey[K <: Any](key: K): List[TestProcess.ResultContext[Any]] = {
+      collectingListener.results
+        .nodeResults("end")
+        .filter(_.variableTyped[K](VariableConstants.KeyVariableName).contains(key))
+    }
+
+    def keyVariables[T <: AnyRef]: List[T] = {
+      collectingListener.results
+        .nodeResults("end")
+        .map(_.variableTyped[T]("key").get)
+    }
+
+  }
+
+  private val processValidator: ProcessValidator =
+    ProcessValidator.default(modelData(ResultsCollectingListenerHolder.noopListener))
 
   test("aggregates are properly validated") {
     validateOk("#AGG.approxCardinality", "#input.str", Typed[Long])
@@ -136,57 +166,86 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   test("sum aggregate") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
+      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(1, 3, 7)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(1, 3, 7)
+    }
   }
 
   test("sum aggregate with zeros") {
     val id = "1"
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 0, "a"), TestRecordHours(id, 1, 1, "b"), TestRecordHours(id, 2, 0, "b"))
+        )
+      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 0, "a"), TestRecordHours(id, 1, 1, "b"), TestRecordHours(id, 2, 0, "b")))
-    val testProcess = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
-
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(0, 1, 1)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(0, 1, 1)
+    }
   }
 
   test("countWhen aggregate") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "c")))
-    val testProcess =
-      sliding("#AGG.countWhen", """#input.str == "a" || #input.str == "b" """, emitWhenEventLeft = false)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "c"))
+        )
+      val testScenario =
+        sliding("#AGG.countWhen", """#input.str == "a" || #input.str == "b" """, emitWhenEventLeft = false)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(1, 2, 1)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(1, 2, 1)
+    }
   }
 
   test("average aggregate") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess = sliding("#AGG.average", "#input.eId", emitWhenEventLeft = false)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
+      val testScenario = sliding("#AGG.average", "#input.eId", emitWhenEventLeft = false)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
+    }
   }
 
   test("median aggregate") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess = sliding("#AGG.median", "#input.eId", emitWhenEventLeft = false)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
+      val testScenario = sliding("#AGG.median", "#input.eId", emitWhenEventLeft = false)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
+    }
   }
 
   test("standard deviation and average aggregates") {
@@ -201,69 +260,89 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     forAll(table) { (aggregationName, secondValue) =>
       val id = "1"
 
-      val model =
-        modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
-      val testProcess = sliding(aggregationName, "#input.eId", emitWhenEventLeft = false)
+      ResultsCollectingListenerHolder.withListener { collectingListener =>
+        val model =
+          modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
+        val testScenario = sliding(aggregationName, "#input.eId", emitWhenEventLeft = false)
 
-      val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-      val mapped = aggregateVariables
-        .map(e => e.asInstanceOf[Double])
-      mapped.size shouldBe 2
-      mapped(0) shouldBe 0.0 +- 0.0001
-      mapped(1) shouldBe secondValue +- 0.0001
+        runScenario(model, testScenario)
+        val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+        val mapped = aggregateVariables
+          .map(e => e.asInstanceOf[Double])
+        mapped.size shouldBe 2
+        mapped(0) shouldBe 0.0 +- 0.0001
+        mapped(1) shouldBe secondValue +- 0.0001
+      }
     }
   }
 
   test("sliding aggregate should emit context of variables") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess =
-      sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false, afterAggregateExpression = "#input.eId")
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
+      val testScenario =
+        sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false, afterAggregateExpression = "#input.eId")
 
-    val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
+      runScenario(model, testScenario)
+      val nodeResults = collectingListener.endVariablesForKey(id)
+      nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
+    }
   }
 
   test("sum aggregate for out of order elements") {
     val id = "1"
 
-    val model = modelData(
-      List(
-        TestRecordHours(id, 0, 1, "a"),
-        TestRecordHours(id, 1, 2, "b"),
-        TestRecordHours(id, 2, 5, "b"),
-        TestRecordHours(id, 1, 1, "b")
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 0, 1, "a"),
+          TestRecordHours(id, 1, 2, "b"),
+          TestRecordHours(id, 2, 5, "b"),
+          TestRecordHours(id, 1, 1, "b")
+        )
       )
-    )
-    val testProcess = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
+      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(1, 3, 7, 4)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(1, 3, 7, 4)
+    }
   }
 
   test("emit aggregate when event left the slide") {
     val id = "1"
 
-    val model = modelData(
-      List(
-        TestRecordHours(id, 0, 1, ""),
-        TestRecordHours(id, 1, 2, ""),
-        TestRecordHours(id, 2, 5, "")
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 0, 1, ""),
+          TestRecordHours(id, 1, 2, ""),
+          TestRecordHours(id, 2, 5, "")
+        )
       )
-    )
-    val testProcess = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true)
+      val testScenario = sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(1, 3, 7, 5, 0)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(1, 3, 7, 5, 0)
+    }
   }
 
   test("emit aggregate when event left the slide should not emit context") {
-    val testProcess =
+    val testScenario =
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = processValidator.validate(testProcess, isFragment = false)(jobDataFor(testProcess))
+    val jobData = jobDataFor(testScenario)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    val result = processValidator.validate(testScenario, isFragment = false)(scenarioCompilationDependencies)
 
     inside(result.result) {
       case Invalid(
@@ -278,28 +357,45 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   test("sum tumbling aggregate") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
+      val testScenario = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(3, 5)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(3, 5)
+
+      collectingListener.endVariablesForKey(id).flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+      collectingListener
+        .endVariablesForKey(id)
+        .map(
+          _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+        ) shouldBe List(hoursToMillis(2) - 1, hoursToMillis(4) - 1)
+    }
   }
 
   test("set tumbling aggregate") {
     val id = "1"
-    val model = modelData(
-      List(
-        TestRecordHours(id, 10, 1, "a"),
-        TestRecordHours(id, 11, 2, "b"),
-        TestRecordHours(id, 13, 5, "b"),
-        TestRecordHours(id, 14, 6, "b"),
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 10, 1, "a"),
+          TestRecordHours(id, 11, 2, "b"),
+          TestRecordHours(id, 13, 5, "b"),
+          TestRecordHours(id, 14, 6, "b"),
+        )
       )
-    )
-    val testProcess = tumbling("#AGG.set", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+      val testScenario = tumbling("#AGG.set", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
-    val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
-    aggregateVariables shouldBe List(Set(1, 2), Set(5), Set(6)).map(_.asJava)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Set[Number]](id)
+      aggregateVariables shouldBe List(Set(1, 2), Set(5), Set(6)).map(_.asJava)
+    }
   }
 
   test("set tumbling aggregate - daily windows in GMT+03 - with aggregate offset set to -3H") {
@@ -311,30 +407,33 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       val t1b = OffsetDateTime.parse("2011-12-03T23:59:30+03:00").toEpochSecond * 1000L
       val t2  = OffsetDateTime.parse("2011-12-04T02:59:30+03:00").toEpochSecond * 1000L
 
-      val model = modelData(
-        List(
-          TestRecordWithTimestamp(id, t0, 1, "a"),
-          TestRecordWithTimestamp(id, t1a, 2, "b"),
-          TestRecordWithTimestamp(id, t1b, 5, "b"),
-          TestRecordWithTimestamp(id, t2, 7, "b"),
-        ),
-        AggregateWindowsConfig(Some(Duration.parse("PT-3H")))
-      )
+      ResultsCollectingListenerHolder.withListener { collectingListener =>
+        val model = modelData(
+          collectingListener,
+          List(
+            TestRecordWithTimestamp(id, t0, 1, "a"),
+            TestRecordWithTimestamp(id, t1a, 2, "b"),
+            TestRecordWithTimestamp(id, t1b, 5, "b"),
+            TestRecordWithTimestamp(id, t2, 7, "b"),
+          ),
+          AggregateWindowsConfig(Some(Duration.parse("PT-3H")))
+        )
 
-      val testProcess = tumbling(
-        "#AGG.set",
-        "#input.eId",
-        emitWhen = trigger,
-        Map("windowLength" -> "T(java.time.Duration).parse('P1D')")
-      )
+        val testScenario = tumbling(
+          "#AGG.set",
+          "#input.eId",
+          emitWhen = trigger,
+          Map("windowLength" -> "T(java.time.Duration).parse('P1D')")
+        )
 
-      val aggregateVariables = runCollectOutputAggregate[java.util.Set[Number]](id, model, testProcess)
-      var expected           = List(Set(1), Set(2, 5), Set(7))
-      if (trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
-        expected = expected :+ Set()
+        runScenario(model, testScenario)
+        val aggregateVariables = collectingListener.fragmentResultEndVariable[java.util.Set[Number]](id)
+        var expected           = List(Set(1), Set(2, 5), Set(7))
+        if (trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
+          expected = expected :+ Set()
+        }
+        aggregateVariables shouldBe expected.map(_.asJava)
       }
-      aggregateVariables shouldBe expected.map(_.asJava)
-
     }
   }
 
@@ -360,11 +459,17 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
 
-    val aggregateVariables = runCollectOutputAggregate[java.util.Map[String, Any]](id, model, resolvedScenario)
-    aggregateVariables.map(_.asScala("aggresult")) shouldBe List(3, 5)
+      runScenario(model, resolvedScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[java.util.Map[String, Any]](id)
+      aggregateVariables.map(_.asScala("aggresult")) shouldBe List(3, 5)
+    }
   }
 
   test("tumbling aggregate in fragment clears context of main scenario") {
@@ -387,104 +492,142 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val resolvedScenario = resolveFragmentWithTumblingAggregate(scenario)
 
     val id = "1"
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
 
-    lazy val run = runProcess(model, resolvedScenario)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
 
-    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some(ParameterName($expression)),#input,None)"
+      val ex = the[IllegalArgumentException] thrownBy {
+        runScenario(model, resolvedScenario)
+      }
+      ex should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input,None)"
+    }
+
   }
 
   test("sum tumbling aggregate emit on event, emit context of variables") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess = tumbling(
-      "#AGG.list",
-      "#input.eId",
-      emitWhen = TumblingWindowTrigger.OnEvent,
-      afterAggregateExpression = "#input.eId"
-    )
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val inputRecords =
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+      val model =
+        modelData(
+          collectingListener,
+          inputRecords
+        )
+      val testScenario = tumbling(
+        "#AGG.list",
+        "#input.eId",
+        emitWhen = TumblingWindowTrigger.OnEvent,
+        afterAggregateExpression = "#input.eId"
+      )
 
-    val nodeResults = runCollectOutputVariables(id, model, testProcess)
+      runScenario(model, testScenario)
+      val nodeResults = collectingListener.endVariablesForKey(id)
 
-    nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
+      nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
 
-    val aggregateVariables = nodeResults.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get)
-    // TODO: reverse order in aggregate
-    aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(5))
+      val aggregateVariables = nodeResults.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get)
+      // TODO: reverse order in aggregate
+      aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(5))
+      nodeResults.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe inputRecords.map(e => e.timestamp)
+      nodeResults.map(_.variableTyped[TestRecordHours]("input").get) shouldBe inputRecords
+    }
   }
 
   test("sum tumbling aggregate for out of order elements") {
     val id = "1"
 
-    val model = modelData(
-      List(
-        TestRecordHours(id, 0, 1, "a"),
-        TestRecordHours(id, 1, 2, "b"),
-        TestRecordHours(id, 2, 5, "b"),
-        TestRecordHours(id, 1, 1, "b")
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 0, 1, "a"),
+          TestRecordHours(id, 1, 2, "b"),
+          TestRecordHours(id, 2, 5, "b"),
+          TestRecordHours(id, 1, 1, "b")
+        )
       )
-    )
-    val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+      val testScenario = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(4, 5)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(4, 5)
+    }
   }
 
   test("drop late events") {
     val id = "1"
 
-    val model = modelData(
-      List(
-        TestRecordHours(id, 0, 1, "a"),
-        TestRecordHours(id, 1, 2, "b"),
-        TestRecordHours(id, 3, 5, "b"), // watermark advances more than max out of orderness (1h in test)
-        TestRecordHours(id, 1, 1, "b")
-      )
-    ) // lost because watermark advanced to 2
-    val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 0, 1, "a"),
+          TestRecordHours(id, 1, 2, "b"),
+          TestRecordHours(id, 3, 5, "b"), // watermark advances more than max out of orderness (1h in test)
+          TestRecordHours(id, 1, 1, "b")
+        )
+      ) // lost because watermark advanced to 2
+      val testScenario = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(3, 5)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(3, 5)
+    }
   }
 
   test("emit aggregate for extra window when no data come") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model =
+        modelData(
+          collectingListener,
+          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+        )
+      val testScenario = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(3, 5, 0)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(3, 5, 0)
+    }
   }
 
   test("emit aggregate for extra window when no data come for average aggregator for return type double") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a")))
-    val testProcess = tumbling("#AGG.average", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model        = modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a")))
+      val testScenario = tumbling("#AGG.average", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables.length shouldEqual (2)
-    aggregateVariables(0) shouldEqual 1.0
-    aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables.length shouldEqual (2)
+      aggregateVariables(0) shouldEqual 1.0
+      aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+    }
   }
 
   test("emit aggregate for extra window when no data come for median aggregator for return type double") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a")))
-    val testProcess = tumbling("#AGG.median", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model        = modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a")))
+      val testScenario = tumbling("#AGG.median", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables.length shouldEqual (2)
-    aggregateVariables(0) shouldEqual 1.0
-    aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables.length shouldEqual (2)
+      aggregateVariables(0) shouldEqual 1.0
+      aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+    }
   }
 
   test(
@@ -501,39 +644,53 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     forAll(table) { aggregatorName =>
       val id = "1"
 
-      val model =
-        modelData(List(TestRecordHours(id, 0, 1, "a")))
-      val testProcess = tumbling(aggregatorName, "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+      ResultsCollectingListenerHolder.withListener { collectingListener =>
+        val model        = modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a")))
+        val testScenario = tumbling(aggregatorName, "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
-      val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-      aggregateVariables.length shouldEqual (2)
-      aggregateVariables(0) shouldEqual 0.0
-      aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+        runScenario(model, testScenario)
+        val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+        aggregateVariables.length shouldEqual (2)
+        aggregateVariables(0) shouldEqual 0.0
+        aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
+      }
     }
   }
 
   test("emit aggregate for extra window when no data come for average aggregator for return type BigDecimal") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a")))
-    val testProcess =
-      tumbling("#AGG.average", """T(java.math.BigDecimal).ONE""", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a")))
+      val testScenario =
+        tumbling(
+          "#AGG.average",
+          """T(java.math.BigDecimal).ONE""",
+          emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow
+        )
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)
+    }
   }
 
   test("emit aggregate for extra window when no data come for median aggregator for return type BigDecimal") {
     val id = "1"
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a")))
-    val testProcess =
-      tumbling("#AGG.median", """T(java.math.BigDecimal).ONE""", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a")))
+      val testScenario =
+        tumbling(
+          "#AGG.median",
+          """T(java.math.BigDecimal).ONE""",
+          emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow
+        )
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)
+    }
   }
 
   test(
@@ -550,204 +707,344 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     forAll(table) { aggregatorName =>
       val id = "1"
 
-      val model =
-        modelData(List(TestRecordHours(id, 0, 1, "a")))
-      val testProcess =
-        tumbling(
-          aggregatorName,
-          """T(java.math.BigDecimal).ONE""",
-          emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow
-        )
+      ResultsCollectingListenerHolder.withListener { collectingListener =>
+        val model = modelData(collectingListener, List(TestRecordHours(id, 0, 1, "a")))
+        val testScenario =
+          tumbling(
+            aggregatorName,
+            """T(java.math.BigDecimal).ONE""",
+            emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow
+          )
 
-      val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-      aggregateVariables shouldEqual List(new java.math.BigDecimal("0"), null)
+        runScenario(model, testScenario)
+        val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+        aggregateVariables shouldEqual List(new java.math.BigDecimal("0"), null)
+      }
     }
+
   }
 
   test("emit aggregate for extra window when no data come - out of order elements") {
     val id = "1"
 
-    val model = modelData(
-      List(
-        TestRecordHours(id, 0, 1, "a"),
-        TestRecordHours(id, 1, 2, "b"),
-        TestRecordHours(id, 2, 5, "b"),
-        TestRecordHours(id, 1, 1, "b")
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 0, 1, "a"),
+          TestRecordHours(id, 1, 2, "b"),
+          TestRecordHours(id, 2, 5, "b"),
+          TestRecordHours(id, 1, 1, "b")
+        )
       )
-    )
-    val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+      val testScenario = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(4, 5, 0)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(4, 5, 0)
+    }
   }
 
   test("sum session aggregate") {
     val id = "1"
 
-    val model = modelData(
-      List(
-        TestRecordHours(id, 0, 1, "a"),
-        TestRecordHours(id, 1, 2, "b"),
-        TestRecordHours(id, 2, 3, "d"),
-        TestRecordHours(id, 3, 4, "d"),
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 0, 1, "a"),
+          TestRecordHours(id, 1, 2, "b"),
+          TestRecordHours(id, 2, 3, "d"),
+          TestRecordHours(id, 3, 4, "d"),
 
-        // gap
-        TestRecordHours(id, 6, 5, "b"),
-        TestRecordHours(id, 6, 6, "b"),
-        TestRecordHours(id, 6, 7, "stop"),
-        // stop condition
-        TestRecordHours(id, 6, 8, "a")
+          // gap
+          TestRecordHours(id, 6, 5, "b"),
+          TestRecordHours(id, 6, 6, "b"),
+          TestRecordHours(id, 6, 7, "stop"),
+          // stop condition
+          TestRecordHours(id, 6, 8, "a")
+        )
       )
-    )
-    val testProcess = session("#AGG.list", "#input.eId", SessionWindowTrigger.OnEnd, "#input.str == 'stop'")
+      val testScenario = session("#AGG.list", "#input.eId", SessionWindowTrigger.OnEnd, "#input.str == 'stop'")
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(asList(4, 3, 2, 1), asList(7, 6, 5), asList(8))
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
+      aggregateVariables shouldBe List(asList(4, 3, 2, 1), asList(7, 6, 5), asList(8))
 
-    val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+      val nodeResults = collectingListener.endVariablesForKey(id)
+      nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+
+      nodeResults.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe List(
+        // session timeout is 2
+        hoursToMillis(5) - 1, // 3h last event time + (2h - 1ms) timeout
+        hoursToMillis(6),     // 6h event time from event witch evaluated stop condition to true
+        hoursToMillis(8) - 1  // 6h last event time + (2h - 1ms) timeout
+      )
+    }
   }
 
   test("sum session aggregate on event with context") {
     val id = "1"
 
-    val testRecords =
-      List(
-        TestRecordHours(id, 0, 1, "a"),
-        TestRecordHours(id, 2, 2, "d"),
-        // gap
-        TestRecordHours(id, 6, 3, "b"),
-        TestRecordHours(id, 6, 4, "stop"),
-        // stop condition
-        TestRecordHours(id, 6, 5, "a")
-      )
-    val model       = modelData(testRecords)
-    val testProcess = session("#AGG.list", "#input.eId", SessionWindowTrigger.OnEvent, "#input.str == 'stop'")
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testRecords =
+        List(
+          TestRecordHours(id, 0, 1, "a"),
+          TestRecordHours(id, 2, 2, "d"),
+          // gap
+          TestRecordHours(id, 6, 3, "b"),
+          TestRecordHours(id, 6, 4, "stop"),
+          // stop condition
+          TestRecordHours(id, 6, 5, "a")
+        )
+      val model        = modelData(collectingListener, testRecords)
+      val testScenario = session("#AGG.list", "#input.eId", SessionWindowTrigger.OnEvent, "#input.str == 'stop'")
 
-    val outputVariables = runCollectOutputVariables(id, model, testProcess)
-    outputVariables.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get) shouldBe List(
-      asList(1),
-      asList(2, 1),
-      asList(3),
-      asList(4, 3),
-      asList(5)
-    )
-    outputVariables.map(_.variableTyped[TestRecordHours]("input").get) shouldBe testRecords
+      runScenario(model, testScenario)
+      val outputVariables = collectingListener.endVariablesForKey(id)
+      outputVariables.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get) shouldBe List(
+        asList(1),
+        asList(2, 1),
+        asList(3),
+        asList(4, 3),
+        asList(5)
+      )
+      outputVariables.map(_.variableTyped[TestRecordHours]("input").get) shouldBe testRecords
+      outputVariables.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe
+        testRecords.map(e => e.timestamp)
+    }
   }
 
   test("map aggregate") {
     val id = "1"
 
-    val model = modelData(
-      List(
-        TestRecordHours(id, 1, 1, "a"),
-        TestRecordHours(id, 2, 2, "b"),
-        TestRecordHours(id, 3, 3, "c"),
-        TestRecordHours(id, 3, 4, "d"),
-        TestRecordHours("2", 3, 5, "no"),
-        TestRecordHours(id, 4, 6, "e"),
-        TestRecordHours(id, 5, 7, "a"),
-        TestRecordHours(id, 5, 8, "b")
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 1, 1, "a"),
+          TestRecordHours(id, 2, 2, "b"),
+          TestRecordHours(id, 3, 3, "c"),
+          TestRecordHours(id, 3, 4, "d"),
+          TestRecordHours("2", 3, 5, "no"),
+          TestRecordHours(id, 4, 6, "e"),
+          TestRecordHours(id, 5, 7, "a"),
+          TestRecordHours(id, 5, 8, "b")
+        )
       )
-    )
-    val testProcess = sliding(
-      "#AGG.map({sum: #AGG.sum, first: #AGG.first, last: #AGG.last, set: #AGG.set, hll: #AGG.approxCardinality})",
-      "{sum: #input.eId, first: #input.eId, last: #input.eId, set: #input.str, hll: #input.str}",
-      emitWhenEventLeft = false
-    )
+      val testScenario = sliding(
+        "#AGG.map({sum: #AGG.sum, first: #AGG.first, last: #AGG.last, set: #AGG.set, hll: #AGG.approxCardinality})",
+        "{sum: #input.eId, first: #input.eId, last: #input.eId, set: #input.str, hll: #input.str}",
+        emitWhenEventLeft = false
+      )
 
-    val aggregateVariables = runCollectOutputAggregate[util.Map[String, Any]](id, model, testProcess).map(_.asScala)
+      runScenario(model, testScenario)
+      val aggregateVariables = collectingListener.fragmentResultEndVariable[util.Map[String, Any]](id).map(_.asScala)
 
-    aggregateVariables shouldBe List(
-      Map("first" -> 1, "last" -> 1, "hll" -> 1, "sum" -> 1, "set"  -> Set("a").asJava),
-      Map("first" -> 1, "last" -> 2, "hll" -> 2, "sum" -> 3, "set"  -> Set("a", "b").asJava),
-      Map("first" -> 2, "last" -> 3, "hll" -> 2, "sum" -> 5, "set"  -> Set("b", "c").asJava),
-      Map("first" -> 2, "last" -> 4, "hll" -> 3, "sum" -> 9, "set"  -> Set("b", "c", "d").asJava),
-      Map("first" -> 3, "last" -> 6, "hll" -> 3, "sum" -> 13, "set" -> Set("c", "d", "e").asJava),
-      Map("first" -> 6, "last" -> 7, "hll" -> 2, "sum" -> 13, "set" -> Set("e", "a").asJava),
-      Map("first" -> 6, "last" -> 8, "hll" -> 3, "sum" -> 21, "set" -> Set("e", "a", "b").asJava)
-    )
+      aggregateVariables shouldBe List(
+        Map("first" -> 1, "last" -> 1, "hll" -> 1, "sum" -> 1, "set"  -> Set("a").asJava),
+        Map("first" -> 1, "last" -> 2, "hll" -> 2, "sum" -> 3, "set"  -> Set("a", "b").asJava),
+        Map("first" -> 2, "last" -> 3, "hll" -> 2, "sum" -> 5, "set"  -> Set("b", "c").asJava),
+        Map("first" -> 2, "last" -> 4, "hll" -> 3, "sum" -> 9, "set"  -> Set("b", "c", "d").asJava),
+        Map("first" -> 3, "last" -> 6, "hll" -> 3, "sum" -> 13, "set" -> Set("c", "d", "e").asJava),
+        Map("first" -> 6, "last" -> 7, "hll" -> 2, "sum" -> 13, "set" -> Set("e", "a").asJava),
+        Map("first" -> 6, "last" -> 8, "hll" -> 3, "sum" -> 21, "set" -> Set("e", "a", "b").asJava)
+      )
+    }
   }
 
   test("base aggregates test") {
     val id = "1"
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val model = modelData(
-      List(
-        TestRecordHours(id, 1, 2, "a"),
-        TestRecordHours(id, 2, 1, "b")
-      ),
-      collectingListener = collectingListener
-    )
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          TestRecordHours(id, 1, 2, "a"),
+          TestRecordHours(id, 2, 1, "b")
+        ),
+      )
 
-    val aggregates = List(
-      ("sum", 3),
-      ("first", 2),
-      ("last", 1),
-      ("max", 2),
-      ("min", 1),
-      ("list", util.Arrays.asList(2, 1)),
-      ("approxCardinality", 2)
-    )
+      val aggregates = List(
+        ("sum", 3),
+        ("first", 2),
+        ("last", 1),
+        ("max", 2),
+        ("min", 1),
+        ("list", util.Arrays.asList(2, 1)),
+        ("approxCardinality", 2)
+      )
 
-    // "aggregate-sliding", aggregator, aggregateBy, "windowLength", Map("emitWhenEventLeft" -> emitWhenEventLeft.toString
-    val testProcess = process(
-      aggregates
-        .map(_._1)
-        .map(name =>
-          AggregateData(
-            "aggregate-sliding",
-            s"#AGG.$name",
-            "#input.eId",
-            "windowLength",
-            Map("emitWhenEventLeft" -> "false"),
-            name
-          )
-        ): _*
-    )
+      // "aggregate-sliding", aggregator, aggregateBy, "windowLength", Map("emitWhenEventLeft" -> emitWhenEventLeft.toString
+      val testScenario = process(
+        aggregates
+          .map(_._1)
+          .map(name =>
+            AggregateData(
+              "aggregate-sliding",
+              s"#AGG.$name",
+              "#input.eId",
+              "windowLength",
+              Map("emitWhenEventLeft" -> "false"),
+              name
+            )
+          ): _*
+      )
 
-    runProcess(model, testProcess)
-    val lastResult = variablesForKey(collectingListener, id).last
-    aggregates.foreach { case (name, expected) =>
-      lastResult.variableTyped[AnyRef](s"fragmentResult$name").get shouldBe expected
+      runScenario(model, testScenario)
+      val lastResult = collectingListener.endVariablesForKey(id).last
+      aggregates.foreach { case (name, expected) =>
+        lastResult.variableTyped[AnyRef](s"fragmentResult$name").get shouldBe expected
+      }
     }
   }
 
-  private def runCollectOutputAggregate[T <: AnyRef](
-      key: String,
-      model: LocalModelData,
-      testProcess: CanonicalProcess
-  ): List[T] = {
-    runCollectOutputVariables(key, model, testProcess).map(_.variableTyped[T]("fragmentResult").get)
+  val intKey: Int              = 1
+  val stringKey: String        = "2"
+  val mapKey: Map[String, Int] = Map("a" -> 1)
+
+  def modelDataToCheckAggregations(collectingListener: ResultsCollectingListener[Any]): LocalModelData = {
+    modelData(
+      collectingListener,
+      List(
+        GenericRecordHours(intKey, 0, 1, "a"),
+        GenericRecordHours(stringKey, 1, 2, "b"),
+        GenericRecordHours(mapKey, 1, 3, "a"),
+        GenericRecordHours(intKey, 2, 5, "b"),
+        GenericRecordHours(stringKey, 3, 2, "c"),
+        GenericRecordHours(mapKey, 4, 5, "b")
+      )
+    )
   }
 
-  private def runCollectOutputVariables(
-      key: String,
-      model: LocalModelData,
-      testProcess: CanonicalProcess
-  ): List[TestProcess.ResultContext[Any]] = {
-    runProcess(model, testProcess)
-    val collectingListener = model.configCreator.asInstanceOf[ConfigCreatorWithCollectingListener].collectingListener
-    variablesForKey(collectingListener, key)
+  test("key variable can be something else than string") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(
+        collectingListener,
+        List(
+          GenericRecordHours(1, 0, 1, "a"),
+          GenericRecordHours("2", 1, 2, "b"),
+          GenericRecordHours(List(1), 2, 5, "b"),
+          GenericRecordHours(Map("a" -> 1), 3, 2, "c"),
+          GenericRecordHours(1.2, 4, 5, "b")
+        )
+      )
+      val testScenario = sliding("#AGG.first", "#input.str", emitWhenEventLeft = false)
+
+      runScenario(model, testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables shouldBe List(1, "2", List(1), Map("a" -> 1), 1.2)
+    }
   }
 
-  private def runProcess(
+  test("sliding aggregation when emitWhenEventLeft is false should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = sliding("#AGG.first", "#input.eId", emitWhenEventLeft = false)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.distinct shouldBe List(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5)
+    }
+  }
+
+  test("sliding aggregation when emitWhenEventLeft is true should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = sliding("#AGG.first", "#input.eId", emitWhenEventLeft = true)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5, null)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2, null)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5, null)
+    }
+  }
+
+  test("tumbling aggregation when emitWhen is onEndWithExtraWindow should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = tumbling("#AGG.first", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5, null)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2, null)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, null, 5, null)
+    }
+  }
+
+  test("tumbling aggregation when emitWhen is onEvent should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario = tumbling("#AGG.first", "#input.eId", emitWhen = TumblingWindowTrigger.OnEvent)
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 5)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5)
+    }
+  }
+
+  test("session aggregation should groupBy complex types") {
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val testScenario =
+        session("#AGG.first", "#input.eId", emitWhen = SessionWindowTrigger.OnEvent, endSessionCondition = "false")
+
+      runScenario(modelDataToCheckAggregations(collectingListener), testScenario)
+      val keyVariables = collectingListener.keyVariables
+      keyVariables.toSet shouldBe Set(intKey, stringKey, mapKey)
+
+      val aggregateVariablesForInt = collectingListener.fragmentResultEndVariable[Int, Number](intKey)
+      aggregateVariablesForInt shouldBe List(1, 1)
+
+      val aggregateVariablesForString = collectingListener.fragmentResultEndVariable[String, Number](stringKey)
+      aggregateVariablesForString shouldBe List(2, 2)
+
+      val aggregateVariablesForMap = collectingListener.fragmentResultEndVariable[Map[String, Int], Number](mapKey)
+      aggregateVariablesForMap shouldBe List(3, 5)
+    }
+  }
+
+  private def runScenario(
       model: LocalModelData,
-      testProcess: CanonicalProcess
+      testScenario: CanonicalProcess
   ): Unit = {
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
-  }
-
-  private def variablesForKey(
-      collectingListener: ResultsCollectingListener[Any],
-      key: String
-  ): List[TestProcess.ResultContext[Any]] = {
-    collectingListener.results
-      .nodeResults("end")
-      .filter(_.variableTyped[String](VariableConstants.KeyVariableName).contains(key))
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(testScenario, env)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
+    }
   }
 
   private def validateError(aggregator: String, aggregateBy: String, error: String): Unit = {
@@ -764,7 +1061,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
     val scenario = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
-    processValidator.validate(scenario, isFragment = false)(jobDataFor(scenario))
+    val jobData  = jobDataFor(scenario)
+    val scenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+    processValidator.validate(scenario, isFragment = false)(scenarioCompilationDependencies)
   }
 
   private def tumbling(
@@ -842,15 +1142,14 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def process(aggregateData: AggregateData*): CanonicalProcess = {
-
     def params(data: AggregateData) = {
-      val baseParams: List[(String, Expression)] = List(
+      val baseParams: Map[String, Expression] = Map(
         "groupBy"             -> "#id".spel,
         "aggregateBy"         -> data.aggregateBy.spel,
         "aggregator"          -> data.aggregator.spel,
         data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')".spel
       )
-      baseParams ++ data.additionalParams.mapValuesNow(_.spel).toList
+      baseParams ++ data.additionalParams.mapValuesNow(_.spel)
     }
 
     val beforeAggregate = ScenarioBuilder
@@ -867,7 +1166,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             s"transform${definition.idSuffix}",
             s"fragmentResult${definition.idSuffix}",
             definition.aggregatingNode,
-            params(definition): _*
+            params(definition).toList: _*
           )
           .buildSimpleVariable(
             s"after-aggregate-expression-${definition.idSuffix}",
@@ -875,6 +1174,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             definition.afterAggregateExpression.spel
           )
       }
+      .customNodeNoOutput(
+        "custom",
+        eventTimeExtractionComponentName,
+      )
       .emptySink("end", "dead-end")
   }
 
@@ -939,7 +1242,7 @@ case class AggregateData(
 )
 
 trait TestRecord {
-  val id: String
+  val id: Any
   val eId: Int
   val str: String
 
@@ -947,7 +1250,15 @@ trait TestRecord {
 }
 
 case class TestRecordHours(id: String, timeHours: Int, eId: Int, str: String) extends TestRecord {
-  override def timestamp: Long = timeHours * 3600L * 1000
+  override def timestamp: Long = hoursToMillis(timeHours)
+}
+
+object TestRecordHours {
+  def hoursToMillis(hours: Int): Long = hours * 3600L * 1000
 }
 
 case class TestRecordWithTimestamp(id: String, timestamp: Long, eId: Int, str: String) extends TestRecord
+
+case class GenericRecordHours[T <: Any](id: T, timeHours: Int, eId: Int, str: String) extends TestRecord {
+  override def timestamp: Long = timeHours * 3600L * 1000
+}

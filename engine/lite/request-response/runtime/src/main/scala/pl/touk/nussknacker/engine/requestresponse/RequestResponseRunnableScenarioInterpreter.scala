@@ -1,26 +1,26 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.http.scaladsl.server.{Directives, Route}
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.lang3.concurrent.BasicThreadFactory
-import pl.touk.nussknacker.engine.ModelData
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
+import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.{RunnableScenarioInterpreter, TaskStatus}
 import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.{RunnableScenarioInterpreter, TaskStatus}
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
-import java.util.concurrent.Executors
-import scala.concurrent.{ExecutionContext, Future, blocking}
+import scala.concurrent.{ExecutionContext, Future}
 
 class RequestResponseRunnableScenarioInterpreter(
-    jobData: JobData,
-    parsedResolvedScenario: CanonicalProcess,
     modelData: ModelData,
     contextPreparer: LiteEngineRuntimeContextPreparer,
+    parsedResolvedScenario: CanonicalProcess,
+    jobData: JobData,
+    nodesDeploymentData: NodesDeploymentData,
     requestResponseConfig: RequestResponseConfig
 )(implicit ec: ExecutionContext)
     extends RunnableScenarioInterpreter
@@ -34,11 +34,12 @@ class RequestResponseRunnableScenarioInterpreter(
   private val interpreter: RequestResponseScenarioInterpreter[Future] = RequestResponseInterpreter[Future](
     parsedResolvedScenario,
     jobData.processVersion,
+    nodesDeploymentData,
     contextPreparer,
     modelData,
-    Nil,
+    additionalListeners = Nil,
     ProductionServiceInvocationCollector,
-    ComponentUseCase.EngineRuntime
+    RuntimeMode.Live,
   )
     .map { i =>
       i.open()
@@ -46,35 +47,17 @@ class RequestResponseRunnableScenarioInterpreter(
     }
     .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
-  override def run(): Future[Unit] = {
-    val threadFactory = new BasicThreadFactory.Builder()
-      .namingPattern(s"wait-until-closed")
-      .build()
-    // run waiting in separate thread to not exhaust main actor system thread pool
-    val executionContext = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor(threadFactory))
-    Future {
-      waitUntilClosed()
-    }(executionContext)
-  }
-
-  private def waitUntilClosed(): Unit = {
-    blocking {
-      synchronized {
-        while (!closed) {
-          wait()
-        }
-      }
-    }
-  }
+  override def run(): IO[Unit] = IO.unit
 
   override def status(): TaskStatus = TaskStatus.Running
 
   override def close(): Unit = {
     synchronized {
-      closed = true
-      notify()
+      if (!closed) {
+        interpreter.close()
+        closed = true
+      }
     }
-    interpreter.close()
   }
 
   override val routes: Option[Route] = {

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository.activities
 
 import cats.effect.IO
-import db.util.DBIOActionInstances.{DB, dbMonad}
+import db.util.DBIOActionInstances.{dbMonad, DB}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy

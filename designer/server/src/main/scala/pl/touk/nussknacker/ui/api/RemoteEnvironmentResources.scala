@@ -1,28 +1,29 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, Route}
+import cats.data.EitherT
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteEnvironmentResources(
@@ -78,30 +79,36 @@ class RemoteEnvironmentResources(
                 processIdWithName,
                 version,
                 details =>
-                  for {
-                    result <- remoteEnvironment.migrate(
-                      details.processingMode,
-                      details.engineSetupName,
-                      details.processCategory,
-                      details.labels,
-                      details.scenarioGraphUnsafe,
-                      details.processVersionId,
-                      details.name,
-                      details.isFragment
-                    )
-                    _ <- dbioActionRunner.run(
-                      scenarioActivityRepository.addActivity(
-                        ScenarioActivity.OutgoingMigration(
-                          scenarioId = ScenarioId(processIdWithName.id.value),
-                          scenarioActivityId = ScenarioActivityId.random,
-                          user = user.scenarioUser,
-                          date = clock.instant(),
-                          scenarioVersionId = Some(ScenarioVersionId.from(details.processVersionId)),
-                          destinationEnvironment = Environment(remoteEnvironment.environmentId)
+                  {
+                    for {
+                      result <- EitherT(
+                        remoteEnvironment.migrate(
+                          details.processingMode,
+                          details.engineSetupName,
+                          details.processCategory,
+                          details.labels,
+                          details.scenarioGraphUnsafe,
+                          details.processVersionId,
+                          details.name,
+                          details.isFragment
                         )
                       )
-                    )
-                  } yield result
+                      _ <- EitherT.right[NuDesignerError](
+                        dbioActionRunner.run(
+                          scenarioActivityRepository.addActivity(
+                            ScenarioActivity.OutgoingMigration(
+                              scenarioId = ScenarioId(processIdWithName.id.value),
+                              scenarioActivityId = ScenarioActivityId.random,
+                              user = user.scenarioUser,
+                              date = clock.instant(),
+                              scenarioVersionId = Some(ScenarioVersionId.from(details.processVersionId)),
+                              destinationEnvironment = Environment(remoteEnvironment.environmentId)
+                            )
+                          )
+                        )
+                      )
+                    } yield result
+                  }.value
               )
             }
           }

@@ -3,14 +3,15 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.Monad
 import cats.data.Writer
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.common.components.DecisionTable
+import pl.touk.nussknacker.engine.lite.api.{commonTypes, customComponentTypes}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSink
-import pl.touk.nussknacker.engine.lite.api.{commonTypes, customComponentTypes}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 import scala.language.higherKinds
@@ -21,8 +22,8 @@ class LiteBaseComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig: DocsConfig = DocsConfig(config)
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    val docsConfig: DocsConfig = DocsConfig(componentProviderConfig)
     LiteBaseComponentProvider.create(docsConfig)
   }
 

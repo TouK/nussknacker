@@ -1,20 +1,19 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.Id
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{Writer, WriterT}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -27,10 +26,8 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
-
-import scala.util.Try
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 
 /*
  * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler, ValidationContext and declared dictionaries.
@@ -38,7 +35,7 @@ import scala.util.Try
  */
 class FragmentParametersDefinitionExtractor(
     classLoader: ClassLoader,
-    val classDefinitions: Set[ClassDefinition] = Set.empty
+    val classDefinitions: ClassDefinitionSet,
 ) {
 
   private val fragmentParameterTypingParser = new FragmentParameterTypingParser(classLoader, classDefinitions)
@@ -80,7 +77,7 @@ class FragmentParametersDefinitionExtractor(
   ): Writer[List[PartSubGraphCompilationError], Parameter] = {
     val parameterData = ParameterData(typ, Nil)
 
-    val (extractedEditor, validationErrors) = fragmentParameter.valueEditor
+    val (extractedEditors, validationErrors) = fragmentParameter.valueEditor
       .map(editor =>
         FragmentParameterValidator(classDefinitions).validateAgainstClazzRefAndGetEditor(
           valueEditor = editor,
@@ -89,8 +86,8 @@ class FragmentParametersDefinitionExtractor(
           paramName = fragmentParameter.name,
           nodeIds = Set(nodeId.id)
         ) match {
-          case Valid(editor) => (Some(editor), List.empty)
-          case Invalid(e)    => (None, e.toList)
+          case Valid(editors) => (editors, List.empty)
+          case Invalid(e)     => (Nil, e.toList)
         }
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))
@@ -105,14 +102,14 @@ class FragmentParametersDefinitionExtractor(
           ParameterData(typ, Nil),
           !fragmentParameter.required,
           ParameterConfig.empty,
-          extractedEditor
+          extractedEditors
         )
       )
 
     val param = Parameter
       .optional(fragmentParameter.name, typ)
       .copy(
-        editor = extractedEditor,
+        editors = extractedEditors,
         validators = validators.toList,
         defaultValue = fragmentParameter.initialValue
           .map(initialValue =>
@@ -128,7 +125,7 @@ class FragmentParametersDefinitionExtractor(
                 parameterData,
                 !fragmentParameter.required,
                 ParameterConfig.empty,
-                extractedEditor
+                extractedEditors
               )
             )
           ),

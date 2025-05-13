@@ -1,14 +1,23 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
-import akka.http.scaladsl.server.Route
+import cats.effect.IO
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
+import pl.touk.nussknacker.engine.lite.{
+  InterpreterTestRunner,
+  RunnableScenarioInterpreter,
+  ScenarioInterpreterFactory,
+  TestRunner
+}
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.TestRunner._
@@ -16,15 +25,10 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeCont
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
-import pl.touk.nussknacker.engine.lite.{
-  InterpreterTestRunner,
-  RunnableScenarioInterpreter,
-  ScenarioInterpreterFactory,
-  TestRunner
-}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.Using
 
 /*
@@ -68,14 +72,15 @@ object KafkaTransactionalScenarioInterpreter {
   def testRunner(implicit ec: ExecutionContext): TestRunner = new InterpreterTestRunner[Future, Input, AnyRef]
 
   def apply(
+      modelData: ModelData,
+      engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer,
       scenario: CanonicalProcess,
       jobData: JobData,
+      nodesDeploymentData: NodesDeploymentData,
       liteKafkaJobData: LiteKafkaJobData,
-      modelData: ModelData,
-      engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer
   )(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, jobData, modelData)
+      .createInterpreter[Future, Input, Output](scenario, jobData, nodesDeploymentData, modelData)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     new KafkaTransactionalScenarioInterpreter(
       interpreter,
@@ -97,20 +102,22 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
     modelData: ModelData,
     engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer
 )(implicit ec: ExecutionContext)
-    extends RunnableScenarioInterpreter {
+    extends RunnableScenarioInterpreter
+    with LazyLogging {
 
   override def status(): TaskStatus = taskRunner.status()
 
-  import KafkaTransactionalScenarioInterpreter._
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+
+  import KafkaTransactionalScenarioInterpreter._
 
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
   private val sourceMetrics = new SourceMetrics(interpreter.sources.keys)
 
-  private val interpreterConfig = modelData.modelConfig.as[KafkaInterpreterConfig]
+  private val interpreterConfig = modelData.modelConfig.underlyingConfig.as[KafkaInterpreterConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(
     scenario.name.value,
@@ -121,10 +128,24 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
     context.metricsProvider
   )
 
-  override def run(): Future[Unit] = {
-    sourceMetrics.registerOwnMetrics(context.metricsProvider)
-    interpreter.open(context)
-    taskRunner.run(ec)
+  override def run(): IO[Unit] = {
+    for {
+      _ <- IO.delay(sourceMetrics.registerOwnMetrics(context.metricsProvider))
+      _ <- IO.delay(interpreter.open(context))
+      _ <- ExecutionContextWithIORuntimeAdapter
+        .createFrom(ec)
+        .use { adapter =>
+          IO.delay {
+            taskRunner
+              .run(adapter)
+              .unsafeRunAsync {
+                case Left(ex) =>
+                  logger.error("Task runner failed", ex)
+                case Right(_) =>
+              }(adapter.ioRuntime)
+          }
+        }
+    } yield ()
   }
 
   override def close(): Unit = {

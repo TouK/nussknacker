@@ -1,63 +1,19 @@
 package pl.touk.nussknacker.engine.embedded
 
-import cats.data.Validated.valid
-import cats.data.ValidatedNel
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.{newdeployment, BaseModelDataProvider}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
-import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
-import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies, ModelData}
-import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.newdeployment
-import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-
-class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
-
-  override def createDeploymentManager(
-      modelData: BaseModelData,
-      dependencies: DeploymentManagerDependencies,
-      engineConfig: Config,
-      scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] = {
-    import dependencies._
-    val strategy = forMode(engineConfig)(
-      new StreamingDeploymentStrategy,
-      RequestResponseDeploymentStrategy(engineConfig)
-    )
-
-    val metricRegistry  = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
-    val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
-
-    strategy.open(modelData.asInvokableModelData, contextPreparer)
-    valid(new EmbeddedDeploymentManager(modelData.asInvokableModelData, deployedScenariosProvider, strategy))
-  }
-
-  override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =
-    RequestResponseDeploymentStrategy.defaultSlug(scenarioName)
-
-  override def additionalValidators(config: Config): List[CustomProcessValidator] = forMode(config)(
-    Nil,
-    List(EmbeddedRequestResponseScenarioValidator)
-  )
-
-  override def name: String = "lite-embedded"
-
-}
 
 /*
   FIXME: better synchronization - comment below isn't true anymore + make HA ready
@@ -66,30 +22,13 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
   checking status, but for this @volatile on interpreters should suffice.
  */
 class EmbeddedDeploymentManager(
-    override protected val modelData: ModelData,
-    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
+    override protected val modelDataProvider: BaseModelDataProvider,
     deploymentStrategy: DeploymentStrategy
 )(implicit ec: ExecutionContext)
     extends LiteDeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
-  private val retrieveDeployedScenariosTimeout = 10.seconds
-
-  @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
-    val deployedScenarios =
-      Await.result(deployedScenariosProvider.getDeployedScenarios, retrieveDeployedScenariosTimeout)
-    deployedScenarios
-      .map(data =>
-        deployScenario(
-          data.processVersion,
-          data.deploymentData,
-          data.resolvedScenario,
-          throwInterpreterRunExceptionsImmediately = false
-        )
-      )
-      .toMap
-  }
+  @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = Map.empty
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
@@ -158,7 +97,7 @@ class EmbeddedDeploymentManager(
       throwInterpreterRunExceptionsImmediately: Boolean
   ) = {
 
-    val interpreterTry = runInterpreter(processVersion, parsedResolvedScenario)
+    val interpreterTry = runInterpreter(processVersion, deploymentData, parsedResolvedScenario)
     interpreterTry match {
       case Failure(ex) if throwInterpreterRunExceptionsImmediately =>
         throw ex
@@ -167,12 +106,20 @@ class EmbeddedDeploymentManager(
       case Success(_) =>
         logger.debug(s"Deployed scenario $processVersion")
     }
-    processVersion.processName -> ScenarioDeploymentData(deploymentData.deploymentId, processVersion, interpreterTry)
+    processVersion.processName -> ScenarioDeploymentData(
+      deploymentData.deploymentId,
+      processVersion.versionId,
+      interpreterTry
+    )
   }
 
-  private def runInterpreter(processVersion: ProcessVersion, parsedResolvedScenario: CanonicalProcess) = {
+  private def runInterpreter(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      parsedResolvedScenario: CanonicalProcess
+  ) = {
     val jobData = JobData(parsedResolvedScenario.metaData, processVersion)
-    deploymentStrategy.onScenarioAdded(jobData, parsedResolvedScenario)
+    deploymentStrategy.onScenarioAdded(jobData, deploymentData.nodesData, parsedResolvedScenario)
   }
 
   private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
@@ -212,25 +159,14 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(
       WithDataFreshnessStatus.fresh(
         deployments
-          .get(name)
-          .map { interpreterData =>
-            StatusDetails(
-              status = interpreterData.scenarioDeployment
-                .fold(
-                  _ => ProblemStateStatus(s"Scenario compilation errors"),
-                  deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
-                ),
-              deploymentId = Some(interpreterData.deploymentId),
-              externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
-              version = Some(interpreterData.processVersion)
-            )
-          }
+          .get(scenarioName)
+          .map(_.statusDetails)
           .toList
       )
     )
@@ -255,7 +191,18 @@ class EmbeddedDeploymentManager(
 
     }
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override val deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    new DeploymentsStatusesQueryForAllScenariosSupported {
+      override def getAllScenariosDeploymentsStatuses()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[DeploymentStatusDetails]]]] = {
+        Future {
+          WithDataFreshnessStatus.fresh(deployments.mapValuesNow(deployment => List(deployment.statusDetails)))
+        }
+      }
+    }
+
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 
@@ -267,10 +214,22 @@ class EmbeddedDeploymentManager(
 
   override protected def executionContext: ExecutionContext = ec
 
-  private sealed case class ScenarioDeploymentData(
+  private case class ScenarioDeploymentData(
       deploymentId: DeploymentId,
-      processVersion: ProcessVersion,
+      scenarioVersionId: VersionId,
       scenarioDeployment: Try[Deployment]
-  )
+  ) {
+
+    def statusDetails: DeploymentStatusDetails = DeploymentStatusDetails(
+      status = scenarioDeployment
+        .fold(
+          _ => GeneralProblemStateStatus(s"Scenario compilation errors"),
+          deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
+        ),
+      deploymentId = Some(deploymentId),
+      version = Some(scenarioVersionId)
+    )
+
+  }
 
 }

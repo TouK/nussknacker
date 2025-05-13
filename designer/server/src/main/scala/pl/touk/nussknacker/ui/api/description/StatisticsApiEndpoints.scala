@@ -2,15 +2,15 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{CirceEnum, Enum, EnumEntry}
+import enumeratum.EnumEntry.UpperSnakecase
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs
 import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
@@ -132,11 +132,12 @@ object StatisticsApiEndpoints {
       case object ClickScenarioCompare                 extends StatisticName { override val shortName = "f_csco"  }
       case object ClickScenarioMigrate                 extends StatisticName { override val shortName = "f_csm"   }
       case object ClickScenarioImport                  extends StatisticName { override val shortName = "f_csi"   }
-      case object ClickScenarioJson                    extends StatisticName { override val shortName = "f_csj"   }
+      case object ClickScenarioExport                  extends StatisticName { override val shortName = "f_csj"   }
       case object ClickScenarioPdf                     extends StatisticName { override val shortName = "f_cspd"  }
       case object ClickScenarioArchive                 extends StatisticName { override val shortName = "f_csa"   }
       case object ClickTestGenerated                   extends StatisticName { override val shortName = "f_ctg"   }
       case object ClickTestAdhoc                       extends StatisticName { override val shortName = "f_cta"   }
+      case object ClickScenarioTest                    extends StatisticName { override val shortName = "f_cst"   }
       case object ClickTestFromFile                    extends StatisticName { override val shortName = "f_ctff"  }
       case object ClickTestGenerateFile                extends StatisticName { override val shortName = "f_ctgt"  }
       case object ClickTestHide                        extends StatisticName { override val shortName = "f_cth"   }

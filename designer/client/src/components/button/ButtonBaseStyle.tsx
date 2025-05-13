@@ -1,5 +1,5 @@
-import { Theme } from "@mui/material";
-import { CSSProperties } from "react";
+import type { Theme } from "@mui/material";
+import type { CSSProperties } from "react";
 
 export const buttonBaseStyle = (theme: Theme): CSSProperties | Record<string, unknown> => ({
     ...theme.typography.button,

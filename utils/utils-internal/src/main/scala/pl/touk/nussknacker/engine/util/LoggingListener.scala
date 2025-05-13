@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util
 
 import org.slf4j.Logger
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
@@ -39,6 +39,19 @@ object LoggingListener extends ProcessListener with Serializable {
   override def nodeEntered(nodeId: String, context: Context, metadata: MetaData): Unit = {
     debug(List(metadata.name.value, nodeId), s"Node entered. Context: $context")
   }
+
+  override def transitionToNextNode(
+      nodeId: String,
+      nextNodeId: String,
+      context: Context,
+      processMetaData: MetaData
+  ): Unit = ()
+
+  override def processingFinishedInNode(
+      nodeId: String,
+      context: Context,
+      processMetaData: MetaData,
+  ): Unit = ()
 
   override def endEncountered(
       nodeId: String,
@@ -80,7 +93,7 @@ object LoggingListener extends ProcessListener with Serializable {
     )
   }
 
-  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit = {
     debug(
       List(exceptionInfo.context.id, "exception"),
       "Exception occurred",

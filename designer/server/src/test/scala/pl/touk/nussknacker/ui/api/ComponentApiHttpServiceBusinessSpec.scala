@@ -8,21 +8,21 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 
 class ComponentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -93,8 +93,7 @@ class ComponentApiHttpServiceBusinessSpec
                |  "modifiedAt": "${regexes.zuluDateRegex}",
                |  "modifiedBy": "admin",
                |  "createdAt": "${regexes.zuluDateRegex}",
-               |  "createdBy": "admin",
-               |  "lastAction": null
+               |  "createdBy": "admin"
                |}]""".stripMargin
           )
         )
@@ -152,11 +151,13 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-service-configuratorservice",
     "streaming-service-customvalidatedservice",
     "streaming-service-datestypesservice",
+    "streaming-service-deploy-param-service",
     "streaming-service-dynamicmultipleparamsservice",
     "streaming-service-dynamicservice",
     "streaming-service-echoenumservice",
     "streaming-service-enricher",
     "streaming-service-enrichernullresult",
+    "streaming-service-env",
     "streaming-service-listreturnobjectservice",
     "streaming-service-log",
     "streaming-service-meetingservice",
@@ -178,6 +179,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-sink-monitor",
     "streaming-sink-sendsms",
     "streaming-source-boundedsource",
+    "streaming-source-boundedsourcewithoffset",
     "streaming-source-classinstancesource",
     "streaming-source-communicationsource",
     "streaming-source-csv-source",

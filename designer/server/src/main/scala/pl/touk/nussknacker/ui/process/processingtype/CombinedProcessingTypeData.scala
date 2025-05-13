@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.data.Validated
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -17,14 +18,14 @@ object CombinedProcessingTypeData {
 
   def create(
       processingTypes: Map[ProcessingType, ProcessingTypeData]
-  ): CombinedProcessingTypeData = {
-    val parametersService =
-      ScenarioParametersService.createUnsafe(processingTypes.mapValuesNow(_.scenarioParameters))
-    CombinedProcessingTypeData(
-      statusNameToStateDefinitionsMapping =
-        ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),
-      parametersService = parametersService
-    )
+  ): Validated[ScenarioParametersConfigurationError, CombinedProcessingTypeData] = {
+    ScenarioParametersService.create(processingTypes.mapValuesNow(_.scenarioParameters)).map { parametersService =>
+      CombinedProcessingTypeData(
+        statusNameToStateDefinitionsMapping =
+          ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),
+        parametersService = parametersService
+      )
+    }
   }
 
 }

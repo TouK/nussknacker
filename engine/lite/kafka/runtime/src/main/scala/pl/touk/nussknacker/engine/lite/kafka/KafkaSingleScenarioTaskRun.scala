@@ -11,11 +11,11 @@ import org.apache.kafka.common.errors.{
   OutOfOrderSequenceException,
   ProducerFencedException
 }
+import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.api.exception.WithExceptionExtractor
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.kafka.exception.{
   DefaultKafkaErrorTopicInitializer,

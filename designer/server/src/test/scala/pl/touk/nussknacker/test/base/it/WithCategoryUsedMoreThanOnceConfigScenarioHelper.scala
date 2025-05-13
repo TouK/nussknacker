@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.test.base.it
 
+import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.test.base.db.WithTestDb
@@ -12,12 +13,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait WithCategoryUsedMoreThanOnceConfigScenarioHelper {
   this: WithTestDb with WithClock with WithCategoryUsedMoreThanOnceDesignerConfig =>
 
-  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, clock, designerConfig)
+  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, clock, designerRawConfig)
   private val usedCategory           = TestCategory.Category1
 
   def createSavedScenario(scenario: CanonicalProcess): ProcessId = {
     rawScenarioHelper.createSavedScenario(scenario, usedCategory.stringify, isFragment = false)
   }
+
+  def prepareDeploy(scenarioId: ProcessId): Unit =
+    rawScenarioHelper.prepareDeploy(scenarioId).futureValue
 
   def createArchivedExampleScenario(scenarioName: ProcessName): ProcessId = {
     rawScenarioHelper.createArchivedExampleScenario(scenarioName, usedCategory.stringify, isFragment = false)
@@ -25,6 +29,10 @@ trait WithCategoryUsedMoreThanOnceConfigScenarioHelper {
 
   def createSavedFragment(scenario: CanonicalProcess): ProcessId = {
     rawScenarioHelper.createSavedScenario(scenario, usedCategory.stringify, isFragment = true)
+  }
+
+  def updateScenario(scenarioName: ProcessName, scenario: CanonicalProcess): ProcessId = {
+    rawScenarioHelper.updateScenario(scenarioName, scenario).processId
   }
 
 }

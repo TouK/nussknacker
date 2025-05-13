@@ -1,22 +1,18 @@
 import { get } from "lodash";
-import EditableEditor from "../graph/node-modal/editors/EditableEditor";
 import React, { useCallback } from "react";
-import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
-import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
-import { NodeValidationError, PropertiesType } from "../../types";
 
-export interface ScenarioPropertyConfig {
-    editor: any;
-    label: string;
-    defaultValue: string | null;
-    hintText: string | null;
-}
+import type { NodeValidationError, PropertiesType } from "../../types";
+import EditableEditor from "../graph/node-modal/editors/EditableEditor";
+import type { ExpressionObj } from "../graph/node-modal/editors/expression/types";
+import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
+import type { ParamType } from "../graph/node-modal/editors/types";
+import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 
 interface Props {
     showSwitch: boolean;
     showValidation: boolean;
     propertyName: string;
-    propertyConfig: ScenarioPropertyConfig;
+    propertyConfig: ParamType;
     editedNode: PropertiesType;
     onChange: <K extends keyof PropertiesType["additionalFields"]["properties"]>(
         property: K,
@@ -35,7 +31,7 @@ export default function ScenarioProperty(props: Props) {
     const current = get(editedNode, propertyPath) || "";
     const expressionObj = { expression: current, value: current, language: ExpressionLang.String };
 
-    const onValueChange = useCallback((newValue) => onChange(propertyPath, newValue), [onChange, propertyPath]);
+    const onValueChange = useCallback((newValue: ExpressionObj) => onChange(propertyPath, newValue.expression), [onChange, propertyPath]);
 
     return (
         <EditableEditor

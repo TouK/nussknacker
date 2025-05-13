@@ -1,13 +1,14 @@
+import { Download } from "@mui/icons-material";
+import InfoIcon from "@mui/icons-material/Info";
+import { Box, FormControl, FormLabel, Link, styled } from "@mui/material";
 import { isEmpty, isObject, join } from "lodash";
 import React from "react";
-import InfoIcon from "@mui/icons-material/Info";
-import NodeTip from "../NodeTip";
-import { useTestResults } from "../TestResultsWrapper";
-import { NodeId } from "../../../../types";
-import { Box, FormControl, FormLabel, Link } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
+import type { NodeId } from "../../../../types";
+import { InfoTooltip } from "../editors/InfoTooltip";
+import { useTestResults } from "../TestResultsWrapper";
 import TestResultsVariables from "./TestResultsVariables";
-import { Download } from "@mui/icons-material";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
     const { t } = useTranslation();
@@ -21,7 +22,9 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
         <Box sx={(theme) => ({ border: `1px solid ${theme.palette.success.main}`, padding: "5px" })}>
             <FormControl>
                 <FormLabel>
-                    <NodeTip title={"Variables in test case"} icon={<InfoIcon />} />
+                    <InfoTooltip title={"Variables in test case"} variant={"hover"}>
+                        <InfoIcon />
+                    </InfoTooltip>
                 </FormLabel>
             </FormControl>
             {Object.keys(results.testResultsToShow.context.variables)

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -30,35 +30,35 @@ class TypingResultSpec
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 
-  test("determine if can be subclass for typed object") {
+  test("determine if can be assigned for typed object") {
 
-    typeMap("field1" -> Typed[String], "field2" -> Typed[Int]).canBeConvertedTo(
+    typeMap("field1" -> Typed[String], "field2" -> Typed[Int]).canBeLooselyAssignedTo(
       typeMap("field1" -> Typed[String])
     ) shouldBe true
 
-    typeMap("field1" -> Typed[String]).canBeConvertedTo(
+    typeMap("field1" -> Typed[String]).canBeLooselyAssignedTo(
       typeMap("field1" -> Typed[String], "field2" -> Typed[Int])
     ) shouldBe false
 
-    typeMap("field1" -> Typed[Int]).canBeConvertedTo(
+    typeMap("field1" -> Typed[Int]).canBeLooselyAssignedTo(
       typeMap("field1" -> Typed[String])
     ) shouldBe false
 
-    typeMap("field1" -> Typed[Int]).canBeConvertedTo(
+    typeMap("field1" -> Typed[Int]).canBeLooselyAssignedTo(
       typeMap("field1" -> Typed[Number])
     ) shouldBe true
 
-    typeMap("field1" -> list(typeMap("field2" -> Typed[String], "field3" -> Typed[Int]))).canBeConvertedTo(
+    typeMap("field1" -> list(typeMap("field2" -> Typed[String], "field3" -> Typed[Int]))).canBeLooselyAssignedTo(
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
     ) shouldBe true
 
-    typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))).canBeConvertedTo(
+    typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))).canBeLooselyAssignedTo(
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
     ) shouldBe false
 
-    typeMap("field1" -> Typed[String]).canBeConvertedTo(Typed[java.util.Map[_, _]]) shouldBe true
+    typeMap("field1" -> Typed[String]).canBeLooselyAssignedTo(Typed[java.util.Map[_, _]]) shouldBe true
 
-    Typed[java.util.Map[_, _]].canBeConvertedTo(typeMap("field1" -> Typed[String])) shouldBe false
+    Typed[java.util.Map[_, _]].canBeLooselyAssignedTo(typeMap("field1" -> Typed[String])) shouldBe false
   }
 
   test("extract Unknown value type when no super matching supertype found among all fields of Record") {
@@ -75,79 +75,79 @@ class TypingResultSpec
     Typed.record(Map.empty[String, TypingResult]).runtimeObjType.params(1) shouldEqual Unknown
   }
 
-  test("determine if can be subclass for typed unions") {
-    Typed(Typed[String], Typed[Int]).canBeConvertedTo(Typed[Int]) shouldBe true
-    Typed[Int].canBeConvertedTo(Typed(Typed[String], Typed[Int])) shouldBe true
+  test("determine if can be assigned for typed unions") {
+    Typed(Typed[String], Typed[Int]).canBeLooselyAssignedTo(Typed[Int]) shouldBe true
+    Typed[Int].canBeLooselyAssignedTo(Typed(Typed[String], Typed[Int])) shouldBe true
 
-    Typed(Typed[String], Typed[Int]).canBeConvertedTo(Typed(Typed[Long], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeLooselyAssignedTo(Typed(Typed[Long], Typed[Int])) shouldBe true
   }
 
-  test("determine if can be subclass for unknown") {
-    Unknown.canBeConvertedTo(Typed[Int]) shouldBe true
-    Typed[Int].canBeConvertedTo(Unknown) shouldBe true
+  test("determine if can be assigned for unknown") {
+    Unknown.canBeLooselyAssignedTo(Typed[Int]) shouldBe true
+    Typed[Int].canBeLooselyAssignedTo(Unknown) shouldBe true
 
-    Unknown.canBeConvertedTo(Typed(Typed[String], Typed[Int])) shouldBe true
-    Typed(Typed[String], Typed[Int]).canBeConvertedTo(Unknown) shouldBe true
+    Unknown.canBeLooselyAssignedTo(Typed(Typed[String], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeLooselyAssignedTo(Unknown) shouldBe true
 
-    Unknown.canBeConvertedTo(typeMap("field1" -> Typed[String])) shouldBe true
-    typeMap("field1" -> Typed[String]).canBeConvertedTo(Unknown) shouldBe true
+    Unknown.canBeLooselyAssignedTo(typeMap("field1" -> Typed[String])) shouldBe true
+    typeMap("field1" -> Typed[String]).canBeLooselyAssignedTo(Unknown) shouldBe true
   }
 
-  test("determine if can be subclass for class") {
+  test("determine if can be assigned for class") {
     Typed
       .fromDetailedType[java.util.List[BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe true
     Typed
       .fromDetailedType[java.util.List[BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.List[Number]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.List[Number]]) shouldBe true
     Typed
       .fromDetailedType[java.util.List[Number]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe false
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe false
 
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, Number]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, Number]]) shouldBe true
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[Number, Number]]) shouldBe false
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[Number, Number]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[Number, Number]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[Number, BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, Number]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[_, BigDecimal]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[_, BigDecimal]]) shouldBe true
     Typed
       .fromDetailedType[java.util.Map[_, BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
 
     // For arrays it might be tricky
     Typed
       .fromDetailedType[Array[BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe true
     Typed
       .fromDetailedType[Array[BigDecimal]]
-      .canBeConvertedTo(Typed.fromDetailedType[Array[Number]]) shouldBe true
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[Array[Number]]) shouldBe true
     Typed
       .fromDetailedType[Array[Number]]
-      .canBeConvertedTo(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe false
+      .canBeLooselyAssignedTo(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe false
   }
 
   test("determine if numbers can be converted") {
-    Typed[Int].canBeConvertedTo(Typed[Long]) shouldBe true
-    Typed[Long].canBeConvertedTo(Typed[Int]) shouldBe true
-    Typed[Long].canBeConvertedTo(Typed[Double]) shouldBe true
-    Typed[Double].canBeConvertedTo(Typed[Long]) shouldBe false
-    Typed[java.math.BigDecimal].canBeConvertedTo(Typed[Long]) shouldBe true
-    Typed[Long].canBeConvertedTo(Typed[java.math.BigDecimal]) shouldBe true
+    Typed[Int].canBeLooselyAssignedTo(Typed[Long]) shouldBe true
+    Typed[Long].canBeLooselyAssignedTo(Typed[Int]) shouldBe true
+    Typed[Long].canBeLooselyAssignedTo(Typed[Double]) shouldBe true
+    Typed[Double].canBeLooselyAssignedTo(Typed[Long]) shouldBe false
+    Typed[java.math.BigDecimal].canBeLooselyAssignedTo(Typed[Long]) shouldBe true
+    Typed[Long].canBeLooselyAssignedTo(Typed[java.math.BigDecimal]) shouldBe true
   }
 
   test("find common supertype for simple types") {
@@ -300,25 +300,25 @@ class TypingResultSpec
     ) shouldBe empty
   }
 
-  test("determine if can be subclass for tagged value") {
+  test("determine if can be assigned for tagged value") {
     Typed
       .tagged(Typed.typedClass[String], "tag1")
-      .canBeConvertedTo(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe true
+      .canBeLooselyAssignedTo(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe true
     Typed
       .tagged(Typed.typedClass[String], "tag1")
-      .canBeConvertedTo(Typed.tagged(Typed.typedClass[String], "tag2")) shouldBe false
+      .canBeLooselyAssignedTo(Typed.tagged(Typed.typedClass[String], "tag2")) shouldBe false
     Typed
       .tagged(Typed.typedClass[String], "tag1")
-      .canBeConvertedTo(Typed.tagged(Typed.typedClass[Integer], "tag1")) shouldBe false
-    Typed.tagged(Typed.typedClass[String], "tag1").canBeConvertedTo(Typed.typedClass[String]) shouldBe true
-    Typed.typedClass[String].canBeConvertedTo(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe false
+      .canBeLooselyAssignedTo(Typed.tagged(Typed.typedClass[Integer], "tag1")) shouldBe false
+    Typed.tagged(Typed.typedClass[String], "tag1").canBeLooselyAssignedTo(Typed.typedClass[String]) shouldBe true
+    Typed.typedClass[String].canBeLooselyAssignedTo(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe false
   }
 
-  test("determine if can be subclass for null") {
-    TypedNull.canBeConvertedTo(Typed[Int]) shouldBe true
-    TypedNull.canBeConvertedTo(Typed.fromInstance(4)) shouldBe false
-    TypedNull.canBeConvertedTo(TypedNull) shouldBe true
-    Typed[String].canBeConvertedTo(TypedNull) shouldBe false
+  test("determine if can be assigned for null") {
+    TypedNull.canBeLooselyAssignedTo(Typed[Int]) shouldBe true
+    TypedNull.canBeLooselyAssignedTo(Typed.fromInstance(4)) shouldBe false
+    TypedNull.canBeLooselyAssignedTo(TypedNull) shouldBe true
+    Typed[String].canBeLooselyAssignedTo(TypedNull) shouldBe false
   }
 
   test("should deeply extract typ parameters") {
@@ -336,24 +336,24 @@ class TypingResultSpec
     }
   }
 
-  test("determine if can be subclass for object with value") {
-    Typed.fromInstance(45).canBeConvertedTo(Typed.typedClass[Long]) shouldBe true
-    Typed.fromInstance(29).canBeConvertedTo(Typed.typedClass[String]) shouldBe false
-    Typed.fromInstance(78).canBeConvertedTo(Typed.fromInstance(78)) shouldBe true
-    Typed.fromInstance(12).canBeConvertedTo(Typed.fromInstance(15)) shouldBe false
-    Typed.fromInstance(41).canBeConvertedTo(Typed.fromInstance("t")) shouldBe false
-    Typed.typedClass[String].canBeConvertedTo(Typed.fromInstance("t")) shouldBe true
+  test("determine if can be assigned for object with value") {
+    Typed.fromInstance(45).canBeLooselyAssignedTo(Typed.typedClass[Long]) shouldBe true
+    Typed.fromInstance(29).canBeLooselyAssignedTo(Typed.typedClass[String]) shouldBe false
+    Typed.fromInstance(78).canBeLooselyAssignedTo(Typed.fromInstance(78)) shouldBe true
+    Typed.fromInstance(12).canBeLooselyAssignedTo(Typed.fromInstance(15)) shouldBe false
+    Typed.fromInstance(41).canBeLooselyAssignedTo(Typed.fromInstance("t")) shouldBe false
+    Typed.typedClass[String].canBeLooselyAssignedTo(Typed.fromInstance("t")) shouldBe true
   }
 
-  test("determine if can be subclass for object with value - use conversion") {
-    Typed.fromInstance("2007-12-03").canBeConvertedTo(Typed.typedClass[LocalDate]) shouldBe true
-    Typed.fromInstance("2007-12-03T10:15:30").canBeConvertedTo(Typed.typedClass[LocalDateTime]) shouldBe true
+  test("determine if can be assigned for object with value - use conversion") {
+    Typed.fromInstance("2007-12-03").canBeLooselyAssignedTo(Typed.typedClass[LocalDate]) shouldBe true
+    Typed.fromInstance("2007-12-03T10:15:30").canBeLooselyAssignedTo(Typed.typedClass[LocalDateTime]) shouldBe true
 
-    Typed.fromInstance("2007-12-03-qwerty").canBeConvertedTo(Typed.typedClass[LocalDate]) shouldBe false
-    Typed.fromInstance("2007-12-03").canBeConvertedTo(Typed.typedClass[Currency]) shouldBe false
+    Typed.fromInstance("2007-12-03-qwerty").canBeLooselyAssignedTo(Typed.typedClass[LocalDate]) shouldBe false
+    Typed.fromInstance("2007-12-03").canBeLooselyAssignedTo(Typed.typedClass[Currency]) shouldBe false
   }
 
-  test("determinate if can be superclass for objects with value") {
+  test("determinate if can be supertype for objects with value") {
     intersectionSuperTypeFinder.commonSupertypeOpt(Typed.fromInstance(65), Typed.fromInstance(65)).value shouldBe Typed
       .fromInstance(65)
     intersectionSuperTypeFinder.commonSupertypeOpt(Typed.fromInstance(91), Typed.fromInstance(35)).value shouldBe Typed
@@ -449,7 +449,7 @@ class TypingResultSpec
       logger.trace(s"Checking: ${input.display}")
       withClue(s"Input: ${input.display};") {
 
-        input.canBeConvertedTo(input) shouldBe true
+        input.canBeLooselyAssignedTo(input) shouldBe true
         val superType = CommonSupertypeFinder.Default.commonSupertype(input, input)
         withClue(s"Supertype: ${superType.display};") {
           superType shouldEqual input
@@ -463,11 +463,11 @@ class TypingResultSpec
       logger.trace(s"Checking: ${input.display}")
       withClue(s"Input: ${input.display};") {
 
-        input.canBeConvertedTo(input) shouldBe true
+        input.canBeLooselyAssignedTo(input) shouldBe true
         val superType = CommonSupertypeFinder.Default.commonSupertype(input, input)
         withClue(s"Supertype: ${superType.display};") {
           // We generate combinations of types co we can only check if input type is a subclass of super type
-          input.canBeConvertedTo(superType)
+          input.canBeLooselyAssignedTo(superType)
         }
       }
     }
@@ -483,12 +483,12 @@ class TypingResultSpec
       logger.trace(s"Checking supertype of: ${first.display} and ${second.display}")
       withClue(s"Input: ${first.display}; ${second.display};") {
 
-        first.canBeConvertedTo(first) shouldBe true
-        second.canBeConvertedTo(second) shouldBe true
+        first.canBeLooselyAssignedTo(first) shouldBe true
+        second.canBeLooselyAssignedTo(second) shouldBe true
         val superType = CommonSupertypeFinder.Default.commonSupertype(first, second)
         withClue(s"Supertype: ${superType.display};") {
-          first.canBeConvertedTo(superType)
-          second.canBeConvertedTo(superType)
+          first.canBeLooselyAssignedTo(superType)
+          second.canBeLooselyAssignedTo(superType)
         }
       }
     }

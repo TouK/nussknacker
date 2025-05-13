@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
@@ -15,8 +15,8 @@ import scala.concurrent.Await
 
 class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
 
-  import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
+  import scala.jdk.CollectionConverters._
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40), birth_date DATE);",
@@ -76,7 +76,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     val result: service.TransformationStepResult = definition(service.TransformationStep(List(), None))
     result match {
       case service.NextParameters(parameters, _, _) =>
-        parameters.head.editor.get shouldBe FixedValuesParameterEditor(
+        parameters.head.editors.headOption.get shouldBe FixedValuesParameterEditor(
           List(FixedExpressionValue("'PERSONS'", "PERSONS"))
         )
       case _ =>
@@ -93,7 +93,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
     result match {
       case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
-        parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
+        parameters.head.editors.head shouldBe FixedValuesParameterEditor(List())
       case _ =>
     }
   }
@@ -108,7 +108,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
     result match {
       case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
-        parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
+        parameters.head.editors.head shouldBe FixedValuesParameterEditor(List())
       case _ =>
     }
   }

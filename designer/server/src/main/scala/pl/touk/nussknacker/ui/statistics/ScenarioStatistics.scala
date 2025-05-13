@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 
 import java.time.Instant
 
@@ -225,7 +225,7 @@ object ScenarioStatistics {
       LiteK8sDMCount       -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
       LiteEmbeddedDMCount  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
       UnknownDMCount       -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
-      ActiveScenarioCount  -> inputData.status.contains(SimpleStateStatus.Running),
+      ActiveScenarioCount  -> inputData.status.contains(SimpleStateStatus.Running.name),
     ).map { case (k, v) => (k.toString, if (v) 1 else 0) }
   }
 

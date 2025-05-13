@@ -1,16 +1,18 @@
 import { alpha, styled, Typography } from "@mui/material";
-import { useStateWithRevertTimeout } from "./useStateWithRevertTimeout";
-import { useSelector } from "react-redux";
-import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
-import React, { PropsWithChildren, useCallback, useMemo } from "react";
-import { TruncatedList } from "react-truncate-list";
-import { TabElement } from "./TabElement";
-import Arrow from "../../assets/img/arrows/arrow-left.svg";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";
+import { useSelector } from "react-redux";
+import { TruncatedList } from "react-truncate-list";
+import { useIntersectionObserverRef, useKey } from "rooks";
+
+import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
 import { blendLighten } from "../../containers/theme/helpers";
+import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
+import { TabElement } from "./TabElement";
+import { useStateWithRevertTimeout } from "./useStateWithRevertTimeout";
 
 const PlainButton = styled("button")({
     background: "unset",

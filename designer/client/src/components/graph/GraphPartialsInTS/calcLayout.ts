@@ -1,10 +1,12 @@
-import * as dagre from "dagre";
-import { dia, layout, util } from "jointjs";
-import { isCellSelected, isModelElement } from "./cellUtils";
+import dagre from "dagre";
+import type { dia } from "jointjs";
+import { layout, util } from "jointjs";
+
+import { isCellSelected, isModelOrStickyNote } from "./cellUtils";
 
 export function getCellsToLayout(graph: dia.Graph, selectedItems: string[]): dia.Cell[] {
     const cells = graph.getCells();
-    const modelsAndLinks = cells.filter((cell) => cell.isLink() || isModelElement(cell));
+    const modelsAndLinks = cells.filter((cell) => cell.isLink() || isModelOrStickyNote(cell));
     const selectedCells = modelsAndLinks.filter(isCellSelected(selectedItems));
     return selectedCells.length > 1 ? selectedCells : modelsAndLinks;
 }

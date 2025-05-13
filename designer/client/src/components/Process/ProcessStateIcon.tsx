@@ -1,9 +1,9 @@
-import React from "react";
-import { ProcessStateType, Scenario } from "./types";
-import ProcessStateUtils from "./ProcessStateUtils";
-import UrlIcon from "../UrlIcon";
 import { Box, Divider, Popover, styled, Typography } from "@mui/material";
-import { Errors } from "./ProcessErrors";
+import React from "react";
+
+import UrlIcon from "../UrlIcon";
+import ProcessStateUtils from "./ProcessStateUtils";
+import type { ProcessStateType, Scenario } from "./types";
 
 const StyledUrlIcon = styled(UrlIcon)(({ theme }) => ({
     width: theme.spacing(2.5),
@@ -44,7 +44,6 @@ function ProcessStateIcon({ scenario, processState }: Props) {
                     <Typography variant="body2" style={{ whiteSpace: "pre-wrap" }}>
                         {tooltip}
                     </Typography>
-                    <Errors state={processState} />
                 </Box>
             </Popover>
         </>

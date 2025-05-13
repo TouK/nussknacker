@@ -3,8 +3,8 @@ package pl.touk.nussknacker.test
 import com.networknt.schema.{InputFormat, JsonSchema}
 import io.circe.Json
 import org.scalactic.source
-import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.{Assertion, Assertions}
+import org.scalatest.matchers.{Matcher, MatchResult}
 
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag

@@ -16,38 +16,10 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-const mockedParam = {
-    name: "LongDict",
-    typ: {
-        display: "Unknown",
-        type: "Unknown",
-        refClazzName: "java.lang.Object",
-        params: [],
-    },
-    editor: {
-        dictId: "long_dict",
-        type: "DictParameterEditor",
-    },
-    defaultValue: {
-        language: "dictKeyWithLabel",
-        expression: "",
-    },
-    additionalVariables: {},
-    variablesToHide: [],
-    branchParam: false,
-    hintText: null,
-    label: "LongDict",
-};
-
 const mockStore = configureMockStore();
 
 const store = mockStore({
-    graphReducer: {
-        scenario: {
-            processingType: "streaming-dev",
-        },
-        history: { present: { scenario: { scenarioGraph: {} } } },
-    },
+    graphReducer: { present: { scenario: {} } },
 });
 
 const ComponentWrapper = ({ children }) => (
@@ -56,7 +28,7 @@ const ComponentWrapper = ({ children }) => (
     </NuThemeProvider>
 );
 
-describe(DictParameterEditor.name, () => {
+describe("DictParameterEditor", () => {
     it("should display validation error when the field contain errors", () => {
         render(
             <ComponentWrapper>
@@ -68,7 +40,7 @@ describe(DictParameterEditor.name, () => {
                     expressionObj={{ language: "spel", expression: "" }}
                     formatter={mockFormatter}
                     showValidation={true}
-                    param={mockedParam}
+                    editorConfig={{ dictId: "long_dict" }}
                 />
             </ComponentWrapper>,
         );
@@ -88,7 +60,7 @@ describe(DictParameterEditor.name, () => {
                     expressionObj={{ language: "spel", expression: "" }}
                     formatter={mockFormatter}
                     showValidation={true}
-                    param={mockedParam}
+                    editorConfig={{ dictId: "long_dict" }}
                 />
             </ComponentWrapper>,
         );

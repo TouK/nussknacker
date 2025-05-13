@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.encode
 
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.util.json.{EncodeInput, EncodeOutput, ToJsonSchemaBasedEncoderCustomisation}
+
 import scala.jdk.CollectionConverters._
 
 class AvroToJsonSchemaBasedEncoderCustomisation extends ToJsonSchemaBasedEncoderCustomisation {

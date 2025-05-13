@@ -36,8 +36,8 @@ class ExpressionSuggester(
   )(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
     val validationContext = validationContextGlobalVariablesOnly.copy(localVariables = localVariables)
     expression.language match {
-      // currently we only support Spel and SpelTemplate expressions
-      case Language.Spel | Language.SpelTemplate =>
+      // currently we only support Spel, SpelTemplate and JsonTemplate expressions
+      case Language.Spel | Language.SpelTemplate | Language.JsonTemplate =>
         spelExpressionSuggester
           .expressionSuggestions(
             expression,
@@ -57,7 +57,7 @@ object ExpressionSuggester {
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithClasses.classDefinitions,
       modelData.designerDictServices,
-      modelData.modelClassLoader.classLoader,
+      modelData.modelClassLoader,
       scenarioPropertiesNames
     )
   }

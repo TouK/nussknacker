@@ -3,9 +3,10 @@ import { Box, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import TreeView from "react-treeview";
+
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import { ComponentGroup } from "../../../types";
+import type { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
@@ -17,7 +18,7 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
 
     useEffect(() => {
         if (resetCondition) setFlag(initialState);
-    }, [resetCondition]);
+    }, [initialState, resetCondition]);
 
     const toggle = useCallback(() => setFlag((state) => !state), []);
 
@@ -73,7 +74,13 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
     const elements = useMemo(
         () =>
             componentGroup.components.map((component) => (
-                <Tool nodeModel={component.node} label={component.label} key={component.componentId} highlights={highlights} />
+                <Tool
+                    nodeModel={component.node}
+                    label={component.label}
+                    key={component.componentId}
+                    highlights={highlights}
+                    disabled={component.disabled ? component.disabled() : false}
+                />
             )),
         [highlights, componentGroup.components],
     );

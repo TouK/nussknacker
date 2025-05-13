@@ -1,8 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useFieldsContext } from "../NodeRowFieldsProvider";
 
 import { StyledButton } from "../../../styledButton";
+import { useFieldsContext } from "../NodeRowFieldsProvider";
 
 export function AddButton(): JSX.Element {
     const { t } = useTranslation();

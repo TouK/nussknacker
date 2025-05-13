@@ -1,27 +1,29 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.actor.ActorSystem
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
+import skuber.{k8sInit, ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service}
 import skuber.LabelSelector.dsl._
 import skuber.Pod.LogQueryParams
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
@@ -57,15 +59,18 @@ class BaseK8sDeploymentManagerTest
     .withValue("imagePullPolicy", fromAnyRef("Never"))
 
   protected def prepareManager(modelData: ModelData, deployConfig: Config): K8sDeploymentManager = {
-    val dependencies = DeploymentManagerDependencies(
-      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-      new ProcessingTypeActionServiceStub,
-      NoOpScenarioActivityManager,
+    val dependencies = new DeploymentManagerDependencies(
       system.dispatcher,
+      IORuntime.global,
       system,
       backend
     )
-    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig, dependencies)
+    new K8sDeploymentManager(
+      modelData.toModelDataProvider,
+      K8sDeploymentManagerConfig.parse(deployConfig),
+      deployConfig,
+      dependencies
+    )
   }
 
   override protected def beforeAll(): Unit = {
@@ -118,12 +123,16 @@ class BaseK8sDeploymentManagerTest
       with Matchers
       with LazyLogging {
 
-    def withRunningScenario(action: => Unit): Unit = {
+    final def withRunningScenario(action: => Unit): Unit = {
+      withRunningScenarioWithDeployParams(nodesData = NodesDeploymentData.empty)(action)
+    }
+
+    def withRunningScenarioWithDeployParams(nodesData: NodesDeploymentData)(action: => Unit): Unit = {
       manager
         .processCommand(
           DMRunDeploymentCommand(
             version,
-            DeploymentData.empty,
+            DeploymentData.empty.copy(nodesData = nodesData),
             scenario,
             DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
@@ -143,15 +152,16 @@ class BaseK8sDeploymentManagerTest
       } finally {
         manager.processCommand(DMCancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
         eventually {
-          manager.getProcessStates(version.processName).futureValue.value shouldBe List.empty
+          manager.getScenarioDeploymentsStatuses(version.processName).futureValue.value shouldBe List.empty
         }
       }
     }
 
     def waitForRunning(version: ProcessVersion): Assertion = {
       eventually {
-        val state = manager.getProcessStates(version.processName).map(_.value).futureValue
-        state.flatMap(_.version) shouldBe List(version)
+        val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
+        logger.debug(s"Current process state: $state")
+        state.flatMap(_.version) shouldBe List(version.versionId)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
     }

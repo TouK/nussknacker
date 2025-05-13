@@ -1,10 +1,11 @@
-import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
-import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import ProcessUtils from "../../../../common/ProcessUtils";
-import { RootState } from "../../../../reducers";
-import { NodeId, NodeType, NodeValidationError, UiScenarioProperties, UIParameter } from "../../../../types";
 import { isEqual } from "lodash";
+import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
+
+import ProcessUtils from "../../../../common/ProcessUtils";
+import type { RootState } from "../../../../reducers";
+import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
+import type { NodeId, NodeType, NodeValidationError, UiScenarioProperties, UIParameter } from "../../../../types";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 

@@ -1,13 +1,13 @@
-import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
-import Field, { FieldType } from "./editors/field/Field";
-import React, { useMemo, useState } from "react";
-import { useDiffMark } from "./PathsToMark";
-import { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
-import { useSelector } from "react-redux";
-import { getProcessNodesIds } from "../../../reducers/selectors/graph";
-import NodeUtils from "../NodeUtils";
 import { isEmpty } from "lodash";
+import React, { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { getProcessNodesIds } from "../../../reducers/selectors/graph";
+import type { NodeOrPropertiesType, NodeType, NodeValidationError } from "../../../types";
+import Field, { FieldType } from "./editors/field/Field";
+import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
+import { useDiffMark } from "./PathsToMark";
 
 interface IdFieldProps {
     isEditMode?: boolean;
@@ -23,7 +23,11 @@ interface IdFieldProps {
 const propName = `id`;
 const FAKE_NAME_PROP_NAME = "$id";
 
-export function applyIdFromFakeName({ id, ...editedNode }: NodeType & { [FAKE_NAME_PROP_NAME]?: string }): NodeType {
+export type EditedNode = NodeType & {
+    [FAKE_NAME_PROP_NAME]?: string;
+};
+
+export function applyIdFromFakeName({ id, ...editedNode }: EditedNode): NodeType {
     const name = editedNode[FAKE_NAME_PROP_NAME];
     delete editedNode[FAKE_NAME_PROP_NAME];
     return { ...editedNode, id: name ?? id };

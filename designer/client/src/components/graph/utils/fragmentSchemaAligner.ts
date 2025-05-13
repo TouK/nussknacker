@@ -1,5 +1,6 @@
 import fp from "lodash/fp";
-import { NodeType, ProcessDefinitionData } from "../../../types";
+
+import type { NodeType, ProcessDefinitionData } from "../../../types";
 
 /*
  * TODO: It's a workaround

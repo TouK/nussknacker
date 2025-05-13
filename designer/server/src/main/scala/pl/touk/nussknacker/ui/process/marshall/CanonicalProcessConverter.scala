@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.process.marshall
 import pl.touk.nussknacker.engine.api.graph
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
@@ -21,7 +21,7 @@ object CanonicalProcessConverter {
         }
     }
     val props = ProcessProperties(process.metaData.additionalFields)
-    ScenarioGraph(props, nodes, edges)
+    ScenarioGraph(props, nodes, edges, process.stickyNotes)
   }
 
   def findNodes(process: CanonicalProcess): List[NodeData] = {
@@ -99,7 +99,7 @@ object CanonicalProcessConverter {
       findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
-    CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches)
+    CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches, graph.stickyNotes)
   }
 
   // TODO: Should find root nodes based no structure to have loose nodes visible at canonical process level - otherwise

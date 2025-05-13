@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.definition.component
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
+
 import WrongConfigurationAttribute.{
   ComponentGroupNameAttribute,
   ComponentTypeAttribute,

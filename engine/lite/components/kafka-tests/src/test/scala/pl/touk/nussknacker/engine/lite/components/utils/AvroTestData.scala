@@ -1,28 +1,28 @@
 package pl.touk.nussknacker.engine.lite.components.utils
 
 import org.apache.avro
+import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.avro.Schema.Type
 import org.apache.avro.data.TimeConversions.TimestampMicrosConversion
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.GenericRecord
-import org.apache.avro.{LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.lite.components.utils.AvroSchemaCreator.{
-  Null,
   createArray,
   createEnum,
   createField,
   createFixed,
   createLogical,
   createMap,
-  createRecord
+  createRecord,
+  Null
 }
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
 import java.nio.charset.StandardCharsets
-import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, LocalTime}
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 

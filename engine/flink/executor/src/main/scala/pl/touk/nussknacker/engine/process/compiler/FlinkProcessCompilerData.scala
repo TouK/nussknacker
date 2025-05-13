@@ -1,18 +1,21 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data._
+import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.Interpreter
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.{Interpreter, RuntimeMode, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ComponentUseCase}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreatorDeps
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
+import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -32,13 +35,13 @@ class FlinkProcessCompilerData(
     exceptionHandler: FlinkExceptionHandler,
     val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
     val processTimeout: FiniteDuration,
-    val componentUseCase: ComponentUseCase
+    val runtimeMode: RuntimeMode,
 ) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase))
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode))
     }
   }
 
@@ -46,8 +49,16 @@ class FlinkProcessCompilerData(
     compilerData.lifecycle(nodesToUse).foreach(_.close())
   }
 
-  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compilerData.subPartCompiler.compile(node, validationContext)(jobData).result)
+  def compileSubPart(
+      node: SplittedNode[_],
+      validationContext: ValidationContext,
+      engineCompilationDeps: EngineScenarioCompilationDependencies
+  ): Node = {
+    validateOrFail(
+      compilerData.subPartCompiler
+        .compile(node, validationContext)(new ScenarioCompilationDependencies(jobData, engineCompilationDeps))
+        .result
+    )
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -65,16 +76,23 @@ class FlinkProcessCompilerData(
     jobData
   )
 
-  def compileProcess(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
-    compilerData.compile(process)
+  def compileProcess(
+      process: CanonicalProcess
+  )(
+      implicit engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies
+  ): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = compilerData.compile(process)
 
-  def compileProcessOrFail(process: CanonicalProcess): CompiledProcessParts = validateOrFail(compileProcess(process))
+  def compileProcessOrFail(
+      process: CanonicalProcess
+  )(
+      implicit engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies
+  ): CompiledProcessParts = validateOrFail(compileProcess(process))
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
     exceptionHandler.open(
-      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase)
+      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, runtimeMode)
     )
     exceptionHandler
   }

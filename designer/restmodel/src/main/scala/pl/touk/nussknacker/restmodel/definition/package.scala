@@ -1,17 +1,15 @@
 package pl.touk.nussknacker.restmodel
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterCategory, ParameterEditor, StaticParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-
-import java.net.URI
 
 package object definition {
 
@@ -35,8 +33,8 @@ package object definition {
   @JsonCodec final case class UIParameter(
       name: String,
       typ: TypingResult,
-      editor: ParameterEditor,
-      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
+      editors: List[ParameterEditor],
+      // It is used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
       // and ScenarioWithDetails.json.validationResult.nodeResults is not enough
@@ -51,6 +49,7 @@ package object definition {
       // The option is for decoder backward compatibility to decode responses from older versions
       // The option can be removed in future releases
       requiredParam: Option[Boolean],
+      category: ParameterCategory,
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
@@ -72,7 +71,8 @@ package object definition {
       icon: String,
       docsUrl: Option[String],
       // This field is defined only for fragments
-      outputParameters: Option[List[String]]
+      outputParameters: Option[List[String]],
+      label: String
   )
 
   @JsonCodec final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
@@ -95,11 +95,12 @@ package object definition {
     def create(
         componentId: ComponentId,
         nodeTemplate: NodeData,
-        branchParametersTemplate: List[NodeParameter]
+        branchParametersTemplate: List[NodeParameter],
+        label: String
     ): UIComponentNodeTemplate =
       UIComponentNodeTemplate(
         componentId,
-        componentId.name,
+        label,
         nodeTemplate,
         branchParametersTemplate
       )
@@ -128,7 +129,7 @@ package object definition {
       // This attribute is deprecated on BE and FE as it's not used anywhere.
       // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],
-      editor: ParameterEditor,
+      editor: StaticParameterEditor,
       label: Option[String],
       hintText: Option[String]
   )

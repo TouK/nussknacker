@@ -7,16 +7,17 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 import pl.touk.nussknacker.engine.util
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import scala.language.higherKinds
 
@@ -35,17 +36,18 @@ class AggregatorFunction[MapT[K, V]](
     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
 )(implicit override val rangeMap: FlinkRangeMap[MapT])
     extends LatelyEvictableStateFunction[
-      ValueWithContext[StringKeyedValue[AnyRef]],
+      ValueWithContext[KeyedValue[AnyRef, AnyRef]],
       ValueWithContext[AnyRef],
-      MapT[Long, AnyRef]
+      MapT[Long, AnyRef],
+      AnyRef
     ]
     with AggregatorFunctionMixin[MapT] {
 
   type FlinkCtx =
-    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
+    KeyedProcessFunction[AnyRef, ValueWithContext[KeyedValue[AnyRef, AnyRef]], ValueWithContext[AnyRef]]#Context
 
   override def processElement(
-      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
       ctx: FlinkCtx,
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
@@ -93,7 +95,7 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
   protected implicit def rangeMap: FlinkRangeMap[MapT]
 
   protected def handleNewElementAdded(
-      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      value: ValueWithContext[KeyedValue[AnyRef, AnyRef]],
       timestamp: Long,
       timeService: TimerService,
       out: Collector[ValueWithContext[AnyRef]]
@@ -106,8 +108,8 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
 
   }
 
-  protected def addElementToState(
-      value: ValueWithContext[StringKeyedValue[AnyRef]],
+  protected def addElementToState[T <: AnyRef](
+      value: ValueWithContext[KeyedValue[T, AnyRef]],
       timestamp: Long,
       timeService: TimerService,
       out: Collector[ValueWithContext[AnyRef]]

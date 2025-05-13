@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.util
 
-import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
@@ -30,7 +30,7 @@ object Serializers extends LazyLogging {
       implicitly[SerializerRegistrar[SpelMapHack]] :: Nil).foreach(_.registerIn(config))
     ScalaServiceLoader
       .load[SerializersRegistrar](getClass.getClassLoader)
-      .foreach(_.register(modelData.modelConfig, config))
+      .foreach(_.register(modelData.modelConfig.underlyingConfig, config))
     TimeSerializers.addDefaultSerializers(config)
   }
 

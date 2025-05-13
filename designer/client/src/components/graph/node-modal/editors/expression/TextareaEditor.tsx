@@ -1,14 +1,18 @@
-import React from "react";
-import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { EditorType, ExtendedEditor } from "./Editor";
 import i18next from "i18next";
+import React from "react";
+
 import { Textarea } from "../field/Textarea";
+import type { FieldError } from "../Validators";
+import type { ExtendedEditor, OnValueChange } from "./Editor";
+import { editorsParameters } from "./editorsParameters";
+import { FormatterType, typeFormatters } from "./Formatter";
+import type { Formatter } from "./Formatter";
 import { ExpressionLang } from "./types";
-import { FieldError } from "../Validators";
+import type { EditorType } from "./types";
 
 type Props = {
     expressionObj: $TodoType;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     onFocus?: () => void;
     className?: string;
     inputClassName?: string;
@@ -44,7 +48,12 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
             isMarked={isMarked}
             fieldErrors={fieldErrors}
             showValidation={showValidation}
-            onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
+            onChange={(event) =>
+                onValueChange({
+                    expression: stringFormatter.encode(event.target.value),
+                    language: editorsParameters.TextareaParameterEditor.language,
+                })
+            }
             value={stringFormatter.decode(expressionObj.expression) as string}
             formattedValue={expressionObj.expression}
             className={className}
@@ -68,9 +77,9 @@ const parseable = (expressionObj) => {
 };
 
 TextareaEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj);
-TextareaEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode");
 TextareaEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.textarea.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
+        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+        { editorName: editorsParameters.TextareaParameterEditor.displayName },
     );

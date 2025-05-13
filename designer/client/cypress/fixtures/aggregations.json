@@ -15,12 +15,12 @@
     },
     "nodes": [
         {
-            "id": "sample-generator",
+            "id": "event-generator",
             "ref": {
-                "typ": "sample-generator",
+                "typ": "event-generator",
                 "parameters": [
                     {
-                        "name": "period",
+                        "name": "schedule",
                         "expression": {
                             "language": "spel",
                             "expression": "T(java.time.Duration).parse('PT1M')"
@@ -63,7 +63,7 @@
                                 "name": "groupBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{ #input.floatValue }.toString"
+                                    "expression": "#input.floatValue"
                                 }
                             },
                             {
@@ -139,7 +139,7 @@
                                 "name": "groupBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{ #input.longValue }.toString"
+                                    "expression": "#input.longValue"
                                 }
                             },
                             {
@@ -208,7 +208,7 @@
                                 "name": "groupBy",
                                 "expression": {
                                     "language": "spel",
-                                    "expression": "{ #input.longValue }.toString"
+                                    "expression": "#input.longValue"
                                 }
                             },
                             {

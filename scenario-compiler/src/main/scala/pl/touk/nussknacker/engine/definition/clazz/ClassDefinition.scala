@@ -11,7 +11,7 @@ case class ClassDefinition(
 
   def getClazz: Class[_] = clazzName match {
     case TypedClass(klass, _) => klass
-    case Unknown              => AnyClass
+    case Unknown(_)           => AnyClass
     case typingResult =>
       throw new IllegalAccessException(
         s"$typingResult not supported. Class and Unknown are only valid inputs for fragment."

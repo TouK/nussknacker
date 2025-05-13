@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util.json
 
-import io.circe.Json._
 import io.circe.{Json, JsonObject}
+import io.circe.Json._
 import org.json.{JSONArray, JSONObject, JSONTokener}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 

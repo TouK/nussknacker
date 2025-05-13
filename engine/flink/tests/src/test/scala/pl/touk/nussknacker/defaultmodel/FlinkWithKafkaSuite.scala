@@ -9,41 +9,43 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistryClientHolder.MockSchemaRegistryClientProvider
 import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemaV1
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
+import pl.touk.nussknacker.engine.flink.util.transformer.{FlinkBaseComponentProvider, FlinkKafkaComponentProvider}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   ProcessSettingsPreparer,
   UnoptimizedSerializationPreparer
 }
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
   LatestSchemaVersion,
   SchemaRegistryClientFactory,
   SchemaVersionOption
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -79,17 +81,23 @@ abstract class FlinkWithKafkaSuite
     valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
-      new MockFlinkKafkaComponentProvider(() => schemaRegistryClientProvider.schemaRegistryClientFactory)
-        .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
+      createFinkKafkaComponentProvider(schemaRegistryClientProvider)
+        .create(kafkaComponentsConfig, ModelConfig.parse(config)) :::
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         additionalComponents
     val modelData =
       LocalModelData(config, components, configCreator = creator)
     registrar = FlinkProcessRegistrar(
-      new FlinkProcessCompilerDataFactory(modelData),
+      new FlinkProcessCompilerDataFactory(modelData, DeploymentData.empty),
       FlinkJobConfig.parse(modelData.modelConfig),
       executionConfigPreparerChain(modelData, schemaRegistryClientProvider)
     )
+  }
+
+  protected def createFinkKafkaComponentProvider(
+      schemaRegistryClientProvider: MockSchemaRegistryClientProvider
+  ): FlinkKafkaComponentProvider = {
+    new MockFlinkKafkaComponentProvider(() => schemaRegistryClientProvider.schemaRegistryClientFactory)
   }
 
   private def executionConfigPreparerChain(
@@ -115,27 +123,31 @@ abstract class FlinkWithKafkaSuite
 
   protected def avroAsJsonSerialization = false
 
-  override def kafkaComponentsConfig: Config = ConfigFactory
-    .empty()
-    .withValue(
-      KafkaConfigProperties.bootstrapServersProperty("config"),
-      fromAnyRef(kafkaServerWithDependencies.kafkaAddress)
-    )
-    .withValue(
-      KafkaConfigProperties.property("config", "schema.registry.url"),
-      fromAnyRef("not_used")
-    )
-    .withValue(
-      KafkaConfigProperties.property("config", "auto.offset.reset"),
-      fromAnyRef("earliest")
-    )
-    .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
-    .withValue("config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
-    // we turn off auto registration to do it on our own passing mocked schema registry client
-    .withValue(
-      s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
-      fromAnyRef(false)
-    )
+  override def kafkaComponentsConfig: Config = {
+    val config = ConfigFactory
+      .empty()
+      .withValue(
+        KafkaConfigProperties.bootstrapServersProperty("config"),
+        fromAnyRef(kafkaServer.bootstrapServers)
+      )
+      .withValue(
+        KafkaConfigProperties.property("config", "auto.offset.reset"),
+        fromAnyRef("earliest")
+      )
+      .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
+      .withValue("config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
+      // we turn off auto registration to do it on our own passing mocked schema registry client
+      .withValue(
+        s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
+        fromAnyRef(false)
+      )
+    maybeAddSchemaRegistryUrl(config)
+  }
+
+  protected def maybeAddSchemaRegistryUrl(config: Config): Config = config.withValue(
+    KafkaConfigProperties.property("config", "schema.registry.url"),
+    fromAnyRef("not_used")
+  )
 
   lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfig(config, "config")
   protected val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
@@ -151,9 +163,11 @@ abstract class FlinkWithKafkaSuite
   )
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
-    env.withJobRunning(process.name.value)(action)
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
+      val executionResult = env.execute()
+      flinkMiniCluster.withRunningJob(executionResult.getJobID)(action)
+    }
   }
 
   protected def sendAvro(
@@ -306,7 +320,7 @@ object SampleSchemas {
 
 class TestDefaultConfigCreator extends DefaultConfigCreator {
 
-  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelConfig: ModelConfig): Seq[ProcessListener] =
     Seq(LoggingListener)
 
 }

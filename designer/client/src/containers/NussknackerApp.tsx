@@ -3,6 +3,8 @@ import { isEmpty } from "lodash";
 import React from "react";
 import { useSelector } from "react-redux";
 import { Outlet } from "react-router-dom";
+
+import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistantButton";
 import { MenuBar } from "../components/MenuBar";
 import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
@@ -49,6 +51,7 @@ export function NussknackerApp() {
                         <Outlet />
                     </main>
                 </div>
+                <AiAssistantButton />
             </WindowManager>
 
             <ConnectionErrorProvider>

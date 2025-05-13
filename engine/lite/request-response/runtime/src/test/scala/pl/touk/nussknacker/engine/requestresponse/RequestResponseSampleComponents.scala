@@ -156,7 +156,7 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
           override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              componentUseCase: ComponentUseCase
+              componentUseContext: ComponentUseContext,
           ): Future[Response] = {
             Future.successful(Response(opened.toString))
           }
@@ -180,7 +180,7 @@ object CollectingEagerService extends EagerService {
     override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext,
     ): Future[Any] = {
       collector.collect(s"static-$static-dynamic-${dynamic.evaluate(context)}", Option(())) {
         Future.successful(())

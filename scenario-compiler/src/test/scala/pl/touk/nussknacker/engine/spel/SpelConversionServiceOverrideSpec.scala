@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Invalid
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
@@ -10,10 +10,16 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.{
+  CustomProcessValidatorLoader,
+  ModelConfig,
+  RuntimeMode,
+  ScenarioCompilationDependencies
+}
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId, ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
@@ -51,7 +57,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
   class WithConvUtilConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider])
       extends EmptyProcessConfigCreator {
 
-    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {
       ExpressionConfig(
         globalProcessVariables = Map("CONV" -> WithCategories.anyCategory(ConversionUtils)),
         globalImports = List.empty,
@@ -77,6 +83,8 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
               NuExceptionInfo(
                 Some(NodeComponentInfo("invoke-service", Some(ComponentId(ComponentType.Service, "service")))),
                 ex,
+                _,
+                _,
                 _
               ),
               Nil
@@ -113,13 +121,18 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       Seq.empty,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime,
-      CustomProcessValidatorLoader.emptyCustomProcessValidator
+      RuntimeMode.Live,
+      CustomProcessValidatorLoader.emptyCustomProcessValidator,
+      NodesDeploymentData.empty,
     )
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
     val parts  = compilerData.compile(process).value
     val source = parts.sources.head
     val compiledNode =
-      compilerData.subPartCompiler.compile(source.node, source.validationContext)(jobData).result.value
+      compilerData.subPartCompiler.compile(source.node, source.validationContext).result.value
 
     val inputContext                = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
     implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global

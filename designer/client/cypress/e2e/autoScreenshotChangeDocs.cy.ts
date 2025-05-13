@@ -1,4 +1,4 @@
-import * as path from "path";
+import { join } from "path";
 
 describe("Auto Screenshot Change Docs -", () => {
     const seed = "autoScreenshotChangeDocs";
@@ -155,10 +155,10 @@ describe("Auto Screenshot Change Docs -", () => {
 
 // screenshots CONSTANT options DO NOT CHANGE
 
-const projectRoot = path.join(Cypress.config("fileServerFolder"), "../..");
+const projectRoot = join(Cypress.config("fileServerFolder"), "../..");
 const snapshotOptions = {
     maxDiffThreshold: 0.009,
-    imagesPath: path.join(projectRoot, "docs/autoScreenshotChangeDocs"),
+    imagesPath: join(projectRoot, "docs/autoScreenshotChangeDocs"),
 };
 
 // screenshots taking functions

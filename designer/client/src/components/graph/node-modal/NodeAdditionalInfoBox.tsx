@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useDebounce } from "use-debounce";
-import { NodeOrPropertiesType } from "../../../types";
 import { useSelector } from "react-redux";
-import { getProcessName } from "./NodeDetailsContent/selectors";
+import { useDebouncedValue } from "rooks";
+
+import type { NodeOrPropertiesType } from "../../../types";
 import { MarkdownStyled } from "./MarkdownStyled";
+import { getProcessName } from "./NodeDetailsContent/selectors";
 
 interface Props {
     node: NodeOrPropertiesType;
@@ -30,14 +31,14 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
 
     //We don't use redux here since this additionalInfo is local to this component. We use debounce, as
     //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
-    const [debouncedNode] = useDebounce(node, 1000);
+    const [debouncedNode] = useDebouncedValue(node, 1000);
 
     const getAdditionalInfo = useCallback(
         (processName: string, debouncedNode: NodeOrPropertiesType) => {
             const controller = new AbortController();
             handleGetAdditionalInfo(processName, debouncedNode, controller).then((data) => {
                 // signal should cancel request, but for some reason it doesn't in dev
-                if (!controller.signal.aborted && data) {
+                if (!controller.signal.aborted) {
                     setAdditionalInfo(data);
                 }
             });

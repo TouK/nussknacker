@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
@@ -10,9 +10,10 @@ import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaConfig, KafkaRecordUtils, KafkaSpec}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{
   ConsumerRecordDeserializationSchemaFactory,
   ConsumerRecordToJsonFormatterFactory
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.{
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, KafkaSpec, serialization}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
@@ -38,7 +38,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   val constTimestamp: Long          = 123L
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
-  lazy val modelDependencies: ProcessObjectDependencies = ProcessObjectDependencies.withConfig(config)
+  lazy val modelConfig: ModelConfig = ModelConfig.parse(config)
 
   protected def objToSerializeSerializationSchema(topic: String): serialization.KafkaSerializationSchema[Any] =
     new BaseSimpleSerializationSchema[ObjToSerialize](
@@ -96,7 +96,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -111,7 +111,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -126,7 +126,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -139,7 +139,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]

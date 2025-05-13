@@ -7,16 +7,16 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails
+}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
-}
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  RestAssuredVerboseLoggingIfValidationFails
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
@@ -42,6 +42,7 @@ class ManagementApiHttpServiceBusinessSpec
             Map(
               exampleScenario.name.value -> TestResults(
                 nodeResults = Map.empty,
+                nodeTransitionResults = Map.empty,
                 invocationResults = Map.empty,
                 externalInvocationResults = Map.empty,
                 exceptions = List.empty,
@@ -52,22 +53,25 @@ class ManagementApiHttpServiceBusinessSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(s"""{
-            | "sourceParameters": {
-            |   "sourceId": "1",
-            |   "parameterExpressions": {
-            |     "param1": {
-            |       "language": "spel",
-            |       "expression": "1"
-            |     },
-            |     "param2": {
-            |       "language": "spel",
-            |       "expression": "test"
+            | "testData": {
+            |   "type": "WITH_PARAMETERS",
+            |   "sourceParameters": {
+            |     "sourceId": "1",
+            |     "parameterExpressions": {
+            |       "param1": {
+            |         "language": "spel",
+            |         "expression": "1"
+            |       },
+            |       "param2": {
+            |         "language": "spel",
+            |         "expression": "test"
+            |       }
             |     }
             |   }
             | },
             | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
             |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .equalsJsonBody(
@@ -75,6 +79,7 @@ class ManagementApiHttpServiceBusinessSpec
              |{
              |  "results": {
              |    "nodeResults": {},
+             |    "nodeTransitionResults": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
              |    "exceptions": []

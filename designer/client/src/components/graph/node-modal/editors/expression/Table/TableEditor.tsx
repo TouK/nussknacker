@@ -1,10 +1,8 @@
 import { css } from "@emotion/css";
-import DataEditor, {
-    CompactSelection,
+import type {
     DataEditorProps,
     DataEditorRef,
     GridCell,
-    GridCellKind,
     GridColumn,
     GridSelection,
     GroupHeaderClickedEventArgs,
@@ -12,14 +10,24 @@ import DataEditor, {
     Item,
     Rectangle,
 } from "@glideapps/glide-data-grid";
+import DataEditor, { CompactSelection, GridCellKind } from "@glideapps/glide-data-grid";
+import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { Box } from "@mui/material";
-import { PopoverPosition } from "@mui/material/Popover/Popover";
+import type { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
+import { find, head, orderBy } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+
+import ProcessUtils from "../../../../../../common/ProcessUtils";
+import { getProcessDefinitionData } from "../../../../../../reducers/selectors/processDefinitionData";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import { EditorProps, ExtendedEditor } from "../Editor";
+import type { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
+import { editorsParameters } from "../editorsParameters";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
+import { isDatePickerCell } from "./customCells";
+import { customRenderers } from "./customRenderers";
 import { useErrorHighlights } from "./errorHighlights";
 import { Sizer } from "./Sizer";
 import { ActionTypes } from "./state/action";
@@ -27,13 +35,6 @@ import { longestRow } from "./state/helpers";
 import { useTableState } from "./state/tableState";
 import { useTableTheme } from "./tableTheme";
 import { TypesMenu } from "./TypesMenu";
-import { customRenderers } from "./customRenderers";
-import { isDatePickerCell } from "./customCells";
-import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
-import { useSelector } from "react-redux";
-import { getProcessDefinitionData } from "../../../../../../reducers/selectors/settings";
-import ProcessUtils from "../../../../../../common/ProcessUtils";
-import { find, head, orderBy } from "lodash";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -117,7 +118,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
 
     useEffect(() => {
         if (rawExpression !== expressionObj.expression) {
-            onValueChange(rawExpression);
+            onValueChange({ expression: rawExpression, language: editorsParameters.TabularTypedDataEditor.language });
         }
     }, [expressionObj.expression, onValueChange, rawExpression]);
 
@@ -551,6 +552,7 @@ export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps
 };
 
 TableEditor.isSwitchableTo = () => true; // TODO: implement
-TableEditor.switchableToHint = () => i18next.t("editors.table.switchableToHint", "Switch to table mode");
 TableEditor.notSwitchableToHint = () =>
-    i18next.t("editors.table.notSwitchableToHint", "Expression must match schema to switch to table mode");
+    i18next.t("editors.table.notSwitchableToHint", `Expression must match schema to switch to {{}} mode`, {
+        editorName: editorsParameters.TabularTypedDataEditor.displayName,
+    });

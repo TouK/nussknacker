@@ -1,14 +1,19 @@
-import React, { ForwardedRef, forwardRef } from "react";
 import { Box, styled, Typography } from "@mui/material";
-import { formatDateTime } from "../../../../common/DateUtils";
-import { ItemActivity } from "../ActivitiesPanel";
-import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import ActivityItemHeader from "./ActivityItemHeader";
-import { ActivityType } from "../types";
-import { getItemColors } from "../helpers/activityItemColors";
+import { lowerCase, upperFirst } from "lodash";
+import type { ForwardedRef } from "react";
+import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
+
+import { formatDateTime } from "../../../../common/DateUtils";
+import { SearchHighlighter } from "../../creator/SearchHighlighter";
+import type { ItemActivity } from "../ActivitiesPanel";
+import { getItemColors } from "../helpers/activityItemColors";
+import type { ActivityType } from "../types";
 import { ActivityItemComment } from "./ActivityItemComment";
+import ActivityItemHeader from "./ActivityItemHeader";
 import { useActivityItemInfo } from "./ActivityItemProvider";
+
+export const humanizeString = (str: string) => upperFirst(lowerCase(str));
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
     padding: theme.spacing(0.5, 1.25),
@@ -35,11 +40,14 @@ export const ActivityItem = forwardRef(
         const { handleSetIsActivityHovered } = useActivityItemInfo();
 
         const actionsWithVersionInfo: ActivityType[] = [
+            "AUTOMATIC_UPDATE",
+            "INCOMING_MIGRATION",
+            "OUTGOING_MIGRATION",
             "PERFORMED_SINGLE_EXECUTION",
             "PERFORMED_SCHEDULED_EXECUTION",
+            "SCENARIO_CANCELED",
             "SCENARIO_DEPLOYED",
             "SCENARIO_PAUSED",
-            "SCENARIO_CANCELED",
         ];
 
         const version =
@@ -95,7 +103,7 @@ export const ActivityItem = forwardRef(
 
                         {activity.additionalFields.map((additionalField, index) => {
                             const additionalFieldText = additionalField.name
-                                ? `${additionalField.name}: ${additionalField.value}`
+                                ? `${humanizeString(additionalField.name)}: ${additionalField.value}`
                                 : additionalField.value;
 
                             return (

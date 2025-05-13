@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.flink.util.transformer.{EventGeneratorSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{
   SessionWindowAggregateTransformer,
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
   TumblingAggregateTransformer
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{FullOuterJoinTransformer, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.{SampleGeneratorSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkBaseUnboundedComponentProvider extends ComponentProvider {
@@ -18,9 +18,9 @@ class FlinkBaseUnboundedComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig             = DocsConfig(config)
-    val aggregateWindowsConfig = AggregateWindowsConfig.loadOrDefault(config)
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    val docsConfig             = DocsConfig(componentProviderConfig)
+    val aggregateWindowsConfig = AggregateWindowsConfig.loadOrDefault(componentProviderConfig)
     FlinkBaseUnboundedComponentProvider.create(docsConfig, aggregateWindowsConfig)
   }
 
@@ -39,8 +39,8 @@ object FlinkBaseUnboundedComponentProvider {
 
     // When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
     val statelessComponents = List(
-      ComponentDefinition("sample-generator", SampleGeneratorSourceFactory).withRelativeDocs(
-        "DataSourcesAndSinks#sample-generator"
+      ComponentDefinition("event-generator", EventGeneratorSourceFactory).withRelativeDocs(
+        "DataSourcesAndSinks#event-generator"
       ),
     )
 

@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { RawEditor } from "../../src/components/graph/node-modal/editors/expression/RawEditor";
+import { SpelEditor } from "../../src/components/graph/node-modal/editors/expression/SpelEditor";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
 import { mockFieldErrors, mockValueChange } from "./helpers";
@@ -21,15 +21,15 @@ const store = mockStore({
             defaultAsyncInterpretation: true,
         },
     },
-    graphReducer: { history: { present: { scenario: { scenarioGraph: {} } } } },
+    graphReducer: { present: { scenario: {} } },
 });
 
-describe(RawEditor.name, () => {
+describe("SpelEditor", () => {
     it("should display validation error when the field is required", () => {
         const { container } = render(
             <NuThemeProvider>
                 <Provider store={store}>
-                    <RawEditor
+                    <SpelEditor
                         readOnly={false}
                         className={""}
                         isMarked={false}

@@ -1,27 +1,28 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import com.typesafe.config.Config
+import cats.effect.SyncIO
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   Components,
   DynamicComponentStaticDefinitionDeterminer
 }
-import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
-import scala.util.control.NonFatal
-
-final case class ProcessingTypeData private (
-    name: ProcessingType,
-    designerModelData: DesignerModelData,
-    deploymentData: DeploymentData,
-    category: String,
+final class ProcessingTypeData private (
+    val processingType: ProcessingType,
+    val designerModelData: DesignerModelData,
+    // TODO: We should replace all usages of this method with access to DeploymentData which is created separately from model
+    //       to fully split deployment managers from model
+    val deploymentData: DeploymentData,
+    val category: String,
+    val limitsConfig: LimitsConfig
 ) {
 
   // TODO: We should allow to have >1 processing mode configured inside one model and return a List here
@@ -37,11 +38,6 @@ final case class ProcessingTypeData private (
       deploymentData.engineSetupErrors
     )
 
-  def close(): Unit = {
-    designerModelData.close()
-    deploymentData.close()
-  }
-
 }
 
 object ProcessingTypeData {
@@ -50,117 +46,90 @@ object ProcessingTypeData {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def createProcessingTypeData(
-      name: ProcessingType,
+      processingType: ProcessingType,
       modelData: ModelData,
-      deploymentManagerProvider: DeploymentManagerProvider,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
-      deploymentConfig: Config,
+      deploymentData: DeploymentData,
       category: String,
+      limitsConfig: LimitsConfig,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ProcessingTypeData = {
-    try {
-      val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(deploymentConfig)
-      val deploymentData =
-        createDeploymentData(
-          deploymentManagerProvider,
-          deploymentManagerDependencies,
-          engineSetupName,
-          modelData,
-          deploymentConfig,
-          metaDataInitializer
-        )
-
-      val designerModelData =
-        createDesignerModelData(modelData, metaDataInitializer, name, componentDefinitionExtractionMode)
-      ProcessingTypeData(
-        name,
-        designerModelData,
-        deploymentData,
-        category
-      )
-    } catch {
-      case NonFatal(ex) =>
-        throw new IllegalArgumentException(
-          s"Error during creation of processing type data for processing type [$name]",
-          ex
-        )
-    }
-  }
-
-  private def createDeploymentData(
-      deploymentManagerProvider: DeploymentManagerProvider,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
-      modelData: ModelData,
-      deploymentConfig: Config,
-      metaDataInitializer: MetaDataInitializer
-  ) = {
-    val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(deploymentConfig)
-
-    val validDeploymentManager =
-      deploymentManagerProvider.createDeploymentManager(
+    val designerModelData =
+      createDesignerModelData(
         modelData,
-        deploymentManagerDependencies,
-        deploymentConfig,
-        scenarioStateCacheTTL
+        deploymentData,
+        processingType,
+        componentDefinitionExtractionMode
       )
-    val scenarioProperties =
-      deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
-        .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
-    val fragmentProperties = modelData.modelConfig
-      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
-
-    DeploymentData(
-      validDeploymentManager,
-      metaDataInitializer,
-      scenarioProperties,
-      fragmentProperties,
-      deploymentManagerProvider.additionalValidators(deploymentConfig),
-      DeploymentManagerType(deploymentManagerProvider.name),
-      engineSetupName
+    new ProcessingTypeData(
+      processingType,
+      designerModelData,
+      deploymentData,
+      category,
+      limitsConfig
     )
   }
 
   private def createDesignerModelData(
       modelData: ModelData,
-      metaDataInitializer: MetaDataInitializer,
+      deploymentData: DeploymentData,
       processingType: ProcessingType,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
+    // TODO: consider using ParameterName for property names instead of String (for scenario and fragment properties)
+    val scenarioProperties = deploymentData.deploymentScenarioPropertiesConfig ++ modelData.modelConfig.underlyingConfig
+      .getOrElse[Map[String, ScenarioPropertyConfig]](
+        "scenarioPropertiesConfig",
+        Map.empty
+      )
+    val fragmentProperties = modelData.modelConfig.underlyingConfig
+      .getOrElse[Map[String, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     val staticDefinitionForDynamicComponents =
-      createDynamicComponentsStaticDefinitions(modelData, metaDataInitializer, componentDefinitionExtractionMode)
+      createDynamicComponentsStaticDefinitions(modelData, deploymentData, componentDefinitionExtractionMode)
 
     val singleProcessingMode =
       ScenarioParametersDeterminer.determineProcessingMode(
         modelData.modelDefinition.components.components,
         processingType
       )
-    DesignerModelData(modelData, staticDefinitionForDynamicComponents, singleProcessingMode)
+    new DesignerModelData(
+      modelData,
+      scenarioProperties,
+      fragmentProperties,
+      staticDefinitionForDynamicComponents,
+      singleProcessingMode
+    )
   }
 
   private def createDynamicComponentsStaticDefinitions(
       modelData: ModelData,
-      metaDataInitializer: MetaDataInitializer,
+      deploymentData: DeploymentData,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): DynamicComponentsStaticDefinitions = {
-    def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
-      DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
-        modelData,
-        metaDataInitializer.create(_, Map.empty),
-        extractComponents
-      )
-    }
+    // We assume that this information is not important for determining initial parameters of dynamic nodes, so we pass fake values
+    val scenarioName = ProcessName("fakeScenarioName")
+    val metaData     = deploymentData.metaDataInitializer.create(scenarioName, Map.empty)
+    val jobData      = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
+    deploymentData.validDeploymentManagerOrStub.scenarioCompilationDependenciesResource.use {
+      engineScenarioCompilationDependencies =>
+        SyncIO {
+          def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
+            DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
+              modelData,
+              extractComponents
+            )(new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies))
+          }
 
-    DynamicComponentsStaticDefinitions(
-      finalDefinitions = createStaticDefinitions(_.components),
-      basicDefinitions = componentDefinitionExtractionMode match {
-        case ComponentDefinitionExtractionMode.FinalDefinition => None
-        case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
-          Some(createStaticDefinitions(_.basicComponentsUnsafe))
-      }
-    )
-  }
+          DynamicComponentsStaticDefinitions(
+            finalDefinitions = createStaticDefinitions(_.components),
+            basicDefinitions = componentDefinitionExtractionMode match {
+              case ComponentDefinitionExtractionMode.FinalDefinition => None
+              case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
+                Some(createStaticDefinitions(_.basicComponentsUnsafe))
+            }
+          )
+        }
+    }
+  }.unsafeRunSync()
 
 }

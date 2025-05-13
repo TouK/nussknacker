@@ -1,9 +1,10 @@
-import React from "react";
 import WarningIcon from "@mui/icons-material/Warning";
-import NodeTip from "../NodeTip";
-import { useTestResults } from "../TestResultsWrapper";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
+import React from "react";
+
+import { InfoTooltip } from "../editors/InfoTooltip";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { useTestResults } from "../TestResultsWrapper";
 
 export default function TestErrors(): JSX.Element {
     const results = useTestResults();
@@ -15,7 +16,9 @@ export default function TestErrors(): JSX.Element {
     return (
         <FormControl>
             <FormLabel>
-                <NodeTip title={"Test case error"} icon={<WarningIcon sx={(theme) => ({ color: theme.palette.warning.main })} />} />
+                <InfoTooltip title={"Test case error"} variant={"hover"}>
+                    <WarningIcon sx={(theme) => ({ color: theme.palette.warning.main })} />
+                </InfoTooltip>
             </FormLabel>
             <div className={nodeValue}>
                 <FormHelperText variant={"largeMessage"} error>

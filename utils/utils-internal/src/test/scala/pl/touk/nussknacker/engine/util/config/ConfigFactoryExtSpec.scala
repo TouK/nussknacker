@@ -13,7 +13,7 @@ class ConfigFactoryExtSpec extends AnyFunSuite with Matchers {
   test("loads in correct order") {
 
     val conf1 =
-      writeToTemp(Map("f1" -> "default", "f2" -> "not so default", "akka.http.server.request-timeout" -> "300s"))
+      writeToTemp(Map("f1" -> "default", "f2" -> "not so default", "pekko.http.server.request-timeout" -> "300s"))
     val conf2 = writeToTemp(Map("f1" -> "I win!"))
 
     val result = new ConfigFactoryExt(getClass.getClassLoader).parseUnresolved(
@@ -24,7 +24,7 @@ class ConfigFactoryExtSpec extends AnyFunSuite with Matchers {
     result.getString("f2") shouldBe "not so default"
     result.getString("f4") shouldBe "fromClasspath"
     result.hasPath("f5") shouldBe false
-    result.getString("akka.http.server.request-timeout") shouldBe "300s"
+    result.getString("pekko.http.server.request-timeout") shouldBe "300s"
   }
 
   def writeToTemp(map: Map[String, Any]): URI = {

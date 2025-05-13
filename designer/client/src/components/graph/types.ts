@@ -1,22 +1,27 @@
-import { ProcessCounts } from "../../reducers/graph";
-import {
+import type {
+    editNode,
     injectNode,
     Layout,
     layoutChanged,
     nodeAdded,
     nodesConnected,
     nodesDisconnected,
+    replaceNode,
     resetSelection,
     toggleSelection,
 } from "../../actions/nk";
-import { Capabilities } from "../../reducers/selectors/other";
-import { Scenario } from "../Process/types";
+import type { ProcessCounts } from "../../reducers/graph";
+import type { Capabilities } from "../../reducers/selectors/other";
+import type { NodeType } from "../../types";
+import type { Scenario } from "../Process/types";
 
 type ScenarioGraphProps = {
     nodesConnected: typeof nodesConnected;
     nodesDisconnected: typeof nodesDisconnected;
     layoutChanged: typeof layoutChanged;
     injectNode: typeof injectNode;
+    editNode: typeof editNode;
+    replaceNode: typeof replaceNode;
     nodeAdded: typeof nodeAdded;
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
@@ -34,6 +39,7 @@ type ScenarioGraphProps = {
     isFragment?: false | null;
 
     connectDropTarget;
+    createFragment?: (callback: (node: NodeType) => void) => void;
 };
 
 type FragmentGraphProps = {
@@ -65,6 +71,8 @@ export enum Events {
     CELL_MOUSEENTER = "cell:mouseenter",
     CELL_MOUSELEAVE = "cell:mouseleave",
     CELL_MOVED = "cellCustom:moved",
+    CELL_RESIZED = "cellCustom:resized",
+    CELL_CONTENT_UPDATED = "cellCustom:contentUpdated",
     BLANK_POINTERCLICK = "blank:pointerclick",
     BLANK_POINTERDOWN = "blank:pointerdown",
     BLANK_POINTERUP = "blank:pointerup",

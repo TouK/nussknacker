@@ -1,7 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { PropsWithChildren, useEffect, useState } from "react";
+import type { Theme } from "@mui/material";
+import { lighten, styled, useTheme } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React, { useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
-import { lighten, styled, Theme, useTheme } from "@mui/material";
+
 import { PanelSide } from "../../actions/nk";
 import { blendDarken } from "../../containers/theme/helpers";
 

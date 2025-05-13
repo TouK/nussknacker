@@ -1,10 +1,14 @@
 /* @refresh reset */
-import { dia, g } from "jointjs";
+import type { Selection } from "d3-selection";
+import { select } from "d3-selection";
+import type { D3ZoomEvent, ZoomBehavior, ZoomedElementBaseType, ZoomTransform } from "d3-zoom";
+import { zoom, zoomIdentity } from "d3-zoom";
+import type { dia } from "jointjs";
+import { g } from "jointjs";
 import { throttle } from "lodash";
+
 import { isVisualTesting } from "../../devHelpers";
 import { GlobalCursor } from "./GlobalCursor";
-import { select, Selection } from "d3-selection";
-import { D3ZoomEvent, zoom, ZoomBehavior, ZoomedElementBaseType, zoomIdentity, ZoomTransform } from "d3-zoom";
 import { rafThrottle } from "./rafThrottle";
 
 function isModified(event: MouseEvent | TouchEvent) {

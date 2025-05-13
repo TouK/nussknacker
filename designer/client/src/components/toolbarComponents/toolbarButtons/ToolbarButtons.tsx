@@ -1,23 +1,31 @@
-import React, { PropsWithChildren, createContext } from "react";
-import { ToolbarButtonWrapper } from "./ToolbarButtonStyled";
+import type { PropsOf } from "@emotion/react";
+import { styled } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React, { createContext } from "react";
+
+const ToolbarButtonsContainer = styled("div")(() => ({
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+}));
 
 export enum ButtonsVariant {
+    xs = "xs",
     small = "small",
     label = "label",
+    horizontal = "horizontal",
 }
-
-type Props = {
-    variant?: ButtonsVariant;
-};
 
 export const ToolbarButtonsContext = createContext<{ variant: ButtonsVariant }>({ variant: ButtonsVariant.label });
 
-export function ToolbarButtons(props: PropsWithChildren<Props>): JSX.Element {
-    const { variant = ButtonsVariant.label } = props;
+type Props = {
+    variant?: ButtonsVariant;
+} & PropsOf<typeof ToolbarButtonsContainer>;
 
+export function ToolbarButtons({ variant, ...props }: PropsWithChildren<Props>): JSX.Element {
     return (
-        <ToolbarButtonsContext.Provider value={{ variant }}>
-            <ToolbarButtonWrapper>{props.children}</ToolbarButtonWrapper>
+        <ToolbarButtonsContext.Provider value={{ variant: variant || ButtonsVariant.label }}>
+            <ToolbarButtonsContainer {...props} />
         </ToolbarButtonsContext.Provider>
     );
 }

@@ -9,7 +9,7 @@ object RawFEStatistics {
 
   def apply(request: RegisterStatisticsRequestDto): RawFEStatistics =
     new RawFEStatistics(
-      // todo change to groupMapReduce in scala 2.13
+      // TODO: change to groupMapReduce in scala 2.13
       raw = request.statistics
         .groupBy(_.name.shortName)
         .map { case (k, v) =>

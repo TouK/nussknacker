@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.Done
-import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.Done
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.{AvailablePortFinder, ExtremelyPatientScalaFutures, ProcessUtils}
+import skuber.{ConfigMap, Container, ObjectMeta, ObjectResource, Pod, Service, Volume}
 import skuber.Pod.Phase
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
-import skuber.{ConfigMap, Container, ObjectMeta, ObjectResource, Pod, Service, Volume}
 
 import java.io.File
 import java.net.Socket
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class K8sTestUtils(k8s: KubernetesClient)
     extends K8sUtils(k8s)

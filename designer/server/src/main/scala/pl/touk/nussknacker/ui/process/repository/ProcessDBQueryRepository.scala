@@ -3,10 +3,10 @@ package pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
+import pl.touk.nussknacker.ui.security.api._
 
 import java.sql.Timestamp
 import scala.language.higherKinds
@@ -65,6 +65,48 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
         }
       }
 
+  protected def fetchLatestProcessesQuery(
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+  )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
+    ((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity),
+    ((ProcessId, Option[Timestamp]), ProcessVersionEntityData),
+    Seq
+  ] =
+    processVersionsTableWithUnit
+      .groupBy(_.processId)
+      .map { case (n, group) => (n, group.map(_.createDate).max) }
+      .join(processVersionsTableQuery)
+      .on { case ((processId, latestVersionDate), processVersion) =>
+        processVersion.processId === processId && processVersion.createDate === latestVersionDate
+      }
+      .join(processTableFilteredByUser.filter(query).map(_.id))
+      .on { case ((_, latestVersion), processId) => latestVersion.processId === processId }
+      .map(_._1)
+
+  protected def fetchLatestVersionForProcessesExcludingUsers(
+      query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
+      excludedUserNames: Set[String],
+  )(implicit loggedUser: LoggedUser): Query[
+    (Rep[ProcessId], (Rep[VersionId], Rep[Timestamp], Rep[String])),
+    (ProcessId, (VersionId, Timestamp, String)),
+    Seq
+  ] =
+    processVersionsTableWithUnit
+      .filterNot(_.user.inSet(excludedUserNames))
+      .groupBy(_.processId)
+      .map { case (n, group) => (n, group.map(_.createDate).max) }
+      .join {
+        processVersionsTableWithUnit.map(version => (version.processId, version.id, version.createDate, version.user))
+      }
+      .on { case ((processId, latestVersionDate), (versionProcessId, _, versionCreateDate, _)) =>
+        versionProcessId === processId && versionCreateDate === latestVersionDate
+      }
+      .join(processTableFilteredByUser.filter(query).map(_.id))
+      .on { case ((_, (versionProcessId, _, _, _)), processId) => versionProcessId === processId }
+      .map { case (((processId, _), (_, versionId, versionCreateDate, versionCreatedByUser)), _) =>
+        (processId, (versionId, versionCreateDate, versionCreatedByUser))
+      }
+
   protected def processVersionsTableQuery(
       implicit fetchShape: ScenarioShapeFetchStrategy[_]
   ): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
@@ -100,9 +142,7 @@ object ProcessDBQueryRepository {
     ScenarioVersion(
       processVersionId = versionData.id,
       createDate = versionData.createDate.toInstant,
-      modelVersion = versionData.modelVersion,
       user = versionData.user,
-      actions = actions
     )
 
   final case class ProcessNotFoundError(name: ProcessName) extends NotFoundError(s"No scenario $name found")

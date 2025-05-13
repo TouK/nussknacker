@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import cats.data.Validated.{Valid, invalidNel}
+import cats.data.Validated.{invalidNel, Valid}
 import cats.data.ValidatedNel
 import org.apache.flink.table.types.logical.LogicalType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
+import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
 import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, OutputValidatorExpected, OutputValidatorTypeError}
 
 object TableTypeOutputValidator {
@@ -14,7 +14,7 @@ object TableTypeOutputValidator {
     val aligned              = ToTableTypeSchemaBasedEncoder.alignTypingResult(actualType, expectedType)
     val expectedTypingResult = expectedType.toTypingResult
 
-    if (aligned.canBeConvertedTo(expectedTypingResult)) {
+    if (aligned.canBeLooselyAssignedTo(expectedTypingResult)) {
       Valid(())
     } else {
       invalidNel(

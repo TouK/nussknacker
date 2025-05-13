@@ -1,9 +1,10 @@
-import React from "react";
-import { isEmpty } from "lodash";
-import { styledIcon } from "../Styled";
-import { ValidationErrors } from "../../../types";
 import DangerousIcon from "@mui/icons-material/Dangerous";
 import { useTheme } from "@mui/material";
+import { isEmpty } from "lodash";
+import React from "react";
+
+import type { ValidationErrors } from "../../../types";
+import { styledIcon } from "../Styled";
 
 export const HeaderIcon = ({ errors }: { errors: ValidationErrors }) => {
     const theme = useTheme();

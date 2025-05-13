@@ -1,19 +1,30 @@
 import React, { useMemo } from "react";
-import { RawEditor, RawEditorProps } from "./RawEditor";
-import { ExpressionLang } from "./types";
-import { SimpleEditor } from "./Editor";
+
+import type { SimpleEditor } from "./Editor";
+import { editorsParameters } from "./editorsParameters";
+import type { SpelEditorProps } from "./SpelEditor";
+import { SpelEditor } from "./SpelEditor";
+import { EditorMode } from "./types";
 
 //TODO add highlighting for opening and closing braces ('#{' and '}') in brace/mode/spelTemplate.js file
-export const SpelTemplateEditor: SimpleEditor<RawEditorProps> = (props: RawEditorProps) => {
-    const { expressionObj, ...passProps } = props;
+export const SpelTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEditorProps) => {
+    const { expressionObj, rows = 1, ...passProps } = props;
 
     const value = useMemo(
         () => ({
-            expression: expressionObj.expression,
-            language: ExpressionLang.SpELTemplate,
+            expression: expressionObj?.expression,
+            language: editorsParameters.SpelTemplateParameterEditor.language,
         }),
         [expressionObj],
     );
 
-    return <RawEditor {...passProps} expressionObj={value} rows={6} />;
+    return (
+        <SpelEditor
+            {...passProps}
+            expressionObj={value}
+            rows={rows}
+            editorMode={EditorMode.SpELTemplate}
+            language={editorsParameters.SpelTemplateParameterEditor.language}
+        />
+    );
 };

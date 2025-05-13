@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
+import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
   ClassDefinitionSet,
@@ -25,8 +25,8 @@ import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import java.nio.charset.Charset
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util.{Currency, Locale, UUID}
 import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext
@@ -137,6 +137,14 @@ class ExpressionSuggesterSpec
     dictServices,
     getClass.getClassLoader,
     List("scenarioProperty")
+  )
+
+  private val expressionSuggesterWithExtensions = new ExpressionSuggester(
+    expressionConfig,
+    ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
+    dictServices,
+    getClass.getClassLoader,
+    Nil
   )
 
   private val localVariables: Map[String, TypingResult] = Map(
@@ -852,33 +860,51 @@ class ExpressionSuggesterSpec
   }
 
   test("should suggest the same methods for list and array") {
-    val suggester = new ExpressionSuggester(
-      expressionConfig,
-      ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
-      dictServices,
-      getClass.getClassLoader,
-      Nil
-    )
     val variables = Map(
-      "list"  -> Typed[java.util.List[String]],
+      "list"  -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
       "array" -> Typed.genericTypeClass(classOf[Array[String]], List(Typed[String])),
     )
     val listSpelExpression  = Expression.spel("#list.")
     val arraySpelExpression = Expression.spel("#array.")
 
-    def suggestion(expression: Expression): List[ExpressionSuggestion] =
-      suggester
-        .expressionSuggestions(
-          expression,
-          CaretPosition2d(0, expression.expression.length),
-          variables
-        )(ExecutionContext.global)
-        .futureValue
-
-    val listMethodsSuggestion  = suggestion(listSpelExpression)
-    val arrayMethodsSuggestion = suggestion(arraySpelExpression)
+    val listMethodsSuggestion  = suggestions(expressionSuggesterWithExtensions, variables, listSpelExpression)
+    val arrayMethodsSuggestion = suggestions(expressionSuggesterWithExtensions, variables, arraySpelExpression)
     arrayMethodsSuggestion should contain allElementsOf listMethodsSuggestion
   }
+
+  test("should suggest correct type for get method on collections") {
+    val variables = Map(
+      "list"     -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String])),
+      "array"    -> Typed.genericTypeClass(classOf[Array[String]], List(Typed[String])),
+      "jsonList" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.json)),
+      "jsonMap"  -> Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed.json))
+    )
+    val data = List(
+      (Expression.spel("#list.get"), Typed[String]),
+      (Expression.spel("#array.get"), Typed[String]),
+      (Expression.spel("#jsonList.get"), Typed.json),
+      (Expression.spel("#jsonMap.get"), Typed.json),
+    )
+
+    data.foreach { case (expression, expectedTypingResult) =>
+      val getSuggestion = suggestions(expressionSuggesterWithExtensions, variables, expression).head
+      getSuggestion.refClazz shouldBe expectedTypingResult
+    }
+
+  }
+
+  private def suggestions(
+      suggester: ExpressionSuggester,
+      localVariables: Map[String, TypedClass],
+      expression: Expression
+  ): List[ExpressionSuggestion] =
+    suggester
+      .expressionSuggestions(
+        expression,
+        CaretPosition2d(0, expression.expression.length),
+        localVariables
+      )(ExecutionContext.global)
+      .futureValue
 
 }
 

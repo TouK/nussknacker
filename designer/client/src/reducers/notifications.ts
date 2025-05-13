@@ -1,7 +1,8 @@
-import { Action, Reducer } from "../actions/reduxTypes";
+import { uniq } from "lodash";
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import { uniq } from "lodash";
+
+import type { Action, Reducer } from "../actions/reduxTypes";
 
 export type BackendNotificationState = {
     processedNotificationIds: string[];

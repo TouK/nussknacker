@@ -1,7 +1,9 @@
 // provide parents css classes to dragged clone - temporary.
-import React, { PropsWithChildren } from "react";
-import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { styled } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React from "react";
+
+import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 const ModalContent = styled("div")({

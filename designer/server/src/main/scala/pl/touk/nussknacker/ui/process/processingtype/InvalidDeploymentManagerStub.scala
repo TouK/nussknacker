@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.effect.{Resource, SyncIO}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 
 import scala.concurrent.Future
@@ -13,33 +15,16 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   private val stubbedActionResponse =
     Future.failed(new ProcessIllegalAction("Can't perform action because of an error in deployment configuration"))
 
-  private val stubbedStatus = StatusDetails(
-    ProblemStateStatus("Error in deployment configuration", allowedActions = List.empty),
-    deploymentId = None
+  private val stubbedStatus = DeploymentStatusDetails(
+    GeneralProblemStateStatus("Error in deployment configuration", allowedActions = Set.empty),
+    deploymentId = None,
+    version = None
   )
 
-  override def getProcessStates(name: ProcessName)(
+  override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  ): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(WithDataFreshnessStatus.fresh(List(stubbedStatus)))
-  }
-
-  override def resolve(
-      idWithName: ProcessIdWithName,
-      statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction],
-      latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId],
-      currentlyPresentedVersionId: Option[VersionId],
-  ): Future[ProcessState] = {
-    Future.successful(
-      processStateDefinitionManager.processState(
-        stubbedStatus,
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId
-      )
-    )
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
@@ -52,7 +37,13 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport
+
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
 
   override def close(): Unit = ()
 }

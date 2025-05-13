@@ -4,8 +4,9 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -74,6 +75,14 @@ object ProcessCompilationError {
   final case class NonUniqueEdge(nodeId: String, target: String) extends ProcessCompilationError with InASingleNode
 
   final case class LooseNode(nodeIds: Set[String]) extends ProcessCompilationError with ScenarioGraphLevelError
+
+  final case class StickyNotesLimitExceeded(nodeId: String, notesCount: Int, notesLimit: Int)
+      extends ProcessCompilationError
+      with InASingleNode
+
+  final case class StickyNoteContentTooLong(nodeId: String, length: Int, max: Int)
+      extends ProcessCompilationError
+      with InASingleNode
 
   final case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
@@ -166,15 +175,6 @@ object ProcessCompilationError {
   object MissingParameters {
     def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingParameters(params, nodeId.id)
-  }
-
-  final case class RedundantParameters(params: Set[ParameterName], nodeId: String)
-      extends PartSubGraphCompilationError
-      with InASingleNode
-
-  object RedundantParameters {
-    def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      RedundantParameters(params, nodeId.id)
   }
 
   final case class WrongParameters(
@@ -327,6 +327,14 @@ object ProcessCompilationError {
 
   final case class UnsupportedDictParameterEditorType(paramName: ParameterName, typ: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
+
+  final case class IncompatibleParameterDefinitionModification(
+      paramName: ParameterName,
+      language: Language,
+      parameterEditors: List[ParameterEditor],
+      nodeId: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
 
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 

@@ -1,15 +1,19 @@
 import { cloneDeep, isEqual, set } from "lodash";
-import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
+import type { SetStateAction } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { Edge, NodeType, NodeValidationError, PropertiesType } from "../../../types";
+
+import { validateNodeData } from "../../../actions/nk";
+import type { RootState } from "../../../reducers";
+import { getCreatorType } from "../../../reducers/selectors/getCreator";
+import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
+import type { Edge, NodeType, NodeValidationError } from "../../../types";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { ParamFieldLabel } from "./FieldLabel";
 import { Filter } from "./filter";
 import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
-import { FragmentInputParameter } from "./fragment-input-definition/item";
+import type { FragmentInputParameter } from "./fragment-input-definition/item";
 import { FragmentInput } from "./fragmentInput";
 import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { JoinNode } from "./joinNode";
@@ -26,6 +30,7 @@ import { adjustParameters } from "./ParametersUtils";
 import { Sink } from "./sink";
 import { Source } from "./source";
 import { Split } from "./split";
+import { StickyNote } from "./stickyNote";
 import { Switch } from "./switch";
 import Variable from "./Variable";
 import { VariableBuilder } from "./variableBuilder";
@@ -41,6 +46,18 @@ export type NodeTypeDetailsContentProps = {
     errors: NodeValidationError[];
 };
 
+export function useNodeAdjust() {
+    const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
+    return useCallback(
+        (node: NodeType) => {
+            const parameterDefinitions = getParameterDefinitions(node);
+            const adjustedNode = adjustParameters(node, parameterDefinitions);
+            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
+        },
+        [getParameterDefinitions],
+    );
+}
+
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
     const { onChange, node, edges, showValidation } = props;
     const dispatch = useDispatch();
@@ -53,7 +70,17 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const processName = useSelector(getProcessName);
     const processProperties = useSelector(getProcessProperties);
 
-    const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
+    const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
+
+    const adjustNode = useNodeAdjust();
+    const [proxyNode, setProxyNode] = useState(() => adjustNode(node));
+
+    useEffect(() => {
+        setProxyNode((currentNode) => {
+            const adjustedNode = adjustNode(node);
+            return isEqual(adjustedNode, currentNode) ? currentNode : adjustedNode;
+        });
+    }, [adjustNode, node]);
 
     const change = useCallback(
         (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
@@ -64,19 +91,23 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         [isEditMode, onChange],
     );
 
-    const setEditedNode = useCallback((n: SetStateAction<NodeType>) => change(n, edges), [edges, change]);
+    const setEditedNode = useCallback(
+        (n: SetStateAction<NodeType>) => {
+            setProxyNode((current) => {
+                const nextNode = typeof n === "function" ? n(current) : n;
+                if (isEqual(current, nextNode)) {
+                    return current;
+                }
+                change(nextNode, edges);
+                return nextNode;
+            });
+        },
+        [edges, change],
+    );
 
     const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => change(node, e), [node, change]);
 
     const parameterDefinitions = useMemo(() => getParameterDefinitions(node), [getParameterDefinitions, node]);
-
-    const adjustNode = useCallback(
-        (node: NodeType) => {
-            const { adjustedNode } = adjustParameters(node, parameterDefinitions);
-            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
-        },
-        [parameterDefinitions],
-    );
 
     const renderFieldLabel = useCallback(
         (paramName: string): JSX.Element => {
@@ -117,13 +148,6 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     );
 
     useEffect(() => {
-        dispatch(nodeDetailsOpened(node.id));
-        return () => {
-            dispatch(nodeDetailsClosed(node.id));
-        };
-    }, [dispatch, node.id]);
-
-    useEffect(() => {
         if (showValidation) {
             dispatch(
                 validateNodeData(processName, {
@@ -138,13 +162,6 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         }
     }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
 
-    useEffect(() => {
-        setEditedNode((node) => {
-            const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, node) ? node : adjustedNode;
-        });
-    }, [adjustNode, setEditedNode]);
-
     return {
         ...props,
         isEditMode,
@@ -157,6 +174,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         removeElement,
         addElement,
         setProperty,
+        node: proxyNode,
     };
 }
 
@@ -310,8 +328,8 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     showValidation={showValidation}
                 />
             );
-        case "VariableBuilder":
-            return (
+        case "VariableBuilder": {
+            return getCreatorType(node) ? null : (
                 <VariableBuilder
                     addElement={addElement}
                     errors={errors}
@@ -324,6 +342,7 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     variableTypes={variableTypes}
                 />
             );
+        }
         case "Variable":
             return (
                 <Variable
@@ -356,6 +375,17 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
         case "Split":
             return (
                 <Split
+                    errors={errors}
+                    isEditMode={isEditMode}
+                    node={node}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    showValidation={showValidation}
+                />
+            );
+        case "StickyNoteNode":
+            return (
+                <StickyNote
                     errors={errors}
                     isEditMode={isEditMode}
                     node={node}

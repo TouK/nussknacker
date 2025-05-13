@@ -1,14 +1,15 @@
 import loadable from "@loadable/component";
-import { WindowContentProps } from "@touk/window-manager";
+import type { WindowContentProps } from "@touk/window-manager";
 import React from "react";
+
 import FrameDialog from "../components/FrameDialog";
+import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
+import RemoteModuleDialog from "../components/RemoteModuleDialog";
 import LoaderSpinner from "../components/spinner/Spinner";
 import { Debug } from "../containers/Debug";
 import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { WindowContent } from "./WindowContent";
 import { WindowKind } from "./WindowKind";
-import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
-import RemoteModuleDialog from "../components/RemoteModuleDialog";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -24,7 +25,13 @@ const CompareVersionsDialog = loadable(() => import("../components/modals/Compar
 const AdhocTestingDialog = loadable(() => import("../components/modals/AdhocTesting/AdhocTestingDialog"), {
     fallback: <LoaderSpinner show />,
 });
+const TestingDialog = loadable(() => import("../components/modals/Testing/TestingDialog"), {
+    fallback: <LoaderSpinner show />,
+});
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+const DeployWithParametersDialog = loadable(() => import("../components/modals/DeployWithParameters/DeployWithParametersDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const GenericConfirmDialog = loadable(() => import("../components/modals/GenericConfirmDialog"), {
@@ -59,6 +66,10 @@ const PropertiesDialog = loadable(() => import("../components/modals/PropertiesD
     fallback: <LoaderSpinner show />,
 });
 
+const AiAssistantModal = loadable(() => import("../components/aiAssistant/components/AiAssistantModal"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -69,6 +80,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <SaveProcessDialog {...props} />;
         case WindowKind.deployProcess:
             return <DeployProcessDialog {...props} />;
+        case WindowKind.deployWithParameters:
+            return <DeployWithParametersDialog {...props} />;
         case WindowKind.calculateCounts:
             return <CountsDialog {...props} />;
         case WindowKind.generateTestData:
@@ -79,6 +92,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <CompareVersionsDialog {...props} />;
         case WindowKind.adhocTesting:
             return <AdhocTestingDialog {...props} />;
+        case WindowKind.scenarioTest:
+            return <TestingDialog {...props} />;
         case WindowKind.confirm:
             return <GenericConfirmDialog {...props} />;
         case WindowKind.inform:
@@ -105,6 +120,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <AddAttachmentDialog {...props} />;
         case WindowKind.editProperties:
             return <PropertiesDialog {...props} />;
+        case WindowKind.aiAssistant:
+            return <AiAssistantModal {...props} />;
         default:
             return (
                 <WindowContent {...props}>

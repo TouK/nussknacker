@@ -9,8 +9,8 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.InMemoryTimeseriesRepository
 
 import java.time.{Clock, Instant}
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 final case class NotificationConfig(duration: FiniteDuration)
 

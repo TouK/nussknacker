@@ -1,9 +1,10 @@
-import React, { forwardRef, Ref } from "react";
-import { ValueFieldProps } from "../valueField";
-import { NodeInput } from "../FormElements";
 import { alpha } from "@mui/material";
+import type { Ref } from "react";
+import React, { forwardRef } from "react";
 
 import { blendLighten } from "../../containers/theme/helpers";
+import { NodeInput } from "../FormElements";
+import type { ValueFieldProps } from "../valueField";
 
 export type InputProps = ValueFieldProps<string> & {
     placeholder?: string;

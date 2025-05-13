@@ -4,64 +4,53 @@ import pl.touk.nussknacker.engine.api.definition.{
   BoolParameterEditor,
   DateParameterEditor,
   DateTimeParameterEditor,
-  DualParameterEditor,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   ParameterEditor,
-  StringParameterEditor,
+  SpelParameterEditor,
+  SpelTemplateParameterEditor,
   TimeParameterEditor
 }
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
 object implicits {
 
   implicit class RichSwaggerTyped(st: SwaggerTyped) {
 
-    def editorOpt: Option[ParameterEditor] =
+    def editorList: List[ParameterEditor] =
       st match {
         case SwaggerString =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = StringParameterEditor,
-              defaultMode = DualEditorMode.RAW
-            )
+          List(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor
           )
         case SwaggerBool =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = BoolParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
+          List(
+            BoolParameterEditor,
+            SpelParameterEditor
           )
         case SwaggerTime =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = TimeParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
+          List(
+            TimeParameterEditor,
+            SpelParameterEditor
           )
         case SwaggerDate =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = DateParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
+          List(
+            DateParameterEditor,
+            SpelParameterEditor
           )
         case SwaggerDateTime =>
-          Some(
-            DualParameterEditor(
-              simpleEditor = DateTimeParameterEditor,
-              defaultMode = DualEditorMode.SIMPLE
-            )
+          List(
+            DateTimeParameterEditor,
+            SpelParameterEditor
           )
         // TODO: FixedValuesParameterEditor for other types e.g. numbers
         case SwaggerEnum(values) if values.forall(v => v.isInstanceOf[String]) =>
-          Some(
+          List(
             FixedValuesParameterEditor(
               values.map(value => FixedExpressionValue(s"'$value'", value.asInstanceOf[String]))
             )
           )
-        case _ => None
+        case _ => Nil
       }
 
   }

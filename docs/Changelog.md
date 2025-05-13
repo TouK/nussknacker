@@ -10,6 +10,10 @@
 
 ### 1.19.0 (Not released yet)
 
+* [#7181](https://github.com/TouK/nussknacker/pull/7181) StickyNotes feature
+  * sticky notes are designed to store information inside scenario/fragment, they are separate from graph nodes and do not take part in scenario logic
+  * new API available under `processes/{scenarioName}/stickyNotes`
+  * configuration `stickyNotesSettings` allowing to hide/show stickyNotes, set sticky notes max content length or its max number on a graph
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
@@ -33,9 +37,10 @@
 * [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
 * [#7379](https://github.com/TouK/nussknacker/pull/7379) Removed CustomAction mechanism.
-* Changes to `periodic` component (renamed to `sample-generator`):
-  * [#7368](https://github.com/TouK/nussknacker/pull/7368) Component rename: `periodic` to `sample-generator`
-  * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `period` editor
+* Changes to `periodic` component (renamed to `event-generator`):
+  * [#7502](https://github.com/TouK/nussknacker/pull/7502) Component rename: `periodic` to `event-generator`
+  * [#7502](https://github.com/TouK/nussknacker/pull/7502) Parameter rename: `period` to `schedule`
+  * [#7373](https://github.com/TouK/nussknacker/pull/7373) Improvements to `schedule` editor
   * [#7376](https://github.com/TouK/nussknacker/pull/7376) Previously, when count was > 1, the value was evaluated once
     and emitted times count. For example: if the value was evaluated to be a random UUID and count was 5, one UUID was
     generated and emitted 5 times. Now in one count batch each value is evaluated separately.
@@ -45,7 +50,124 @@
 * [#7387](https://github.com/TouK/nussknacker/pull/7387) Creator panel is automatically reloaded after configuration reload - page refresh is not needed now
 * [#7400](https://github.com/TouK/nussknacker/pull/7400) Deploy and cancel buttons are not shown for fragments
 * [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
-* [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix spel evaluation error when using conversion extensions methods or array.get extension method
+* [#7404](https://github.com/TouK/nussknacker/pull/7404) Fix SpEL evaluation error when using conversion extensions methods or array.get extension method
+* [#7420](https://github.com/TouK/nussknacker/pull/7420) Add toInteger and toIntegerOrNull conversions. Also add canBeInteger extension
+* [#7438](https://github.com/TouK/nussknacker/pull/7438) Map int32 integer format in OpenAPI schema to the `Integer` type
+* [#7446](https://github.com/TouK/nussknacker/pull/7446) Small changes regarding node errors in fragments used in scenarios:
+  * Fragment error node tips in scenarios are now clickable and open problematic node edit window in a new tab.
+  * Fragment nodes are now highlighted when they contain nodes with errors.
+* [#7364](https://github.com/TouK/nussknacker/pull/7364) PeriodicDeploymentManager is no longer a separate DM, but instead is an optional functionality and decorator for all DMs
+  * Nussknacker API additionally modified in [#7552](https://github.com/TouK/nussknacker/pull/7552)
+  * in order to use it, DM must implement interface `SchedulingSupported`, that handles deployments on a specific engine
+  * implementation provided for Flink DM
+  * additional, necessary, db schema changes concerning the periodic/scheduling mechanism introduced in [#7519](https://github.com/TouK/nussknacker/pull/7519)
+* [#7443](https://github.com/TouK/nussknacker/pull/7443) Indexing on record is more similar to indexing on map. The change lets us access record values dynamically. For example now spel expression "{a: 5, b: 10}[#input.field]" compiles and has type "Integer" inferred from types of values of the record. This lets us access record value based on user input, for instance if user passes "{"field": "b"}" to scenario we will get value "10", whereas input {"field": "c"} would result in "null". Expression "{a: 5}["b"]" still does not compile because it is known at compile time that record does not have property "b".
+* [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
+* [#7335](https://github.com/TouK/nussknacker/pull/7335) introduced `managersDirs` config to configure deployment managers directory paths (you can use `MANAGERS_DIR` env in case of docker-based deployments). The default is `./managers`.
+* [#7481](https://github.com/TouK/nussknacker/pull/7481) Ignore jobs in CANCELLING status when checking for duplicate jobs on Flink
+* [#7483](https://github.com/TouK/nussknacker/pull/7483) It's possible to configure kafka source to work without schema registry. To do that you should not provide property "schema.registry.url" in kafkaProperties config.
+* [#7458](https://github.com/TouK/nussknacker/pull/7458) Flink scenario testing mechanism and scenario state verification mechanism: mini cluster created once and reused each time
+* [#7498](https://github.com/TouK/nussknacker/pull/7498) Support many migrations loaded using SPI. Loaded migration numbers
+  cannot overlap, if they do, an exception is thrown.
+* [#7504](https://github.com/TouK/nussknacker/pull/7504) Return scenario validation error when an incompatible change was introduced in a fragment or component parameter definition.
+* [#7468](https://github.com/TouK/nussknacker/pull/7468) Configurable namespace separator (was fixed to `_`), added namespace tag to Lite engine metrics and fixed namespacing of Kafka consumer groups.
+* [#7508](https://github.com/TouK/nussknacker/pull/7508) Fixes for window components:
+  * Can now pass more than 31 days as `windowLength` and it won't be reduced to remainder of 31 
+  * Introduced some default values:
+    * For all - default `windowLength` is 1 hour
+    * For `aggregate-session` - default `endSessionCondition` is now false
+* Improved scenario visualization loading time
+    * [#7453](https://github.com/TouK/nussknacker/pull/7453) optimized and rearranged API calls and GUI loading order, with additional changes in [#7554](https://github.com/TouK/nussknacker/pull/7554)
+    * [#7516](https://github.com/TouK/nussknacker/pull/7516) Scenario testing endpoints no longer perform full scenario compilation and validation
+    * [#7522](https://github.com/TouK/nussknacker/pull/7522) Improved fetching UI Components: faster resolving of fragments, optimized db query for fetching fragments
+* [#7524](https://github.com/TouK/nussknacker/pull/7524) Add a possibility to choose a new valid value in node details when inconsistencies in parameter's definition were detected.
+* [#7511](https://github.com/TouK/nussknacker/pull/7511) `flink-components-testkit` rework: easier `ScenarioTestRunner` creation - see [Migration guide](MigrationGuide.md) for details
+* [#7517](https://github.com/TouK/nussknacker/pull/7517) Log unhandled errors and remove logback json libraries
+* [#7539](https://github.com/TouK/nussknacker/pull/7539) Remove old workaround for passing job arguments to Flink, now they are sent using `programArgsList`
+* [#7542](https://github.com/TouK/nussknacker/pull/7542) Use `restart-strategy.type` Flink config key instead of the deprecated `restart-strategy`
+* [#7537](https://github.com/TouK/nussknacker/pull/7537) Collection helper improvements:
+    * preserved elements order in #COLLECTION.merge and #COLLECTION.distinct functions
+    * additional check for #COLLECTION.min and #COLLECTION.max if elements have a Comparable type
+* [#6860](https://github.com/TouK/nussknacker/pull/6860) [#7562](https://github.com/TouK/nussknacker/pull/7562) Added optional configuration of action parameters and applied those parameters in deploy http request. 
+  * Kafka source has "offset reset strategy" parameter that controls starting point for reading events.
+  * The http request for `/deploy` and `/cancel` require valid json instead of plain text message.
+  * Configuration entry `kafkaEspProperties.forceLatestRead` is replaced with `kafkaEspProperties.defaultOffsetResetStrategy` with possible values: "ToLatest", "ToEarliest", "None".
+* [#7545](https://github.com/TouK/nussknacker/pull/7545) Added `useMiniClusterForDeployment` option allowing to run Flink scenarios on Flink MiniCluster
+* [#7568](https://github.com/TouK/nussknacker/pull/7568) The "JSON" button was renamed to "Export" to mark that it generates data usable in "Import"
+* [#7586](https://github.com/TouK/nussknacker/pull/7586) Extended the configuration for action parameters, allowing
+  DEPLOY parameters to be configured for services.
+  * Instead of having separate entries for each node, action parameters are now grouped into a single entry per
+    component in the UI. The configured parameters are then applied to all nodes for that component.  
+* [#7591](https://github.com/TouK/nussknacker/pull/7591) Improve scenario testing error messages
+  - Error messages should point to the appropriate `testDataSettings` where possible
+  - `testDataSettings.testDataMaxLength` is validated also for received test data
+  - Change `testDataSettings.resultsMaxBytes` to long to allow higher limit than 2 GiB
+* [#7600](https://github.com/TouK/nussknacker/pull/7600) Added 'Custom HTTP Service' SPI
+    * it can be used to run custom services and expose custom endpoints alongside Nu Designer API
+    * it can be used by providing implementation of `class CustomHttpServiceProviderFactory`
+    * this SPI can be provided only on compile-time, not as a plugin on a later time
+    * Nussknacker provides some limited set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
+    * the service is created and started alongside Nu Designer, endpoints are exposed on path `/api/custom/*`
+* [#7578](https://github.com/TouK/nussknacker/pull/7578) Component labels are now independent of component Id. Labels can be set during the component defining or can be set in ui configuration in application config 
+* [#7614](https://github.com/TouK/nussknacker/pull/7614) SpelTemplate as a main text editor
+  * Added a new parameter editor type: SpelParameterEditor which works the same as RawParameterEditor.
+  * Added a list of editors to the UIParameter.
+* [#7616](https://github.com/TouK/nussknacker/pull/7616) (K8s DM) Fix for: k8s object name sanitizing strategy sometimes generated invalid object names, in other cases, 
+  it generated names with unnecessary characters appended
+* [#7615](https://github.com/TouK/nussknacker/pull/7615) Updated Flink dependency to 1.19.2
+* [#7648](https://github.com/TouK/nussknacker/pull/7648) Strip namespace from topic name in `inputMeta` context variable
+* [#7649](https://github.com/TouK/nussknacker/pull/7649) Renamed 'sticky note' component label to 'Sticky Note' and assigned it to the 'Misc' component group
+* Added test capabilities for Event Generator source
+  * [#7626](https://github.com/TouK/nussknacker/pull/7626) tests from file
+  * [#7663](https://github.com/TouK/nussknacker/pull/7663) ad-hoc tests
+* [#7590](https://github.com/TouK/nussknacker/pull/7590) Replaced Akka and Akka HTTP libraries with Apache Pekko (1.0.3) and Apache Pekko HTTP (1.0.1)
+* [#7673](https://github.com/TouK/nussknacker/pull/7673) Improve the node documentation link in the node header
+* [#7653](https://github.com/TouK/nussknacker/pull/7653) Refactored JSON codecs
+* [#7632](https://github.com/TouK/nussknacker/pull/7632) Simplified parameter editors API
+  * Added migration of scenario nodes from a string defined in SpEL to a SpelTemplate string. 
+  * Removed the single `editor` from the UIParameter and now only the `editors` property is available.
+  * Made changes to the Component API regarding editors. For details, please see the Migration Guide.
+  * Extract `StaticParameterEditor` as a set of editors for scenario properties and action parameters that handle only
+    static values.
+  * JsonDefaultExpression and AvroDefaultExpression default string values changed to SpEL template.
+  * For now on, default values are provided for dry run parameters.
+* [#7764](https://github.com/TouK/nussknacker/pull/7764) Fix SpEL template evaluation on runtime. For now on, there is
+  no need to pass .toString on variable in SpEL template expression. 
+* [#7690](https://github.com/TouK/nussknacker/pull/7690) Add JSON validation for ad hoc tests with schemaless topics.
+* [#7693](https://github.com/TouK/nussknacker/pull/7693) Fixes for incoming/outgoing migration activities:
+  * displayed username refers to the user that executes migration
+  * correct source and target environment names
+  * outgoing activity is not registered on the local environment when migration is failed and rejected on the remote environment
+  Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
+* [#7805](https://github.com/TouK/nussknacker/pull/7805) Add `parameter.category` to node parameters validation API.
+* [#7711](https://github.com/TouK/nussknacker/pull/7711) Ability to derive schema from data sample for schemaless Kafka topics for Kafka Sources
+* [#7871](https://github.com/TouK/nussknacker/pull/7871) Added Tapir variant of 'Custom HTTP Service' SPI
+  * Use `TapirCustomHttpServiceProvider` to implement custom Tapir based HTTP services. 
+    Those endpoints are automatically added to the Nussknacker OpenAPI documentation.
+  * `CustomHttpServiceProvider` providing Pekko route was renamed to `PekkoCustomHttpServiceProvider`
+* [#7922](https://github.com/TouK/nussknacker/pull/7922) Fixed the hiding of components configured with `disabled` flag in `componentsUiConfig` section.
+* [#7937](https://github.com/TouK/nussknacker/pull/7937) Data sample from Kafka Source as initial input for Ad-Hoc test
+* [#7864](https://github.com/TouK/nussknacker/pull/7864) Add the forbidden IPs feature to the HTTP client configuration,
+  if `followRedirect` is enabled then `Location` response header is also checked:
+  * `forbiddenCidrs` - list of forbidden CIDR.
+* [#7961](https://github.com/TouK/nussknacker/pull/7961) Fix distance calculated by `GeoUtils.distanceInKm`
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window component doesn't have to be string
+* [#7553](https://github.com/TouK/nussknacker/pull/7553) Key variable created in window components is not transformed into a string.
+  Key will now have type of value given in `groupBy` field. Previously we wrapped `groupBy` value as a list in String, e.g. for `id = 1` before: `groupBy: id -> key: "[1]"`, after: `groupBy: id -> key: 1`
+* [#7824](https://github.com/TouK/nussknacker/pull/7824) Add Json type support for schemaless topic data with Json content type.
+* [#7959](https://github.com/TouK/nussknacker/pull/7959) Scenario testing API changes:
+    * Scenario testing API (on path prefix `/scenarioTesting`) is refactored - incompatible change, please check the Migration Guide for details
+    * test endpoints moved from Process Management API to Scenario Testing API
+    * introduced new representation of test results
+* [#7953](https://github.com/TouK/nussknacker/pull/7953) Add implicit conversion from records produced by kafka source to map.
+  Also typing of spel expressions was refactored, which improved typing of selection on a map.
+* [#8005](https://github.com/TouK/nussknacker/pull/8005) Add implicit conversion from records produced by table api source to map.
+* [#7964](https://github.com/TouK/nussknacker/pull/7964) Add JsonTemplate language and editor.
+* [#8006](https://github.com/TouK/nussknacker/pull/8006) Add JsonTemplate editor to Event Generator source and Kafka sink value.
+* [#7970](https://github.com/TouK/nussknacker/pull/7970) Added "limits.maxActiveScenariosCount" setting defined per processing type and "globalLimits.maxActiveScenariosCount" to limit active scenarios globally
+* [#8004](https://github.com/TouK/nussknacker/pull/8004) Scenarios no longer have to end with final `Sink` node
+  * set `modelConfig.allowEndingScenarioWithoutSink` of the scenarioType in the `scenarioTypes` config section to `true` in order to allow ending scenarios with nodes other than sinks
+  * the flag is optional, the default value of the flag is `false` (no changes in behavior)
 
 ## 1.18
 
@@ -975,7 +1097,7 @@
 * [#3412](https://github.com/TouK/nussknacker/pull/3412) Corrected filtering disallowed types in methods
 * [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. Instead, Kafka client will use default Kafka value which is `latest`
 * [#3371](https://github.com/TouK/nussknacker/pull/3371) Fix for: Indexing on arrays wasn't possible
-* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling Kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/installation_configuration_guide/model/Flink#configuring-exception-handling)
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling Kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/configuration/model/Flink/#configuring-exception-handling)
 
 ## 1.4
 
@@ -1089,7 +1211,7 @@
   * `FinalResults.forValidation` utility method added to easily handle situation when you need to make some validation on context of variables (e.g. add variable checking if it already exists)
 * [#2245](https://github.com/TouK/nussknacker/pull/2245) Periodic process scheduler retries failed scenario deployments based on PeriodicBatchConfig.
   Breaking change in PeriodicProcessListener FailedEvent. Failed event is split into FailedOnDeployEvent and FailedOnRunEvent.
-  Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://docs.nussknacker.io/docs/installation_configuration_guide/ModelConfiguration#configuring-restart-strategies-flink-only)
+  Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://nussknacker.io/documentation/docs/configuration/model/Flink/#configuring-restart-strategies)
 * [#2304](https://github.com/TouK/nussknacker/pull/2304) Upgrade to Flink 1.14
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` has additional methods to handle exceptions during evaluation gracefully
 * [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group

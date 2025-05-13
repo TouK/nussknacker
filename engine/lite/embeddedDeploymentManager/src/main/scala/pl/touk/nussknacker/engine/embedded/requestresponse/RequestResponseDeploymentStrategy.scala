@@ -1,28 +1,30 @@
 package pl.touk.nussknacker.engine.embedded.requestresponse
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.Http.ServerBinding
-import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.Http.ServerBinding
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.stream.Materializer
+import pl.touk.nussknacker.engine.BaseModelDataProvider
+import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
+import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
 object RequestResponseDeploymentStrategy {
@@ -57,14 +59,17 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
 ) extends DeploymentStrategy
     with LazyLogging {
 
-  private val akkaHttpSetupTimeout = 10 seconds
+  private val pekkoHttpSetupTimeout = 10 seconds
 
   private val slugToScenarioRoute = TrieMap[String, Route]()
 
   private var server: ServerBinding = _
 
-  override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
-    super.open(modelData, contextPreparer)
+  override def open(
+      modelDataProvider: BaseModelDataProvider,
+      contextPreparer: LiteEngineRuntimeContextPreparer
+  ): Unit = {
+    super.open(modelDataProvider, contextPreparer)
     logger.info(s"Serving request-response on ${httpConfig.port}")
 
     val route = new ScenarioDispatcherRoute(slugToScenarioRoute)
@@ -77,24 +82,29 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
           port = httpConfig.port
         )
         .bind(route.route),
-      akkaHttpSetupTimeout
+      pekkoHttpSetupTimeout
     )
   }
 
   override def close(): Unit = {
-    Await.result(server.terminate(akkaHttpSetupTimeout), akkaHttpSetupTimeout)
+    Await.result(server.terminate(pekkoHttpSetupTimeout), pekkoHttpSetupTimeout)
   }
 
-  override def onScenarioAdded(jobData: JobData, parsedResolvedScenario: CanonicalProcess)(
+  override def onScenarioAdded(
+      jobData: JobData,
+      nodesDeploymentData: NodesDeploymentData,
+      parsedResolvedScenario: CanonicalProcess
+  )(
       implicit ec: ExecutionContext
   ): Try[RequestResponseDeployment] = synchronized {
     // RequestResponseScenarioInterpreter is 'opened' in constructor of RequestResponseRunnableScenarioInterpreter
     lazy val interpreterTry = Try(
       new RequestResponseRunnableScenarioInterpreter(
-        jobData,
-        parsedResolvedScenario,
-        modelData,
+        modelDataProvider.getCurrentModelData().asInvokableModelData,
         contextPreparer,
+        parsedResolvedScenario,
+        jobData,
+        nodesDeploymentData,
         config
       )
     )

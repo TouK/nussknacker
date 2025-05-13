@@ -15,7 +15,9 @@ export default defineConfig({
     defaultCommandTimeout: 30000,
     e2e: {
         video: true,
+        experimentalMemoryManagement: true,
         experimentalRunAllSpecs: true,
+        numTestsKeptInMemory: 10,
         // We've imported your old cypress plugins here.
         // You may want to clean this up later by importing these.
         setupNodeEvents(on, config) {
@@ -46,7 +48,7 @@ export default defineConfig({
             });
             return require("./cypress/plugins/index.js")(on, config);
         },
-        baseUrl: "http://localhost:3000",
+        baseUrl: `http://localhost:${process.env.PORT || 3000}`,
         excludeSpecPattern: ["**/__snapshots__/*", "**/__image_snapshots__/*"],
     },
 });

@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.Invalid
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, OptionValues}
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
@@ -12,26 +13,27 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   WrongParameters
 }
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.definition.{
+  EngineScenarioCompilationDependencies,
+  Parameter,
+  SpelParameterEditor,
+  SpelTemplateParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
+import pl.touk.nussknacker.engine.definition.component.Components
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 
-import scala.jdk.CollectionConverters._
 import scala.jdk.CollectionConverters._
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
@@ -65,7 +67,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
     ModelDefinitionBuilder.emptyExpressionConfig,
-    ClassExtractionSettings.Default
+    ClassExtractionSettings.Default,
+    allowEndingScenarioWithoutSink = false,
   )
 
   private val validator = ProcessValidator.default(
@@ -75,16 +78,21 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   )
 
   private def validate(process: CanonicalProcess) = {
-    implicit val jobData: JobData =
+    val jobData: JobData =
       JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
     validator.validate(process, isFragment = false)
   }
 
   private val expectedGenericParameters = List(
     Parameter[String](ParameterName("par1"))
       .copy(
-        editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-        defaultValue = Some("''".spel)
+        editors = List(
+          SpelTemplateParameterEditor,
+          SpelParameterEditor,
+        ),
+        defaultValue = Some("".spelTemplate)
       ),
     Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
     Parameter(ParameterName("val1"), Unknown),
@@ -233,8 +241,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
         .copy(
-          editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-          defaultValue = Some("''".spel)
+          editors = List(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor,
+          ),
+          defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
       Parameter(ParameterName("val1"), Unknown),
@@ -303,8 +314,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
         .copy(
-          editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-          defaultValue = Some("''".spel)
+          editors = List(
+            SpelTemplateParameterEditor,
+            SpelParameterEditor,
+          ),
+          defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
       Parameter(ParameterName("val1"), Unknown),
@@ -385,7 +399,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter
         .optional[CharSequence](ParameterName("optionalParameter"))
-        .copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some("".spel))
+        .copy(
+          editors = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(),
+          defaultValue = Some("".spelTemplate)
+        )
     )
   }
 

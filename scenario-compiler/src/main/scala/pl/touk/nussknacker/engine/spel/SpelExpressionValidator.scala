@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import org.springframework.expression.Expression
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -23,7 +23,7 @@ class SpelExpressionValidator(typer: Typer) {
           Valid(collected)
         case a if a == Typed[String] && expectedType == Typed[TemplateEvaluationResult] =>
           Valid(collected)
-        case a if a.canBeConvertedTo(expectedType) =>
+        case a if a.canBeLooselyAssignedTo(expectedType) =>
           Valid(collected)
         case a =>
           Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, a)))

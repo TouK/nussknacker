@@ -1,4 +1,4 @@
-import { Graph } from "../../components/graph/Graph";
+import type { Graph } from "../../components/graph/Graph";
 
 export function zoomIn(graph: Graph) {
     return (dispatch) => {

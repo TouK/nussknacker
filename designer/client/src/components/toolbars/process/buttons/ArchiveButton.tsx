@@ -1,12 +1,13 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
 import Icon from "../../../../assets/img/toolbarButtons/archive.svg";
-import * as DialogMessages from "../../../../common/DialogMessages";
+import DialogMessages from "../../../../common/DialogMessages";
 import { getProcessName, isArchivePossible } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { ToolbarButtonProps } from "../../types";
+import type { ToolbarButtonProps } from "../../types";
 import { useArchiveHelper } from "./useArchiveHelper";
 
 function ArchiveButton({ disabled, type }: ToolbarButtonProps): JSX.Element {

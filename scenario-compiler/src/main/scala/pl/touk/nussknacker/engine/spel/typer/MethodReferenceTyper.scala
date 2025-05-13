@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
 
 class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecutionForUnknownAllowed: Boolean) {
 
@@ -20,10 +20,10 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
         typeFromClazzDefinitions(extractClazzDefinitions(union.possibleTypes))
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
-      case Unknown =>
+      case Unknown(_) =>
         typeFromClazzDefinitions(classDefinitionSet.unknown.toList) match {
-          case Right(Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(Unknown))
-          case result @ _                                          => result
+          case Right(u: Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(u))
+          case result @ _                                             => result
         }
     }
   }
@@ -62,7 +62,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
   )(implicit reference: MethodReference): Either[Option[ExpressionParseError], NonEmptyList[MethodDefinition]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).toList.mkString(", ")
 
-    def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeConvertedTo(Typed[Class[_]]))
+    def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeLooselyAssignedTo(Typed[Class[_]]))
 
     val clazzMethods =
       if (reference.isStatic) clazzDefinitions.toList.flatMap(_.staticMethods.get(reference.methodName).toList.flatten)

@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.ui.db.timeseries.questdb
 
-import akka.actor.{ActorSystem, Cancellable}
 import better.files.File
 import cats.effect.{IO, Resource}
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.questdb.cairo.CairoEngine
 import io.questdb.cairo.security.AllowAllSecurityContext
 import io.questdb.cairo.sql.RecordCursorFactory
 import io.questdb.cairo.wal.WalWriter
 import io.questdb.griffin.{SqlExecutionContext, SqlExecutionContextImpl}
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
   BuildCairoEngineExtension,
   CairoEngineExtension,
@@ -21,14 +21,13 @@ import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepositor
   selectQuery,
   tableName
 }
-import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 import pl.touk.nussknacker.ui.statistics.RawFEStatistics
 
 import java.time.Clock
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
@@ -46,9 +45,8 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
   private val recordCursorPool: ThreadAwareObjectPool[RecordCursorFactory] =
     new ThreadAwareObjectPool(() => engine.get().select(selectQuery, sqlContextPool.get()))
 
-  private val walTableWriterPool: ThreadAwareObjectPool[WalWriter] = new ThreadAwareObjectPool(() =>
-    engine.get().getWalWriter(engine.get().getTableTokenIfExists(tableName))
-  )
+  private val walTableWriterPool: ThreadAwareObjectPool[WalWriter] =
+    new ThreadAwareObjectPool(() => engine.get().getWalWriter(engine.get().getTableTokenIfExists(tableName)))
 
   private val taskRecovery       = new TaskRecovery(engine, recover, tableName)
   private val flushDataTask      = new AtomicReference(createFlushDataTask())
@@ -156,9 +154,12 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
        |    WHERE timestamp_floor('d', ts) = timestamp_floor('d', now())
        | GROUP BY name""".stripMargin
 
-  def create(system: ActorSystem, clock: Clock, config: Config): Resource[IO, FEStatisticsRepository[Future]] =
+  def create(
+      system: ActorSystem,
+      clock: Clock,
+      questDbConfig: QuestDbConfig
+  ): Resource[IO, FEStatisticsRepository[Future]] =
     for {
-      questDbConfig <- Resource.eval(IO(QuestDbConfig.apply(config)))
       repository <- questDbConfig match {
         case enabledCfg: QuestDbConfig.Enabled =>
           createRepositoryResource(system, clock, enabledCfg)

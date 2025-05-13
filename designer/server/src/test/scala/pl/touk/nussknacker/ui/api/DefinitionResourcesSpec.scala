@@ -1,32 +1,35 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Json, parser}
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import io.circe.{parser, Json}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.testkit.TestDuration
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,
   ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+
+import scala.concurrent.duration.DurationInt
 
 class DefinitionResourcesSpec
     extends AnyFunSpec
@@ -47,7 +50,7 @@ class DefinitionResourcesSpec
       DefinitionsService(
         processingTypeData,
         modelDefinitionEnricher,
-        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
         fragmentRepository,
         None
       )
@@ -103,6 +106,20 @@ class DefinitionResourcesSpec
     }
   }
 
+  it("should return definition sorted data for allowed classes - skipping array because list should be uses instead") {
+    getProcessDefinitionData() ~> check {
+      status shouldBe StatusCodes.OK
+
+      val allowedClasses              = responseAs[Json].hcursor.downField("classes").focus.value.asArray.value
+      val allowedClassesRefClazzNames = allowedClasses.flatMap(_.hcursor.downField("refClazzName").focus.value.asString)
+      val allowedClassesDisplay       = allowedClasses.flatMap(_.hcursor.downField("display").focus.value.asString)
+
+      allowedClassesRefClazzNames should contain("java.util.List")
+      allowedClassesRefClazzNames should not contain (Array().getClass.getName)
+      allowedClassesDisplay shouldBe allowedClassesDisplay.sortBy(_.toLowerCase)
+    }
+  }
+
   it("should return info about editor based on fragment parameter definition") {
     val fragmentWithFixedValuesEditor = {
       CanonicalProcess(
@@ -145,12 +162,12 @@ class DefinitionResourcesSpec
         .downField("fragment-fragment1")
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
-        .downField("editor")
+        .downField("editors")
         .focus
         .value
 
       editor shouldBe parser
-        .parse("""{"possibleValues" : [
+        .parse("""[{"possibleValues" : [
                    |    {
                    |      "expression" : "",
                    |      "label" : ""
@@ -161,7 +178,7 @@ class DefinitionResourcesSpec
                    |    }
                    |  ],
                    |  "type" : "FixedValuesParameterEditor"
-                   |}""".stripMargin)
+                   |}]""".stripMargin)
         .toOption
         .get
     }
@@ -176,7 +193,7 @@ class DefinitionResourcesSpec
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "enrichers")
         .downField("components")
-        .downAt(_.hcursor.get[String]("label").rightValue == "echoEnumService")
+        .downAt(_.hcursor.get[String]("label").rightValue == "Echoenumservice")
         .downField("node")
         .downField("service")
         .downField("parameters")
@@ -200,7 +217,7 @@ class DefinitionResourcesSpec
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "base")
         .downField("components")
-        .downAt(_.hcursor.get[String]("label").rightValue == "enrichWithAdditionalData")
+        .downAt(_.hcursor.get[String]("label").rightValue == "Enrichwithadditionaldata")
         .downField("branchParametersTemplate")
         .downAt(_.hcursor.get[String]("name").rightValue == "role")
         .downField("expression")
@@ -221,7 +238,7 @@ class DefinitionResourcesSpec
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "sources")
         .downField("components")
-        .downAt(_.hcursor.get[String]("label").rightValue == "communicationSource")
+        .downAt(_.hcursor.get[String]("label").rightValue == "Communicationsource")
         .downField("node")
         .downField("ref")
         .downField("parameters")
@@ -238,9 +255,11 @@ class DefinitionResourcesSpec
       )
       val initialExpressions =
         parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
-      initialExpressions shouldEqual List("'SMS'", "''", "''")
+      initialExpressions shouldEqual List("'SMS'", "", "")
     }
   }
+
+  implicit val timeout: RouteTestTimeout = RouteTestTimeout(55.seconds.dilated)
 
   it("initial parameters for dynamic components should take into account static component configuration in file") {
     getProcessDefinitionData() ~> check {
@@ -251,7 +270,7 @@ class DefinitionResourcesSpec
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "services")
         .downField("components")
-        .downAt(_.hcursor.get[String]("label").rightValue == "dynamicMultipleParamsService")
+        .downAt(_.hcursor.get[String]("label").rightValue == "Dynamicmultipleparamsservice")
         .downField("node")
         .downField("service")
         .downField("parameters")
@@ -266,7 +285,7 @@ class DefinitionResourcesSpec
         parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
       initialExpressions shouldEqual List(
         "'fooValueFromConfig'",
-        "'barValueFromProviderCode'",
+        "barValueFromProviderCode",
         "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'"
       )
     }
@@ -292,6 +311,61 @@ class DefinitionResourcesSpec
           "custom-enrichWithAdditionalData",
           "custom-unionWithEditors",
         )
+    }
+  }
+
+  describe("if label not set for") {
+    it("component, should default with name converted to Title Case as label") {
+      getProcessDefinitionData() ~> check {
+        val label = responseAs[Json].hcursor
+          .downField("components")
+          .downField("custom-sendCommunication")
+          .downField("label")
+          .focus
+          .value
+          .asString
+          .value
+
+        label shouldBe "Sendcommunication"
+      }
+    }
+
+    it("fragment, should default with unchanged name as label") {
+      val fragmentName = "fragment1"
+
+      val fragmentWithFixedValuesEditor = {
+        CanonicalProcess(
+          MetaData(fragmentName, FragmentSpecificData()),
+          List(
+            FlatNode(FragmentInputDefinition("in", List(), None)),
+            FlatNode(FragmentOutputDefinition("out", "output", List.empty, None))
+          ),
+          List.empty
+        )
+      }
+
+      val processName         = ProcessTestData.sampleScenario.name
+      val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
+      val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+      saveFragment(fragmentGraph)(succeed)
+      saveCanonicalProcess(processWithFragment.process)(succeed)
+
+      getProcessDefinitionData() ~> check {
+        status shouldBe StatusCodes.OK
+
+        val response = responseAs[Json].hcursor
+
+        val label = response
+          .downField("components")
+          .downField("fragment-fragment1")
+          .downField("label")
+          .focus
+          .value
+          .asString
+          .value
+
+        label shouldBe fragmentName
+      }
     }
   }
 

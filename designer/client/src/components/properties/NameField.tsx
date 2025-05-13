@@ -1,12 +1,14 @@
-import React, { ComponentProps } from "react";
-import Field, { FieldType } from "../graph/node-modal/editors/field/Field";
 import { isEmpty } from "lodash";
-import { nodeInput, nodeInputWithError } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import type { ComponentProps } from "react";
+import React from "react";
+
+import type { NodeValidationError } from "../../types";
+import Field, { FieldType } from "../graph/node-modal/editors/field/Field";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
-import { NodeValidationError } from "../../types";
-import { PropertiesForm } from "./PropertiesForm";
+import { nodeInput, nodeInputWithError } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "../graph/node-modal/PathsToMark";
+import type { PropertiesForm } from "./PropertiesForm";
 
 const FAKE_NAME_PROP_NAME = "$id";
 const fieldName = "name";

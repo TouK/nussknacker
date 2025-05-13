@@ -1,21 +1,23 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentStatusName,
   ProcessActionId,
   ProcessActionState,
   ScenarioActionName
 }
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.ui.db.NuJdbcProfile
 
 import java.util.UUID
 
-trait BaseEntityFactory {
-  protected val profile: JdbcProfile
-  import profile.api._
+trait BaseEntityFactory extends LazyLogging {
+
+  protected val profile: NuJdbcProfile
+  import profile.apiWithEnforcedSchema._
 
   implicit def processIdMapping: BaseColumnType[ProcessId] =
     MappedColumnType.base[ProcessId, Long](_.value, ProcessId.apply)

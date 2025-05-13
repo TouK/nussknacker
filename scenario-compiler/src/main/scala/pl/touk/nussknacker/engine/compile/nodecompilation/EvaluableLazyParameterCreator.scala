@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import pl.touk.nussknacker.engine.api.LazyParameter._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.LazyParameter._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler

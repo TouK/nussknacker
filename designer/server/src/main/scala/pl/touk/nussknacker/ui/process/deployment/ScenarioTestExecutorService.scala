@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.{DMTestScenarioCommand, DeploymentManager}
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import cats.data.Validated
+import io.circe.Json
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, DMTestScenarioCommand}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import io.circe.Json
-import pl.touk.nussknacker.engine.api.ProcessVersion
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,9 +30,13 @@ class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, deploy
       scenarioTestData: ScenarioTestData,
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[Json]] = {
     for {
-      resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
+      resolvedScenarioWithErrors <- scenarioResolver.resolveScenario(canonicalProcess)
+      resolvedScenario <- resolvedScenarioWithErrors match {
+        case Validated.Valid(scenario) => Future.successful(scenario)
+        case Validated.Invalid(e)      => Future.failed(new RuntimeException(e.head.toString))
+      }
       testResult <- deploymentManager.processCommand(
-        DMTestScenarioCommand(processVersion, resolvedProcess, scenarioTestData)
+        DMTestScenarioCommand(processVersion, resolvedScenario, scenarioTestData)
       )
     } yield testResult
   }

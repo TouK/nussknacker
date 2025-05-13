@@ -10,7 +10,9 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesWithRadioParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
@@ -23,17 +25,19 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource,
   StandardFlinkSourceFunctionUtils
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{
-  FlinkDeserializationSchemaWrapper,
-  wrapToFlinkDeserializationSchema
+  wrapToFlinkDeserializationSchema,
+  FlinkDeserializationSchemaWrapper
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.util
@@ -54,7 +58,9 @@ class FlinkKafkaSource[T](
     with Serializable
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
-    with TestWithParametersSupport[T] {
+    with TestWithParametersSupport[T]
+    with WithActionParametersSupport
+    with LazyLogging {
 
   @silent("deprecated")
   override def sourceStream(
@@ -72,12 +78,60 @@ class FlinkKafkaSource[T](
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
+  private val defaultOffsetResetStrategy = kafkaConfig.defaultOffsetResetStrategy.getOrElse(OffsetResetStrategy.None)
+
+  override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = {
+    Map(
+      ScenarioActionName.Deploy -> Map(
+        OFFSET_RESET_STRATEGY_PARAM_NAME -> StaticParameterConfig(
+          defaultValue = Some(defaultOffsetResetStrategy.toString),
+          editor = FixedValuesWithRadioParameterEditor(
+            List(
+              FixedExpressionValue(
+                OffsetResetStrategy.None.toString,
+                s"Resume reading where it previously stopped"
+              ),
+              FixedExpressionValue(
+                OffsetResetStrategy.ToLatest.toString,
+                "Read new messages only"
+              ),
+              FixedExpressionValue(
+                OffsetResetStrategy.ToEarliest.toString,
+                "Read all messages from the topic"
+              ),
+            )
+          ),
+          validators = None,
+          label = Some("Offset reset strategy"),
+          hintText = None
+        ),
+      )
+    )
+  }
+
   @silent("deprecated")
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
-    topics.toList.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
+    val offsetResetStrategy =
+      flinkNodeContext.componentUseContext.deploymentData
+        .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
+        .map(OffsetResetStrategy.withName)
+        .getOrElse(defaultOffsetResetStrategy)
+    logger.info(
+      s"Flink source for scenario ${flinkNodeContext.jobData.processVersion.processName.value} for node ${flinkNodeContext.nodeId} defaultOffsetResetStrategy=${kafkaConfig.defaultOffsetResetStrategy}, offsetResetStrategy=${offsetResetStrategy}"
+    )
+
+    offsetResetStrategy match {
+      case OffsetResetStrategy.ToLatest =>
+        topics.toList.foreach(t => KafkaUtils.setOffsetToLatest(t.name, consumerGroupId, kafkaConfig))
+      case OffsetResetStrategy.ToEarliest =>
+        topics.toList.foreach(t => KafkaUtils.setOffsetToEarliest(t.name, consumerGroupId, kafkaConfig))
+      case OffsetResetStrategy.None =>
+        ()
+    }
+
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
@@ -126,8 +180,8 @@ class FlinkKafkaSource[T](
     val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
     val removedValue = if (unflattenedParams.size == 1) {
       unflattenedParams.head match {
-        case ("Value", inner) => inner
-        case _                => unflattenedParams
+        case (`inputParamName`.`value`, inner) => inner
+        case _                                 => unflattenedParams
       }
     } else unflattenedParams
     deserializeTestData(
@@ -138,11 +192,15 @@ class FlinkKafkaSource[T](
     )
   }
 
-  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = overriddenConsumerGroup match {
-    case Some(overridden) => overridden
-    case None             => ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext)
+  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
+    val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
+    namingStrategy.prepareName(baseName)
   }
 
+}
+
+object FlinkKafkaSource {
+  val OFFSET_RESET_STRATEGY_PARAM_NAME: ParameterName = ParameterName("offsetResetStrategy")
 }
 
 // TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by

@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.schemedkafka.serialization
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 
 import scala.reflect.ClassTag
 

@@ -1,7 +1,10 @@
-import React, { PropsWithChildren } from "react";
-import Input, { InputProps } from "./Input";
 import { FormControl } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React from "react";
+
 import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
+import type { InputProps } from "./Input";
+import Input from "./Input";
 
 export type LabeledInputProps = PropsWithChildren<
     Pick<InputProps, "placeholder" | "isMarked" | "readOnly" | "value" | "autoFocus" | "showValidation" | "fieldErrors" | "onChange">

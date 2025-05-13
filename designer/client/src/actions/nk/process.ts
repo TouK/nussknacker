@@ -1,15 +1,29 @@
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
-import { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
+
+import type { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { ProcessDefinitionData, ScenarioGraph } from "../../types";
-import { ThunkAction } from "../reduxTypes";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
+import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
+import type { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
 
-export type ScenarioActions =
-    | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
-    | { type: "DISPLAY_PROCESS"; scenario: Scenario };
+export type ScenarioActions = CorrectInvalidScenarioAction | DisplayProcessAction | UpdateImportedProcessAction;
+
+type CorrectInvalidScenarioAction = {
+    type: "CORRECT_INVALID_SCENARIO";
+    processDefinitionData: ProcessDefinitionData;
+};
+
+type DisplayProcessAction = {
+    type: "DISPLAY_PROCESS";
+    scenario: Scenario;
+};
+
+type UpdateImportedProcessAction = {
+    type: "UPDATE_IMPORTED_PROCESS";
+    scenario: Scenario;
+};
 
 export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
@@ -34,16 +48,6 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
                 processState: data,
             }),
         );
-}
-
-export function fetchTestFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
-    return (dispatch) =>
-        HttpService.getTestFormParameters(processName, scenarioGraph).then(({ data }) => {
-            dispatch({
-                type: "UPDATE_TEST_FORM_PARAMETERS",
-                testFormParameters: data,
-            });
-        });
 }
 
 export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph) {

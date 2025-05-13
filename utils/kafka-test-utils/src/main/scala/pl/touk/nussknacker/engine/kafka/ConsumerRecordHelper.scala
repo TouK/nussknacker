@@ -4,7 +4,7 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil
 
 import java.nio.charset.StandardCharsets
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 
 object ConsumerRecordHelper {
 

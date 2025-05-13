@@ -1,12 +1,12 @@
-import { ThunkAction } from "../reduxTypes";
 import HttpService from "../../http/HttpService";
+import type { ThunkAction } from "../reduxTypes";
 
 export function loadProcessToolbarsConfiguration(processName: string): ThunkAction {
     return (dispatch) =>
-        HttpService.fetchProcessToolbarsConfiguration(processName).then((response) =>
+        HttpService.fetchProcessToolbarsConfiguration(processName).then(({ data }) =>
             dispatch({
                 type: "PROCESS_TOOLBARS_CONFIGURATION_LOADED",
-                data: response.data,
+                data,
             }),
         );
 }

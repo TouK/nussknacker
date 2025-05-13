@@ -1,19 +1,11 @@
 import { min } from "lodash";
-import React, {
-    createContext,
-    PropsWithChildren,
-    ReactElement,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import type { PropsWithChildren, ReactElement } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
-import { useDebouncedCallback } from "use-debounce";
+import { useDebounceFn } from "rooks";
+
 import {
     copySelection,
     cutSelection,
@@ -25,14 +17,15 @@ import {
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
-import * as ClipboardUtils from "../../common/ClipboardUtils";
+import { readText, writeText } from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
 import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
+import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHistory";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
@@ -42,7 +35,6 @@ type UserAction = ((e: Event) => unknown) | null;
 interface UserActions {
     copy: UserAction;
     paste: UserAction;
-    canPaste: boolean;
     cut: UserAction;
     delete: UserAction;
     undo: UserAction;
@@ -56,6 +48,7 @@ function useClipboardParse() {
     return useCallback(
         (text) => {
             const selection = tryParseOrNull(text);
+            // TODO: check what happens with wrong nodes.
             const isValid = selection?.edges && selection?.nodes?.every((node) => NodeUtils.isAvailable(node, processDefinitionData));
             return isValid ? selection : null;
         },
@@ -121,6 +114,17 @@ export const useSelectionActions = (): UserActions => {
     return selectionActions;
 };
 
+function useUndoRedoActions(disabled?: boolean) {
+    const dispatch = useDispatch();
+    const [past, future] = useSelector(getHistoryCounts);
+    return useMemo(() => {
+        return {
+            undo: past <= 0 || disabled ? null : () => dispatch(UndoActionCreators.undo()),
+            redo: future <= 0 || disabled ? null : () => dispatch(UndoActionCreators.redo()),
+        };
+    }, [past, disabled, future, dispatch]);
+}
+
 export default function SelectionContextProvider(
     props: PropsWithChildren<{
         pastePosition: () => { x: number; y: number };
@@ -143,7 +147,7 @@ export default function SelectionContextProvider(
             }
 
             if (canModifySelected) {
-                await ClipboardUtils.writeText(JSON.stringify(selection));
+                await writeText(JSON.stringify(selection));
                 return selection.nodes;
             } else {
                 dispatch(error(t("userActions.copy.failed", "Can not copy selected content. It should contain only plain nodes")));
@@ -186,7 +190,7 @@ export default function SelectionContextProvider(
         return randomizedNodePosition;
     }
 
-    const [parseInsertNodes] = useDebouncedCallback((clipboardText) => {
+    const [parseInsertNodes] = useDebounceFn((clipboardText) => {
         const selection = parse(clipboardText);
         if (selection) {
             const { x, y } = props.pastePosition();
@@ -209,7 +213,7 @@ export default function SelectionContextProvider(
                 return;
             }
             try {
-                const clipboardText = await ClipboardUtils.readText(event);
+                const clipboardText = await readText(event);
                 parseInsertNodes(clipboardText);
             } catch {
                 dispatch(error(t("userActions.paste.notAvailable", "Paste button is not available. Try Ctrl+V")));
@@ -219,19 +223,32 @@ export default function SelectionContextProvider(
     );
 
     const canAccessClipboard = useClipboardPermission();
+
+    const graphLocked = useSelector(getGraphLocked);
+    const undoRedoActions = useUndoRedoActions(graphLocked);
     const userActions: UserActions = useMemo(
         () => ({
+            ...undoRedoActions,
             copy: canModifySelected && !hasSelection && (() => dispatch(copySelection(copy))),
-            canPaste: !!canAccessClipboard,
-            paste: capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
-            cut: canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
-            delete: canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
-            undo: () => dispatch(UndoActionCreators.undo()),
-            redo: () => dispatch(UndoActionCreators.redo()),
-            selectAll: () => dispatch(selectAll()),
-            deselectAll: () => dispatch(resetSelection()),
+            paste: !!canAccessClipboard && !graphLocked && capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
+            cut: !graphLocked && canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
+            delete: !graphLocked && canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
+            selectAll: !graphLocked && (() => dispatch(selectAll())),
+            deselectAll: !graphLocked && (() => dispatch(resetSelection())),
         }),
-        [copy, cut, paste, selectionState, hasSelection, canAccessClipboard, canModifySelected, capabilities.editFrontend, dispatch],
+        [
+            undoRedoActions,
+            canModifySelected,
+            hasSelection,
+            graphLocked,
+            canAccessClipboard,
+            capabilities.editFrontend,
+            dispatch,
+            copy,
+            paste,
+            cut,
+            selectionState,
+        ],
     );
 
     useDocumentListeners(

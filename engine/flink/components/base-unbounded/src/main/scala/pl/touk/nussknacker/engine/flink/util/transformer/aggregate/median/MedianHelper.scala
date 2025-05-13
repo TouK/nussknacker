@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate.median
 
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.{
-  ForLargeFloatingNumbersOperation,
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
 import pl.touk.nussknacker.engine.util.MathUtils
 
 import scala.annotation.tailrec
@@ -15,7 +13,9 @@ object MedianHelper {
     if (numbers.isEmpty) {
       None
     } else if (numbers.size % 2 == 1) {
-      Some(MathUtils.convertToPromotedType(quickSelect(numbers, (numbers.size - 1) / 2))(ForLargeFloatingNumbersOperation))
+      Some(
+        MathUtils.convertToPromotedType(quickSelect(numbers, (numbers.size - 1) / 2))(ForLargeFloatingNumbersOperation)
+      )
     } else {
       // it is possible to fetch both numbers with single recursion, but it would complicate code
       val firstNumber  = quickSelect(numbers, numbers.size / 2 - 1)

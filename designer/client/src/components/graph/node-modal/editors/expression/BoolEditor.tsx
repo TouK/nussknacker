@@ -1,14 +1,17 @@
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React from "react";
+
+import type { FieldError } from "../Validators";
+import type { ExtendedEditor, OnValueChange } from "./Editor";
+import { editorsParameters } from "./editorsParameters";
 import { FixedValuesEditor } from "./FixedValuesEditor";
-import { ExpressionLang, ExpressionObj } from "./types";
-import { ExtendedEditor } from "./Editor";
-import { FieldError } from "../Validators";
+import type { ExpressionObj } from "./types";
+import { ExpressionLang } from "./types";
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     readOnly: boolean;
     className: string;
     fieldErrors: FieldError[];
@@ -51,6 +54,7 @@ export const BoolEditor: ExtendedEditor<Props> = ({
 };
 
 BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression);
-BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode");
 BoolEditor.notSwitchableToHint = () =>
-    i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to basic mode");
+    i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to {{displayName}} mode", {
+        displayName: editorsParameters.BoolParameterEditor.displayName,
+    });

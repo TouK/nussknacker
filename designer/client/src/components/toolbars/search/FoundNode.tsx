@@ -1,8 +1,9 @@
-import { NodeType } from "../../../types";
 import { Stack, styled, Typography } from "@mui/material";
 import React from "react";
-import { SearchHighlighter } from "../creator/SearchHighlighter";
+
+import type { NodeType } from "../../../types";
 import { ComponentIcon } from "../creator/ComponentIcon";
+import { SearchHighlighter } from "../creator/SearchHighlighter";
 
 type Props = {
     node: NodeType;

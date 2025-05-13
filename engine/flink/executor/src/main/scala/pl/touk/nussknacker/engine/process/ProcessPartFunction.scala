@@ -35,9 +35,7 @@ trait ExceptionHandlerFunction extends RichFunction {
 
   protected var exceptionHandler: FlinkExceptionHandler = _
 
-  protected lazy val compilerData: FlinkProcessCompilerData = compilerDataForClassloader(
-    getRuntimeContext.getUserCodeClassLoader
-  )
+  protected var compilerData: FlinkProcessCompilerData = _
 
   override def close(): Unit = {
     if (exceptionHandler != null) {
@@ -46,6 +44,7 @@ trait ExceptionHandlerFunction extends RichFunction {
   }
 
   override def open(openContext: OpenContext): Unit = {
+    compilerData = compilerDataForClassloader(getRuntimeContext.getUserCodeClassLoader)
     exceptionHandler = compilerData.prepareExceptionHandler(getRuntimeContext)
   }
 

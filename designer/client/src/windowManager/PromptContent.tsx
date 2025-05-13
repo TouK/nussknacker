@@ -1,13 +1,17 @@
 import { css } from "@emotion/css";
-import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
-import React, { PropsWithChildren, useMemo } from "react";
-import { LoadingButton } from "./LoadingButton";
-import { isTouchDevice } from "../helpers/detectDevice";
 import { useTheme } from "@mui/material";
+import type { DefaultContentProps } from "@touk/window-manager";
+import { DefaultContent } from "@touk/window-manager";
+import type { PropsWithChildren } from "react";
+import React, { useMemo } from "react";
+
+import { DialogErrorFallbackComponent, ErrorBoundary } from "../components/common/error-boundary";
+import { isTouchDevice } from "../helpers/detectDevice";
+import { LoadingButton } from "./LoadingButton";
 
 const HeaderPlaceholder = () => <header>{/*grid placeholder*/}</header>;
 
-export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JSX.Element {
+export function PromptContent({ children, ...props }: PropsWithChildren<DefaultContentProps>): JSX.Element {
     const theme = useTheme();
     const classnames = useMemo(() => {
         const content = css({
@@ -28,5 +32,9 @@ export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JS
         [props.components],
     );
 
-    return <DefaultContent backgroundDrag={!isTouchDevice()} {...props} classnames={classnames} components={components} />;
+    return (
+        <DefaultContent backgroundDrag={!isTouchDevice()} {...props} classnames={classnames} components={components}>
+            <ErrorBoundary FallbackComponent={DialogErrorFallbackComponent}>{children}</ErrorBoundary>
+        </DefaultContent>
+    );
 }

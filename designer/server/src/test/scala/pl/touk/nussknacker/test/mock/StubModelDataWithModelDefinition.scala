@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessConfigCreator}
+import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 
 class StubModelDataWithModelDefinition(
@@ -23,10 +23,9 @@ class StubModelDataWithModelDefinition(
 
   override def modelClassLoader: ModelClassLoader = ModelClassLoader.empty
 
-  override def modelConfigLoader: ModelConfigLoader =
-    new DefaultModelConfigLoader(_ => true)
+  override def modelConfigLoader: ModelConfigLoader = DefaultModelConfigLoader
 
-  override def namingStrategy: NamingStrategy = NamingStrategy(None)
+  override def namingStrategy: NamingStrategy = NamingStrategy.Disabled
 
   override def inputConfigDuringExecution: InputConfigDuringExecution = InputConfigDuringExecution(
     configDuringExecution

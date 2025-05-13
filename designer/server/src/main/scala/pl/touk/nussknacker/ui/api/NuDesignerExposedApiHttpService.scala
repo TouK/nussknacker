@@ -1,6 +1,6 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.ui.api.BaseHttpService
+import pl.touk.nussknacker.ui.api.BaseHttpService.HttpServiceServerEndpoint
 import sttp.tapir.docs.openapi.OpenAPIDocsOptions
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.SwaggerUIOptions
@@ -29,7 +29,7 @@ class NuDesignerExposedApiHttpService(
       "" // we don't want to have versioning of this API yet
     )
 
-  def allEndpoints: List[ServerEndpoint[Any, Future]] = {
+  def allEndpoints: List[HttpServiceServerEndpoint] = {
     swaggerEndpoints ::: apiEndpoints.toList
   }
 

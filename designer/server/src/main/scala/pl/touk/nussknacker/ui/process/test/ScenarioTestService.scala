@@ -1,22 +1,33 @@
 package pl.touk.nussknacker.ui.process.test
 
+import cats.data.EitherT
+import cats.syntax.either._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
+  ParametersDefinitionError,
+  SourceTestDataGenerationError,
+  TestingCapabilitiesError
+}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
+  GenerateTestDataError,
+  PerformTestError,
+  SourceTestError
+}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -35,19 +46,16 @@ class ScenarioTestService(
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(
-      implicit user: LoggedUser
-  ): TestingCapabilities = {
-    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+  ): Either[TestingCapabilitiesError, TestingCapabilities] = {
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     testInfoProvider.getTestingCapabilities(processVersion, canonical)
   }
 
-  def testParametersDefinition(
+  def validateAndGetTestParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
-  )(implicit user: LoggedUser): Map[String, List[Parameter]] = {
+  )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[String, List[Parameter]]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     testInfoProvider
       .getTestParameters(processVersion, canonical)
@@ -56,12 +64,14 @@ class ScenarioTestService(
   def testUISourceParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean
-  )(implicit user: LoggedUser): List[UISourceParameters] =
-    testParametersDefinition(scenarioGraph, processVersion, isFragment)
-      .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
-      .map { assignUserFriendlyEditor }
-      .toList
+  ): Either[ParametersDefinitionError, List[UISourceParameters]] = {
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
+    testInfoProvider
+      .getTestParameters(processVersion, canonical)
+      .map(_.map { case (id, params) =>
+        UISourceParameters(id, params.map(DefinitionsService.createUIParameter))
+      }.toList)
+  }
 
   def generateData(
       scenarioGraph: ScenarioGraph,
@@ -70,17 +80,40 @@ class ScenarioTestService(
       testSampleSize: Int
   )(
       implicit user: LoggedUser
-  ): Either[String, RawScenarioTestData] = {
+  ): Either[GenerateTestDataError, RawScenarioTestData] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
 
     for {
-      _ <- Either.cond(
-        testSampleSize <= testDataSettings.maxSamplesCount,
-        (),
-        s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}"
-      )
-      generatedData <- testInfoProvider.generateTestData(processVersion, canonical, testSampleSize)
-      rawTestData   <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
+      _ <- validateSampleSize(testSampleSize)(GenerateTestDataError.TooManySamplesRequestedError)
+      generatedData <- testInfoProvider
+        .generateTestData(processVersion, canonical, testSampleSize)
+        .leftMap(GenerateTestDataError.ScenarioTestDataGenerationError)
+      rawTestData <- preliminaryScenarioTestDataSerDe
+        .serialize(generatedData)
+        .leftMap(GenerateTestDataError.ScenarioTestDataSerializationError)
+    } yield rawTestData
+  }
+
+  def getDataFromSource(
+      metaData: MetaData,
+      sourceNodeData: SourceNodeData,
+      size: Int
+  ): Either[SourceTestError, RawScenarioTestData] = {
+    for {
+      _ <- validateSampleSize(size)(SourceTestError.TooManySamplesRequestedError)
+      result <- testInfoProvider
+        .generateTestDataForSource(metaData, sourceNodeData, size)
+        .leftMap {
+          case SourceTestDataGenerationError.SourceCompilationError(nodeId, errors) =>
+            SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString))
+          case SourceTestDataGenerationError.UnsupportedSourceError(nodeId) =>
+            SourceTestError.UnsupportedSourcePreviewError(nodeId.id)
+          case SourceTestDataGenerationError.NoDataGenerated =>
+            SourceTestError.NoDataGeneratedError
+        }
+      rawTestData <- preliminaryScenarioTestDataSerDe
+        .serialize(result)
+        .leftMap(serializationError => SourceTestError.ScenarioTestDataSerializationError(serializationError))
     } yield rawTestData
   }
 
@@ -89,28 +122,32 @@ class ScenarioTestService(
       processVersion: ProcessVersion,
       isFragment: Boolean,
       rawTestData: RawScenarioTestData,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
-    for {
-      preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
-        .deserialize(rawTestData)
-        .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    (for {
+      preliminaryScenarioTestData <- EitherT.fromEither[Future](
+        preliminaryScenarioTestDataSerDe
+          .deserialize(rawTestData)
+          .leftMap[PerformTestError](PerformTestError.DeserializationError)
+      )
       canonical = toCanonicalProcess(
         scenarioGraph,
         processVersion,
         isFragment
       )
-      scenarioTestData <- testInfoProvider
-        .prepareTestData(preliminaryScenarioTestData, canonical)
-        .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
-      testResults <- testExecutorService.testProcess(
-        processVersion,
-        canonical,
-        scenarioTestData,
+      scenarioTestData <- EitherT.fromEither[Future](
+        testInfoProvider
+          .prepareTestData(preliminaryScenarioTestData, canonical)
+          .leftMap[PerformTestError](PerformTestError.TestDataPreparationError)
       )
-      _ <- {
-        assertTestResultsAreNotTooBig(testResults)
-      }
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
+      testResults <- EitherT.liftF(
+        testExecutorService.testProcess(
+          processVersion,
+          canonical,
+          scenarioTestData,
+        )
+      )
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def performTest(
@@ -118,28 +155,26 @@ class ScenarioTestService(
       processVersion: ProcessVersion,
       isFragment: Boolean,
       parameterTestData: TestSourceParameters,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    for {
-      testResults <- testExecutorService.testProcess(
-        processVersion,
-        canonical,
-        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
+    (for {
+      testResults <- EitherT.liftF(
+        testExecutorService.testProcess(
+          processVersion,
+          canonical,
+          ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
+        )
       )
-      _ <- assertTestResultsAreNotTooBig(testResults)
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
-  private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
-    val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
-      uiParameter.editor match {
-        case DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)
-            if uiParameter.typ.canBeConvertedTo(Typed[String]) =>
-          uiParameter.copy(editor = StringParameterEditor)
-        case _ => uiParameter
-      }
-    }
-    uiSourceParameter.copy(parameters = adaptedParameters)
+  def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {
+    Either.cond(
+      size <= testDataSettings.maxSamplesCount,
+      (),
+      tooManySamplesError(testDataSettings.maxSamplesCount)
+    )
   }
 
   private def toCanonicalProcess(
@@ -154,16 +189,13 @@ class ScenarioTestService(
     )
   }
 
-  private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
+  private def validateTestResultsAreNotTooBig(testResults: TestResults[_]): Either[PerformTestError, Unit] = {
     val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
-    if (testDataResultApproxByteSize > testDataSettings.resultsMaxBytes) {
-      logger.info(
-        s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: ${testDataSettings.resultsMaxBytes}"
-      )
-      Future.failed(new RuntimeException("Too much test data. Please decrease test input data size."))
-    } else {
-      Future.successful(())
-    }
+    Either.cond(
+      testDataResultApproxByteSize <= testDataSettings.resultsMaxBytes,
+      (),
+      PerformTestError.TestResultsSizeExceeded(testDataResultApproxByteSize, testDataSettings.resultsMaxBytes)
+    )
   }
 
   private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults[_])(
@@ -176,6 +208,39 @@ class ScenarioTestService(
       )
     }
     processCounter.computeCounts(canonical, isFragment, counts.get)
+  }
+
+}
+
+object ScenarioTestService {
+  sealed trait GenerateTestDataError
+
+  object GenerateTestDataError {
+    final case class ScenarioTestDataGenerationError(cause: TestInfoProvider.ScenarioTestDataGenerationError)
+        extends GenerateTestDataError
+    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
+        extends GenerateTestDataError
+    final case class TooManySamplesRequestedError(maxSamples: Int) extends GenerateTestDataError
+  }
+
+  sealed trait SourceTestError
+
+  object SourceTestError {
+    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
+    final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
+    final case object NoDataGeneratedError                                        extends SourceTestError
+    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
+        extends SourceTestError
+    final case class TooManySamplesRequestedError(maxSamples: Int) extends SourceTestError
+  }
+
+  sealed trait PerformTestError
+
+  object PerformTestError {
+    final case class DeserializationError(cause: PreliminaryScenarioTestDataSerDe.DeserializationError)
+        extends PerformTestError
+    final case class TestDataPreparationError(cause: TestInfoProvider.TestDataPreparationError) extends PerformTestError
+    final case class TestResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long)           extends PerformTestError
   }
 
 }

@@ -1,14 +1,16 @@
-import { cx } from "@emotion/css";
+import type { Ace } from "ace-builds";
 import i18next from "i18next";
-import { debounce, flatMap, uniq } from "lodash";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactAce from "react-ace/lib/ace";
-import { ExtendedEditor } from "./Editor";
-import { Formatter } from "./Formatter";
-import { RawEditor, RawEditorProps } from "./RawEditor";
-import { isSwitchableTo } from "./StringEditor";
-import { EditorMode } from "./types";
-import { Ace } from "ace-builds";
+import React, { useCallback, useLayoutEffect, useRef } from "react";
+import type ReactAce from "react-ace/lib/ace";
+
+import type { ExtendedEditor } from "./Editor";
+import { editorsParameters } from "./editorsParameters";
+import type { Formatter } from "./Formatter";
+import type { SpelEditorProps } from "./SpelEditor";
+import { SpelEditor } from "./SpelEditor";
+import { isQuoted } from "./SpelQuotesUtils";
+import type { ExpressionObj } from "./types";
+import { EditorMode, ExpressionLang } from "./types";
 
 interface SyntaxMode extends Ace.SyntaxMode {
     $highlightRules: {
@@ -26,70 +28,58 @@ interface EditSession extends Ace.EditSession {
     getMode(): SyntaxMode;
 }
 
-export interface Props extends RawEditorProps {
+export interface Props extends Omit<SpelEditorProps, "language"> {
     formatter: Formatter;
 }
 
-const CLASSNAME = "tokenizer-working";
-
 function useAliasUsageHighlight(token = "alias") {
-    const [keywords, setKeywords] = useState<string>("");
     const ref = useRef<ReactAce>();
-    const editor = ref.current?.editor;
-    const session = useMemo(() => editor?.getSession() as unknown as EditSession, [editor]);
 
-    const getValuesForToken = useCallback(
-        (line: string, index: number) =>
-            session
-                ?.getTokens(index)
-                .filter(({ type }) => type === token)
-                .map(({ value }) => value.trim().toLowerCase()),
-        [session, token],
-    );
+    const toggleTokenizerWorkingClass = useCallback((value: boolean) => {
+        ref.current?.refEditor?.classList.toggle("tokenizer-working", value);
+    }, []);
 
-    const toggleClassname = useCallback(
-        debounce(
-            (classname: string, enabled: boolean): void => {
-                const el = ref.current?.refEditor;
-
-                if (el) {
-                    if (!enabled) {
-                        el.className = el.className.replace(classname, "");
-                    }
-
-                    if (!el.className.includes(classname)) {
-                        el.className = cx(el.className, { [classname]: enabled });
-                    }
+    const getNextKeywords = useCallback(() => {
+        const keywordsSet = new Set<string>();
+        const session: EditSession = ref.current?.editor?.getSession() as any;
+        session?.bgTokenizer.lines.forEach((line, index) => {
+            session.getTokens(index).forEach(({ value, type }) => {
+                if (type === token) {
+                    keywordsSet.add(value.trim().toLowerCase());
                 }
-            },
-            1000,
-            { trailing: true, leading: true },
-        ),
-        [],
-    );
+            });
+        });
+        return [...keywordsSet].join("|");
+    }, [token]);
 
-    useEffect(() => {
-        if (session?.getMode().$highlightRules.setAliases) {
-            // for cypress tests only, we need some "still working" state
-            toggleClassname(CLASSNAME, true);
-            session.bgTokenizer.stop();
-            session.getMode().$highlightRules.setAliases(keywords);
-            session.bgTokenizer.start(0);
-        }
-    }, [toggleClassname, session, keywords]);
+    useLayoutEffect(() => {
+        const session: EditSession = ref.current?.editor?.getSession() as any;
+        if (!session?.getMode().$highlightRules?.setAliases) return;
 
-    useEffect(() => {
-        const callback = () => {
-            const allLines = session.bgTokenizer.lines;
-            const next = uniq(flatMap(allLines, getValuesForToken)).join("|");
-            setKeywords(next);
-            toggleClassname(CLASSNAME, false);
+        let prevKeywords = "";
+        const tokenizerUpdate = () => {
+            const nextKeywords = getNextKeywords();
+            if (prevKeywords === nextKeywords) {
+                toggleTokenizerWorkingClass(false);
+            } else {
+                toggleTokenizerWorkingClass(true);
+                session.bgTokenizer.stop();
+                prevKeywords = nextKeywords;
+                session.getMode().$highlightRules.setAliases(nextKeywords);
+                session.bgTokenizer.start(0);
+            }
         };
-        session?.on(`tokenizerUpdate`, callback);
+
+        session.on(`tokenizerUpdate`, tokenizerUpdate);
+
+        toggleTokenizerWorkingClass(true);
+        tokenizerUpdate();
+
         return () => {
-            session?.off(`tokenizerUpdate`, callback);
+            session.off(`tokenizerUpdate`, tokenizerUpdate);
+            toggleTokenizerWorkingClass(false);
         };
-    }, [toggleClassname, session, getValuesForToken]);
+    }, [getNextKeywords, toggleTokenizerWorkingClass]);
 
     return ref;
 }
@@ -99,7 +89,7 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
     const ref = useAliasUsageHighlight();
 
     return (
-        <RawEditor
+        <SpelEditor
             {...passProps}
             ref={ref}
             onValueChange={onValueChange}
@@ -107,14 +97,23 @@ export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
             className={className}
             rows={6}
             editorMode={EditorMode.SQL}
+            language={editorsParameters.SqlParameterEditor.language}
         />
     );
 };
 
+const splitConcats = (value: string) => {
+    return value.split(/\s*\+\s*/gm);
+};
+
+export const isSwitchableTo = ({ expression, language }: ExpressionObj): boolean => {
+    return language === ExpressionLang.SpEL && splitConcats(expression.trim()).some(isQuoted);
+};
+
 SqlEditor.isSwitchableTo = isSwitchableTo;
-SqlEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode");
 SqlEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.textarea.notSwitchableToHint",
-        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
+        "Expression must be a string literal i.e. text surrounded by quotation marks to switch to {{editorName}} mode",
+        { editorName: editorsParameters.SqlParameterEditor.displayName },
     );

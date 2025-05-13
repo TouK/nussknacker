@@ -1,32 +1,38 @@
-import { AnyAction, Reducer as ReduxReducer } from "redux";
-import { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
+import type { AnyAction, Reducer as ReduxReducer } from "redux";
+import type { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
 
-import { ActionTypes } from "./actionTypes";
-import { CountsActions, NodeActions, ScenarioActions, SelectionActions, NodeDetailsActions, PropertiesActions } from "./nk";
-import { UserSettingsActions } from "./nk/userSettings";
-import { UiActions } from "./nk/ui/uiActions";
-import { SettingsActions } from "./settingsActions";
-import { ToolbarActions } from "./nk/toolbars";
-import { RootState } from "../reducers";
-import { NotificationActions } from "./nk/notifications";
-import { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
-import { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
+import type { RootState } from "../reducers";
+import type { CloudDataActions } from "../reducers/cloudData";
+import type { SquashHistoryActions } from "../reducers/graph/historySquash";
+import type { ScenariosActions } from "../reducers/scenarios";
+import type { ActionTypes } from "./actionTypes";
+import type { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
+import type { TestsActions } from "./nk/displayTestResults";
+import type { NotificationActions } from "./nk/notifications";
+import type { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
+import type { ToolbarActions } from "./nk/toolbars";
+import type { UiActions } from "./nk/ui/uiActions";
+import type { UserSettingsActions } from "./nk/userSettings";
+import type { SettingsActions } from "./settingsActions";
 
 type TypedAction =
-    | UiActions
-    | SettingsActions
-    | GetScenarioActivitiesAction
-    | UpdateScenarioActivitiesAction
-    | NodeActions
-    | ToolbarActions
-    | NodeDetailsActions
-    | UserSettingsActions
-    | SelectionActions
-    | NotificationActions
-    | DisplayTestResultsDetailsAction
+    | CloudDataActions
     | CountsActions
+    | GetScenarioActivitiesAction
+    | NodeActions
+    | NodeDetailsActions
+    | NotificationActions
+    | PropertiesActions
     | ScenarioActions
-    | PropertiesActions;
+    | ScenariosActions
+    | SelectionActions
+    | SettingsActions
+    | SquashHistoryActions
+    | TestsActions
+    | ToolbarActions
+    | UiActions
+    | UpdateScenarioActivitiesAction
+    | UserSettingsActions;
 
 interface UntypedAction extends AnyAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;

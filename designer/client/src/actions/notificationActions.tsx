@@ -1,9 +1,11 @@
-import React from "react";
-import Notifications from "react-notification-system-redux";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import React from "react";
+import Notifications from "react-notification-system-redux";
+
 import Notification from "../components/notifications/Notification";
-import { Action } from "./reduxTypes";
+import type { Action } from "./reduxTypes";
 
 export function success(message: string): Action {
     return Notifications.success({
@@ -25,3 +27,12 @@ export function info(message: string): Action {
         children: <Notification type={"info"} icon={<InfoOutlinedIcon />} message={message} />,
     });
 }
+
+export function warn(message: string): Action {
+    return Notifications.warning({
+        autoDismiss: 10,
+        children: <Notification type={"warning"} icon={<WarningAmberOutlinedIcon />} message={message} />,
+    });
+}
+
+export default { success, error, info, warn };

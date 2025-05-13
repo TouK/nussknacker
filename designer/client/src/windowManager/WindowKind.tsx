@@ -8,6 +8,7 @@ export enum WindowKind {
     addFragment,
     saveProcess,
     deployProcess,
+    deployWithParameters,
     calculateCounts,
     generateTestData,
     generateDataAndTest,
@@ -22,4 +23,6 @@ export enum WindowKind {
     addAttachment,
     editProperties,
     remote,
+    scenarioTest,
+    aiAssistant,
 }

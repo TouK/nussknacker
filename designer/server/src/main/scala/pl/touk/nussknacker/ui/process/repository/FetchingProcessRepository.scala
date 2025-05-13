@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
-import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
@@ -22,6 +23,22 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
   def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]]
+
+  def fetchLatestProcesses[PS: ScenarioShapeFetchStrategy](
+      query: ScenarioQuery
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[PS]]
+
+  def fetchLatestVersionForProcesses(
+      query: ScenarioQuery,
+      scenarioVersionQuery: ScenarioVersionQuery,
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Map[ProcessId, ScenarioVersionMetadata]]
+
+  def getProcessVersion(
+      processName: ProcessName,
+      versionId: VersionId
+  )(
+      implicit user: LoggedUser,
+  ): F[Option[ProcessVersion]]
 
   def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]]
 

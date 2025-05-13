@@ -1,32 +1,32 @@
 package pl.touk.nussknacker.engine.management.rest
 
-import cats.data.Validated.{invalid, valid}
-import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.api.exception.DeeplyCheckingExceptionExtractor
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
-import pl.touk.nussknacker.engine.sttp.SttpJson
-import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
-import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
+import pl.touk.nussknacker.http.backend.SttpJson
+import pl.touk.nussknacker.http.backend.SttpJson.asOptionalJson
 import sttp.client3._
 import sttp.client3.circe._
 import sttp.model.Uri
 
 import java.io.File
+import java.net.URI
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.concurrent.duration.FiniteDuration
 
-class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
+class HttpFlinkClient(restUrl: URI, scenarioStateRequestTimeout: FiniteDuration, jobManagerTimeout: FiniteDuration)(
     implicit backend: SttpBackend[Future, Any],
     ec: ExecutionContext
 ) extends FlinkClient
     with LazyLogging {
 
-  import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler._
+  private val flinkUrl = Uri(restUrl)
+
+  import pl.touk.nussknacker.http.backend.HttpClientErrorHandler._
 
   def uploadJarFileIfNotExists(jarFile: File): Future[JarFile] = {
     checkThatJarWithNameExists(jarFile.getName).flatMap {
@@ -86,7 +86,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
   ): Future[WithDataFreshnessStatus[List[JobOverview]]] = {
     logger.trace(s"Fetching jobs overview")
     basicRequest
-      .readTimeout(config.scenarioStateRequestTimeout)
+      .readTimeout(scenarioStateRequestTimeout)
       .get(flinkUrl.addPath("jobs", "overview"))
       .response(asJson[JobsResponse])
       .send(backend)
@@ -104,18 +104,18 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .recoverWith(recoverWithMessage("retrieve Flink jobs"))
   }
 
-  override def getJobDetails(jobId: String): Future[Option[JobDetails]] = {
+  override def getJobDetails(jobId: JobID): Future[Option[JobDetails]] = {
     basicRequest
-      .get(flinkUrl.addPath("jobs", jobId))
+      .get(flinkUrl.addPath("jobs", jobId.toHexString))
       .response(asOptionalJson[JobDetails])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .recoverWith(recoverWithMessage("retrieve Flink job details"))
   }
 
-  override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
+  override def getJobConfig(jobId: JobID): Future[flinkRestModel.ExecutionConfig] = {
     basicRequest
-      .get(flinkUrl.addPath("jobs", jobId, "config"))
+      .get(flinkUrl.addPath("jobs", jobId.toHexString, "config"))
       .response(asJson[JobConfig])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -123,17 +123,17 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
   }
 
   // FIXME: get rid of sleep, refactor?
-  def waitForSavepoint(
-      jobId: ExternalDeploymentId,
+  private def waitForSavepoint(
+      jobId: JobID,
       savepointId: String,
-      timeoutLeft: Long = config.jobManagerTimeout.toMillis
+      timeoutLeft: Long = jobManagerTimeout.toMillis
   ): Future[SavepointResult] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
     basicRequest
-      .get(flinkUrl.addPath("jobs", jobId.value, "savepoints", savepointId))
+      .get(flinkUrl.addPath("jobs", jobId.toHexString, "savepoints", savepointId))
       .response(asJson[GetSavepointStatusResponse])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -153,9 +153,9 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       }
   }
 
-  override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
+  override def cancel(jobId: JobID): Future[Unit] = {
     basicRequest
-      .patch(flinkUrl.addPath("jobs", deploymentId.value))
+      .patch(flinkUrl.addPath("jobs", jobId.toHexString))
       .send(backend)
       .flatMap(handleUnitResponse("cancel scenario"))
       .recoverWith(recoverWithMessage("cancel scenario"))
@@ -163,26 +163,26 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
   }
 
   override def makeSavepoint(
-      deploymentId: ExternalDeploymentId,
+      jobId: JobID,
       savepointDir: Option[String]
   ): Future[SavepointResult] = {
     val savepointRequest = basicRequest
-      .post(flinkUrl.addPath("jobs", deploymentId.value, "savepoints"))
+      .post(flinkUrl.addPath("jobs", jobId.toHexString, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
-    processSavepointRequest(deploymentId, savepointRequest, "make savepoint")
+    processSavepointRequest(jobId, savepointRequest, "make savepoint")
   }
 
-  override def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override def stop(jobId: JobID, savepointDir: Option[String]): Future[SavepointResult] = {
     // because of https://issues.apache.org/jira/browse/FLINK-28758 we can't use '/stop' endpoint,
     // so jobs ends up in CANCELED state, not FINISHED - we should switch back when we get rid of old Kafka source
     val stopRequest = basicRequest
-      .post(flinkUrl.addPath("jobs", deploymentId.value, "savepoints"))
+      .post(flinkUrl.addPath("jobs", jobId.toHexString, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = true))
-    processSavepointRequest(deploymentId, stopRequest, "stop scenario")
+    processSavepointRequest(jobId, stopRequest, "stop scenario")
   }
 
   private def processSavepointRequest(
-      deploymentId: ExternalDeploymentId,
+      jobId: JobID,
       request: RequestT[Identity, Either[String, String], Any],
       action: String
   ): Future[SavepointResult] = {
@@ -191,7 +191,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .flatMap { response =>
-        waitForSavepoint(deploymentId, response.`request-id`)
+        waitForSavepoint(jobId, response.`request-id`)
       }
       .recoverWith(recoverWithMessage(action))
   }
@@ -203,13 +203,13 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       mainClass: String,
       args: List[String],
       savepointPath: Option[String],
-      jobId: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+      jobId: Option[JobID]
+  ): Future[Option[JobID]] = {
     val program =
       DeployProcessRequest(
         entryClass = mainClass,
         savepointPath = savepointPath,
-        programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "),
+        programArgsList = args,
         jobId = jobId
       )
     uploadJarFileIfNotExists(jarFile).flatMap { flinkJarFile =>
@@ -219,7 +219,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
         .response(asJson[RunResponse])
         .send(backend)
         .flatMap(SttpJson.failureToFuture)
-        .map(ret => Some(ExternalDeploymentId(ret.jobid)))
+        .map(ret => Some(ret.jobid))
         .recover({
           // sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           // workaround for now, not the best solution though
@@ -263,27 +263,10 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
 
 }
 
-object HttpFlinkClient {
-
-  def createUnsafe(
-      config: FlinkConfig
-  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): HttpFlinkClient = {
-    create(config).valueOr(err =>
-      throw new IllegalArgumentException(err.toList.mkString("Cannot create HttpFlinkClient: ", ", ", ""))
-    )
-  }
-
-  def create(
-      config: FlinkConfig
-  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ValidatedNel[String, HttpFlinkClient] = {
-    config.restUrl.map(valid).getOrElse(invalid("Invalid configuration: missing restUrl")).andThen { restUrl =>
-      Try(uri"$restUrl")
-        .map(valid)
-        .getOrElse(invalid(s"Invalid configuration: restUrl is not a valid url [$restUrl]"))
-        .map { parsedRestUrl =>
-          new HttpFlinkClient(config, parsedRestUrl)
-        }
-    }
-  }.toValidatedNel
-
-}
+case class ParsedHttpFlinkClientConfig(
+    restUrl: URI,
+    scenarioStateRequestTimeout: FiniteDuration,
+    jobManagerTimeout: FiniteDuration,
+    scenarioStateCacheTTL: Option[FiniteDuration],
+    jobConfigsCacheSize: Int
+)

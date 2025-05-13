@@ -4,7 +4,9 @@ import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.WithTestDeploymentManagerClassLoader
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 
 import java.net.URI
@@ -12,17 +14,21 @@ import java.nio.file.Files
 import java.util.UUID
 
 // TODO: We should spit DesignerConfigLoader tests and model ProcessingTypeConfig tests
-class ConfigurationTest extends AnyFunSuite with Matchers {
+class ConfigurationTest extends AnyFunSuite with WithTestDeploymentManagerClassLoader with Matchers {
 
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
   private def globalConfig = ConfigWithScalaVersion.TestsConfig
 
-  private def modelData: ModelData = ModelData(
-    ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-    TestFactory.modelDependencies
-  )
+  private def modelData: ModelData = {
+    val config = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    ModelData(
+      config,
+      TestFactory.modelDependencies,
+      ModelClassLoaderFactory.create(config.classPath, None, deploymentManagersClassLoader),
+    )
+  }
 
-  private lazy val modelDataConfig = modelData.modelConfig
+  private lazy val modelDataConfig = modelData.modelConfig.underlyingConfig
 
   private def classLoader = {
     getClass.getClassLoader
@@ -33,7 +39,6 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
       .loadDesignerConfig()
       .unsafeRunSync()
       .rawConfig
-      .resolved
       .getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
   }
 
@@ -44,7 +49,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
         .loadDesignerConfig()
         .unsafeRunSync()
 
-      loadedConfig.rawConfig.resolved.getString("foo") shouldEqual "./storage"
+      loadedConfig.rawConfig.getString("foo") shouldEqual "./storage"
     }
   }
 
@@ -91,7 +96,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
           System.getProperties.remove(randomPropertyName)
         }
 
-      result.rawConfig.resolved.getString(randomPropertyName) shouldBe "I win!"
+      result.rawConfig.getString(randomPropertyName) shouldBe "I win!"
     }
   }
 

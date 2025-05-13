@@ -2,15 +2,16 @@ import { isEmpty } from "lodash";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
-import * as DialogMessages from "../../../../common/DialogMessages";
+import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { ToolbarButtonProps } from "../../types";
-import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import type { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;
 
@@ -39,7 +40,7 @@ function MigrateButton(props: Props) {
                 confirmText: t("panels.actions.process-migrate.yes", "Yes"),
                 denyText: t("panels.actions.process-migrate.no", "No"),
             }),
-        [confirm, processName, t, targetEnvironmentId, versionId],
+        [confirm, dispatch, processName, t, targetEnvironmentId, versionId],
     );
 
     if (isEmpty(featuresSettings?.remoteEnvironment)) {

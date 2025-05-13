@@ -5,10 +5,10 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.migrations.DecisionTableParameterNamesMigration
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.graph.node.Enricher
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.Enricher
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class DecisionTableParameterNamesMigrationSpec extends AnyFreeSpecLike with Matchers {

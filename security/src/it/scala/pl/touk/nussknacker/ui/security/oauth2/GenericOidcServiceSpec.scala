@@ -14,8 +14,8 @@ import pl.touk.nussknacker.ui.security.oidc.{
   OidcService,
   OidcUserInfo
 }
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.{SttpBackend, _}
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import java.net.URI
 import scala.concurrent.Future

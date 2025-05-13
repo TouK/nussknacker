@@ -1,9 +1,10 @@
 import { Chip, FormHelperText } from "@mui/material";
 import React from "react";
-import { FieldName, FixedValuesOption } from "../../../item";
+
+import type { NodeValidationError } from "../../../../../../../types";
+import type { FieldName, FixedValuesOption } from "../../../item";
+import type { Option } from "../../../TypeSelect";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
-import { Option } from "../../../TypeSelect";
-import { NodeValidationError } from "../../../../../../../types";
 
 interface ListItemsProps {
     items: (FixedValuesOption | Option)[];

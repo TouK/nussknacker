@@ -1,14 +1,15 @@
 /* eslint-disable i18next/no-literal-string */
+import { find, head } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import ProcessUtils from "../../../../common/ProcessUtils";
-import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { MapVariableProps } from "../MapVariable";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
+import type { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import { FieldsSelect } from "./FieldsSelect";
-import { find, head, orderBy } from "lodash";
+import type { FragmentInputParameter } from "./item";
 import { getDefaultFields } from "./item/utils";
-import { FragmentInputParameter } from "./item";
 
 interface Props extends Omit<MapVariableProps<FragmentInputParameter>, "readOnly"> {
     isEditMode?: boolean;
@@ -26,11 +27,9 @@ export function useFragmentInputDefinitionTypeOptions() {
         [definitionData?.classes],
     );
 
-    const orderedTypeOptions = useMemo(() => orderBy(typeOptions, (item) => [item.label, item.value], ["asc"]), [typeOptions]);
-
     const defaultTypeOption = useMemo(() => find(typeOptions, { label: "String" }) || head(typeOptions), [typeOptions]);
     return {
-        orderedTypeOptions,
+        typeOptions,
         defaultTypeOption,
     };
 }
@@ -40,7 +39,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
     const { node, setProperty, isEditMode, showValidation } = passProps;
 
     const readOnly = !isEditMode;
-    const { orderedTypeOptions, defaultTypeOption } = useFragmentInputDefinitionTypeOptions();
+    const { typeOptions, defaultTypeOption } = useFragmentInputDefinitionTypeOptions();
 
     const addField = useCallback(() => {
         addElement("parameters", getDefaultFields(defaultTypeOption.value));
@@ -57,7 +56,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
                 removeField={removeElement}
                 namespace={"parameters"}
                 fields={fields}
-                options={orderedTypeOptions}
+                options={typeOptions}
                 showValidation={showValidation}
                 readOnly={readOnly}
                 variableTypes={variableTypes}

@@ -1,6 +1,7 @@
-import { PropsOf } from "@emotion/react";
+import type { PropsOf } from "@emotion/react";
 import { lighten, styled } from "@mui/material";
-import React, { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
+import React from "react";
 import Markdown from "react-markdown";
 import { Link } from "react-router-dom";
 import rehypeExternalLinks from "rehype-external-links";
@@ -8,6 +9,8 @@ import rehypeRaw from "rehype-raw";
 import remarkDirective from "remark-directive";
 import remarkDirectiveRehype from "remark-directive-rehype";
 import remarkHtml from "remark-html";
+
+import { CodeBlock } from "../../../common/CodeBlock";
 import { getBorderColor } from "../../../containers/theme/helpers";
 
 const RouterLink = ({
@@ -37,6 +40,7 @@ const MarkdownWithPlugins = ({
     <Markdown
         components={{
             "router-link": RouterLink,
+            code: CodeBlock,
             ...components,
         }}
         remarkPlugins={[remarkDirective, remarkDirectiveRehype, remarkHtml, ...remarkPlugins]}

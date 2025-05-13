@@ -2,15 +2,14 @@ package pl.touk.nussknacker.engine.definition.clazz
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.generics.{
   ExpressionParseError,
   GenericFunctionTypingError,
   MethodTypeInfo,
   Parameter
 }
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 sealed trait MethodDefinition {
@@ -31,19 +30,13 @@ sealed trait MethodDefinition {
 
   protected def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
     val checkNoVarArgs = arguments.length >= methodTypeInfo.noVarArgs.length &&
-      arguments.zip(methodTypeInfo.noVarArgs).forall {
-        // Allow pass array as List argument because of array to list auto conversion:
-        // pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
-        case (tc @ TypedClass(klass, _), Parameter(_, y)) if klass.isArray =>
-          tc.canBeConvertedTo(y) || Typed
-            .genericTypeClass[java.util.List[_]](tc.params)
-            .canBeConvertedTo(y)
-        case (x, Parameter(_, y)) => x.canBeConvertedTo(y)
+      arguments.zip(methodTypeInfo.noVarArgs).forall { case (x, Parameter(_, y)) =>
+        x.canBeLooselyAssignedTo(y)
       }
 
     val checkVarArgs = methodTypeInfo.varArg match {
       case Some(Parameter(_, t)) =>
-        arguments.drop(methodTypeInfo.noVarArgs.length).forall(_.canBeConvertedTo(t))
+        arguments.drop(methodTypeInfo.noVarArgs.length).forall(_.canBeLooselyAssignedTo(t))
       case None =>
         arguments.length == methodTypeInfo.noVarArgs.length
     }
@@ -96,7 +89,7 @@ case class FunctionalMethodDefinition(
 
     val typeCalculated = typeFunction(methodInvocationTarget, arguments).leftMap(_.map(errorConverter.convert))
     typeCalculated.map { calculated =>
-      if (!typesFromStaticMethodInfo.exists(calculated.canBeConvertedTo)) {
+      if (!typesFromStaticMethodInfo.exists(calculated.canBeLooselyAssignedTo)) {
         val expectedTypesString = typesFromStaticMethodInfo.map(_.display).mkString("(", ", ", ")")
         val argumentsString     = arguments.map(_.display).mkString("(", ", ", ")")
         throw new AssertionError(

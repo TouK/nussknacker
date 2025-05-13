@@ -1,7 +1,8 @@
-import React, { useCallback } from "react";
-import { useSize } from "../../../../../../containers/hooks/useSize";
 import { Box } from "@mui/material";
-import { BoxProps } from "@mui/material/Box/Box";
+import type { BoxProps } from "@mui/material/Box/Box";
+import React, { useCallback } from "react";
+
+import { useSize } from "../../../../../../containers/hooks/useSize";
 
 type SizerProps = BoxProps & {
     overflowY?: boolean;

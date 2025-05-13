@@ -1,9 +1,12 @@
 /* eslint-disable i18next/no-literal-string */
-import { dia, routers } from "jointjs";
-import { Edge, EdgeKind, ProcessDefinitionData, ScenarioGraph } from "../../../types";
-import NodeUtils from "../NodeUtils";
-import { Theme } from "@mui/material";
+import type { Theme } from "@mui/material";
+import type { routers } from "jointjs";
+import { dia } from "jointjs";
+
 import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
+import type { Edge, ProcessDefinitionData, ScenarioGraph } from "../../../types";
+import { EdgeKind } from "../../../types";
+import NodeUtils from "../NodeUtils";
 
 function makeLabels(theme: Theme, label = "", prefix = ""): dia.Link.Label[] {
     const havePrefix = prefix.length > 0;

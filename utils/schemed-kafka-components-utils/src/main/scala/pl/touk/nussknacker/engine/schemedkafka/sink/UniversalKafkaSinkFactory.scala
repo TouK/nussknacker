@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
+import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -14,10 +16,14 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.schemedkafka.{
+  KafkaUniversalComponentTransformer,
+  RuntimeSchemaData,
+  SchemaDeterminerErrorHandler
+}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ContentTypes,
@@ -26,11 +32,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClientFactory
 }
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
-import pl.touk.nussknacker.engine.schemedkafka.{
-  KafkaUniversalComponentTransformer,
-  RuntimeSchemaData,
-  SchemaDeterminerErrorHandler
-}
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
@@ -44,7 +45,7 @@ object UniversalKafkaSinkFactory {
     Parameter.optional[CharSequence](sinkKeyParamName).copy(isLazyParameter = true),
     Parameter[Boolean](sinkRawEditorParamName).copy(
       defaultValue = Some(Expression.spel("false")),
-      editor = Some(BoolParameterEditor),
+      editors = List(BoolParameterEditor),
       validators = List(MandatoryParameterValidator)
     )
   )
@@ -55,7 +56,7 @@ object UniversalKafkaSinkFactory {
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    val modelDependencies: ProcessObjectDependencies,
+    val modelConfig: ModelConfig,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
     with SinkFactory {
@@ -70,8 +71,8 @@ class UniversalKafkaSinkFactory(
     ParameterDeclaration
       .mandatory[String](sinkValidationModeParamName)
       .withCreator(
-        modify = _.copy(editor =
-          Some(
+        modify = _.copy(editors =
+          List(
             FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
           )
         )
@@ -136,7 +137,7 @@ class UniversalKafkaSinkFactory(
         .andThen { runtimeSchemaData =>
           schemaSupportDispatcher
             .forSchemaType(runtimeSchemaData.schema.schemaType())
-            .extractParameter(
+            .extractParameterForSink(
               runtimeSchemaData.schema,
               rawMode = true,
               validationMode = extractValidationMode(mode),
@@ -171,7 +172,7 @@ class UniversalKafkaSinkFactory(
       val runtimeSchemaData = runtimeSchemaDataForContentType(contentType)
       schemaSupportDispatcher
         .forSchemaType(runtimeSchemaData.schema.schemaType())
-        .extractParameter(
+        .extractParameterForSink(
           runtimeSchemaData.schema,
           rawMode = true,
           validationMode = extractValidationMode(mode),
@@ -226,7 +227,7 @@ class UniversalKafkaSinkFactory(
         .andThen { schemaData =>
           schemaSupportDispatcher
             .forSchemaType(schemaData.schema.schemaType())
-            .extractParameter(
+            .extractParameterForSink(
               schemaData.schema,
               rawMode = false,
               validationMode = ValidationMode.lax,
@@ -257,7 +258,7 @@ class UniversalKafkaSinkFactory(
 
       schemaSupportDispatcher
         .forSchemaType(schemaData.schema.schemaType())
-        .extractParameter(
+        .extractParameterForSink(
           schemaData.schema,
           rawMode = false,
           validationMode = ValidationMode.lax,

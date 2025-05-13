@@ -1,9 +1,10 @@
 import React, { useContext } from "react";
-import { Field } from "../../../../../types";
+
+import type { Field } from "../../../../../types";
+import { getValidationErrorsForField } from "../Validators";
 import { MapItemsCtx } from "./Map";
 import MapKey from "./MapKey";
 import MapValue from "./MapValue";
-import { getValidationErrorsForField } from "../Validators";
 
 interface MapRowProps<F extends Field> {
     index: number;
@@ -33,7 +34,7 @@ export default function MapRow<F extends TypedField>({ index, item }: MapRowProp
                 readOnly={readOnly}
                 showValidation={showValidation}
                 isMarked={isPropertyMarked("expression.expression")}
-                onChange={(value) => setItemProperty("expression.expression", value)}
+                onChange={({ expression }) => setItemProperty("expression.expression", expression)}
                 value={expression}
                 validationLabelInfo={typeInfo}
                 fieldErrors={getValidationErrorsForField(errors, `$fields-${index}-$value`)}

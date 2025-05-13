@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.ValueWithContext
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.process.ExceptionHandlerFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector

@@ -6,8 +6,8 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2._
 import sttp.client3.SttpBackend
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 trait OidcAuthorizationData extends OAuth2AuthorizationData {
   val idToken: Option[String]

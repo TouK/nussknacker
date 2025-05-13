@@ -1,18 +1,20 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { PropsWithChildren, useCallback, useMemo, useState } from "react";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import moment from "moment";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
 import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
+import Icon from "../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { WindowContent } from "../../../windowManager";
-import { PickerInput } from "./Picker";
-import { CalculateCountsForm } from "./CalculateCountsForm";
-import moment from "moment";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
-import Icon from "../../../assets/img/toolbarButtons/counts.svg";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
+import { CalculateCountsForm } from "./CalculateCountsForm";
+import type { PickerInput } from "./Picker";
 
 export type State = {
     from: PickerInput;

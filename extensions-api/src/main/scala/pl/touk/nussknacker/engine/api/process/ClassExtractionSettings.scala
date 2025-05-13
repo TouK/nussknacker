@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.api.process
 
 import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.{Hidden, HideToString, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Hidden, HideToString, TemplateEvaluationResult}
 
 import java.lang.reflect.{AccessibleObject, Member, Method}
 import java.text.NumberFormat
@@ -13,9 +13,9 @@ import java.time.Clock
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime, ChronoZonedDateTime}
 import java.time.temporal.{ChronoUnit, Temporal, TemporalAccessor}
 import java.util
+import java.util.{Calendar, Date, Optional, UUID}
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import java.util.{Calendar, Date, Optional, UUID}
 
 // TODO: Rename to ClassDefinitionDiscoverySettings
 /**

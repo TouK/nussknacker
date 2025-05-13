@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,
   DesignerWideComponentId,
   ProcessingMode
 }
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component._
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.{
@@ -179,7 +179,8 @@ final case class ModelDefinitionBuilder(
     ComponentDefinitionExtractor
       .filterOutDisabledAndComputeFinalUiDefinition(
         configWithDesignerWideComponentId,
-        groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
+        groupName => groupNameMapping.getOrElse(groupName, Some(groupName)),
+        name
       )
       .map { case (uiDefinition, _) =>
         MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
@@ -204,7 +205,8 @@ final case class ModelDefinitionBuilder(
     ModelDefinition(
       Components.empty(componentDefinitionExtractionMode).withComponents(components),
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
-      ClassExtractionSettings.Default
+      ClassExtractionSettings.Default,
+      allowEndingScenarioWithoutSink = false,
     )
   }
 

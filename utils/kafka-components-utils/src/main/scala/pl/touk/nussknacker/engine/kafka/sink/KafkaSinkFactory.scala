@@ -1,38 +1,37 @@
 package pl.touk.nussknacker.engine.kafka.sink
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
+import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.kafka.serialization.{
   FixedKafkaSerializationSchemaFactory,
   KafkaSerializationSchema,
   KafkaSerializationSchemaFactory
 }
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, serialization}
 
 import javax.validation.constraints.NotBlank
 
 class KafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
-    modelDependencies: ProcessObjectDependencies,
+    modelConfig: ModelConfig,
     implProvider: KafkaSinkImplFactory
-) extends BaseKafkaSinkFactory(serializationSchemaFactory, modelDependencies, implProvider) {
+) extends BaseKafkaSinkFactory(serializationSchemaFactory, modelConfig, implProvider) {
 
   def this(
       serializationSchema: String => serialization.KafkaSerializationSchema[AnyRef],
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       implProvider: KafkaSinkImplFactory
   ) =
-    this(FixedKafkaSerializationSchemaFactory(serializationSchema), modelDependencies, implProvider)
+    this(FixedKafkaSerializationSchemaFactory(serializationSchema), modelConfig, implProvider)
 
   @MethodToInvoke
   def create(
       processMetaData: MetaData,
-      @DualEditor(
-        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-        defaultMode = DualEditorMode.RAW
-      )
+      @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR)
+      @Editor(`type` = EditorType.SPEL_EDITOR)
       @ParamName("Topic") @NotBlank topic: String,
       @ParamName("Value") value: LazyParameter[AnyRef]
   ): Sink =
@@ -42,13 +41,13 @@ class KafkaSinkFactory(
 
 abstract class BaseKafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
-    modelDependencies: ProcessObjectDependencies,
+    modelConfig: ModelConfig,
     implProvider: KafkaSinkImplFactory
 ) extends SinkFactory {
 
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val kafkaConfig   = KafkaConfig.parseConfig(modelDependencies.config)
-    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
+    val kafkaConfig   = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig)
     KafkaComponentsUtils.validateTopicsExistence(NonEmptyList.one(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId            = s"${processMetaData.name}-${preparedTopic.prepared}"

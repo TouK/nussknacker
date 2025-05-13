@@ -1,6 +1,8 @@
-import React, { ComponentProps, ReactNode, useState } from "react";
-import { absoluteBePath } from "../../common/UrlUtils";
 import { styled } from "@mui/material";
+import type { ComponentProps, ReactNode } from "react";
+import React, { useState } from "react";
+
+import { absoluteBePath } from "../../common/UrlUtils";
 
 const Logo = styled("img")({
     height: "1.5em",

@@ -1,9 +1,10 @@
+import type { NotificationsState } from "react-notification-system-redux";
 import { createSelector } from "reselect";
+
+import type { RootState } from "../index";
+import type { BackendNotificationState } from "../notifications";
 import { getProcessCategory, isArchived } from "./graph";
 import { getLoggedUser } from "./settings";
-import { RootState } from "../index";
-import { NotificationsState } from "react-notification-system-redux";
-import { BackendNotificationState } from "../notifications";
 
 export interface Capabilities {
     write?: boolean;

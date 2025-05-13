@@ -1,10 +1,19 @@
-import { dia, shapes } from "jointjs";
+import type { dia } from "jointjs";
+import { shapes } from "jointjs";
 
 export const isLink = (c: dia.Cell): c is dia.Link => c.isLink();
 export const isElement = (c: dia.Cell): c is dia.Element => c?.isElement();
 
 export function isModelElement(el: dia.Cell): el is shapes.devs.Model {
     return el instanceof shapes.devs.Model;
+}
+
+export function isModelOrStickyNote(el: dia.Cell): el is shapes.devs.Model {
+    return isModelElement(el) || isStickyNoteElement(el);
+}
+
+export function isStickyNoteElement(el: dia.Cell): el is shapes.devs.Model {
+    return isElement(el) && el.get("type") === `stickyNote.StickyNoteElement`;
 }
 
 export function isConnected(el: dia.Element): boolean {

@@ -1,6 +1,7 @@
-import { Action } from "../actions/reduxTypes";
-import { NodeValidationError, TypingResult, UIParameter } from "../types";
 import { omit } from "lodash";
+
+import type { Action } from "../actions/reduxTypes";
+import type { NodeValidationError, TypingResult, UIParameter } from "../types";
 
 export type NodeDetailsState = Record<
     string,

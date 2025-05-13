@@ -1,22 +1,25 @@
 package pl.touk.nussknacker.ui.process
 
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFactory}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
-import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ValueWithRestriction}
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypeDataProviderFactory
+import pl.touk.nussknacker.ui.process.processingtype.{DeploymentData, ProcessingTypeData, ValueWithRestriction}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
@@ -143,7 +146,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
     val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
     val service = new ProcessStateDefinitionService(
-      ProcessingTypeDataProvider(
+      TestProcessingTypeDataProviderFactory.create(
         Map(
           "Streaming" -> ValueWithRestriction
             .userWithAccessRightsToAnyOfCategories("Category1", Set("Category1")),
@@ -157,8 +160,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   }
 
   private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
-    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]             = Map.empty
-    override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] = Nil
+    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]                        = Map.empty
+    override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
   }
 
   private def createProcessingTypeDataMap(
@@ -184,6 +187,19 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       stateDefinitionManager: ProcessStateDefinitionManager,
       category: String
   ): ProcessingTypeData = {
+    val mockManager = MockDeploymentManager.create(
+      config = ConfigWithScalaVersion.StreamingProcessTypeConfig,
+      customProcessStateDefinitionManager = Some(stateDefinitionManager)
+    )
+    val deploymentData = new DeploymentData(
+      DeploymentManagerType("mock"),
+      Valid(mockManager),
+      MetaDataInitializer("streaming", Map.empty[String, String]),
+      Map.empty,
+      List.empty,
+      JobsRecoverySettings.noRecovery,
+      EngineSetupName("mock")
+    )
     ProcessingTypeData.createProcessingTypeData(
       processingType,
       LocalModelData(
@@ -191,16 +207,10 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {}))),
         componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
       ),
-      new MockManagerProvider(
-        new MockDeploymentManager() {
-          override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
-        }
-      ),
-      TestFactory.deploymentManagerDependencies,
-      deploymentConfig = ConfigFactory.empty(),
-      engineSetupName = EngineSetupName("mock"),
+      deploymentData,
       category = category,
-      componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
+      limitsConfig = LimitsConfig.default,
+      componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode,
     )
   }
 

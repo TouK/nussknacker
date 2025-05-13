@@ -1,20 +1,23 @@
-import { ExpressionObj } from "../types";
-import React, { useEffect, useRef, useState } from "react";
-import Cron from "react-cron-generator";
 import "react-cron-generator/dist/cron-builder.css";
-import Input from "../../field/Input";
 import i18next from "i18next";
-import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
-import { CronEditorStyled } from "./CronEditorStyled";
-import { ExtendedEditor } from "../Editor";
-import { FieldError } from "../../Validators";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import Cron from "react-cron-generator";
+
 import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import Input from "../../field/Input";
+import type { FieldError } from "../../Validators";
+import type { ExtendedEditor, OnValueChange } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
+import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
+import type { Formatter } from "../Formatter";
+import type { ExpressionObj } from "../types";
+import { CronEditorStyled } from "./CronEditorStyled";
 
 export type CronExpression = string;
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
@@ -33,9 +36,12 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
 
     const cronFormatter = formatter == null ? typeFormatters[FormatterType.Cron] : formatter;
 
-    function encode(value) {
-        return value == "" ? "" : cronFormatter.encode(value);
-    }
+    const encode = useCallback(
+        (value: string): string => {
+            return value === "" ? "" : cronFormatter.encode(value);
+        },
+        [cronFormatter],
+    );
 
     function decode(expression: string): CronExpression {
         const result = cronFormatter.decode(expression);
@@ -64,8 +70,8 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     }, [open]);
 
     useEffect(() => {
-        onValueChange(encode(value));
-    }, [value]);
+        onValueChange({ expression: encode(value), language: editorsParameters.CronParameterEditor.language });
+    }, [encode, onValueChange, value]);
 
     const onInputFocus = () => {
         if (!readOnly) {
@@ -101,10 +107,9 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
 CronEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     spelFormatters[FormatterType.Cron].decode(expressionObj.expression) != null || expressionObj.expression === "";
 
-CronEditor.switchableToHint = () => i18next.t("editors.cron.switchableToHint", "Switch to basic mode");
-
 CronEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.cron.notSwitchableToHint",
-        "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to basic mode",
+        "Expression must match pattern new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('* * * * * * *') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.CronParameterEditor.displayName },
     );

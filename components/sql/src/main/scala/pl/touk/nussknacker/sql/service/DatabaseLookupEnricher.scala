@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.sql.service
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{
-  TransformationState,
   cacheTTLParamDeclaration,
-  cacheTTLParamName
+  cacheTTLParamName,
+  TransformationState
 }
 
 import scala.util.control.NonFatal
@@ -31,7 +31,7 @@ object DatabaseLookupEnricher {
   private def keyColumnParam(tableDef: TableDefinition): Parameter = {
     val columnNameValues = tableDef.columnDefs.map(column => FixedExpressionValue(s"'${column.name}'", column.name))
     Parameter(KeyColumnParamName, Typed[String])
-      .copy(editor = Some(FixedValuesParameterEditor(columnNameValues)))
+      .copy(editors = List(FixedValuesParameterEditor(columnNameValues)))
   }
 
   private def keyValueParam(keyColumnName: String, tableDef: TableDefinition): Parameter = {
@@ -62,7 +62,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
     val possibleTables: List[FixedExpressionValue] =
       schemaMetaData.tables.map(table => FixedExpressionValue(s"'$table'", table))
-    Parameter(TableParamName, Typed[String]).copy(editor = Some(FixedValuesParameterEditor(possibleTables)))
+    Parameter(TableParamName, Typed[String]).copy(editors = List(FixedValuesParameterEditor(possibleTables)))
   }
 
   import DatabaseLookupEnricher._

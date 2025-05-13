@@ -6,18 +6,19 @@ import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
   WithAccessControlCheckingDesignerConfig,
   WithMockableDeploymentManager
 }
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 
 class AppApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -39,8 +40,8 @@ class AppApiHttpServiceSecuritySpec
 
           MockableDeploymentManager.configureScenarioStatuses(
             Map(
-              "id1" -> SimpleStateStatus.Running,
-              "id2" -> SimpleStateStatus.Running
+              "id1" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+              "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1)))
             )
           )
         }
@@ -70,9 +71,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -100,9 +100,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -124,9 +123,9 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> SimpleStateStatus.ProblemStateStatus.Failed,
-                "id2" -> SimpleStateStatus.ProblemStateStatus.Failed,
-                "id3" -> SimpleStateStatus.ProblemStateStatus.Failed
+                "id1" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None),
+                "id3" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None)
               )
             )
           }
@@ -156,8 +155,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> SimpleStateStatus.NotDeployed,
-                "id2" -> SimpleStateStatus.NotDeployed
+                "id1" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, None)
               )
             )
           }
@@ -185,9 +184,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -205,13 +203,6 @@ class AppApiHttpServiceSecuritySpec
           .applicationState {
             createDeployedExampleScenario(ProcessName("id1"), category = Category1)
             createDeployedExampleScenario(ProcessName("id2"), category = Category2)
-
-            MockableDeploymentManager.configureScenarioStatuses(
-              Map(
-                "id1" -> SimpleStateStatus.NotDeployed,
-                "id2" -> SimpleStateStatus.NotDeployed
-              )
-            )
           }
           .when()
           .noAuth()
@@ -319,9 +310,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -347,9 +337,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -371,9 +360,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
@@ -391,7 +379,7 @@ class AppApiHttpServiceSecuritySpec
     }
   }
 
-  "The processing type data reload endpoint when" - {
+  "The model reload endpoint when" - {
     "authenticated should" - {
       "allow to reload when user is an admin" in {
         given()
@@ -402,15 +390,14 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
           .when()
           .basicAuthAdmin()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(204)
       }
@@ -423,15 +410,14 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
           .when()
           .basicAuthAllPermUser()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(403)
           .body(equalTo("The supplied authentication is not authorized to access this resource"))
@@ -447,15 +433,14 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
           .when()
           .basicAuthUnknownUser()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
@@ -471,15 +456,14 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
+                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
               )
             )
           }
           .when()
           .noAuth()
-          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .post(s"$nuDesignerHttpAddress/api/app/model/reload")
           .Then()
           .statusCode(403)
           .body(equalTo("The supplied authentication is not authorized to access this resource"))
@@ -487,7 +471,7 @@ class AppApiHttpServiceSecuritySpec
     }
   }
 
-  override def designerConfig: Config = super.designerConfig
+  override def designerRawConfig: Config = super.designerRawConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
 
 }

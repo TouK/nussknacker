@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.test.utils
 
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, SchemaValidatorsConfig, ValidationMessage}
-import io.circe.yaml.{parser => YamlParser}
 import io.circe.{ACursor, Json}
+import io.circe.yaml.{parser => YamlParser}
 import org.scalactic.anyvals.NonEmptyList
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.TapirJsonSchemaFactory

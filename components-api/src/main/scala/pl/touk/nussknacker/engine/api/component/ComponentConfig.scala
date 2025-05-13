@@ -3,7 +3,13 @@ package pl.touk.nussknacker.engine.api.component
 import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  ParameterCategory,
+  ParameterEditor,
+  ParameterValidator,
+  StaticParameterEditor,
+  StaticStringParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 case class ComponentConfig(
@@ -16,12 +22,13 @@ case class ComponentConfig(
     //      It should be probable called designerWideComponentId but we don't want to change it
     //      to not break the compatibility
     componentId: Option[DesignerWideComponentId],
-    disabled: Boolean = false
+    disabled: Boolean = false,
+    label: Option[String]
 )
 
 object ComponentConfig {
 
-  val zero: ComponentConfig = ComponentConfig(None, None, None, None, None)
+  val zero: ComponentConfig = ComponentConfig(None, None, None, None, None, false, None)
 
   implicit val semigroup: Semigroup[ComponentConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
@@ -51,6 +58,8 @@ object ComponentConfig {
         x.docsUrl |+| y.docsUrl,
         x.componentGroup |+| y.componentGroup,
         x.componentId |+| y.componentId,
+        disabled = x.disabled || y.disabled,
+        label = x.label |+| y.label
       )
     }
   }
@@ -59,19 +68,32 @@ object ComponentConfig {
 
 case class ParameterConfig(
     defaultValue: Option[String],
-    editor: Option[ParameterEditor],
+    editors: Option[List[ParameterEditor]],
+    validators: Option[List[ParameterValidator]],
+    label: Option[String],
+    hintText: Option[String],
+    category: Option[ParameterCategory],
+)
+
+case class StaticParameterConfig(
+    defaultValue: Option[String],
+    editor: StaticParameterEditor = StaticStringParameterEditor,
     validators: Option[List[ParameterValidator]],
     label: Option[String],
     hintText: Option[String]
 )
 
+object StaticParameterConfig {
+  val empty: StaticParameterConfig = StaticParameterConfig(None, StaticStringParameterEditor, None, None, None)
+}
+
 object ParameterConfig {
-  val empty: ParameterConfig = ParameterConfig(None, None, None, None, None)
+  val empty: ParameterConfig = ParameterConfig(None, None, None, None, None, None)
 }
 
 @JsonCodec case class ScenarioPropertyConfig(
     defaultValue: Option[String],
-    editor: Option[SimpleParameterEditor],
+    editor: Option[StaticParameterEditor],
     validators: Option[List[ParameterValidator]],
     label: Option[String],
     hintText: Option[String]

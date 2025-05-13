@@ -1,8 +1,11 @@
+import type { PaletteMode } from "@mui/material";
+import { CssBaseline } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
-import React, { PropsWithChildren } from "react";
-import { nuTheme } from "./nuTheme";
-import { CssBaseline, PaletteMode } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React from "react";
 import { useLocalstorageState } from "rooks";
+
+import { nuTheme } from "./nuTheme";
 
 export const NuThemeProvider: React.FC<PropsWithChildren<unknown>> = ({ children }) => {
     const [mode, setMode] = useLocalstorageState<PaletteMode>("palette-mode", "dark");

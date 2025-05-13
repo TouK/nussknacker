@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.Parameter
-
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
+import java.lang.annotation.Annotation
+import java.lang.reflect.Parameter
 import scala.reflect.ClassTag
 
 //we extract needed data from java.lang.reflect.Parameter to be able to use it e.g. for fragment parameters

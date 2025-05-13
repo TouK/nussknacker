@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
-import org.scalatest.prop.TableFor3
 import org.scalatest.prop.TableDrivenPropertyChecks.Table
+import org.scalatest.prop.TableFor3
 
 object TypeSpecificDataTestData {
 

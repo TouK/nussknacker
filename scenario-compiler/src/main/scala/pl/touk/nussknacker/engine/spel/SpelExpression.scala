@@ -1,33 +1,33 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{
+  standard,
   SpelCompilerMode,
   SpelEvaluationException,
-  SpelParserConfiguration,
-  standard
+  SpelParserConfiguration
 }
+import org.springframework.expression.spel.ast.SpelNodeImpl
+import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
@@ -88,7 +88,7 @@ final case class ParsedSpelExpression(
 
 }
 
-class SpelExpressionEvaluationException(val expression: String, val ctxId: String, cause: Throwable)
+class SpelExpressionEvaluationException(val expression: String, cause: Throwable)
     extends NonTransientException(
       expression,
       s"Expression [$expression] evaluation failed, message: ${cause.getMessage}",
@@ -106,6 +106,8 @@ class SpelExpression(
   override val original: String = parsed.original
 
   override val language: Language = flavour.languageId
+
+  val parsedSpringExpression: Expression = parsed.parsed
 
   private val expectedClass =
     expectedReturnType match {
@@ -126,8 +128,15 @@ class SpelExpression(
       case SpelExpressionParser.Standard =>
         parsed.getValue[T](evaluationContext, expectedClass)
       case SpelExpressionParser.Template =>
-        val parts = renderTemplateExpressionParts(evaluationContext)
-        TemplateEvaluationResult(parts).asInstanceOf[T]
+        val parts            = renderTemplateExpressionParts(evaluationContext)
+        val evaluationResult = TemplateEvaluationResult(parts)
+        if (expectedReturnType == Typed[TemplateEvaluationResult]) {
+          evaluationResult.asInstanceOf[T]
+        } else if (expectedReturnType.canBeStrictlyAssignedTo(Typed[CharSequence])) {
+          evaluationResult.renderedTemplate.asInstanceOf[T]
+        } else {
+          throw new IllegalStateException(s"Expression parsed with unexpected type: $expectedReturnType")
+        }
     }
   }
 
@@ -135,8 +144,7 @@ class SpelExpression(
     def renderExpression(expression: Expression): List[TemplateRenderedPart] = expression match {
       case literal: LiteralExpression => List(RenderedLiteral(literal.getExpressionString))
       case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
-        // TODO: Should we use the same trick with re-parsing after ClassCastException as we use in ParsedSpelExpression?
-        List(RenderedSubExpression(spelExpr.getValue[String](evaluationContext, classOf[String])))
+        List(RenderedSubExpression(spelExpr.getValue(evaluationContext)))
       case composite: CompositeStringExpression => composite.getExpressions.toList.flatMap(renderExpression)
       case other =>
         throw new IllegalArgumentException(
@@ -151,16 +159,19 @@ class SpelExpression(
       block
     } catch {
       case NonFatal(e) =>
-        logger.info(
-          s"Expression evaluation failed. Original {}, ctxId: {}, message: {}",
-          original,
-          ctx.id,
-          e.getMessage
-        )
-        // we log twice here because LazyLogging cannot print context and stacktrace at the same time
-        logger.debug("Expression evaluation failed. Original: {}. Context: {}", original, ctx)
-        logger.debug("Expression evaluation failed", e)
-        throw new SpelExpressionEvaluationException(original, ctx.id, e)
+        if (logger.underlying.isDebugEnabled) {
+          // we log twice here because LazyLogging cannot print context and stacktrace at the same time
+          logger.debug("Expression evaluation failed. Original: {}. Context: {}", original, ctx)
+          logger.debug("Expression evaluation failed", e)
+        } else {
+          logger.info(
+            s"Expression evaluation failed. Original {}, ctxId: {}, message: {}",
+            original,
+            ctx.id,
+            e.getMessage
+          )
+        }
+        throw new SpelExpressionEvaluationException(original, e)
     }
   }
 
@@ -243,6 +254,17 @@ class SpelExpressionParser(
       prepareEvaluationContext
     )
 
+  def withValidator(modify: SpelExpressionValidator => SpelExpressionValidator): SpelExpressionParser = {
+    new SpelExpressionParser(
+      parser,
+      modify(validator),
+      dictRegistry,
+      enableSpelForceCompile,
+      flavour,
+      prepareEvaluationContext
+    )
+  }
+
 }
 
 object SpelExpressionParser extends LazyLogging {
@@ -286,16 +308,16 @@ object SpelExpressionParser extends LazyLogging {
       dictRegistry: DictRegistry,
       enableSpelForceCompile: Boolean,
       flavour: Flavour,
-      classDefinitionSet: ClassDefinitionSet
+      classDefinitionSet: ClassDefinitionSet,
   ): SpelExpressionParser = {
 
-    val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
+    val parser = new AdjustingTemplateExpressionSpringSpelExpressionParser(
       // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
     val validator = new SpelExpressionValidator(
-      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet)
+      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet, false)
     )
     new SpelExpressionParser(
       parser,
@@ -305,6 +327,26 @@ object SpelExpressionParser extends LazyLogging {
       flavour,
       evaluationContextPreparer
     )
+  }
+
+  private class AdjustingTemplateExpressionSpringSpelExpressionParser(configuration: SpelParserConfiguration)
+      extends org.springframework.expression.spel.standard.SpelExpressionParser(configuration) {
+
+    // Override for: org.springframework.expression.common.TemplateAwareExpressionParser.parseTemplate, because
+    // the spring should return only the StringExpression for a template
+    override def parseExpression(expressionString: String, context: ParserContext): Expression = {
+      val expression = super.parseExpression(expressionString, context)
+      if (context != null && context.isTemplate) {
+        expression match {
+          case l: LiteralExpression         => l
+          case s: CompositeStringExpression => s
+          case other                        => new CompositeStringExpression(expressionString, Array(other))
+        }
+      } else {
+        expression
+      }
+    }
+
   }
 
 }

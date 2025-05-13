@@ -4,37 +4,42 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CustomNodeError,
   ExpressionParserCompilationError
 }
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
+import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import scala.jdk.CollectionConverters._
-import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
-class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
+class TableSinkParametersTest
+    extends AnyFunSuite
+    with Matchers
+    with PatientScalaFutures
+    with BeforeAndAfterAll
+    with ModelClassLoaderSimulationSuite {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val inputTableName                 = "input"
   private val outputTableName                = "output"
-  private val virtualColumnOutputTableName   = "virtual-column-output"
+  private val virtualColumnOutputTableName   = "virtual_column_output"
   private val outputTableNameWithInvalidCols = "output_invalid_column_names"
 
   private lazy val outputDirectory =
@@ -79,28 +84,23 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
        |);
        |""".stripMargin
 
-  private lazy val sqlTablesDefinitionFilePath = {
-    val tempFile = File.createTempFile("tables-definition", ".sql")
-    tempFile.deleteOnExit()
-    FileUtils.writeStringToFile(tempFile, tablesDefinition, StandardCharsets.UTF_8)
-    tempFile.toPath
-  }
-
   private lazy val tableComponentsConfig: Config = ConfigFactory.parseString(
     s"""
        |{
-       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
+       |  tableDefinition: \"\"\" $tablesDefinition \"\"\"
        |}
        |""".stripMargin
   )
 
-  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
+  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
     tableComponentsConfig,
-    ProcessObjectDependencies.withConfig(tableComponentsConfig)
+    ModelConfig.parse(tableComponentsConfig)
   )
 
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
-    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(tableComponents)
     .build()
@@ -108,6 +108,7 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   override protected def afterAll(): Unit = {
     FileUtils.deleteQuietly(outputDirectory.toFile)
     FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
+    flinkMiniClusterWithServices.close()
     super.afterAll()
   }
 

@@ -4,8 +4,9 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromIterable, fromMap}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.k8s.manager.OptionalNussknackerInstanceName
 import skuber.ObjectMeta
 import skuber.networking.v1.Ingress
 
@@ -27,7 +28,7 @@ class IngressPreparerTest extends AnyFunSuite {
   test("should prepare ingress") {
     val preparer = new IngressPreparer(
       config = IngressConfig(enabled = true, Some(hostname)),
-      nuInstanceName = Some(nussknackerInstanceName)
+      nuInstanceName = OptionalNussknackerInstanceName.forInstanceName(nussknackerInstanceName)
     )
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe Some(
@@ -86,7 +87,10 @@ class IngressPreparerTest extends AnyFunSuite {
       )
 
     val preparer =
-      new IngressPreparer(config = IngressConfig(enabled = true, Some(hostname), "/", tlsConf), nuInstanceName = None)
+      new IngressPreparer(
+        config = IngressConfig(enabled = true, Some(hostname), "/", tlsConf),
+        nuInstanceName = OptionalNussknackerInstanceName.empty
+      )
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe Some(
       Ingress(
@@ -143,7 +147,7 @@ class IngressPreparerTest extends AnyFunSuite {
 
     val preparer = new IngressPreparer(
       config = IngressConfig(enabled = true, Some(hostname), "/", annotationConf),
-      nuInstanceName = None
+      nuInstanceName = OptionalNussknackerInstanceName.empty
     )
 
     preparer
@@ -154,13 +158,19 @@ class IngressPreparerTest extends AnyFunSuite {
   }
 
   test("should not prepare ingress for lite-streaming") {
-    val preparer = new IngressPreparer(config = IngressConfig(enabled = true, Some(hostname)), nuInstanceName = None)
+    val preparer = new IngressPreparer(
+      config = IngressConfig(enabled = true, Some(hostname)),
+      nuInstanceName = OptionalNussknackerInstanceName.empty
+    )
 
     preparer.prepare(processVersion, liteStreamMetaData, serviceName, servicePort) shouldBe None
   }
 
   test("should not prepare ingress when disabled") {
-    val preparer = new IngressPreparer(config = IngressConfig(enabled = false, Some(hostname)), nuInstanceName = None)
+    val preparer = new IngressPreparer(
+      config = IngressConfig(enabled = false, Some(hostname)),
+      nuInstanceName = OptionalNussknackerInstanceName.empty
+    )
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe None
   }

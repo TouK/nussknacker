@@ -1,18 +1,14 @@
-import { TypingResult, UIParameter } from "./definition";
-import { Edge, EdgeType } from "./edge";
-import { NodeType, PropertiesType } from "./node";
-import { ComponentGroup } from "./component";
-import { ScenarioPropertyConfig } from "../components/properties/ScenarioProperty";
-
-export type ScenarioGraphWithName = {
-    processName: string;
-    scenarioGraph: ScenarioGraph;
-};
+import type { ParamType } from "../components/graph/node-modal/editors/types";
+import type { ComponentGroup } from "./component";
+import type { TypingResult, UIParameter } from "./definition";
+import type { Edge, EdgeType } from "./edge";
+import type { NodeType, PropertiesType } from "./node";
 
 export type ScenarioGraph = {
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
+    stickyNotes: NodeType[];
 };
 
 export type Category = string;
@@ -25,7 +21,7 @@ export type ProcessAdditionalFields = {
 };
 
 export interface UiScenarioProperties {
-    propertiesConfig: { [key: string]: ScenarioPropertyConfig };
+    propertiesConfig: { [key: string]: ParamType };
     docsUrl?: string;
 }
 //"ReturnType" is builtin type alias
@@ -33,7 +29,7 @@ export interface ReturnedType {
     display: string;
     type: string;
     refClazzName: string;
-    params: [];
+    params: TypingResult[];
 }
 
 export interface ComponentDefinition {
@@ -43,6 +39,7 @@ export interface ComponentDefinition {
     docsUrl?: string;
     // For fragments only
     outputParameters?: string[] | null;
+    label: string;
 }
 
 export interface ProcessDefinitionData {

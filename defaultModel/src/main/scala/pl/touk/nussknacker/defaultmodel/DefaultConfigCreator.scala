@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.defaultmodel
 
+import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 
 class DefaultConfigCreator extends EmptyProcessConfigCreator {
 
   import pl.touk.nussknacker.engine.util.functions._
 
-  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+  override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {
     ExpressionConfig(
-      Map(
+      globalProcessVariables = Map(
         "GEO"         -> anyCategory(geo),
         "NUMERIC"     -> anyCategory(numeric),
         "CONV"        -> anyCategory(conversion),
@@ -20,14 +22,16 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
         "RANDOM"      -> anyCategory(random),
         "BASE64"      -> anyCategory(base64)
       ),
-      List()
+      globalImports = List()
     )
   }
 
-  override def buildInfo(): Map[String, String] = {
-    pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) =>
-      k -> v.toString
-    } + ("name" -> "defaultModel")
+  override def modelInfo(): ModelInfo = {
+    ModelInfo.fromMap(
+      pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) =>
+        k -> v.toString
+      } + ("name" -> "defaultModel")
+    )
   }
 
 }

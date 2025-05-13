@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.api.process
 
+import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
-import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExcludeList}
 
 import java.time._
 import java.util.UUID
 
-//TODO: how to make this config less spel-centric?, move globalImports and optimizeCompilation to spel configuration
+//TODO: move most of this things to some separate expression field inside ModelConfig
 case class ExpressionConfig(
     globalProcessVariables: Map[String, WithCategories[AnyRef]],
     globalImports: List[String],

@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
 import pl.touk.nussknacker.engine.api
+import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariable,
   AdditionalVariableProvidedInRuntime,
   AdditionalVariableWithFixedValue,
-  Parameter
+  Parameter,
+  ParameterCategory
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -50,16 +51,21 @@ object ParameterExtractor {
     val parameterData = ParameterData(p, paramType)
     val isOptional    = OptionalDeterminer.isOptional(parameterData, isScalaOptionParameter, isJavaOptionalParameter)
 
-    val editor = EditorExtractor.extract(parameterData, parameterConfig)
+    val editors = EditorExtractor.extract(parameterData, parameterConfig)
     val validators =
-      ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional, parameterConfig, editor))
+      ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional, parameterConfig, editors))
     val defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(
-      DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, editor)
+      DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, editors)
     )
+
+    val category = ParameterCategoryExtractor
+      .extract(parameterData, parameterConfig)
+      .getOrElse(ParameterCategory.Standard)
+
     Parameter(
       name,
       paramType,
-      editor,
+      editors,
       validators,
       defaultValue,
       additionalVariables(p, isLazyParameter),
@@ -69,7 +75,8 @@ object ParameterExtractor {
       scalaOptionParameter = isScalaOptionParameter,
       javaOptionalParameter = isJavaOptionalParameter,
       hintText = parameterConfig.hintText,
-      labelOpt = parameterConfig.label
+      labelOpt = parameterConfig.label,
+      category = category
     )
   }
 

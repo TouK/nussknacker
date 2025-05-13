@@ -1,42 +1,39 @@
 package pl.touk.nussknacker.development.manager
 
-import akka.actor.ActorSystem
 import cats.data.{Validated, ValidatedNel}
+import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{
-  DateParameterEditor,
-  LiteralIntegerValidator,
-  MandatoryParameterValidator,
-  StringParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
+import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 
-import java.net.URI
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Future, Promise}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success}
 
-class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseModelData)
-    extends DeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+class DevelopmentDeploymentManager(
+    dependencies: DeploymentManagerDependencies,
+    modelDataProvider: BaseModelDataProvider
+) extends DeploymentManager
+    with LazyLogging {
+
+  import dependencies._
 
   import SimpleStateStatus._
-  import pl.touk.nussknacker.engine.ModelData._
 
   // Use these "magic" description values to simulate deployment/validation failure
   private val descriptionForValidationFail = "validateFail"
@@ -45,24 +42,23 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
-  private val random                                      = new scala.util.Random()
+  private val memory: TrieMap[ProcessName, DeploymentStatusDetails] = TrieMap[ProcessName, DeploymentStatusDetails]()
+  private val random                                                = new scala.util.Random()
 
-  private lazy val flinkTestRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
-
-  implicit private class ProcessStateExpandable(processState: StatusDetails) {
-
-    def withStateStatus(stateStatus: StateStatus): StatusDetails = {
-      StatusDetails(
-        stateStatus,
-        processState.deploymentId,
-        processState.externalDeploymentId,
-        processState.version,
-        Some(System.currentTimeMillis())
+  private val miniClusterWithServices =
+    FlinkMiniClusterFactory
+      .createMiniClusterWithServices(
+        modelDataProvider.modelClassLoader,
+        new Configuration,
       )
-    }
 
-  }
+  private lazy val flinkTestRunner =
+    new FlinkMiniClusterScenarioTestRunner(
+      modelDataProvider,
+      miniClusterWithServices,
+      parallelism = 1,
+      waitForJobIsFinishedRetryPolicy = 20.seconds.toPausePolicy
+    )
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
     case DMValidateScenarioCommand(_, _, canonicalProcess, _) =>
@@ -83,7 +79,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     case command: DMRunOffScheduleCommand  => runOffSchedule(command)
     case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
     case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-      flinkTestRunner.test(canonicalProcess, scenarioTestData) // it's just for streaming e2e tests from file purposes
+      flinkTestRunner.runTests(
+        canonicalProcess,
+        scenarioTestData
+      ) // it's just for streaming e2e tests from file purposes
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
@@ -108,7 +107,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
               case None        => changeState(processVersion.processName, NotDeployed)
             }
           } else {
-            result.complete(Success(duringDeployStateStatus.externalDeploymentId))
+            result.complete(Success(duringDeployStateStatus.deploymentId.map(_.value).map(ExternalDeploymentId(_))))
             asyncChangeState(processVersion.processName, Running)
           }
         }
@@ -135,10 +134,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     Future.unit
   }
 
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(memory.get(scenarioName).toList))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
@@ -148,18 +147,21 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     notImplemented
   }
 
-  override def close(): Unit = {}
+  override def close(): Unit = {
+    miniClusterWithServices.close()
+  }
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach { processState =>
-      val newProcessState = processState.withStateStatus(stateStatus)
+    memory.get(name).foreach { statusDetails =>
+      val newProcessState = statusDetails.copy(status = stateStatus)
       memory.update(name, newProcessState)
-      logger.debug(s"Changed scenario $name state from ${processState.status.name} to ${stateStatus.name}.")
+      logger.debug(s"Changed scenario $name state from ${statusDetails.status.name} to ${stateStatus.name}.")
     }
 
   private def asyncChangeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach { processState =>
-      logger.debug(s"Starting async changing state for $name from ${processState.status.name} to ${stateStatus.name}..")
+    memory.get(name).foreach { statusDetails =>
+      logger
+        .debug(s"Starting async changing state for $name from ${statusDetails.status.name} to ${stateStatus.name}..")
       actorSystem.scheduler.scheduleOnce(
         sleepingTimeSeconds,
         new Runnable {
@@ -169,17 +171,18 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
       )
     }
 
-  private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): StatusDetails = {
-    val processState = StatusDetails(
-      stateStatus,
-      None,
-      Some(ExternalDeploymentId(UUID.randomUUID().toString)),
-      version = Some(processVersion),
-      startTime = Some(System.currentTimeMillis()),
+  private def createAndSaveProcessState(
+      stateStatus: StateStatus,
+      processVersion: ProcessVersion
+  ): DeploymentStatusDetails = {
+    val statusDetails = DeploymentStatusDetails(
+      status = stateStatus,
+      deploymentId = None,
+      version = Some(processVersion.versionId),
     )
 
-    memory.update(processVersion.processName, processState)
-    processState
+    memory.update(processVersion.processName, statusDetails)
+    statusDetails
   }
 
   private def sleepingTimeSeconds = FiniteDuration(
@@ -189,18 +192,25 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport
+
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
+    Resource.pure(EngineScenarioCompilationDependencies.empty)
+
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(
-      modelData: BaseModelData,
+      modelDataProvider: BaseModelDataProvider,
       dependencies: DeploymentManagerDependencies,
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
-    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem, modelData))
+    Validated.valid(new DevelopmentDeploymentManager(dependencies, modelDataProvider))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer

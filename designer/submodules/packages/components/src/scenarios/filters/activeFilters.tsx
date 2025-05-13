@@ -1,10 +1,11 @@
-import { useFilterContext } from "../../common";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
-import React, { useMemo } from "react";
-import { Chance } from "chance";
 import { alpha, Avatar, Box, Chip, emphasize } from "@mui/material";
+import { Chance } from "chance";
+import React, { useMemo } from "react";
+
 import { ClearFiltersButton } from "./clearFiltersButton";
+import { useScenariosFilterContext } from "./common/useScenariosFilterContext";
 import { getUserSetting } from "./getUserSetting";
+import type { ScenariosFiltersModel } from "./scenariosFiltersModel";
 
 function getInitials(value: string): [string, string] {
     const [first, ...restChars] = value;
@@ -53,7 +54,7 @@ export function ActiveFilters<F extends Record<string, any>>({
     getLabel?: (name: keyof F, value?: string | number) => string;
     getColor?: (name: keyof F, value?: string | number) => string;
 }): JSX.Element {
-    const { setFilter, getFilter } = useFilterContext<F>();
+    const { setFilter, getFilter } = useScenariosFilterContext<F>();
 
     const values = useMemo(
         () =>

@@ -1,12 +1,15 @@
-import React, { useCallback, useMemo } from "react";
-import { ExpressionObj } from "../types";
-import { FieldError } from "../../Validators";
-import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
-import { Formatter, FormatterType, typeFormatters } from "../Formatter";
-import moment from "moment";
 import { isEmpty } from "lodash";
-import { ExtendedEditor } from "../Editor";
+import moment from "moment";
+import React, { useCallback, useMemo } from "react";
+
+import type { FieldError } from "../../Validators";
+import type { ExtendedEditor, OnValueChange } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
+import { FormatterType, typeFormatters } from "../Formatter";
+import type { Formatter } from "../Formatter";
+import type { ExpressionObj } from "../types";
+import TimeRangeEditor from "./TimeRangeEditor";
 
 export type Duration = {
     days: number;
@@ -17,7 +20,7 @@ export type Duration = {
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
@@ -29,7 +32,7 @@ type Props = {
 const SPEL_DURATION_SWITCHABLE_TO_REGEX =
     /^T\(java\.time\.Duration\)\.parse\('(-)?P([0-9]{1,}D)?(T((-)?[0-9]{1,}H)?((-)?[0-9]{1,}M)?((-)?[0-9]{1,}S)?)?'\)$/;
 const NONE_DURATION = {
-    days: () => null,
+    asDays: () => null,
     hours: () => null,
     minutes: () => null,
     seconds: () => null,
@@ -60,14 +63,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
         (expression: string): Duration => {
             const decodeExecResult = durationFormatter.decode(expression);
 
-            const duration =
-                decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
-            return {
-                days: duration.days(),
-                hours: duration.hours(),
-                minutes: duration.minutes(),
-                seconds: duration.seconds(),
-            };
+            return duration(decodeExecResult);
         },
         [durationFormatter],
     );
@@ -83,6 +79,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
+            language={editorsParameters.DurationParameterEditor.language}
         />
     );
 };
@@ -90,10 +87,19 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
 DurationEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
-DurationEditor.switchableToHint = () => i18next.t("editors.duration.switchableToHint", "Switch to basic mode");
-
 DurationEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.duration.noSwitchableToHint",
-        "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to basic mode",
+        "Expression must match pattern T(java.time.Duration).parse('P(n)DT(n)H(n)M') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.DurationParameterEditor.displayName },
     );
+
+export function duration(decodeExecResult) {
+    const duration = decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
+    return {
+        days: Math.floor(duration.asDays()),
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+        seconds: duration.seconds(),
+    };
+}

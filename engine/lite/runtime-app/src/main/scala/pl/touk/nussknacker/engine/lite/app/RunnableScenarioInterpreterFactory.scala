@@ -1,47 +1,66 @@
 package pl.touk.nussknacker.engine.lite.app
 
-import akka.actor.ActorSystem
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
+import pl.touk.nussknacker.engine.api.namespaces.Namespace
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.classloader.{DeploymentManagersClassLoaderFactory, ModelClassLoaderFactory}
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 object RunnableScenarioInterpreterFactory extends LazyLogging {
 
   def prepareScenarioInterpreter(
       scenario: CanonicalProcess,
       runtimeConfig: Config,
-      deploymentConfig: Config,
+      deploymentData: LiteDeploymentData,
       system: ActorSystem
-  ): RunnableScenarioInterpreter = {
-    val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
-    val modelData = ModelData.duringExecution(
-      ModelConfigs(modelConfig),
-      ModelClassLoader(modelConfig.as[List[String]]("classPath"), workingDirectoryOpt = None),
-      resolveConfigs = true
-    )
-    val metricRegistry = prepareMetricRegistry(runtimeConfig)
-    val preparer       = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
-    // TODO Pass correct ProcessVersion and DeploymentData
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+  ): Resource[IO, RunnableScenarioInterpreter] = {
+    for {
+      deploymentManagersClassLoader <- DeploymentManagersClassLoaderFactory.create(List.empty)
+      scenarioInterpreter <- Resource
+        .make(
+          acquire = IO.delay {
+            val modelConfig = runtimeConfig.getConfig("modelConfig")
+            val urls        = modelConfig.as[List[String]]("classPath")
+            val modelData = ModelData.duringExecution(
+              ModelConfigs(modelConfig),
+              ModelClassLoaderFactory.create(urls, workingDirectoryOpt = None, deploymentManagersClassLoader),
+              resolveConfigs = true
+            )
+            val metricRegistry = prepareMetricRegistry(runtimeConfig, modelData.namingStrategy.namespace)
+            val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+            val jobData  = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
-    prepareScenarioInterpreter(scenario, runtimeConfig, jobData, deploymentConfig, modelData, preparer)(system)
+            prepareScenarioInterpreter(
+              scenario,
+              runtimeConfig,
+              jobData,
+              deploymentData,
+              modelData,
+              preparer
+            )(system)
+          }
+        )(
+          release = scenarioInterpreter => IO.delay(scenarioInterpreter.close())
+        )
+    } yield scenarioInterpreter
   }
 
   private def prepareScenarioInterpreter(
       scenario: CanonicalProcess,
       runtimeConfig: Config,
       jobData: JobData,
-      deploymentConfig: Config,
+      deploymentData: LiteDeploymentData,
       modelData: ModelData,
       preparer: LiteEngineRuntimeContextPreparer
   )(implicit system: ActorSystem) = {
@@ -49,23 +68,31 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
     scenario.metaData.typeSpecificData match {
       case _: LiteStreamMetaData =>
         KafkaTransactionalScenarioInterpreter(
+          modelData,
+          preparer,
           scenario,
           jobData,
-          deploymentConfig.as[LiteKafkaJobData],
-          modelData,
-          preparer
+          deploymentData.nodesData,
+          LiteKafkaJobData(deploymentData.tasksCountUnsafe),
         )
       case _: RequestResponseMetaData =>
         val requestResponseConfig = runtimeConfig.as[RequestResponseConfig]("request-response")
-        new RequestResponseRunnableScenarioInterpreter(jobData, scenario, modelData, preparer, requestResponseConfig)
+        new RequestResponseRunnableScenarioInterpreter(
+          modelData,
+          preparer,
+          scenario,
+          jobData,
+          deploymentData.nodesData,
+          requestResponseConfig
+        )
       case other =>
         throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
     }
   }
 
-  private def prepareMetricRegistry(engineConfig: Config) = {
+  private def prepareMetricRegistry(engineConfig: Config, namespace: Option[Namespace]) = {
     lazy val instanceId = sys.env.getOrElse("INSTANCE_ID", LiteMetricRegistryFactory.hostname)
-    new LiteMetricRegistryFactory(instanceId).prepareRegistry(engineConfig)
+    new LiteMetricRegistryFactory(instanceId, namespace).prepareRegistry(engineConfig)
   }
 
 }

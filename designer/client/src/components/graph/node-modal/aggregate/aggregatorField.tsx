@@ -5,13 +5,13 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from "re
 import { useSelector } from "react-redux";
 import { useArrayState } from "rooks";
 import { v4 as uuid4 } from "uuid";
+
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { FieldsRow } from "../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
 import { getFindAvailableVariables } from "../NodeDetailsContent/selectors";
-import { FieldWrapperProps } from "../ParameterExpressionField";
+import type { FieldWrapperProps } from "../ParameterExpressionField";
 import { findParamDefinitionByName } from "../parameterHelpers";
-
 import { AggregateContext } from "./aggregateContext";
 import { AggregatorFieldsStack } from "./aggregatorFieldsStack";
 
@@ -34,7 +34,7 @@ export type AggregateValue = WithUuid<AggRow>;
 export function AggregatorField({ parameterDefinitions, node, isEditMode, showValidation }: FieldWrapperProps) {
     const aggregators = useMemo(() => {
         const definition = findParamDefinitionByName(parameterDefinitions, "aggregator");
-        return definition.editor.simpleEditor.possibleValues;
+        return definition.editors[0].possibleValues || [];
     }, [parameterDefinitions]);
 
     const { aggregator } = useContext(AggregateContext);

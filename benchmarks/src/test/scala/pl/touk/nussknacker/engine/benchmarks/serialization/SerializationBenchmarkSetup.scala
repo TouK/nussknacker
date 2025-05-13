@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization
 
 import com.github.ghik.silencer.silent
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 class SerializationBenchmarkSetup[T](
     typeInfo: TypeInformation[T],

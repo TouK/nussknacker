@@ -3,14 +3,14 @@ package pl.touk.nussknacker.engine.definition.component.bultin
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.BuiltInComponentId
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   BuiltInComponentSpecificData,
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
   ComponentStaticDefinition
 }
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfig) {
@@ -25,7 +25,7 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
       val defaultConfig  = DefaultComponentConfigDeterminer.forBuiltInComponent(id)
       val combinedConfig = componentsUiConfig.getConfig(id) |+| defaultConfig
       ComponentDefinitionExtractor
-        .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName)
+        .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName, id.name)
         .map { case (uiDefinition, _) =>
           // Currently built-in components are represented as method-based component, probably we should change it to some dedicated type
           MethodBasedComponentDefinitionWithImplementation.withNullImplementation(

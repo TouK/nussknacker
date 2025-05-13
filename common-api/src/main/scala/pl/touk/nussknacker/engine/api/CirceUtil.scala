@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.api
 
-import com.github.ghik.silencer.silent
 import io.circe
-import io.circe.generic.extras.Configuration
 import io.circe._
+import io.circe.generic.extras.Configuration
 
 import java.net.{URI, URL}
 import java.nio.charset.StandardCharsets
@@ -19,24 +18,34 @@ object CirceUtil {
     io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
 
   def decodeJson[T: Decoder](json: Array[Byte]): Either[circe.Error, T] =
-    decodeJson(new String(json, StandardCharsets.UTF_8))
+    decodeJson(toString(json))
 
-  def decodeJsonUnsafe[T: Decoder](json: String): T = unsafe(decodeJson(json))
+  def decodeJsonUnsafe[T: Decoder](json: String): T = unsafe(decodeJson(json), json)
 
-  def decodeJsonUnsafe[T: Decoder](json: String, message: String): T = unsafe(decodeJson(json), message)
+  def decodeJsonUnsafe[T: Decoder](json: String, message: String): T = unsafe(decodeJson(json), json, message)
 
-  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = unsafe(decodeJson(json))
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = {
+    val jsonString = toString(json)
+    unsafe(decodeJson(jsonString), jsonString)
+  }
 
-  def decodeJsonUnsafe[T: Decoder](json: Array[Byte], message: String): T = unsafe(decodeJson(json), message)
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte], message: String): T = {
+    val jsonString = toString(json)
+    unsafe(decodeJson(jsonString), jsonString, message)
+  }
 
-  def decodeJsonUnsafe[T: Decoder](json: Json): T = unsafe(Decoder[T].decodeJson(json))
+  def decodeJsonUnsafe[T: Decoder](json: Json): T = unsafe(Decoder[T].decodeJson(json), json.asString.getOrElse(""))
 
-  def decodeJsonUnsafe[T: Decoder](json: Json, message: String): T = unsafe(Decoder[T].decodeJson(json), message)
+  def decodeJsonUnsafe[T: Decoder](json: Json, message: String): T =
+    unsafe(Decoder[T].decodeJson(json), json.asString.getOrElse(""), message)
 
-  private def unsafe[T](result: Either[circe.Error, T], message: String = "") = result match {
+  private def toString(json: Array[Byte]): String =
+    new String(json, StandardCharsets.UTF_8)
+
+  private def unsafe[T](result: Either[circe.Error, T], json: => String, message: String = "") = result match {
     case Left(error) =>
       throw DecodingError(
-        s"Failed to decode${if (message.isBlank) "" else s" - $message"}, error: ${error.getMessage}",
+        s"Failed to decode${if (message.isBlank) "" else s" - $message"}, error: ${error.getMessage}, json: $json",
         error
       )
     case Right(data) => data
@@ -72,20 +81,19 @@ object CirceUtil {
 
   implicit class HCursorExt(val cursor: HCursor) extends AnyVal {
 
-    @silent("deprecated")
     def toMapExcluding(keys: String*): Decoder.Result[Map[String, String]] = {
       val keysSet = keys.toSet
       cursor
         .as[Map[String, String]]
         .map {
-          _.filterKeys(k => !keysSet.contains(k)).toMap
+          _.filter { case (k, _) => !keysSet.contains(k) }
         }
     }
 
   }
 
   // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit
-  // that some value is null, but for people it generates a lot of unnecessary noice
+  // that some value is null, but for people it generates a lot of unnecessary noise
   val humanReadablePrinter: Printer = Printer.spaces2.copy(dropNullValues = true)
 
 }

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
 import pl.touk.nussknacker.engine.api.definition.ParameterDeclarationBuilder.ParamType
 import pl.touk.nussknacker.engine.api.definition.ParameterDeclarationBuilder.ParamType._
 import pl.touk.nussknacker.engine.api.definition.ParameterExtractor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.util.NotNothing
-import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
 
 import scala.reflect.runtime.universe._
 

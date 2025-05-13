@@ -1,27 +1,28 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
 class UnionTransformerSpec
     extends AnyFunSuite
-    with BeforeAndAfterEach
+    with BeforeAndAfterAll
     with Matchers
-    with FlinkSpec
     with LazyLogging
     with VeryPatientScalaFutures {
 
-  import ValidatedValuesDetailedMessage._
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  import ValidatedValuesDetailedMessage._
 
   private val BranchFooId = "foo"
 
@@ -33,8 +34,16 @@ class UnionTransformerSpec
 
   private val data = List("10", "20", "30", "40")
 
-  override def afterEach(): Unit = {
-    super.afterEach()
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  private lazy val testScenarioRunner =
+    TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)
+      .build()
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
   }
 
   test("should unify streams with union-memo") {
@@ -185,10 +194,5 @@ class UnionTransformerSpec
       "Expression [#input / (#input % 4)] evaluation failed, message: EL1072E: An exception occurred whilst evaluating a compiled expression"
     )
   }
-
-  private def testScenarioRunner =
-    TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
-      .build()
 
 }

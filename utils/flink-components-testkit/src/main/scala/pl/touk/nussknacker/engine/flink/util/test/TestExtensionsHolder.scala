@@ -24,11 +24,15 @@ object TestExtensionsHolder {
   private val extensions = new ConcurrentHashMap[TestRunId, Extensions]()
 
   private def componentsForId(id: TestRunId): List[ComponentDefinition] = {
-    extensions.get(id).components
+    getExtension(id).components
   }
 
   private def globalVariablesForId(id: TestRunId): Map[String, AnyRef] = {
-    extensions.get(id).globalVariables
+    getExtension(id).globalVariables
+  }
+
+  private def getExtension(id: TestRunId): Extensions = {
+    Option(extensions.get(id)).getOrElse(throw new IllegalArgumentException(s"Test run $id doesn't exist"))
   }
 
   def registerTestExtensions(

@@ -190,23 +190,20 @@ To obtain the last matching element, the syntax is `.$`.
 ### Transforming lists
 
 Special variable `#this` is used to operate on single element of list.
-            
-Examples below assume following structure:
-```Person: {name: String, age: Integer }
-listOfPersons: List[Person]
-person1 = name: "Alex"; age: 42
-person2 = name: "John"; age: 24
-listOfPersons = {person1, person2}
-```
 
-| Expression                                                      | Result               | Type                 |
-|-----------------------------------------------------------------|----------------------|----------------------|
-| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}         | List[Integer]        |
-| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}     | List[String]         |
-| `#listOfPersons.![#this.age]`                                   | {42, 24}             | List[Integer]        |
-| `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
-| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
+For the examples in the table below, let's assume that the `#listOfPersons` contains the following data:  
+`{{"name":"Alex", "age": 42}, {"name": "John", "age": 24}}` - it is a list of records. 
 
+| Expression                                                      | Result                                                       | Type                 |
+|-----------------------------------------------------------------|--------------------------------------------------------------|----------------------|
+| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}                                                 | List[Integer]        |
+| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}                                             | List[String]         |
+| `#listOfPersons.![#this.age]`                                   | {42, 24}                                                     | List[Integer]        |
+| `#listOfPersons.![7]`                                           | {7, 7}                                                       | List[Integer]        |
+| `#listOfPersons.![{key: #this.name, value: #this.age}]`         | {{"key": "Alex", "value": 42}, {"key": "John", "value": 24}} | List[Record]         |
+| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24}                                         | Map[String, Integer] |
+
+Note, that `toMap()` method can be applied to lists of records, if each record contains two properties: `key` and `value`. 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
 ### Safe navigation
@@ -276,6 +273,7 @@ Explicit conversions are available as built-in functions and utility classes.
 List of built-in functions:
 - `canBe(className)`/`to(className)`/`toOrNull(className)`
 - `canBeBoolean`/`toBoolean`/`toBooleanOrNull`
+- `canBeInteger`/`toInteger`/`toIntegerOrNull`
 - `canBeLong`/`toLong`/`toLongOrNull`
 - `canBeDouble`/`toDouble`/`toDoubleOrNull`
 - `canBeBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
@@ -462,4 +460,3 @@ On the other hand, formatter created using `#DATE_FORMAT.formatter()` method wil
 - `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
 
 For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
-

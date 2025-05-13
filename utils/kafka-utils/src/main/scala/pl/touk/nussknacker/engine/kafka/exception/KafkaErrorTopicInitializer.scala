@@ -4,9 +4,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{DescribeTopicsOptions, ListTopicsOptions, NewTopic}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 
+import java.{lang, util}
 import java.util.{Collections, Optional}
 import java.util.concurrent.TimeUnit
-import java.{lang, util}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 

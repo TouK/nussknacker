@@ -1,21 +1,20 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
-import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
+import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.ui.security.api.AuthManager.ImpersonationConsideringInputEndpoint
-import pl.touk.nussknacker.ui.server.{AkkaHttpBasedTapirStreamEndpointProvider, TapirStreamEndpointProvider}
-import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
+import pl.touk.nussknacker.ui.server.{PekkoHttpBasedTapirStreamEndpointProvider, TapirStreamEndpointProvider}
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
+import sttp.tapir.{auth, Endpoint, EndpointInput}
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
-import sttp.tapir.{Endpoint, EndpointInput, auth}
 
 import java.lang.reflect.{Method, Modifier}
 import java.time.{ZoneId, ZoneOffset}
@@ -33,7 +32,8 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
     val examplesValidationResult = OpenAPIExamplesValidator.forTapir.validateExamples(
       specYaml = generatedSpec,
       excludeResponseValidationForOperationIds = List(
-        "getApiProcessesScenarionameActivityActivities" // todo NU-1772: responses contain discriminator, it is not properly handled by validator
+        "getApiProcessesScenarionameActivityActivities", // TODO: NU-1772: responses contain discriminator, it is not properly handled by validator,
+        "postApiScenariotestingScenarionameCapabilities" // same reason as above
       )
     )
     val clue = examplesValidationResult
@@ -105,7 +105,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_SCENARIO_COMPARE",
           "CLICK_SCENARIO_MIGRATE",
           "CLICK_SCENARIO_IMPORT",
-          "CLICK_SCENARIO_JSON",
+          "CLICK_SCENARIO_EXPORT",
           "CLICK_SCENARIO_PDF",
           "CLICK_SCENARIO_ARCHIVE",
           "CLICK_TEST_GENERATED",
@@ -130,6 +130,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_SCENARIO_UNARCHIVE",
           "CLICK_SCENARIO_CUSTOM_ACTION",
           "CLICK_SCENARIO_CUSTOM_LINK",
+          "CLICK_SCENARIO_TEST",
           "CLICK_SCENARIO_ACTIVITIES_ADD_ATTACHMENT",
           "CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT",
           "CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT_TO_ACTIVITY",
@@ -177,7 +178,7 @@ object NuDesignerApiAvailableToExpose {
   private def withStreamProvider[T](handle: TapirStreamEndpointProvider => T): T = {
     val actorSystem: ActorSystem                    = ActorSystem()
     val mat: Materializer                           = Materializer(actorSystem)
-    val streamProvider: TapirStreamEndpointProvider = new AkkaHttpBasedTapirStreamEndpointProvider()(mat)
+    val streamProvider: TapirStreamEndpointProvider = new PekkoHttpBasedTapirStreamEndpointProvider()(mat)
     val result                                      = handle(streamProvider)
     Await.result(actorSystem.terminate(), scala.concurrent.duration.Duration.Inf)
     result

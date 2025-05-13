@@ -8,23 +8,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.utils.{QueryParamsHelper, StatisticEncryptionSupport}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
-import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
-import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
-  emptyActivityStatistics,
-  emptyComponentStatistics,
-  emptyGeneralStatistics,
-  emptyScenarioStatistics,
-  emptyUptimeStats
-}
+import pl.touk.nussknacker.ui.statistics.ScenarioStatistics._
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -308,7 +302,7 @@ class UsageStatisticsReportsSettingsServiceTest
     isFragment = false,
     ProcessingMode.UnboundedStream,
     DeploymentManagerType("flinkStreaming"),
-    Some(SimpleStateStatus.NotDeployed),
+    Some(SimpleStateStatus.NotDeployed.name),
     nodesCount = 3,
     scenarioCategory = "Category1",
     scenarioVersion = VersionId(2),
@@ -322,7 +316,7 @@ class UsageStatisticsReportsSettingsServiceTest
     isFragment = false,
     ProcessingMode.UnboundedStream,
     DeploymentManagerType("flinkStreaming"),
-    Some(SimpleStateStatus.Running),
+    Some(SimpleStateStatus.Running.name),
     nodesCount = 2,
     scenarioCategory = "Category1",
     scenarioVersion = VersionId(3),
@@ -350,7 +344,7 @@ class UsageStatisticsReportsSettingsServiceTest
     isFragment = false,
     ProcessingMode.RequestResponse,
     DeploymentManagerType("lite-k8s"),
-    Some(SimpleStateStatus.Running),
+    Some(SimpleStateStatus.Running.name),
     nodesCount = 4,
     scenarioCategory = "Category1",
     scenarioVersion = VersionId(2),

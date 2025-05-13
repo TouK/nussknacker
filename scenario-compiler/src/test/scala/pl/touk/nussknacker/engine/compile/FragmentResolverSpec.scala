@@ -1,23 +1,23 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, Fragment}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 
 class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
@@ -239,7 +239,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     )
     val resolver = FragmentResolver(List(fragment, emptyFragment))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
-      case Valid(CanonicalProcess(_, flatNodes, _)) =>
+      case Valid(CanonicalProcess(_, flatNodes, _, _)) =>
         flatNodes(0) match {
           case FlatNode(Source(id, _, _)) =>
             id shouldBe "source"
@@ -399,6 +399,44 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     ): GraphBuilder[R] =
       build(node =>
         builder.creator(
+          Some(
+            FragmentNode(
+              FragmentInput(
+                id,
+                FragmentRef(
+                  fragmentId,
+                  params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList
+                ),
+                isDisabled = Some(true)
+              ),
+              Map(output -> node)
+            )
+          )
+        )
+      )
+
+    def fragmentDisabledManyOutputs(
+        id: String,
+        fragmentId: String,
+        params: List[(String, Expression)],
+        outputs: Map[String, Option[SubsequentNode]]
+    ): R =
+      creator(
+        Some(
+          FragmentNode(
+            FragmentInput(
+              id,
+              FragmentRef(fragmentId, params.map { case (name, value) => NodeParameter(ParameterName(name), value) }),
+              isDisabled = Some(true)
+            ),
+            outputs
+          )
+        )
+      )
+
+    def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
+      creator(
+        Some(
           FragmentNode(
             FragmentInput(
               id,
@@ -408,40 +446,8 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
               ),
               isDisabled = Some(true)
             ),
-            Map(output -> node)
+            Map()
           )
-        )
-      )
-
-    def fragmentDisabledManyOutputs(
-        id: String,
-        fragmentId: String,
-        params: List[(String, Expression)],
-        outputs: Map[String, SubsequentNode]
-    ): R =
-      creator(
-        FragmentNode(
-          FragmentInput(
-            id,
-            FragmentRef(fragmentId, params.map { case (name, value) => NodeParameter(ParameterName(name), value) }),
-            isDisabled = Some(true)
-          ),
-          outputs
-        )
-      )
-
-    def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
-      creator(
-        FragmentNode(
-          FragmentInput(
-            id,
-            FragmentRef(
-              fragmentId,
-              params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList
-            ),
-            isDisabled = Some(true)
-          ),
-          Map()
         )
       )
 

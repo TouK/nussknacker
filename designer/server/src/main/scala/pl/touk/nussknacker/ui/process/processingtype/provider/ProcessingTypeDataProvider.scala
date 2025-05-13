@@ -1,5 +1,10 @@
 package pl.touk.nussknacker.ui.process.processingtype.provider
 
+import cats.effect.{IO, Ref}
+import cats.effect.std.Mutex
+import cats.effect.unsafe.IORuntime
+import cats.implicits.toTraverseOps
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
@@ -7,7 +12,10 @@ import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.{List => JList}
+import java.util.concurrent.CopyOnWriteArrayList
+import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Try}
 
 /**
   * ProcessingType is a context of application. One ProcessingType can't see data from another ProcessingType.
@@ -15,65 +23,66 @@ import java.util.concurrent.atomic.AtomicReference
   *
   * This class is meant to provide access to some scope of data inside context of application to the user.
   * We don't want to pass all ProcessingType's data to every service because it would complicate testing of services
-  * and would broke isolation between areas of application. Due to that, this class is a `Functor`
+  * and would brake isolation between areas of application. Due to that, this class is a `Functor`
   * (to be precise `BiFunctor` but more on that below) which allows to transform the scope of `Data`.
   *
   * Sometimes it is necessary to have access also to combination of data across all ProcessingTypes. Due to that
   * this class is a `BiFunctor` which second value named as `CombinedData`
   *
   * This class caches `Data` and `CombinedData` wrapped in `ProcessingTypeDataState` to avoid computations of
-  * transformations during each lookup to `Data`/`CombinedData`. It behave similar to `Observable` where given
-  * transformed `ProcessingTypeDataProvider` check its parent if `ProcessingTypeDataState.stateIdentity` changed.
+  * transformations during each lookup to `Data`/`CombinedData`.
   *
   * ProcessingType is associated with Category e.g. Fraud Detection, Marketing. Given user has access to certain
-  * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if he/she
-  * has access to category.
+  * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if they
+  * have access to category.
   */
-trait ProcessingTypeDataProvider[+Data, +CombinedData] {
+class ProcessingTypeDataProvider[Data, CombinedData](
+    initialState: ProcessingTypeDataState[Data, CombinedData]
+)(implicit ioRuntime: IORuntime)
+    extends LazyLogging {
 
-  // TODO: replace with proper forType handling
+  type State = ProcessingTypeDataState[Data, CombinedData]
+
+  // We use unsafeRunSync because IO-based solution would complicate a lot our application initialization logic where
+  // we pass to every service, various views for our ProcessingTypeData
+  private val stateRef: Ref[IO, State] =
+    Ref.of[IO, State](initialState).unsafeRunSync()
+
+  private val stateMutex: Mutex[IO] = Mutex[IO].unsafeRunSync()
+
+  private val observers = new CopyOnWriteArrayList[Observer[State]]()
+
+  private val stateOps = new StateOperations(stateRef, observers)
+
   final def forProcessingTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data =
-    forProcessingType(processingType)
-      .getOrElse(
-        throw new IllegalArgumentException(
+    forProcessingTypeEUnsafe(processingType).toTry.get
+
+  final def forProcessingType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
+    forProcessingTypeE(processingType).toTry.get
+  }
+
+  final def forProcessingTypeEUnsafe(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): Either[UnauthorizedError, Data] = {
+    forProcessingTypeE(processingType).map(
+      _.getOrElse(
+        throw new IllegalStateException(
           s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
         )
       )
-
-  final def forProcessingType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
-    allAuthorized
-      .get(processingType)
-      .map(_.getOrElse(throw new UnauthorizedError(user)))
+    )
   }
 
   final def forProcessingTypeE(
       processingType: ProcessingType
   )(implicit user: LoggedUser): Either[UnauthorizedError, Option[Data]] = {
-    allAuthorized
-      .get(processingType) match {
+    allAuthorized.get(processingType) match {
       case Some(dataO) =>
         dataO match {
           case Some(data) => Right(Some(data))
           case None       => Left(new UnauthorizedError(user))
         }
       case None => Right(None)
-    }
-  }
-
-  final def forProcessingTypeEUnsafe(
-      processingType: ProcessingType
-  )(implicit user: LoggedUser): Either[UnauthorizedError, Data] = {
-    allAuthorized
-      .get(processingType) match {
-      case Some(dataO) =>
-        dataO match {
-          case Some(data) => Right(data)
-          case None       => Left(new UnauthorizedError(user))
-        }
-      case None =>
-        throw new IllegalStateException(
-          s"Error while providing process resolver for processing type $processingType requested by user ${user.username}"
-        )
     }
   }
 
@@ -86,33 +95,70 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
   //       Thanks to that we will be sure that no sensitive data leak
-  final def combined: CombinedData = state.getCombined()
+  final def combined: CombinedData = state.combinedDataTry.get
 
-  private[processingtype] def state: ProcessingTypeDataState[Data, CombinedData]
+  // Currently the whole application use this state synchronously, inside Future, because of that we unsafeRunSync()
+  // It is not so risky because we use separate IORuntime in ProcessingTypeDataProviders
+  // TODO: migrate application to IO
+  private def state: State = {
+    accessStateInCriticalSection(_.value).unsafeRunSync()
+  }
 
-  final def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] =
-    new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this, _.mapValues(fun))
+  def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] = {
+    val childProvider =
+      new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this.state, _.mapValues(fun))
+    observers.add(childProvider)
+    childProvider
+  }
 
-  final def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataProvider[Data, CC] =
-    new TransformingProcessingTypeDataProvider[Data, CombinedData, Data, CC](this, _.mapCombined(fun))
+  def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataProvider[Data, CC] = {
+    val childProvider =
+      new TransformingProcessingTypeDataProvider[Data, CombinedData, Data, CC](this.state, _.mapCombined(fun))
+    observers.add(childProvider)
+    childProvider
+  }
 
-}
+  def transform[TT, CC](
+      fun: (Map[ProcessingType, ValueWithRestriction[Data]], Try[CombinedData]) => ProcessingTypeDataState[TT, CC]
+  ): TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CC] = {
+    val childProvider =
+      new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CC](this.state, _.transform(fun))
+    observers.add(childProvider)
+    childProvider
+  }
 
-private[processingtype] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
-    observed: ProcessingTypeDataProvider[T, C],
-    transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
-) extends ProcessingTypeDataProvider[TT, CC] {
+  final def close(): IO[Unit] = {
+    for {
+      _ <- closeObservers
+      _ <- closeStateInCriticalSection
+      _ <- finalizeAfterClosingObserversAndState
+    } yield ()
+  }
 
-  private val stateValue = new AtomicReference(transformState(observed.state))
+  private def closeObservers: IO[Unit] = {
+    observers.asScala.toList.map(_.close()).sequence.map(_ => observers.clear())
+  }
 
-  override private[processingtype] def state: ProcessingTypeDataState[TT, CC] = {
-    stateValue.updateAndGet { currentValue =>
-      val currentObservedState = observed.state
-      if (currentObservedState.stateIdentity != currentValue.stateIdentity) {
-        transformState(currentObservedState)
-      } else {
-        currentValue
-      }
+  private def closeStateInCriticalSection: IO[Unit] = {
+    accessStateInCriticalSection { stateOps =>
+      for {
+        beforeSetToEmpty <- stateOps.value
+        // It is better to return uninitialized state than closed state
+        _ <- stateOps.setValue(ProcessingTypeDataState.uninitialized)
+        _ <- closeState(beforeSetToEmpty)
+      } yield ()
+    }
+  }
+
+  protected def closeState(state: State): IO[Unit] = IO.unit
+
+  protected def finalizeAfterClosingObserversAndState: IO[Unit] = IO.unit
+
+  protected def accessStateInCriticalSection[T](
+      doWithState: StateOperations[State] => IO[T]
+  ): IO[T] = {
+    stateMutex.lock.surround {
+      doWithState(stateOps)
     }
   }
 
@@ -120,78 +166,83 @@ private[processingtype] class TransformingProcessingTypeDataProvider[T, C, TT, C
 
 object ProcessingTypeDataProvider {
 
-  val noCombinedDataFun: () => Nothing = () =>
-    throw new IllegalStateException(
-      "Processing type data provider does not have combined data!"
-    )
+  def fromState[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] = {
+    // We create separate ioRuntime to ensure that we don't have some deadlocks during reading state where is used unsafeRunSync()
+    // See ProcessingTypeDataProvider.state method
+    implicit val ioRuntime: IORuntime = IORuntime.builder().build()
+    new ProcessingTypeDataProvider[T, C](stateValue)
+  }
 
-  def apply[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
-    new ProcessingTypeDataProvider[T, C] {
-      override private[processingtype] def state: ProcessingTypeDataState[T, C] = stateValue
-    }
+}
 
-  def apply[T, C](
-      allValues: Map[ProcessingType, ValueWithRestriction[T]],
-      combinedValue: C
-  ): ProcessingTypeDataProvider[T, C] =
-    new ProcessingTypeDataProvider[T, C] {
+class StateOperations[State](stateRef: Ref[IO, State], observers: JList[Observer[State]]) {
 
-      override private[processingtype] val state: ProcessingTypeDataState[T, C] = ProcessingTypeDataState(
-        allValues,
-        () => combinedValue,
-        allValues
-      )
+  def value: IO[State] = stateRef.get
 
-    }
+  def setValue(newValue: State): IO[Unit] = {
+    for {
+      _ <- stateRef.set(newValue)
+      _ <- observers.asScala
+        .map { observer =>
+          observer.notifyChange(newValue)
+        }
+        .toList
+        .sequence
+    } yield ()
+  }
 
-  def withEmptyCombinedData[T](
-      allValues: Map[ProcessingType, ValueWithRestriction[T]]
-  ): ProcessingTypeDataProvider[T, Nothing] =
-    new ProcessingTypeDataProvider[T, Nothing] {
+}
 
-      override private[processingtype] val state: ProcessingTypeDataState[T, Nothing] = ProcessingTypeDataState(
-        allValues,
-        noCombinedDataFun,
-        allValues
-      )
+trait Observer[V] {
+  def notifyChange(newValue: V): IO[Unit]
 
-    }
+  def close(): IO[Unit]
+}
+
+private[provider] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
+    initialValue: ProcessingTypeDataState[T, C],
+    transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
+)(implicit ioRuntime: IORuntime)
+    extends ProcessingTypeDataProvider[TT, CC](transformState(initialValue))
+    with Observer[ProcessingTypeDataState[T, C]] {
+
+  override def notifyChange(newValue: ProcessingTypeDataState[T, C]): IO[Unit] = {
+    accessStateInCriticalSection(_.setValue(transformState(newValue)))
+  }
 
 }
 
 // It keeps a state (Data and CombinedData) that is cached and restricted by ProcessingTypeDataProvider
-trait ProcessingTypeDataState[+Data, +CombinedData] {
-  def all: Map[ProcessingType, ValueWithRestriction[Data]]
+final class ProcessingTypeDataState[+Data, +CombinedData](
+    private[provider] val all: Map[ProcessingType, ValueWithRestriction[Data]],
+    private[processingtype] val combinedDataTry: Try[CombinedData]
+) {
 
-  // It returns function because we want to sometimes throw Exception instead of return value and we want to
-  // transform values without touch combined part
-  def getCombined: () => CombinedData
+  def mapValues[TT](fun: Data => TT): ProcessingTypeDataState[TT, CombinedData] =
+    new ProcessingTypeDataState[TT, CombinedData](all.mapValuesNow(_.map(fun)), combinedDataTry)
 
-  // We keep stateIdentity as a separate value to avoid frequent computation of this.all.equals(that.all)
-  // Also, it is easier to provide one (source) state identity than provide it for all observers
-  def stateIdentity: Any
+  def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataState[Data, CC] = {
+    val newCombined = combinedDataTry.map(fun)
+    new ProcessingTypeDataState[Data, CC](all, newCombined)
+  }
 
-  final def mapValues[TT](fun: Data => TT): ProcessingTypeDataState[TT, CombinedData] =
-    ProcessingTypeDataState[TT, CombinedData](all.mapValuesNow(_.map(fun)), getCombined, stateIdentity)
-
-  final def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataState[Data, CC] = {
-    val newCombined = fun(getCombined())
-    ProcessingTypeDataState[Data, CC](all, () => newCombined, stateIdentity)
+  def transform[TT, CC](
+      fun: (Map[ProcessingType, ValueWithRestriction[Data]], Try[CombinedData]) => ProcessingTypeDataState[TT, CC]
+  ): ProcessingTypeDataState[TT, CC] = {
+    fun(all, combinedDataTry)
   }
 
 }
 
 object ProcessingTypeDataState {
 
-  def apply[Data, CombinedData](
-      allValues: Map[ProcessingType, ValueWithRestriction[Data]],
-      getCombinedValue: () => CombinedData,
-      stateIdentityValue: Any
-  ): ProcessingTypeDataState[Data, CombinedData] =
-    new ProcessingTypeDataState[Data, CombinedData] {
-      override def all: Map[ProcessingType, ValueWithRestriction[Data]] = allValues
-      override def getCombined: () => CombinedData                      = getCombinedValue
-      override def stateIdentity: Any                                   = stateIdentityValue
-    }
+  val uninitialized: ProcessingTypeDataState[Nothing, Nothing] = withUninitializedCombinedData(Map.empty)
+
+  // This method is used by external project
+  def withUninitializedCombinedData[Data](all: Map[ProcessingType, ValueWithRestriction[Data]]) =
+    new ProcessingTypeDataState(all, Failure(UninitializedCombinedDataException))
+
+  private[provider] object UninitializedCombinedDataException
+      extends IllegalAccessException("ProcessingTypeData is not initialized")
 
 }

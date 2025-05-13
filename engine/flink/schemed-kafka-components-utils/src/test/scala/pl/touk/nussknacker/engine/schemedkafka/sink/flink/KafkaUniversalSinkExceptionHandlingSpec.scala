@@ -2,17 +2,19 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
@@ -36,11 +38,11 @@ class KafkaUniversalSinkExceptionHandlingSpec
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def registerInEnvironment(
-      env: MiniClusterExecutionEnvironment,
+  override protected def runScenario(
+      env: StreamExecutionEnvironment,
       modelData: ModelData,
       scenario: CanonicalProcess
-  ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
+  ): JobExecutionResult = new FlinkScenarioUnitTestJob(modelData).run(scenario, env)
 
   test("should handle exceptions in kafka sinks") {
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)
@@ -50,7 +52,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
     val kafkaComponent = new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalProvider,
-      ProcessObjectDependencies.withConfig(config),
+      ModelConfig.parse(config),
       FlinkKafkaUniversalSinkImplFactory
     )
 

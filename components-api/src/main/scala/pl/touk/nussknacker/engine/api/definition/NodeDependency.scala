@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import enumeratum._
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   OutputVariableNameValue,
@@ -11,6 +13,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import scala.collection.immutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
@@ -70,7 +73,7 @@ object Parameter {
     Parameter(
       name,
       typ,
-      editor = None,
+      editors = Nil,
       validators = validators,
       defaultValue = None,
       additionalVariables = Map.empty,
@@ -80,7 +83,8 @@ object Parameter {
       scalaOptionParameter = false,
       javaOptionalParameter = false,
       hintText = None,
-      labelOpt = None
+      labelOpt = None,
+      category = ParameterCategory.Standard
     )
 
   def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
@@ -92,7 +96,7 @@ object Parameter {
     Parameter(
       name,
       typ,
-      editor = None,
+      editors = Nil,
       validators = List.empty,
       defaultValue = None,
       additionalVariables = Map.empty,
@@ -102,7 +106,8 @@ object Parameter {
       scalaOptionParameter = false,
       javaOptionalParameter = false,
       hintText = None,
-      labelOpt = None
+      labelOpt = None,
+      category = ParameterCategory.Standard,
     )
 
 }
@@ -123,7 +128,7 @@ object NotBlankParameter {
 case class Parameter(
     name: ParameterName,
     typ: TypingResult,
-    editor: Option[ParameterEditor],
+    editors: List[ParameterEditor],
     validators: List[ParameterValidator],
     defaultValue: Option[Expression],
     additionalVariables: Map[String, AdditionalVariable],
@@ -134,12 +139,13 @@ case class Parameter(
     javaOptionalParameter: Boolean,
     hintText: Option[String],
     labelOpt: Option[String],
+    category: ParameterCategory,
 ) extends NodeDependency {
 
   def copy(
       name: ParameterName,
       typ: TypingResult,
-      editor: Option[ParameterEditor],
+      editors: List[ParameterEditor],
       validators: List[ParameterValidator],
       defaultValue: Option[Expression],
       additionalVariables: Map[String, AdditionalVariable],
@@ -152,7 +158,7 @@ case class Parameter(
     copy(
       name,
       typ,
-      editor,
+      editors,
       validators,
       defaultValue,
       additionalVariables,
@@ -169,7 +175,7 @@ case class Parameter(
   def copy(
       name: ParameterName = this.name,
       typ: TypingResult = this.typ,
-      editor: Option[ParameterEditor] = this.editor,
+      editors: List[ParameterEditor] = this.editors,
       validators: List[ParameterValidator] = this.validators,
       defaultValue: Option[Expression] = this.defaultValue,
       additionalVariables: Map[String, AdditionalVariable] = this.additionalVariables,
@@ -180,11 +186,12 @@ case class Parameter(
       javaOptionalParameter: Boolean = this.javaOptionalParameter,
       hintText: Option[String] = this.hintText,
       labelOpt: Option[String] = this.labelOpt,
+      category: ParameterCategory = this.category,
   ): Parameter = {
     new Parameter(
       name,
       typ,
-      editor,
+      editors,
       validators,
       defaultValue,
       additionalVariables,
@@ -194,14 +201,15 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText,
-      labelOpt
+      labelOpt,
+      category,
     )
   }
 
   def apply(
       name: ParameterName,
       typ: TypingResult,
-      editor: Option[ParameterEditor],
+      editors: List[ParameterEditor],
       validators: List[ParameterValidator],
       defaultValue: Option[Expression],
       additionalVariables: Map[String, AdditionalVariable],
@@ -211,12 +219,13 @@ case class Parameter(
       scalaOptionParameter: Boolean,
       javaOptionalParameter: Boolean,
       hintText: Option[String],
-      labelOpt: Option[String]
+      labelOpt: Option[String],
+      category: ParameterCategory,
   ): Parameter = {
     new Parameter(
       name,
       typ,
-      editor,
+      editors,
       validators,
       defaultValue,
       additionalVariables,
@@ -226,14 +235,15 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText,
-      labelOpt
+      labelOpt,
+      category,
     )
   }
 
   def apply(
       name: ParameterName,
       typ: TypingResult,
-      editor: Option[ParameterEditor],
+      editors: List[ParameterEditor],
       validators: List[ParameterValidator],
       defaultValue: Option[Expression],
       additionalVariables: Map[String, AdditionalVariable],
@@ -246,7 +256,7 @@ case class Parameter(
     new Parameter(
       name,
       typ,
-      editor,
+      editors,
       validators,
       defaultValue,
       additionalVariables,
@@ -256,7 +266,8 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText = None,
-      labelOpt = None
+      labelOpt = None,
+      category = ParameterCategory.Standard,
     )
   }
 
@@ -275,8 +286,11 @@ case class Parameter(
 
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
-  // TODO: all three methods below could be removed when we split this class into api class and domain model class
-  def finalEditor: ParameterEditor = editor.getOrElse(RawParameterEditor)
+//  // TODO: all three methods below could be removed when we split this class into api class and domain model class
+  def editorsWithDefault: List[ParameterEditor] = editors match {
+    case Nil => List(SpelParameterEditor)
+    case nel => nel
+  }
 
   def finalDefaultValue: Expression = defaultValue.getOrElse(Expression.spel(""))
 
@@ -307,3 +321,17 @@ object AdditionalVariableWithFixedValue {
 }
 
 case class AdditionalVariableWithFixedValue(value: Any, typingResult: TypingResult) extends AdditionalVariable
+
+sealed trait ParameterCategory extends EnumEntry
+
+object ParameterCategory extends Enum[ParameterCategory] {
+  case object Standard extends ParameterCategory
+  case object Advanced extends ParameterCategory
+
+  override def values: immutable.IndexedSeq[ParameterCategory] = findValues
+
+  implicit val parameterCategoryEncoder: Encoder[ParameterCategory] = Encoder.encodeString.contramap(_.entryName)
+
+  implicit val parameterCategoryDecoder: Decoder[ParameterCategory] = Decoder.decodeString
+    .map(name => ParameterCategory.withNameInsensitive(name))
+}

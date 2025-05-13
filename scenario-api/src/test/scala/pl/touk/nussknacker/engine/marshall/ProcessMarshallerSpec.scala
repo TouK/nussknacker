@@ -2,22 +2,24 @@ package pl.touk.nussknacker.engine.marshall
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import io.circe.{Codec, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.syntax._
-import io.circe.{Codec, Json}
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
+import pl.touk.nussknacker.engine.canonize.MissingSinkHandler.DoNotAllowMissingSinkHandler
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
@@ -223,8 +225,13 @@ class ProcessMarshallerSpec
   it should "detect bad branch" in {
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
-      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty))) {
-        case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
+      inside(
+        ProcessCanonizer.uncanonize(
+          CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty),
+          DoNotAllowMissingSinkHandler,
+        )
+      ) { case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) =>
+        id shouldBe expectedBadNodeId
       }
     }
     val source = FlatNode(Source("s1", SourceRef("a", List())))

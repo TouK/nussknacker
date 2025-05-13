@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.basicauth
 
-import akka.http.scaladsl.server.directives.Credentials
+import org.apache.pekko.http.scaladsl.server.directives.Credentials
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser

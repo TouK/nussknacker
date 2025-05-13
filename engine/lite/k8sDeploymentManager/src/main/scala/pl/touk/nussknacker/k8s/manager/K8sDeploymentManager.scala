@@ -1,31 +1,23 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.http.scaladsl.settings.ConnectionPoolSettings
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
+import pl.touk.nussknacker.engine.{BaseModelDataProvider, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
-import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
+import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment._
+import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
-import skuber.LabelSelector.Requirement
-import skuber.LabelSelector.dsl._
-import skuber.api.Configuration
-import skuber.api.client.{KubernetesClient, LoggingConfig}
-import skuber.apps.v1.Deployment
-import skuber.json.format._
-import skuber.networking.v1.Ingress
 import skuber.{
   ConfigMap,
   LabelSelector,
@@ -37,6 +29,13 @@ import skuber.{
   Secret,
   Service
 }
+import skuber.LabelSelector.Requirement
+import skuber.LabelSelector.dsl._
+import skuber.api.Configuration
+import skuber.api.client.{KubernetesClient, LoggingConfig}
+import skuber.apps.v1.Deployment
+import skuber.json.format._
+import skuber.networking.v1.Ingress
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
@@ -44,13 +43,12 @@ import scala.language.reflectiveCalls
 import scala.util.Using
 
 class K8sDeploymentManager(
-    override protected val modelData: BaseModelData,
+    override protected val modelDataProvider: BaseModelDataProvider,
     config: K8sDeploymentManagerConfig,
     rawConfig: Config,
     dependencies: DeploymentManagerDependencies
 ) extends LiteDeploymentManager
-    with LazyLogging
-    with DeploymentManagerInconsistentStateHandlerMixIn {
+    with LazyLogging {
 
   import dependencies._
 
@@ -93,15 +91,16 @@ class K8sDeploymentManager(
   private val ingressPreparerOpt          = config.ingress.map(new IngressPreparer(_, config.nussknackerInstanceName))
 
   // runtime config is combined from scenarioType.modelConfig and deploymentConfig.configExecutionOverrides
-  private val serializedRuntimeConfig = {
-    val inputConfig     = modelData.inputConfigDuringExecution
+  private def serializedRuntimeConfig() = {
+    val inputConfig     = modelDataProvider.getCurrentModelData().inputConfigDuringExecution
     val modelConfigPart = inputConfig.config.withoutPath("classPath").atPath("modelConfig")
     // TODO: should overrides apply only to model or to whole config??
     val withOverrides = config.configExecutionOverrides.withFallback(modelConfigPart)
     inputConfig.copy(config = withOverrides).serialized
   }
 
-  private lazy val defaultLogbackConfig = Using.resource(Source.fromResource("runtime/default-logback.xml"))(_.mkString)
+  private lazy val defaultLogbackConfig =
+    Using.resource(Source.fromResource("runtime/default-logback.xml", getClass.getClassLoader))(_.mkString)
 
   private def logbackConfig: String = config.logbackConfigPath
     .map(path => Using.resource(Source.fromFile(path))(_.mkString))
@@ -171,11 +170,10 @@ class K8sDeploymentManager(
         configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
           Map(
             "scenario.json" -> canonicalProcess.asJson.noSpaces,
-            "deploymentConfig.conf" -> ConfigFactory
-              .empty()
-              .withValue("tasksCount", fromAnyRef(scalingOptions.noOfTasksInReplica))
-              .root()
-              .render()
+            "deploymentData.json" -> LiteDeploymentData(
+              scalingOptions.noOfTasksInReplica,
+              deploymentData.nodesData
+            ).asJson.noSpaces
           )
         )
       )
@@ -189,7 +187,7 @@ class K8sDeploymentManager(
       // runtimeConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
       secret <- k8sUtils.createOrUpdate(
         secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
-          Map("runtimeConfig.conf" -> serializedRuntimeConfig)
+          Map("runtimeConfig.conf" -> serializedRuntimeConfig())
         )
       )
       mountableResources = MountableResources(
@@ -316,24 +314,23 @@ class K8sDeploymentManager(
     }
   }
 
-  override def getProcessStates(
-      name: ProcessName
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
+  override def getScenarioDeploymentsStatuses(
+      scenarioName: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     for {
       deployments <- scenarioStateK8sClient
-        .listSelected[ListResource[Deployment]](requirementForName(name))
+        .listSelected[ListResource[Deployment]](requirementForName(scenarioName))
         .map(_.items)
-      pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
+      pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(scenarioName)).map(_.items)
     } yield {
-      WithDataFreshnessStatus.fresh(deployments.map(mapper.status(_, pods)))
+      WithDataFreshnessStatus.fresh(deployments.map(K8sDeploymentStatusMapper.status(_, pods)))
     }
   }
 
   private def configMapForData(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
-      nussknackerInstanceName: Option[String]
+      nussknackerInstanceName: OptionalNussknackerInstanceName
   )(
       data: Map[String, String],
       additionalLabels: Map[String, String] = Map.empty,
@@ -362,7 +359,7 @@ class K8sDeploymentManager(
   private def secretForData(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
-      nussknackerInstanceName: Option[String]
+      nussknackerInstanceName: OptionalNussknackerInstanceName
   )(data: Map[String, String], additionalLabels: Map[String, String] = Map.empty): Secret = {
     val scenario = canonicalProcess.asJson.spaces2
     val objectName =
@@ -387,8 +384,10 @@ class K8sDeploymentManager(
   //      for each scenario in this case and where store the deploymentId
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+  override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
+    NoDeploymentsStatusesQueryForAllScenariosSupport
 
+  override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 }
 
 object K8sDeploymentManager {
@@ -440,11 +439,14 @@ object K8sDeploymentManager {
   /*
     Labels contain scenario name, scenario id and version.
    */
-  private[manager] def labelsForScenario(processVersion: ProcessVersion, nussknackerInstanceName: Option[String]) = Map(
+  private[manager] def labelsForScenario(
+      processVersion: ProcessVersion,
+      nussknackerInstanceName: OptionalNussknackerInstanceName
+  ) = Map(
     scenarioNameLabel    -> scenarioNameLabelValue(processVersion.processName),
     scenarioIdLabel      -> processVersion.processId.value.toString,
     scenarioVersionLabel -> processVersion.versionId.value.toString
-  ) ++ nussknackerInstanceName.map(nussknackerInstanceNameLabel -> _)
+  ) ++ nussknackerInstanceName.valueOpt.map(nussknackerInstanceNameLabel -> _)
 
   private[manager] def versionAnnotationForScenario(processVersion: ProcessVersion) =
     Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
@@ -457,32 +459,17 @@ object K8sDeploymentManager {
    */
   private[manager] def objectNameForScenario(
       processVersion: ProcessVersion,
-      nussknackerInstanceName: Option[String],
+      nussknackerInstanceName: OptionalNussknackerInstanceName,
       hashInput: Option[String]
   ): String = {
     // we simulate (more or less) --append-hash kubectl behaviour...
     val hashToAppend      = hashInput.map(input => "-" + shortHash(input)).getOrElse("")
     val plainScenarioName = s"scenario-${processVersion.processId.value}-${processVersion.processName}"
-    val scenarioName      = objectNamePrefixedWithNussknackerInstanceName(nussknackerInstanceName, plainScenarioName)
-    sanitizeObjectName(scenarioName, hashToAppend)
-  }
-
-  private[manager] def objectNamePrefixedWithNussknackerInstanceName(
-      nussknackerInstanceName: Option[String],
-      objectName: String
-  ) =
-    sanitizeObjectName(
-      objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName, objectName)
+    K8sUtils.sanitizeObjectName(
+      nussknackerInstanceName.objectNameWithoutSanitization(plainScenarioName),
+      hashToAppend
     )
-
-  private[manager] def objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(
-      nussknackerInstanceName: Option[String],
-      objectName: String
-  ) =
-    nussknackerInstanceNamePrefix(nussknackerInstanceName) + objectName
-
-  private[manager] def nussknackerInstanceNamePrefix(nussknackerInstanceName: Option[String]) =
-    nussknackerInstanceName.map(_ + "-").getOrElse("")
+  }
 
   private[manager] def parseVersionAnnotation(deployment: ObjectResource): Option[ProcessVersion] = {
     deployment.metadata.annotations

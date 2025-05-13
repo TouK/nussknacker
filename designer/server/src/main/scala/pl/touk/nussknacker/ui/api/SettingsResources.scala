@@ -1,19 +1,20 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
 import cats.data.Validated
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.config.{FeatureTogglesConfig, UsageStatisticsReportsConfig}
+import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
+import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
+import pl.touk.nussknacker.ui.config.{DesignerConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService}
 
 import java.net.URL
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(
-    config: FeatureTogglesConfig,
+    config: DesignerConfig,
     authenticationMethod: String,
     usageStatisticsReportsConfig: UsageStatisticsReportsConfig,
     fingerprintService: FingerprintService
@@ -42,7 +43,9 @@ class SettingsResources(
                 testDataSettings = config.testDataSettings,
                 redirectAfterArchive = config.redirectAfterArchive,
                 usageStatisticsReports =
-                  UsageStatisticsReportsSettings(usageStatisticsReportsConfig, fingerprint.toOption)
+                  UsageStatisticsReportsSettings(usageStatisticsReportsConfig, fingerprint.toOption),
+                stickyNotesSettings = config.stickyNotesSettings,
+                assistant = config.assistantSettings,
               )
               val authenticationSettings = AuthenticationSettings(
                 authenticationMethod
@@ -94,7 +97,7 @@ final case class EmptyDeploymentCommentSettingsError(message: String) extends Ex
 
 @JsonCodec final case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
-@JsonCodec final case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
+@JsonCodec final case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Long)
 
 object TopTabType extends Enumeration {
 
@@ -134,8 +137,10 @@ object TopTabType extends Enumeration {
     tabs: Option[List[TopTab]],
     intervalTimeSettings: IntervalTimeSettings,
     testDataSettings: TestDataSettings,
+    stickyNotesSettings: StickyNotesSettings,
     redirectAfterArchive: Boolean,
     usageStatisticsReports: UsageStatisticsReportsSettings,
+    assistant: AssistantSettings,
 )
 
 @JsonCodec final case class AuthenticationSettings(provider: String)
@@ -163,4 +168,12 @@ object UsageStatisticsReportsSettings {
       fingerprint = maybeFingerprint.map(_.value)
     )
 
+}
+
+@JsonCodec final case class AssistantSettings(
+    enabled: Boolean,
+)
+
+object AssistantSettings {
+  def disabled: AssistantSettings = AssistantSettings(enabled = false)
 }

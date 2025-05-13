@@ -1,12 +1,13 @@
-import { Edge, NodeType } from "../../../types";
 import { isEqual, uniq } from "lodash";
-import { useSelector } from "react-redux";
-import { getScenario } from "../../../reducers/selectors/graph";
-import NodeUtils from "../../graph/NodeUtils";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+
 import { ensureArray } from "../../../common/arrayUtils";
-import { SearchQuery } from "./SearchResults";
+import { getScenario } from "../../../reducers/selectors/graph";
+import type { Edge, NodeType } from "../../../types";
+import NodeUtils from "../../graph/NodeUtils";
+import type { SearchQuery } from "./SearchResults";
 
 type SelectorResult = { expression: string } | string;
 type Selector = (node: NodeType) => SelectorResult | SelectorResult[];
@@ -169,7 +170,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                     }
                 })
                 .filter(({ groups }) => groups.length),
-        [displayNames, allEdges, searchQuery, allNodes],
+        [allNodes, allEdges, displayNames, isSimpleSearch, searchQuery],
     );
 }
 
@@ -197,7 +198,7 @@ export function searchQueryToString(query: SearchQuery): string {
     const formattedParts = Object.entries(query)
         .filter(([key]) => key !== "plainQuery")
         .map(([key, value]) => {
-            if (Array.isArray(value) && !(value.length === 1 && value[0] === "")) {
+            if (Array.isArray(value) && value.length > 0 && value[0] !== null && value[0] !== "") {
                 return `${key}:(${value})`;
             } else if (typeof value === "string" && value.length > 0) {
                 return `${key}:(${[value]})`;

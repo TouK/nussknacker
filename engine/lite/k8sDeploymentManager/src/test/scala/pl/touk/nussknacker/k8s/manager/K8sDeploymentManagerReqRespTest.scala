@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import org.scalatest.OptionValues
@@ -9,15 +9,15 @@ import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.tags.Network
 import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.ComponentProvider
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.component.{ComponentProvider, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.deployment.{
-  DMRunDeploymentCommand,
-  DMValidateScenarioCommand,
   DataFreshnessPolicy,
-  DeploymentUpdateStrategy
+  DeploymentUpdateStrategy,
+  DMRunDeploymentCommand,
+  DMValidateScenarioCommand
 }
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -27,10 +27,10 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+import skuber.{LabelSelector, ListResource, Service}
 import skuber.LabelSelector.dsl._
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{LabelSelector, ListResource, Service}
 import sttp.client3._
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -179,8 +179,8 @@ class K8sDeploymentManagerReqRespTest
           )
           .futureValue
         eventually {
-          val state = f.manager.getProcessStates(secondVersionInfo.processName).map(_.value).futureValue
-          state.flatMap(_.version).map(_.versionId.value) shouldBe List(secondVersion)
+          val state = f.manager.getScenarioDeploymentsStatuses(secondVersionInfo.processName).map(_.value).futureValue
+          state.flatMap(_.version).map(_.value) shouldBe List(secondVersion)
           state.map(_.status) shouldBe List(SimpleStateStatus.Running)
         }
         val versionsAfterRedeploy = checkVersions()
@@ -268,6 +268,25 @@ class K8sDeploymentManagerReqRespTest
 
   }
 
+  test("allow to use nodes data passed during deployment") {
+    val givenScenarioName = "reqresp-deployparam"
+    val f                 = createReqRespFixture(givenScenarioName)
+
+    val givenDeployParamValue = "fooDeployParam"
+    f.withRunningScenarioWithDeployParams(
+      NodesDeploymentData(Map(NodeId("deployParamNodeId") -> Map("deployParam" -> givenDeployParamValue)))
+    ) {
+      k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { proxyLocalPort =>
+        val pingMessage  = s"""{"ping":"foo"}"""
+        val request      = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
+        val response     = request.body(pingMessage).send(backend).futureValue.body.rightValue
+        val jsonResponse = parser.parse(response).rightValue
+        jsonResponse.hcursor.downField("deployParam").as[String].rightValue shouldEqual givenDeployParamValue
+      }
+    }
+
+  }
+
   private def reqRespDeployConfig(
       port: Int,
       extraClasses: K8sExtraClasses,
@@ -319,7 +338,7 @@ class K8sDeploymentManagerReqRespTest
   ) = {
     val extraClasses = new K8sExtraClasses(
       k8s,
-      List(classOf[TestComponentProvider], classOf[EnvService]),
+      List(classOf[TestComponentProvider], classOf[EnvService], classOf[DeployParamService]),
       K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider])
     )
     val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses, extraDeployConfig)
@@ -347,6 +366,7 @@ class K8sDeploymentManagerReqRespTest
         |  "properties": {
         |    "pong": { "type": "string" },
         |    "instanceId": { "type": "string" },
+        |    "deployParam": { "type": "string" },
         |    "version": { "type": "integer" }
         |  }
         |}
@@ -362,13 +382,15 @@ class K8sDeploymentManagerReqRespTest
       )
       .source("source", "request")
       .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"".spel)
+      .enricher("deployParamNodeId", "deployParam", "deploy-param-service")
       .emptySink(
         "sink",
         "response",
-        "Raw editor" -> "false".spel,
-        "pong"       -> "#input.ping".spel,
-        "instanceId" -> "#instanceId".spel,
-        "version"    -> version.toString.spel
+        "Raw editor"  -> "false".spel,
+        "pong"        -> "#input.ping".spel,
+        "instanceId"  -> "#instanceId".spel,
+        "deployParam" -> "#deployParam".spel,
+        "version"     -> version.toString.spel
       )
   }
 
@@ -379,9 +401,9 @@ class K8sDeploymentManagerReqRespTest
       extraClasses: K8sExtraClasses
   ) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
 
-    override def withRunningScenario(action: => Unit): Unit = {
+    override def withRunningScenarioWithDeployParams(nodesData: NodesDeploymentData)(action: => Unit): Unit = {
       extraClasses.withExtraClassesSecret {
-        super.withRunningScenario(action)
+        super.withRunningScenarioWithDeployParams(nodesData)(action)
         // should not fail
         assertNoGarbageLeft()
       }

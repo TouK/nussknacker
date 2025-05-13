@@ -1,29 +1,37 @@
-import NodeUtils from "../NodeUtils";
+import type { dia } from "jointjs";
 import { cloneDeep, isEqual, map, reject } from "lodash";
-import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
+
+import { isTouchEvent } from "../../../helpers/detectDevice";
 import {
     adjustBranchParametersAfterDisconnect,
     enrichNodeWithProcessDependentData,
     removeBranchParameter,
 } from "../../../reducers/graph/utils";
-import { dia } from "jointjs";
-import { isTouchEvent } from "../../../helpers/detectDevice";
+import type { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
+import NodeUtils from "../NodeUtils";
 
 export function mapProcessWithNewNode(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType): ScenarioGraph {
+    const edges = map(scenarioGraph.edges, (e) => {
+        if (isEqual(e.from, before.id)) {
+            return { ...e, from: after.id, to: e.to };
+        } else if (isEqual(e.to, before.id)) {
+            return { ...e, from: e.from, to: after.id };
+        } else {
+            return e;
+        }
+    });
+    const nodes = map(scenarioGraph.nodes, (n) => {
+        const equal = isEqual(n, before);
+        if (equal) {
+            return after;
+        } else {
+            return mapBranchParametersWithNewNode(before.id, after.id, n);
+        }
+    });
     return {
         ...scenarioGraph,
-        edges: map(scenarioGraph.edges, (e) => {
-            if (isEqual(e.from, before.id)) {
-                return { ...e, from: after.id, to: e.to };
-            } else if (isEqual(e.to, before.id)) {
-                return { ...e, from: e.from, to: after.id };
-            } else {
-                return e;
-            }
-        }),
-        nodes: map(scenarioGraph.nodes, (n) => {
-            return isEqual(n, before) ? after : mapBranchParametersWithNewNode(before.id, after.id, n);
-        }),
+        edges: edges,
+        nodes: nodes,
     };
 }
 
@@ -51,6 +59,14 @@ export function mapProcessWithNewEdge(scenarioGraph: ScenarioGraph, before: Edge
                 return e;
             }
         }),
+    };
+}
+
+export function cleanupNodeInputEdges(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType) {
+    if (NodeUtils.hasInputs(after)) return scenarioGraph;
+    return {
+        ...scenarioGraph,
+        edges: scenarioGraph.edges.filter(({ to }) => to !== before.id),
     };
 }
 
@@ -127,8 +143,9 @@ export const handleGraphEvent =
     <T = dia.CellView>(
         touchEvent: ((view: T, event: dia.Event) => void) | null,
         mouseEvent: ((view: T, event: dia.Event) => void) | null,
+        preventDefault: (view: T) => boolean = () => true,
     ) =>
     (view: T, event: dia.Event) => {
-        event.preventDefault();
+        if (preventDefault(view)) event.preventDefault();
         return isTouchEvent(event) ? touchEvent?.(view, event) : mouseEvent?.(view, event);
     };

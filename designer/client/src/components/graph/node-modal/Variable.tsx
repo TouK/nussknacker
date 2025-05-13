@@ -1,15 +1,17 @@
 import React, { useCallback } from "react";
-import EditableEditor from "./editors/EditableEditor";
-import LabeledInput from "./editors/field/LabeledInput";
-import { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
-import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../reducers";
-import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
+
 import ProcessUtils from "../../../common/ProcessUtils";
-import { IdField } from "./IdField";
-import { getValidationErrorsForField } from "./editors/Validators";
+import type { RootState } from "../../../reducers";
+import type { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
+import EditableEditor from "./editors/EditableEditor";
+import type { ExpressionObj } from "./editors/expression/types";
+import LabeledInput from "./editors/field/LabeledInput";
+import { getValidationErrorsForField } from "./editors/Validators";
+import { IdField } from "./IdField";
+import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
+import { useDiffMark } from "./PathsToMark";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
@@ -37,7 +39,7 @@ export default function Variable({
     variableTypes,
     renderFieldLabel,
 }: Props): JSX.Element {
-    const onExpressionChange = useCallback((value: string) => setProperty("value.expression", value), [setProperty]);
+    const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value.expression", value.expression), [setProperty]);
     const [isMarked] = useDiffMark();
     const inferredVariableType = useSelector((state: RootState) => {
         const expressionType = getExpressionType(state)(node.id);

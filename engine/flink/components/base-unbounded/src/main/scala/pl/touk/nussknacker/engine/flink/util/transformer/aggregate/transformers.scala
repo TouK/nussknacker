@@ -8,13 +8,13 @@ import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink._
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.OnEventOperatorKeyedStream
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.ExtendedWindowOperator.OnEventOperatorKeyedStream
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
 import pl.touk.nussknacker.engine.util.KeyedValue
 
@@ -27,7 +27,7 @@ import scala.concurrent.duration.Duration
 object transformers {
 
   def slidingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -36,7 +36,7 @@ object transformers {
       explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
-      .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy))
+      .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy, groupBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
@@ -70,7 +70,7 @@ object transformers {
   }
 
   def tumblingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -91,7 +91,7 @@ object transformers {
 
   @silent("deprecated")
   def tumblingTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
@@ -105,7 +105,8 @@ object transformers {
         aggregator.toContextTransformation(
           variableName,
           emitContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent,
-          aggregateBy
+          aggregateBy,
+          groupBy
         )
       )
       .implementedBy(
@@ -124,7 +125,7 @@ object transformers {
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
-                .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
+                .extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
                 .window(windowDefinition)
@@ -156,7 +157,7 @@ object transformers {
   // Experimental component, API may change in the future
   @silent("deprecated")
   def sessionWindowTransformer(
-      groupBy: LazyParameter[CharSequence],
+      groupBy: LazyParameter[AnyRef],
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       sessionTimeout: Duration,
@@ -169,7 +170,8 @@ object transformers {
         aggregator.toContextTransformation(
           variableName,
           emitContext = sessionWindowTrigger == SessionWindowTrigger.OnEvent,
-          aggregateBy
+          aggregateBy,
+          groupBy
         )
       )
       .implementedBy(
@@ -178,7 +180,7 @@ object transformers {
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val baseTrigger =
-            ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
+            ClosingEndEventTrigger[ValueWithContext[KeyedValue[AnyRef, (AnyRef, java.lang.Boolean)]], TimeWindow](
               EventTimeTrigger.create(),
               _.value.value._2
             )
@@ -192,22 +194,10 @@ object transformers {
 
           (sessionWindowTrigger match {
             case SessionWindowTrigger.OnEvent =>
-              keyedStream.eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
+              keyedStream.extendedEventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
               keyedStream
-                .window(windowDefinition)
-                .trigger(baseTrigger)
-                .aggregate(
-                  new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](
-                    aggregator,
-                    aggregateBy.returnType,
-                    _._1
-                  ),
-                  EnrichingWithKeyFunction(fctx),
-                  typeInfos.storedTypeInfo,
-                  typeInfos.returnTypeInfo,
-                  typeInfos.returnedValueTypeInfo
-                )
+                .extendedWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger, preserveContext = false)
           }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         })
       )

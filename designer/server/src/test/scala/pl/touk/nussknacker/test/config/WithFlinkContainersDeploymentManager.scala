@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.test.config
 
-import com.dimafeng.testcontainers.{Container, ForAllTestContainer, LazyContainer, MultipleContainers}
+import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleContainers}
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.StrictLogging
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.flink.test.docker.WithFlinkContainers
@@ -15,7 +15,7 @@ trait WithFlinkContainersDeploymentManager
     with ForAllTestContainer
     with WithFlinkContainers
     with BeforeAndAfterAll {
-  self: Suite with LazyLogging =>
+  self: Suite with StrictLogging =>
 
   override val container: Container = MultipleContainers(flinkContainers: _*)
 
@@ -24,8 +24,8 @@ trait WithFlinkContainersDeploymentManager
     super.afterAll()
   }
 
-  abstract override def designerConfig: Config = {
-    val config                   = super.designerConfig
+  abstract override def designerRawConfig: Config = {
+    val config                   = super.designerRawConfig
     val scenarioTypeConfigObject = config.getObject("scenarioTypes")
     val processingTypes          = scenarioTypeConfigObject.keySet().asScala.toSet
     processingTypes.foldLeft(config) { case (acc, processingType) =>

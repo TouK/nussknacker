@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.component
 
-import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 
 // TODO This class is used as a work around for the problem that the components are duplicated across processing types.
 //      We plan to get rid of this. After that, we could replace usages of this class by usage of ComponentId

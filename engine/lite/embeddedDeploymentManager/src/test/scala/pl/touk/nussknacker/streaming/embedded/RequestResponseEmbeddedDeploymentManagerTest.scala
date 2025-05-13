@@ -1,26 +1,17 @@
 package pl.touk.nussknacker.streaming.embedded
 
-import akka.actor.ActorSystem
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{
-  DMCancelScenarioCommand,
-  DMRunDeploymentCommand,
-  DataFreshnessPolicy,
-  DeployedScenarioData,
-  DeploymentManager,
-  DeploymentUpdateStrategy,
-  NoOpScenarioActivityManager,
-  ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub,
-  ScenarioActivityManager
-}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -30,10 +21,9 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestRespons
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.test.{AvailablePortFinder, ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
+import sttp.client3.{basicRequest, HttpURLConnectionBackend, Identity, SttpBackend, UriContext}
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
 
 class RequestResponseEmbeddedDeploymentManagerTest
@@ -46,24 +36,22 @@ class RequestResponseEmbeddedDeploymentManagerTest
 
   private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
-  protected def prepareFixture(initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty): FixtureParam = {
+  protected def prepareFixture(): FixtureParam = {
     val modelData = LocalModelData(
       ConfigFactory.empty(),
       RequestResponseComponentProvider.Components
     )
     val as: ActorSystem = ActorSystem(getClass.getSimpleName)
-    val dependencies = DeploymentManagerDependencies(
-      new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
-      new ProcessingTypeActionServiceStub,
-      NoOpScenarioActivityManager,
+    val dependencies = new DeploymentManagerDependencies(
       as.dispatcher,
+      IORuntime.global,
       as,
       SttpBackendStub.asynchronousFuture
     )
     val port = AvailablePortFinder.findAvailablePorts(1).head
     val manager = new EmbeddedDeploymentManagerProvider()
       .createDeploymentManager(
-        modelData,
+        modelData.toModelDataProvider,
         dependencies,
         ConfigFactory
           .empty()
@@ -138,7 +126,9 @@ class RequestResponseEmbeddedDeploymentManagerTest
     fixture.deployScenario(scenario)
 
     eventually {
-      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
+        SimpleStateStatus.Running
+      )
     }
 
     request.body("""{ productId: 15 }""").send(backend).body shouldBe Right("""{"transformed":15}""")
@@ -158,7 +148,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
 
     manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
 
-    manager.getProcessStates(name).futureValue.value shouldBe List.empty
+    manager.getScenarioDeploymentsStatuses(name).futureValue.value shouldBe List.empty
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
   }
 

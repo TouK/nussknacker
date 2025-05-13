@@ -4,22 +4,22 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.definition.{
-  DualParameterEditor,
   Parameter,
   ParameterEditor,
-  StringParameterEditor
+  SpelParameterEditor,
+  SpelTemplateParameterEditor
 }
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TestWithParametersSupport
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 
 class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Matchers {
 
-  case class SimplifiedParam(name: String, typingResult: TypingResult, editor: Option[ParameterEditor])
+  case class SimplifiedParam(name: String, typingResult: TypingResult, editors: List[ParameterEditor])
 
   test("should generate test parameters for fragment input definition") {
     val fragmentInputDefinition = FragmentInputDefinition(
@@ -30,7 +30,7 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
       )
     )
     val stubbedSourcePreparer = new StubbedFragmentSourceDefinitionPreparer(
-      new FragmentParametersDefinitionExtractor(getClass.getClassLoader)
+      new FragmentParametersDefinitionExtractor(getClass.getClassLoader, ClassDefinitionSet(Set.empty[ClassDefinition]))
     )
     val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition("foo", fragmentInputDefinition)
@@ -42,12 +42,12 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
       SimplifiedParam(
         "name",
         Typed.apply[String],
-        Option(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+        List(SpelTemplateParameterEditor, SpelParameterEditor),
       ),
-      SimplifiedParam("age", Typed.apply[Long], None),
+      SimplifiedParam("age", Typed.apply[Long], Nil),
     )
     parameters.map(p =>
-      SimplifiedParam(p.name.value, p.typ, p.editor)
+      SimplifiedParam(p.name.value, p.typ, p.editors)
     ) should contain theSameElementsAs expectedParameters
   }
 

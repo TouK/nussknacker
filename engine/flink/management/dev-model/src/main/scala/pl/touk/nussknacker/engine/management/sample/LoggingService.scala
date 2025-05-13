@@ -1,10 +1,15 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import cats.implicits.catsSyntaxOptionId
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
+import pl.touk.nussknacker.engine.api.definition.BoolParameterEditor
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import javax.annotation.Nullable
@@ -16,14 +21,14 @@ object LoggingService extends EagerService {
 
   @MethodToInvoke(returnType = classOf[Void])
   def prepare(
+      @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
       @ParamName("logger") @Nullable loggerName: String,
+      @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
-      @ParamName("message") @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[
-        TemplateEvaluationResult
-      ]
+      @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
-    new ServiceInvoker {
-
+    new ServiceInvoker with WithActionParametersSupport {
+      private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"
       private lazy val logger = LoggerFactory.getLogger(
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
@@ -31,18 +36,37 @@ object LoggingService extends EagerService {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
-        val msg = message.evaluate(context).renderedTemplate
-        level match {
-          case Level.TRACE => logger.trace(msg)
-          case Level.DEBUG => logger.debug(msg)
-          case Level.INFO  => logger.info(msg)
-          case Level.WARN  => logger.warn(msg)
-          case Level.ERROR => logger.error(msg)
+        if (isLoggingAllowed(componentUseContext)) {
+          val msg = message.evaluate(context)
+          level match {
+            case Level.TRACE => logger.trace(msg)
+            case Level.DEBUG => logger.debug(msg)
+            case Level.INFO  => logger.info(msg)
+            case Level.WARN  => logger.warn(msg)
+            case Level.ERROR => logger.error(msg)
+          }
         }
         Future.successful(())
       }
+
+      private def isLoggingAllowed(componentUseContext: ComponentUseContext) =
+        componentUseContext.deploymentData
+          .flatMap(_.get(debuggingWithLoggingComponentsAllowedPropertyName))
+          .exists(_.toBoolean)
+
+      override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = Map(
+        ScenarioActionName.Deploy -> Map(
+          ParameterName(debuggingWithLoggingComponentsAllowedPropertyName) -> StaticParameterConfig(
+            defaultValue = "false".some,
+            editor = BoolParameterEditor,
+            validators = None,
+            label = "Debugging".some,
+            hintText = "Enable debugging with logging components".some
+          )
+        )
+      )
 
     }
 

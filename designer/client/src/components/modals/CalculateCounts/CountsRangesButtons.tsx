@@ -1,7 +1,10 @@
-import moment, { Moment } from "moment";
-import React, { PropsWithChildren, useCallback, useMemo } from "react";
-import { PredefinedDropdownButton, PredefinedRangeButton } from "./CountsStyled";
+import type { Moment } from "moment";
+import moment from "moment";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+
+import { PredefinedDropdownButton, PredefinedRangeButton } from "./CountsStyled";
 
 export interface Range {
     name: string;

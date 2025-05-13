@@ -1,0 +1,58 @@
+{
+    "metaData": {
+        "id": "sticky",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "inputSchema": "{}",
+                "outputSchema": "{}",
+                "slug": "sticky"
+            },
+            "metaDataType": "RequestResponseMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "request",
+            "ref": {
+                "typ": "request",
+                "parameters": []
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "response",
+            "ref": {
+                "typ": "response",
+                "parameters": [
+                    {
+                        "name": "Raw editor",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "false"
+                        }
+                    }
+                ]
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 180
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}

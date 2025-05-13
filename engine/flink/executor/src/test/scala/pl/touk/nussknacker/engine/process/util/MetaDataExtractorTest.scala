@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.process.util
 
-import java.time._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
+
+import java.time._
 
 class MetaDataExtractorTest extends AnyFunSuite with Matchers {
 

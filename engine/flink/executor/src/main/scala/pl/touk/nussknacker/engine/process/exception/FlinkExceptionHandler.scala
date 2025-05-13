@@ -4,11 +4,11 @@ import com.github.ghik.silencer.silent
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, stringValueReader, toFicusConfig}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, WithExceptionExtractor}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.flink.api.exception.{
   ExceptionHandler,
   FlinkEspExceptionConsumer,
@@ -43,16 +43,16 @@ object FlinkExceptionHandler {
 
 class FlinkExceptionHandler(
     metaData: MetaData,
-    modelDependencies: ProcessObjectDependencies,
+    modelConfig: ModelConfig,
     listeners: Seq[ProcessListener],
     classLoader: ClassLoader
 ) extends ExceptionHandler {
 
   @silent("deprecated")
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
-    RestartStrategyFromConfiguration.readFromConfiguration(modelDependencies.config, metaData)
+    RestartStrategyFromConfiguration.readFromConfiguration(modelConfig.underlyingConfig, metaData)
 
-  private val baseConfig = modelDependencies.config.getConfig(exceptionHandlerConfigPath)
+  private val baseConfig = modelConfig.underlyingConfig.getConfig(exceptionHandlerConfigPath)
 
   protected val consumer: FlinkEspExceptionConsumer = {
     val baseConsumer: FlinkEspExceptionConsumer = extractBaseConsumer(baseConfig)
@@ -65,7 +65,7 @@ class FlinkExceptionHandler(
 
   protected val extractor: WithExceptionExtractor = extractExceptionExtractor(baseConfig)
 
-  def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
+  def handle(exceptionInfo: NuExceptionInfo): Unit = {
     listeners.foreach(_.exceptionThrown(exceptionInfo))
     consumer.consume(extractor.extractOrThrow(exceptionInfo))
   }

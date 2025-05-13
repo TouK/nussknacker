@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal
 
 import com.azure.core.credential.TokenCredential
-import com.azure.core.http.policy._
 import com.azure.core.http.{HttpPipeline, HttpPipelineBuilder}
+import com.azure.core.http.policy._
 import com.azure.core.util.{Configuration, CoreUtils}
 
 import java.time.temporal.ChronoUnit

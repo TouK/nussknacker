@@ -58,7 +58,7 @@ object ToolbarButtonConfigType extends Enumeration {
   val ProcessCompare: Value    = Value("process-compare")
   val ProcessMigrate: Value    = Value("process-migrate")
   val ProcessImport: Value     = Value("process-import")
-  val ProcessJSON: Value       = Value("process-json")
+  val ProcessExport: Value     = Value("process-export")
   val ProcessPDF: Value        = Value("process-pdf")
 
   val ProcessArchiveToggle: Value = Value("process-archive-toggle")
@@ -69,6 +69,7 @@ object ToolbarButtonConfigType extends Enumeration {
   val TestGenerate: Value    = Value("test-generate")
   val GenerateAndTest: Value = Value("generate-and-test")
   val AdhocTesting: Value    = Value("adhoc-testing")
+  val ScenarioTest: Value    = Value("scenario-test")
   val TestCounts: Value      = Value("test-counts")
   val TestHide: Value        = Value("test-hide")
 

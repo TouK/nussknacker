@@ -1,6 +1,8 @@
-import { ReactComponentLike } from "prop-types";
-import React, { PropsWithChildren, useCallback } from "react";
-import { DragDropContext, DragDropContextProps, DraggableChildrenFn, Droppable, DroppableProps } from "@hello-pangea/dnd";
+import type { DragDropContextProps, DraggableChildrenFn, DroppableProps } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import type { ReactComponentLike } from "prop-types";
+import type { PropsWithChildren } from "react";
+import React, { useCallback } from "react";
 
 // TODO: get rid of renderClone to fix touch ux -> replace CloneWrapper with styles to fix clone translation
 export function DropTarget({

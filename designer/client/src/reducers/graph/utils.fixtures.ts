@@ -1,7 +1,8 @@
-import { GraphState } from "./types";
+import type { NodesWithPositions } from "../../actions/nk";
+import { TestCapabilityStatus } from "../../common/TestResultUtils";
 import { ProcessingMode } from "../../http/HttpService";
 import { EdgeKind } from "../../types";
-import { NodesWithPositions } from "../../actions/nk";
+import type { GraphState } from "./types";
 
 export const state: GraphState = {
     scenario: {
@@ -47,6 +48,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Switch",
+                    label: "union",
                 },
                 {
                     id: "variable 1",
@@ -63,6 +65,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Variable",
+                    label: "variable",
                 },
                 {
                     id: "variable 2",
@@ -79,6 +82,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Variable",
+                    label: "variable",
                 },
                 {
                     id: "union",
@@ -119,6 +123,7 @@ export const state: GraphState = {
                         },
                     },
                     type: "Join",
+                    label: "union",
                 },
             ],
             edges: [
@@ -160,22 +165,18 @@ export const state: GraphState = {
                     edgeType: null,
                 },
             ],
+            stickyNotes: [],
         },
         state: {
-            externalDeploymentId: null,
             status: {
                 name: "NOT_DEPLOYED",
             },
-            version: null,
             visibleActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             allowedActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             actionTooltips: {},
             icon: "/assets/states/not-deployed.svg",
             tooltip: "The scenario is not deployed.",
             description: "The scenario is not deployed.",
-            startTime: null,
-            attributes: null,
-            errors: [],
         },
         validationResult: {
             errors: {
@@ -262,7 +263,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",
@@ -366,7 +367,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",
@@ -434,7 +435,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",
@@ -562,7 +563,7 @@ export const state: GraphState = {
                                 params: [],
                             },
                             editor: {
-                                type: "RawParameterEditor",
+                                type: "SpelParameterEditor",
                             },
                             defaultValue: {
                                 language: "spel",
@@ -614,33 +615,24 @@ export const state: GraphState = {
                 },
             },
         },
-        lastDeployedAction: null,
-        lastAction: null,
         history: [
             {
                 processVersionId: 3,
                 createDate: "2024-10-03T08:36:52.856496Z",
                 user: "writer",
-                modelVersion: 4,
-                actions: [],
             },
             {
                 processVersionId: 2,
                 createDate: "2024-10-03T08:14:04.647992Z",
                 user: "writer",
-                modelVersion: 4,
-                actions: [],
             },
             {
                 processVersionId: 1,
                 createDate: "2024-10-03T08:08:02.059243Z",
                 user: "writer",
-                modelVersion: 4,
-                actions: [],
             },
         ],
     },
-    unsavedNewName: null,
     layout: [
         {
             id: "choice",
@@ -674,9 +666,12 @@ export const state: GraphState = {
     selectionState: [],
     scenarioLoading: false,
     testCapabilities: {
-        canBeTested: false,
-        canGenerateTestData: false,
-        canTestWithForm: false,
+        testWithParameters: {
+            status: TestCapabilityStatus.NOT_AVAILABLE,
+        },
+        testWithGeneratedData: {
+            status: TestCapabilityStatus.NOT_AVAILABLE,
+        },
     },
     testFormParameters: [],
     processCounts: {},
@@ -700,6 +695,7 @@ export const nodesWithPositions: NodesWithPositions = [
                 },
             },
             type: "Variable",
+            label: "variable",
         },
         position: {
             x: 350,
@@ -722,6 +718,7 @@ export const nodesWithPositions: NodesWithPositions = [
                 },
             },
             type: "Variable",
+            label: "variable",
         },
         position: {
             x: 710,
@@ -768,6 +765,7 @@ export const nodesWithPositions: NodesWithPositions = [
                 },
             },
             type: "Join",
+            label: "union",
         },
         position: {
             x: 530,

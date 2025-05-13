@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum._
+import enumeratum.EnumEntry.UpperSnakecase
 import io.circe.Decoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -17,13 +17,14 @@ import scala.util.matching.Regex
 
 trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
-  import profile.api._
+  import profile.apiWithEnforcedSchema._
 
   val scenarioActivityTable: LTableQuery[ScenarioActivityEntityFactory#ScenarioActivityEntity] = LTableQuery(
     new ScenarioActivityEntity(_)
   )
 
-  class ScenarioActivityEntity(tag: Tag) extends Table[ScenarioActivityEntityData](tag, "scenario_activities") {
+  class ScenarioActivityEntity(tag: Tag)
+      extends TableWithSchema[ScenarioActivityEntityData](tag, "scenario_activities") {
 
     def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
@@ -59,8 +60,6 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
     def errorMessage: Rep[Option[String]] = column[Option[String]]("error_message")
 
-    def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
-
     def additionalProperties: Rep[AdditionalProperties] = column[AdditionalProperties]("additional_properties")
 
     override def * =
@@ -82,10 +81,10 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
         performedAt,
         state,
         errorMessage,
-        buildInfo,
         additionalProperties,
       ) <> (
-        ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
+        ScenarioActivityEntityData.apply _ tupled,
+        ScenarioActivityEntityData.unapply
       )
 
   }
@@ -195,6 +194,5 @@ final case class ScenarioActivityEntityData(
     finishedAt: Option[Timestamp],
     state: Option[ProcessActionState],
     errorMessage: Option[String],
-    buildInfo: Option[String],
     additionalProperties: AdditionalProperties,
 )

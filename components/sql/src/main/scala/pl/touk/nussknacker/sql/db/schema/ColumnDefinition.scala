@@ -2,11 +2,11 @@ package pl.touk.nussknacker.sql.db.schema
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
+import java.{sql, util}
 import java.io.BufferedReader
 import java.sql.{Clob, ResultSet, ResultSetMetaData}
 import java.time.{Instant, LocalDate, LocalTime}
 import java.util.stream.Collectors
-import java.{sql, util}
 import scala.util.Using
 
 final case class ColumnDefinition(

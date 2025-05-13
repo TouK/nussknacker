@@ -1,7 +1,8 @@
-import { useDocumentEventListener } from "rooks";
-import { useEventTracking } from "./use-event-tracking";
 import { useSelector } from "react-redux";
+import { useDocumentEventListener } from "rooks";
+
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { useEventTracking } from "./use-event-tracking";
 
 export const enum EventTrackingType {
     Search = "SEARCH",
@@ -33,7 +34,7 @@ enum ClickEventsSelector {
     EditRedo = "EDIT_REDO",
     EditUndo = "EDIT_UNDO",
     TestGenerateFile = "TEST_GENERATE_FILE",
-    ScenarioJson = "SCENARIO_JSON",
+    ScenarioExport = "SCENARIO_EXPORT",
     ScenarioArchive = "SCENARIO_ARCHIVE",
     ScenarioCompare = "SCENARIO_COMPARE",
     ActionDeploy = "ACTION_DEPLOY",
@@ -48,6 +49,7 @@ enum ClickEventsSelector {
     ScenarioProperties = "SCENARIO_PROPERTIES",
     TestGenerated = "TEST_GENERATED",
     TestAdhoc = "TEST_ADHOC",
+    ScenarioTest = "SCENARIO_TEST",
     ScenarioSave = "SCENARIO_SAVE",
     TestCounts = "TEST_COUNTS",
     ScenarioCancel = "SCENARIO_CANCEL",

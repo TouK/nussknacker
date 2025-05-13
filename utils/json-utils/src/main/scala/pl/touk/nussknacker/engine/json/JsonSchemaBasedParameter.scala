@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.json
 
-import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -76,7 +76,7 @@ object JsonSchemaBasedParameter {
       // By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
       val isOptional = !isRequired.getOrElse(false)
       val parameter = (if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing))
-        .copy(isLazyParameter = true, defaultValue = defaultValue, editor = swaggerTyped.editorOpt)
+        .copy(isLazyParameter = true, defaultValue = defaultValue, editors = swaggerTyped.editorList)
 
       SingleSchemaBasedParameter(
         parameter,

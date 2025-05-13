@@ -1,12 +1,15 @@
-import { ExpressionObj } from "../types";
-import React, { useCallback, useMemo } from "react";
-import moment from "moment";
-import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
-import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import { isEmpty } from "lodash";
-import { ExtendedEditor } from "../Editor";
-import { FieldError } from "../../Validators";
+import moment from "moment";
+import React, { useCallback, useMemo } from "react";
+
+import type { FieldError } from "../../Validators";
+import type { ExtendedEditor, OnValueChange } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
+import { FormatterType, typeFormatters } from "../Formatter";
+import type { Formatter } from "../Formatter";
+import type { ExpressionObj } from "../types";
+import TimeRangeEditor from "./TimeRangeEditor";
 
 export type Period = {
     years: number;
@@ -16,7 +19,7 @@ export type Period = {
 
 type Props = {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
@@ -74,6 +77,7 @@ export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
             fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
+            language={editorsParameters.PeriodParameterEditor.language}
         />
     );
 };
@@ -81,10 +85,9 @@ export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
 PeriodEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
-PeriodEditor.switchableToHint = () => i18next.t("editors.period.switchableToHint", "Switch to basic mode");
-
 PeriodEditor.notSwitchableToHint = () =>
     i18next.t(
         "editors.period.notSwitchableToHint",
-        "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to basic mode",
+        "Expression must match pattern T(java.time.Period).parse('P(n)Y(n)M(n)W(n)D') to switch to {{editorName}} mode",
+        { editorName: editorsParameters.PeriodParameterEditor.displayName },
     );

@@ -1,8 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
-import { NodeField } from "./NodeField";
-import { FieldType } from "./editors/field/Field";
 import React from "react";
-import { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
+
+import type { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
+import { FieldType } from "./editors/field/Field";
+import { NodeField } from "./NodeField";
 
 interface DescriptionFieldProps {
     autoFocus?: boolean;

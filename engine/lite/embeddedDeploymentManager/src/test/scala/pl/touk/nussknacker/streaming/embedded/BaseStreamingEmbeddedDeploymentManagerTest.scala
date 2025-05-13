@@ -5,11 +5,11 @@ import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
@@ -82,12 +82,11 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       |}
       |""".stripMargin
 
-  protected def wrapInFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
+  protected def wrapInFailingLoader[T] = ThreadUtils.withContextClassLoader[T](new FailingContextClassloader) _
 
   protected def prepareFixture(
       inputTopic: TopicName.ForSource = generateInputTopicName,
       outputTopic: TopicName.ForSink = generateOutputTopicName,
-      initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty,
       jsonSchema: String = defaultJsonSchema
   ): FixtureParam = {
     registerJsonSchema(inputTopic.toUnspecialized, jsonSchema, isKey = false)
@@ -115,18 +114,17 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
         )
       )
 
-    val kafkaComponents = new MockLiteKafkaComponentProvider()
-      .create(kafkaComponentProviderConfig, ProcessObjectDependencies.withConfig(config))
+    val kafkaComponents =
+      new MockLiteKafkaComponentProvider().create(kafkaComponentProviderConfig, ModelConfig.parse(config))
 
-    val modelData         = LocalModelData(configToUse, kafkaComponents)
-    val deploymentService = new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios)
+    val modelData = LocalModelData(configToUse, kafkaComponents)
     wrapInFailingLoader {
       val strategy = new StreamingDeploymentStrategy {
         override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit =
           throw new AssertionError("Should not happen...")
       }
-      strategy.open(modelData, LiteEngineRuntimeContextPreparer.noOp)
-      val manager = new EmbeddedDeploymentManager(modelData, deploymentService, strategy)
+      strategy.open(modelData.toModelDataProvider, LiteEngineRuntimeContextPreparer.noOp)
+      val manager = new EmbeddedDeploymentManager(modelData.toModelDataProvider, strategy)
       FixtureParam(manager, modelData, inputTopic, outputTopic)
     }
   }

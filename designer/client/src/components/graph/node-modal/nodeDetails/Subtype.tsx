@@ -1,7 +1,8 @@
 import { styled } from "@mui/material";
-import { IconModalTitle } from "./IconModalTitle";
-import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
+
+import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
+import { IconModalTitle } from "./IconModalTitle";
 
 export const Subtype = styled(IconModalTitle)(({ theme }) => {
     const backgroundColor =
@@ -14,7 +15,7 @@ export const Subtype = styled(IconModalTitle)(({ theme }) => {
         backgroundColor,
         padding: theme.spacing(0, 1.6),
         columnGap: theme.spacing(1),
-
+        height: "100%",
         "a > &": {
             color: color,
             ":hover": {

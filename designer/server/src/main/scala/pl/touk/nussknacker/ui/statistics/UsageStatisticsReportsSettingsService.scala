@@ -2,8 +2,9 @@ package pl.touk.nussknacker.ui.statistics
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -12,12 +13,11 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStatisticsRepository}
 import pl.touk.nussknacker.ui.definition.component.ComponentService
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import java.time.Clock
@@ -57,7 +57,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
                 isFragment = scenario.isFragment,
                 processingMode = scenario.processingMode,
                 deploymentManagerType = deploymentManagerTypeByProcessingType(scenario.processingType),
-                status = scenario.state.map(_.status),
+                status = scenario.state.map(_.status.name),
                 nodesCount = scenario.scenarioGraph.map(_.nodes.length).getOrElse(0),
                 scenarioCategory = scenario.processCategory,
                 scenarioVersion = scenario.processVersionId,
@@ -177,7 +177,7 @@ private[statistics] case class ScenarioStatisticsInputData(
     processingMode: ProcessingMode,
     deploymentManagerType: DeploymentManagerType,
     // For fragments status is empty
-    status: Option[StateStatus],
+    status: Option[String],
     nodesCount: Int,
     scenarioCategory: String,
     scenarioVersion: VersionId,

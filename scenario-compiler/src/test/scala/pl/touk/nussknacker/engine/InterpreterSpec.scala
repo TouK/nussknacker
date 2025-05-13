@@ -1,17 +1,21 @@
 package pl.touk.nussknacker.engine
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.prop.Tables.Table
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  DesignerWideComponentId,
+  NodesDeploymentData,
+  UnboundedStreamComponent
+}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidFragment
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -19,7 +23,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -31,8 +34,8 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.component.Components
@@ -42,8 +45,8 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -51,11 +54,11 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.testcomponents.SpelTemplatePartsService
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContextAndIORuntime}
 import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
   EnricherContextTransformation
 }
-import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContextAndIORuntime}
 
 import java.util.{Collections, Optional}
 import javax.annotation.Nullable
@@ -114,10 +117,14 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val processCompilerData =
       prepareCompilerData(jobData, additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts       = failOnErrors(processCompilerData.compile(scenario))
+    implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
+      EngineScenarioCompilationDependencies.empty
+    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
+      new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
+    val parts = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
 
     val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
@@ -189,7 +196,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
-      ClassExtractionSettings.Default
+      ClassExtractionSettings.Default,
+      allowEndingScenarioWithoutSink = false,
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
@@ -201,8 +209,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       listeners,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime,
-      CustomProcessValidatorLoader.emptyCustomProcessValidator
+      RuntimeMode.Live,
+      CustomProcessValidatorLoader.emptyCustomProcessValidator,
+      NodesDeploymentData.empty,
     )
   }
 
@@ -428,6 +437,19 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         nodeResults = nodeResults :+ nodeId
       }
 
+      override def transitionToNextNode(
+          nodeId: String,
+          nextNodeId: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = ()
+
+      override def processingFinishedInNode(
+          nodeId: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = ()
+
       override def endEncountered(
           nodeId: String,
           ref: String,
@@ -460,7 +482,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           result: Any
       ): Unit = {}
 
-      override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {}
+      override def exceptionThrown(exceptionInfo: NuExceptionInfo) = {}
     }
 
     val process1 = ScenarioBuilder
@@ -944,7 +966,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,ParameterName(expression),customNode)"
+    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,expression,customNode)"
   }
 
   test("not accept blank expression for not blank parameter") {
@@ -957,7 +979,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,ParameterName(expression),customNode)"
+    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
   }
 
   test("use eager service") {
@@ -1175,7 +1197,7 @@ object InterpreterSpec {
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
       Future.successful(eagerParameters.head._2.toString)
     }
@@ -1188,7 +1210,7 @@ object InterpreterSpec {
 
     private val spelTemplateParameter = Parameter
       .optional[String](spelTemplateParameterName)
-      .copy(isLazyParameter = true, editor = Some(SpelTemplateParameterEditor))
+      .copy(isLazyParameter = true, editors = List(SpelTemplateParameterEditor))
 
     override def parameters: List[Parameter] = List(spelTemplateParameter)
 
@@ -1199,9 +1221,9 @@ object InterpreterSpec {
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[AnyRef] = {
-      Future.successful(params(spelTemplateParameterName).asInstanceOf[TemplateEvaluationResult].renderedTemplate)
+      Future.successful(params(spelTemplateParameterName).asInstanceOf[String])
     }
 
   }
@@ -1210,7 +1232,7 @@ object InterpreterSpec {
 
     override def parameters: List[Parameter] = List(
       Parameter[String](ParameterName("param")).copy(
-        editor = Some(DictParameterEditor("someDictId"))
+        editors = List(DictParameterEditor("someDictId"))
       )
     )
 
@@ -1221,7 +1243,7 @@ object InterpreterSpec {
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
+        componentUseContext: ComponentUseContext
     ): Future[Any] = {
       Future.successful(eagerParameters.head._2.toString)
     }
@@ -1244,7 +1266,7 @@ object InterpreterSpec {
       override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          componentUseCase: ComponentUseCase
+          componentUseContext: ComponentUseContext,
       ): Future[Any] = {
         Future.successful(param)
       }
@@ -1271,7 +1293,7 @@ object InterpreterSpec {
             override def invoke(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                componentUseCase: ComponentUseCase
+                componentUseContext: ComponentUseContext,
             ): Future[AnyRef] = {
               Future.successful(lazyOne.evaluate(context))
             }
@@ -1324,7 +1346,7 @@ object InterpreterSpec {
         override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            componentUseCase: ComponentUseCase
+            componentUseContext: ComponentUseContext,
         ): Future[AnyRef] = {
           Future.successful(lazyDynamicParamValue.evaluate(context))
         }

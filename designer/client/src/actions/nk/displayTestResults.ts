@@ -1,65 +1,110 @@
-import HttpService, { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
+import type { ProcessName } from "src/components/Process/types";
+
+import type { TestResults } from "../../common/TestResultUtils";
+import type { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
+import HttpService from "../../http/HttpService";
+import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
+import type { ScenarioGraph } from "../../types";
+import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
-import { TestResults } from "../../common/TestResultUtils";
-import { ThunkAction } from "../reduxTypes";
-import { ProcessName } from "src/components/Process/types";
-import { ScenarioGraph } from "../../types";
 
-export function testProcessFromFile(processName: ProcessName, testDataFile: File, scenarioGraph: ScenarioGraph): ThunkAction {
-    return (dispatch) => {
-        dispatch({
-            type: "PROCESS_LOADING",
-        });
-
-        HttpService.testProcess(processName, testDataFile, scenarioGraph)
-            .then((response) => dispatch(displayTestResults(response.data)))
-            .catch(() => dispatch({ type: "LOADING_FAILED" }));
-    };
+export function testProcessFromFile(testDataFile: File): ThunkAction {
+    return wrapWithTestAction((processName, scenarioGraph) =>
+        HttpService.testScenarioWithFile(processName, scenarioGraph, testDataFile).then(({ data }) => ({
+            testResults: data,
+        })),
+    );
 }
 
-export function testProcessWithParameters(
-    processName: ProcessName,
-    testData: SourceWithParametersTest,
-    scenarioGraph: ScenarioGraph,
+export function testProcessWithParameters(sourceParameters: SourceWithParametersTest): ThunkAction {
+    return wrapWithTestAction((processName, scenarioGraph) =>
+        HttpService.testScenario(processName, scenarioGraph, {
+            type: "WITH_PARAMETERS",
+            sourceParameters,
+        }).then(({ data }) => ({
+            testResults: data,
+            testData: sourceParameters,
+        })),
+    );
+}
+
+export function testScenarioWithGeneratedData(testSampleSize: string): ThunkAction {
+    return wrapWithTestAction((processName, scenarioGraph) =>
+        HttpService.testScenario(processName, scenarioGraph, {
+            type: "WITH_GENERATED_DATA",
+            numberOfSamples: parseInt(testSampleSize),
+        }).then(({ data }) => ({
+            testResults: data,
+        })),
+    );
+}
+
+export type TestsActions =
+    | {
+          type: "TEST_RESULTS_LOADING";
+      }
+    | {
+          type: "TEST_RESULTS_FAILED";
+      }
+    | {
+          type: "DISPLAY_TEST_RESULTS_DETAILS";
+          testResults: TestResults;
+          testData?: SourceWithParametersTest;
+      }
+    | {
+          type: "UPDATE_TEST_TYPE";
+          testType: string;
+      }
+    | {
+          type: "SET_TEST_DATA";
+          testData: SourceWithParametersTest;
+      };
+
+function wrapWithTestAction(
+    fn: (
+        processName: ProcessName,
+        scenarioGraph: ScenarioGraph,
+    ) => Promise<{
+        testResults: TestProcessResponse;
+        testData?: SourceWithParametersTest;
+    }>,
 ): ThunkAction {
-    return (dispatch) => {
-        dispatch({
-            type: "PROCESS_LOADING",
-        });
-
-        HttpService.testProcessWithParameters(processName, testData, scenarioGraph)
-            .then((response) => dispatch(displayTestResults(response.data)))
-            .catch(() => dispatch({ type: "LOADING_FAILED" }));
+    return (dispatch, getState) => {
+        dispatch({ type: "TEST_RESULTS_LOADING" });
+        const state = getState();
+        const scenarioGraph = getScenarioGraph(state);
+        const processName = getProcessName(state);
+        fn(processName, scenarioGraph)
+            .then(({ testResults, testData }) => dispatch(displayTestResults(testResults, testData)))
+            .catch(() => dispatch({ type: "TEST_RESULTS_FAILED" }));
     };
 }
 
-export function testScenarioWithGeneratedData(testSampleSize: string, processName: ProcessName, scenarioGraph: ScenarioGraph): ThunkAction {
-    return (dispatch) => {
-        dispatch({
-            type: "PROCESS_LOADING",
-        });
-
-        HttpService.testScenarioWithGeneratedData(processName, testSampleSize, scenarioGraph)
-            .then((response) => dispatch(displayTestResults(response.data)))
-            .catch(() => dispatch({ type: "LOADING_FAILED" }));
-    };
-}
-
-export interface DisplayTestResultsDetailsAction {
-    testResults: TestResults;
-    type: "DISPLAY_TEST_RESULTS_DETAILS";
-}
-
-function displayTestResultsDetails(testResults: TestProcessResponse): DisplayTestResultsDetailsAction {
+function displayTestResultsDetails(testResults: TestResults, testData?: SourceWithParametersTest): Action {
     return {
         type: "DISPLAY_TEST_RESULTS_DETAILS",
-        testResults: testResults.results,
+        testResults,
+        testData,
     };
 }
 
-function displayTestResults(testResults: TestProcessResponse) {
+export function updateTestType(testType: string): Action {
+    return {
+        type: "UPDATE_TEST_TYPE",
+        testType,
+    };
+}
+
+function displayTestResults({ counts, results }: TestProcessResponse, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
-        dispatch(displayTestResultsDetails(testResults));
-        dispatch(displayProcessCounts(testResults.counts));
+        dispatch(displayTestResultsDetails(results, testData));
+        dispatch(displayProcessCounts(counts));
+    };
+}
+
+export function setTestData(testData: SourceWithParametersTest): Action {
+    return {
+        type: "SET_TEST_DATA",
+        testData,
     };
 }

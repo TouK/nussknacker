@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.api.description
 import cats.data.NonEmptyList
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.{NodeDeploymentData, NodesDeploymentData, SqlFilteringExpression}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyProcess,
   ExpressionParserCompilationError,
@@ -20,11 +20,11 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import sttp.model.StatusCode
+import sttp.tapir._
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.{Example, Info}
-import sttp.tapir._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
@@ -48,9 +48,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
           .example(
             RunDeploymentRequest(
               scenarioName = ProcessName("scenario1"),
-              NodesDeploymentData(
-                Map(NodeId("sourceNodeId1") -> SqlFilteringExpression("field1 = 'value'"))
-              ),
+              nodesDeploymentData = Map(NodeId("sourceNodeId1") -> "field1 = 'value'"),
               comment = None
             )
           )
@@ -140,7 +138,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
               Example.of(
                 GetDeploymentStatusResponse(
                   DeploymentStatus.Problem.Failed.name,
-                  Some(DeploymentStatus.Problem.Failed.description),
+                  Some(DeploymentStatus.Problem.Failed.problemDescription),
                   exampleInstant
                 ),
                 Some("PROBLEM status")
@@ -200,7 +198,7 @@ object DeploymentApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class RunDeploymentRequest(
         scenarioName: ProcessName,
-        nodesDeploymentData: NodesDeploymentData,
+        nodesDeploymentData: Map[NodeId, String],
         comment: Option[String]
     )
 
@@ -213,13 +211,7 @@ object DeploymentApiEndpoints {
         modifiedAt: Instant
     )
 
-    implicit val nodeDeploymentDataCodec: Schema[NodeDeploymentData] = Schema.string[SqlFilteringExpression].as
-
-    implicit val nodesDeploymentDataCodec: Schema[NodesDeploymentData] = Schema
-      .schemaForMap[NodeId, NodeDeploymentData](_.id)
-      .map[NodesDeploymentData]((map: Map[NodeId, NodeDeploymentData]) => Some(NodesDeploymentData(map)))(
-        _.dataByNodeId
-      )
+    implicit val nodesDeploymentDataCodec: Schema[Map[NodeId, String]] = Schema.schemaForMap[NodeId, String](_.id)
 
     sealed trait RunDeploymentError
 
@@ -258,7 +250,7 @@ object DeploymentApiEndpoints {
         case DeploymentOfFragmentError            => s"Deployment of fragment is not allowed"
         case DeploymentOfArchivedScenarioError    => s"Deployment of archived scenario is not allowed"
         case CommentValidationError(message)      => message
-        case ScenarioGraphValidationError(errors) => toHumanReadableMessage(errors)
+        case ScenarioGraphValidationError(errors) => errors.toHumanReadableMessage // TODO: Move to some details field
         case DeployValidationError(message)       => message
       }
 
@@ -276,30 +268,6 @@ object DeploymentApiEndpoints {
         s"Deployment ${err.id} not found"
       )
 
-  }
-
-  private def toHumanReadableMessage(errors: ValidationErrors) = {
-    // TODO: Move to some details field
-    s"Scenario is invalid.${Option(errors.invalidNodes)
-        .filterNot(_.isEmpty)
-        .map {
-          _.map { case (nodeId, nodeErrors) =>
-            s"\n  $nodeId: ${nodeErrors.map(_.message).mkString(", ")}"
-          }.mkString("\nNode errors:", "", "")
-        }
-        .getOrElse("")}" +
-      s"${Option(errors.globalErrors)
-          .filterNot(_.isEmpty)
-          .map {
-            _.map(_.error.message).mkString("\nGlobal errors: ", ", ", "")
-          }
-          .getOrElse("")}" +
-      s"${Option(errors.processPropertiesErrors)
-          .filterNot(_.isEmpty)
-          .map {
-            _.map(_.message).mkString("\nProperties errors: ", ", ", "")
-          }
-          .getOrElse("")}"
   }
 
 }

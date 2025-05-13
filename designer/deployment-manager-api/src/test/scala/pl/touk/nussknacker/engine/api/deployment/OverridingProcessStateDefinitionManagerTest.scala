@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.process.VersionId
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
 
@@ -28,7 +29,7 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
       )
     )
 
-    override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] = Nil
+    override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
   }
 
   test("should combine delegate state definitions with custom overrides") {
@@ -58,10 +59,19 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
     definitionsMap(CustomState.name).description shouldBe "Custom description"
     definitionsMap(CustomStateThatOverrides.name).description shouldBe "Custom description that overrides"
 
+    def toStatusWithContext(status: StateStatus) =
+      ScenarioStatusWithScenarioContext(status, None, None)
+
     // Description assigned to a scenario, with custom calculations
-    manager.statusDescription(DefaultState) shouldBe "Calculated description for default, e.g. schedule date"
-    manager.statusDescription(CustomState) shouldBe "Calculated description for custom, e.g. schedule date"
-    manager.statusDescription(CustomStateThatOverrides) shouldBe "Custom description that overrides"
+    manager.statusDescription(
+      toStatusWithContext(DefaultState)
+    ) shouldBe "Calculated description for default, e.g. schedule date"
+    manager.statusDescription(
+      toStatusWithContext(CustomState)
+    ) shouldBe "Calculated description for custom, e.g. schedule date"
+    manager.statusDescription(
+      toStatusWithContext(CustomStateThatOverrides)
+    ) shouldBe "Custom description that overrides"
   }
 
 }

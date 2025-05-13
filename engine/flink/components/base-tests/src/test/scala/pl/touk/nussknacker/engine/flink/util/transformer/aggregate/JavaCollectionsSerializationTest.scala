@@ -11,10 +11,11 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
-import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -50,16 +51,17 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       set = mutable.Set("def").asJava
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerListener
-    val model              = modelData(collectingListener, List(record))
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = modelData(collectingListener, List(record))
 
-    runProcess(model, process)
+      runScenario(model, process)
 
-    val result = collectingListener.results
-      .nodeResults("end")
-      .map(_.variableTyped[Record]("input"))
+      val result = collectingListener.results
+        .nodeResults("end")
+        .map(_.variableTyped[Record]("input"))
 
-    result shouldBe List(Some(record))
+      result shouldBe List(Some(record))
+    }
   }
 
   def modelData(collectingListener: ResultsCollectingListener[Any], list: List[Record] = List()): LocalModelData = {
@@ -76,13 +78,14 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     )
   }
 
-  protected def runProcess(
+  protected def runScenario(
       model: LocalModelData,
-      testProcess: CanonicalProcess
+      testScenario: CanonicalProcess
   ): Unit = {
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
+    flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+      val executionResult = new FlinkScenarioUnitTestJob(model).run(testScenario, env)
+      flinkMiniCluster.waitForJobIsFinished(executionResult.getJobID)
+    }
   }
 
 }

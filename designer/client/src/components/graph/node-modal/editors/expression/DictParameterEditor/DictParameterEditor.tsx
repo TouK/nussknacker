@@ -1,27 +1,31 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { Autocomplete, Box, SxProps, Theme, useTheme } from "@mui/material";
-import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
-import { getScenario } from "../../../../../../reducers/selectors/graph";
-import { useSelector } from "react-redux";
-import { debounce } from "@mui/material/utils";
-import { ExtendedEditor } from "../Editor";
-import { ExpressionLang, ExpressionObj } from "../types";
-import { FieldError } from "../../Validators";
-import { ParamType } from "../../types";
-import { NodeInput } from "../../../../../FormElements";
-import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
-import i18next from "i18next";
-import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { cx } from "@emotion/css";
+import type { SxProps, Theme } from "@mui/material";
+import { Autocomplete, Box, useTheme } from "@mui/material";
+import { debounce } from "@mui/material/utils";
+import i18next from "i18next";
 import { isEmpty } from "lodash";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
+import type { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
+import HttpService from "../../../../../../http/HttpService";
+import { getScenario } from "../../../../../../reducers/selectors/graph";
+import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
+import { NodeInput } from "../../../../../FormElements";
+import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
+import type { FieldError } from "../../Validators";
+import type { ExtendedEditor, OnValueChange } from "../Editor";
+import { editorsParameters } from "../editorsParameters";
+import type { ExpressionObj } from "../types";
+import { ExpressionLang } from "../types";
 
 interface Props {
     expressionObj: ExpressionObj;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     fieldErrors: FieldError[];
-    param: ParamType;
+    editorConfig: $TodoType;
     showValidation: boolean;
     readOnly: boolean;
 }
@@ -29,7 +33,7 @@ interface Props {
 export const DictParameterEditor: ExtendedEditor<Props> = ({
     fieldErrors,
     expressionObj,
-    param,
+    editorConfig,
     onValueChange,
     showValidation,
     readOnly,
@@ -39,18 +43,12 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const { menuOption } = selectStyled(theme);
     const [options, setOptions] = useState<ProcessDefinitionDataDictOption[]>([]);
     const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(() => {
-        if (!expressionObj.expression) {
-            return null;
-        }
-
-        const parseObject = tryParseOrNull(expressionObj.expression);
-        return typeof parseObject === "object" ? parseObject : null;
-    });
+    const [value, setValue] = useState<ProcessDefinitionDataDictOption>();
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const dictId = param.editor.dictId || param.editor?.simpleEditor?.dictId;
+    const dictId = editorConfig?.dictId;
 
     const fetchProcessDefinitionDataDict = useCallback(
         async (inputValue: string) => {
@@ -64,6 +62,16 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
         [dictId, scenario.processingType],
     );
 
+    const fetchProcessDefinitionDataDictByKey = useCallback(
+        async (key: string) => {
+            setIsFetching(true);
+            const response = await HttpService.fetchProcessDefinitionDataDictByKey(scenario.processingType, dictId, key);
+            setIsFetching(false);
+            return response;
+        },
+        [dictId, scenario.processingType],
+    );
+
     const debouncedUpdateOptions = useMemo(() => {
         return debounce(async (value: string) => {
             const fetchedOptions = await fetchProcessDefinitionDataDict(value);
@@ -72,6 +80,35 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     }, [fetchProcessDefinitionDataDict]);
 
     const isValid = isEmpty(fieldErrors);
+
+    // This logic is needed, because scenario is initially loaded without full validation data.
+    // In that case the label is missing, and we need to fetch it separately.
+    useEffect(() => {
+        if (!expressionObj.expression) return;
+        const parseObject = tryParseOrNull(expressionObj.expression);
+        if (!parseObject) {
+            setIsLoading(false);
+            return;
+        }
+        fetchProcessDefinitionDataDictByKey(parseObject?.key)
+            .then((response) => {
+                if (response.status == "success") {
+                    setValue(response.data);
+                } else {
+                    setValue(parseObject);
+                }
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [expressionObj, fetchProcessDefinitionDataDictByKey]);
+
+    // This condition means, that we should delay rendering this fragment when both conditions are met:
+    // - expression is defined, so we know that value is present, but we do not yet have enough information to render it (label)
+    // - value is not yet available - label is not yet loaded
+    if (isLoading && expressionObj?.expression) {
+        return;
+    }
 
     return (
         <Box className={nodeValue}>
@@ -93,7 +130,10 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange(value ? JSON.stringify(value) : "");
+                    onValueChange({
+                        expression: value ? JSON.stringify(value) : "",
+                        language: editorsParameters.DictParameterEditor.language,
+                    });
                     setValue(value);
                     setOpen(false);
                 }}
@@ -108,7 +148,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 }}
                 open={open}
                 noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
-                getOptionLabel={(option) => option.label}
+                getOptionLabel={(option) => option.label ?? ""}
                 isOptionEqualToValue={() => true}
                 value={value}
                 inputValue={inputValue}
@@ -116,7 +156,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 renderOption={(props, option) => {
                     const isSelected = option.key === value?.key;
                     return (
-                        // aira-selected is set to false as it overrides styles defined in our menuOption
+                        // aria-selected is set to false as it overrides styles defined in our menuOption
                         <Box component={"li"} sx={menuOption({}, isSelected, false) as SxProps<Theme>} {...props} aria-selected={false}>
                             {option.label}
                         </Box>
@@ -135,14 +175,22 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
 const isParseable = (expressionObj: ExpressionObj) =>
     tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";
 
-DictParameterEditor.switchableToHint = () => i18next.t("editors.dictParameter.switchableToHint", "Switch to basic mode");
 DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
 DictParameterEditor.isSwitchableTo = () => true;
-DictParameterEditor.getExpressionMode = (expressionObj) => ({
-    language: ExpressionLang.SpEL,
-    expression: isParseable(expressionObj) ? "" : expressionObj.expression,
-});
-DictParameterEditor.getBasicMode = (expressionObj) => ({
-    language: ExpressionLang.DictKeyWithLabel,
-    expression: isParseable(expressionObj) ? expressionObj.expression : "",
-});
+DictParameterEditor.parseValueOnEditorChange = (expressionObj: ExpressionObj, newLanguage: ExpressionLang) => {
+    if (newLanguage === ExpressionLang.DictKeyWithLabel) {
+        return {
+            language: newLanguage,
+            expression: isParseable(expressionObj) ? expressionObj.expression : "",
+        };
+    }
+
+    if (newLanguage === ExpressionLang.SpEL) {
+        return {
+            language: newLanguage,
+            expression: isParseable(expressionObj) ? "" : expressionObj.expression,
+        };
+    }
+
+    return expressionObj;
+};

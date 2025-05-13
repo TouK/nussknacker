@@ -2,12 +2,12 @@ package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
-  StringParameterEditor
+  StaticStringParameterEditor
 }
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 
 class UiScenarioPropertyEditorDeterminerTest extends AnyFunSuite with Matchers {
 
@@ -23,7 +23,7 @@ class UiScenarioPropertyEditorDeterminerTest extends AnyFunSuite with Matchers {
   test("should determine StringParameter editor for scenario property by default") {
     val determined = UiScenarioPropertyEditorDeterminer.determine(ScenarioPropertyConfig.empty)
 
-    determined shouldBe StringParameterEditor
+    determined shouldBe StaticStringParameterEditor
   }
 
 }

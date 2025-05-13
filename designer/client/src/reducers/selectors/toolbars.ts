@@ -1,17 +1,36 @@
 import { createSelector } from "reselect";
-import { defaultToolbarsConfig } from "../../components/toolbarSettings/defaultToolbarsConfig";
-import { RootState } from "../index";
-import { ToolbarsSide, ToolbarsState, ToolbarsStates } from "../toolbars";
+
+import { ButtonsVariant } from "../../components/toolbarComponents/toolbarButtons";
+import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons";
+import { fallbackToolbarsConfig } from "../../components/toolbarSettings/fallbackToolbarsConfig";
+import type { ToolbarsConfig } from "../../components/toolbarSettings/types";
+import type { WithId } from "../../types/common";
+import type { RootState } from "../index";
+import type { ToolbarsState, ToolbarsStates } from "../toolbars";
+import { ToolbarsSide } from "../toolbars";
 import { isArchived, isFragment } from "./graph";
 import { getSettings } from "./settings";
 
 const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {};
-export const getToolbarsConfig = createSelector(
-    getSettings,
-    isFragment,
-    isArchived,
-    (settings, fragment, archived) => settings?.processToolbarsConfiguration || defaultToolbarsConfig(fragment, archived),
-);
+
+const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }: WithId<ToolbarsConfig>): WithId<ToolbarsConfig> => ({
+    ...toolbars,
+    [ToolbarsSide.RightTop]: [{ id: "survey-panel" }, ...topRight],
+    [ToolbarsSide.RightBottom]: [
+        ...bottomRight,
+        {
+            id: "user-settings-panel",
+            buttonsVariant: ButtonsVariant.horizontal,
+            buttons: [{ type: BuiltinButtonTypes.viewReset }],
+        },
+    ],
+});
+
+export const getToolbarsConfig = createSelector(getSettings, isFragment, isArchived, (settings, fragment, archived) => {
+    const toolbars = settings?.processToolbarsConfiguration || fallbackToolbarsConfig(fragment, archived);
+    return appendDefaultToolbars(toolbars);
+});
+
 export const getToolbarsConfigId = createSelector(getToolbarsConfig, getToolbarsState, (c, t) => c?.id || t?.currentConfigId);
 export const getToolbars = createSelector(getToolbarsState, getToolbarsConfigId, (t, id) => t?.[`#${id}`] || ({} as ToolbarsState));
 export const getToolbarsInitData = createSelector(getToolbars, (t) => t.initData || []);

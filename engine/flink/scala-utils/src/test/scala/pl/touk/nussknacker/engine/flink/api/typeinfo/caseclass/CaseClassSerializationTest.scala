@@ -11,7 +11,7 @@ import org.scalatest.matchers.must.Matchers
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 
 class CaseClassSerializationTest extends AnyFunSuite with Matchers {
 

@@ -7,13 +7,13 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 import java.util.UUID
@@ -37,30 +37,33 @@ class ManagementResourcesBatchBusinessSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(s"""{
-                     | "sourceParameters": {
-                     |   "sourceId": "sourceId",
-                     |   "parameterExpressions": {
-                     |     "datetime": {
-                     |       "language": "spel",
-                     |       "expression": "T(java.time.LocalDateTime).parse('2020-12-31T10:15')"
-                     |     },
-                     |     "client_id": {
-                     |       "language": "spel",
-                     |       "expression": "'client1'"
-                     |     },
-                     |     "amount": {
-                     |       "language": "spel",
-                     |       "expression": "50"
-                     |     },
-                     |     "date": {
-                     |       "language": "spel",
-                     |       "expression": "'2020-12-31'"
+                     | "testData": {
+                     |   "type": "WITH_PARAMETERS",
+                     |   "sourceParameters": {
+                     |     "sourceId": "sourceId",
+                     |     "parameterExpressions": {
+                     |       "datetime": {
+                     |         "language": "spel",
+                     |         "expression": "T(java.time.LocalDateTime).parse('2020-12-31T10:15')"
+                     |       },
+                     |       "client_id": {
+                     |         "language": "spel",
+                     |         "expression": "'client1'"
+                     |       },
+                     |       "amount": {
+                     |         "language": "spel",
+                     |         "expression": "50"
+                     |       },
+                     |       "date": {
+                     |         "language": "spel",
+                     |         "expression": "'2020-12-31'"
+                     |       }
                      |     }
                      |   }
                      | },
                      | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
                      |}""".stripMargin)
-        .post(s"$nuDesignerHttpAddress/api/processManagement/testWithParameters/${exampleScenario.name}")
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .body(
