@@ -6,7 +6,7 @@ import { useUserSettings } from "../../../common/userSettings";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
-import MockedOutputField from "./editors/expression/MockedOutputField";
+import MockExpressionField from "./editors/expression/MockExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
@@ -96,7 +96,7 @@ export function EnricherProcessor({
                     errors={errors}
                 />
                 {showMockField ? (
-                    <MockedOutputField
+                    <MockExpressionField
                         isEditMode={isEditMode}
                         editedNode={node}
                         showValidation={showValidation}

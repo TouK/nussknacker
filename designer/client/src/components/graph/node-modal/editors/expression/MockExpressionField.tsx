@@ -15,9 +15,9 @@ import type { ExpressionObj } from "./types";
 import { ExpressionLang } from "./types";
 import { EditorType } from "./types";
 
-const MOCKED_OUTPUT_IN_NODE_FIELD_NAME = "mockedOutput";
+const MOCK_EXPRESSION_IN_NODE_NAME = "mockExpression";
 const MOCK_EXPRESSION_PARAMETER_NAME = "$mockExpression";
-const EXPRESSION_TEXT_PATH = `${MOCKED_OUTPUT_IN_NODE_FIELD_NAME}.mockExpression.expression`;
+const EXPRESSION_TEXT_PATH = `${MOCK_EXPRESSION_IN_NODE_NAME}.expression`;
 
 const MOCK_EXPRESSION_HINT_TEXT =
     "If you provide this expression, the real service won't be invoked during tests. Instead, the result of the evaluation will be used.";
@@ -52,12 +52,10 @@ type Props = {
     errors: NodeValidationError[];
 };
 
-function MockedOutputField(props: Props): JSX.Element {
+function MockExpressionField(props: Props): JSX.Element {
     const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, errors } = props;
     const [mockExpression, setMockExpression] = useState(() => {
-        return (
-            get(editedNode, MOCKED_OUTPUT_IN_NODE_FIELD_NAME)?.mockExpression || { expression: "", language: ExpressionLang.JsonTemplate }
-        );
+        return get(editedNode, MOCK_EXPRESSION_IN_NODE_NAME) || { expression: "", language: ExpressionLang.JsonTemplate };
     });
     const [isMarked] = useDiffMark();
     const { t } = useTranslation();
@@ -67,9 +65,9 @@ function MockedOutputField(props: Props): JSX.Element {
         (value: ExpressionObj) => {
             setMockExpression(value);
             if (value.expression.length > 0) {
-                setNodeDataAt(MOCKED_OUTPUT_IN_NODE_FIELD_NAME, { type: "SingleMockExpression", mockExpression: value });
+                setNodeDataAt(MOCK_EXPRESSION_IN_NODE_NAME, value);
             } else {
-                setNodeDataAt(MOCKED_OUTPUT_IN_NODE_FIELD_NAME, null);
+                setNodeDataAt(MOCK_EXPRESSION_IN_NODE_NAME, null);
             }
         },
         [setNodeDataAt],
@@ -101,4 +99,4 @@ function MockedOutputField(props: Props): JSX.Element {
     );
 }
 
-export default MockedOutputField;
+export default MockExpressionField;

@@ -38,7 +38,6 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.node.EnricherMockedOutput.SingleMockExpression
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
@@ -403,8 +402,8 @@ class NodeCompiler(
   ): NodeCompilationResult[EnricherCompilationResult] = {
     val serviceCompilationResult = compileService(n.service, ctx, Some(outputVar))
 
-    val expressionCompilationResult = n.mockedOutput match {
-      case Some(SingleMockExpression(mockExpression)) =>
+    val expressionCompilationResult = n.mockExpression match {
+      case Some(mockExpression) =>
         val expectedType =
           serviceCompilationResult.validationContext.map(_.localVariables(outputVar.outputName)).getOrElse(Unknown)
         compileEnricherMockExpression(mockExpression, expectedType, ctx)
