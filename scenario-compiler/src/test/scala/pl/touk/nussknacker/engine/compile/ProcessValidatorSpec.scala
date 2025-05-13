@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefini
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -977,7 +978,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("should not allow mock expression not matching enricher return type") {
+  test("should not allow mock expression not matching enricher return type - spel expression") {
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
@@ -989,6 +990,34 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
             NonEmptyList(
               ExpressionParserCompilationError(
                 "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String(abc)}",
+                "enricher1",
+                Some(NodeCompiler.MockExpressionParameterName),
+                _,
+                None
+              ),
+              Nil
+            )
+          ) =>
+    }
+  }
+
+  test("should not allow mock expression not matching enricher return type - json template expression") {
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "typed-source")
+      .enricherWithMockExpression(
+        "enricher1",
+        "out",
+        "sampleEnricherWithPlainRecord",
+        Expression(Language.JsonTemplate, """{"someString": "abc"}""")
+      )
+      .emptySink("id2", "sink")
+
+    inside(validate(process, definitionWithTypedSource).result) {
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String}",
                 "enricher1",
                 Some(NodeCompiler.MockExpressionParameterName),
                 _,

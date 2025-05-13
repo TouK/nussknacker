@@ -45,6 +45,7 @@ import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefini
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -1039,7 +1040,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction(), runtimeMode = Live) should equal("1111")
   }
 
-  test("should use configured mocked output as output instead of invoking enricher in case of test mode") {
+  test(
+    "should use configured mocked output as output instead of invoking enricher in case of test mode - spel expression case"
+  ) {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
@@ -1054,6 +1057,44 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .emptySink("end-end", "dummySink")
 
     interpretProcess(process, Transaction(), runtimeMode = Test) should equal("2222")
+  }
+
+  test(
+    "should use configured mocked output as output instead of invoking enricher in case of test mode - json template expression case"
+  ) {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = Expression(Language.JsonTemplate, "\"2222\""),
+        params = "param1" -> "1111".spel
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(), runtimeMode = Test) should equal("2222")
+  }
+
+  test(
+    "should use configured mocked output as output instead of invoking enricher in case of test mode - json template null expression case"
+  ) {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = Expression(Language.JsonTemplate, "null"),
+        params = "param1" -> "1111".spel
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(), runtimeMode = Test) shouldBe null.asInstanceOf[String]
   }
 
   test("inject fixed additional variable") {

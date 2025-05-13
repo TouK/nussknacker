@@ -12,6 +12,7 @@ import EditableEditor from "../EditableEditor";
 import { getValidationErrorsForField } from "../Validators";
 import type { OnValueChange } from "./Editor";
 import type { ExpressionObj } from "./types";
+import { ExpressionLang } from "./types";
 import { EditorType } from "./types";
 
 const MOCKED_OUTPUT_IN_NODE_FIELD_NAME = "mockedOutput";
@@ -33,7 +34,8 @@ const MockExpressionParameter: UIParameter = {
     additionalVariables: {},
     branchParam: false,
     defaultValue: { expression: "", language: "spel" },
-    editor: { type: EditorType.SPEL_PARAMETER_EDITOR },
+    editor: { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+    editors: [{ type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR }, { type: EditorType.SPEL_PARAMETER_EDITOR }],
     label: "",
     name: MOCK_EXPRESSION_PARAMETER_NAME,
     typ: UnknownTypingResult,
@@ -53,7 +55,9 @@ type Props = {
 function MockedOutputField(props: Props): JSX.Element {
     const { editedNode, isEditMode, showValidation, showSwitch, findAvailableVariables, setNodeDataAt, errors } = props;
     const [mockExpression, setMockExpression] = useState(() => {
-        return get(editedNode, MOCKED_OUTPUT_IN_NODE_FIELD_NAME)?.mockExpression || { expression: "", language: "spel" };
+        return (
+            get(editedNode, MOCKED_OUTPUT_IN_NODE_FIELD_NAME)?.mockExpression || { expression: "", language: ExpressionLang.JsonTemplate }
+        );
     });
     const [isMarked] = useDiffMark();
     const { t } = useTranslation();
