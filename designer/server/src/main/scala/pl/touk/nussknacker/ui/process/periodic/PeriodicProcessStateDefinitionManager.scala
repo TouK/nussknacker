@@ -28,7 +28,10 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
     ) {
 
   override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
-    input.scenarioStatus match {
+    val periodicStatus = extractPeriodicStatus(input.scenarioStatus)
+      .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
+      .getOrElse(input)
+    periodicStatus.scenarioStatus match {
       case _: ScheduledStatus =>
         Set(
           ScenarioActionName.Cancel,
