@@ -201,11 +201,11 @@ class ScenarioTestingApiHttpService(
                     case Some(results) =>
                       Right(results)
                     case None =>
-                      Left(TestingError.UnsupportedOperation("This scenario does not support live data preview 1"))
+                      Left(TestingError.UnsupportedOperation("There are no live data available for this scenario"))
                   }
                 case NoLiveDataPreviewSupport =>
                   Future.successful(
-                    Left(TestingError.UnsupportedOperation("This scenario does not support live data preview 2"))
+                    Left(TestingError.UnsupportedOperation("This scenario does not support live data preview"))
                   )
               }
             }
@@ -405,12 +405,6 @@ object ScenarioTestingApiHttpService {
       summary = Some("No scenario {scenarioName} found"),
       value = NoScenario(ProcessName("'example scenario'"))
     )
-
-    val noScenarioErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
-      oneOfVariant(
-        NotFound,
-        plainBody[NoScenario].example(noScenarioExample)
-      )
 
   }
 

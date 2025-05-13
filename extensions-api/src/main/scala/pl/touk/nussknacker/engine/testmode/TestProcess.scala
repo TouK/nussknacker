@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.testmode
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
-import java.time.Instant
-
 object TestProcess {
 
   case class TestResults[T](
