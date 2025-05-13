@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.node.EnricherMockedOutput.SingleMockExpression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -37,7 +36,7 @@ trait GraphBuilder[R] {
       creator(
         Some(
           OneOutputSubsequentNode(
-            Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockedOutput = None),
+            Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockExpression = None),
             node
           )
         )
@@ -45,17 +44,17 @@ trait GraphBuilder[R] {
     )
 
   def enricherWithMockExpression(
-                                  id: String,
-                                  output: String,
-                                  svcId: String,
-                                  mockExpression: Expression,
-                                  params: (String, Expression)*
-                                ): GraphBuilder[R] =
+      id: String,
+      output: String,
+      svcId: String,
+      mockExpression: Expression,
+      params: (String, Expression)*
+  ): GraphBuilder[R] =
     build(node =>
       creator(
         Some(
           OneOutputSubsequentNode(
-            Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockedOutput = Some(SingleMockExpression(mockExpression))),
+            Enricher(id, ServiceRef(svcId, toNodeParameters(params)), output, mockExpression = Some(mockExpression)),
             node
           )
         )
