@@ -8,6 +8,7 @@ import io.circe.parser.decode
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentConfig, ComponentGroupName, ParameterConfig}
 import pl.touk.nussknacker.engine.api.definition._
@@ -71,7 +72,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     WithCategories(value, "Category1", "Category2", "DevelopmentTests", "Periodic")
 
   override def sinkFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "sendSms"           -> all(new SingleValueSinkFactory(new DiscardingSink)),
@@ -81,23 +82,23 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "kafka-string" -> all(
         new KafkaSinkFactory(
           new SimpleSerializationSchema[AnyRef](_, String.valueOf),
-          modelDependencies,
+          modelConfig,
           FlinkKafkaSinkImplFactory
         )
       )
     )
   }
 
-  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(LoggingListener)
+  override def listeners(modelConfig: ModelConfig): Seq[ProcessListener] = List(LoggingListener)
 
   override def sourceFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "real-kafka" -> all(fixedValueKafkaSource[String](modelDependencies, new SimpleStringSchema())),
+      "real-kafka" -> all(fixedValueKafkaSource[String](modelConfig, new SimpleStringSchema())),
       "real-kafka-json-SampleProduct" -> all(
         fixedValueKafkaSource(
-          modelDependencies,
+          modelConfig,
           new EspDeserializationSchema(bytes =>
             decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).toOption.get
           )(TypeInformation.of(classOf[SampleProduct]))
@@ -116,7 +117,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+  override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
     Map(
       "accountService" -> categories(EmptyService).withComponentConfig(
         ComponentConfig.zero.copy(docsUrl = Some("accountServiceDocs"))
@@ -216,12 +217,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "dynamicService"                 -> categories(new DynamicService),
       "customValidatedService"         -> categories(new CustomValidatedService),
       "serviceWithDictParameterEditor" -> categories(new ServiceWithDictParameterEditor),
-      "modelConfigReader"              -> categories(new ModelConfigReaderService(modelDependencies.config)),
+      "modelConfigReader"              -> categories(new ModelConfigReaderService(modelConfig.underlyingConfig)),
       "log"                            -> all(LoggingService)
     )
 
   override def customStreamTransformers(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> categories(NoneReturnTypeTransformer),
     "stateful"                  -> categories(StatefulTransformer),
@@ -245,7 +246,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "hideVariables"            -> all(HidingVariablesTransformer)
   )
 
-  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+  override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {
     val globalProcessVariables = Map(
       "GEO"            -> anyCategory(geo),
       "NUMERIC"        -> anyCategory(numeric),
@@ -297,7 +298,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   }
 
   private def fixedValueKafkaSource[T: ClassTag: Encoder: Decoder](
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       schema: DeserializationSchema[T]
   ): KafkaSourceFactory[String, T] = {
     val schemaFactory    = new FixedValueDeserializationSchemaFactory(schema)
@@ -305,7 +306,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     new KafkaSourceFactory[String, T](
       schemaFactory,
       formatterFactory,
-      modelDependencies,
+      modelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
   }

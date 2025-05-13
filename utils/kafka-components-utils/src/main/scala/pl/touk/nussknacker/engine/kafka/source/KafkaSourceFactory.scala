@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -40,7 +41,7 @@ import scala.reflect.ClassTag
 class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     protected val deserializationSchemaFactory: KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]],
     protected val formatterFactory: RecordFormatterFactory,
-    protected val modelDependencies: ProcessObjectDependencies,
+    protected val modelConfig: ModelConfig,
     protected val implProvider: KafkaSourceImplFactory[K, V]
 ) extends SourceFactory
     with SingleInputDynamicComponent[Source]
@@ -76,7 +77,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       topicsString: String
   )(implicit nodeId: NodeId): List[ProcessCompilationError.CustomNodeError] = {
     val topics         = topicNamesFrom(topicsString)
-    val preparedTopics = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelDependencies)).map(_.prepared)
+    val preparedTopics = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelConfig)).map(_.prepared)
     validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
   }
 
@@ -137,7 +138,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       OutputVariableNameDependency.extract(dependencies),
       keyTypingResult,
       valueTypingResult,
-      modelDependencies.namingStrategy
+      modelConfig.namingStrategy
     )
 
   /**
@@ -158,7 +159,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       finalState: Option[State]
   ): Source = {
     val topics                = extractTopics(params)
-    val preparedTopics        = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelDependencies))
+    val preparedTopics        = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelConfig))
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
     val formatter             = formatterFactory.create(kafkaConfig, deserializationSchema)
     val contextInitializer    = finalState.get.contextInitializer
@@ -172,7 +173,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       formatter,
       contextInitializer,
       KafkaTestParametersInfo.empty,
-      modelDependencies.namingStrategy
+      modelConfig.namingStrategy
     )
   }
 
@@ -198,7 +199,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   override def nodeDependencies: List[NodeDependency] =
     List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
-  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelDependencies.config)
+  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
 
   private def topicNamesFrom(value: String) = {
     val topicsList = value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toList

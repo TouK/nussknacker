@@ -5,21 +5,28 @@ import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataCollectingMode
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
+    namingStrategy: NamingStrategy,
     liveDataCollectingMode: LiveDataCollectingMode,
     // TODO: we should parse this underlying config as ModelConfig class fields instead of passing raw config
     underlyingConfig: Config,
-)
+) {
+
+  def transformUnderlyingConfig(f: Config => Config): ModelConfig = ModelConfig.parse(f(underlyingConfig))
+
+}
 
 object ModelConfig {
 
-  def parse(modelConfig: Config): ModelConfig = {
+  def parse(rawModelConfig: Config): ModelConfig = {
     ModelConfig(
-      allowEndingScenarioWithoutSink = modelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
-      liveDataCollectingMode = parseLiveDataCollectingMode(modelConfig),
-      underlyingConfig = modelConfig,
+      allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
+      namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
+      liveDataCollectingMode = parseLiveDataCollectingMode(rawModelConfig),
+      underlyingConfig = rawModelConfig,
     )
   }
 

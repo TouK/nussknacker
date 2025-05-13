@@ -5,9 +5,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
@@ -35,7 +35,7 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
   ) { loader =>
     new FlinkExceptionHandler(
       metaData,
-      ProcessObjectDependencies.withConfig(config),
+      ModelConfig.parse(config),
       listeners = Nil,
       loader
     )

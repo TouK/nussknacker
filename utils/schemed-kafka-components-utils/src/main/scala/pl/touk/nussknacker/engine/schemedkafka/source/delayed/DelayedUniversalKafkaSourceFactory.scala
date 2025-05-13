@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.delayed
 
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
@@ -15,12 +15,12 @@ import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactor
 class DelayedUniversalKafkaSourceFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    modelDependencies: ProcessObjectDependencies,
+    modelConfig: ModelConfig,
     implProvider: KafkaSourceImplFactory[Any, Any]
 ) extends UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       schemaBasedMessagesSerdeProvider,
-      modelDependencies,
+      modelConfig,
       implProvider
     ) {
 

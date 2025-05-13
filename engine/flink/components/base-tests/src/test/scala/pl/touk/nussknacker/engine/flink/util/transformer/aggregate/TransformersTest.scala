@@ -28,12 +28,14 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.test.ScalatestMiniClusterJobStatusCheckingOps.miniClusterWithServicesToOps
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TestRecordHours.hoursToMillis
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.CustomTimestampExtractingTransformation
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -48,6 +50,8 @@ import scala.jdk.CollectionConverters._
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
+  private val eventTimeExtractionComponentName = "customTimestampExtractingTransformation"
+
   def modelData(
       collectingListener: => ResultsCollectingListener[Any],
       list: List[TestRecord] = List(),
@@ -61,7 +65,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       ComponentDefinition("start", sourceComponent) :: FlinkBaseUnboundedComponentProvider.create(
         DocsConfig.Default,
         aggregateWindowsConfig
-      ) ::: FlinkBaseComponentProvider.Components,
+      ) ::: FlinkBaseComponentProvider.Components
+        ::: List(ComponentDefinition(eventTimeExtractionComponentName, CustomTimestampExtractingTransformation)),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
@@ -366,6 +371,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       runScenario(model, testScenario)
       val aggregateVariables = collectingListener.fragmentResultEndVariable[Number](id)
       aggregateVariables shouldBe List(3, 5)
+
+      collectingListener.endVariablesForKey(id).flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+      collectingListener
+        .endVariablesForKey(id)
+        .map(
+          _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+        ) shouldBe List(hoursToMillis(2) - 1, hoursToMillis(4) - 1)
     }
   }
 
@@ -503,10 +515,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val inputRecords =
+        List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
       val model =
         modelData(
           collectingListener,
-          List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
+          inputRecords
         )
       val testScenario = tumbling(
         "#AGG.list",
@@ -523,6 +537,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       val aggregateVariables = nodeResults.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get)
       // TODO: reverse order in aggregate
       aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(5))
+      nodeResults.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe inputRecords.map(e => e.timestamp)
+      nodeResults.map(_.variableTyped[TestRecordHours]("input").get) shouldBe inputRecords
     }
   }
 
@@ -758,6 +776,15 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       val nodeResults = collectingListener.endVariablesForKey(id)
       nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+
+      nodeResults.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe List(
+        // session timeout is 2
+        hoursToMillis(5) - 1, // 3h last event time + (2h - 1ms) timeout
+        hoursToMillis(6),     // 6h event time from event witch evaluated stop condition to true
+        hoursToMillis(8) - 1  // 6h last event time + (2h - 1ms) timeout
+      )
     }
   }
 
@@ -788,6 +815,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         asList(5)
       )
       outputVariables.map(_.variableTyped[TestRecordHours]("input").get) shouldBe testRecords
+      outputVariables.map(
+        _.variableTyped[Long](CustomTimestampExtractingTransformation.timestampVariableName).get
+      ) shouldBe
+        testRecords.map(e => e.timestamp)
     }
   }
 
@@ -1146,6 +1177,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             definition.afterAggregateExpression.spel
           )
       }
+      .customNodeNoOutput(
+        "custom",
+        eventTimeExtractionComponentName,
+      )
       .emptySink("end", "dead-end")
   }
 
@@ -1218,7 +1253,11 @@ trait TestRecord {
 }
 
 case class TestRecordHours(id: String, timeHours: Int, eId: Int, str: String) extends TestRecord {
-  override def timestamp: Long = timeHours * 3600L * 1000
+  override def timestamp: Long = hoursToMillis(timeHours)
+}
+
+object TestRecordHours {
+  def hoursToMillis(hours: Int): Long = hours * 3600L * 1000
 }
 
 case class TestRecordWithTimestamp(id: String, timestamp: Long, eId: Int, str: String) extends TestRecord

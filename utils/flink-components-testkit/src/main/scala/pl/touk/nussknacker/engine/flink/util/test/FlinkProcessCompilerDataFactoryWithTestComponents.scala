@@ -90,19 +90,19 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          modelDependencies: ProcessObjectDependencies
+          modelConfig: ModelConfig
       ): List[ProcessListener] = defaults :+ resultsCollectingListener
 
       override protected def exceptionHandler(
           metaData: MetaData,
-          modelDependencies: ProcessObjectDependencies,
+          modelConfig: ModelConfig,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
       ): FlinkExceptionHandler = runtimeMode match {
         case RuntimeMode.Test => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
-          new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
+          new TestFlinkExceptionHandler(metaData, modelConfig, listeners, classLoader)
         case _ =>
-          super.exceptionHandler(metaData, modelDependencies, listeners, classLoader)
+          super.exceptionHandler(metaData, modelConfig, listeners, classLoader)
       }
 
     }

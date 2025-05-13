@@ -208,7 +208,7 @@ class KafkaJsonSchemalessSourceFactorySpec
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
-      testModelDependencies,
+      testModelConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
   }

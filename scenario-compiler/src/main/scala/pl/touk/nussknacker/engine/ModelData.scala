@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, Comp
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{
@@ -31,7 +31,7 @@ object ModelData extends LazyLogging {
   type ExtractDefinitionFun =
     (
         ClassLoader,
-        ProcessObjectDependencies,
+        ModelConfig,
         ComponentId => DesignerWideComponentId,
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
@@ -185,14 +185,14 @@ object ClassLoaderModelData {
 
     override def apply(
         classLoader: ClassLoader,
-        modelDependencies: ProcessObjectDependencies,
+        modelConfig: ModelConfig,
         determineDesignerWideId: ComponentId => DesignerWideComponentId,
         additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ): ModelDefinition = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
-        modelDependencies,
+        modelConfig,
         category,
         determineDesignerWideId,
         additionalConfigsFromProvider,
@@ -226,7 +226,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     val modelDefinitions = withModelClassloaderAsContextClassLoader {
       extractModelDefinitionFun(
         modelClassLoader,
-        ProcessObjectDependencies(modelConfig, namingStrategy),
+        modelConfig,
         determineDesignerWideId,
         additionalConfigsFromProvider
       )

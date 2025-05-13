@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.{
@@ -55,7 +56,7 @@ object UniversalKafkaSinkFactory {
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    val modelDependencies: ProcessObjectDependencies,
+    val modelConfig: ModelConfig,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
     with SinkFactory {

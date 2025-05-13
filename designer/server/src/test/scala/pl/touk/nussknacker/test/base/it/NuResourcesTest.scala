@@ -226,7 +226,7 @@ trait NuResourcesTest
       .create(
         processingTypeConfigs = designerConfig.processingTypeConfigs(),
         modelClassLoaderProvider = modelClassLoaderProvider,
-        modelDependencies = modelDependencies,
+        modelConfig = modelDependencies,
         deploymentManagersClassLoader = deploymentManagersClassLoader,
         deploymentManagerDependencies = deploymentManagerDependencies,
       )

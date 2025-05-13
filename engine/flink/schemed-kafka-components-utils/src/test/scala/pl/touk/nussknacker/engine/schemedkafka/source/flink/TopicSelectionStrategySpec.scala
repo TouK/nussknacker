@@ -50,7 +50,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
-      testModelDependencies,
+      testModelConfig,
       new FlinkKafkaSourceImplFactory(None)
     ) {
       override def topicSelectionStrategy =

@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.defaultmodel
 
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 
 class DefaultConfigCreator extends EmptyProcessConfigCreator {
 
   import pl.touk.nussknacker.engine.util.functions._
 
-  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+  override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig = {
     ExpressionConfig(
       globalProcessVariables = Map(
         "GEO"         -> anyCategory(geo),

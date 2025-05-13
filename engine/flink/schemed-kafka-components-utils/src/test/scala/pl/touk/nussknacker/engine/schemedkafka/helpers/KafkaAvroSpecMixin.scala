@@ -99,7 +99,7 @@ trait KafkaAvroSpecMixin
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelDependencies,
+      testModelConfig,
       new FlinkKafkaSourceImplFactory(None)
     ) {
       override protected def prepareKafkaConfig: KafkaConfig =
@@ -112,7 +112,7 @@ trait KafkaAvroSpecMixin
     new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelDependencies,
+      testModelConfig,
       FlinkKafkaUniversalSinkImplFactory
     )
   }

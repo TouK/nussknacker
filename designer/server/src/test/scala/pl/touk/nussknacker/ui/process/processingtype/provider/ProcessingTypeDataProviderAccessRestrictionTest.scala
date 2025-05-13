@@ -54,7 +54,7 @@ class ProcessingTypeDataProviderAccessRestrictionTest
 
   private def mockProcessingTypeDataProvider(processingTypeName: String, processingTypeNames: String*) = {
     val allProcessingTypes = (processingTypeName :: processingTypeNames.toList).toSet
-    val modelDependencies  = TestFactory.modelDependencies
+    val modelConfig        = TestFactory.modelDependencies
 
     val processingTypeConfigs = ProcessingTypeConfigs(allProcessingTypes.toList.map { processingType =>
       processingType -> ProcessingTypeConfig(
@@ -73,7 +73,7 @@ class ProcessingTypeDataProviderAccessRestrictionTest
         allProcessingTypes.map(_ -> ModelClassLoaderDependencies(modelClasspath, workingDirectoryOpt = None)).toMap,
         deploymentManagersClassLoader
       ),
-      modelDependencies = modelDependencies,
+      modelConfig = modelConfig,
       deploymentManagersClassLoader = deploymentManagersClassLoader,
       deploymentManagerDependencies = TestFactory.deploymentManagerDependencies,
     )

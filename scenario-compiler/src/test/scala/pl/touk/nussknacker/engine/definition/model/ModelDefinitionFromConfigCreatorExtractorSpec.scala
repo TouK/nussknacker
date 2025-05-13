@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
@@ -208,7 +209,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val modelDefinition = ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
       TestCreator,
       category,
-      ProcessObjectDependencies.withConfig(modelConfig),
+      ModelConfig.parse(modelConfig),
       ComponentsUiConfigParser.parse(modelConfig),
       id => DesignerWideComponentId(id.toString),
       Map.empty,
@@ -220,7 +221,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   object TestCreator extends ProcessConfigCreator {
 
     override def customStreamTransformers(
-        modelDependencies: ProcessObjectDependencies
+        modelConfig: ModelConfig
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "transformer1"                -> WithCategories.anyCategory(Transformer1),
@@ -243,7 +244,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         "transformedInSomeOtherCategory" -> WithCategories(Transformer1, SomeOtherCategory),
       )
 
-    override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+    override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
       Map(
         "configurable1" -> WithCategories.anyCategory(
           EmptyExplicitMethodToInvoke(
@@ -254,16 +255,16 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       )
 
     override def sourceFactories(
-        modelDependencies: ProcessObjectDependencies
+        modelConfig: ModelConfig
     ): Map[String, WithCategories[SourceFactory]] = Map()
 
     override def sinkFactories(
-        modelDependencies: ProcessObjectDependencies
+        modelConfig: ModelConfig
     ): Map[String, WithCategories[SinkFactory]] = Map()
 
-    override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
+    override def listeners(modelConfig: ModelConfig): Seq[ProcessListener] = List()
 
-    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
+    override def expressionConfig(modelConfig: ModelConfig): ExpressionConfig =
       ExpressionConfig(
         globalProcessVariables = Map(
           "helper"      -> WithCategories.anyCategory(SampleHelper),
