@@ -35,7 +35,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val implementation = service.implementation(
-      params = Params(
+      params = Params.fromRawValuesMap(
         Map(
           cacheTTLParamName     -> java.time.Duration.ofDays(1),
           ParameterName("arg1") -> 1

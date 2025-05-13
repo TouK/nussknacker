@@ -125,9 +125,10 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
-            "requiredParam" -> fromBoolean(true),
-            "category"      -> fromString("Standard"),
+            "hintText"                   -> fromString("hint-text-from-additional-ui-config-provider"),
+            "requiredParam"              -> fromBoolean(true),
+            "category"                   -> fromString("Standard"),
+            "changesCanReloadParameters" -> fromBoolean(false),
           ),
           obj(
             "name"  -> fromString("tariffType"),
@@ -151,9 +152,10 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
-            "category"      -> fromString("Standard"),
+            "hintText"                   -> Null,
+            "requiredParam"              -> fromBoolean(true),
+            "category"                   -> fromString("Standard"),
+            "changesCanReloadParameters" -> fromBoolean(false),
           ),
         ),
         "icon"    -> fromString("/assets/components/Filter.svg"),
@@ -170,9 +172,10 @@ class BaseFlowTest
                 encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test"))))
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
-            "category"      -> fromString("Standard"),
+            "hintText"                   -> Null,
+            "requiredParam"              -> fromBoolean(true),
+            "category"                   -> fromString("Standard"),
+            "changesCanReloadParameters" -> fromBoolean(false),
           ),
           obj(
             "name"         -> fromString("bar"),
@@ -183,9 +186,10 @@ class BaseFlowTest
                 encodeEditor(SpelTemplateParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
-            "category"      -> fromString("Standard"),
+            "hintText"                   -> Null,
+            "requiredParam"              -> fromBoolean(true),
+            "category"                   -> fromString("Standard"),
+            "changesCanReloadParameters" -> fromBoolean(false),
           ),
           obj(
             "name"         -> fromString("baz"),
@@ -198,9 +202,10 @@ class BaseFlowTest
                 )
               )
             ),
-            "hintText"      -> fromString("some hint text"),
-            "requiredParam" -> fromBoolean(true),
-            "category"      -> fromString("Standard"),
+            "hintText"                   -> fromString("some hint text"),
+            "requiredParam"              -> fromBoolean(true),
+            "category"                   -> fromString("Standard"),
+            "changesCanReloadParameters" -> fromBoolean(false),
           ),
           obj(
             "name"         -> fromString("quax"),
@@ -212,9 +217,10 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
-            "category"      -> fromString("Standard"),
+            "hintText"                   -> Null,
+            "requiredParam"              -> fromBoolean(true),
+            "category"                   -> fromString("Standard"),
+            "changesCanReloadParameters" -> fromBoolean(false),
           ),
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -237,9 +243,10 @@ class BaseFlowTest
                 encodeEditor(SpelParameterEditor),
               )
             ),
-            "hintText"      -> Null,
-            "requiredParam" -> fromBoolean(true),
-            "category"      -> fromString("Standard"),
+            "hintText"                   -> Null,
+            "requiredParam"              -> fromBoolean(true),
+            "category"                   -> fromString("Standard"),
+            "changesCanReloadParameters" -> fromBoolean(false),
           )
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),

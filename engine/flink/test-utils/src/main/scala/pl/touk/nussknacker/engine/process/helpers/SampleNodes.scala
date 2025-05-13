@@ -717,7 +717,7 @@ object SampleNodes {
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = {
-      val map  = params.nameToValueMap.filterNot(k => List(par1ParamName, lazyPar1ParamName).contains(k._1))
+      val map  = params.nameToRawValueMap.filterNot(k => List(par1ParamName, lazyPar1ParamName).contains(k._1))
       val bool = lazyPar1Declaration.extractValueUnsafe(params)
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream

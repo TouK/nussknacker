@@ -98,6 +98,7 @@ sealed trait DynamicComponent[T] extends Component {
   }
 
   case class NextParameters(
+      // TODO: Use NonEmptyList instead
       parameters: List[Parameter],
       errors: List[ProcessCompilationError] = Nil,
       state: Option[State] = None

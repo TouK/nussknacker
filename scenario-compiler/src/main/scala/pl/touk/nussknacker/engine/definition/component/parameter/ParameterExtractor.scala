@@ -76,7 +76,9 @@ object ParameterExtractor {
       javaOptionalParameter = isJavaOptionalParameter,
       hintText = parameterConfig.hintText,
       labelOpt = parameterConfig.label,
-      category = category
+      category = category,
+      // this feature is available only for DynamicComponents
+      changesCanReloadParameters = false
     )
   }
 

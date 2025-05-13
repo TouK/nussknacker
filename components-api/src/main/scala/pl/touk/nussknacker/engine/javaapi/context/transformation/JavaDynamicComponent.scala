@@ -63,7 +63,7 @@ trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
       finalState: Option[State]
   ): T =
     javaDef.implementation(
-      params.nameToValueMap.asJava,
+      params.nameToRawValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
     )
@@ -154,7 +154,7 @@ class JoinDynamicComponentWrapper[ST](javaDef: JavaJoinDynamicComponent[_ <: Any
       finalState: Option[State]
   ): Object =
     javaDef.implementation(
-      params.nameToValueMap.asJava,
+      params.nameToRawValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
     )
