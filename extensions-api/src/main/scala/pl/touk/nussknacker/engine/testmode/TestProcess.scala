@@ -126,9 +126,7 @@ object TestProcess {
   }
 
   case class ResultContext[T](id: String, variables: Map[String, T]) {
-
     def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
-
   }
 
 }
