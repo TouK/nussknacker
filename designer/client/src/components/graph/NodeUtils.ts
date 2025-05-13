@@ -2,13 +2,13 @@
 import { isEqual, uniqBy } from "lodash";
 
 import ProcessUtils from "../../common/ProcessUtils";
+import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import { createEdge } from "../../reducers/graph/utils";
-import { ttlMemoize } from "../../ttlMemoize";
 import type { Edge, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { EdgeKind } from "../../types";
 import { NoWrap, WrapAllMethods } from "../../WrapAllMethods";
 
-@WrapAllMethods(ttlMemoize)
+@WrapAllMethods(memoizeByArgsWithTTL)
 class NodeUtils {
     @NoWrap
     nodeIsFragment = (node: NodeType): node is FragmentNodeType => {

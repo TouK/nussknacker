@@ -1,10 +1,12 @@
+import { ArrayKeyedMapLike } from "./ArrayKeyedMapLike";
+
 type Entry<V> = {
     value: V;
     lastUsed: number;
 };
 
-export class TTLMap<K, V> {
-    private map = new Map<K, Entry<V>>();
+export class CacheWithTTL<K extends any[], V> {
+    private map = new ArrayKeyedMapLike<K, Entry<V>>();
 
     constructor(private ttl = 60000, private maxSize = 10) {}
 

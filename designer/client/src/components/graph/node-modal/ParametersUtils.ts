@@ -6,7 +6,6 @@ import { setImmutable } from "./setImmutable";
 const parametersPath = (node) => {
     switch (node.type) {
         case "CustomNode":
-            return `parameters`;
         case "Join":
             return `parameters`;
         case "Source":
@@ -14,7 +13,6 @@ const parametersPath = (node) => {
         case "FragmentInput":
             return `ref.parameters`;
         case "Enricher":
-            return `service.parameters`;
         case "Processor":
             return `service.parameters`;
         default:
