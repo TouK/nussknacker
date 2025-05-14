@@ -12,6 +12,7 @@ type BaseButtonProps = Omit<ButtonProps, "type" | "onDrop"> & {
     type: BuiltinButtonTypes | CustomButtonTypes;
     hasError?: boolean;
     isActive?: boolean;
+    showIndicator?: boolean;
 };
 
 type LoadingButtonProps = BaseButtonProps & {
