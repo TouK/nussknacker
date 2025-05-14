@@ -35,17 +35,6 @@ trait KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  // TODO: return SingleValueCache ??
-  def createKafkaAdminClient(kafkaConfig: KafkaConfig): CreatedKafkaAdminClient = {
-    try {
-      CreatedKafkaAdminClient.Value(createKafkaAdminClientUnsafe(kafkaConfig))
-    } catch {
-      case NonFatal(e) =>
-        logger.error(s"Failed to create Kafka admin client for config: $kafkaConfig", e)
-        CreatedKafkaAdminClient.Failed(e)
-    }
-  }
-
   def createLazyKafkaAdminClient(kafkaConfig: KafkaConfig): LazyKafkaAdminClient = {
     new LazyKafkaAdminClient(createKafkaAdminClientUnsafe(kafkaConfig))
   }
