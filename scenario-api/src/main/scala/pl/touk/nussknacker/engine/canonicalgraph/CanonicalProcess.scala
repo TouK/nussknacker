@@ -5,8 +5,8 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
+import pl.touk.nussknacker.engine.graph.{node, Test}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
@@ -83,6 +83,7 @@ case class CanonicalProcess(
     nodes: List[CanonicalNode],
     additionalBranches: List[List[CanonicalNode]] = List.empty,
     stickyNotes: List[StickyNote] = List.empty,
+    tests: List[Test] = List.empty // some class for it (TestsConfig)
 ) extends CanonicalTreeNode {
 
   import CanonicalProcess._
