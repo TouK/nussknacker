@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, NodeId, ParamName}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.compiledgraph.{CompiledTest, CompiledTestSourceInput}
-import pl.touk.nussknacker.engine.graph.{Test, TestSourceInput}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledTest, CompiledTestSourceInput}
+import pl.touk.nussknacker.engine.graph.{Assertion, Test, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.Test.NodeName
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 
 import scala.collection.immutable
 
@@ -23,9 +24,18 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
     val sources: Validated[NonEmptyList[ProcessCompilationError], List[(NodeName, List[CompiledTestSourceInput])]] =
       inputCompilationResults.toList.sequence
 
-    sources match {
-      case Valid(a)   => Valid(CompiledTest(test.id, a.toMap, Map.empty, Map.empty))
-      case Invalid(e) => Invalid(e)
+    val assertionCompilationResults
+        : Validated[NonEmptyList[ProcessCompilationError], List[(NodeName, List[CompiledAssertion])]] = {
+      for {
+        (node, assertions) <- test.assertions
+      } yield compileAssertions(NodeId(node), assertions, typing(node)).map(node -> _)
+    }.toList.sequence
+
+    ProcessCompilationError.ValidatedNelApplicative.map2( // todo: ensure that errors are cumulated
+      sources,
+      assertionCompilationResults
+    ) { (validSources, validAssertions) =>
+      CompiledTest(test.id, validSources.toMap, Map.empty, validAssertions.toMap)
     }
   }
 
@@ -45,4 +55,48 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
       .map(e => CompiledTestSourceInput(e.expression))
   }
 
+  private def compileAssertions(
+      nodeId: NodeId,
+      assertions: List[Assertion],
+      nodeTyping: NodeTypingInfo
+  ): ValidatedNel[ProcessCompilationError, List[CompiledAssertion]] = {
+    val context = nodeTyping.inputValidationContext
+      .withVariableUnsafe(
+        "results",
+        Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
+      ) // todo: better typing
+    assertions.map { assertion =>
+      val assertionValidationContext = context
+      expressionCompiler
+        .compile(
+          Expression(Spel, assertion.expression),
+          None,
+          assertionValidationContext,
+          Typed.typedClass(classOf[AssertionResult])
+        )(nodeId)
+        .map(e => CompiledAssertion(e.expression))
+    }.sequence
+  }
+
 }
+
+object tests extends TestsFunctions
+
+trait TestsFunctions extends HideToString {
+
+  @Documentation(description = "Check whether two objects are equals")
+  def assertEquals(@ParamName("expected") expected: Any, @ParamName("actual") actual: Any): AssertionResult = {
+    if (expected == actual) {
+      FailedAssertion(s"Expected: $expected but found $actual")
+    }
+    SuccessfulAssertion
+  }
+
+}
+
+sealed trait AssertionResult
+
+object SuccessfulAssertion extends AssertionResult
+
+//todo: mby message can be easily hidden
+case class FailedAssertion(message: String) extends AssertionResult

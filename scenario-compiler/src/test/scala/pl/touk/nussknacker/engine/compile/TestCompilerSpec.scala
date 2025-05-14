@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.{Test, TestSourceInput}
+import pl.touk.nussknacker.engine.graph.{Assertion, Test, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
@@ -26,6 +26,7 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
   private val baseDefinition = ModelDefinitionBuilder.empty
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
     .withSink("sink")
+    .withGlobalVariable("TESTS", tests) // todo: move from here
     .build
 
   private val modelDefinitionWithClasses = ModelDefinitionWithClasses(baseDefinition)
@@ -41,7 +42,7 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
       "someTest",
       inputs = Map("id1" -> List(TestSourceInput(Expression(JsonTemplate, """{"input": 1}""")))),
       mocks = Map.empty,
-      assertions = Map()
+      assertions = Map("end-id2" -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
     )
 
     val typing       = compileScenarioForTyping(scenario)
@@ -51,8 +52,14 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
     inside(testCompilationResult) { case Valid(compiledTest) =>
       compiledTest.inputs.size shouldBe 1
+      compiledTest.inputs("id1").size shouldBe 1
+      compiledTest.inputs("id1").head.expression.original shouldBe """{"input": 1}"""
+
       compiledTest.mocks shouldBe Map.empty
-      compiledTest.assertions shouldBe Map.empty
+
+      compiledTest.assertions.size shouldBe 1
+      compiledTest.assertions("end-id2").size shouldBe 1
+      compiledTest.assertions("end-id2").head.expression.original shouldBe "#TESTS.assertEquals(#results.size, 1)"
     }
   }
 
