@@ -54,11 +54,9 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   def modelConfig: ModelConfig
 
-  // TODO: close schema registry client
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  // TODO: close kafka admin client
   @transient private lazy val lazyKafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {

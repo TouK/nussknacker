@@ -237,6 +237,7 @@ class LazyKafkaAdminClient private[kafka] (create: => Admin) extends AutoCloseab
 
   def getOrCreate: Admin = cache.getOrCreate(create)
 
+  // TODO: In fact we never close the client, we would need to add a lifecycle to components created by component providers.
   override def close(): Unit = {
     cache.get().foreach(_.close(time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis)))
   }

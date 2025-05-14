@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.dimafeng.testcontainers.{ForAllTestContainer, KafkaContainer}
 import org.apache.kafka.clients.admin.{Admin, NewTopic}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
@@ -118,7 +119,8 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
 abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Boolean)
     extends AnyFunSuite
     with ForAllTestContainer
-    with Matchers {
+    with Matchers
+    with BeforeAndAfterAll {
 
   override val container: KafkaContainer =
     KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0"))
@@ -143,6 +145,11 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
   val notExistingSourceTopic: TopicName.ForSource = TopicName.ForSource("source.not.existing")
 
   val notExistingSinkTopic: TopicName.ForSink = TopicName.ForSink("sink.not.existing")
+
+  override def afterAll(): Unit = {
+    lazyKafkaAdminClient.close()
+    super.afterAll()
+  }
 
   protected def createValidator(kafkaConfig: KafkaConfig): CachedTopicsExistenceValidator = {
     new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, lazyKafkaAdminClient)
