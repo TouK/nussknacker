@@ -60,21 +60,15 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     schemaRegistryClientFactory.create(kafkaConfig)
 
   // TODO: close kafka admin client
-  @transient private lazy val createdKafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
+  @transient private lazy val lazyKafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {
-      createdKafkaAdminClient match {
-        case CreatedKafkaAdminClient.Value(admin) =>
-          new AllNonHiddenTopicsSelectionStrategy(
-            schemaRegistryClient,
-            admin,
-            kafkaConfig.topicsWithoutSchemaFetchTimeout
-          )
-        case CreatedKafkaAdminClient.Failed(_) =>
-          logger.warn("Kafka admin client creation failed, using topics with existing subjects strategy")
-          new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
-      }
+      new AllNonHiddenTopicsSelectionStrategy(
+        schemaRegistryClient,
+        lazyKafkaAdminClient,
+        kafkaConfig.topicsWithoutSchemaFetchTimeout
+      )
     } else new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
   }
 
@@ -85,13 +79,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       kafkaConfig
     )
 
-  @transient private lazy val topicsExistenceValidator = createdKafkaAdminClient match {
-    case CreatedKafkaAdminClient.Value(admin) =>
-      new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, admin)
-    case CreatedKafkaAdminClient.Failed(_) =>
-      // TODO NU-2021
-      throw new NotImplementedError("TODO NU-2021")
-  }
+  @transient private lazy val topicsExistenceValidator =
+    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, lazyKafkaAdminClient)
 
   protected def prepareKafkaConfig: KafkaConfig = {
     KafkaConfig.parseConfig(modelConfig.underlyingConfig)

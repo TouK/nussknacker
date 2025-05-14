@@ -138,14 +138,14 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
     )
   )
 
-  lazy val kafkaAdminClient: Admin = KafkaUtils.createKafkaAdminClientUnsafe(defaultKafkaConfig)
+  private lazy val lazyKafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(defaultKafkaConfig)
 
   val notExistingSourceTopic: TopicName.ForSource = TopicName.ForSource("source.not.existing")
 
   val notExistingSinkTopic: TopicName.ForSink = TopicName.ForSink("sink.not.existing")
 
   protected def createValidator(kafkaConfig: KafkaConfig): CachedTopicsExistenceValidator = {
-    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
+    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, lazyKafkaAdminClient)
   }
 
   protected def createUniqueSourceTopic(): TopicName.ForSource = {

@@ -8,3 +8,5 @@ object CreatedKafkaAdminClient {
   final case class Value(admin: Admin)          extends CreatedKafkaAdminClient
   final case class Failed(exception: Throwable) extends CreatedKafkaAdminClient
 }
+
+class CachedKafkaAdminClient(create: => Admin)

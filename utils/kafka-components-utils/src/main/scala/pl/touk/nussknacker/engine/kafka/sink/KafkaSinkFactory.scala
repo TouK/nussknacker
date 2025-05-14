@@ -53,12 +53,12 @@ abstract class BaseKafkaSinkFactory(
     implProvider: KafkaSinkImplFactory
 ) extends SinkFactory {
 
-  @transient private lazy val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-  @transient private lazy val kafkaAdminClient = KafkaUtils.createKafkaAdminClientUnsafe(kafkaConfig)
+  @transient private lazy val kafkaConfig          = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+  @transient private lazy val lazyKafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
 
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
     val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig)
-    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
+    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, lazyKafkaAdminClient)
       .validateTopics(NonEmptyList.one(preparedTopic).map(_.prepared))
       .valueOr(err => throw err)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)

@@ -6,15 +6,17 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeConfigsOptions, ListTopicsOptions}
 import org.apache.kafka.common.config.ConfigResource
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.{TopicsExistenceValidationConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{LazyKafkaAdminClient, TopicsExistenceValidationConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import scala.jdk.CollectionConverters._
 
-class CachedTopicsExistenceValidator(config: TopicsExistenceValidationConfig, kafkaAdminClient: Admin)
-    extends TopicsExistenceValidator
+class CachedTopicsExistenceValidator(
+    config: TopicsExistenceValidationConfig,
+    lazyKafkaAdminClient: LazyKafkaAdminClient
+) extends TopicsExistenceValidator
     with LazyLogging {
 
   private val validatorConfig = config.validatorConfig
@@ -83,7 +85,7 @@ class CachedTopicsExistenceValidator(config: TopicsExistenceValidationConfig, ka
   }
 
   private def fetchAllTopicsAndCache() = {
-    val existingTopics = kafkaAdminClient
+    val existingTopics = lazyKafkaAdminClient.getOrCreate
       .listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
       .names()
       .get()
@@ -96,7 +98,7 @@ class CachedTopicsExistenceValidator(config: TopicsExistenceValidationConfig, ka
 
   private def isAutoCreateEnabled: Boolean = autoCreateSettingCache.getOrCreate {
     val timeout = validatorConfig.adminClientTimeout.toMillis.toInt
-    val randomKafkaNodeId = kafkaAdminClient
+    val randomKafkaNodeId = lazyKafkaAdminClient.getOrCreate
       .describeCluster(new DescribeClusterOptions().timeoutMs(timeout))
       .nodes()
       .get()
@@ -104,7 +106,7 @@ class CachedTopicsExistenceValidator(config: TopicsExistenceValidationConfig, ka
       .head
       .id()
       .toString
-    kafkaAdminClient
+    lazyKafkaAdminClient.getOrCreate
       .describeConfigs(
         List(new ConfigResource(ConfigResource.Type.BROKER, randomKafkaNodeId)).asJava,
         new DescribeConfigsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt)

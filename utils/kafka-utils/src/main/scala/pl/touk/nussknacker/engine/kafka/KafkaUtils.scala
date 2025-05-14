@@ -10,6 +10,7 @@ import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySe
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.admin.CreatedKafkaAdminClient
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import java.time
 import java.util.{Collections, Properties}
@@ -43,6 +44,10 @@ trait KafkaUtils extends LazyLogging {
         logger.error(s"Failed to create Kafka admin client for config: $kafkaConfig", e)
         CreatedKafkaAdminClient.Failed(e)
     }
+  }
+
+  def createLazyKafkaAdminClient(kafkaConfig: KafkaConfig): LazyKafkaAdminClient = {
+    new LazyKafkaAdminClient(createKafkaAdminClientUnsafe(kafkaConfig))
   }
 
   def createKafkaAdminClientUnsafe(kafkaConfig: KafkaConfig): Admin = {
@@ -238,3 +243,9 @@ trait KafkaUtils extends LazyLogging {
 }
 
 case class PreparedKafkaTopic[T <: TopicName](original: T, prepared: T)
+
+class LazyKafkaAdminClient private[kafka] (create: => Admin) {
+  private val cache: SingleValueCache[Admin] = new SingleValueCache(expireAfterAccess = None, expireAfterWrite = None)
+
+  def getOrCreate: Admin = cache.getOrCreate(create)
+}

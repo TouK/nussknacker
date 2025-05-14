@@ -4,7 +4,7 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, ListTopicsOptions}
 import org.apache.kafka.common.KafkaException
-import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.{LazyKafkaAdminClient, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
 import java.util.regex.Pattern
@@ -28,7 +28,7 @@ class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaReg
 
 class AllNonHiddenTopicsSelectionStrategy(
     schemaRegistryClient: SchemaRegistryClient,
-    kafkaAdminClient: Admin,
+    lazyKafkaAdminClient: LazyKafkaAdminClient,
     fetchTimeout: FiniteDuration
 ) extends TopicSelectionStrategy
     with LazyLogging {
@@ -38,7 +38,7 @@ class AllNonHiddenTopicsSelectionStrategy(
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        kafkaAdminClient
+        lazyKafkaAdminClient.getOrCreate
           .listTopics(new ListTopicsOptions().timeoutMs(fetchTimeout.toMillis.toInt))
           .names()
           .get()
