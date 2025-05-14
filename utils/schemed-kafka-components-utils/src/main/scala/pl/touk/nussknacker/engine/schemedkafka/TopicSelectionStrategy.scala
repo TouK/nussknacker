@@ -26,7 +26,6 @@ class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaReg
 
 }
 
-// TODO: Close client
 class AllNonHiddenTopicsSelectionStrategy(
     schemaRegistryClient: SchemaRegistryClient,
     kafkaAdminClient: Admin,

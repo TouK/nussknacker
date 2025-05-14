@@ -19,6 +19,7 @@ import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Using}
 import scala.util.Using.Releasable
+import scala.util.control.NonFatal
 
 object KafkaUtils extends KafkaUtils
 
@@ -33,11 +34,12 @@ trait KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
+  // TODO: return SingleValueCache ??
   def createKafkaAdminClient(kafkaConfig: KafkaConfig): CreatedKafkaAdminClient = {
     try {
       CreatedKafkaAdminClient.Value(createKafkaAdminClientUnsafe(kafkaConfig))
     } catch {
-      case e: Exception =>
+      case NonFatal(e) =>
         logger.error(s"Failed to create Kafka admin client for config: $kafkaConfig", e)
         CreatedKafkaAdminClient.Failed(e)
     }

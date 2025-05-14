@@ -5,14 +5,22 @@ import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
-import pl.touk.nussknacker.engine.kafka.{serialization, KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{
+  serialization,
+  KafkaComponentsUtils,
+  KafkaConfig,
+  KafkaUtils,
+  PreparedKafkaTopic
+}
 import pl.touk.nussknacker.engine.kafka.serialization.{
   FixedKafkaSerializationSchemaFactory,
   KafkaSerializationSchema,
   KafkaSerializationSchemaFactory
 }
+import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 
 import javax.validation.constraints.NotBlank
+import scala.Console.err
 
 class KafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
@@ -45,10 +53,14 @@ abstract class BaseKafkaSinkFactory(
     implProvider: KafkaSinkImplFactory
 ) extends SinkFactory {
 
+  @transient private lazy val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+  @transient private lazy val kafkaAdminClient = KafkaUtils.createKafkaAdminClientUnsafe(kafkaConfig)
+
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val kafkaConfig   = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
     val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig)
-    KafkaComponentsUtils.validateTopicsExistence(NonEmptyList.one(preparedTopic), kafkaConfig)
+    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
+      .validateTopics(NonEmptyList.one(preparedTopic).map(_.prepared))
+      .valueOr(err => throw err)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId            = s"${processMetaData.name}-${preparedTopic.prepared}"
     implProvider.prepareSink(preparedTopic, value, kafkaConfig, serializationSchema, clientId)

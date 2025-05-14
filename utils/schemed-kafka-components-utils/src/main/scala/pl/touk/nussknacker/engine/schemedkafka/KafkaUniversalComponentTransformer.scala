@@ -23,8 +23,8 @@ import pl.touk.nussknacker.engine.kafka.{
 }
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.admin.CreatedKafkaAdminClient
+import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
-import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
@@ -46,7 +46,6 @@ object KafkaUniversalComponentTransformer {
 
 abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValidationType]
     extends SingleInputDynamicComponent[T]
-    with WithCachedTopicsExistenceValidator
     with LazyLogging {
   self: Component =>
 
@@ -56,12 +55,16 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   def modelConfig: ModelConfig
 
+  // TODO: close schema registry client
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
+  // TODO: close kafka admin client
+  @transient private lazy val createdKafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
+
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {
-      KafkaUtils.createKafkaAdminClient(kafkaConfig) match {
+      createdKafkaAdminClient match {
         case CreatedKafkaAdminClient.Value(admin) =>
           new AllNonHiddenTopicsSelectionStrategy(
             schemaRegistryClient,
@@ -81,6 +84,14 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     UniversalSchemaSupportDispatcher(
       kafkaConfig
     )
+
+  @transient private lazy val topicsExistenceValidator = createdKafkaAdminClient match {
+    case CreatedKafkaAdminClient.Value(admin) =>
+      new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, admin)
+    case CreatedKafkaAdminClient.Failed(_) =>
+      // TODO NU-2021
+      throw new NotImplementedError("TODO NU-2021")
+  }
 
   protected def prepareKafkaConfig: KafkaConfig = {
     KafkaConfig.parseConfig(modelConfig.underlyingConfig)
@@ -238,7 +249,11 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       val preparedTopic             = prepareTopic(topic)
       val versionOrContentTypeParam = getVersionOrContentTypeParam(preparedTopic)
       val topicValidationErrors =
-        validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
+        topicsExistenceValidator
+          .validateTopic(preparedTopic.prepared)
+          .swap
+          .toList
+          .map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
       NextParameters(
         versionOrContentTypeParam.value.createParameter() :: nextParams,
         errors = versionOrContentTypeParam.written ++ topicValidationErrors

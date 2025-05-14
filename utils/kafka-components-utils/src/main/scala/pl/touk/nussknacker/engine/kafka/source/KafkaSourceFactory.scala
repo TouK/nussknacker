@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory._
-import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
+import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 
 import scala.reflect.ClassTag
 
@@ -45,7 +45,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     protected val implProvider: KafkaSourceImplFactory[K, V]
 ) extends SourceFactory
     with SingleInputDynamicComponent[Source]
-    with WithCachedTopicsExistenceValidator
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
 
@@ -67,6 +66,10 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   override type State = KafkaSourceFactoryState[K, V]
 
+  private lazy val kafkaAdminClient = KafkaUtils.createKafkaAdminClientUnsafe(kafkaConfig)
+  private lazy val topicsExistenceValidator =
+    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
+
   private def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = { case step @ TransformationStep(Nil, _) =>
@@ -78,7 +81,11 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   )(implicit nodeId: NodeId): List[ProcessCompilationError.CustomNodeError] = {
     val topics         = topicNamesFrom(topicsString)
     val preparedTopics = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelConfig)).map(_.prepared)
-    validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
+    topicsExistenceValidator
+      .validateTopics(preparedTopics)
+      .swap
+      .toList
+      .map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
   }
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -199,7 +206,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   override def nodeDependencies: List[NodeDependency] =
     List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
-  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+  private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
 
   private def topicNamesFrom(value: String) = {
     val topicsList = value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toList
