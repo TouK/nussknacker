@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.requestresponse.{
   Response
 }
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -57,9 +58,9 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val firstId    = contextIds.nextContextId()
     val secondId   = contextIds.nextContextId()
 
-    results.nodeResults("filter1").toSet shouldBe Set(
-      ResultContext(firstId, Map("input" -> variable(Request1("a", "b")))),
-      ResultContext(secondId, Map("input" -> variable(Request1("c", "d"))))
+    nodeResults(results, "filter1").toSet shouldBe Set(
+      (firstId, Map("input" -> variable(Request1("a", "b")))),
+      (secondId, Map("input" -> variable(Request1("c", "d"))))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
@@ -105,10 +106,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     )
 
     results.exceptions should have size 1
-    results.exceptions.head.context shouldBe ResultContext(
-      firstId,
-      Map("input" -> variable(Request1("a", "b")))
-    )
+    results.exceptions.head.context.id shouldBe firstId
+    results.exceptions.head.context.variables shouldBe Map("input" -> variable(Request1("a", "b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true] evaluation failed, message: / by zero"""
   }
@@ -132,8 +131,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       scenarioTestData = scenarioTestData,
     )
 
-    results.nodeResults("endNodeIID").toSet shouldBe Set(
-      ResultContext(firstId, Map("input" -> variable(Request1("a", "b"))))
+    nodeResults(results, "endNodeIID").toSet shouldBe Set(
+      (firstId, Map("input" -> variable(Request1("a", "b"))))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
@@ -178,7 +177,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val unionContextIds = results.nodeResults("union1").map(_.id)
     unionContextIds should contain only (s"$sourceContextId-$branch1NodeId", s"$sourceContextId-$branch2NodeId")
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
-    results.nodeResults("union1") shouldBe results.nodeResults("collect1")
+    nodeResults(results, "union1") shouldBe nodeResults(results, "collect1")
 
     val endNodeIdInvocationResult = results.externalInvocationResults("endNodeIID").loneElement
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, "collect1").nextContextId()
@@ -218,5 +217,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
     Json.obj("pretty" -> toJson(value))
   }
+
+  private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
+    results.nodeResults(key).map(r => (r.id, r.variables))
 
 }

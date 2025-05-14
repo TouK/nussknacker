@@ -95,6 +95,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                       )
                     ),
                     testWithGeneratedData = CapabilityStatus.available,
+                    liveDataPreview = CapabilityStatus.available,
                   )
                 )
               )
@@ -190,7 +191,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
   def scenarioLiveDataEndpoint: SecuredEndpoint[
     (ProcessName, Option[SkipResultsPerNode], Option[SkipResultsPerTransition]),
     TestingError,
-    TestResultsDto,
+    ResultsWithCountsDto,
     Any
   ] =
     baseNuApiEndpoint
@@ -200,7 +201,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "liveData")
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
-      .out(statusCode(Ok).and(jsonBody[TestResultsDto]))
+      .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
       .errorOut(errorOutput)
       .withSecurity(auth)
 

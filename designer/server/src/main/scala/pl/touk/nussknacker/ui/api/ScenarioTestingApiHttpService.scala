@@ -22,18 +22,17 @@ import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError._
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.NotFoundTestingError._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{
-  ResultsWithCountsDto,
-  ScenarioTestData,
-  TestResultsDto
-}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ResultsWithCountsDto, ScenarioTestData}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
   ScenarioTestCapabilities,
   TestCapabilityDetails
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
+  EmptyDetails,
+  TestWithParametersDetails
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.ScenarioTestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
@@ -41,13 +40,12 @@ import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.{ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
-import sttp.model.StatusCode.NotFound
-import sttp.tapir.{oneOfVariant, plainBody, Codec, CodecFormat, EndpointOutput}
+import sttp.tapir.{Codec, CodecFormat}
 import sttp.tapir.EndpointIO.Example
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -77,6 +75,9 @@ class ScenarioTestingApiHttpService(
         { case (scenarioName, scenarioGraph) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT
+              .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
+            processIdWithName = ProcessIdWithName(processId, scenarioName)
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
@@ -84,15 +85,29 @@ class ScenarioTestingApiHttpService(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
             )
+            liveDataPreviewCapability <- EitherT.right(
+              dmDispatcher
+                .deploymentManager(processIdWithName)
+                .map {
+                  case Some(deploymentManager) => deploymentManager.liveDataPreviewSupport
+                  case None                    => NoLiveDataPreviewSupport
+                }
+                .map {
+                  case _: LiveDataPreviewSupported =>
+                    CapabilityStatus.available
+                  case NoLiveDataPreviewSupport =>
+                    CapabilityStatus.NotAvailable[EmptyDetails](NotAvailableReason.NotSupportedByScenarioType)
+                }
+            )
             result = capabilities match {
               case Left(TestingCapabilitiesError.NoSourcesError) =>
                 def status[T <: TestCapabilityDetails] =
                   CapabilityStatus.NotAvailable[T](NotAvailableReason.NoSources)
-                ScenarioTestCapabilities(status, status)
+                ScenarioTestCapabilities(status, status, liveDataPreviewCapability)
               case Left(TestingCapabilitiesError.SourceCompilationError) =>
                 def status[T <: TestCapabilityDetails] =
                   CapabilityStatus.NotAvailable[T](NotAvailableReason.InvalidScenario)
-                ScenarioTestCapabilities(status, status)
+                ScenarioTestCapabilities(status, status, liveDataPreviewCapability)
               case Right(capabilities) =>
                 ScenarioTestCapabilities(
                   testWithParameters = if (capabilities.canTestWithForm) {
@@ -113,6 +128,7 @@ class ScenarioTestingApiHttpService(
                   testWithGeneratedData =
                     if (capabilities.canBeTested && capabilities.canGenerateTestData) CapabilityStatus.available
                     else CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources),
+                  liveDataPreview = liveDataPreviewCapability
                 )
             }
           } yield result
@@ -209,8 +225,17 @@ class ScenarioTestingApiHttpService(
                   )
               }
             }
-          } yield TestResultsDto.from(
-            testResults,
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            resultsWithCounts = scenarioTestService.resultsWithCounts(
+              testResults,
+              scenarioWithDetails.scenarioGraphUnsafe,
+              scenarioWithDetails.processVersionUnsafe,
+              scenarioWithDetails.isFragment
+            )
+          } yield ResultsWithCountsDto.from(
+            resultsWithCounts,
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
             skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
           )

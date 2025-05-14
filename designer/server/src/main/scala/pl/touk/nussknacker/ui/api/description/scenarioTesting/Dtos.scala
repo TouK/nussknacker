@@ -24,7 +24,6 @@ import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
 import sttp.tapir.derevo.schema
 
-import scala.collection.compat._
 import scala.collection.immutable
 
 object Dtos {
@@ -37,6 +36,7 @@ object Dtos {
     final case class ScenarioTestCapabilities(
         testWithParameters: CapabilityStatus[TestWithParametersDetails],
         testWithGeneratedData: CapabilityStatus[EmptyDetails],
+        liveDataPreview: CapabilityStatus[EmptyDetails],
     )
 
     object ScenarioTestCapabilities {
@@ -111,9 +111,10 @@ object Dtos {
     sealed trait NotAvailableReason extends EnumEntry with UpperSnakecase
 
     object NotAvailableReason extends Enum[NotAvailableReason] with CirceEnum[NotAvailableReason] {
-      case object NoSources             extends NotAvailableReason
-      case object NotSupportedBySources extends NotAvailableReason
-      case object InvalidScenario       extends NotAvailableReason
+      case object NoSources                  extends NotAvailableReason
+      case object NotSupportedBySources      extends NotAvailableReason
+      case object InvalidScenario            extends NotAvailableReason
+      case object NotSupportedByScenarioType extends NotAvailableReason
       override def values: immutable.IndexedSeq[NotAvailableReason] = findValues
       implicit def schema: Schema[NotAvailableReason]               = Schema.derived
     }
