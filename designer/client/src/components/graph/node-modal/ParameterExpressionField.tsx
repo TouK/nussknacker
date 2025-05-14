@@ -1,4 +1,4 @@
-import type { ComponentType, PropsWithChildren } from "react";
+import type { ComponentType, PropsWithChildren, ReactNode } from "react";
 import React, { useMemo } from "react";
 
 import type { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
