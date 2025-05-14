@@ -37,7 +37,8 @@ export type SidesState<K extends Side = Side> = {
 
 export const InputOutputLayout = memo(function InputOutputWrapper({ children }: PropsWithChildren) {
     const moveHandle = useRef<HTMLButtonElement>();
-    const sizes = useRef<number[]>([]);
+    const defaultSizes = [300, 900, 300];
+    const sizes = useRef<number[]>(defaultSizes);
     const ref = useRef<AllotmentHandle>();
 
     const startPos = useRef(null);
@@ -65,7 +66,7 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
         document.addEventListener("mouseup", handleMouseUp);
     }, []);
 
-    const prevSizes = useRef<number[]>([0, 0, 0]);
+    const prevSizes = useRef<number[]>(defaultSizes);
 
     const togglePanel = useCallback((index: number, collapsedSize: number, shouldCollapse = sizes.current[index] > collapsedSize * 2) => {
         const currentSize = sizes.current[index];
@@ -86,7 +87,7 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
     const collapsedSize = 30;
 
-    const [sideState, setSideState] = useState<SidesState>({
+    const [sidesState, setSidesState] = useState<SidesState>({
         left: { side: "left", collapsed: false, hidden: false },
         right: { side: "right", collapsed: false, hidden: false },
     });
@@ -98,7 +99,7 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
             moveHandle.current.style.left = `${leftSize + centerSize / 2}px`;
         }
 
-        setSideState(
+        setSidesState(
             produce(({ left, right }) => {
                 left.collapsed = leftSize < collapsedSize * 2;
                 right.collapsed = rightSize < collapsedSize * 2;
@@ -108,7 +109,7 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
     const onIsEmptyChange = useCallback(
         (side: "left" | "right", isEmpty: boolean) => {
-            setSideState(
+            setSidesState(
                 produce((draft) => {
                     draft[side].hidden = isEmpty;
                 }),
@@ -126,22 +127,26 @@ export const InputOutputLayout = memo(function InputOutputWrapper({ children }: 
 
     return (
         <Wrapper>
-            <Allotment ref={ref} onChange={onChange} defaultSizes={[278, 820, 278]}>
-                <SidePane
-                    sideState={sideState.left}
-                    collapsedSize={collapsedSize}
-                    onToggleClick={onToggleClick}
-                    onIsEmptyChange={onIsEmptyChange}
-                />
+            <Allotment ref={ref} onChange={onChange} defaultSizes={defaultSizes}>
+                <Allotment.Pane
+                    preferredSize={sidesState.right.hidden ? "40%" : "20%"}
+                    minSize={sidesState.left.hidden ? 0 : collapsedSize}
+                    maxSize={sidesState.left.hidden ? 0 : Infinity}
+                    visible={!sidesState.left.hidden}
+                >
+                    <SidePane sideState={sidesState.left} onToggleClick={onToggleClick} onIsEmptyChange={onIsEmptyChange} />
+                </Allotment.Pane>
                 <Allotment.Pane preferredSize="60%" minSize={820} className={shadowClassName}>
                     {children}
                 </Allotment.Pane>
-                <SidePane
-                    sideState={sideState.right}
-                    collapsedSize={collapsedSize}
-                    onToggleClick={onToggleClick}
-                    onIsEmptyChange={onIsEmptyChange}
-                />
+                <Allotment.Pane
+                    preferredSize={sidesState.left.hidden ? "40%" : "20%"}
+                    minSize={sidesState.right.hidden ? 0 : collapsedSize}
+                    maxSize={sidesState.right.hidden ? 0 : Infinity}
+                    visible={!sidesState.right.hidden}
+                >
+                    <SidePane sideState={sidesState.right} onToggleClick={onToggleClick} onIsEmptyChange={onIsEmptyChange} />
+                </Allotment.Pane>
             </Allotment>
             <PanelButton side="center" ref={moveHandle} tabIndex={-1} onMouseDown={onMouseDown} onDoubleClick={onResetClick}>
                 <MoreHoriz />
