@@ -13,11 +13,13 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.{Test, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
@@ -25,6 +27,8 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
     .withSink("sink")
     .build
+
+  private val modelDefinitionWithClasses = ModelDefinitionWithClasses(baseDefinition)
 
   test("initial test compiler test") {
     val scenario = ScenarioBuilder
@@ -41,7 +45,7 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
     )
 
     val typing       = compileScenarioForTyping(scenario)
-    val testCompiler = new TestCompiler()
+    val testCompiler = createTestCompiler()
 
     val testCompilationResult = testCompiler.compile(test, typing)
 
@@ -52,6 +56,19 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  private def createTestCompiler(): TestCompiler = {
+    val expressionCompiler = ExpressionCompiler.withOptimization(
+      getClass.getClassLoader,
+      new SimpleDictRegistry(Map.empty),
+      modelDefinitionWithClasses.modelDefinition.expressionConfig,
+      modelDefinitionWithClasses.classDefinitions,
+      ExpressionEvaluator.unOptimizedEvaluator(
+        GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
+      )
+    )
+    new TestCompiler(expressionCompiler)
+  }
+
   private def compileScenarioForTyping(scenario: CanonicalProcess): Map[String, NodeTypingInfo] = {
     val jobData: JobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
@@ -59,7 +76,7 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
     val compilationResult = ProcessValidator
       .default(
-        ModelDefinitionWithClasses(baseDefinition),
+        modelDefinitionWithClasses,
         new SimpleDictRegistry(Map.empty),
         CustomProcessValidatorLoader.emptyCustomProcessValidator,
       )
