@@ -168,6 +168,7 @@
 * [#8004](https://github.com/TouK/nussknacker/pull/8004) Scenarios no longer have to end with final `Sink` node
   * set `modelConfig.allowEndingScenarioWithoutSink` of the scenarioType in the `scenarioTypes` config section to `true` in order to allow ending scenarios with nodes other than sinks
   * the flag is optional, the default value of the flag is `false` (no changes in behavior)
+* [#8082](https://github.com/TouK/nussknacker/pull/8082) Kafka admin client needed by Kafka source and sink components is now created once and lazily.
 
 ## 1.18
 
