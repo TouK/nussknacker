@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-final case class Params(nameToValueMap: Map[ParameterName, Any]) {
+final class Params private (val nameToRawValueMap: Map[ParameterName, Any]) extends Serializable {
 
-  def isPresent(name: ParameterName): Boolean = nameToValueMap.contains(name)
+  def isPresent(name: ParameterName): Boolean = nameToRawValueMap.contains(name)
 
   def extract[T](name: ParameterName): Option[T] = {
     extractValue(name).map(cast[T])
@@ -29,7 +30,7 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
   }
 
   private def extractValue(paramName: ParameterName) = {
-    nameToValueMap.get(paramName) match {
+    nameToRawValueMap.get(paramName) match {
       case None        => throw new IllegalStateException(cannotFindParamNameMessage(paramName))
       case Some(null)  => None
       case Some(value) => Some(value)
@@ -37,7 +38,7 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
   }
 
   private def cannotFindParamNameMessage(paramName: ParameterName) =
-    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.map(_.value).mkString(",")}"
+    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToRawValueMap.keys.map(_.value).mkString(",")}"
 
   private def paramValueIsNoneMessage(paramName: ParameterName) =
     s"Parameter [${paramName.value}] doesn't expect to be null!"
@@ -47,5 +48,23 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
 }
 
 object Params {
-  lazy val empty: Params = Params(Map.empty)
+
+  // TODO: We should use fromParameterEvaluationResultMap instead of current variant. Thanks to that,
+  //       in types, it will be visible what kind of "value" we have
+  def fromRawValuesMap(nameToRawValueMap: Map[ParameterName, Any]) = new Params(nameToRawValueMap)
+
+  def fromParameterEvaluationResultMap(
+      nameToEvaluationResult: Map[ParameterName, ParameterEvaluationResult]
+  ): Params = {
+    val nameToValueMap = nameToEvaluationResult.mapValuesNow {
+      case SingleEagerParameterEvaluationResult(value, _)           => value
+      case SingleLazyParameterEvaluationResult(lazyParameter)       => lazyParameter
+      case BranchEagerParameterEvaluationResult(valueByBranchId, _) => valueByBranchId
+      case BranchLazyParameterEvaluationResult(lazyParamByBranchId) => lazyParamByBranchId
+    }
+    new Params(nameToValueMap)
+  }
+
+  lazy val empty: Params = new Params(Map.empty)
+
 }

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.connector.source.Boundedness
-import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process._
@@ -46,7 +46,7 @@ object TestFlinkProcessCompilerDataFactory {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          modelDependencies: ProcessObjectDependencies
+          modelConfig: ModelConfig
       ): List[ProcessListener] = {
         collectingListener :: defaults
       }
@@ -75,7 +75,9 @@ object TestFlinkProcessCompilerDataFactory {
           ): Any = {
             // Transform EvaluableLazyParameterCreator's into EvaluableLazyParameter's
             // in order to have them available for resolving when executing tests
-            val resolvedParams = Params(params.nameToValueMap.map { case (name, value) => name -> resolveParam(value) })
+            val resolvedParams = Params.fromRawValuesMap(params.nameToRawValueMap.map { case (name, value) =>
+              name -> resolveParam(value)
+            })
             original.invokeMethod(resolvedParams, outputVariableNameOpt, additional)
           }
 
@@ -109,11 +111,11 @@ object TestFlinkProcessCompilerDataFactory {
 
       override protected def exceptionHandler(
           metaData: MetaData,
-          modelDependencies: ProcessObjectDependencies,
+          modelConfig: ModelConfig,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
       ): FlinkExceptionHandler = {
-        new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
+        new TestFlinkExceptionHandler(metaData, modelConfig, listeners, classLoader)
       }
 
     }
@@ -165,10 +167,10 @@ class StubbedSourcePreparer(
 
 class TestFlinkExceptionHandler(
     metaData: MetaData,
-    modelDependencies: ProcessObjectDependencies,
+    modelConfig: ModelConfig,
     listeners: Seq[ProcessListener],
     classLoader: ClassLoader
-) extends FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader) {
+) extends FlinkExceptionHandler(metaData, modelConfig, listeners, classLoader) {
 
   @silent("deprecated")
   override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()

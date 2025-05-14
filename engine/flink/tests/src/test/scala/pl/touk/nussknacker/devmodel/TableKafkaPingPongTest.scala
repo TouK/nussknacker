@@ -5,8 +5,8 @@ import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
 import pl.touk.nussknacker.devmodel.TestData._
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
@@ -113,7 +113,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
   override lazy val additionalComponents: List[ComponentDefinition] =
     new FlinkTableDataSourceComponentProvider().create(
       tableKafkaComponentsConfig,
-      ProcessObjectDependencies.withConfig(tableKafkaComponentsConfig)
+      ModelConfig.parse(tableKafkaComponentsConfig)
     )
 
   test("should ping-pong with sql kafka source and DataStream kafka sink") {

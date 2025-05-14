@@ -5,9 +5,9 @@ import org.apache.flink.types.Row
 import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableDataSourceComponentProvider
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.table.source.TableSource.SQL_EXPRESSION_
 import pl.touk.nussknacker.engine.flink.table.utils.ModelClassLoaderSimulationSuite
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
-import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
 class TableSourceTest
@@ -46,7 +46,7 @@ class TableSourceTest
 
   private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
     tableComponentsConfig,
-    ProcessObjectDependencies.withConfig(tableComponentsConfig)
+    ModelConfig.parse(tableComponentsConfig)
   )
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
@@ -123,7 +123,7 @@ class TableSourceTest
     val tableComponentsBasedOnCatalogConfiguration: List[ComponentDefinition] =
       new FlinkTableDataSourceComponentProvider().create(
         configWithCatalogConfiguration,
-        ProcessObjectDependencies.withConfig(configWithCatalogConfiguration)
+        ModelConfig.parse(configWithCatalogConfiguration)
       )
 
     val runnerWithCatalogConfiguration: FlinkTestScenarioRunner = TestScenarioRunner

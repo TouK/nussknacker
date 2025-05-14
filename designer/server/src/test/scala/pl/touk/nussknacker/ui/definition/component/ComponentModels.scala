@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -70,7 +71,7 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   import ComponentModelData._
 
   override def sourceFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = Map(
     SharedSourceName -> all(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown), Some(SharedSourceName)),
     SuperMarketingSourceName -> marketing(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown)),
@@ -78,13 +79,13 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   )
 
   override def sinkFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = Map(
     SharedSinkName -> all(SinkFactory.noParam(EmptySink), Some(SharedSinkName)),
     MonitorName    -> marketing(SinkFactory.noParam(EmptySink)),
   )
 
-  override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+  override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
     Map(
       FuseBlockServiceName                    -> marketing(EmptyProcessor),
       CustomerDataEnricherName                -> marketing(CustomerDataEnricher),
@@ -93,7 +94,7 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
     )
 
   override def customStreamTransformers(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     CustomStreamName         -> all(EmptyCustomStreamTransformer(false), Some(CustomStreamName)),
     OptionalCustomStreamName -> marketing(EmptyCustomStreamTransformer(true)),
@@ -105,21 +106,21 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
   import ComponentModelData._
 
   override def sourceFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = Map(
     SharedSourceName -> all(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown), Some(SharedSourceName)),
     NotSharedSourceName -> fraud(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown)),
   )
 
   override def sinkFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = Map(
     SharedSinkName    -> all(SinkFactory.noParam(EmptySink), Some(SharedSinkName)),
     FraudSinkName     -> fraud(SinkFactory.noParam(EmptySink)),
     SecondMonitorName -> all(SinkFactory.noParam(EmptySink)),
   )
 
-  override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+  override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
     Map(
       FuseBlockServiceName                -> fraud(EmptyProcessor),
       CustomerDataEnricherName            -> fraud(CustomerDataEnricher),
@@ -128,7 +129,7 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
     )
 
   override def customStreamTransformers(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     CustomStreamName         -> fraud(EmptyCustomStreamTransformer(false)),
     OptionalCustomStreamName -> fraud(EmptyCustomStreamTransformer(true)),
@@ -140,7 +141,7 @@ object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreat
   import ComponentModelData._
 
   override def sourceFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = Map(
     SharedSourceV2Name -> all(
       SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown),
@@ -148,7 +149,7 @@ object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreat
     ),
   )
 
-  override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+  override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
     Map(
       SharedEnricherName                      -> all(EmptyProcessor, Some(SharedEnricherName)),
       HiddenMarketingCustomerDataEnricherName -> marketing(CustomerDataEnricher),

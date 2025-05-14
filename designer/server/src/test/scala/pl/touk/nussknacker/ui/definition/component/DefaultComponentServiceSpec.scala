@@ -8,13 +8,13 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer, ModelData}
+import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer, ModelConfig, ModelData}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
@@ -557,7 +557,7 @@ class DefaultComponentServiceSpec
 
   private val providerComponents =
     new DynamicComponentProvider()
-      .create(ConfigFactory.empty, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
+      .create(ConfigFactory.empty, ModelConfig.parse(ConfigFactory.empty()))
 
   private val modelDataMap: Map[ProcessingType, (ModelData, String)] = Map(
     ProcessingTypeStreaming -> (

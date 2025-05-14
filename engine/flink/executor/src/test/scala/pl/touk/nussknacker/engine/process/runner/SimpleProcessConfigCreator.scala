@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
@@ -13,7 +14,7 @@ import java.net.ConnectException
 
 class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+  override def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]] =
     Map(
       "logService"      -> WithCategories(LogService, "c1"),
       "throwingService" -> WithCategories(new ThrowingService(new RuntimeException("Thrown as expected")), "c1"),
@@ -24,7 +25,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     )
 
   override def sinkFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor"      -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
     "valueMonitor" -> WithCategories(SinkForAny(valueMonitorResultsHolder), "c2"),
@@ -32,7 +33,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def customStreamTransformers(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "stateCustom"                          -> WithCategories.anyCategory(StateCustomNode),
     "transformWithTime"                    -> WithCategories.anyCategory(TransformerWithTime),
@@ -42,7 +43,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def sourceFactories(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = Map(
     "input"                            -> WithCategories(simpleRecordSource(Nil), "cat2"),
     "jsonInput"                        -> WithCategories(jsonSource, "cat2"),

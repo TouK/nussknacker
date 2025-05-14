@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 
@@ -10,26 +11,26 @@ import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 trait ProcessConfigCreator extends Serializable {
 
   def customStreamTransformers(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]]
 
-  def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]]
+  def services(modelConfig: ModelConfig): Map[String, WithCategories[Service]]
 
-  def sourceFactories(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]]
+  def sourceFactories(modelConfig: ModelConfig): Map[String, WithCategories[SourceFactory]]
 
-  def sinkFactories(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
+  def sinkFactories(modelConfig: ModelConfig): Map[String, WithCategories[SinkFactory]]
 
-  def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener]
+  def listeners(modelConfig: ModelConfig): Seq[ProcessListener]
 
-  def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig
+  def expressionConfig(modelConfig: ModelConfig): ExpressionConfig
 
   def modelInfo(): ModelInfo
 
   def asyncExecutionContextPreparer(
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): Option[AsyncExecutionContextPreparer] = None
 
-  def classExtractionSettings(modelDependencies: ProcessObjectDependencies): ClassExtractionSettings =
+  def classExtractionSettings(modelConfig: ModelConfig): ClassExtractionSettings =
     ClassExtractionSettings.Default
 
 }

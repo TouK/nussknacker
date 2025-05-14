@@ -738,7 +738,12 @@ class NodeCompiler(
       }
 
       val compiledServiceRef = computedParameters.map { params =>
-        val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, jobData))
+        val evaluateParams = { context: Context =>
+          val nameToRawValueMap = params
+            .map(p => p.name -> parametersEvaluator.evaluateParameterToRawValue(context, p))
+            .toMap
+          Params.fromRawValuesMap(nameToRawValueMap)
+        }
         compiledgraph.service.ServiceRef(
           id = serviceRef.id,
           invoker = new MethodBasedServiceInvoker(jobData.metaData, nodeId, outputVar, objWithMethod, evaluateParams),

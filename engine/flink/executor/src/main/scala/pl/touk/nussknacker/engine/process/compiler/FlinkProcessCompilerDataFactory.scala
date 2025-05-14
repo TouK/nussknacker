@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   NodesDeploymentData
 }
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -66,21 +66,19 @@ class FlinkProcessCompilerDataFactory(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
-    val modelDependencies = ProcessObjectDependencies.withConfig(modelConfig.underlyingConfig)
-
     // TODO: this should be somewhere else?
     val timeout = modelConfig.underlyingConfig.as[FiniteDuration]("timeout")
 
     // TODO: should this be the default?
     val asyncExecutionContextPreparer = creator
-      .asyncExecutionContextPreparer(modelDependencies)
+      .asyncExecutionContextPreparer(modelConfig)
       .getOrElse(
         modelConfig.underlyingConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
       )
-    val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelDependencies)
-    val listenersToUse   = adjustListeners(defaultListeners, modelDependencies)
+    val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelConfig)
+    val listenersToUse   = adjustListeners(defaultListeners, modelConfig)
 
-    val (definitionWithTypes, dictRegistry) = definitions(modelDependencies, userCodeClassLoader)
+    val (definitionWithTypes, dictRegistry) = definitions(modelConfig, userCodeClassLoader)
 
     val customProcessValidator =
       CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig.underlyingConfig)
@@ -100,7 +98,7 @@ class FlinkProcessCompilerDataFactory(
 
     new FlinkProcessCompilerData(
       compilerData = compilerData,
-      exceptionHandler = exceptionHandler(metaData, modelDependencies, listenersToUse, userCodeClassLoader),
+      exceptionHandler = exceptionHandler(metaData, modelConfig, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       runtimeMode = runtimeMode
@@ -121,14 +119,14 @@ class FlinkProcessCompilerDataFactory(
   }
 
   private def definitions(
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       userCodeClassLoader: ClassLoader
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
       extractModelDefinition(
         userCodeClassLoader,
-        modelDependencies,
+        modelConfig,
         id => DesignerWideComponentId(id.toString),
         configsFromProviderWithDictionaryEditor
       )
@@ -163,16 +161,16 @@ class FlinkProcessCompilerDataFactory(
 
   protected def adjustListeners(
       defaults: List[ProcessListener],
-      modelDependencies: ProcessObjectDependencies
+      modelConfig: ModelConfig
   ): List[ProcessListener] = defaults
 
   protected def exceptionHandler(
       metaData: MetaData,
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       listeners: Seq[ProcessListener],
       classLoader: ClassLoader
   ): FlinkExceptionHandler = {
-    new FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
+    new FlinkExceptionHandler(metaData, modelConfig, listeners, classLoader)
   }
 
 }

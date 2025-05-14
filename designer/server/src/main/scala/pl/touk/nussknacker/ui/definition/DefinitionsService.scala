@@ -176,7 +176,8 @@ object DefinitionsService {
       hintText = parameter.hintText,
       label = parameter.label,
       requiredParam = Some(!parameter.isOptional),
-      category = parameter.category
+      category = parameter.category,
+      changesCanReloadParameters = parameter.changesCanReloadParameters
     )
   }
 

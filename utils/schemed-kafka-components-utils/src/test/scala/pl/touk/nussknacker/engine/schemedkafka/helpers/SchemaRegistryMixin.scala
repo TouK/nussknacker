@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.helpers
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.test.{KafkaConfigProperties, WithConfig}
 
@@ -19,8 +19,7 @@ trait SchemaRegistryMixin extends AnyFunSuite with KafkaSpec with KafkaWithSchem
       .withValue(s"kafka.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization", fromAnyRef(false))
   }
 
-  protected lazy val testModelDependencies: ProcessObjectDependencies =
-    ProcessObjectDependencies.withConfig(config)
+  protected lazy val testModelConfig: ModelConfig = ModelConfig.parse(config)
 
   protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 

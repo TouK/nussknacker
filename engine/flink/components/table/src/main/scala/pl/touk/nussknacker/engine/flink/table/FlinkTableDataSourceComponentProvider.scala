@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.flink.table
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, FlinkDdlParser}
@@ -20,8 +20,8 @@ class FlinkTableDataSourceComponentProvider extends ComponentProvider with LazyL
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val parsedConfig                    = TableComponentProviderConfig.parse(config)
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    val parsedConfig                    = TableComponentProviderConfig.parse(componentProviderConfig)
     val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
     val sqlStatements                   = parsedConfig.tableDefinition
     val catalogConfigurationOpt         = parsedConfig.catalogConfiguration.map(_.asJava).map(Configuration.fromMap)

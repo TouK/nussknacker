@@ -54,7 +54,8 @@ object ParametersExtractor {
         javaOptionalParameter = false,
         hintText = None,
         labelOpt = None,
-        category = ParameterCategory.Standard
+        category = ParameterCategory.Standard,
+        changesCanReloadParameters = false
       ),
       isBodyPart = isBodyPart
     )

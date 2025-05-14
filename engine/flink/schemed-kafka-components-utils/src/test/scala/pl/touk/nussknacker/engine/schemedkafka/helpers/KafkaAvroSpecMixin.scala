@@ -99,7 +99,7 @@ trait KafkaAvroSpecMixin
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelDependencies,
+      testModelConfig,
       new FlinkKafkaSourceImplFactory(None)
     ) {
       override protected def prepareKafkaConfig: KafkaConfig =
@@ -112,7 +112,7 @@ trait KafkaAvroSpecMixin
     new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelDependencies,
+      testModelConfig,
       FlinkKafkaUniversalSinkImplFactory
     )
   }
@@ -292,7 +292,7 @@ trait KafkaAvroSpecMixin
       givenKey: Any,
       givenValue: Any
   ): Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
-    val parameterValues = Params(
+    val parameterValues = Params.fromRawValuesMap(
       Map(
         KafkaUniversalComponentTransformer.topicParamName         -> topic,
         KafkaUniversalComponentTransformer.schemaVersionParamName -> versionOptionToString(versionOption)
@@ -344,7 +344,7 @@ trait KafkaAvroSpecMixin
       params: Params,
   ): Validated[NonEmptyList[ProcessCompilationError], sourceFactory.State] = {
     implicit val nodeId: NodeId = NodeId("dummy")
-    val parameters              = params.nameToValueMap.mapValuesNow(value => DefinedEagerParameter(value, null)).toList
+    val parameters = params.nameToRawValueMap.mapValuesNow(value => DefinedEagerParameter(value, null)).toList
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
     stepResult match {

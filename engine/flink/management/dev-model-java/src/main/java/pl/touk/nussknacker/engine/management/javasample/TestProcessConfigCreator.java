@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.javasample;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies;
+import pl.touk.nussknacker.engine.ModelConfig;
 import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
@@ -19,32 +19,32 @@ public class TestProcessConfigCreator implements ProcessConfigCreator {
     private Objects objects = new Objects();
 
     @Override
-    public Map<String, WithCategories<Service>> services(ProcessObjectDependencies processObjectDependencies) {
+    public Map<String, WithCategories<Service>> services(ModelConfig modelConfig) {
         return Collections.emptyMap();
     }
 
     @Override
-    public Map<String, WithCategories<SourceFactory>> sourceFactories(ProcessObjectDependencies processObjectDependencies) {
+    public Map<String, WithCategories<SourceFactory>> sourceFactories(ModelConfig modelConfig) {
         return Collections.singletonMap("source", objects.source());
     }
 
     @Override
-    public Map<String, WithCategories<SinkFactory>> sinkFactories(ProcessObjectDependencies processObjectDependencies) {
+    public Map<String, WithCategories<SinkFactory>> sinkFactories(ModelConfig modelConfig) {
         return Collections.singletonMap("sink", objects.sink());
     }
 
     @Override
-    public Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(ProcessObjectDependencies processObjectDependencies) {
+    public Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(ModelConfig modelConfig) {
         return Collections.emptyMap();
     }
 
     @Override
-    public Collection<ProcessListener> listeners(ProcessObjectDependencies processObjectDependencies) {
+    public Collection<ProcessListener> listeners(ModelConfig modelConfig) {
         return Collections.emptyList();
     }
 
     @Override
-    public ExpressionConfig expressionConfig(ProcessObjectDependencies processObjectDependencies) {
+    public ExpressionConfig expressionConfig(ModelConfig modelConfig) {
         return new ExpressionConfig(Collections.emptyMap(), Collections.emptyList());
     }
 

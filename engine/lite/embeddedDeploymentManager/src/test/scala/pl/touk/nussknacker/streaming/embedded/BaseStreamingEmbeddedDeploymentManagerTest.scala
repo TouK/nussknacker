@@ -5,11 +5,11 @@ import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
@@ -114,8 +114,8 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
         )
       )
 
-    val kafkaComponents = new MockLiteKafkaComponentProvider()
-      .create(kafkaComponentProviderConfig, ProcessObjectDependencies.withConfig(config))
+    val kafkaComponents =
+      new MockLiteKafkaComponentProvider().create(kafkaComponentProviderConfig, ModelConfig.parse(config))
 
     val modelData = LocalModelData(configToUse, kafkaComponents)
     wrapInFailingLoader {

@@ -35,7 +35,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
         nodeId = nodeId,
         outputVariableNameOpt = None,
         componentDefinition = definition,
-        parametersProvider = _ => Params(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> 1))
+        parametersProvider = _ => Params.fromRawValuesMap(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> 1))
       )
 
     whenReady(invoker.invoke(context)) { _ =>
@@ -51,7 +51,8 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
       nodeId = nodeId,
       outputVariableNameOpt = None,
       componentDefinition = definition,
-      parametersProvider = _ => Params(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> "terefere"))
+      parametersProvider =
+        _ => Params.fromRawValuesMap(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> "terefere"))
     )
 
     intercept[IllegalArgumentException](
