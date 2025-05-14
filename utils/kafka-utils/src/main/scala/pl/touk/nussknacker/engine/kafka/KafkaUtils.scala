@@ -8,7 +8,6 @@ import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, Re
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.KafkaUtils.defaultTimeoutMillis
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
