@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.kafka.{
   UnspecializedTopicName
 }
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
-import pl.touk.nussknacker.engine.kafka.admin.CreatedKafkaAdminClient
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._

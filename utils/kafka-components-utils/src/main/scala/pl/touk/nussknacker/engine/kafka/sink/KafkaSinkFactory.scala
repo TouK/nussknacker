@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.{
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 
 import javax.validation.constraints.NotBlank
-import scala.Console.err
 
 class KafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],

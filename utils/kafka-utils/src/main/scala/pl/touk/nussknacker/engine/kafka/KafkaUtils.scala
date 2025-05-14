@@ -8,7 +8,6 @@ import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, Re
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.admin.CreatedKafkaAdminClient
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
@@ -20,7 +19,6 @@ import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Using}
 import scala.util.Using.Releasable
-import scala.util.control.NonFatal
 
 object KafkaUtils extends KafkaUtils
 
