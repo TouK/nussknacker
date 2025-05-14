@@ -8,6 +8,7 @@ import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, Re
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.KafkaUtils.defaultTimeoutMillis
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
@@ -34,10 +35,10 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def createLazyKafkaAdminClient(kafkaConfig: KafkaConfig): LazyKafkaAdminClient = {
-    new LazyKafkaAdminClient(createKafkaAdminClientUnsafe(kafkaConfig))
+    new LazyKafkaAdminClient(createKafkaAdminClient(kafkaConfig))
   }
 
-  def createKafkaAdminClientUnsafe(kafkaConfig: KafkaConfig): Admin = {
+  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
     AdminClient.create(withPropertiesFromConfig(new Properties, kafkaConfig))
   }
 
@@ -46,7 +47,7 @@ trait KafkaUtils extends LazyLogging {
     val releasable = new Releasable[Admin] {
       override def release(resource: Admin): Unit = resource.close(time.Duration.ofMillis(defaultTimeoutMillis))
     }
-    Using.resource(createKafkaAdminClientUnsafe(kafkaConfig))(adminClientOperation)(releasable)
+    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)(releasable)
   }
 
   def sanitizeClientId(originalId: String): String =
@@ -231,8 +232,13 @@ trait KafkaUtils extends LazyLogging {
 
 case class PreparedKafkaTopic[T <: TopicName](original: T, prepared: T)
 
-class LazyKafkaAdminClient private[kafka] (create: => Admin) {
+class LazyKafkaAdminClient private[kafka] (create: => Admin) extends AutoCloseable {
   private val cache: SingleValueCache[Admin] = new SingleValueCache(expireAfterAccess = None, expireAfterWrite = None)
 
   def getOrCreate: Admin = cache.getOrCreate(create)
+
+  override def close(): Unit = {
+    cache.get().foreach(_.close(time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis)))
+  }
+
 }
