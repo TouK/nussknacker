@@ -1,11 +1,13 @@
 import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
-import React, { PropsWithChildren, ReactElement, useMemo } from "react";
+import type { PropsWithChildren, ReactElement } from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
-import { NodeType } from "../../../../types";
+import type { NodeType } from "../../../../types";
 import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 import { IconModalTitle } from "./IconModalTitle";
 import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";

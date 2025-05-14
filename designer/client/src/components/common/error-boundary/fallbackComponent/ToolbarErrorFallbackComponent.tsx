@@ -1,6 +1,7 @@
 import { alpha, Box, Button, styled, Typography } from "@mui/material";
 import i18next from "i18next";
 import React from "react";
+
 import { messages } from "../ErrorBoundary";
 
 const BoxWithIntersectionLines = styled(Box)(({ theme }) => ({

@@ -1,11 +1,12 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { importFiles } from "../../../../actions/nk";
-import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { getProcessName } from "../../../../reducers/selectors/graph";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+
+import { importFiles } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/import.svg";
-import { ToolbarButtonProps } from "../../types";
+import { getProcessName } from "../../../../reducers/selectors/graph";
+import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
+import type { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;
 

@@ -1,6 +1,7 @@
 import { useTheme } from "@mui/material";
+import type { CSSProperties } from "react";
+import React from "react";
 import Highlighter from "react-highlight-words";
-import React, { CSSProperties } from "react";
 
 export function SearchHighlighter({
     children,

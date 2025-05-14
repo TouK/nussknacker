@@ -8,9 +8,9 @@ import { blendDarken, getBorderColor } from "../../../../../containers/theme/hel
 import type { Option } from "../../fragment-input-definition/TypeSelect";
 import { editors, isExtendedEditor } from "../expression/Editor";
 import { editorsParameters } from "../expression/editorsParameters";
-import { InfoTooltip } from "../expression/InfoTooltip";
 import type { ExpressionObj } from "../expression/types";
 import { EditorType } from "../expression/types";
+import { InfoTooltip } from "../InfoTooltip";
 import type { Editor, ParamType } from "../types";
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -87,12 +87,21 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         [readOnly, allowsSwitch, t],
     );
 
-    const [selectedEditor, setSelectedEditor] = useState(
-        availableEditors.find((editor) => {
-            const editorParameters = editorsParameters[editor.type];
+    const [selectedEditorType, setSelectedEditorType] = useState<Editor["type"]>(
+        () =>
+            availableEditors.find((editor) => {
+                const editorParameters = editorsParameters[editor.type];
 
-            return editorParameters?.language === expressionObj?.language && allowsSwitch(editor);
-        }) ?? availableEditors[0],
+                return editorParameters?.language === expressionObj.language;
+            })?.type,
+    );
+
+    const selectedEditor = useMemo(
+        () =>
+            availableEditors.find((editor) => {
+                return editor.type === selectedEditorType && allowsSwitch(editor);
+            }) ?? availableEditors[0],
+        [allowsSwitch, availableEditors, selectedEditorType],
     );
 
     const availableEditorsOptions: (Option & { hint: string | undefined })[] = useMemo(
@@ -144,7 +153,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                                 ? editorComponent?.parseValueOnEditorChange(expressionObj, editorParameters.language)
                                 : { ...expressionObj, language: editorParameters.language },
                         );
-                        setSelectedEditor(availableEditors.find((availableEditorsOption) => availableEditorsOption.type === value));
+                        setSelectedEditorType(selectedEditor.type);
                     }}
                 >
                     {availableEditorsOptions.map((option, index) => (
@@ -173,7 +182,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                             icon={
                                 option.hint && (
                                     <div>
-                                        <InfoTooltip text={option.hint} />
+                                        <InfoTooltip title={option.hint} />
                                     </div>
                                 )
                             }

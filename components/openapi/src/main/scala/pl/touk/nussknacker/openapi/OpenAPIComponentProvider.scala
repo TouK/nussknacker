@@ -6,9 +6,9 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigVa
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 import pl.touk.nussknacker.openapi.OpenAPIServicesConfig._
 import pl.touk.nussknacker.openapi.discovery.SwaggerOpenApiDefinitionDiscovery
@@ -49,9 +49,9 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
     }
   }
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val openAPIsConfig          = config.rootAs[OpenAPIServicesConfig]
-    val serviceDefinitionConfig = config.getList("services").render(ConfigRenderOptions.concise())
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    val openAPIsConfig          = componentProviderConfig.rootAs[OpenAPIServicesConfig]
+    val serviceDefinitionConfig = componentProviderConfig.getList("services").render(ConfigRenderOptions.concise())
     val swaggerServices =
       CirceUtil.decodeJsonUnsafe[List[SwaggerService]](serviceDefinitionConfig, "Failed to parse service config")
     val creator = prepareBaseEnricherCreator(openAPIsConfig)

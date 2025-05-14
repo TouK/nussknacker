@@ -1,5 +1,5 @@
-import { Action, Reducer } from "../actions/reduxTypes";
-import { ProcessStateType } from "../components/Process/types";
+import type { Action, Reducer } from "../actions/reduxTypes";
+import type { ProcessStateType } from "../components/Process/types";
 
 export const reducer: Reducer<ProcessStateType> = (state = null, action: Action): ProcessStateType => {
     switch (action.type) {

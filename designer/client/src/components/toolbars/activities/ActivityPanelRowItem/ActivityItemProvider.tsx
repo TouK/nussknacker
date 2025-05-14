@@ -1,5 +1,6 @@
+import type { PropsWithChildren } from "react";
 import React, { useContext } from "react";
-import { createContext, PropsWithChildren, useState } from "react";
+import { createContext, useState } from "react";
 
 interface Props {
     isActivityHovered: boolean;

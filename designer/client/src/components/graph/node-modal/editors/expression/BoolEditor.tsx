@@ -1,11 +1,13 @@
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React from "react";
-import { FixedValuesEditor } from "./FixedValuesEditor";
-import { ExpressionLang, ExpressionObj } from "./types";
-import { ExtendedEditor, OnValueChange } from "./Editor";
-import { FieldError } from "../Validators";
+
+import type { FieldError } from "../Validators";
+import type { ExtendedEditor, OnValueChange } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import { FixedValuesEditor } from "./FixedValuesEditor";
+import type { ExpressionObj } from "./types";
+import { ExpressionLang } from "./types";
 
 type Props = {
     expressionObj: ExpressionObj;

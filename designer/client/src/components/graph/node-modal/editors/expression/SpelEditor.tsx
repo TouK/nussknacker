@@ -4,12 +4,12 @@ import type ReactAce from "react-ace/lib/ace";
 import { useTranslation } from "react-i18next";
 
 import type { VariableTypes } from "../../../../../types";
+import { InfoTooltip } from "../InfoTooltip";
 import type { FieldError } from "../Validators";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionSuggestProps } from "./ExpressionSuggest";
 import { ExpressionSuggest } from "./ExpressionSuggest";
-import { InfoTooltip } from "./InfoTooltip";
 import type { ExpressionObj } from "./types";
 import { EditorMode, ExpressionLang } from "./types";
 
@@ -75,7 +75,10 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
             properties.placeholder = placeholder || t("editors.spelEditor.placeholder", "e.g. #input.someField");
             properties.InputAdornmentEnd = (
                 <InfoTooltip
-                    text={t(
+                    customComponentsProps={{
+                        tooltip: { sx: { maxWidth: "none" } },
+                    }}
+                    title={t(
                         "editors.spelEditor.infoText",
                         `You are using an expression-based input, allowing calculations and conditions. Access variables and helpers with \`#\`, e.g., \`#input.someField == 'value'\` or \`#UTIL.split('foo-bar', '-')\`. \n 
 When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
@@ -90,7 +93,10 @@ Use autocompletion to explore available options. To read more see [Documentation
             properties.placeholder = placeholder || t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");
             properties.InputAdornmentEnd = (
                 <InfoTooltip
-                    text={t(
+                    customComponentsProps={{
+                        tooltip: { sx: { maxWidth: "none" } },
+                    }}
+                    title={t(
                         "editors.spelTemplateEditor.infoText",
                         `You are using a string-template-based input, allowing text with embedded expressions. Text should not be quoted. \n 
 Embed expression with \`#{ }\`, e.g., \`Hello #{ #input.name }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
@@ -104,7 +110,7 @@ Use autocompletion to explore available options. To read more see [Documentation
             properties.placeholder = placeholder || t("editors.jsonTemplateEditor.placeholder", 'e.g. { "key": "#{ #input.value }" }');
             properties.InputAdornmentEnd = (
                 <InfoTooltip
-                    text={t(
+                    title={t(
                         "editors.jsonTemplateEditor.infoText",
                         `You are using a json-template-based input, allowing json with embedded expressions. \n 
 Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n

@@ -1,8 +1,10 @@
-import { alpha, css, Theme } from "@mui/material";
-import { CSSProperties } from "react";
-import { CSSObjectWithLabel } from "react-select";
-import { blendDarken, blendLighten, getBorderColor } from "../containers/theme/helpers";
+import type { Theme } from "@mui/material";
+import { css } from "@mui/material";
 import { getLuminance } from "@mui/system/colorManipulator";
+import type { CSSProperties } from "react";
+import type { CSSObjectWithLabel } from "react-select";
+
+import { blendDarken, blendLighten, getBorderColor } from "../containers/theme/helpers";
 
 export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
@@ -23,7 +25,6 @@ export const selectStyled = (theme: Theme) => {
         ${base};
         background-color: ${isDisabled ? theme.palette.action.disabledBackground : theme.palette.background.paper};
         color: ${theme.palette.action.disabled} !important;
-        max-height: 35px;
         min-height: 35px;
         border: none;
         border-radius: 0;
@@ -34,10 +35,11 @@ export const selectStyled = (theme: Theme) => {
     const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isDisabled: boolean) => css`
         ${base}
         ${commonNodeInput("10px")};
-        height: 25px;
+        min-height: 25px;
         line-height: 25px;
         border: 1px;
         border-radius: 0;
+        padding: 3px 10px;
         background-color: ${isSelected
             ? getLuminance(theme.palette.background.paper) > 0.5
                 ? blendDarken(theme.palette.background.paper, 0.15)

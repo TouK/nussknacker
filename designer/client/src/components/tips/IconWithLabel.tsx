@@ -1,6 +1,7 @@
 import { css } from "@emotion/css";
-import React, { ComponentType, SVGProps } from "react";
 import { useTheme } from "@mui/material";
+import type { ComponentType, SVGProps } from "react";
+import React from "react";
 
 export function IconWithLabel({ icon: Icon, message }: { icon: ComponentType<SVGProps<SVGSVGElement>>; message: string }): JSX.Element {
     const theme = useTheme();

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -47,7 +46,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
   def apply(
       creator: ProcessConfigCreator,
       extractModelDefinition: ExtractDefinitionFun,
-      modelConfig: Config,
+      modelConfig: ModelConfig,
       runtimeMode: RuntimeMode,
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener[Any],
@@ -90,19 +89,19 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          modelDependencies: ProcessObjectDependencies
+          modelConfig: ModelConfig
       ): List[ProcessListener] = defaults :+ resultsCollectingListener
 
       override protected def exceptionHandler(
           metaData: MetaData,
-          modelDependencies: ProcessObjectDependencies,
+          modelConfig: ModelConfig,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
       ): FlinkExceptionHandler = runtimeMode match {
         case RuntimeMode.Test => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
-          new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
+          new TestFlinkExceptionHandler(metaData, modelConfig, listeners, classLoader)
         case _ =>
-          super.exceptionHandler(metaData, modelDependencies, listeners, classLoader)
+          super.exceptionHandler(metaData, modelConfig, listeners, classLoader)
       }
 
     }

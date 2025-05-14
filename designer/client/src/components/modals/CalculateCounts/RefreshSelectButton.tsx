@@ -1,8 +1,8 @@
+import { ArrowDropDown, Update, UpdateDisabled } from "@mui/icons-material";
+import { Button, ButtonGroup, ClickAwayListener, Grow, MenuItem, MenuList, Paper, Popper } from "@mui/material";
+import { duration } from "moment";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, ButtonGroup, ClickAwayListener, Grow, MenuItem, MenuList, Paper, Popper } from "@mui/material";
-import { ArrowDropDown, Update, UpdateDisabled } from "@mui/icons-material";
-import { duration } from "moment";
 
 type RefreshSelectButtonProps = {
     onChange: (value: number | null) => void;

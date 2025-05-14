@@ -1,10 +1,12 @@
-import React, { PropsWithChildren, useCallback } from "react";
-import { useFieldsContext } from "../node-row-fields-provider";
-import { NodeRow, NodeValue } from "../node/";
-import { RemoveButton } from "./buttons/RemoveButton";
 import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
+import type { PropsWithChildren } from "react";
+import React, { useCallback } from "react";
+
+import { useFieldsContext } from "../node-row-fields-provider";
+import { NodeRow, NodeValue } from "../node/";
 import { movableRow, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { RemoveButton } from "./buttons/RemoveButton";
 
 const StyledFieldsRow = styled(NodeRow)`
     .fieldName {

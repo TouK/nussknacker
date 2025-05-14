@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import cats.data.Validated
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentAdditionalConfig,
-  DesignerWideComponentId,
-  NodesDeploymentData
-}
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
+import pl.touk.nussknacker.engine.util.{AdditionalComponentConfigsForRuntimeExtractor, ExecutionContextWithIORuntime}
+import pl.touk.nussknacker.ui.limits.LimitsService
+import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.MaxActiveScenariosCountExceededError
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.DeployingInvalidScenarioError
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.language.higherKinds
 import scala.util.{Failure, Success}
 
@@ -33,8 +32,11 @@ class DeploymentService(
       Map[DesignerWideComponentId, ComponentAdditionalConfig],
       _
     ],
-)(implicit ec: ExecutionContext)
+    limitsService: LimitsService
+)(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime)
     extends LazyLogging {
+
+  import executionContextWithIORuntime.ioRuntime
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
@@ -83,13 +85,21 @@ class DeploymentService(
 
   private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
     import command.commonData._
-
     actionService
       .actionProcessorForLatestVersion[CanonicalProcess]
       .processActionWithCustomFinalization[RunDeploymentCommand, Future[Option[ExternalDeploymentId]]](
         command = command,
         actionName = ScenarioActionName.Deploy
       ) { case (ctx, actionFinalizer) =>
+        implicit class FinalizerExt[T](val future: Future[T]) {
+          def removeInvalidActionOnFailure(): Future[T] = {
+            future.transformWith {
+              case Success(result) => Future.successful(result)
+              case Failure(ex)     => actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
+            }
+          }
+        }
+
         for {
           dmCommand <- prepareDMRunDeploymentCommand(
             ctx.latestScenarioDetails,
@@ -97,58 +107,75 @@ class DeploymentService(
             // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
             //       references to existing fields and uses correct types. We should also protect from sql injection attacks
             command
-          )
-          // TODO: move validateBeforeDeploy before creating an action
-          actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, dmCommand)
-            .transformWith {
-              case Failure(ex) =>
-                actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
-              case Success(_) =>
-                // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
-                Future {
+          ).removeInvalidActionOnFailure()
+          _ <- validateScenario(ctx.latestScenarioDetails).removeInvalidActionOnFailure()
+          actionResult <- checkActiveScenariosLimits(ctx.latestScenarioDetails, dmCommand.updateStrategy) {
+            IO.fromFuture {
+              IO {
+                for {
+                  _ <- validateUsingDeploymentManager(ctx.latestScenarioDetails, dmCommand)
+                    .removeInvalidActionOnFailure()
+                } yield {
+                  // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
                   actionFinalizer.handleResult {
                     dispatcher
                       .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
                       .processCommand(dmCommand)
                   }
                 }
+              }
+            }
+          }
+            .flatMap {
+              case Right(result) => Future.successful(result)
+              case Left(error: MaxActiveScenariosCountExceededError) =>
+                Future.failed(error).removeInvalidActionOnFailure()
             }
         } yield actionResult
       }
   }
 
-  protected def validateBeforeDeploy(
-      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+  private def validateScenario(
+      scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess]
+  )(implicit user: LoggedUser) = Future {
+    processValidator
+      .forProcessingTypeUnsafe(scenarioDetails.processingType)
+      .validateCanonicalProcess(
+        scenarioDetails.json,
+        scenarioDetails.toEngineProcessVersion,
+        scenarioDetails.isFragment
+      ) match {
+      case validationResult if validationResult.hasErrors =>
+        throw DeployingInvalidScenarioError(validationResult.errors)
+      case _ => ()
+    }
+  }
+
+  private def checkActiveScenariosLimits(
+      scenario: ScenarioWithDetailsEntity[CanonicalProcess],
+      deploymentUpdateStrategy: DeploymentUpdateStrategy,
+  )(action: IO[Future[Option[ExternalDeploymentId]]])(implicit user: LoggedUser) = {
+    limitsService
+      .checkActiveScenarioLimitsBeforeDeployment(scenario.name, scenario.processingType, deploymentUpdateStrategy)(
+        action
+      )
+      .unsafeToFuture()
+  }
+
+  protected def validateUsingDeploymentManager(
+      scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       runDeploymentCommand: DMRunDeploymentCommand,
-  )(implicit user: LoggedUser): Future[Unit] = {
-    for {
-      // 1. check scenario has no errors
-      _ <- Future {
-        processValidator
-          .forProcessingTypeUnsafe(processDetails.processingType)
-          .validateCanonicalProcess(
-            processDetails.json,
-            processDetails.toEngineProcessVersion,
-            processDetails.isFragment
-          )
-      }.flatMap {
-        case validationResult if validationResult.hasErrors =>
-          Future.failed(DeployingInvalidScenarioError(validationResult.errors))
-        case _ => Future.successful(())
-      }
-      // 2. deployment managers specific checks
-      // TODO: scenario was already resolved during validation - use it here
-      _ <- dispatcher
-        .deploymentManagerUnsafe(processDetails.processingType)
-        .processCommand(
-          DMValidateScenarioCommand(
-            runDeploymentCommand.processVersion,
-            runDeploymentCommand.deploymentData,
-            runDeploymentCommand.canonicalProcess,
-            runDeploymentCommand.updateStrategy
-          )
+  )(implicit user: LoggedUser) = {
+    dispatcher
+      .deploymentManagerUnsafe(scenarioDetails.processingType)
+      .processCommand(
+        DMValidateScenarioCommand(
+          runDeploymentCommand.processVersion,
+          runDeploymentCommand.deploymentData,
+          runDeploymentCommand.canonicalProcess,
+          runDeploymentCommand.updateStrategy
         )
-    } yield ()
+      )
   }
 
   private def prepareDMRunDeploymentCommand(

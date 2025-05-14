@@ -1,9 +1,11 @@
-import React, { SyntheticEvent } from "react";
+import type { SyntheticEvent } from "react";
+import React from "react";
 import { v4 as uuid4 } from "uuid";
-import { HeaderIcon } from "./HeaderIcon";
-import { NodeOrPropertiesType, ValidationErrors } from "../../../types";
+
+import type { NodeOrPropertiesType, ValidationErrors } from "../../../types";
+import type { Scenario } from "../../Process/types";
 import { ErrorTips } from "./ErrorTips";
-import { Scenario } from "../../Process/types";
+import { HeaderIcon } from "./HeaderIcon";
 
 export interface Props {
     errors: ValidationErrors;

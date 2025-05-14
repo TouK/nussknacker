@@ -1,9 +1,10 @@
 import React, { useContext, useMemo } from "react";
 import { useSelector } from "react-redux";
+
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { NodeRow, NodeValue } from "../../node";
 import { getFindAvailableVariables } from "../../NodeDetailsContent/selectors";
-import { FieldWrapperProps } from "../../ParameterExpressionField";
+import type { FieldWrapperProps } from "../../ParameterExpressionField";
 import { AggregateContext } from "../aggregateContext";
 import { CollectionField } from "./collectionField";
 

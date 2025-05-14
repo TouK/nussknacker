@@ -1,4 +1,5 @@
-import { Edge, EdgeKind } from "../types";
+import type { Edge } from "../types";
+import { EdgeKind } from "../types";
 
 const EDITABLE_EDGES: string[] = [
     EdgeKind.switchNext,

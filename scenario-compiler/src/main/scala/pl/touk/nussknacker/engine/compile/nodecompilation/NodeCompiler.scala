@@ -16,12 +16,8 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.{
-  ComponentExecutorFactory,
-  ExpressionCompiler,
-  FragmentSourceWithTestWithParametersSupportFactory,
-  NodeValidationExceptionHandler
-}
+import pl.touk.nussknacker.engine.canonize.MissingSinkHandler
+import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -74,6 +70,16 @@ class NodeCompiler(
     nodesDeploymentData: NodesDeploymentData,
     nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
 ) extends LazyLogging {
+
+  def missingSinkHandler(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): MissingSinkHandler = {
+    import scenarioCompilationDependencies._
+    lazy val allowEndingScenarioWithoutSink = definitions.allowEndingScenarioWithoutSink
+    lazy val isFragment                     = metaData.typeSpecificData.isFragment
+    if (allowEndingScenarioWithoutSink && !isFragment) MissingSinkHandler.AllowMissingSinkHandler
+    else MissingSinkHandler.DoNotAllowMissingSinkHandler
+  }
 
   def withLabelsDictTyper: NodeCompiler = {
     new NodeCompiler(
@@ -732,7 +738,12 @@ class NodeCompiler(
       }
 
       val compiledServiceRef = computedParameters.map { params =>
-        val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, jobData))
+        val evaluateParams = { context: Context =>
+          val nameToRawValueMap = params
+            .map(p => p.name -> parametersEvaluator.evaluateParameterToRawValue(context, p))
+            .toMap
+          Params.fromRawValuesMap(nameToRawValueMap)
+        }
         compiledgraph.service.ServiceRef(
           id = serviceRef.id,
           invoker = new MethodBasedServiceInvoker(jobData.metaData, nodeId, outputVar, objWithMethod, evaluateParams),

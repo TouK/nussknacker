@@ -1,7 +1,7 @@
 import { getLayout } from "../../../reducers/selectors/layout";
-import { NodeId } from "../../../types";
-import { ThunkAction } from "../../reduxTypes";
-import { WithConfigId } from "../toolbars";
+import type { NodeId } from "../../../types";
+import type { ThunkAction } from "../../reduxTypes";
+import type { WithConfigId } from "../toolbars";
 
 export type Position = {
     x: number;

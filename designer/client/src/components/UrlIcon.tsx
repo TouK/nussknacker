@@ -1,7 +1,10 @@
-import React, { ComponentType, DetailedHTMLProps, ImgHTMLAttributes, useEffect, useState } from "react";
+import type { ComponentType, DetailedHTMLProps, ImgHTMLAttributes } from "react";
+import React, { useEffect, useState } from "react";
+
 import { absoluteBePath } from "../common/UrlUtils";
-import { InlineSvg, InlineSvgProps } from "./SvgDiv";
 import { PlaceholderIconFallbackComponent } from "./common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
+import type { InlineSvgProps } from "./SvgDiv";
+import { InlineSvg } from "./SvgDiv";
 
 export interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> {
     src: string;

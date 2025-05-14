@@ -8,13 +8,13 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer, ModelData}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig.DeploymentManagerType
+import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer, ModelConfig, ModelData}
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
@@ -27,6 +27,7 @@ import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElem
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockFetchingProcessRepository}
 import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
@@ -556,7 +557,7 @@ class DefaultComponentServiceSpec
 
   private val providerComponents =
     new DynamicComponentProvider()
-      .create(ConfigFactory.empty, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
+      .create(ConfigFactory.empty, ModelConfig.parse(ConfigFactory.empty()))
 
   private val modelDataMap: Map[ProcessingType, (ModelData, String)] = Map(
     ProcessingTypeStreaming -> (
@@ -876,7 +877,7 @@ class DefaultComponentServiceSpec
       case (processingType, (modelData, category)) =>
         val deploymentData = new DeploymentData(
           DeploymentManagerType("mock"),
-          Valid(MockDeploymentManager.create()),
+          Valid(MockDeploymentManager.create(ConfigWithScalaVersion.StreamingProcessTypeConfig)),
           MetaDataInitializer("streaming", Map.empty[String, String]),
           deploymentScenarioPropertiesConfig = Map.empty,
           additionalValidators = List.empty,
@@ -888,6 +889,7 @@ class DefaultComponentServiceSpec
           modelData,
           deploymentData,
           category = category,
+          limitsConfig = LimitsConfig.default,
           ComponentDefinitionExtractionMode.FinalDefinition
         )
     }
@@ -918,9 +920,9 @@ class DefaultComponentServiceSpec
     new DBProcessService(
       scenarioStatusProvider = mock[ScenarioStatusProvider],
       scenarioStatusPresenter = mock[ScenarioStatusPresenter],
-      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
+      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType(),
       scenarioParametersServiceProvider = scenarioParametersServiceProvider,
-      processResolverByProcessingType = TestFactory.processResolverByProcessingType,
+      processResolverByProcessingType = TestFactory.processResolverByProcessingType(),
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       scenarioActionRepository = TestFactory.newDummyActionRepository(),

@@ -1,10 +1,12 @@
+import { FormControl } from "@mui/material";
 import { isEmpty } from "lodash";
 import React from "react";
+
+import type { TextAreaWithFocusProps } from "../../../../FormElements";
+import { TextArea } from "../../../../FormElements";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { TextArea, TextAreaWithFocusProps } from "../../../../FormElements";
-import { LabeledInputProps } from "./LabeledInput";
-import { FormControl } from "@mui/material";
 import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
+import type { LabeledInputProps } from "./LabeledInput";
 
 export interface LabeledTextareaProps
     extends Pick<LabeledInputProps, "value" | "isMarked" | "children" | "showValidation" | "fieldErrors">,

@@ -1,5 +1,5 @@
-import { UiSettingsAction } from "./nk/assignSettings";
-import { LoggedUserAction } from "./nk/assignUser";
-import { ProcessDefinitionDataAction } from "./nk/processDefinitionData";
+import type { UiSettingsAction } from "./nk/assignSettings";
+import type { LoggedUserAction } from "./nk/assignUser";
+import type { ProcessDefinitionDataAction } from "./nk/processDefinitionData";
 
 export type SettingsActions = LoggedUserAction | UiSettingsAction | ProcessDefinitionDataAction;

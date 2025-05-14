@@ -6,10 +6,10 @@ import org.apache.flink.types.Row
 import org.scalatest.{BeforeAndAfterAll, Inside, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
@@ -37,7 +37,7 @@ class TableJoinTest
 
   private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableOpsComponentProvider().create(
     ConfigFactory.empty(),
-    ProcessObjectDependencies.withConfig(ConfigFactory.empty())
+    ModelConfig.parse(ConfigFactory.empty())
   )
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()

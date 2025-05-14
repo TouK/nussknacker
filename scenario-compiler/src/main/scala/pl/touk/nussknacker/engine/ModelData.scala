@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, Comp
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{
@@ -31,7 +31,7 @@ object ModelData extends LazyLogging {
   type ExtractDefinitionFun =
     (
         ClassLoader,
-        ProcessObjectDependencies,
+        ModelConfig,
         ComponentId => DesignerWideComponentId,
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
@@ -163,7 +163,7 @@ case class ClassLoaderModelData private (
     }
   }
 
-  override val namingStrategy: NamingStrategy = NamingStrategy.fromConfig(modelConfig)
+  override val namingStrategy: NamingStrategy = NamingStrategy.fromConfig(modelConfig.underlyingConfig)
 
   override val extractModelDefinitionFun: ExtractDefinitionFun =
     new ExtractDefinitionFunImpl(
@@ -185,14 +185,14 @@ object ClassLoaderModelData {
 
     override def apply(
         classLoader: ClassLoader,
-        modelDependencies: ProcessObjectDependencies,
+        modelConfig: ModelConfig,
         determineDesignerWideId: ComponentId => DesignerWideComponentId,
         additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ): ModelDefinition = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
-        modelDependencies,
+        modelConfig,
         category,
         determineDesignerWideId,
         additionalConfigsFromProvider,
@@ -226,7 +226,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     val modelDefinitions = withModelClassloaderAsContextClassLoader {
       extractModelDefinitionFun(
         modelClassLoader,
-        ProcessObjectDependencies(modelConfig, namingStrategy),
+        modelConfig,
         determineDesignerWideId,
         additionalConfigsFromProvider
       )
@@ -245,14 +245,17 @@ trait ModelData extends BaseModelData with AutoCloseable {
     DictServicesFactoryLoader.justOne(modelClassLoader)
 
   final lazy val designerDictServices: UiDictServices =
-    dictServicesFactory.createUiDictServices(modelDefinition.expressionConfig.dictionaries, modelConfig)
+    dictServicesFactory.createUiDictServices(
+      modelDefinition.expressionConfig.dictionaries,
+      modelConfig.underlyingConfig
+    )
 
   final lazy val engineDictRegistry: EngineDictRegistry =
     dictServicesFactory.createEngineDictRegistry(modelDefinition.expressionConfig.dictionaries)
 
   // TODO: remove it, see notice in CustomProcessValidatorFactory
   final def customProcessValidator: CustomProcessValidator = {
-    CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader, modelConfig)
+    CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader, modelConfig.underlyingConfig)
   }
 
   final def withModelClassloaderAsContextClassLoader[T](block: => T): T = {
@@ -265,10 +268,10 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   def modelConfigLoader: ModelConfigLoader
 
-  final override lazy val modelConfig: Config =
-    modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader)
+  final override lazy val modelConfig: ModelConfig =
+    ModelConfig.parse(modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader))
 
-  final lazy val componentsUiConfig: ComponentsUiConfig = ComponentsUiConfigParser.parse(modelConfig)
+  final lazy val componentsUiConfig: ComponentsUiConfig = ComponentsUiConfigParser.parse(modelConfig.underlyingConfig)
 
   final def close(): Unit = {
     designerDictServices.close()

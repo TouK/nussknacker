@@ -160,14 +160,14 @@ class ExpressionCompiler(
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
-    val missingValidation = Validations.validateRedundantAndMissingParameters(
+    val adjustedParameters = NodeParametersAdjuster.adjustNonBranchParameters(
       parameterDefinitions,
-      nodeParameters ++ nodeBranchParameters.flatMap(_.parameters)
+      nodeParameters
     )
     val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, ctx.globalVariables)
     val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
-    val compiledParams = nodeParameters
+    val compiledParams = adjustedParameters
       .flatMap { nodeParam =>
         paramDefMap
           .get(nodeParam.name)
@@ -186,13 +186,11 @@ class ExpressionCompiler(
 
     for {
       compiledParams <- allCompiledParams.toIor
-      paramsAfterValidation = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap) match {
-        case Valid(a) => Ior.right(a)
-        // We want to preserve typing information from allCompiledParams even if custom validators give us some errors
-        case Invalid(e) => Ior.both(e, compiledParams)
-      }
-      combinedParams <- missingValidation.map(_ => List()).toIor.combine(paramsAfterValidation)
-    } yield combinedParams
+      customValidatorsResult = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap)
+      // We want to accumulate errors from custom validators, but also preserve typing information from allCompiledParams
+      // even if custom validators return some errors
+      _ <- customValidatorsResult.toIor.addRight(())
+    } yield compiledParams
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(

@@ -1,8 +1,11 @@
-import React, { ReactElement } from "react";
-import { Alert, AlertColor } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { CopyTooltip } from "./copyTooltip";
+import type { AlertColor } from "@mui/material";
+import { Alert } from "@mui/material";
+import type { ReactElement } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
+
+import { CopyTooltip } from "./copyTooltip";
 
 interface Props {
     icon: ReactElement;

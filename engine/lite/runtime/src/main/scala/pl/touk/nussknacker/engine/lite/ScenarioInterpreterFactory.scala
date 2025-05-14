@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, Proces
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ServiceExecutionContext, Source}
+import pl.touk.nussknacker.engine.api.process.{ServiceExecutionContext, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -68,8 +68,7 @@ object ScenarioInterpreterFactory {
   ): ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Input, Res]] =
     modelData.withModelClassloaderAsContextClassLoader {
 
-      val creator           = modelData.configCreator
-      val modelDependencies = ProcessObjectDependencies.withConfig(modelData.modelConfig)
+      val creator = modelData.configCreator
 
       val allNodes = process.collectAllNodes
       val countingListeners = List(
@@ -78,7 +77,7 @@ object ScenarioInterpreterFactory {
         new ExceptionCountingListener,
         new EndCountingListener(allNodes),
       )
-      val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
+      val listeners = creator.listeners(modelData.modelConfig) ++ additionalListeners ++ countingListeners
 
       val compilerData = ProcessCompilerData.prepare(
         jobData,

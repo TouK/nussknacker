@@ -1,9 +1,10 @@
 import React, { useCallback } from "react";
-import { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../types";
+import { v4 as uuid4 } from "uuid";
+
+import type { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../types";
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
 import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
-import { v4 as uuid4 } from "uuid";
 
 export interface MapVariableProps<F extends Field> {
     node: NodeType<F>;

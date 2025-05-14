@@ -67,7 +67,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
     ModelDefinitionBuilder.emptyExpressionConfig,
-    ClassExtractionSettings.Default
+    ClassExtractionSettings.Default,
+    allowEndingScenarioWithoutSink = false,
   )
 
   private val validator = ProcessValidator.default(
@@ -84,7 +85,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     validator.validate(process, isFragment = false)
   }
 
-  private val expectedGenericParameters = List(
+  private val expectedGenericParameters =
+    prepareExpectedGenericParameters(lastParameterChangesCanReloadParameters = false)
+
+  private def prepareExpectedGenericParameters(lastParameterChangesCanReloadParameters: Boolean) = List(
     Parameter[String](ParameterName("par1"))
       .copy(
         editors = List(
@@ -93,10 +97,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         ),
         defaultValue = Some("".spelTemplate)
       ),
-    Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
+    Parameter[Long](ParameterName("lazyPar1"))
+      .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
     Parameter(ParameterName("val1"), Unknown),
     Parameter(ParameterName("val2"), Unknown),
-    Parameter(ParameterName("val3"), Unknown)
+    Parameter(ParameterName("val3"), Unknown).copy(changesCanReloadParameters = lastParameterChangesCanReloadParameters)
   )
 
   test("should validate happy path") {
@@ -201,7 +206,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     result.result shouldBe Symbol("valid")
 
     result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
-    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
+    result.parametersInNodes("genericEnricher") shouldBe expectedGenericParameters
   }
 
   test("should handle exception throws during validation gracefully") {
@@ -219,7 +224,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .emptySink("end", "dummySink")
     )
 
-    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
+    // For the failure case, we don't know if parameters returned during the last step before the failure,
+    // was the last one, so we can't clear lastParameterChangesCanReloadParameters value
+    val expectedGenericParametersForExceptionDuringValidation =
+      prepareExpectedGenericParameters(lastParameterChangesCanReloadParameters = true)
+    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParametersForExceptionDuringValidation
   }
 
   test("should dependent parameter in sink") {
@@ -246,7 +255,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
           ),
           defaultValue = Some("".spelTemplate)
         ),
-      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
+      Parameter[Long](ParameterName("lazyPar1"))
+        .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
       Parameter(ParameterName("val1"), Unknown),
       Parameter(ParameterName("val2"), Unknown)
     )
@@ -319,7 +329,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
           ),
           defaultValue = Some("".spelTemplate)
         ),
-      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
+      Parameter[Long](ParameterName("lazyPar1"))
+        .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
       Parameter(ParameterName("val1"), Unknown),
       Parameter(ParameterName("val2"), Unknown)
     )

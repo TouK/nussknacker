@@ -1,17 +1,13 @@
 package pl.touk.nussknacker.engine.definition.model
 
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{
   Component,
   ComponentAdditionalConfig,
   ComponentId,
   DesignerWideComponentId
 }
-import pl.touk.nussknacker.engine.api.process.{
-  ExpressionConfig,
-  ProcessConfigCreator,
-  ProcessObjectDependencies,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.globalvariables.{
@@ -25,20 +21,20 @@ object ModelDefinitionFromConfigCreatorExtractor {
   def extractModelDefinition(
       creator: ProcessConfigCreator,
       categoryOpt: Option[String],
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ModelDefinition = {
 
-    val sourceFactories          = creator.sourceFactories(modelDependencies).toList
-    val sinkFactories            = creator.sinkFactories(modelDependencies).toList
-    val services                 = creator.services(modelDependencies).toList
-    val customStreamTransformers = creator.customStreamTransformers(modelDependencies).toList
+    val sourceFactories          = creator.sourceFactories(modelConfig).toList
+    val sinkFactories            = creator.sinkFactories(modelConfig).toList
+    val services                 = creator.services(modelConfig).toList
+    val customStreamTransformers = creator.customStreamTransformers(modelConfig).toList
     val allComponents            = sourceFactories ++ sinkFactories ++ services ++ customStreamTransformers
 
-    val expressionConfig = creator.expressionConfig(modelDependencies)
+    val expressionConfig = creator.expressionConfig(modelConfig)
 
     val components = extractFromComponentsList(
       allComponents,
@@ -49,12 +45,13 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentDefinitionExtractionMode,
     )
 
-    val settings = creator.classExtractionSettings(modelDependencies)
+    val classExtractionSettings = creator.classExtractionSettings(modelConfig)
 
     ModelDefinition(
       components,
       toDefinition(expressionConfig, categoryOpt),
-      settings
+      classExtractionSettings,
+      modelConfig.allowEndingScenarioWithoutSink,
     )
   }
 
@@ -104,7 +101,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig.methodExecutionForUnknownAllowed,
       expressionConfig.dynamicPropertyAccessAllowed,
       expressionConfig.spelExpressionExcludeList,
-      expressionConfig.customConversionsProviders
+      expressionConfig.customConversionsProviders,
     )
   }
 

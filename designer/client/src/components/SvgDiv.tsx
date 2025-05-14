@@ -1,7 +1,9 @@
-import React, { ComponentType, DetailedHTMLProps, HTMLAttributes } from "react";
 import loadable from "@loadable/component";
-import { ErrorBoundary } from "react-error-boundary";
 import { styled } from "@mui/material";
+import type { ComponentType, DetailedHTMLProps, HTMLAttributes } from "react";
+import React from "react";
+import { ErrorBoundary } from "react-error-boundary";
+
 import { absoluteBePath } from "../common/UrlUtils";
 
 const absoluteExp = /^(?<root>(?<proto>(https?:)?\/)?\/)?.*\.svg$/i;

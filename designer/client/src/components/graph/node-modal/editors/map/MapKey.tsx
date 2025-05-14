@@ -1,7 +1,9 @@
-import React from "react";
-import { NodeValue } from "../../node";
-import Input, { InputProps } from "../field/Input";
 import { cx } from "@emotion/css";
+import React from "react";
+
+import { NodeValue } from "../../node";
+import type { InputProps } from "../field/Input";
+import Input from "../field/Input";
 
 interface MapKeyProps extends Omit<InputProps, "onChange"> {
     onChange?: (value: string) => void;

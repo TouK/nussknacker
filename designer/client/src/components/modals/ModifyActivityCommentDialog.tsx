@@ -1,16 +1,17 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import { PromptContent } from "../../windowManager";
 import { css, cx } from "@emotion/css";
-import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import { useTranslation } from "react-i18next";
-import CommentInput from "../comment/CommentInput";
 import { FormHelperText, Typography } from "@mui/material";
-import httpService from "../../http/HttpService";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import React, { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName } from "../../reducers/selectors/graph";
+
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
-import { ModifyActivityCommentMeta } from "../toolbars/activities/types";
+import httpService from "../../http/HttpService";
+import { getProcessName } from "../../reducers/selectors/graph";
+import { PromptContent } from "../../windowManager";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import CommentInput from "../comment/CommentInput";
+import type { ModifyActivityCommentMeta } from "../toolbars/activities/types";
 
 const ModifyActivityCommentDialog = (props: WindowContentProps<number, ModifyActivityCommentMeta>) => {
     const meta = props.data.meta;

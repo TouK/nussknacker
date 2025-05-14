@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import cats.data.NonEmptyList
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -32,7 +33,7 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
   }
 
   def extractComponents(
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
@@ -41,12 +42,12 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
     Components
       .fold(
         componentDefinitionExtractionMode,
-        loadCorrectProviders(modelDependencies.config).toList
+        loadCorrectProviders(modelConfig.underlyingConfig).toList
           .map { case (_, (config, provider)) =>
             extract(
               config,
               provider,
-              modelDependencies,
+              modelConfig,
               componentsUiConfig,
               determineDesignerWideId,
               additionalConfigsFromProvider,
@@ -138,13 +139,13 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
   private def extract(
       config: ComponentProviderConfig,
       provider: ComponentProvider,
-      modelDependencies: ProcessObjectDependencies,
+      modelConfig: ModelConfig,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
-    val components = provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
+    val components = provider.create(config.config, modelConfig).map { inputComponentDefinition =>
       config.componentPrefix
         .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
         .getOrElse(inputComponentDefinition)

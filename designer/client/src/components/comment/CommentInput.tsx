@@ -1,7 +1,9 @@
-import React, { DetailedHTMLProps, TextareaHTMLAttributes } from "react";
-import { useTranslation } from "react-i18next";
-import { TextAreaNode } from "../FormElements";
 import { lighten } from "@mui/material";
+import type { DetailedHTMLProps, TextareaHTMLAttributes } from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import { TextAreaNode } from "../FormElements";
 
 type Props = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 

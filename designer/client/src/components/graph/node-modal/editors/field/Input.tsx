@@ -1,10 +1,12 @@
-import React from "react";
-import ValidationLabels from "../../../../modals/ValidationLabels";
-import { InputWithFocusProps, NodeInput } from "../../../../FormElements";
 import { cx } from "@emotion/css";
-import { FieldError } from "../Validators";
 import { isEmpty } from "lodash";
+import React from "react";
+
+import type { InputWithFocusProps } from "../../../../FormElements";
+import { NodeInput } from "../../../../FormElements";
+import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInput, nodeInputWithError } from "../../NodeDetailsContent/NodeTableStyled";
+import type { FieldError } from "../Validators";
 
 export interface InputProps
     extends Pick<

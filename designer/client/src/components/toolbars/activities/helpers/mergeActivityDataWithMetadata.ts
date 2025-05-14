@@ -1,5 +1,5 @@
-import { ActivitiesResponse, ActivityMetadataResponse } from "../types";
-import { Activity } from "../ActivitiesPanel";
+import type { Activity } from "../ActivitiesPanel";
+import type { ActivitiesResponse, ActivityMetadataResponse } from "../types";
 
 export const mergeActivityDataWithMetadata = (
     activities: ActivitiesResponse["activities"],

@@ -1,6 +1,7 @@
 import { Autocomplete, FormControl } from "@mui/material";
-import { nodeInput } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import React from "react";
+
+import { nodeInput } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 export const SearchLabeledAutocomplete = ({ children, name, options, value, setFilterFields }) => {
     function handleChange(_, value) {

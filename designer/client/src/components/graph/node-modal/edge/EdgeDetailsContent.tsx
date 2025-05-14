@@ -1,6 +1,8 @@
 import { FormLabel } from "@mui/material";
 import React, { useCallback } from "react";
-import { Edge, EdgeKind, EdgeType } from "../../../../types";
+
+import type { Edge, EdgeType } from "../../../../types";
+import { EdgeKind } from "../../../../types";
 import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
 import { useDiffMark } from "../PathsToMark";

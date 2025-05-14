@@ -12,9 +12,9 @@ import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
-import pl.touk.nussknacker.engine.RuntimeMode
+import pl.touk.nussknacker.engine.{ModelConfig, RuntimeMode}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
@@ -94,9 +94,9 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(schemaRegistryClientFactor = schemaRegistryClientFactor)
 
   override def build(): LiteKafkaTestScenarioRunner = {
-    val modelDependencies             = ProcessObjectDependencies.withConfig(config)
+    val modelConfig                   = ModelConfig.parse(config)
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
-    val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelDependencies)
+    val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelConfig)
     val schemaRegistryClient          = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde

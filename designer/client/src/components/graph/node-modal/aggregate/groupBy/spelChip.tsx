@@ -1,5 +1,7 @@
-import { Chip, ChipProps } from "@mui/material";
+import type { ChipProps } from "@mui/material";
+import { Chip } from "@mui/material";
 import React from "react";
+
 import { HighlightedSpel } from "./highlightedSpel";
 
 export const SpelChip = ({ label, ...props }: ChipProps) => (

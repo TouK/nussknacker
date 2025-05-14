@@ -50,12 +50,12 @@ class KafkaSourceFactorySpec
         VariableConstants.InputVariableName,
         Typed[Any],
         Typed[Any],
-        modelDependencies.namingStrategy
+        modelConfig.namingStrategy
       )
     )
     val source = sourceFactory
       .implementation(
-        Params(Map(TopicParamName -> topic)),
+        Params.fromRawValuesMap(Map(TopicParamName -> topic)),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
         Some(finalState)
       )

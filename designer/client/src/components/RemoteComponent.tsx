@@ -1,5 +1,7 @@
-import { FederatedComponent, FederatedComponentProps, getFederatedComponentLoader } from "@touk/federated-component";
+import type { FederatedComponentProps } from "@touk/federated-component";
+import { FederatedComponent, getFederatedComponentLoader } from "@touk/federated-component";
 import React, { useMemo } from "react";
+
 import SystemUtils from "../common/SystemUtils";
 import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { useWindows, WindowKind } from "../windowManager";

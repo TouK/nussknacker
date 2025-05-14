@@ -1,7 +1,8 @@
 import { omitBy } from "lodash";
-import { RootState } from "../index";
-import { UserSettings } from "../userSettings";
 import { createSelector } from "reselect";
+
+import type { RootState } from "../index";
+import type { UserSettings } from "../userSettings";
 
 const userSettings = (state: RootState): UserSettings => state.userSettings;
 

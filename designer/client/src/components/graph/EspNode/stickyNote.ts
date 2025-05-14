@@ -1,15 +1,14 @@
 import type { Theme } from "@mui/material";
-import { dia, shapes, util, V } from "jointjs";
+import DOMPurify from "dompurify";
+import { dia } from "jointjs";
+import { shapes, util } from "jointjs";
 import { marked } from "marked";
 
 import { getBorderColor } from "../../../containers/theme/helpers";
+import type { NodeValidationError, StickyNoteNodeType } from "../../../types";
 import { StickyNoteElement } from "../StickyNoteElement";
 
 import MarkupNodeJSON = dia.MarkupNodeJSON;
-
-import DOMPurify from "dompurify";
-
-import type { NodeValidationError, StickyNoteNodeType } from "../../../types";
 
 export const STICKY_NOTE_CONSTRAINTS = {
     MIN_WIDTH: 100,

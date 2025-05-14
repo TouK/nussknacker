@@ -282,7 +282,8 @@ object SchemalessKafkaJsonTypeTests {
          |        "hintText": null,
          |        "label": "Input",
          |        "requiredParam": true,
-         |        "category": "Standard"
+         |        "category": "Standard",
+         |        "changesCanReloadParameters": false
          |      }
          |    ]
          |  }

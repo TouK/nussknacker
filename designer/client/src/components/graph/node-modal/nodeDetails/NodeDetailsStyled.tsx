@@ -1,6 +1,7 @@
 import { styled } from "@mui/material";
+
+import type { WindowKind } from "../../../../windowManager";
 import { Icon } from "../../../toolbars/creator/Icon";
-import { WindowKind } from "../../../../windowManager";
 
 export const WindowHeaderIconStyled = styled(Icon)<{ type?: WindowKind }>(({ theme, type }) => {
     return {

@@ -1,5 +1,6 @@
 import { uniq, xor } from "lodash";
-import { Reducer } from "../../actions/reduxTypes";
+
+import type { Reducer } from "../../actions/reduxTypes";
 
 export const selectionState: Reducer<string[]> = (state = [], action) => {
     switch (action.type) {

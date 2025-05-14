@@ -1,8 +1,9 @@
-import React from "react";
 import { Skeleton, Typography } from "@mui/material";
-import { Scenario } from "../../Process/types";
-import { useGetAllCombinations } from "../../useGetAllCombinations";
+import React from "react";
 import { useTranslation } from "react-i18next";
+
+import type { Scenario } from "../../Process/types";
+import { useGetAllCombinations } from "../../useGetAllCombinations";
 
 export const CategoryDetails = ({ scenario }: { scenario: Scenario }) => {
     const { t } = useTranslation();

@@ -1,6 +1,7 @@
-import { isEmpty } from "lodash";
 import i18next from "i18next";
-import { NodeValidationError } from "../../../../types";
+import { isEmpty } from "lodash";
+
+import type { NodeValidationError } from "../../../../types";
 import { FormatterType } from "./expression/Formatter";
 
 export enum HandledErrorType {

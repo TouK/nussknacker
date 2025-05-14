@@ -84,7 +84,8 @@ object Parameter {
       javaOptionalParameter = false,
       hintText = None,
       labelOpt = None,
-      category = ParameterCategory.Standard
+      category = ParameterCategory.Standard,
+      changesCanReloadParameters = false,
     )
 
   def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
@@ -108,6 +109,7 @@ object Parameter {
       hintText = None,
       labelOpt = None,
       category = ParameterCategory.Standard,
+      changesCanReloadParameters = false,
     )
 
 }
@@ -140,6 +142,7 @@ case class Parameter(
     hintText: Option[String],
     labelOpt: Option[String],
     category: ParameterCategory,
+    changesCanReloadParameters: Boolean
 ) extends NodeDependency {
 
   def copy(
@@ -187,6 +190,7 @@ case class Parameter(
       hintText: Option[String] = this.hintText,
       labelOpt: Option[String] = this.labelOpt,
       category: ParameterCategory = this.category,
+      changesCanReloadParameters: Boolean = this.changesCanReloadParameters
   ): Parameter = {
     new Parameter(
       name,
@@ -203,6 +207,7 @@ case class Parameter(
       hintText,
       labelOpt,
       category,
+      changesCanReloadParameters
     )
   }
 
@@ -221,6 +226,7 @@ case class Parameter(
       hintText: Option[String],
       labelOpt: Option[String],
       category: ParameterCategory,
+      changesCanReloadParameters: Boolean
   ): Parameter = {
     new Parameter(
       name,
@@ -237,6 +243,7 @@ case class Parameter(
       hintText,
       labelOpt,
       category,
+      changesCanReloadParameters
     )
   }
 
@@ -268,6 +275,7 @@ case class Parameter(
       hintText = None,
       labelOpt = None,
       category = ParameterCategory.Standard,
+      changesCanReloadParameters = false,
     )
   }
 

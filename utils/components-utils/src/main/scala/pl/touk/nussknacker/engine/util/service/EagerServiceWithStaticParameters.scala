@@ -80,8 +80,8 @@ trait EagerServiceWithStaticParameters
       finalState: Option[TypingResult]
   ): ServiceInvoker =
     createServiceInvoker(
-      params.nameToValueMap.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
-      params.nameToValueMap.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
+      params.nameToRawValueMap.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
+      params.nameToRawValueMap.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
       finalState.getOrElse(Unknown),
       metaData.extract(dependencies)
     )

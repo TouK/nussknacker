@@ -1,5 +1,6 @@
-import { dia, g } from "jointjs";
-import { NodeType } from "../../../types";
+import type { dia, g } from "jointjs";
+
+import type { NodeType } from "../../../types";
 import { getNodeData } from "../Graph";
 import { isModelElement } from "../GraphPartialsInTS";
 import { rafThrottle } from "../rafThrottle";

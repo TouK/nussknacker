@@ -14,9 +14,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistryClientHolder.MockSchemaRegistryClientProvider
 import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemaV1
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -81,7 +82,7 @@ abstract class FlinkWithKafkaSuite
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
       createFinkKafkaComponentProvider(schemaRegistryClientProvider)
-        .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
+        .create(kafkaComponentsConfig, ModelConfig.parse(config)) :::
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         additionalComponents
     val modelData =
@@ -319,7 +320,7 @@ object SampleSchemas {
 
 class TestDefaultConfigCreator extends DefaultConfigCreator {
 
-  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelConfig: ModelConfig): Seq[ProcessListener] =
     Seq(LoggingListener)
 
 }

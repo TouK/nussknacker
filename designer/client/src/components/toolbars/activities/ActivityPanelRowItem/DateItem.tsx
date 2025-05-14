@@ -1,7 +1,9 @@
-import React, { ForwardedRef, forwardRef } from "react";
 import { Box, Divider, Typography } from "@mui/material";
+import type { ForwardedRef } from "react";
+import React, { forwardRef } from "react";
+
+import type { DateActivity } from "../ActivitiesPanel";
 import { formatUiDate } from "../helpers/date";
-import { DateActivity } from "../ActivitiesPanel";
 
 interface Props {
     activity: DateActivity;

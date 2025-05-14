@@ -1,8 +1,8 @@
-import { ThunkAction } from "../reduxTypes";
-import httpService from "../../http/HttpService";
-import { mergeActivityDataWithMetadata } from "../../components/toolbars/activities/helpers/mergeActivityDataWithMetadata";
+import type { UIActivity } from "../../components/toolbars/activities";
 import { extendActivitiesWithUIData } from "../../components/toolbars/activities/helpers/extendActivitiesWithUIData";
-import { UIActivity } from "../../components/toolbars/activities";
+import { mergeActivityDataWithMetadata } from "../../components/toolbars/activities/helpers/mergeActivityDataWithMetadata";
+import httpService from "../../http/HttpService";
+import type { ThunkAction } from "../reduxTypes";
 
 export type GetScenarioActivitiesAction = {
     type: "GET_SCENARIO_ACTIVITIES";

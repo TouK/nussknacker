@@ -13,6 +13,8 @@ type SettingsNames =
     | "node.showInputsAndOutputs"
     | "node.showFragmentCreator"
     | "node.autoApply"
+    | "node.showGenerateEndpointButton"
+    | "node.showSendRequestButton"
     | "cloud.showIntegrationsCreators"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
@@ -29,6 +31,8 @@ const getDefaultUserSettings = (): UserSettings => ({
     "node.shortCounts": getInitialUserFlag("node.shortCounts"),
     "node.showInputsAndOutputs": getInitialUserFlag("node.showInputsAndOutputs"),
     "node.showFragmentCreator": getInitialUserFlag("node.showFragmentCreator"),
+    "node.showGenerateEndpointButton": getInitialUserFlag("node.showGenerateEndpointButton"),
+    "node.showSendRequestButton": getInitialUserFlag("node.showSendRequestButton"),
     "node.autoApply": getInitialUserFlag("node.autoApply"),
     "cloud.showIntegrationsCreators": getInitialUserFlag("cloud.showIntegrationsCreators"),
     "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),

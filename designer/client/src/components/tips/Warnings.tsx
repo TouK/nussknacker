@@ -1,11 +1,12 @@
+import WarningIcon from "@mui/icons-material/Warning";
+import { styled, Typography } from "@mui/material";
+import { groupBy } from "lodash";
 import React from "react";
 import { v4 as uuid4 } from "uuid";
-import WarningIcon from "@mui/icons-material/Warning";
+
+import type { NodeType, ScenarioGraph } from "../../types";
 import NodeUtils from "../graph/NodeUtils";
-import { groupBy } from "lodash";
 import { LinkStyled } from "./Styled";
-import { NodeType, ScenarioGraph } from "../../types";
-import { styled, Typography } from "@mui/material";
 
 interface Warning {
     error: {

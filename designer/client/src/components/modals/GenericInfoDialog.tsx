@@ -1,9 +1,12 @@
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { PropsWithChildren, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { PromptContent, WindowKind } from "../../windowManager";
 import { Typography } from "@mui/material";
+import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import type { PropsWithChildren } from "react";
+import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
+import type { WindowKind } from "../../windowManager";
+import { PromptContent } from "../../windowManager";
 
 export interface InfoDialogData {
     text: string;

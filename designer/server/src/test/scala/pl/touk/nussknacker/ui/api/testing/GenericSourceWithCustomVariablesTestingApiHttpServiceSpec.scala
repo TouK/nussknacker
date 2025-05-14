@@ -63,7 +63,8 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec
       |    "requiredParam": true,
       |    "hintText": null,
       |    "label": "elements",
-      |    "category": "Standard"
+      |    "category": "Standard",
+      |    "changesCanReloadParameters": false
       |  }
       |""".stripMargin
 
@@ -127,7 +128,8 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec
        |        "hintText": null,
        |        "label": "elements",
        |        "requiredParam": true,
-       |        "category": "Standard"
+       |        "category": "Standard",
+       |        "changesCanReloadParameters": false
        |      }
        |    ]
        |  }

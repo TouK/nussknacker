@@ -2,11 +2,12 @@ package pl.touk.nussknacker.engine.management.sample.component
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -25,8 +26,8 @@ class SampleComponentProvider extends ComponentProvider {
     config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
   }
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    config.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+    componentProviderConfig.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
       ComponentDefinition(s"component-$value", SampleProvidedComponent(value))
     }
   }

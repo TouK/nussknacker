@@ -1,9 +1,10 @@
 import { uniqBy } from "lodash";
 import { createSelector } from "reselect";
-import { MetricsType } from "../../actions/nk";
-import { DynamicTabData } from "../../containers/DynamicTab";
-import { RootState } from "../index";
-import { AuthenticationSettings, SettingsState } from "../settings";
+
+import type { MetricsType } from "../../actions/nk";
+import type { DynamicTabData } from "../../containers/DynamicTab";
+import type { RootState } from "../index";
+import type { AuthenticationSettings, SettingsState } from "../settings";
 
 export const getSettings = (state: RootState): SettingsState => state.settings;
 

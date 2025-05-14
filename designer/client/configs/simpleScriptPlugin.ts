@@ -1,7 +1,8 @@
-import chalk from "chalk";
 import { spawn } from "child_process";
+
+import chalk from "chalk";
 import { debounce } from "lodash";
-import { Compiler } from "webpack";
+import type { Compiler } from "webpack";
 
 interface Options {
     scripts: Array<string>;

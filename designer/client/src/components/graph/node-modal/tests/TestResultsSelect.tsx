@@ -1,8 +1,11 @@
 import { css, cx } from "@emotion/css";
 import { FormControl, FormLabel, useTheme } from "@mui/material";
 import React from "react";
-import TestResultUtils, { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
-import { Option, TypeSelect } from "../fragment-input-definition/TypeSelect";
+
+import type { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
+import TestResultUtils from "../../../../common/TestResultUtils";
+import type { Option } from "../fragment-input-definition/TypeSelect";
+import { TypeSelect } from "../fragment-input-definition/TypeSelect";
 
 export interface TestResultsSelectProps {
     results: NodeTestResults;

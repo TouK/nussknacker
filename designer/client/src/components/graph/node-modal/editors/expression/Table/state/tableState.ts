@@ -1,10 +1,13 @@
-import { Dispatch, useEffect, useMemo, useReducer, useState } from "react";
-import { ExpressionObj } from "../../types";
-import { reducer } from "./reducer";
-import { Action, ActionTypes } from "./action";
+import type { Dispatch } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
+
+import type { ExpressionObj } from "../../types";
+import type { SupportedType } from "../TableEditor";
+import type { Action } from "./action";
+import { ActionTypes } from "./action";
 import { getParser } from "./expressionParser";
 import { getStringifier } from "./expressionStringifier";
-import { SupportedType } from "../TableEditor";
+import { reducer } from "./reducer";
 
 export type DataColumn = {
     name: string;

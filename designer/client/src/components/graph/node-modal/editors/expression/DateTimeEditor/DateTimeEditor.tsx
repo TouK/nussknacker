@@ -1,12 +1,14 @@
 import i18next from "i18next";
-import { ExpressionObj } from "../types";
-import React from "react";
-import { DatepickerEditor, DatepickerEditorProps } from "./DatepickerEditor";
 import { isEmpty } from "lodash";
-import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import moment from "moment";
-import { ExtendedEditor } from "../Editor";
+import React from "react";
+
+import type { ExtendedEditor } from "../Editor";
 import { editorsParameters } from "../editorsParameters";
+import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
+import type { ExpressionObj } from "../types";
+import { DatepickerEditor } from "./DatepickerEditor";
+import type { DatepickerEditorProps } from "./DatepickerEditor";
 
 const dateFormat = "YYYY-MM-DD";
 const timeFormat = "HH:mm";

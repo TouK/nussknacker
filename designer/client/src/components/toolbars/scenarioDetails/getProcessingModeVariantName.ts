@@ -1,5 +1,6 @@
-import { ProcessingMode } from "../../../http/HttpService";
 import i18next from "i18next";
+
+import { ProcessingMode } from "../../../http/HttpService";
 
 export const getProcessingModeVariantName = (processingMode: ProcessingMode) => {
     switch (processingMode) {

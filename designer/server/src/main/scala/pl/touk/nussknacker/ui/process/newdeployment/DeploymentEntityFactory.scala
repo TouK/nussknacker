@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.{BaseEntityFactory, ProcessEntityData, ProcessEntityFactory}
@@ -62,25 +62,18 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       statusProblemDescription: Option[String],
       statusModifiedAt: Timestamp
   ) = {
-    val status = if (statusName == ProblemDeploymentStatus.name) {
-      ProblemDeploymentStatus(
-        statusProblemDescription.getOrElse(throw new IllegalStateException("Problem status without description"))
-      )
-    } else {
-      DeploymentStatus.withName(statusName.value)
-    }
+    val status = DeploymentStatus.from(statusName, statusProblemDescription)
     DeploymentEntityData(id, scenarioId, createdAt, createdBy, WithModifiedAt(status, statusModifiedAt))
   }
 
   private def extractFieldsFromEntity(entity: DeploymentEntityData) = {
-    val statusProblemDescription = ProblemDeploymentStatus.extractDescription(entity.statusWithModifiedAt.value)
     Option(
       entity.id,
       entity.scenarioId,
       entity.createdAt,
       entity.createdBy,
       entity.statusWithModifiedAt.value.name,
-      statusProblemDescription,
+      entity.statusWithModifiedAt.value.problemDescription,
       entity.statusWithModifiedAt.modifiedAt
     )
   }

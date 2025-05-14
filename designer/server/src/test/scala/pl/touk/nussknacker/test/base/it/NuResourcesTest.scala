@@ -19,6 +19,7 @@ import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
@@ -27,6 +28,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -48,13 +50,17 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.DesignerConfig
+import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
-import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
+  ScenarioStatusProvider => OldApproachScenarioStatusProvider
+}
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -84,6 +90,9 @@ trait NuResourcesTest
     with LazyLogging {
   self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
 
+  private val executionContextWithIORuntime: ExecutionContextWithIORuntimeAdapter =
+    ExecutionContextWithIORuntimeAdapter.unsafeCreateFrom(executor)
+
   protected val adminUser: LoggedUser = TestFactory.adminUser("user")
 
   private implicit val implicitAdminUser: LoggedUser = adminUser
@@ -93,9 +102,7 @@ trait NuResourcesTest
   protected val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(testDbRef)
 
   protected val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
-    newFutureFetchingScenarioRepository(
-      testDbRef
-    )
+    newFutureFetchingScenarioRepository(testDbRef)
 
   protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingScenarioRepository)
 
@@ -110,6 +117,7 @@ trait NuResourcesTest
   protected val processChangeListener = new TestProcessChangeListener()
 
   protected lazy val deploymentManager: MockDeploymentManager = MockDeploymentManager.create(
+    config = ConfigWithScalaVersion.StreamingProcessTypeConfig,
     // In pekko-based resources tests, it is hard to use deploymentManager.withStubbedDeployResult(...) syntax because checks are done in function pipeline.
     // Because of that we stub results with happy-path defaults. After rewriting endpoint to Tapir and tests to rest-assured-based it should be easier
     defaultDeployResult = Future.successful(None),
@@ -124,15 +132,23 @@ trait NuResourcesTest
   )
 
   protected val deploymentsStatusesProvider =
-    new EngineSideDeploymentStatusesProvider(dmDispatcher, None)
+    new EngineSideDeploymentStatusesProvider(dmDispatcher, None)(executionContextWithIORuntime)
 
-  protected val scenarioStatusProvider: ScenarioStatusProvider = new ScenarioStatusProvider(
-    deploymentsStatusesProvider,
-    dmDispatcher,
-    fetchingProcessRepository,
-    actionRepository,
-    dbioRunner,
-  )
+  protected val oldApproachScenarioStatusProvider: OldApproachScenarioStatusProvider =
+    new OldApproachScenarioStatusProvider(
+      deploymentsStatusesProvider,
+      dmDispatcher,
+      fetchingProcessRepository,
+      actionRepository,
+      dbioRunner,
+    )
+
+  protected val newApproachScenarioStatusProvider: NewApproachScenarioStatusProvider =
+    new NewApproachScenarioStatusProvider(
+      mapProcessingTypeDataProvider(Streaming.stringify -> ()),
+      TestFactory.newDeploymentRepository(testDbRef, clock),
+      dbioRunner
+    )
 
   protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
 
@@ -141,19 +157,28 @@ trait NuResourcesTest
     actionRepository,
     dbioRunner,
     processChangeListener,
-    scenarioStatusProvider,
+    oldApproachScenarioStatusProvider,
     deploymentCommentSettings,
     Clock.systemUTC()
   )
 
+  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
+
   protected val deploymentService: DeploymentService =
     new DeploymentService(
-      dmDispatcher,
-      processValidatorByProcessingType,
-      scenarioResolverByProcessingType,
-      actionService,
-      mapProcessingTypeDataProvider(),
-    )
+      dispatcher = dmDispatcher,
+      processValidator = processValidatorByProcessingType(),
+      scenarioResolver = scenarioResolverByProcessingType(),
+      actionService = actionService,
+      additionalComponentConfigs = mapProcessingTypeDataProvider(),
+      limitsService = new LimitsService(
+        globalLimitsConfig = designerConfig.globalLimitsConfig,
+        perProcessingTypesLimitsProvider =
+          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
+      )
+    )(executionContextWithIORuntime)
 
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
@@ -186,15 +211,14 @@ trait NuResourcesTest
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
-        Streaming.stringify,
-        modelData,
-        deploymentData,
-        processingTypeConfig.category,
-        modelDependencies.componentDefinitionExtractionMode
+        processingType = Streaming.stringify,
+        modelData = modelData,
+        deploymentData = deploymentData,
+        category = processingTypeConfig.category,
+        limitsConfig = LimitsConfig.default,
+        componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
       )
     )
-
-  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
 
   protected val (processingTypeDataProvider, closeDeploymentManagers) = {
     val designerConfig = DesignerConfig.from(testConfig)
@@ -202,7 +226,7 @@ trait NuResourcesTest
       .create(
         processingTypeConfigs = designerConfig.processingTypeConfigs(),
         modelClassLoaderProvider = modelClassLoaderProvider,
-        modelDependencies = modelDependencies,
+        modelConfig = modelDependencies,
         deploymentManagersClassLoader = deploymentManagersClassLoader,
         deploymentManagerDependencies = deploymentManagerDependencies,
       )
@@ -210,7 +234,7 @@ trait NuResourcesTest
       .unsafeRunSync()
   }
 
-  protected val processService: DBProcessService = createDBProcessService(scenarioStatusProvider)
+  protected val processService: DBProcessService = createDBProcessService(oldApproachScenarioStatusProvider)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
@@ -222,7 +246,7 @@ trait NuResourcesTest
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    scenarioStatusProvider = scenarioStatusProvider,
+    scenarioStatusProvider = oldApproachScenarioStatusProvider,
     scenarioStatusPresenter = scenarioStatusPresenter,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
@@ -242,13 +266,13 @@ trait NuResourcesTest
     RealLoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
-  protected def createDBProcessService(processStateProvider: ScenarioStatusProvider): DBProcessService =
+  protected def createDBProcessService(processStateProvider: OldApproachScenarioStatusProvider): DBProcessService =
     new DBProcessService(
       processStateProvider,
       scenarioStatusPresenter,
-      newProcessPreparerByProcessingType,
+      newProcessPreparerByProcessingType(),
       processingTypeDataProvider.mapCombined(_.parametersService),
-      processResolverByProcessingType,
+      processResolverByProcessingType(),
       dbioRunner,
       futureFetchingScenarioRepository,
       actionRepository,
@@ -265,12 +289,12 @@ trait NuResourcesTest
   ): ScenarioTestService =
     new ScenarioTestService(
       testInfoProvider,
-      processResolver,
+      processResolver(),
       designerConfig.testDataSettings,
       new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
-      new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
+      new ProcessCounter(TestFactory.prepareSampleFragmentRepository()),
       new ScenarioTestExecutorServiceImpl(
-        new ScenarioResolver(sampleResolver, Streaming.stringify),
+        new ScenarioResolver(sampleResolver(), Streaming.stringify),
         deploymentManager
       )
     )
@@ -293,6 +317,7 @@ trait NuResourcesTest
   override protected def afterAll(): Unit = {
     super.afterAll()
     closeDeploymentManagers.unsafeRunSync()
+    executionContextWithIORuntime.close()
   }
 
   protected def saveCanonicalProcessAndAssertSuccess(
@@ -568,7 +593,7 @@ trait NuResourcesTest
       processName: ProcessName,
       isFragment: Boolean = false,
   ): ProcessId = {
-    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName, isFragment)
+    val emptyProcess = newProcessPreparer().prepareEmptyProcess(processName, isFragment)
     saveAndGetId(emptyProcess, Category1, isFragment).futureValue
   }
 

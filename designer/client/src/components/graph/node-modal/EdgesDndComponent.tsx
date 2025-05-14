@@ -1,12 +1,14 @@
 import { defaultsDeep } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
-import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
+import type { Edge, NodeValidationError, VariableTypes } from "../../../types";
+import { EdgeKind } from "../../../types";
 import { DndItems } from "../../common/dndItems/DndItems";
 import NodeUtils from "../NodeUtils";
 import { EdgeFields } from "./EdgeFields";
-import { EdgeTypeOption } from "./EdgeTypeSelect";
+import type { EdgeTypeOption } from "./EdgeTypeSelect";
 import { ExpressionLang } from "./editors/expression/types";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { NodeRowFieldsProvider } from "./node-row-fields-provider";

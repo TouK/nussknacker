@@ -136,7 +136,7 @@ object HttpRemoteEnvironmentSpec {
     mapProcessingTypeDataProvider(
       "streaming" -> new ProcessModelMigrator(new TestMigrations(1, 2))
     ),
-    mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator)
+    mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator("streaming" :: Nil))
   )
 
   private val impersonationSupport = new ImpersonationSupported {

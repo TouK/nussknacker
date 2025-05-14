@@ -1,9 +1,12 @@
-import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
+import type { PropsWithChildren } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import TestResultUtils, { StateForSelectTestResults } from "../../../common/TestResultUtils";
+
+import type { StateForSelectTestResults } from "../../../common/TestResultUtils";
+import TestResultUtils from "../../../common/TestResultUtils";
 import { useUserSettings } from "../../../common/userSettings";
 import { getTestResults } from "../../../reducers/selectors/graph";
-import { NodeId } from "../../../types";
+import type { NodeId } from "../../../types";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import TestErrors from "./tests/TestErrors";
 import TestResultsComponent from "./tests/TestResults";

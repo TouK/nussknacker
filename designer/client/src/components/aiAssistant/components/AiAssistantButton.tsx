@@ -33,7 +33,9 @@ const ASSISTANT_BUTTON = {
     height: 75,
 };
 
-const StyledAiAssistantButton = styled(Box)<{ isOpenedAiAssistantDialog: boolean }>(({ theme, isOpenedAiAssistantDialog }) => {
+const StyledAiAssistantButton = styled(Box, {
+    shouldForwardProp: (propName: string) => !["isOpenedAiAssistantDialog"].includes(propName),
+})<{ isOpenedAiAssistantDialog: boolean }>(({ theme, isOpenedAiAssistantDialog }) => {
     return {
         position: "fixed",
         bottom: ASSISTANT_BUTTON.bottom,

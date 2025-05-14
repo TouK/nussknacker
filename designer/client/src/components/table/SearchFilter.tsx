@@ -1,9 +1,10 @@
 import { css, cx } from "@emotion/css";
-import React from "react";
-import SearchSvg from "../../assets/img/search.svg";
-import AdvancedSearchSvg from "../../assets/img/advanced-search.svg";
-import DeleteSvg from "../../assets/img/toolbarButtons/delete.svg";
 import { useTheme } from "@mui/material";
+import React from "react";
+
+import AdvancedSearchSvg from "../../assets/img/advanced-search.svg";
+import SearchSvg from "../../assets/img/search.svg";
+import DeleteSvg from "../../assets/img/toolbarButtons/delete.svg";
 
 const flex = css({
     width: 0, // edge 18. why? because! 🙃

@@ -1,6 +1,7 @@
 import { t } from "i18next";
-import { LoadingButton } from "../../../../windowManager/LoadingButton";
 import React from "react";
+
+import { LoadingButton } from "../../../../windowManager/LoadingButton";
 import { DefaultFullScreenMessage } from "../DefaultFullScreenMessage";
 
 export const FullPageErrorBoundaryFallbackComponent = () => {

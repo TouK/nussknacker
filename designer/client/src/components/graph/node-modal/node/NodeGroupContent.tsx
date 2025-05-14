@@ -1,8 +1,10 @@
 import { css } from "@emotion/css";
-import React, { memo, SetStateAction } from "react";
+import type { SetStateAction } from "react";
+import React, { memo } from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../../reducers";
-import { Edge, NodeType } from "../../../../types";
+
+import type { RootState } from "../../../../reducers";
+import type { Edge, NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
 import { NodeDetailsContent } from "../NodeDetailsContent";
 import { ContentSize } from "./ContentSize";

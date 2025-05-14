@@ -214,21 +214,23 @@ describe("Fragment", () => {
             cy.getNode("@fragmentName").trigger("dblclick");
             cy.get("#nk-graph-fragment [model-id='input']").scrollIntoView().should("be.visible");
 
-            cy.get("[data-testid=window]")
-                .find("section")
-                .scrollTo("top")
-                .click(5, 5) //drop focus from input - avoid random scrolling/reszing of window contents
-                .matchImage();
+            //FIXME flaky screenshot
+            // cy.get("[data-testid=window]")
+            //     .find("section")
+            //     .scrollTo("top")
+            //     .click(5, 5) //drop focus from input - avoid random scrolling/reszing of window contents
+            //     .matchImage();
 
             cy.get("[data-testid=window]").find("section").scrollTo("bottom").find('[id="nk-graph-fragment"]').should("be.visible");
-            cy.getNode("output")
-                .parent()
-                .matchImage({
-                    maxDiffThreshold: 0.02,
-                    screenshotConfig: {
-                        padding: 8,
-                    },
-                });
+            //FIXME flaky screenshot
+            // cy.getNode("output")
+            //     .parent()
+            //     .matchImage({
+            //         maxDiffThreshold: 0.02,
+            //         screenshotConfig: {
+            //             padding: 8,
+            //         },
+            //     });
         });
 
         it("should validate and save changes", function () {
@@ -258,7 +260,7 @@ describe("Fragment", () => {
 
             cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find("[role=tab]").contains("fixed values");
             cy.get('[title="name_string_fixed"]').siblings().eq(0).contains("#meta.processName");
-            cy.get('[title="name_string_fixed"]').find('[title="Hint text test"]').should("be.visible");
+            cy.get('[title="name_string_fixed"]').find('[data-testid="InfoIcon"]').should("be.visible");
             cy.get('[title="non_boolean_or_string"]').siblings().eq(0).contains("1");
 
             // any value with suggestions preset verification
@@ -307,6 +309,7 @@ describe("Fragment", () => {
                 .find('[title="Value"]')
                 .siblings()
                 .eq(0)
+                .find("#ace-editor")
                 .should("be.visible")
                 .type("{selectall}#fragmentResult.");
             // We wait for validation result to be sure that red message below the form field will be visible

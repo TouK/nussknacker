@@ -4,13 +4,13 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
@@ -117,7 +117,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
         override def services(
-            modelDependencies: ProcessObjectDependencies
+            modelConfig: ModelConfig
         ): Map[String, WithCategories[Service]] =
           Map(
             "enricher" -> WithCategories.anyCategory(TestService),
@@ -164,7 +164,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
         override def services(
-            modelDependencies: ProcessObjectDependencies
+            modelConfig: ModelConfig
         ): Map[String, WithCategories[Service]] = {
           Map(
             "someGenericNode" -> WithCategories
@@ -340,7 +340,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val processingType = Streaming
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
-      new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
+      new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig.underlyingConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         model.modelDefinitionWithClasses.classDefinitions,

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
-import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
@@ -115,7 +114,10 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withContextClassLoader(classLoader) {
       val compilationResultWithArtificial =
-        ProcessCanonizer.uncanonizeArtificial(process).map(ProcessSplitter.split).map(compile)
+        ProcessCanonizer
+          .uncanonizeArtificial(process, nodeCompiler.missingSinkHandler)
+          .map(ProcessSplitter.split)
+          .map(compile)
       compilationResultWithArtificial.extract
     }
   }
@@ -239,7 +241,7 @@ protected trait ProcessCompilerBase {
         splittednode.SourceNode(sourceData, part.node.next),
         ctx,
         nextParts,
-        part.ends.map(e => TypedEnd(e, typesForParts(e.nodeId)))
+        part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId, ValidationContext.empty)))
       )
     }
   }
@@ -322,7 +324,7 @@ protected trait ProcessCompilerBase {
           ctx.left.getOrElse(ValidationContext.empty),
           nextCtx,
           nextPartsCompiled,
-          part.ends.map(e => TypedEnd(e, typesForParts(e.nodeId)))
+          part.ends.map(e => TypedEnd(e, typesForParts.getOrElse(e.nodeId, ValidationContext.empty)))
         )
       }
       .distinctErrors

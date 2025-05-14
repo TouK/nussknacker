@@ -1,14 +1,15 @@
-import React from "react";
-import { CustomSwitch, SettingLabelStyled, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { FormControl, FormControlLabel } from "@mui/material";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { DefaultParameterVariant, onChangeType } from "../../item";
-import { NodeValidationError, VariableTypes } from "../../../../../../types";
+
+import type { NodeValidationError, VariableTypes } from "../../../../../../types";
 import { TextAreaNode } from "../../../../../FormElements";
-import InitialValue from "./fields/InitialValue";
-import { ValidationsFields } from "./fields/validation";
 import { getValidationErrorsForField } from "../../../editors/Validators";
 import { nodeInput } from "../../../NodeDetailsContent/NodeTableStyled";
+import type { DefaultParameterVariant, onChangeType } from "../../item";
+import InitialValue from "./fields/InitialValue";
+import { CustomSwitch, SettingLabelStyled, SettingsWrapper } from "./fields/StyledSettingsComponnets";
+import { ValidationsFields } from "./fields/validation";
 
 interface Props {
     item: DefaultParameterVariant;

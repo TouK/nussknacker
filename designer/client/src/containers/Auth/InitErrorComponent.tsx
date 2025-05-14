@@ -1,8 +1,10 @@
-import { AuthErrorCodes } from "./AuthErrorCodes";
-import React, { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
+import React from "react";
 import { I18nextProvider } from "react-i18next";
-import { InitializeError } from "../errors/InitializeError";
+
 import i18n from "../../i18n";
+import { InitializeError } from "../errors/InitializeError";
+import type { AuthErrorCodes } from "./AuthErrorCodes";
 
 export interface InitErrorComponentProps extends PropsWithChildren<unknown> {
     error: AuthErrorCodes;

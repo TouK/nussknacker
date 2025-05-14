@@ -1,9 +1,11 @@
-import React, { MouseEventHandler } from "react";
-import { NavLink } from "react-router-dom";
 import { css, cx } from "@emotion/css";
-import { NodeId } from "../../../types";
-import Color from "color";
 import { useTheme } from "@mui/material";
+import Color from "color";
+import type { MouseEventHandler } from "react";
+import React from "react";
+import { NavLink } from "react-router-dom";
+
+import type { NodeId } from "../../../types";
 import { ErrorLinkStyle } from "./styled";
 
 export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElement>; nodeId: NodeId; disabled?: boolean }) => {

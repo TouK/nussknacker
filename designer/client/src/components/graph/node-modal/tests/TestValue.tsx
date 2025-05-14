@@ -1,8 +1,9 @@
-import React, { forwardRef, useImperativeHandle, useRef } from "react";
-import { Variable } from "../../../../common/TestResultUtils";
 import { cx } from "@emotion/css";
-import { nodeInput, nodeValue, partlyHidden } from "../NodeDetailsContent/NodeTableStyled";
 import { styled } from "@mui/material";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
+
+import type { Variable } from "../../../../common/TestResultUtils";
+import { nodeInput, nodeValue, partlyHidden } from "../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     value: Variable;

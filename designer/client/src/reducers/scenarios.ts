@@ -1,8 +1,9 @@
 import { createSelector } from "reselect";
-import { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
-import { Scenario } from "../components/Process/types";
+
+import type { Action, Reducer, ThunkAction } from "../actions/reduxTypes";
+import type { Scenario } from "../components/Process/types";
 import HttpService from "../http/HttpService";
-import { RootState } from "./index";
+import type { RootState } from "./index";
 
 export type ScenariosType = Scenario[];
 

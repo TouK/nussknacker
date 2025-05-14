@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.definition.component
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process._
@@ -22,7 +23,7 @@ class DynamicComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
     List(
       ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
       ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),

@@ -3,9 +3,10 @@ import { Box, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import TreeView from "react-treeview";
+
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import { ComponentGroup } from "../../../types";
+import type { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {

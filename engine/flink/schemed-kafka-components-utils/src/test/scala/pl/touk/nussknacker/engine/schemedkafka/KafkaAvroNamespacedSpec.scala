@@ -4,8 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
 import org.scalatest.OptionValues
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
@@ -27,9 +26,6 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
       .resolveConfig(config)
       .withValue("namespace", fromAnyRef(namespace))
   }
-
-  override protected lazy val testModelDependencies: ProcessObjectDependencies =
-    ProcessObjectDependencies.withConfig(config)
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
