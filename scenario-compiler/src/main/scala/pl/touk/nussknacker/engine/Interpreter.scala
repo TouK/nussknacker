@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine
 
-import cats.Monad
+import cats.{Applicative, Id, Monad}
 import cats.effect.IO
 import cats.syntax.all._
 import com.github.ghik.silencer.silent
@@ -117,7 +117,7 @@ private class InterpreterInternal[F[_]: Monad](
         invokeWrappedInInterpreterShape(ref, ctx).map {
           // for Processor the result is null/BoxedUnit/Void etc. so we ignore it
           case Left(ValueWithContext(_, newCtx)) =>
-            List(Left(InterpretationResult(EndReference(id), newCtx)))
+            interpretationResult[Id](node, EndReference(id), newCtx)
           case Right(exInfo) => List(Right(exInfo))
         }
       case EndingProcessor(id, _, true) =>
@@ -194,19 +194,22 @@ private class InterpreterInternal[F[_]: Monad](
       case EndingCustomNode(id, ref) =>
         listeners.foreach(_.endEncountered(id, ref, ctx, jobData.metaData))
         interpretationResult(node, EndReference(id), ctx)
+      case SplitNode(_, Nil) =>
+        onProcessingFinishedInNode(node, ctx)
+        Applicative[F].pure(List.empty)
       case SplitNode(_, nexts) =>
         import cats.implicits._
         nexts.map(interpretNext(node, _, ctx)).sequence.map(_.flatten)
     }
   }
 
-  private def interpretationResult(
+  private def interpretationResult[FF[_]: Applicative](
       node: Node,
       reference: PartReference,
       ctx: Context
-  ): F[List[Result[InterpretationResult]]] = {
+  ): FF[List[Result[InterpretationResult]]] = {
     onProcessingFinishedInNode(node, ctx)
-    Monad[F].pure(List(Left(InterpretationResult(reference, ctx))))
+    Applicative[FF].pure(List(Left(InterpretationResult(reference, ctx))))
   }
 
   private def interpretOptionalNext(

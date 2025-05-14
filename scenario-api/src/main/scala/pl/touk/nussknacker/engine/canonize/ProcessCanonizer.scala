@@ -96,7 +96,7 @@ object ProcessCanonizer {
         }
 
       case canonicalnode.SplitNode(bare, Nil) :: Nil =>
-        missingSinkHandler.handleMissingSink(bare.id)
+        missingSinkHandler.handleMissingSink(bare.id, Some(node.SplitNode(bare, List.empty)))
 
       case (a @ canonicalnode.SplitNode(bare, nexts)) :: Nil =>
         nexts
@@ -110,7 +110,7 @@ object ProcessCanonizer {
         MaybeArtificial.missingSinkError(InvalidTailOfBranch(invalidHead.id))
 
       case Nil =>
-        missingSinkHandler.handleMissingSink(previous.id)
+        missingSinkHandler.handleMissingSink(previous.id, None)
     }
 
 }
