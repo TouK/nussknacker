@@ -49,7 +49,7 @@ export function EditStateFeedback({ editState }: { editState: EditState }) {
     const [idleVisible, setIdleVisible] = useState(false);
     useTimeoutWhen(() => setIdleVisible(false), 1000, idleVisible);
     useEffect(() => {
-        setIdleVisible(editState === "idle" && prev.current !== "idle");
+        setIdleVisible(editState === "idle" && prev.current && prev.current !== "idle");
         prev.current = editState;
     }, [editState]);
 

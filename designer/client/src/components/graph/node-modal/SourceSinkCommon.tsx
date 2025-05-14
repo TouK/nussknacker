@@ -7,6 +7,7 @@ import type { NodeType, NodeValidationError, UIParameter } from "../../../types"
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface SourceSinkCommonProps {
     errors: NodeValidationError[];
@@ -15,7 +16,7 @@ interface SourceSinkCommonProps {
     node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }

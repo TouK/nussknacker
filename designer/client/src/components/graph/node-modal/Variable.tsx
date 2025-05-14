@@ -12,6 +12,7 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
@@ -22,7 +23,7 @@ function getTypingResult(expressionType: TypingResult, nodeTypingInfo: TypingInf
 interface Props {
     isEditMode?: boolean;
     node: NodeType;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showValidation: boolean;
     errors: NodeValidationError[];
     showSwitch?: boolean;

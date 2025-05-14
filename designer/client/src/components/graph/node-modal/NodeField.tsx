@@ -2,12 +2,13 @@ import { cx } from "@emotion/css";
 import { get, isEmpty } from "lodash";
 import React, { useCallback, useMemo } from "react";
 
-import type { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
+import type { NodeOrPropertiesType, NodeValidationError } from "../../../types";
 import type { FieldType } from "./editors/field/Field";
 import Field from "./editors/field/Field";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
@@ -19,7 +20,7 @@ type NodeFieldProps<N extends string, V> = {
     node: NodeOrPropertiesType;
     readonly?: boolean;
     renderFieldLabel: (paramName: string) => React.ReactNode;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
     description?: string;

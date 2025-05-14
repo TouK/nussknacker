@@ -1,17 +1,16 @@
 import { css } from "@emotion/css";
-import { ExpandLess, MoreHoriz } from "@mui/icons-material";
+import { MoreHoriz } from "@mui/icons-material";
 import { Box, styled } from "@mui/material";
-import type { CSSObject } from "@mui/styled-engine";
 import { Allotment } from "allotment";
 import type { AllotmentHandle } from "allotment/dist/types/src/allotment";
+import { produce } from "immer";
 import { sum } from "lodash";
 import type { PropsWithChildren } from "react";
-import React, { useCallback, useRef, useState } from "react";
-import "allotment/dist/style.css";
-import { ErrorBoundary } from "react-error-boundary";
+import React, { memo, useCallback, useRef, useState } from "react";
 
-import { getScrollStyle } from "../node/StyledHeader";
-import { VariableContextTree } from "./VariableContextTree";
+import "allotment/dist/style.css";
+import { PanelButton } from "./PanelButton";
+import { SidePane } from "./SidePane";
 
 const shadowClassName = css({
     boxShadow: "0px 0px 15px rgba(0,0,0,0.2)",
@@ -24,9 +23,22 @@ const Wrapper = styled(Box)({
     position: "relative",
 });
 
-export const InputOutputLayout = function InputOutputWrapper({ children }: PropsWithChildren) {
+export type Side = "right" | "left";
+
+export type SideState<S extends Side = Side> = {
+    side: S;
+    collapsed: boolean;
+    hidden: boolean;
+};
+
+export type SidesState<K extends Side = Side> = {
+    [P in K]: SideState<P>;
+};
+
+export const InputOutputLayout = memo(function InputOutputWrapper({ children }: PropsWithChildren) {
     const moveHandle = useRef<HTMLButtonElement>();
-    const sizes = useRef<number[]>([]);
+    const defaultSizes = [300, 900, 300];
+    const sizes = useRef<number[]>(defaultSizes);
     const ref = useRef<AllotmentHandle>();
 
     const startPos = useRef(null);
@@ -54,7 +66,7 @@ export const InputOutputLayout = function InputOutputWrapper({ children }: Props
         document.addEventListener("mouseup", handleMouseUp);
     }, []);
 
-    const prevSizes = useRef<number[]>([0, 0, 0]);
+    const prevSizes = useRef<number[]>(defaultSizes);
 
     const togglePanel = useCallback((index: number, collapsedSize: number, shouldCollapse = sizes.current[index] > collapsedSize * 2) => {
         const currentSize = sizes.current[index];
@@ -75,150 +87,70 @@ export const InputOutputLayout = function InputOutputWrapper({ children }: Props
 
     const collapsedSize = 30;
 
-    const [leftCollapsed, setLeftCollapsed] = useState(false);
-    const [rightCollapsed, setRightCollapsed] = useState(false);
+    const [sidesState, setSidesState] = useState<SidesState>({
+        left: { side: "left", collapsed: false, hidden: false },
+        right: { side: "right", collapsed: false, hidden: false },
+    });
+
     const onChange = useCallback((currentSizes) => {
-        const [left, center, right] = currentSizes;
+        const [leftSize, centerSize, rightSize] = currentSizes;
         sizes.current = currentSizes;
         if (moveHandle.current) {
-            moveHandle.current.style.left = `${left + center / 2}px`;
+            moveHandle.current.style.left = `${leftSize + centerSize / 2}px`;
         }
-        setLeftCollapsed(left < collapsedSize * 2);
-        setRightCollapsed(right < collapsedSize * 2);
+
+        setSidesState(
+            produce(({ left, right }) => {
+                left.collapsed = leftSize < collapsedSize * 2;
+                right.collapsed = rightSize < collapsedSize * 2;
+            }),
+        );
     }, []);
 
-    const [leftHidden, setLeftHidden] = useState(false);
-    const [rightHidden, setRightHidden] = useState(false);
+    const onIsEmptyChange = useCallback(
+        (side: "left" | "right", isEmpty: boolean) => {
+            setSidesState(
+                produce((draft) => {
+                    draft[side].hidden = isEmpty;
+                }),
+            );
+            if (isEmpty) {
+                togglePanel(side === "left" ? 0 : 2, 0, true);
+            }
+        },
+        [togglePanel],
+    );
+
+    const onToggleClick = useCallback((i: "left" | "right") => togglePanel(i === "left" ? 0 : 2, collapsedSize), [togglePanel]);
+
+    const onResetClick = useCallback(() => ref.current.reset(), []);
 
     return (
         <Wrapper>
-            <Allotment ref={ref} onChange={onChange} defaultSizes={[278, 820, 278]}>
+            <Allotment ref={ref} onChange={onChange} defaultSizes={defaultSizes}>
                 <Allotment.Pane
-                    preferredSize="20%"
-                    minSize={leftHidden ? 0 : collapsedSize}
-                    maxSize={leftHidden ? 0 : Infinity}
-                    visible={!leftHidden}
+                    preferredSize={sidesState.right.hidden ? "40%" : "20%"}
+                    minSize={sidesState.left.hidden ? 0 : collapsedSize}
+                    maxSize={sidesState.left.hidden ? 0 : Infinity}
+                    visible={!sidesState.left.hidden}
                 >
-                    <SidePanelBox
-                        sx={{
-                            alignItems: "flex-start",
-                            overflowY: leftCollapsed ? "hidden" : "auto",
-                        }}
-                    >
-                        <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
-                            <VariableContextTree
-                                direction="input"
-                                onIsEmptyChange={(isEmpty) => {
-                                    setLeftHidden(isEmpty);
-                                    if (isEmpty) {
-                                        togglePanel(0, 0, true);
-                                    }
-                                }}
-                            />
-                        </ErrorBoundary>
-                    </SidePanelBox>
-                    <PanelButton side="left" collapsed={leftCollapsed} onClick={() => togglePanel(0, collapsedSize)}>
-                        <ExpandLess />
-                    </PanelButton>
+                    <SidePane sideState={sidesState.left} onToggleClick={onToggleClick} onIsEmptyChange={onIsEmptyChange} />
                 </Allotment.Pane>
                 <Allotment.Pane preferredSize="60%" minSize={820} className={shadowClassName}>
                     {children}
                 </Allotment.Pane>
                 <Allotment.Pane
-                    preferredSize="20%"
-                    minSize={rightHidden ? 0 : collapsedSize}
-                    maxSize={rightHidden ? 0 : Infinity}
-                    visible={!rightHidden}
+                    preferredSize={sidesState.left.hidden ? "40%" : "20%"}
+                    minSize={sidesState.right.hidden ? 0 : collapsedSize}
+                    maxSize={sidesState.right.hidden ? 0 : Infinity}
+                    visible={!sidesState.right.hidden}
                 >
-                    <SidePanelBox
-                        sx={{
-                            alignItems: "flex-end",
-                            overflowY: rightCollapsed ? "hidden" : "auto",
-                        }}
-                    >
-                        <ErrorBoundary fallback={<div>{`ERROR`}</div>}>
-                            <VariableContextTree
-                                direction="output"
-                                onIsEmptyChange={(isEmpty) => {
-                                    setRightHidden(isEmpty);
-                                    if (isEmpty) {
-                                        togglePanel(2, 0, isEmpty);
-                                    }
-                                }}
-                            />
-                        </ErrorBoundary>
-                    </SidePanelBox>
-                    <PanelButton side="right" collapsed={rightCollapsed} onClick={() => togglePanel(2, collapsedSize)}>
-                        <ExpandLess />
-                    </PanelButton>
+                    <SidePane sideState={sidesState.right} onToggleClick={onToggleClick} onIsEmptyChange={onIsEmptyChange} />
                 </Allotment.Pane>
             </Allotment>
-            <PanelButton side="center" ref={moveHandle} tabIndex={-1} onMouseDown={onMouseDown} onDoubleClick={() => ref.current.reset()}>
+            <PanelButton side="center" ref={moveHandle} tabIndex={-1} onMouseDown={onMouseDown} onDoubleClick={onResetClick}>
                 <MoreHoriz />
             </PanelButton>
         </Wrapper>
     );
-};
-
-const SidePanelBox = styled(Box)(({ theme }) => ({
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    background: "rgba(0,0,0,.2)",
-    overflowY: "auto",
-    overflowX: "hidden",
-    ...getScrollStyle(theme),
-}));
-
-const PanelButton = styled("button", {
-    shouldForwardProp: (prop) => prop !== "side" && prop !== "collapsed",
-})<{
-    side?: "center" | "left" | "right";
-    collapsed?: boolean;
-}>(({ side, collapsed, theme }) => {
-    const styles: CSSObject = {
-        position: "absolute",
-        bottom: "50%",
-        zIndex: 20,
-        padding: 0,
-        margin: 0,
-        border: 0,
-        outline: 0,
-        lineHeight: 0,
-        background: "transparent",
-        "&:focus": {
-            color: theme.palette.action.active,
-        },
-    };
-    switch (side) {
-        case "left":
-            return {
-                ...styles,
-                right: 0,
-                transform: `translateY(-50%) translateX(35%) rotate(${collapsed ? 90 : -90}deg)`,
-                paddingInline: 20,
-            };
-        case "right":
-            return {
-                ...styles,
-                left: 0,
-                transform: `translateY(-50%) translateX(-35%) rotate(${collapsed ? -90 : 90}deg)`,
-                paddingInline: 20,
-            };
-        case "center":
-            return {
-                ...styles,
-                left: "50%",
-                bottom: "100%",
-                transform: "translateY(50%) translateX(-50%)",
-                paddingInline: 20,
-                "&:focus": {
-                    outline: 0,
-                    color: "inherit",
-                },
-            };
-        default:
-            return styles;
-    }
 });

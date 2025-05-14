@@ -1,9 +1,12 @@
-export type NotificationActions = UpdateBackendNotifications | MarkBackendNotificationRead;
-
-export type UpdateBackendNotifications = {
-    type: "UPDATE_BACKEND_NOTIFICATIONS";
-    notificationIds: string[];
-};
+export type NotificationActions =
+    | {
+          type: "UPDATE_BACKEND_NOTIFICATIONS";
+          notificationIds: string[];
+      }
+    | {
+          type: "MARK_BACKEND_NOTIFICATION_READ";
+          notificationId: string;
+      };
 
 export function updateBackendNotifications(notificationIds: string[]): NotificationActions {
     return {
@@ -11,11 +14,6 @@ export function updateBackendNotifications(notificationIds: string[]): Notificat
         notificationIds: notificationIds,
     };
 }
-
-export type MarkBackendNotificationRead = {
-    type: "MARK_BACKEND_NOTIFICATION_READ";
-    notificationId: string;
-};
 
 export function markBackendNotificationRead(notificationId: string): NotificationActions {
     return {

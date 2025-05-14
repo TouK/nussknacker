@@ -192,6 +192,9 @@ const config: Configuration = {
         new ForkTsCheckerWebpackPlugin({
             typescript: {
                 memoryLimit: 5000,
+                configOverwrite: {
+                    exclude: ["node_modules", ".federated-types", "cypress", "./cypress.config.ts", "**/*.test.ts", "**/*.test.tsx"],
+                },
             },
         }),
         isProd ? null : new ReactRefreshWebpackPlugin({ overlay: false }),

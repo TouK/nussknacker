@@ -3,6 +3,7 @@ import React from "react";
 import type { NodeType, NodeValidationError } from "../../../types";
 import { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface DisableFieldProps {
     autoFocus?: boolean;
@@ -11,7 +12,7 @@ interface DisableFieldProps {
     node: NodeType;
     readonly?: boolean;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
 }
