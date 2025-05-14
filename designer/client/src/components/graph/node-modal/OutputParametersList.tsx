@@ -10,6 +10,7 @@ import type { FieldError } from "./editors/Validators";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { nodeInput, nodeInputWithError, nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 type OutputFieldProps = {
     autoFocus?: boolean;
@@ -72,7 +73,7 @@ export default function OutputParametersList({
     editedNode: NodeType;
     processDefinitionData: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     errors?: NodeValidationError[];
     showValidation?: boolean;
     isEditMode?: boolean;

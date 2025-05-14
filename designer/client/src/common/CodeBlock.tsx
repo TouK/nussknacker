@@ -184,9 +184,7 @@ export const CodeBlock = ({ className, children, node }: Props) => {
         <CodeBlockContainer>
             <CodeBlockHeader>
                 <LanguageLabel>{language}</LanguageLabel>
-                <Tooltip title={isCopied ? "Copied!" : "Copy code"}>
-                    <CopyIconButton onClick={handleCopy} isCopied={isCopied} />
-                </Tooltip>
+                <CopyIconButton onClick={handleCopy} isCopied={isCopied} />
             </CodeBlockHeader>
             <SyntaxHighlighter language={language} style={syntaxHighlighterStyle(theme)}>
                 {typeof children === "string" && children}

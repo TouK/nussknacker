@@ -7,10 +7,11 @@ import LabeledInput from "./editors/field/LabeledInput";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export interface NodeDetailsProps<F extends Field> {
     node: NodeType<F>;
-    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty?: SetProperty;
     readOnly?: boolean;
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;

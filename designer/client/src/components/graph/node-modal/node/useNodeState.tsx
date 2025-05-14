@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { identity, isEqual } from "lodash";
 import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -74,7 +74,8 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         });
     }, [node, scenario]);
 
-    const [status, setStatus] = useEditState();
+    const [status, setStatus, statusRef] = useEditState();
+
     const performNodeEdit = useCallback(
         async (editedNode: EditedNode, outputEdges: Edge[]) => {
             setStatus("processing");
@@ -94,14 +95,17 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
                 setStatus("error");
             }
         },
-        [dispatch, scenario, node, autoApply, setStatus],
+        [setStatus, dispatch, scenario, node, autoApply],
     );
-    const performNodeEditDebounced = useDebounce(performNodeEdit, 750);
+    const performNodeEditDebounced = useDebounce(performNodeEdit, 1500);
 
     const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
 
     const onChange = useCallback(
-        (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = (e) => e) => {
+        (nodeChange: SetStateAction<EditedNode>, edgesChange: SetStateAction<Edge[]> = identity) => {
+            if (statusRef.current === "processing") return;
+            performNodeEditDebounced.cancel();
+
             const editedNode$ = new PendingPromise<[EditedNode, boolean]>();
             const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
 
@@ -125,15 +129,16 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
                 return nextOutputEdges;
             });
 
-            Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
-                if (!autoApply) return;
-                if (!nodeChanged && !edgesChanged) return;
+            if (autoApply) {
+                Promise.all([editedNode$, outputEdges$]).then(([[node, nodeChanged], [edges, edgesChanged]]) => {
+                    if (!nodeChanged && !edgesChanged) return;
 
-                setStatus("pending");
-                performNodeEditDebounced(node, edges);
-            });
+                    setStatus("pending");
+                    performNodeEditDebounced(node, edges);
+                });
+            }
         },
-        [autoApply, performNodeEditDebounced, setStatus],
+        [autoApply, performNodeEditDebounced, setStatus, statusRef],
     );
 
     return {

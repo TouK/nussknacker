@@ -11,7 +11,7 @@ private[definition] class MethodBasedComponentImplementationInvoker(
     with LazyLogging {
 
   override def invokeMethod(params: Params, outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
-    methodDef.invoke(obj, params.nameToValueMap, outputVariableNameOpt, additional)
+    methodDef.invoke(obj, params.nameToRawValueMap, outputVariableNameOpt, additional)
   }
 
 }

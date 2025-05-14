@@ -36,7 +36,7 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
 
     val value = LazyParameter.pure(java.lang.Long.valueOf(1L), Typed[java.lang.Long])
 
-    val parameterValues = Params(Map(ParameterName("a") -> value, ParameterName("b.c") -> value))
+    val parameterValues = Params.fromRawValuesMap(Map(ParameterName("a") -> value, ParameterName("b.c") -> value))
 
     val sinkParam = AvroSchemaBasedParameter(recordSchema, Set.empty).valueOr(e => fail(e.toString))
 
@@ -54,7 +54,7 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
   test("sink params to SinkSingleValue") {
     val longSchema      = SchemaBuilder.builder().longType()
     val value           = LazyParameter.pure(java.lang.Long.valueOf(1L), Typed[java.lang.Long])
-    val parameterValues = Params(Map(sinkValueParamName -> value))
+    val parameterValues = Params.fromRawValuesMap(Map(sinkValueParamName -> value))
     val sinkParam       = AvroSchemaBasedParameter(longSchema, Set.empty).valueOr(e => fail(e.toString))
 
     SinkValue

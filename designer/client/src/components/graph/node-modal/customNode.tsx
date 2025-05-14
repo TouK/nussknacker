@@ -10,6 +10,7 @@ import { IdField } from "./IdField";
 import { isAggregate } from "./isAggregate";
 import { NodeField } from "./NodeField";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export type CustomNodeProps = {
     errors: NodeValidationError[];
@@ -19,7 +20,7 @@ export type CustomNodeProps = {
     parameterDefinitions: UIParameter[];
     processDefinitionData: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 };

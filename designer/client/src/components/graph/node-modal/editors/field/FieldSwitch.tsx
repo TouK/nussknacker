@@ -87,12 +87,21 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
         [readOnly, allowsSwitch, t],
     );
 
-    const [selectedEditor, setSelectedEditor] = useState(
-        availableEditors.find((editor) => {
-            const editorParameters = editorsParameters[editor.type];
+    const [selectedEditorType, setSelectedEditorType] = useState<Editor["type"]>(
+        () =>
+            availableEditors.find((editor) => {
+                const editorParameters = editorsParameters[editor.type];
 
-            return editorParameters?.language === expressionObj?.language && allowsSwitch(editor);
-        }) ?? availableEditors[0],
+                return editorParameters?.language === expressionObj.language;
+            })?.type,
+    );
+
+    const selectedEditor = useMemo(
+        () =>
+            availableEditors.find((editor) => {
+                return editor.type === selectedEditorType && allowsSwitch(editor);
+            }) ?? availableEditors[0],
+        [allowsSwitch, availableEditors, selectedEditorType],
     );
 
     const availableEditorsOptions: (Option & { hint: string | undefined })[] = useMemo(
@@ -144,7 +153,7 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
                                 ? editorComponent?.parseValueOnEditorChange(expressionObj, editorParameters.language)
                                 : { ...expressionObj, language: editorParameters.language },
                         );
-                        setSelectedEditor(availableEditors.find((availableEditorsOption) => availableEditorsOption.type === value));
+                        setSelectedEditorType(selectedEditor.type);
                     }}
                 >
                     {availableEditorsOptions.map((option, index) => (

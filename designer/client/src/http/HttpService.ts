@@ -981,12 +981,18 @@ class HttpService {
         });
     }
 
-    async nodeActions(scenarioName: string, actionName: "send-sample-request" | "generate-endpoint", nodeData: NodeType) {
+    async nodeActions(
+        scenarioName: string,
+        actionName: "send-sample-request" | "generate-endpoint",
+        nodeData: NodeType,
+    ): Promise<
+        { result: { topic: string; actionName: "GenerateEndpointResult" } } | { result: { actionName: "SendSampleRequestResult" } }
+    > {
         try {
             return await api.post(`/custom/nodes/${scenarioName}/actions`, { actionName, nodeData });
         } catch (error) {
             return await Promise.reject(
-                this.#addError(i18next.t("notification.error.failedToSendHttpRequest", `Failed to send ${actionName} action`), error),
+                this.#addError(i18next.t("notification.error.failedToSendNodeAction", `Failed to send ${actionName} action`), error),
             );
         }
     }

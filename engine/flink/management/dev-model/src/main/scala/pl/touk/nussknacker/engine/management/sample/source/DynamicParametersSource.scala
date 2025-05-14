@@ -18,7 +18,7 @@ object DynamicParametersSource extends SourceFactory with DynamicParametersMixin
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): AnyRef = {
-    val paramsTyping = params.nameToValueMap.filterNot(_._1 == choiceParamName).map { case (paramName, value) =>
+    val paramsTyping = params.nameToRawValueMap.filterNot(_._1 == choiceParamName).map { case (paramName, value) =>
       paramName.value -> value
     }
     new CollectionSource[Any](List(TypedMap(paramsTyping)), None, Unknown)

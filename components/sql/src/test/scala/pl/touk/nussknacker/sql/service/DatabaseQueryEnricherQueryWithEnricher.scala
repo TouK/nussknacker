@@ -33,7 +33,7 @@ trait DatabaseQueryEnricherQueryWithEnricher extends BaseDatabaseQueryEnricherTe
     )
     st.close()
     val implementation = databaseQueryEnricher.implementation(
-      params = Params(
+      params = Params.fromRawValuesMap(
         parameters.map { case (k, v) => (ParameterName(k), v) }
           + (DatabaseQueryEnricher.cacheTTLParamName -> null)
       ),
@@ -60,7 +60,7 @@ trait DatabaseQueryEnricherQueryWithEnricher extends BaseDatabaseQueryEnricherTe
       strategy = UpdateResultStrategy
     )
     val implementation = databaseQueryEnricher.implementation(
-      params = Params(
+      params = Params.fromRawValuesMap(
         parameters.map { case (k, v) => (ParameterName(k), v) }
           + (DatabaseQueryEnricher.cacheTTLParamName -> null)
       ),

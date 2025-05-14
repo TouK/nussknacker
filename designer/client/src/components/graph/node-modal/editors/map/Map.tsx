@@ -1,14 +1,15 @@
 import React, { createContext, useCallback, useMemo } from "react";
 
-import type { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+import type { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
 import { DndItems } from "../../../../common/dndItems/DndItems";
 import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
 import { useDiffMark } from "../../PathsToMark";
+import type { SetProperty } from "../../useNodeTypeDetailsContentLogic";
 import MapRow from "./MapRow";
 
 interface MapProps<F extends Field> {
-    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty?: SetProperty;
     readOnly?: boolean;
     showValidation?: boolean;
     variableTypes: VariableTypes;
@@ -24,7 +25,7 @@ interface MapProps<F extends Field> {
 export const MapItemsCtx = createContext<{
     readOnly?: boolean;
     showValidation?: boolean;
-    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty?: SetProperty;
     isMarked: (path: string) => boolean;
     errors: NodeValidationError[];
     variableTypes: VariableTypes;
@@ -62,6 +63,7 @@ export function Map<F extends Field>({
     );
 
     const changeOrder = useCallback((value) => setProperty(namespace, value), [namespace, setProperty]);
+    const changeValue = useCallback((path, value) => setProperty(`${namespace}${path}`, value), [namespace, setProperty]);
 
     const items = useMemo(
         () =>
@@ -82,7 +84,7 @@ export function Map<F extends Field>({
                 value={{
                     readOnly,
                     isMarked: (path) => isMarked(`${namespace}.${path}`),
-                    setProperty: (path, value) => setProperty(`${namespace}.${path}`, value),
+                    setProperty: changeValue,
                     showValidation,
                     errors,
                     variableTypes,

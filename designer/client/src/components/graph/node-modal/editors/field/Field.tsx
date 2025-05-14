@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import React from "react";
+import React, { memo } from "react";
 
 import type { FieldError } from "../Validators";
 import Checkbox from "./Checkbox";
@@ -30,7 +30,7 @@ export interface FieldProps {
     description?: string;
 }
 
-export default function Field({ type, children, ...props }: PropsWithChildren<FieldProps>): JSX.Element {
+export default memo(function Field({ type, children, ...props }: PropsWithChildren<FieldProps>): JSX.Element {
     switch (type) {
         case FieldType.input:
             return (
@@ -61,4 +61,4 @@ export default function Field({ type, children, ...props }: PropsWithChildren<Fi
         default:
             return <UnknownField />;
     }
-}
+});

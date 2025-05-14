@@ -3,6 +3,7 @@ import React from "react";
 import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { SourceSinkCommon } from "./SourceSinkCommon";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface SourceProps {
     errors: NodeValidationError[];
@@ -11,7 +12,7 @@ interface SourceProps {
     showSwitch?: boolean;
     node: NodeType;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showValidation?: boolean;
     isEditMode?: boolean;
 }
