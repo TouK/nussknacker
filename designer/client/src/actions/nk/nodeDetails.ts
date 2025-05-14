@@ -69,12 +69,13 @@ const validate = debounce(
     500,
 );
 
-export function validateNodeData(processName: string, validationRequestData: ValidationRequest): ThunkAction {
+export function validateNodeData(processName: string, validationRequestData: ValidationRequest, callback?: () => void): ThunkAction {
     return (dispatch, getState) => {
         validate(processName, validationRequestData, (nodeId, data) => {
             // node details view creates this on open and removes after close
             if (data && getNodeDetails(getState())(nodeId)) {
                 dispatch(nodeValidationDataUpdated(nodeId, data));
+                callback?.();
             }
         });
     };

@@ -63,7 +63,15 @@ export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: 
                      */}
                     {paramWithIndex.param.name === "Endpoint" && settings["node.showGenerateEndpointButton"] && (
                         <Box display={"flex"} justifyContent={"flex-end"}>
-                            <GenerateNewEndpoint node={node} />
+                            <GenerateNewEndpoint
+                                node={node}
+                                handleNewEndpointGenerated={(topic: string) => {
+                                    const expressionProperty = "expression.expression";
+                                    const expressionPath = `${getListFieldPath(paramWithIndex.index)}${expressionProperty}`;
+
+                                    props.setProperty(expressionPath, topic);
+                                }}
+                            />
                         </Box>
                     )}
 

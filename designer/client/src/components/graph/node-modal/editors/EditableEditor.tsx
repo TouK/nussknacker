@@ -98,7 +98,7 @@ function EditableEditorRow({
                 {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
                 <EditableEditor {...props} />
                 {endAdornment && (
-                    <Box display={"flex"} alignItems={"center"} justifyContent={"center"} ml={0.5} sx={{ cursor: "pointer" }}>
+                    <Box display={"flex"} mt={0.5} justifyContent={"center"} ml={0.5} sx={{ cursor: "pointer" }}>
                         {endAdornment}
                     </Box>
                 )}

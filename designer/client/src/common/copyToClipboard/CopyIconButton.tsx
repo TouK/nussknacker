@@ -18,8 +18,8 @@ interface Props {
 }
 export const CopyIconButton = ({ isCopied, onClick }: Props) => {
     return (
-        <InfoTooltip variant={"hover"} title={isCopied ? "Copied!" : "Copy code"}>
-            <StyledCopyIconButton size="small" onClick={onClick} aria-label="copy code" className={"copy-button"}>
+        <InfoTooltip variant={"hover"} title={isCopied ? "Copied!" : "Copy"}>
+            <StyledCopyIconButton size="small" onClick={onClick} aria-label="copy" className={"copy-button"}>
                 {isCopied ? <Done fontSize="small" /> : <ContentCopy fontSize="small" />}
             </StyledCopyIconButton>
         </InfoTooltip>
