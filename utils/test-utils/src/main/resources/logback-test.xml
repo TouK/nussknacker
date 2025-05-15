@@ -59,7 +59,6 @@
     <!-- in tests we frequently encounter "Error while fetching metadata" WARNings when auto-creating topics -->
     <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
     <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
-    <logger name="org.apache.kafka.clients.admin" level="TRACE"/>
 
     <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
