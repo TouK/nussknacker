@@ -3,11 +3,11 @@ import React, { memo, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { RootState } from "../../../reducers";
-import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { getIsRunning } from "../../../reducers/selectors/scenarioState";
 import type { UIActivity } from "./ActivitiesPanel";
-import { DateItem, ActivityItem, ToggleButtonItem } from "./ActivityPanelRowItem";
+import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
+import { ActivityTypesRelatedToExecutions } from "./types";
 
 interface Props {
     index: number;
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRows, handleHideRows, activities, searchQuery }: Props) => {
-    const scenarioState = useSelector((state: RootState) => getProcessState(state));
+    const isRunning = useSelector(getIsRunning);
 
     const { t } = useTranslation();
     const rowRef = useRef<HTMLDivElement>(null);
@@ -30,7 +30,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         [activities],
     );
     const scenarioStatusesToActiveDeploy = ["RUNNING", "SCHEDULED"];
-    const isDeploymentActive = firstDeployedIndex === index && scenarioStatusesToActiveDeploy.includes(scenarioState.status.name);
+    const isDeploymentActive = firstDeployedIndex === index && isRunning;
     const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
     useEffect(() => {
