@@ -17,11 +17,11 @@ private class LazyKafkaAdminClientCache extends LazyLogging {
   def getOrCreate(kafkaConfig: KafkaConfig)(create: => Admin): Admin = synchronized {
     cache.get(kafkaConfig) match {
       case Some(cacheValue) =>
-        logger.info(s"Reusing existing client for config: $kafkaConfig")
+        logger.info(s"Reusing existing client for: ${kafkaConfig.kafkaBootstrapServers}")
         cache += (kafkaConfig -> cacheValue.incrementUsage)
         cacheValue.client
       case None =>
-        logger.info(s"Creating new client for config: $kafkaConfig")
+        logger.info(s"Creating new client for: ${kafkaConfig.kafkaBootstrapServers}")
         val newClient = create
         cache += (kafkaConfig -> CacheValue(newClient, usedCount = 1))
         newClient
@@ -31,17 +31,20 @@ private class LazyKafkaAdminClientCache extends LazyLogging {
   def close(kafkaConfig: KafkaConfig): Unit = synchronized {
     cache.get(kafkaConfig) match {
       case Some(cacheValue) if cacheValue.usedCount == 1 =>
-        logger.info(s"Closing client for config: $kafkaConfig")
+        logger.info(s"Closing client for: ${kafkaConfig.kafkaBootstrapServers}")
         try {
           cacheValue.client.close(java.time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis))
         } finally {
           cache -= kafkaConfig
         }
       case Some(cacheValue) =>
-        logger.info(s"Closing client for config: $kafkaConfig, but it is still used by others")
-        cache += (kafkaConfig -> cacheValue.decrementUsage)
+        val decrementedUsage = cacheValue.decrementUsage
+        logger.info(
+          s"Closing client for: ${kafkaConfig.kafkaBootstrapServers}, but it is still used by other ${decrementedUsage.usedCount} clients"
+        )
+        cache += (kafkaConfig -> decrementedUsage)
       case None =>
-        logger.warn(s"Trying to close already closed or never opened client for config: $kafkaConfig")
+        logger.warn(s"Trying to close already closed or never opened client for: ${kafkaConfig.kafkaBootstrapServers}")
     }
   }
 
@@ -76,7 +79,7 @@ class LazyKafkaAdminClient private[kafka] (cache: LazyKafkaAdminClientCache, kaf
           initializationState = InitializationState.Closed
         }
       case InitializationState.Closed =>
-        logger.warn(s"Client for config: $kafkaConfig already closed in this instance")
+        logger.warn(s"Client for: ${kafkaConfig.kafkaBootstrapServers} already closed in this instance")
     }
   }
 
