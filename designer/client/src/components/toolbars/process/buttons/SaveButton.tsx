@@ -15,6 +15,7 @@ import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
+
 function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { disabled, type } = props;
@@ -64,11 +65,15 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
         });
     };
 
-    const available = !disabled && !saveDisabled && capabilities.write;
+    const unsavedChanges = !saveDisabled;
+    const available = !disabled && unsavedChanges && capabilities.write;
 
     return (
         <ToolbarButton
-            name={saveDisabled ? t("panels.actions.process-save.button", "save") : t("panels.actions.process-save.buttonUnsaved", "save*")}
+            name={
+                unsavedChanges ? t("panels.actions.process-save.buttonUnsaved", "save*") : t("panels.actions.process-save.button", "save")
+            }
+            showIndicator={unsavedChanges}
             icon={<Icon />}
             disabled={!available}
             onClick={onClick}

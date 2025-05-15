@@ -44,7 +44,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val implementation = service.implementation(
-      params = Params(
+      params = Params.fromRawValuesMap(
         Map(
           DatabaseQueryEnricher.cacheTTLParamName  -> null,
           DatabaseLookupEnricher.KeyValueParamName -> 1L

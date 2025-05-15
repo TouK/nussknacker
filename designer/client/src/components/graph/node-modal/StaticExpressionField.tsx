@@ -5,6 +5,7 @@ import ExpressionField from "./editors/expression/ExpressionField";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { findParamDefinitionByName } from "./parameterHelpers";
 import { useTestResults } from "./TestResultsWrapper";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({
@@ -26,7 +27,7 @@ export function StaticExpressionField({
     node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {

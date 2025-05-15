@@ -1,13 +1,21 @@
+import { isEqual } from "lodash";
+
 import type { Action, Reducer, ThunkAction } from "../../actions/reduxTypes";
 import { getHistoryCounts } from "../selectors/getHistory";
 import type { GraphStateWithHistory } from "./reducer";
+import { getUndoableState } from "./reducer";
 
 export const appendHistorySquashLogic: Reducer<GraphStateWithHistory> = (state, action) => {
     const { snapshots = [], ...passState } = state;
     switch (action.type) {
         case "SQUASH_HISTORY": {
-            const { from, to = passState.past.length } = action;
-            const squashedPast = passState.past.filter((p, i) => i <= from || to < i);
+            const { from, to = passState.past.length - 1 } = action;
+            const squashedPast = passState.past
+                .filter((p, i) => i <= from || to < i)
+                .filter((p, i, arr) => {
+                    if (i === from) return !isEqual(getUndoableState(p), getUndoableState(arr[from + 1] || passState.present));
+                    return true;
+                });
             return {
                 ...passState,
                 past: squashedPast,

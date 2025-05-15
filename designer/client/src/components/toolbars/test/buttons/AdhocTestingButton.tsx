@@ -1,11 +1,10 @@
 import loadable from "@loadable/component";
-import React, { useCallback, useContext } from "react";
+import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { getTestParameters, getTestResultsLoading } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
-import { NodeContext } from "../../../graph/node-modal/node/NodeDetails";
 import type { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
 import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
@@ -53,8 +52,6 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
         });
     }, [action, docs, markdownContent, open, t]);
 
-    const nodeContext = useContext(NodeContext);
-
     return (
         <ToolbarButton
             name={name || t("panels.actions.adhoc-testing.button.name", "ad hoc")}
@@ -66,7 +63,7 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
                 if (sourcesFound > 1) {
                     return multipleSourcesTest();
                 }
-                if (action.previousTestData && Boolean(nodeContext) != e.shiftKey) {
+                if (action.previousTestData && e.shiftKey) {
                     return action.onConfirmAction(action.previousTestData);
                 }
                 return oneSourceTest();

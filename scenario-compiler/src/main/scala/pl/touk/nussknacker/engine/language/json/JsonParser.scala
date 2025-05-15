@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.language.json
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{invalidNel, Valid}
 import io.circe.{parser, Json}
+import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
@@ -39,10 +40,16 @@ object JsonParser extends ExpressionParser {
   }
 
   private def parseJson(jsonString: String): Validated[NonEmptyList[JsonParsingError], Json] =
-    parser.parse(jsonString) match {
-      case Left(error) => invalidNel(JsonParsingError(error.message))
-      case Right(json) => Valid(json)
+    if (shouldBeTreatedAsNull(jsonString)) {
+      Valid(Json.Null)
+    } else {
+      parser.parse(jsonString) match {
+        case Left(error) => invalidNel(JsonParsingError(error.message))
+        case Right(json) => Valid(json)
+      }
     }
+
+  private def shouldBeTreatedAsNull(jsonString: String) = StringUtils.isBlank(jsonString)
 
   case class CompiledJsonExpression(originalJsonString: String, json: Json) extends CompiledExpression {
 

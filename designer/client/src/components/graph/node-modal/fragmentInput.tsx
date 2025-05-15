@@ -7,6 +7,7 @@ import { DisableField } from "./DisableField";
 import { IdField } from "./IdField";
 import OutputParametersList from "./OutputParametersList";
 import { ParameterExpressionField } from "./ParameterExpressionField";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 import { useParametersList } from "./useParametersList";
 
 interface FragmentInput {
@@ -17,7 +18,7 @@ interface FragmentInput {
     parameterDefinitions: UIParameter[];
     processDefinitionData?: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }

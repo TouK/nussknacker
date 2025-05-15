@@ -76,6 +76,11 @@ export const getTestResultsLoading = createSelector(getGraph, (g) => g.testResul
 export const getTestData = createSelector(getGraph, (g) => g.testData || ({} as TestData));
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
+export const getIsTestingMode = createSelector(
+    getTestResults,
+    getProcessCounts,
+    (results, counts) => !isEmpty(results) || !isEmpty(counts),
+);
 
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],

@@ -1,7 +1,8 @@
 import type { PropsOf } from "@emotion/react";
 import { ArrowDropDown } from "@mui/icons-material";
 import { Menu, MenuItem, styled } from "@mui/material";
-import React, { useContext } from "react";
+import type { PopoverPosition } from "@mui/material/Popover/Popover";
+import React, { forwardRef, useContext } from "react";
 
 import type { Option } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { Button } from "./Button";
@@ -29,17 +30,21 @@ const ExpandButton = styled(Button)(({ theme }) => {
     };
 });
 
-export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange, className, buttonProps }: ToolbarButtonMenuWrapperProps) {
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapperProps>(function ButtonMenu(
+    { options = [], selected, onChange, className, buttonProps },
+    ref
+) {
+    const [anchorPosition, setAnchorPosition] = React.useState<null | PopoverPosition>(null);
     const { variant } = useContext(ToolbarButtonsContext);
 
     if (options.length < 1) {
-        return <ToolbarButton {...buttonProps} className={className} />;
+        return <ToolbarButton {...buttonProps} ref={ref} className={className} />;
     }
 
     return (
         <ToolbarButton
             {...buttonProps}
+            ref={ref}
             className={className}
             sx={{
                 "&:has(.toolbarButton-MenuExpand:hover)": {
@@ -76,17 +81,18 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
                 disabled={buttonProps.disabled}
                 onClick={(e) => {
                     e.stopPropagation();
-                    setAnchorEl(e.currentTarget);
+                    setAnchorPosition({ top: e.clientY, left: e.clientX });
                 }}
             >
                 <ArrowDropDown />
             </ExpandButton>
             <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
+                anchorReference="anchorPosition"
+                anchorPosition={anchorPosition}
+                open={Boolean(anchorPosition)}
                 onClose={(e: Event) => {
                     e.stopPropagation();
-                    setAnchorEl(null);
+                    setAnchorPosition(null);
                 }}
             >
                 {options.map((option) => (
@@ -97,7 +103,7 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
                         onClick={(e) => {
                             e.stopPropagation();
                             onChange(option);
-                            setAnchorEl(null);
+                            setAnchorPosition(null);
                         }}
                     >
                         {option.label}
@@ -107,4 +113,4 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
             {buttonProps.children}
         </ToolbarButton>
     );
-};
+});

@@ -1,3 +1,4 @@
+import { isEqual } from "lodash";
 import React from "react";
 import { useSelector } from "react-redux";
 
@@ -5,6 +6,7 @@ import type { RootState } from "../../../reducers";
 import type { NodeType, NodeValidationError, VariableTypes } from "../../../types";
 import MapVariable from "./MapVariable";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function VariableBuilder({
     addElement,
@@ -23,12 +25,11 @@ export function VariableBuilder({
     node: NodeType;
     removeElement: (property: keyof NodeType, uuid: string) => void;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showValidation?: boolean;
     variableTypes?: VariableTypes;
 }): JSX.Element {
-    const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id));
-
+    const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id), isEqual);
     return (
         <MapVariable
             renderFieldLabel={renderFieldLabel}
