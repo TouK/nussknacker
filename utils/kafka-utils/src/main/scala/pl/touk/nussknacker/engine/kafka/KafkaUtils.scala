@@ -9,7 +9,6 @@ import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import java.time
 import java.util.{Collections, Properties}
@@ -34,7 +33,7 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def createLazyKafkaAdminClient(kafkaConfig: KafkaConfig): LazyKafkaAdminClient = {
-    new LazyKafkaAdminClient(createKafkaAdminClient(kafkaConfig))
+    new LazyKafkaAdminClient(LazyKafkaAdminClientCache.instance, kafkaConfig, createKafkaAdminClient(kafkaConfig))
   }
 
   def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
@@ -230,15 +229,3 @@ trait KafkaUtils extends LazyLogging {
 }
 
 case class PreparedKafkaTopic[T <: TopicName](original: T, prepared: T)
-
-class LazyKafkaAdminClient private[kafka] (create: => Admin) extends AutoCloseable {
-  private val cache: SingleValueCache[Admin] = new SingleValueCache(expireAfterAccess = None, expireAfterWrite = None)
-
-  def getOrCreate: Admin = cache.getOrCreate(create)
-
-  // TODO: In fact we never close the client, we would need to add a lifecycle to components created by component providers.
-  override def close(): Unit = {
-    cache.get().foreach(_.close(time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis)))
-  }
-
-}
