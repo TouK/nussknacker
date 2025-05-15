@@ -29,17 +29,17 @@ private class LazyKafkaAdminClientCache extends LazyLogging {
   def close(kafkaConfig: KafkaConfig): Unit = synchronized {
     cache.get(kafkaConfig) match {
       case Some(cacheValue) if cacheValue.usedCount == 1 =>
-        logger.info(s"Closing Kafka client for config: $kafkaConfig")
+        logger.info(s"Closing client for config: $kafkaConfig")
         try {
           cacheValue.client.close(java.time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis))
         } finally {
           cache -= kafkaConfig
         }
       case Some(cacheValue) =>
-        logger.info(s"Closing Kafka client for config: $kafkaConfig, but it is still used by others")
+        logger.info(s"Closing client for config: $kafkaConfig, but it is still used by others")
         cache += (kafkaConfig -> cacheValue.decrementUsage)
       case None =>
-        logger.warn("Trying to close already closed or never opened client")
+        logger.warn(s"Trying to close already closed or never opened client for config: $kafkaConfig")
     }
   }
 
