@@ -33,7 +33,7 @@ case class KafkaConfig(
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     showTopicsWithoutSchema: Boolean = true,
-    topicsWithoutSchemaFetchTimeout: FiniteDuration = 1 second
+    topicsWithoutSchemaFetchTimeout: FiniteDuration = 10 seconds
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
