@@ -30,7 +30,7 @@ class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaReg
 
 class AllNonHiddenTopicsSelectionStrategy(
     schemaRegistryClient: SchemaRegistryClient,
-    lazyKafkaAdminClient: Admin,
+    lazyKafkaAdminClient: LazyKafkaAdminClient,
     fetchTimeout: FiniteDuration
 ) extends TopicSelectionStrategy
     with LazyLogging {
@@ -40,7 +40,7 @@ class AllNonHiddenTopicsSelectionStrategy(
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        lazyKafkaAdminClient
+        lazyKafkaAdminClient.getOrCreate
           .listTopics(new ListTopicsOptions().timeoutMs(fetchTimeout.toMillis.toInt))
           .names()
           .get()
