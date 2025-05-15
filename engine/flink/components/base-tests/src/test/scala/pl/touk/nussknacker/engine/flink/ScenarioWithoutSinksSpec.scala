@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class ScenarioWithoutSinksSpec
@@ -180,6 +181,101 @@ class ScenarioWithoutSinksSpec
           Map("input" -> 20, "timesFour" -> 80),
           Map("input" -> 30, "timesFour" -> 120),
           Map("input" -> 40, "timesFour" -> 160),
+        )
+      },
+      allowEndingScenarioWithoutSink = true,
+    )
+  }
+
+  test("ending without sink is allowed - there is a split with no continuations") {
+    val scenario =
+      ScenarioBuilder
+        .streaming("sample-split")
+        .source("start-foo", "start1")
+        .split(
+          "split",
+          GraphBuilder.endWithoutSink,
+          GraphBuilder.endWithoutSink
+        )
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        assertNumberOfSamplesThatFinishedInNode(testResults, "split", 4)
+        transitionVariables(testResults, "start-foo", Some("split")) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+        transitionVariables(testResults, "split", None) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+      },
+      allowEndingScenarioWithoutSink = true,
+    )
+  }
+
+  test("ending without sink is allowed - there is a switch with no continuations") {
+    val scenario =
+      ScenarioBuilder
+        .streaming("sample-split")
+        .source("start-foo", "start1")
+        .switch(
+          "switch",
+          "''".spel,
+          "var",
+          Case("'1'".spel, GraphBuilder.endWithoutSink),
+          Case("'2'".spel, GraphBuilder.endWithoutSink)
+        )
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        assertNumberOfSamplesThatFinishedInNode(testResults, "switch", 4)
+        transitionVariables(testResults, "start-foo", Some("switch")) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+        transitionVariables(testResults, "switch", None) shouldBe Set(
+          Map("input" -> 10, "var" -> ""),
+          Map("input" -> 20, "var" -> ""),
+          Map("input" -> 30, "var" -> ""),
+          Map("input" -> 40, "var" -> ""),
+        )
+      },
+      allowEndingScenarioWithoutSink = true,
+    )
+  }
+
+  test("ending without sink is allowed - there is a logging processor with no continuations") {
+    val scenario =
+      ScenarioBuilder
+        .streaming("sample-split")
+        .source("start-foo", "start1")
+        .processor("processor", "loggerService", "all" -> "'abrakadabra'".spel)
+        .endWithoutSink
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        assertNumberOfSamplesThatFinishedInNode(testResults, "processor", 4)
+        transitionVariables(testResults, "start-foo", Some("processor")) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+        transitionVariables(testResults, "processor", None) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
         )
       },
       allowEndingScenarioWithoutSink = true,

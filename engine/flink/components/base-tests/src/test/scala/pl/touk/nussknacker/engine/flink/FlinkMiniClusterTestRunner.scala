@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElemen
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.LogService
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -57,13 +58,19 @@ trait FlinkMiniClusterTestRunner { _: FlinkSpec =>
       }
     LocalModelData(
       config,
-      sourcesWithMockedData.toList.map { case (name, data) =>
-        ComponentDefinition(name, sourceComponent(data))
-      } :::
+      List(
+        sourcesWithMockedData.toList.map { case (name, data) =>
+          ComponentDefinition(name, sourceComponent(data))
+        },
         FlinkBaseUnboundedComponentProvider.create(
           DocsConfig.Default,
           aggregateWindowsConfig
-        ) ::: FlinkBaseComponentProvider.Components,
+        ),
+        FlinkBaseComponentProvider.Components,
+        List(
+          ComponentDefinition("loggerService", LogService)
+        ),
+      ).flatten,
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
   }

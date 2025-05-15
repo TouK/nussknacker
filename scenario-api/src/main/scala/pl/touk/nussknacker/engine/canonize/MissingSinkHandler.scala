@@ -6,7 +6,12 @@ import pl.touk.nussknacker.engine.graph.node
 //  - older behavior is that error is returned for missing sinks
 //  - new behavior, which we intend to become the default and only one in the future, allows ending scenario without sink
 sealed trait MissingSinkHandler {
-  def handleMissingSink(previousNodeId: String): MaybeArtificial[Option[node.SubsequentNode]]
+
+  def handleMissingSink(
+      previousNodeId: String,
+      nodeOnMissingSink: Option[node.SubsequentNode],
+  ): MaybeArtificial[Option[node.SubsequentNode]]
+
 }
 
 object MissingSinkHandler {
@@ -14,18 +19,20 @@ object MissingSinkHandler {
   object AllowMissingSinkHandler extends MissingSinkHandler {
 
     override def handleMissingSink(
-        previousNodeId: String
+        previousNodeId: String,
+        nodeOnMissingSink: Option[node.SubsequentNode],
     ): MaybeArtificial[Option[node.SubsequentNode]] =
-      new MaybeArtificial(None, Nil)
+      new MaybeArtificial(nodeOnMissingSink, Nil)
 
   }
 
   object DoNotAllowMissingSinkHandler extends MissingSinkHandler {
 
     override def handleMissingSink(
-        previousNodeId: String
+        previousNodeId: String,
+        nodeOnMissingSink: Option[node.SubsequentNode],
     ): MaybeArtificial[Option[node.SubsequentNode]] =
-      new MaybeArtificial(None, InvalidTailOfBranch(previousNodeId) :: Nil)
+      new MaybeArtificial(nodeOnMissingSink, InvalidTailOfBranch(previousNodeId) :: Nil)
 
   }
 
