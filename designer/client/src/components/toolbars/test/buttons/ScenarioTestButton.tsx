@@ -161,7 +161,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                 };
             }}
             isLoading={isLoading}
-            disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges}
+            disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges || isLoading}
             onClick={() => openDialog(preset)}
             type={type}
             presets={presets}
