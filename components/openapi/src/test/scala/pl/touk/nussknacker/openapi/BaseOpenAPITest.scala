@@ -59,7 +59,7 @@ trait BaseOpenAPITest {
         service = service,
         config = config,
         clientProvider = (_: ExecutionContext) => backend,
-        params = Params(params),
+        params = Params.fromRawValuesMap(params),
         getTimeMeasurement = getTimeMeasurement
       )
     }.toMap

@@ -58,7 +58,7 @@ class OpenAPIServiceSpec
           service = services.head,
           config = config,
           clientProvider = new FixedAsyncHttpClientBackendProvider(client),
-          params = Params(Map(ParameterName("customer_id") -> "10")),
+          params = Params.fromRawValuesMap(Map(ParameterName("customer_id") -> "10")),
           getTimeMeasurement =
             () => new AsyncExecutionTimeMeasurement(TestEngineRuntimeContext(jobData), "openAPI", Map.empty)
         )
