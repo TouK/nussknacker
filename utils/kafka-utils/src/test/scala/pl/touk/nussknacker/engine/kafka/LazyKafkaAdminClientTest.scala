@@ -102,6 +102,7 @@ class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
   }
 
   "For multiple kafka configs" - {
+
     val kafkaConfig1 = KafkaConfig(
       kafkaProperties = Some(Map("bootstrap.servers" -> "host1:9092,host2:9092")),
       kafkaEspProperties = None,
@@ -110,6 +111,37 @@ class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
       kafkaProperties = Some(Map("bootstrap.servers" -> "host3:9092,host4:9092")),
       kafkaEspProperties = None,
     )
+
+    "should create admin client only once for each config" in {
+      val cache       = new LazyKafkaAdminClientCache
+      val lazyClient1 = new LazyKafkaAdminClient(cache, kafkaConfig1, mock[Admin])
+      val lazyClient2 = new LazyKafkaAdminClient(cache, kafkaConfig2, mock[Admin])
+
+      val returnedClient1ForConfig1 = lazyClient1.getOrCreate
+      val returnedClient2ForConfig1 = lazyClient1.getOrCreate
+      val returnedClient1ForConfig2 = lazyClient2.getOrCreate
+      val returnedClient2ForConfig2 = lazyClient2.getOrCreate
+
+      returnedClient1ForConfig1 shouldBe theSameInstanceAs(returnedClient2ForConfig1)
+      returnedClient1ForConfig2 shouldBe theSameInstanceAs(returnedClient2ForConfig2)
+      returnedClient1ForConfig1 should not be theSameInstanceAs(returnedClient1ForConfig2)
+    }
+
+    "should close admin client separately for each config" in {
+      val client1     = mock[Admin]
+      val client2     = mock[Admin]
+      val cache       = new LazyKafkaAdminClientCache
+      val lazyClient1 = new LazyKafkaAdminClient(cache, kafkaConfig1, client1)
+      val lazyClient2 = new LazyKafkaAdminClient(cache, kafkaConfig2, client2)
+
+      lazyClient1.getOrCreate
+      lazyClient2.getOrCreate
+      lazyClient1.close()
+      lazyClient2.close()
+
+      verify(client1).close(any[java.time.Duration]())
+      verify(client2).close(any[java.time.Duration]())
+    }
   }
 
 }
