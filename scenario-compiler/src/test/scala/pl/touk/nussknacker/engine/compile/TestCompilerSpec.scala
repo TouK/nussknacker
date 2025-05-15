@@ -7,16 +7,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.{Assertion, Test, TestSourceInput}
+import pl.touk.nussknacker.engine.graph.{Assertion, EnricherMock, Test, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.{JsonTemplate, Spel}
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -25,24 +26,26 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
 
   private val baseDefinition = ModelDefinitionBuilder.empty
     .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
+    .withService("enricher1", Some(Typed[String]), Parameter[String](ParameterName("par1")))
     .withSink("sink")
     .withGlobalVariable("TESTS", tests) // todo: move from here
     .build
 
   private val modelDefinitionWithClasses = ModelDefinitionWithClasses(baseDefinition)
 
-  test("initial test compiler test") {
+  test("should compile valid test for scenario") {
     val scenario = ScenarioBuilder
       .streaming("process1")
       .source("id1", "sourceWithUnknown")
+      .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
       .buildSimpleVariable("result-id2", "result", "#input".spel)
-      .emptySink("end-id2", "sink")
+      .emptySink("sink1", "sink")
 
     val test = Test(
       "someTest",
       inputs = Map("id1" -> List(TestSourceInput(Expression(JsonTemplate, """{"input": 1}""")))),
-      mocks = Map.empty,
-      assertions = Map("end-id2" -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
+      mocks = Map("enricher1" -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
+      assertions = Map("sink1" -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
     )
 
     val testCompilationResult = compileScenarioWithTests(scenario, test)
@@ -52,11 +55,12 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
       compiledTest.inputs("id1").size shouldBe 1
       compiledTest.inputs("id1").head.expression.original shouldBe """{"input": 1}"""
 
-      compiledTest.mocks shouldBe Map.empty
+      compiledTest.mocks.size shouldBe 1
+      compiledTest.mocks("enricher1").expression.original shouldBe "'someMockedOutput'"
 
       compiledTest.assertions.size shouldBe 1
-      compiledTest.assertions("end-id2").size shouldBe 1
-      compiledTest.assertions("end-id2").head.expression.original shouldBe "#TESTS.assertEquals(#results.size, 1)"
+      compiledTest.assertions("sink1").size shouldBe 1
+      compiledTest.assertions("sink1").head.expression.original shouldBe "#TESTS.assertEquals(#results.size, 1)"
     }
   }
 

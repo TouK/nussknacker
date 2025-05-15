@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationErro
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.node
@@ -41,9 +41,9 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
 
     def toCompilationResult[T](
         validated: ValidatedNel[ProcessCompilationError, T],
-        expressionsTypingInfo: Map[String, ExpressionTypingInfo]
+        expressionsTypingInfo: Map[String, ExpressionTypingInfo],
     ) =
-      CompilationResult(Map(n.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
+      CompilationResult(Map(n.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None, None)), validated)
 
     n match {
       case splittednode.SourceNode(nodeData, next)          => handleSourceNode(nodeData, ctx, next)
@@ -122,7 +122,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         expressionsTypingInfo: Map[String, ExpressionTypingInfo],
         parameters: Option[List[Parameter]]
     ) =
-      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters)), validated)
+      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters, None)), validated)
 
     data match {
       case processor @ Processor(id, _, disabled, _) =>
@@ -177,9 +177,10 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
     def toCompilationResult[T](
         validated: ValidatedNel[ProcessCompilationError, T],
         expressionsTypingInfo: Map[String, ExpressionTypingInfo],
-        parameters: Option[List[Parameter]]
+        parameters: Option[List[Parameter]],
+        outputTyping: Option[TypingResult] = None
     ) =
-      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters)), validated)
+      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters, outputTyping)), validated)
 
     data match {
       case variable @ Variable(id, varName, _, _) =>
@@ -211,11 +212,17 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         )
 
       case enricher @ Enricher(id, _, output, _) =>
+        val outputVar = OutputVar.enricher(output)
         val NodeCompilationResult(typingInfo, parameters, newCtx, validatedServiceRef, _) =
-          nodeCompiler.compileEnricher(enricher, ctx, outputVar = OutputVar.enricher(output))
+          nodeCompiler.compileEnricher(enricher, ctx, outputVar = outputVar)
 
         CompilationResult.map3(
-          toCompilationResult(validatedServiceRef, typingInfo, parameters),
+          toCompilationResult(
+            validatedServiceRef,
+            typingInfo,
+            parameters,
+            Some(newCtx.map(_.localVariables(outputVar.outputName)).getOrElse(Unknown))
+          ),
           CompilationResult(newCtx),
           compile(next, newCtx.getOrElse(ctx))
         )((ref, _, next) => compiledgraph.node.Enricher(id, ref, output, next))
@@ -282,7 +289,10 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           .map(cn => compiledgraph.node.NextNode(cn))
           .map(Some(_))
       case splittednode.PartRef(ref) =>
-        CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty, None)), Valid(compiledgraph.node.PartRef(ref)))
+        CompilationResult(
+          Map(ref -> NodeTypingInfo(ctx, Map.empty, None, None)),
+          Valid(compiledgraph.node.PartRef(ref))
+        )
           .map(Some(_))
     }
   }

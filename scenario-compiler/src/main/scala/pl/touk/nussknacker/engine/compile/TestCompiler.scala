@@ -1,37 +1,61 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, NodeId, ParamName}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledTest, CompiledTestSourceInput}
-import pl.touk.nussknacker.engine.graph.{Assertion, Test, TestSourceInput}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.compiledgraph.{
+  CompiledAssertion,
+  CompiledEnricherMock,
+  CompiledProcessParts,
+  CompiledTest,
+  CompiledTestSourceInput
+}
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
+import pl.touk.nussknacker.engine.graph.{Assertion, EnricherMock, Test, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
 
 class TestCompiler(expressionCompiler: ExpressionCompiler) {
 
+  // todo: take care what should be done when scenario is only partially compiled (there were some errors)
+
   def compile(test: Test, typing: Map[String, NodeTypingInfo]): ValidatedNel[ProcessCompilationError, CompiledTest] = {
-    val sources =
-      (for {
-        (sourceId, inputDataRecords) <- test.inputs
-      } yield compileInputRecords(NodeId(sourceId), inputDataRecords).map(sourceId -> _)).toList.sequence
+    val sources = test.inputs
+      .map { case (sourceId, inputDataRecords) =>
+        compileInputRecords(NodeId(sourceId), inputDataRecords).map(sourceId -> _)
+      }
+      .toList
+      .sequence
 
-    val assertionCompilationResults = (
-      for {
-        (node, assertions) <- test.assertions
-      } yield compileAssertions(NodeId(node), assertions, typing(node)).map(node -> _)
-    ).toList.sequence
+    val mocks = test.mocks
+      .map { case (nodeId, mock) =>
+        compileMock(NodeId(nodeId), mock, typing(nodeId)).map(nodeId -> _)
+      }
+      .toList
+      .sequence
 
-    ProcessCompilationError.ValidatedNelApplicative.map2( // todo: ensure that errors are cumulated
+    val assertions = test.assertions
+      .map { case (node, assertions) =>
+        compileAssertions(NodeId(node), assertions, typing(node)).map(node -> _)
+      }
+      .toList
+      .sequence
+
+    ProcessCompilationError.ValidatedNelApplicative.map3( // todo: ensure that errors are cumulated
       sources,
-      assertionCompilationResults
-    ) { (validSources, validAssertions) =>
+      mocks,
+      assertions
+    ) { (validSources, validMocks, validAssertions) =>
       CompiledTest(
         test.id,
         validSources.toMap,
-        Map.empty,
+        validMocks.toMap,
         validAssertions.toMap
       )
     }
@@ -53,6 +77,42 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
       .map(e => CompiledTestSourceInput(e.expression))
   }
 
+  private def compileMock(nodeId: NodeId, mock: EnricherMock, info: NodeTypingInfo) = {
+    compileEnricherMockExpression(
+      mock.expression,
+      info.outputTyping.getOrElse(throw new IllegalStateException("Output typing for enricher must be provided")),
+      info.inputValidationContext
+    )(nodeId)
+      .map(CompiledEnricherMock(_))
+  }
+
+  private def compileEnricherMockExpression(expression: Expression, expectedType: TypingResult, ctx: ValidationContext)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
+    expressionCompiler
+      .compile(expression, Some(ParameterName("$mockExpression")), ctx, expectedType) match {
+      case Valid(typedExpression) =>
+        // todo: this verification probably should be moved to JsonTemplateParser
+        if (typedExpression.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType)) {
+          Valid(typedExpression.expression)
+        } else {
+          val message = ExpressionTypeError(expectedType, typedExpression.typingInfo.typingResult).message
+          Invalid(
+            NonEmptyList.one(
+              ExpressionParserCompilationError(
+                message,
+                nodeId.id,
+                Some(ParameterName("$mockExpression")),
+                expression.expression,
+                None
+              )
+            )
+          )
+        }
+      case invalid @ Invalid(_) => invalid
+    }
+  }
+
   private def compileAssertions(
       nodeId: NodeId,
       assertions: List[Assertion],
@@ -63,17 +123,18 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
         "results",
         Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
       ) // todo: better typing
-    assertions.map { assertion =>
-      val assertionValidationContext = context
-      expressionCompiler
-        .compile(
-          Expression(Spel, assertion.expression),
-          None,
-          assertionValidationContext,
-          Typed.typedClass(classOf[AssertionResult])
-        )(nodeId)
-        .map(e => CompiledAssertion(e.expression))
-    }.sequence
+    assertions.map(compileAssertionExpression(nodeId, context, _)).sequence
+  }
+
+  private def compileAssertionExpression(nodeId: NodeId, context: ValidationContext, assertion: Assertion) = {
+    expressionCompiler
+      .compile(
+        Expression(Spel, assertion.expression),
+        None,
+        context,
+        Typed.typedClass(classOf[AssertionResult])
+      )(nodeId)
+      .map(e => CompiledAssertion(e.expression))
   }
 
 }
