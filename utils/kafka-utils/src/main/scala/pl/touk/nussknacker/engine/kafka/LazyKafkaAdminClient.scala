@@ -69,6 +69,8 @@ class LazyKafkaAdminClient private[kafka] (cache: LazyKafkaAdminClientCache, kaf
 
   def getOrCreate: Admin = client
 
+  // TODO: In fact we never close the client, we would need to add a lifecycle to components created by component providers.
+  // To mitigate having too many client instance they are cached by unique Kafka config.
   override def close(): Unit = synchronized {
     initializationState match {
       case InitializationState.NotInitialized =>
