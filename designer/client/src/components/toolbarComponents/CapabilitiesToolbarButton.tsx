@@ -25,6 +25,6 @@ export const CapabilitiesToolbarButton = React.forwardRef<HTMLDivElement & HTMLB
 
         const overridesProps = { ...props, ...{ disabled: disabled || hiddenByCapabilities } };
 
-        return <ToolbarButton ref={ref} {...overridesProps} />;
+        return <ToolbarButton {...overridesProps} ref={ref} />;
     },
 );
