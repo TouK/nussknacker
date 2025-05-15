@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka
 
 import org.apache.kafka.clients.admin.Admin
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, verify}
+import org.mockito.Mockito.{never, verify, when}
 import org.scalatest.Inside.inside
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -12,12 +12,12 @@ import scala.util.{Failure, Success, Try}
 
 class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
 
-  private val kafkaConfig = KafkaConfig(
-    kafkaProperties = Some(Map("bootstrap.servers" -> "host1:9092,host2:9092")),
-    kafkaEspProperties = None,
-  )
-
   "For single Kafka config" - {
+
+    val kafkaConfig = KafkaConfig(
+      kafkaProperties = Some(Map("bootstrap.servers" -> "host1:9092,host2:9092")),
+      kafkaEspProperties = None,
+    )
 
     "should create admin client only once" in {
       var createClientInvokedTimes = 0
@@ -60,12 +60,13 @@ class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
       createClientInvokedTimes shouldBe 2
     }
 
-    "should close admin client" in {
-      val client       = mock[Admin]
-      def createClient = client
-      val lazyClient   = new LazyKafkaAdminClient(new LazyKafkaAdminClientCache, kafkaConfig, createClient)
+    "should close admin client once" in {
+      val client     = mock[Admin]
+      val lazyClient = new LazyKafkaAdminClient(new LazyKafkaAdminClientCache, kafkaConfig, client)
 
       lazyClient.getOrCreate
+      lazyClient.close()
+      lazyClient.close()
       lazyClient.close()
 
       verify(client).close(any[java.time.Duration]())
@@ -85,6 +86,30 @@ class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
       verify(client, never()).close(any[java.time.Duration]())
       createClientInvokedTimes shouldBe 0
     }
+
+    "should not try to close again client closed with failure" in {
+      val client = mock[Admin]
+      when(client.close(any[java.time.Duration])).thenThrow(new RuntimeException("Could not close client"))
+      val lazyClient = new LazyKafkaAdminClient(new LazyKafkaAdminClientCache, kafkaConfig, client)
+
+      lazyClient.getOrCreate
+      assertThrows[RuntimeException] { lazyClient.close() }
+      lazyClient.close()
+      lazyClient.close()
+
+      verify(client).close(any[java.time.Duration]())
+    }
+  }
+
+  "For multiple kafka configs" - {
+    val kafkaConfig1 = KafkaConfig(
+      kafkaProperties = Some(Map("bootstrap.servers" -> "host1:9092,host2:9092")),
+      kafkaEspProperties = None,
+    )
+    val kafkaConfig2 = KafkaConfig(
+      kafkaProperties = Some(Map("bootstrap.servers" -> "host3:9092,host4:9092")),
+      kafkaEspProperties = None,
+    )
   }
 
 }

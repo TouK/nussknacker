@@ -1,12 +1,8 @@
 package pl.touk.nussknacker.engine.kafka
 
-import com.sun.org.apache.xalan.internal.lib.ExsltDatetime.time
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.Admin
-
-private object LazyKafkaAdminClientCache {
-  val instance = new LazyKafkaAdminClientCache
-}
+import pl.touk.nussknacker.engine.kafka.LazyKafkaAdminClient.InitializationState
 
 private class LazyKafkaAdminClientCache extends LazyLogging {
   private type CacheKey = KafkaConfig
@@ -34,36 +30,63 @@ private class LazyKafkaAdminClientCache extends LazyLogging {
     cache.get(kafkaConfig) match {
       case Some(cacheValue) if cacheValue.usedCount == 1 =>
         logger.info(s"Closing Kafka client for config: $kafkaConfig")
-        cacheValue.client.close(java.time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis))
-        cache -= kafkaConfig
+        try {
+          cacheValue.client.close(java.time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis))
+        } finally {
+          cache -= kafkaConfig
+        }
       case Some(cacheValue) =>
         logger.info(s"Closing Kafka client for config: $kafkaConfig, but it is still used by others")
         cache += (kafkaConfig -> cacheValue.decrementUsage)
       case None =>
-        logger.warn("Trying to close already closed client")
+        logger.warn("Trying to close already closed or never opened client")
     }
   }
 
+}
+
+private object LazyKafkaAdminClientCache {
+  val instance = new LazyKafkaAdminClientCache
 }
 
 class LazyKafkaAdminClient private[kafka] (cache: LazyKafkaAdminClientCache, kafkaConfig: KafkaConfig, create: => Admin)
     extends AutoCloseable
     with LazyLogging {
 
-  private lazy val client = cache.getOrCreate(kafkaConfig)(create)
+  @volatile private var initializationState: InitializationState = InitializationState.NotInitialized
 
-  @volatile private var closed = false
+  private lazy val client = {
+    initializationState = InitializationState.Opened
+    cache.getOrCreate(kafkaConfig)(create)
+  }
 
   def getOrCreate: Admin = client
 
   override def close(): Unit = synchronized {
-    if (!closed) {
-      cache.close(kafkaConfig)
-      closed = true
-      logger.info(s"Client for config: $kafkaConfig marked as closed in this instance")
-    } else {
-      logger.debug(s"Client for config: $kafkaConfig already closed in this instance")
+    initializationState match {
+      case InitializationState.NotInitialized =>
+        logger.info("Trying to close never used client")
+      case InitializationState.Opened =>
+        logger.info("Closing client")
+        try {
+          cache.close(kafkaConfig)
+        } finally {
+          initializationState = InitializationState.Closed
+        }
+      case InitializationState.Closed =>
+        logger.warn(s"Client for config: $kafkaConfig already closed in this instance")
     }
+  }
+
+}
+
+private object LazyKafkaAdminClient {
+  sealed trait InitializationState
+
+  object InitializationState {
+    case object NotInitialized extends InitializationState
+    case object Opened         extends InitializationState
+    case object Closed         extends InitializationState
   }
 
 }

@@ -935,7 +935,7 @@ lazy val kafkaUtils = (project in utils("kafka-utils"))
     // Depends on componentsApi because of dependency to NuExceptionInfo and NonTransientException -
     // lite kafka engine handles component exceptions in runtime part
   )
-  .dependsOn(commonUtils % Provided, componentsApi % Provided)
+  .dependsOn(commonUtils % Provided, componentsApi % Provided, testUtils % Test)
 
 lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils"))
   .configs(IntegrationTest)
