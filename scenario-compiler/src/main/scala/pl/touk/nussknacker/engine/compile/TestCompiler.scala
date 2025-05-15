@@ -1,41 +1,39 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.ValidatedNel
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, NodeId, ParamName}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledAssertion, CompiledTest, CompiledTestSourceInput}
 import pl.touk.nussknacker.engine.graph.{Assertion, Test, TestSourceInput}
-import pl.touk.nussknacker.engine.graph.Test.NodeName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
-
-import scala.collection.immutable
 
 class TestCompiler(expressionCompiler: ExpressionCompiler) {
 
   def compile(test: Test, typing: Map[String, NodeTypingInfo]): ValidatedNel[ProcessCompilationError, CompiledTest] = {
-    val inputCompilationResults: immutable.Iterable[
-      Validated[NonEmptyList[ProcessCompilationError], (NodeName, List[CompiledTestSourceInput])]
-    ] = for {
-      (sourceId, inputDataRecords) <- test.inputs
-    } yield compileInputRecords(NodeId(sourceId), inputDataRecords).map(sourceId -> _)
-    val sources: Validated[NonEmptyList[ProcessCompilationError], List[(NodeName, List[CompiledTestSourceInput])]] =
-      inputCompilationResults.toList.sequence
+    val sources =
+      (for {
+        (sourceId, inputDataRecords) <- test.inputs
+      } yield compileInputRecords(NodeId(sourceId), inputDataRecords).map(sourceId -> _)).toList.sequence
 
-    val assertionCompilationResults
-        : Validated[NonEmptyList[ProcessCompilationError], List[(NodeName, List[CompiledAssertion])]] = {
+    val assertionCompilationResults = (
       for {
         (node, assertions) <- test.assertions
       } yield compileAssertions(NodeId(node), assertions, typing(node)).map(node -> _)
-    }.toList.sequence
+    ).toList.sequence
 
     ProcessCompilationError.ValidatedNelApplicative.map2( // todo: ensure that errors are cumulated
       sources,
       assertionCompilationResults
     ) { (validSources, validAssertions) =>
-      CompiledTest(test.id, validSources.toMap, Map.empty, validAssertions.toMap)
+      CompiledTest(
+        test.id,
+        validSources.toMap,
+        Map.empty,
+        validAssertions.toMap
+      )
     }
   }
 

@@ -45,10 +45,7 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
       assertions = Map("end-id2" -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
     )
 
-    val typing       = compileScenarioForTyping(scenario)
-    val testCompiler = createTestCompiler()
-
-    val testCompilationResult = testCompiler.compile(test, typing)
+    val testCompilationResult = compileScenarioWithTests(scenario, test)
 
     inside(testCompilationResult) { case Valid(compiledTest) =>
       compiledTest.inputs.size shouldBe 1
@@ -63,17 +60,12 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  private def createTestCompiler(): TestCompiler = {
-    val expressionCompiler = ExpressionCompiler.withOptimization(
-      getClass.getClassLoader,
-      new SimpleDictRegistry(Map.empty),
-      modelDefinitionWithClasses.modelDefinition.expressionConfig,
-      modelDefinitionWithClasses.classDefinitions,
-      ExpressionEvaluator.unOptimizedEvaluator(
-        GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
-      )
-    )
-    new TestCompiler(expressionCompiler)
+  private def compileScenarioWithTests(scenario: CanonicalProcess, test: Test) = {
+    val typing       = compileScenarioForTyping(scenario)
+    val testCompiler = createTestCompiler()
+
+    val testCompilationResult = testCompiler.compile(test, typing)
+    testCompilationResult
   }
 
   private def compileScenarioForTyping(scenario: CanonicalProcess): Map[String, NodeTypingInfo] = {
@@ -95,6 +87,19 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
       case Validated.Invalid(errors) =>
         throw new IllegalStateException(s"Process compilation ended with errors: $errors")
     }
+  }
+
+  private def createTestCompiler(): TestCompiler = {
+    val expressionCompiler = ExpressionCompiler.withOptimization(
+      getClass.getClassLoader,
+      new SimpleDictRegistry(Map.empty),
+      modelDefinitionWithClasses.modelDefinition.expressionConfig,
+      modelDefinitionWithClasses.classDefinitions,
+      ExpressionEvaluator.unOptimizedEvaluator(
+        GlobalVariablesPreparer.apply(modelDefinitionWithClasses.modelDefinition.expressionConfig)
+      )
+    )
+    new TestCompiler(expressionCompiler)
   }
 
 }

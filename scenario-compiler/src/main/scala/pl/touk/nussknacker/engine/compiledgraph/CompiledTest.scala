@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.Test.NodeName
 
 final case class CompiledTest(
-    name: String,
+    id: String,
     inputs: Map[NodeName, List[CompiledTestSourceInput]],
     mocks: Map[NodeName, CompiledEnricherMock],
     assertions: Map[NodeName, List[CompiledAssertion]],
