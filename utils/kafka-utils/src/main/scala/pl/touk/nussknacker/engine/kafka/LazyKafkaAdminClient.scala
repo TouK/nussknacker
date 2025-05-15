@@ -62,8 +62,9 @@ class LazyKafkaAdminClient private[kafka] (cache: LazyKafkaAdminClientCache, kaf
 
   private lazy val client = {
     require(initializationState == InitializationState.NotInitialized)
+    val admin = cache.getOrCreate(kafkaConfig)(create)
     initializationState = InitializationState.Opened
-    cache.getOrCreate(kafkaConfig)(create)
+    admin
   }
 
   def getOrCreate: Admin = client
