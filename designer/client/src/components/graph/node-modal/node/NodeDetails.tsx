@@ -1,6 +1,6 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
-import React, { createContext, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import urljoin from "url-join";
@@ -98,8 +98,6 @@ function useTitleData(node: NodeType) {
     };
 }
 
-export const NodeContext = createContext<EditedNode>(null);
-
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
@@ -162,14 +160,12 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }
 
     return (
-        <NodeContext.Provider value={{ ...editedNode, editState }}>
-            <InputOutputContextProvider nodeId={editedNode.id}>
-                {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
-                <WindowContent {...props} closeWithEsc buttons={buttons} {...titleData} components={components}>
-                    <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
-                </WindowContent>
-            </InputOutputContextProvider>
-        </NodeContext.Provider>
+        <InputOutputContextProvider nodeId={editedNode.id}>
+            {settings["node.autoApply"] ? <EditStateFeedback editState={editState} /> : null}
+            <WindowContent {...props} closeWithEsc={editState === "idle"} buttons={buttons} {...titleData} components={components}>
+                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+            </WindowContent>
+        </InputOutputContextProvider>
     );
 }
 

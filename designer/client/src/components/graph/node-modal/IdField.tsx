@@ -8,12 +8,13 @@ import Field, { FieldType } from "./editors/field/Field";
 import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 import { useDiffMark } from "./PathsToMark";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface IdFieldProps {
     isEditMode?: boolean;
     node: NodeOrPropertiesType;
     renderFieldLabel: (paramName: string) => React.ReactNode;
-    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty?: SetProperty;
     showValidation?: boolean;
     errors: NodeValidationError[];
 }

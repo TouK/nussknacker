@@ -1,16 +1,10 @@
-import { cloneDeep, isEqual, set } from "lodash";
 import type { SetStateAction } from "react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
 
-import { validateNodeData } from "../../../actions/nk";
-import type { RootState } from "../../../reducers";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
-import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType, NodeValidationError } from "../../../types";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
-import { ParamFieldLabel } from "./FieldLabel";
 import { Filter } from "./filter";
 import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
 import type { FragmentInputParameter } from "./fragment-input-definition/item";
@@ -18,24 +12,14 @@ import { FragmentInput } from "./fragmentInput";
 import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { JoinNode } from "./joinNode";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
-import {
-    getDynamicParameterDefinitions,
-    getFindAvailableBranchVariables,
-    getFindAvailableVariables,
-    getProcessName,
-    getProcessProperties,
-} from "./NodeDetailsContent/selectors";
-import { generateUUIDs } from "./nodeUtils";
-import { adjustParameters } from "./ParametersUtils";
 import { Sink } from "./sink";
 import { Source } from "./source";
 import { Split } from "./split";
 import { StickyNote } from "./stickyNote";
 import { Switch } from "./switch";
+import { useNodeTypeDetailsContentLogic } from "./useNodeTypeDetailsContentLogic";
 import Variable from "./Variable";
 import { VariableBuilder } from "./variableBuilder";
-
-type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
 export type NodeTypeDetailsContentProps = {
     node: NodeType;
@@ -45,178 +29,6 @@ export type NodeTypeDetailsContentProps = {
     showSwitch?: boolean;
     errors: NodeValidationError[];
 };
-
-export function useNodeAdjust() {
-    const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
-    return useCallback(
-        (node: NodeType) => {
-            const parameterDefinitions = getParameterDefinitions(node);
-            const adjustedNode = adjustParameters(node, parameterDefinitions);
-            return generateUUIDs(adjustedNode, ["fields", "parameters"]);
-        },
-        [getParameterDefinitions],
-    );
-}
-
-function useWaitForNodeStateSynchronization(node: NodeType) {
-    const [isDynamicParametersLoading, setIsDynamicParametersLoading] = useState(false);
-
-    const withNodeLoadingState = useCallback((changedNode: NodeType, isLoading: boolean) => {
-        return { ...changedNode, isLoading };
-    }, []);
-
-    const handleSetIsDynamicParametersLoading = (isLoading: boolean) => {
-        console.log(node);
-        if (node.changesCanReloadParameters || node.id === "Webhook") {
-            setIsDynamicParametersLoading(isLoading);
-        } else {
-            setIsDynamicParametersLoading(false);
-        }
-    };
-    return { isDynamicParametersLoading, handleSetIsDynamicParametersLoading, withNodeLoadingState };
-}
-export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
-    const { onChange, node, edges, showValidation } = props;
-    const dispatch = useDispatch();
-    const isEditMode = !!onChange;
-
-    const processDefinitionData = useSelector(getProcessDefinitionData);
-    const findAvailableVariables = useSelector(getFindAvailableVariables);
-    const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
-    const branchVariableTypes = useSelector((s: RootState) => getFindAvailableBranchVariables(s)?.(node.id), isEqual);
-    const processName = useSelector(getProcessName);
-    const processProperties = useSelector(getProcessProperties);
-    const { isDynamicParametersLoading, handleSetIsDynamicParametersLoading, withNodeLoadingState } =
-        useWaitForNodeStateSynchronization(node);
-    const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
-
-    const adjustNode = useNodeAdjust();
-    const [proxyNode, setProxyNode] = useState(() => adjustNode(withNodeLoadingState(node, false)));
-
-    useEffect(() => {
-        setProxyNode((currentNode) => {
-            const adjustedNode = adjustNode(node);
-            return isEqual(adjustedNode, currentNode)
-                ? withNodeLoadingState(currentNode, isDynamicParametersLoading)
-                : withNodeLoadingState(adjustedNode, isDynamicParametersLoading);
-        });
-    }, [adjustNode, node, isDynamicParametersLoading, withNodeLoadingState]);
-
-    const change = useCallback(
-        (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
-            if (isEditMode) {
-                if (showValidation) {
-                    handleSetIsDynamicParametersLoading(true);
-                }
-                onChange(node, edges);
-            }
-        },
-        [isEditMode, onChange, handleSetIsDynamicParametersLoading, showValidation],
-    );
-
-    const setEditedNode = useCallback(
-        (n: SetStateAction<NodeType>) => {
-            setProxyNode((current) => {
-                const nextNode = typeof n === "function" ? n(current) : n;
-                if (isEqual(current, nextNode)) {
-                    return withNodeLoadingState(current, isDynamicParametersLoading);
-                }
-                change(withNodeLoadingState(nextNode, isDynamicParametersLoading), edges);
-                return withNodeLoadingState(nextNode, isDynamicParametersLoading);
-            });
-        },
-
-        [change, edges, isDynamicParametersLoading, withNodeLoadingState],
-    );
-
-    const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => change(node, e), [node, change]);
-
-    const parameterDefinitions = useMemo(() => getParameterDefinitions(node), [getParameterDefinitions, node]);
-
-    const renderFieldLabel = useCallback(
-        (paramName: string): JSX.Element => {
-            return <ParamFieldLabel parameterDefinitions={parameterDefinitions} paramName={paramName} />;
-        },
-        [parameterDefinitions],
-    );
-
-    const removeElement = useCallback(
-        (property: keyof NodeType, uuid: string): void => {
-            setEditedNode((currentNode) => ({
-                ...currentNode,
-                [property]: currentNode[property]?.filter((item) => item.uuid !== uuid) || [],
-            }));
-        },
-        [setEditedNode],
-    );
-
-    const addElement = useCallback(
-        <K extends keyof NodeType>(property: K, element: ArrayElement<NodeType[K]>): void => {
-            setEditedNode((currentNode) => ({
-                ...currentNode,
-                [property]: [...currentNode[property], element],
-            }));
-        },
-        [setEditedNode],
-    );
-
-    const setProperty = useCallback(
-        <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]): void => {
-            setEditedNode((currentNode) => {
-                const value = newValue == null && defaultValue != undefined ? defaultValue : newValue;
-                const node = cloneDeep(currentNode);
-                return set(node, property, value);
-            });
-        },
-        [setEditedNode],
-    );
-
-    useEffect(() => {
-        if (showValidation) {
-            dispatch(
-                validateNodeData(
-                    processName,
-                    {
-                        //see NODES_CONNECTED/NODES_DISCONNECTED
-                        outgoingEdges: edges.filter((e) => e.to != ""),
-                        nodeData: node,
-                        processProperties,
-                        branchVariableTypes,
-                        variableTypes,
-                    },
-                    () => {
-                        handleSetIsDynamicParametersLoading(false);
-                    },
-                ),
-            );
-        }
-    }, [
-        dispatch,
-        branchVariableTypes,
-        edges,
-        node,
-        processName,
-        processProperties,
-        showValidation,
-        variableTypes,
-        handleSetIsDynamicParametersLoading,
-    ]);
-
-    return {
-        ...props,
-        isEditMode,
-        processDefinitionData,
-        findAvailableVariables,
-        variableTypes,
-        setEditedEdges,
-        parameterDefinitions,
-        renderFieldLabel,
-        removeElement,
-        addElement,
-        setProperty,
-        node: proxyNode,
-    };
-}
 
 export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTypeDetailsContentProps): JSX.Element {
     const {

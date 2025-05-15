@@ -1,8 +1,7 @@
 import { isEmpty, isEqual } from "lodash";
-import React, { memo, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 
-import { RootState } from "../../../reducers";
 import type { Edge, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
 import { EdgeKind } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
@@ -14,6 +13,7 @@ import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 import { NodeField } from "./NodeField";
 import { useDiffMark } from "./PathsToMark";
 import { StaticExpressionField } from "./StaticExpressionField";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 interface Props {
     edges: Edge[];
@@ -24,7 +24,7 @@ interface Props {
     processDefinitionData?: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
     setEditedEdges: (edges: Edge[]) => void;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
     variableTypes?: VariableTypes;

@@ -13,6 +13,7 @@
         "noEmit": true,
         "preserveSymlinks": true,
         "skipLibCheck": true,
+        "experimentalDecorators": true,
         "downlevelIteration": true,
         "isolatedModules": true,
         "plugins": [

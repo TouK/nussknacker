@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Valid
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -39,6 +39,14 @@ class JsonParserTest extends AnyFunSuite with Matchers {
     val dataSample = "\"text\""
     val result     = parse(dataSample)
     result shouldBe Valid(TypedObjectWithValue(Typed.typedClass[String], "text"))
+  }
+
+  test("Should treat an empty string and whitespace characters as the null expression") {
+    val dataSamples = List("", " ", "      ", "\t", "\r", "\n")
+    dataSamples.foreach { dataSample =>
+      val result = parse(dataSample)
+      result shouldBe Valid(TypedNull)
+    }
   }
 
   test("Should parse an empty array") {

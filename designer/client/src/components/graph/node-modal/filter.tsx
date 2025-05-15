@@ -8,6 +8,7 @@ import { EdgesDndComponent } from "./EdgesDndComponent";
 import { IdField } from "./IdField";
 import { useDiffMark } from "./PathsToMark";
 import { StaticExpressionField } from "./StaticExpressionField";
+import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
 export function Filter({
     edges,
@@ -30,7 +31,7 @@ export function Filter({
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
     setEditedEdges: (edges: Edge[]) => void;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: SetProperty;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {

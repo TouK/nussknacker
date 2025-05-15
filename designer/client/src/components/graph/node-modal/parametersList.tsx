@@ -1,17 +1,9 @@
 import { Box, Skeleton } from "@mui/material";
-import React, { Fragment, useCallback } from "react";
-import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import React, { Fragment } from "react";
 
-import { CopyIconButton, useCopyClipboard } from "../../../common/copyToClipboard";
-import { useUserSettings } from "../../../common/userSettings";
-import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import type { Parameter } from "../../../types";
-import { getValidationErrorsForField } from "./editors/Validators";
-import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
-import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";
-import { ParameterExpressionField } from "./ParameterExpressionField";
+import { ParametersListField } from "./parametersListField";
 
 type ParametersListItemProps = Omit<ParameterExpressionFieldProps, "listFieldPath" | "parameter">;
 
@@ -25,105 +17,29 @@ export type ParametersListProps = ParametersListItemProps & {
     getListFieldPath: (index: number) => string;
 };
 
-export const ParametersList = (ppp: ParametersListProps) => {
-    const { parameters = [], getListFieldPath, ...props } = ppp;
-    const { node } = props;
+export const ParametersList = (props: ParametersListProps) => {
+    const { parameters = [], node, parameterDefinitions } = props;
     const isDynamicParametersLoading = node.isLoading;
 
-    const handleGetListFieldPath = useCallback(
-        (index: number) => {
-            return getListFieldPath(index);
-        },
-        [getListFieldPath],
-    );
-
-    const scenarioState = useSelector(getProcessState);
-    const { t } = useTranslation();
-    const [isCopied, copy] = useCopyClipboard();
-    const [settings] = useUserSettings();
+    console.log(parameterDefinitions);
 
     return (
         <>
-            {parameters.map((paramWithIndex) => (
-                <Fragment key={node.id + paramWithIndex.param.name + paramWithIndex.index}>
-                    {paramWithIndex.param.name === "Endpoint" ? (
-                        <>
-                            <ParameterExpressionField
-                                listFieldPath={handleGetListFieldPath(paramWithIndex.index)}
-                                parameter={paramWithIndex.param}
-                                endAdornment={
-                                    paramWithIndex.param.name === "Endpoint" && (
-                                        <CopyIconButton
-                                            onClick={() => {
-                                                const possibleValues = props.parameterDefinitions.find(
-                                                    (parameterDefinition) => parameterDefinition.name === "Endpoint",
-                                                ).editors[0].possibleValues;
-
-                                                const selectedValue = possibleValues.find(
-                                                    (possibleValue) =>
-                                                        possibleValue.expression === paramWithIndex.param.expression.expression,
-                                                );
-                                                copy(selectedValue.label);
-                                            }}
-                                            isCopied={isCopied}
-                                        />
-                                    )
-                                }
-                                {...props}
-                            />
-                            {/*
-                             * TODO: Remove it when the backend is ready and action buttons will be send by default
-                             */}
-                            {settings["node.showGenerateEndpointButton"] && (
-                                <Box display={"flex"} justifyContent={"flex-end"}>
-                                    <GenerateNewEndpoint
-                                        node={node}
-                                        handleNewEndpointGenerated={(topic: string) => {
-                                            const expressionProperty = "expression.expression";
-                                            const expressionPath = `${getListFieldPath(paramWithIndex.index)}${expressionProperty}`;
-
-                                            props.setProperty(expressionPath, topic);
-                                        }}
-                                    />
-                                </Box>
-                            )}
-                        </>
-                    ) : (
-                        <>
+            {parameters.map(
+                (paramWithIndex) =>
+                    console.log(paramWithIndex) || (
+                        <Fragment key={node.id + paramWithIndex.param.name + paramWithIndex.index}>
                             {isDynamicParametersLoading ? (
-                                <Box display={"flex"} justifyContent={"space-between"}>
+                                <Box display={"flex"} justifyContent={"space-between"} mt={2}>
                                     <Skeleton variant="rectangular" height={15} width={"100%"} sx={{ flexBasis: "10%", mt: "9px" }} />
-                                    <Skeleton variant="rectangular" height={35} width={"100%"} sx={{ mb: 2, flexBasis: "80%" }} />
+                                    <Skeleton variant="rectangular" height={35} width={"100%"} sx={{ flexBasis: "80%" }} />
                                 </Box>
                             ) : (
-                                <>
-                                    <ParameterExpressionField
-                                        listFieldPath={handleGetListFieldPath(paramWithIndex.index)}
-                                        parameter={paramWithIndex.param}
-                                        {...props}
-                                    />
-                                    {paramWithIndex.param.name === "Data sample" && settings["node.showSendRequestButton"] && (
-                                        <Box display={"flex"} justifyContent={"flex-end"}>
-                                            <SendRequestButton
-                                                disabled={
-                                                    getValidationErrorsForField(props.errors, paramWithIndex.param.name).length > 0 ||
-                                                    scenarioState.status.name !== "RUNNING"
-                                                }
-                                                infoTooltip={
-                                                    scenarioState.status.name !== "RUNNING" &&
-                                                    t("node.actions.sendRequest.tooltip.deployScenarioFirst", "Deploy your scenario first")
-                                                }
-                                                expression={paramWithIndex.param.expression.expression}
-                                                node={node}
-                                            />
-                                        </Box>
-                                    )}
-                                </>
+                                <ParametersListField {...props} paramWithIndex={paramWithIndex} />
                             )}
-                        </>
-                    )}
-                </Fragment>
-            ))}
+                        </Fragment>
+                    ),
+            )}
         </>
     );
 };
