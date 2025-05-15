@@ -17,9 +17,11 @@ private class LazyKafkaAdminClientCache extends LazyLogging {
   def getOrCreate(kafkaConfig: KafkaConfig)(create: => Admin): Admin = synchronized {
     cache.get(kafkaConfig) match {
       case Some(cacheValue) =>
+        logger.info(s"Reusing existing client for config: $kafkaConfig")
         cache += (kafkaConfig -> cacheValue.incrementUsage)
         cacheValue.client
       case None =>
+        logger.info(s"Creating new client for config: $kafkaConfig")
         val newClient = create
         cache += (kafkaConfig -> CacheValue(newClient, usedCount = 1))
         newClient
