@@ -61,6 +61,7 @@ class LazyKafkaAdminClient private[kafka] (cache: LazyKafkaAdminClientCache, kaf
   @volatile private var initializationState: InitializationState = InitializationState.NotInitialized
 
   private lazy val client = {
+    require(initializationState == InitializationState.NotInitialized)
     initializationState = InitializationState.Opened
     cache.getOrCreate(kafkaConfig)(create)
   }
