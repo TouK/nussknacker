@@ -339,7 +339,10 @@ class ScenarioWithoutSinksSpec
           "sub-fragmentEnd",
           None
         ) shouldBe Set(
-          Map("input" -> 20, "fragmentResult" -> Map("output" -> 20)),
+          Map(
+            "input"          -> 20,
+            "fragmentResult" -> Map("output" -> 20)
+          ),
           Map("input" -> 30, "fragmentResult" -> Map("output" -> 30)),
           Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),
         )
