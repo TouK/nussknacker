@@ -63,7 +63,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     if (kafkaConfig.showTopicsWithoutSchema) {
       new AllNonHiddenTopicsSelectionStrategy(
         schemaRegistryClient,
-        lazyKafkaAdminClient,
+        // FIXME
+        KafkaUtils.createKafkaAdminClient(kafkaConfig),
         kafkaConfig.topicsWithoutSchemaFetchTimeout
       )
     } else new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
