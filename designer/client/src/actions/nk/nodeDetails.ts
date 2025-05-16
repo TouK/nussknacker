@@ -103,7 +103,7 @@ const validate = debounce(
 export function validateNodeData(
     processName: string,
     validationRequestData: ValidationRequest,
-    callback?: ({ status }: { status: "allowDataUpdate" }) => void,
+    callback?: ({ status }: { status: "allowDataUpdate" | "unknown" }) => void,
 ): ThunkAction {
     return (dispatch, getState) => {
         validate(processName, validationRequestData, (nodeId, data) => {
@@ -113,7 +113,7 @@ export function validateNodeData(
                 dispatch(nodeValidationDataUpdated(nodeId, data));
             }
 
-            callback?.({ status: "allowDataUpdate" });
+            callback?.({ status: allowDataUpdate ? "allowDataUpdate" : "unknown" });
         });
     };
 }
