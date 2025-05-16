@@ -19,6 +19,7 @@ declare global {
             postFormData: typeof postFormData;
             visitProcess: typeof visitProcess;
             getNode: typeof getNode;
+            openNodeWindow: typeof openNodeWindow;
             dragNode: typeof dragNode;
             layoutScenario: typeof layoutScenario;
             deployScenario: typeof deployScenario;
@@ -302,6 +303,17 @@ function getNode(nameOrAlias: string, end?: boolean) {
     );
 }
 
+function openNodeWindow(nameOrAlias: string, end?: boolean) {
+    cy.getNode(nameOrAlias, end).dblclick();
+    cy.intercept("POST", "/api/nodes/*/additionalInfo").as("additionalInfo");
+    cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
+
+    cy.wait("@nodeValidation");
+    cy.wait("@additionalInfo");
+    cy.wait("@nodeValidation");
+    return cy.get("[data-testid=window]").should("be.visible");
+}
+
 function dragNode(
     name: string,
     {
@@ -366,6 +378,7 @@ Cypress.Commands.add("addLabelsToNewProcess", addLabelsToNewProcess);
 Cypress.Commands.add("postFormData", postFormData);
 Cypress.Commands.add("visitProcess", visitProcess);
 Cypress.Commands.add("getNode", getNode);
+Cypress.Commands.add("openNodeWindow", openNodeWindow);
 Cypress.Commands.add("dragNode", dragNode);
 Cypress.Commands.add("layoutScenario", layoutScenario);
 Cypress.Commands.add("deployScenario", deployScenario);

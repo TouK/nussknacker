@@ -1,5 +1,5 @@
 import { identity, isEqual } from "lodash";
-import React, { type SetStateAction, useCallback, useEffect, useMemo } from "react";
+import React, { type SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { validateNodeData } from "../../../actions/nk";
@@ -7,6 +7,7 @@ import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType } from "../../../types";
 import { ParamFieldLabel } from "./FieldLabel";
+import type { NodeState } from "./node/useNodeState";
 import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
@@ -23,9 +24,20 @@ import type { Paths, PathValue } from "./typeHelpers";
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 export type SetProperty<O = NodeType> = <P extends Paths<O>, V extends PathValue<O, P>>(path: P, value: V, fallbackValue?: V) => void;
 
-export function useNodeAdjust() {
+function wrapSetState<T>(action: SetStateAction<T>, transform: (value: T) => T = identity): SetStateAction<T> {
+    function isPlainValue<T>(action: SetStateAction<T>): action is T {
+        return typeof action !== "function";
+    }
+    return (prev) => transform(isPlainValue(action) ? action : action(prev));
+}
+
+export function useNodeAdjust(
+    node: NodeType,
+    onChange: NodeState["onChange"],
+): [adjustedNode: typeof node, adjustedOnChange: typeof onChange] {
     const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
-    return useCallback(
+
+    const adjustNode = useCallback(
         (node: NodeType) => {
             const parameterDefinitions = getParameterDefinitions(node);
             const adjustedNode = adjustParameters(node, parameterDefinitions);
@@ -33,6 +45,20 @@ export function useNodeAdjust() {
         },
         [getParameterDefinitions],
     );
+
+    const adjustFn = useRef(adjustNode);
+    useLayoutEffect(() => {
+        adjustFn.current = adjustNode;
+    }, [adjustNode]);
+
+    const adjustedNode = useMemo<typeof node>(() => adjustNode(node), [adjustNode, node]);
+
+    const adjustedOnChange = useCallback<typeof onChange>(
+        (setNodeAction, setEdgesAction) => onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction),
+        [onChange],
+    );
+
+    return [adjustedNode, adjustedOnChange];
 }
 
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
