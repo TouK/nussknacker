@@ -1,5 +1,5 @@
 import { get, identity, isEqual } from "lodash";
-import React, { type SetStateAction, useCallback, useEffect, useMemo } from "react";
+import React, { type SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { nodeValidationDataUpdating, validateNodeData } from "../../../actions/nk";
@@ -46,10 +46,16 @@ export function useNodeAdjust(
         [getParameterDefinitions],
     );
 
+    const adjustFn = useRef(adjustNode);
+    useLayoutEffect(() => {
+        adjustFn.current = adjustNode;
+    }, [adjustNode]);
+
     const adjustedNode = useMemo<typeof node>(() => adjustNode(node), [adjustNode, node]);
+
     const adjustedOnChange = useCallback<typeof onChange>(
-        (setNodeAction, setEdgesAction) => onChange(wrapSetState(setNodeAction, adjustNode), setEdgesAction),
-        [adjustNode, onChange],
+        (setNodeAction, setEdgesAction) => onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction),
+        [onChange],
     );
 
     return [adjustedNode, adjustedOnChange];
