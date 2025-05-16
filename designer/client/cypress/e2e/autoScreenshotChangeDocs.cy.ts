@@ -131,17 +131,18 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.viewport(1920, 1080);
         cy.visitNewProcess(seed, "docsFragmentsInputs#0");
         cy.layoutScenario();
-        cy.get('[model-id="input"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("input").as("nodeWindow");
+
+        cy.get("@nodeWindow").find('[title="Name"]').click();
         takeWindowScreenshot();
 
         cy.get('[title="Options"]').eq(0).click(); // open parameter1 options
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.get("@nodeWindow").find('[title="Name"]').click();
         takeWindowScreenshot();
 
         cy.get('[title="Options"]').eq(0).click(); // close parameter1 options
         cy.get('[title="Options"]').eq(1).click(); // open parameter2 options
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.get("@nodeWindow").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
 
