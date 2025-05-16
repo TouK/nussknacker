@@ -94,7 +94,7 @@ describe("Connection error", () => {
 
         cy.visitNewProcess(NAME, "filter");
 
-        cy.openNodeWindow("filter");
+        cy.contains("svg", /filter/i).dblclick();
 
         cy.tick(statusIntervalTick * 3);
 

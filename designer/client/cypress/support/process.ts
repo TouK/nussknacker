@@ -309,11 +309,14 @@ function openNodeWindow(nameOrAlias: string) {
     cy.intercept("POST", "/api/nodes/*/additionalInfo").as("additionalInfo");
     cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
 
+    cy.get("[data-testid=window]").should("be.visible").as("nodeWindow");
+    cy.get("@nodeWindow").find('button[name="close"]').should("be.visible");
+
     cy.wait(["@additionalInfo", "@nodeValidation"], { timeout: 10000 }).each((res) => {
         cy.wrap(res).its("response.statusCode").should("eq", 200);
     });
 
-    return cy.get("[data-testid=window]").should("be.visible");
+    return cy.get("@nodeWindow");
 }
 
 function dragNode(
