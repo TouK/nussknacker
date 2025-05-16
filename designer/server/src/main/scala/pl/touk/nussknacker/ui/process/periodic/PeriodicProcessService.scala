@@ -296,7 +296,7 @@ class PeriodicProcessService(
         case (_, _, deployment, Some(status))
             if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(status.status) =>
           deployment.id
-        // Without restarting, we silently succeed the restarting scenario cancel without sending anything to flink
+        // Without considering the `restarting` scenario status, we silently succeed cancelling of the scenario in Restarting status, without sending anything to Flink
         case (_, _, deployment, Some(status)) if status.status == SimpleStateStatus.Restarting =>
           deployment.id
       }.toSet
