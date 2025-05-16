@@ -77,6 +77,7 @@ class DefaultStreamExecutionEnvPreparer(
         // TODO: handle non-configured rocksDB more transparently e.g. hide checkbox on FE?
         logger.warn("RocksDB not configured, cannot use spillStateToDisk")
       case _ =>
+        logger.info(s"Spill state: ${streamMetaData.spillStateToDisk}\nConfig: ${jobConfig.rocksDB}")
         logger.info("Using default state backend configured by cluster")
     }
   }
