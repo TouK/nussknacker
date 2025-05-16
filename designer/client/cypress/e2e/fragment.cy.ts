@@ -31,7 +31,7 @@ describe("Fragment", () => {
         it("should allow adding input parameters", () => {
             cy.visitNewFragment(seed, "fragment");
 
-            cy.getNode("input").trigger("dblclick");
+            cy.openNodeWindow("input");
             cy.get("[data-testid=window]").should("be.visible").as("window");
 
             // Provide String Any Value inputMode
@@ -212,7 +212,7 @@ describe("Fragment", () => {
             cy.intercept("POST", "/api/nodes/*/validation").as("fragmentInputValidation");
             cy.viewport(1600, 1200);
 
-            cy.getNode("@fragmentName").trigger("dblclick");
+            cy.openNodeWindow("@fragmentName");
             cy.get("#nk-graph-fragment").scrollIntoView().getNode("input");
 
             //FIXME flaky screenshot
@@ -446,7 +446,7 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
-        cy.getNode(`e2e**-${seed2}-test-process`).trigger("dblclick");
+        cy.openNodeWindow(`e2e**-${seed2}-test-process`);
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage({
             maxDiffThreshold: 0.04,

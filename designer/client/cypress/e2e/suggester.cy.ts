@@ -15,7 +15,7 @@ describe("Expression suggester", () => {
     it("should display colorfull and sorted completions", () => {
         cy.visitNewProcess(seed, "variables");
         cy.layoutScenario();
-        cy.getNode("kafka-string").trigger("dblclick");
+        cy.openNodeWindow("kafka-string");
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title=Value]").next().find(".ace_editor").click().type(".").contains(/\.$/);
         cy.get(".ace_autocomplete")
@@ -36,7 +36,7 @@ describe("Expression suggester", () => {
     it("should display javadocs", () => {
         cy.viewport(1600, 1200);
         cy.visitNewProcess(seed, "variables");
-        cy.getNode("kafka-string").trigger("dblclick");
+        cy.openNodeWindow("kafka-string");
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title=Value]").next().find(".ace_editor").click().type("{selectall}#DATE_FORMAT.parseLocalDat");
         // We wait for validation result to be sure that red message below the form field will be visible
@@ -49,7 +49,7 @@ describe("Expression suggester", () => {
     it("should display completions for second line (bugfix)", () => {
         cy.visitNewProcess(seed, "variables");
         cy.layoutScenario();
-        cy.getNode("kafka-string").trigger("dblclick");
+        cy.openNodeWindow("kafka-string");
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title=Value]").next().find(".ace_editor").click().type(" +{enter}#").contains(/^.$/m);
         cy.get(".ace_autocomplete")

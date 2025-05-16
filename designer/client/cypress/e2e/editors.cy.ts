@@ -27,7 +27,7 @@ describe("Editors", () => {
         cy.layoutScenario();
         cy.intercept("POST", "/api/nodes/*/validation");
 
-        cy.getNode("Classinstancesource**").trigger("dblclick");
+        cy.openNodeWindow("Classinstancesource**");
 
         // Expression verification
         cy.get("[data-testid=window]")

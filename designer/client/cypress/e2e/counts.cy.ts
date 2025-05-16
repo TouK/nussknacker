@@ -67,7 +67,7 @@ describe("Counts", () => {
             .click();
         cy.get("[data-testid=window]").contains(/^ok$/i).click();
 
-        cy.getNode("dead-end").trigger("dblclick");
+        cy.openNodeWindow("dead-end");
         cy.get("[data-testid=window]").find("input[type=text]").type("12");
         cy.get("[data-testid=window]")
             .contains(/^apply$/i)
