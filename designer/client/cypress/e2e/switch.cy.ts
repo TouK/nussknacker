@@ -28,7 +28,7 @@ describe("Process", () => {
                     force: true,
                 });
             cy.layoutScenario();
-            cy.getNode("**Choice-sendSms-true").trigger("dblclick");
+            cy.openNodeWindow("**Choice-sendSms-true");
 
             cy.get("[data-testid=window]").should("be.visible");
             cy.get("[data-testid=window]").find("[data-testid='fieldsRow:0']").find(".ace_editor").as("input");

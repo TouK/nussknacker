@@ -15,7 +15,7 @@ describe("Nodes advanced section", () => {
     });
 
     it("should display and expand advanced section", () => {
-        cy.getNode("Log").dblclick();
+        cy.openNodeWindow("Log");
         cy.get("[data-testid=window]").should("be.visible");
 
         cy.contains("Advanced parameters").should("be.visible").click();
