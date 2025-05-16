@@ -126,6 +126,7 @@
     * correct source and target environment names
     * outgoing activity is not registered on the local environment when migration is failed and rejected on the remote environment
       Scenario migration uses `MigrateScenarioRequestDtoV3` where `remoteUserName` is removed. Username is provided via impersonation mechanism.
+* [#8076](https://github.com/TouK/nussknacker/pull/8076) Switching periodic job to finished status cleans jars from FS
 
 ## 1.18
 
