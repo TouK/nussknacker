@@ -27,7 +27,7 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
     const handleSendHttpRequest = useCallback(async () => {
         try {
             const { result } = await HttpService.nodeActions(scenarioName, "generate-endpoint", node);
-            const newTopic = result?.actionName === "GENERATE_ENDPOINT" ? `'${result.topic}'` : "";
+            const newTopic = result?.actionName === "GENERATE_ENDPOINT" ? result.topic : "";
             dispatch(
                 validateNodeData(
                     scenarioName,
