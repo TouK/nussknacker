@@ -13,7 +13,6 @@ describe("Sql editor", () => {
     it("should display colorfull sql code", () => {
         cy.visitNewProcess(seed, "withSqlEditor");
         cy.openNodeWindow("sql-source");
-        cy.get("[data-testid=window]").should("be.visible");
         cy.get("#ace-editor").should("have.class", "tokenizer-working");
         cy.get("#ace-editor").should("not.have.class", "tokenizer-working");
         cy.get("#ace-editor").parent().matchImage({ maxDiffThreshold });

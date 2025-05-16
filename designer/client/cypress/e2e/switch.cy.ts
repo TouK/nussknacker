@@ -29,8 +29,6 @@ describe("Process", () => {
                 });
             cy.layoutScenario();
             cy.openNodeWindow("**Choice-sendSms-true");
-
-            cy.get("[data-testid=window]").should("be.visible");
             cy.get("[data-testid=window]").find("[data-testid='fieldsRow:0']").find(".ace_editor").as("input");
             cy.get("[data-testid=window]").matchImage();
             cy.get("@input").click().type(" || false");

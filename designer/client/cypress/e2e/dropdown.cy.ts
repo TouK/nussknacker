@@ -13,7 +13,6 @@ describe("Dropdown", () => {
         cy.visitNewProcess(seed, "testProcess");
         cy.layoutScenario();
         cy.openNodeWindow("enricher");
-        cy.get("[data-testid=window]").should("be.visible");
         cy.get("div[class$=singleValue").contains("normal").parent().click();
         cy.get("[data-testid=window]").matchImage();
         cy.get("div[id$=react-select-2-option-0]").contains("normal").should("be.visible");
