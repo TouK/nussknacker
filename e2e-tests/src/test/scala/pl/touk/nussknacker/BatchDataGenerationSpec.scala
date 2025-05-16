@@ -109,13 +109,14 @@ class BatchDataGenerationSpec
       )
       .Then()
       .statusCode(200)
-      .equalsJsonBody(
+      .matchJsonWithRegexValuesBody(
         s"""{
            |  "results": {
            |    "nodeResults": {
            |      "sourceId": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -132,6 +133,7 @@ class BatchDataGenerationSpec
            |      "end": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -153,6 +155,7 @@ class BatchDataGenerationSpec
            |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -173,6 +176,7 @@ class BatchDataGenerationSpec
            |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -228,13 +232,14 @@ class BatchDataGenerationSpec
       )
       .Then()
       .statusCode(200)
-      .equalsJsonBody(
+      .matchJsonWithRegexValuesBody(
         s"""{
            |  "results": {
            |    "nodeResults": {
            |      "sourceId": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -251,6 +256,7 @@ class BatchDataGenerationSpec
            |      "end": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -272,6 +278,7 @@ class BatchDataGenerationSpec
            |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -292,6 +299,7 @@ class BatchDataGenerationSpec
            |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
+           |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
            |            "input": {
            |              "pretty": {
