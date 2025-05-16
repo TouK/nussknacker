@@ -12,7 +12,7 @@ describe("Dropdown", () => {
     it("should display menu portal", () => {
         cy.visitNewProcess(seed, "testProcess");
         cy.layoutScenario();
-        cy.get("[model-id=enricher]").should("be.visible").trigger("dblclick");
+        cy.getNode("enricher").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible");
         cy.get("div[class$=singleValue").contains("normal").parent().click();
         cy.get("[data-testid=window]").matchImage();

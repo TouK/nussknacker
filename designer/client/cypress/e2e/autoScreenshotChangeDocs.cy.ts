@@ -20,12 +20,12 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario(); // layout alignment
         takeGraphScreenshot(); // take screenshot of whole graph
 
-        cy.get('[model-id="My first variable declaration"]').dblclick(); // click on node
+        cy.getNode("My first variable declaration").dblclick(); // click on node
         cy.get("[data-testid=window]").find('[title="Name"]').click(); // click of remove cursor flickering effect
         takeWindowScreenshot(); // take screenshot of node window
 
         cy.visitNewProcess(seed, "docsBasicComponentsVariable#1"); // load new scenario
-        cy.get('[model-id="only financial ops"]').dblclick(); // click on node
+        cy.getNode("only financial ops").dblclick(); // click on node
         cy.get("[data-testid=window]").find('[title="Name"]').click(); // click of remove cursor flickering effect
         takeWindowScreenshot(); // take screenshot of node window
     });
@@ -33,14 +33,14 @@ describe("Auto Screenshot Change Docs -", () => {
     it("basic components - recordVariable", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsRecordVariable#0");
         cy.layoutScenario();
-        cy.get('[model-id="node label goes here"]').dblclick();
+        cy.getNode("node label goes here").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
             .click();
 
-        cy.get('[model-id="variable"]').dblclick();
+        cy.getNode("variable").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
@@ -54,7 +54,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.get('[model-id="conditional filter"]').dblclick();
+        cy.getNode("conditional filter").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
@@ -67,7 +67,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.get("[title='toggle right panel']").click();
         takeGraphScreenshot();
 
-        cy.get('[model-id="choice"]').dblclick();
+        cy.getNode("choice").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
@@ -81,7 +81,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("basic components - foreach", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsForEach#0");
         cy.layoutScenario();
-        cy.get('[model-id="for-each"]').dblclick();
+        cy.getNode("for-each").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
@@ -93,7 +93,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.get('[model-id="union"]').dblclick();
+        cy.getNode("union").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
@@ -104,7 +104,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.get('[model-id="single-side-join"]').dblclick();
+        cy.getNode("single-side-join").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
@@ -113,7 +113,7 @@ describe("Auto Screenshot Change Docs -", () => {
         //skip
         cy.visitNewProcess(seed, "docsAggregatesFullOuterJoin#0");
         cy.layoutScenario();
-        cy.get('[model-id="full-outer-join"]').dblclick();
+        cy.getNode("full-outer-join").dblclick();
         cy.get("[data-testid=window]").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
