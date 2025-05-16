@@ -25,7 +25,8 @@ class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
         createClientInvokedTimes += 1
         mock[Admin]
       }
-      val lazyClient = new LazyKafkaAdminClient(new LazyKafkaAdminClientCache, kafkaConfig, createClient)
+      val cache      = new LazyKafkaAdminClientCache
+      def lazyClient = new LazyKafkaAdminClient(cache, kafkaConfig, createClient)
 
       val returnedClient1 = lazyClient.getOrCreate
       val returnedClient2 = lazyClient.getOrCreate
@@ -114,8 +115,8 @@ class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
 
     "should create admin client only once for each config" in {
       val cache       = new LazyKafkaAdminClientCache
-      val lazyClient1 = new LazyKafkaAdminClient(cache, kafkaConfig1, mock[Admin])
-      val lazyClient2 = new LazyKafkaAdminClient(cache, kafkaConfig2, mock[Admin])
+      def lazyClient1 = new LazyKafkaAdminClient(cache, kafkaConfig1, mock[Admin])
+      def lazyClient2 = new LazyKafkaAdminClient(cache, kafkaConfig2, mock[Admin])
 
       val returnedClient1ForConfig1 = lazyClient1.getOrCreate
       val returnedClient2ForConfig1 = lazyClient1.getOrCreate

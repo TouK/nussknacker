@@ -17,11 +17,15 @@ private class LazyKafkaAdminClientCache extends LazyLogging {
   def getOrCreate(kafkaConfig: KafkaConfig)(create: => Admin): Admin = synchronized {
     cache.get(kafkaConfig) match {
       case Some(cacheValue) =>
-        logger.info(s"Reusing existing client for: ${kafkaConfig.kafkaBootstrapServers}")
+        logger.info(
+          s"Reusing existing client for: ${kafkaConfig.kafkaBootstrapServers}, usages of this client so far: ${cacheValue.usedCount}"
+        )
         cache += (kafkaConfig -> cacheValue.incrementUsage)
         cacheValue.client
       case None =>
-        logger.info(s"Creating new client for: ${kafkaConfig.kafkaBootstrapServers}")
+        logger.info(
+          s"Creating new client for: ${kafkaConfig.kafkaBootstrapServers}, unique clients so far: ${cache.size}"
+        )
         val newClient = create
         cache += (kafkaConfig -> CacheValue(newClient, usedCount = 1))
         newClient
@@ -31,18 +35,17 @@ private class LazyKafkaAdminClientCache extends LazyLogging {
   def close(kafkaConfig: KafkaConfig): Unit = synchronized {
     cache.get(kafkaConfig) match {
       case Some(cacheValue) if cacheValue.usedCount == 1 =>
-        logger.info(s"Closing client for: ${kafkaConfig.kafkaBootstrapServers}")
+        logger.info(s"Closing client for: ${kafkaConfig.kafkaBootstrapServers}, unique clients so far: ${cache.size}")
         try {
           cacheValue.client.close(java.time.Duration.ofMillis(KafkaUtils.defaultTimeoutMillis))
         } finally {
           cache -= kafkaConfig
         }
       case Some(cacheValue) =>
-        val decrementedUsage = cacheValue.decrementUsage
         logger.info(
-          s"Closing client for: ${kafkaConfig.kafkaBootstrapServers}, but it is still used by other ${decrementedUsage.usedCount} clients"
+          s"Decrementing client usage for: ${kafkaConfig.kafkaBootstrapServers}, usages of this client so far: ${cacheValue.usedCount}"
         )
-        cache += (kafkaConfig -> decrementedUsage)
+        cache += (kafkaConfig -> cacheValue.decrementUsage)
       case None =>
         logger.warn(s"Trying to close already closed or never opened client for: ${kafkaConfig.kafkaBootstrapServers}")
     }
