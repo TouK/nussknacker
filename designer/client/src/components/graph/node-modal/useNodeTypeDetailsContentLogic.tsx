@@ -55,9 +55,7 @@ export function useNodeAdjust(
     const adjustedNode = useMemo<typeof node>(() => adjustNode(node), [adjustNode, node]);
 
     const adjustedOnChange = useCallback<typeof onChange>(
-        (setNodeAction, setEdgesAction) => {
-            return onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction);
-        },
+        (setNodeAction, setEdgesAction) => onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction),
         [onChange],
     );
 
