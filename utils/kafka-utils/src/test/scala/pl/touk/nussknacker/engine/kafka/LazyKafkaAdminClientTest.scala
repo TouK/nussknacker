@@ -18,7 +18,6 @@ class LazyKafkaAdminClientTest extends AnyFreeSpec with Matchers {
       kafkaProperties = Some(Map("bootstrap.servers" -> "host1:9092,host2:9092")),
       kafkaEspProperties = None,
     )
-
     "should create admin client only once" in {
       var createClientInvokedTimes = 0
       def createClient = {
