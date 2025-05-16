@@ -77,11 +77,12 @@ private[livedata] class LiveDataCollectingListenerStorage(
       .values
       .flatMap(_.asScala)
       .groupBy(identity)
-      .view
-      .mapValues(transitions =>
-        BigDecimal(transitions.size)./(frequencyWindowInSeconds).setScale(4, BigDecimal.RoundingMode.HALF_UP)
-      )
-      .toMap
+      .map { case (transition, transitions) =>
+        (
+          transition,
+          BigDecimal(transitions.size)./(frequencyWindowInSeconds).setScale(4, BigDecimal.RoundingMode.HALF_UP)
+        )
+      }
   }
 
   private def cleanOldTransitions(currentEpochSecond: Long): Unit = {
