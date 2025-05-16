@@ -17,7 +17,6 @@ describe("Aggregations", () => {
             cy.visitNewProcess(seed, "aggregations", "Default");
             cy.layoutScenario();
             cy.openNodeWindow(component);
-            cy.get("[data-testid=window]").should("be.visible");
             cy.get("[title='Aggregations']")
                 .parent()
                 .should("be.visible")
