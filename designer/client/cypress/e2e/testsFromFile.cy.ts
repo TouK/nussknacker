@@ -22,7 +22,7 @@ describe("Process tests from file", () => {
             .selectFile("cypress/fixtures/transactionsTestData.json", { force: true });
         cy.get("text[joint-selector='testResultsSummary']").eq(0).contains("1");
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");
-        cy.getNode("kafka").should("be.visible").trigger("dblclick");
+        cy.getNode("kafka").trigger("dblclick");
         cy.wait("@validation");
         cy.get("[data-testid='window-frame']").matchImage();
     });
