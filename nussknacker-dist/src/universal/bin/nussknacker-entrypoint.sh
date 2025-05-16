@@ -5,7 +5,7 @@ set -e
 if [ "$JAVA_DEBUG_PORT" == "" ]; then
   JAVA_DEBUG_OPTS=""
 else
-  JAVA_DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:$JAVA_DEBUG_PORT"
+  JAVA_DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$JAVA_DEBUG_PORT"
 fi
 
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
