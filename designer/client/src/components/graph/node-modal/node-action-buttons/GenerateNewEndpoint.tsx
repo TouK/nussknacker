@@ -27,20 +27,27 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
     const handleSendHttpRequest = useCallback(async () => {
         try {
             const { result } = await HttpService.nodeActions(scenarioName, "generate-endpoint", node);
-            const newTopic = result?.actionName === "GenerateEndpointResult" ? result.topic : "";
-            dispatch(
-                validateNodeData(
-                    scenarioName,
-                    {
-                        outgoingEdges: scenarioGraph.edges,
-                        nodeData: node,
-                        processProperties: scenarioGraph.properties,
-                        branchVariableTypes: getBranchVariableTypes(node.id),
-                        variableTypes,
-                    },
-                    () => handleNewEndpointGenerated(newTopic),
-                ),
-            );
+            const newTopic = result?.actionName === "GENERATE_ENDPOINT" ? result?.topic?.expression : "";
+            await new Promise<void>((resolve) => {
+                dispatch(
+                    validateNodeData(
+                        scenarioName,
+                        {
+                            outgoingEdges: scenarioGraph.edges,
+                            nodeData: node,
+                            processProperties: scenarioGraph.properties,
+                            branchVariableTypes: getBranchVariableTypes(node.id),
+                            variableTypes,
+                        },
+                        ({ status }) => {
+                            if (status === "allowDataUpdate") {
+                                handleNewEndpointGenerated(newTopic);
+                            }
+                            resolve();
+                        },
+                    ),
+                );
+            });
         } catch (error) {
             console.error("Error sending request:", error);
         }

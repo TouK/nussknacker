@@ -9,8 +9,21 @@ import type { ThunkAction } from "../reduxTypes";
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
 type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string; windowId: string };
 type NodeDetailsClosed = { type: "NODE_DETAILS_CLOSED"; nodeId: string; windowId: string };
-
-export type NodeDetailsActions = NodeValidationUpdated | NodeDetailsOpened | NodeDetailsClosed;
+type NodeValidationDynamicParametersLoading = {
+    type: "NODE_VALIDATION_DYNAMIC_PARAMETERS_LOADING";
+    nodeId: string;
+    dynamicParametersChanged: string[];
+};
+type NodeValidationDynamicParametersLoaded = {
+    type: "NODE_VALIDATION_DYNAMIC_PARAMETERS_LOADED";
+    nodeId: string;
+};
+export type NodeDetailsActions =
+    | NodeValidationUpdated
+    | NodeDetailsOpened
+    | NodeValidationDynamicParametersLoading
+    | NodeValidationDynamicParametersLoaded
+    | NodeDetailsClosed;
 
 export interface ValidationData {
     parameters?: UIParameter[];
@@ -31,6 +44,24 @@ export function nodeValidationDataUpdated(nodeId: string, validationData: Valida
     return {
         type: "NODE_VALIDATION_UPDATED",
         validationData,
+        nodeId,
+    };
+}
+
+export function nodeValidationDynamicParametersLoading(
+    nodeId: string,
+    dynamicParametersChanged: string[],
+): NodeValidationDynamicParametersLoading {
+    return {
+        type: "NODE_VALIDATION_DYNAMIC_PARAMETERS_LOADING",
+        nodeId,
+        dynamicParametersChanged,
+    };
+}
+
+export function nodeValidationDynamicParametersLoaded(nodeId: string): NodeValidationDynamicParametersLoaded {
+    return {
+        type: "NODE_VALIDATION_DYNAMIC_PARAMETERS_LOADED",
         nodeId,
     };
 }
@@ -69,14 +100,20 @@ const validate = debounce(
     500,
 );
 
-export function validateNodeData(processName: string, validationRequestData: ValidationRequest, callback?: () => void): ThunkAction {
+export function validateNodeData(
+    processName: string,
+    validationRequestData: ValidationRequest,
+    callback?: ({ status }: { status: "allowDataUpdate" | "unknown" }) => void,
+): ThunkAction {
     return (dispatch, getState) => {
         validate(processName, validationRequestData, (nodeId, data) => {
+            const allowDataUpdate = data && getNodeDetails(getState())(nodeId);
             // node details view creates this on open and removes after close
-            if (data && getNodeDetails(getState())(nodeId)) {
+            if (allowDataUpdate) {
                 dispatch(nodeValidationDataUpdated(nodeId, data));
-                callback?.();
             }
+
+            callback?.({ status: allowDataUpdate ? "allowDataUpdate" : "unknown" });
         });
     };
 }
