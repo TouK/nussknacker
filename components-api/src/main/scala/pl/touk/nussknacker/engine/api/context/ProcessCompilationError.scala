@@ -468,4 +468,20 @@ object ProcessCompilationError {
   object TrailingSpacesId                                                     extends IdErrorType
   final case class IllegalCharactersId(illegalCharacterHumanReadable: String) extends IdErrorType
 
+  // todo: it can be separated from ProcessCompilationError hierarchy (depends on if we finally put test compilation as part of process compilation)
+  trait TestCompilationError extends ProcessCompilationError
+
+  sealed trait TestConfigurationPart
+  object InputData extends TestConfigurationPart
+  object Assertion extends TestConfigurationPart
+  object Mock      extends TestConfigurationPart
+
+  final case class TestConfigurationRefersToNotExistingNode(
+      nodeId: NodeId,
+      testId: String,
+      configurationPart: TestConfigurationPart
+  ) extends TestCompilationError {
+    override val nodeIds: Set[String] = Set.empty
+  }
+
 }

@@ -1,12 +1,18 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  InputData,
+  Mock,
+  TestConfigurationRefersToNotExistingNode
+}
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -61,6 +67,44 @@ class TestCompilerSpec extends AnyFunSuite with Matchers with Inside {
       compiledTest.assertions.size shouldBe 1
       compiledTest.assertions("sink1").size shouldBe 1
       compiledTest.assertions("sink1").head.expression.original shouldBe "#TESTS.assertEquals(#results.size, 1)"
+    }
+  }
+
+  test("should produce errors for data/mocks/asserts on missing nodes") {
+    val scenario = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "sourceWithUnknown")
+      .enricher("enricher1", "enricherOutput", "enricher1", "par1" -> "'abc'".spel)
+      .buildSimpleVariable("result-id2", "result", "#input".spel)
+      .emptySink("sink1", "sink")
+    val test = Test(
+      "someTest",
+      inputs = Map("notExistingSource" -> List(TestSourceInput(Expression(JsonTemplate, """{"input": 1}""")))),
+      mocks = Map("notExistingEnricher" -> EnricherMock(Expression(Spel, "'someMockedOutput'"))),
+      assertions = Map("notExistingSink" -> List(Assertion("#TESTS.assertEquals(#results.size, 1)")))
+    )
+
+    val testCompilationResult = compileScenarioWithTests(scenario, test)
+
+    inside(testCompilationResult) { case Invalid(errors) =>
+      errors.size shouldBe 3
+      assert(
+        errors.toList.contains(
+          TestConfigurationRefersToNotExistingNode(NodeId("notExistingSource"), test.id, InputData)
+        )
+      )
+      assert(
+        errors.toList.contains(TestConfigurationRefersToNotExistingNode(NodeId("notExistingEnricher"), test.id, Mock))
+      )
+      assert(
+        errors.toList.contains(
+          TestConfigurationRefersToNotExistingNode(
+            NodeId("notExistingSink"),
+            test.id,
+            ProcessCompilationError.Assertion
+          )
+        )
+      )
     }
   }
 

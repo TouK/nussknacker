@@ -1,17 +1,21 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, NodeId, ParamName}
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  ExpressionParserCompilationError,
+  InputData,
+  Mock,
+  TestConfigurationRefersToNotExistingNode
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compiledgraph.{
   CompiledAssertion,
   CompiledEnricherMock,
-  CompiledProcessParts,
   CompiledTest,
   CompiledTestSourceInput
 }
@@ -28,26 +32,26 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
   def compile(test: Test, typing: Map[String, NodeTypingInfo]): ValidatedNel[ProcessCompilationError, CompiledTest] = {
     val sources = test.inputs
       .map { case (sourceId, inputDataRecords) =>
-        compileInputRecords(NodeId(sourceId), inputDataRecords).map(sourceId -> _)
+        compileInputRecords(NodeId(sourceId), inputDataRecords, typing, test.id).map(sourceId -> _)
       }
       .toList
       .sequence
 
     val mocks = test.mocks
       .map { case (nodeId, mock) =>
-        compileMock(NodeId(nodeId), mock, typing(nodeId)).map(nodeId -> _)
+        compileMock(NodeId(nodeId), mock, typing, test.id).map(nodeId -> _)
       }
       .toList
       .sequence
 
     val assertions = test.assertions
       .map { case (node, assertions) =>
-        compileAssertions(NodeId(node), assertions, typing(node)).map(node -> _)
+        compileAssertions(NodeId(node), assertions, typing, test.id).map(node -> _)
       }
       .toList
       .sequence
 
-    ProcessCompilationError.ValidatedNelApplicative.map3( // todo: ensure that errors are cumulated
+    ProcessCompilationError.ValidatedNelApplicative.map3(
       sources,
       mocks,
       assertions
@@ -63,9 +67,13 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
 
   private def compileInputRecords(
       nodeId: NodeId,
-      testSourceInputs: List[TestSourceInput]
+      testSourceInputs: List[TestSourceInput],
+      nodesTyping: Map[String, NodeTypingInfo],
+      testId: String
   ): ValidatedNel[ProcessCompilationError, List[CompiledTestSourceInput]] = {
-    testSourceInputs.map(compileInputRecord(nodeId, _)).sequence
+    validateTypingExistence(nodeId, nodesTyping, testId, InputData).andThen { _ =>
+      testSourceInputs.map(compileInputRecord(nodeId, _)).sequence
+    }
   }
 
   private def compileInputRecord(
@@ -77,13 +85,20 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
       .map(e => CompiledTestSourceInput(e.expression))
   }
 
-  private def compileMock(nodeId: NodeId, mock: EnricherMock, info: NodeTypingInfo) = {
-    compileEnricherMockExpression(
-      mock.expression,
-      info.outputTyping.getOrElse(throw new IllegalStateException("Output typing for enricher must be provided")),
-      info.inputValidationContext
-    )(nodeId)
-      .map(CompiledEnricherMock(_))
+  private def compileMock(
+      nodeId: NodeId,
+      mock: EnricherMock,
+      nodesTyping: Map[String, NodeTypingInfo],
+      testId: String
+  ) = {
+    validateTypingExistence(nodeId, nodesTyping, testId, Mock).andThen(typing =>
+      compileEnricherMockExpression(
+        mock.expression,
+        typing.outputTyping.getOrElse(throw new IllegalStateException("Output typing for enricher must be provided")),
+        typing.inputValidationContext
+      )(nodeId)
+        .map(CompiledEnricherMock(_))
+    )
   }
 
   private def compileEnricherMockExpression(expression: Expression, expectedType: TypingResult, ctx: ValidationContext)(
@@ -116,14 +131,33 @@ class TestCompiler(expressionCompiler: ExpressionCompiler) {
   private def compileAssertions(
       nodeId: NodeId,
       assertions: List[Assertion],
-      nodeTyping: NodeTypingInfo
+      nodesTyping: Map[String, NodeTypingInfo],
+      testId: String
   ): ValidatedNel[ProcessCompilationError, List[CompiledAssertion]] = {
-    val context = nodeTyping.inputValidationContext
-      .withVariableUnsafe(
-        "results",
-        Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
-      ) // todo: better typing
-    assertions.map(compileAssertionExpression(nodeId, context, _)).sequence
+    validateTypingExistence(nodeId, nodesTyping, testId, ProcessCompilationError.Assertion).andThen { typing =>
+      val ctx = typing.inputValidationContext
+        .withVariableUnsafe(
+          "results",
+          Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
+        )
+      assertions.map(compileAssertionExpression(nodeId, ctx, _)).sequence
+    }
+  }
+
+  private def validateTypingExistence(
+      nodeId: NodeId,
+      nodesTyping: Map[String, NodeTypingInfo],
+      testId: String,
+      contextTestConfigurationPart: ProcessCompilationError.TestConfigurationPart
+  ) = {
+    nodesTyping
+      .get(nodeId.id)
+      .map(Valid(_))
+      .getOrElse(
+        Invalid(
+          NonEmptyList.one(TestConfigurationRefersToNotExistingNode(nodeId, testId, contextTestConfigurationPart))
+        )
+      )
   }
 
   private def compileAssertionExpression(nodeId: NodeId, context: ValidationContext, assertion: Assertion) = {
