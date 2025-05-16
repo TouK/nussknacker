@@ -985,11 +985,10 @@ class HttpService {
         scenarioName: string,
         actionName: "send-sample-request" | "generate-endpoint",
         nodeData: NodeType,
-    ): Promise<
-        { result: { topic: string; actionName: "GenerateEndpointResult" } } | { result: { actionName: "SendSampleRequestResult" } }
-    > {
+    ): Promise<{ result: { topic: string; actionName: "GENERATE_ENDPOINT" } } | { result: { actionName: "SEND_SAMPLE_REQUEST" } }> {
         try {
-            return await api.post(`/custom/nodes/${scenarioName}/actions`, { actionName, nodeData });
+            const response = await api.post(`/custom/nodes/${scenarioName}/actions`, { actionName, nodeData });
+            return response.data;
         } catch (error) {
             return await Promise.reject(
                 this.#addError(i18next.t("notification.error.failedToSendNodeAction", `Failed to send ${actionName} action`), error),

@@ -10,6 +10,7 @@ export type NodeDetailsState = Record<
         expressionType?: TypingResult;
         validationErrors: NodeValidationError[];
         validationPerformed: boolean;
+        isDynamicParametersLoading: boolean;
     }
 >;
 
@@ -22,6 +23,18 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 [nodeId]: {
                     validationErrors: [],
                     validationPerformed: false,
+                    isDynamicParametersLoading: false,
+                },
+            };
+        }
+
+        case "NODE_VALIDATION_UPDATING": {
+            const { nodeId } = action;
+            return {
+                ...state,
+                [nodeId]: {
+                    ...state[nodeId],
+                    isDynamicParametersLoading: true,
                 },
             };
         }
@@ -33,6 +46,7 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 [nodeId]: {
                     ...state[nodeId],
                     ...validationData,
+                    isDynamicParametersLoading: false,
                 },
             };
         }

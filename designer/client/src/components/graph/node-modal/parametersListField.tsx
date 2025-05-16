@@ -64,7 +64,7 @@ export const ParametersListField = (props: Props) => {
                             node={node}
                             handleNewEndpointGenerated={(topic: string) => {
                                 const expressionProperty = "expression.expression";
-                                const expressionPath = `${getListFieldPath(paramWithIndex.index)}${expressionProperty}`;
+                                const expressionPath = `${getListFieldPath(paramWithIndex.index)}.${expressionProperty}`;
 
                                 setProperty(expressionPath, topic);
                             }}

@@ -33,6 +33,7 @@ export const ParametersListAdvanced = ({
         [parameterDefinitions],
     );
 
+    console.log(props.node);
     const [standard, advanced] = useMemo(
         () =>
             partition(

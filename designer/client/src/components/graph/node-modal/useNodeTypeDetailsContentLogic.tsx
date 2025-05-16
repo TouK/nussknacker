@@ -1,11 +1,11 @@
-import { identity, isEqual } from "lodash";
-import React, { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import { get, identity, isEqual } from "lodash";
+import React, { type SetStateAction, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { validateNodeData } from "../../../actions/nk";
+import { nodeValidationDataUpdating, validateNodeData } from "../../../actions/nk";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
-import type { Edge, NodeType } from "../../../types";
+import type { Edge, NodeType, Parameter } from "../../../types";
 import { ParamFieldLabel } from "./FieldLabel";
 import {
     getDynamicParameterDefinitions,
@@ -35,23 +35,6 @@ export function useNodeAdjust() {
     );
 }
 
-function useWaitForNodeStateSynchronization(node: NodeType) {
-    const [isDynamicParametersLoading, setIsDynamicParametersLoading] = useState(false);
-
-    const withNodeLoadingState = useCallback((changedNode: NodeType, isLoading: boolean) => {
-        return { ...changedNode, isLoading };
-    }, []);
-
-    const handleSetIsDynamicParametersLoading = (isLoading: boolean) => {
-        if (node.id === "Webhook") {
-            setIsDynamicParametersLoading(false);
-        } else {
-            setIsDynamicParametersLoading(false);
-        }
-    };
-    return { isDynamicParametersLoading, handleSetIsDynamicParametersLoading, withNodeLoadingState };
-}
-
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
     const { onChange, node, edges, showValidation } = props;
     const dispatch = useDispatch();
@@ -63,8 +46,6 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables);
     const processName = useSelector(getProcessName);
     const processProperties = useSelector(getProcessProperties);
-    const { isDynamicParametersLoading, handleSetIsDynamicParametersLoading, withNodeLoadingState } =
-        useWaitForNodeStateSynchronization(node);
 
     const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
 
@@ -103,41 +84,45 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const setProperty = useCallback<SetProperty>(
         <P extends Paths<NodeType>, V extends PathValue<NodeType, P>>(path: P, value: V, fallbackValue?: V): void => {
             const nextValue = value === null && fallbackValue !== undefined ? fallbackValue : value;
-            setEditedNode((currentNode) => setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue));
+            setEditedNode((currentNode) => {
+                function extractBasePathWithIndex(path) {
+                    const match = path.match(/^(.*?\[\d+])/);
+                    return match ? match[1] : path;
+                }
+
+                const basePath = extractBasePathWithIndex(path);
+
+                const editedParam: Parameter | undefined = get(currentNode, basePath);
+                const editedParamDefinition = parameterDefinitions.find(
+                    (parameterDefinition) => parameterDefinition.name === editedParam?.name,
+                );
+
+                if (editedParamDefinition?.changesCanReloadParameters) {
+                    dispatch(nodeValidationDataUpdating(currentNode.id));
+                    setImmutable<NodeType, Paths<NodeType>>(currentNode, `${basePath}.isLoading`, true);
+                    console.log(get(currentNode, `${basePath}`));
+                }
+
+                return setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue);
+            });
         },
-        [setEditedNode],
+        [dispatch, parameterDefinitions, setEditedNode],
     );
 
     useEffect(() => {
         if (showValidation) {
             dispatch(
-                validateNodeData(
-                    processName,
-                    {
-                        //see NODES_CONNECTED/NODES_DISCONNECTED
-                        outgoingEdges: edges.filter((e) => e.to != ""),
-                        nodeData: node,
-                        processProperties,
-                        branchVariableTypes: getBranchVariableTypes(node.id),
-                        variableTypes,
-                    },
-                    () => {
-                        handleSetIsDynamicParametersLoading(false);
-                    },
-                ),
+                validateNodeData(processName, {
+                    //see NODES_CONNECTED/NODES_DISCONNECTED
+                    outgoingEdges: edges.filter((e) => e.to != ""),
+                    nodeData: node,
+                    processProperties,
+                    branchVariableTypes: getBranchVariableTypes(node.id),
+                    variableTypes,
+                }),
             );
         }
-    }, [
-        dispatch,
-        edges,
-        getBranchVariableTypes,
-        handleSetIsDynamicParametersLoading,
-        node,
-        processName,
-        processProperties,
-        showValidation,
-        variableTypes,
-    ]);
+    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
 
     return {
         ...props,

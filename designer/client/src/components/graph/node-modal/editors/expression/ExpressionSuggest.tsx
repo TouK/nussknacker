@@ -16,7 +16,7 @@ export type ExpressionSuggestProps = Omit<CustomCompleterAceEditorProps, "comple
     variableTypes: VariableTypes;
 };
 
-function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
+export function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
     const ref = useRef<{
         value: T;
         deps: React.DependencyList;

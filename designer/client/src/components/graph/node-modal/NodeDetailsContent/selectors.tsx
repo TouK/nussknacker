@@ -67,6 +67,7 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
         if (!dynamicParameterDefinitions) {
             return ProcessUtils.extractComponentDefinition(node, components)?.parameters;
         }
+
         return dynamicParameterDefinitions || null;
     },
 );

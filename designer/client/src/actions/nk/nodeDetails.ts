@@ -35,6 +35,13 @@ export function nodeValidationDataUpdated(nodeId: string, validationData: Valida
     };
 }
 
+export function nodeValidationDataUpdating(nodeId: string): NodeValidationUpdated {
+    return {
+        type: "NODE_VALIDATION_UPDATING",
+        nodeId,
+    };
+}
+
 export function nodeDetailsOpened(nodeId: string, windowId: string): NodeDetailsOpened {
     return {
         type: "NODE_DETAILS_OPENED",
