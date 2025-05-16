@@ -985,7 +985,7 @@ class HttpService {
         scenarioName: string,
         actionName: "send-sample-request" | "generate-endpoint",
         nodeData: NodeType,
-    ): Promise<{ result: { topic: string; actionName: "GENERATE_ENDPOINT" } } | { result: { actionName: "SEND_SAMPLE_REQUEST" } }> {
+    ): Promise<{ result: { topic: Expression; actionName: "GENERATE_ENDPOINT" } } | { result: { actionName: "SEND_SAMPLE_REQUEST" } }> {
         try {
             const response = await api.post(`/custom/nodes/${scenarioName}/actions`, { actionName, nodeData });
             return response.data;
