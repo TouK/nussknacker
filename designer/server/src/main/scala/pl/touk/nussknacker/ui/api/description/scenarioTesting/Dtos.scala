@@ -198,18 +198,24 @@ object Dtos {
 
   }
 
-  final case class ResultsWithCountsDto(results: TestResultsDto, counts: Map[String, NodeCount])
+  final case class ResultsWithCountsDto(
+      results: TestResultsDto,
+      counts: Map[String, NodeCount],
+      nodeTransitionFrequency: Option[List[NodeTransitionFrequencyDto]],
+  )
 
   object ResultsWithCountsDto {
 
     def from(
         resultsWithCounts: ResultsWithCounts,
+        nodeTransitionFrequency: Option[Map[NodeTransition, BigDecimal]],
         skipResultsPerNode: SkipResultsPerNode,
         skipResultsPerTransition: SkipResultsPerTransition
     ): ResultsWithCountsDto = {
       ResultsWithCountsDto(
         results = TestResultsDto.from(resultsWithCounts.results, skipResultsPerNode, skipResultsPerTransition),
         counts = resultsWithCounts.counts,
+        nodeTransitionFrequency = nodeTransitionFrequency.map(NodeTransitionFrequency.from),
       )
     }
 
@@ -254,6 +260,22 @@ object Dtos {
       results: List[ResultContext[Json]]
   )
 
+  final case class NodeTransitionFrequencyDto(
+      sourceNodeId: String,
+      destinationNodeId: Option[String],
+      frequency: BigDecimal,
+  )
+
+  object NodeTransitionFrequency {
+
+    def from(nodeTransitionFrequency: Map[NodeTransition, BigDecimal]): List[NodeTransitionFrequencyDto] = {
+      nodeTransitionFrequency.map { case (k, v) =>
+        NodeTransitionFrequencyDto(k.sourceNodeId, k.destinationNodeId, v)
+      }.toList
+    }
+
+  }
+
   implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
   implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
   implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived
@@ -262,6 +284,7 @@ object Dtos {
   implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
   implicit def testResultsSchema: Schema[TestResultsDto]                                  = Schema.derived
   implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
+  implicit def nodeTransitionFrequencyDtoSchema: Schema[NodeTransitionFrequencyDto]       = Schema.derived
   implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject

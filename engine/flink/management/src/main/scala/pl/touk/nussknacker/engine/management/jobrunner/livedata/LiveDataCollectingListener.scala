@@ -9,11 +9,20 @@ import scala.util.Try
 
 // This class must be serializable. It means, that when deserializing, we lose the reference to it.
 // The actual data is stored in the LiveDataCollectingListenerHolder, and all instances of LiveDataCollectingListener can access the data.
-class LiveDataCollectingListener(processName: ProcessName, maxSize: Int) extends ProcessListener with Serializable {
+class LiveDataCollectingListener private[livedata] (
+    processName: ProcessName,
+    maxNumberOfSamples: Int,
+    frequencyWindowInSeconds: Int,
+) extends ProcessListener
+    with Serializable {
 
   private val variableEncoder: Any => io.circe.Json = TestInterpreterRunner.testResultsVariableEncoder
 
-  private def storage = LiveDataCollectingListenerHolder.storage(processName, maxSize)
+  private def storage = LiveDataCollectingListenerHolder.storage(
+    processName = processName,
+    maxNumberOfSamples = maxNumberOfSamples,
+    frequencyWindowInSeconds = frequencyWindowInSeconds,
+  )
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
     storage.updateResults(context, _.updateNodeResult(nodeId, context, variableEncoder))
@@ -25,6 +34,7 @@ class LiveDataCollectingListener(processName: ProcessName, maxSize: Int) extends
       context: Context,
       processMetaData: MetaData,
   ): Unit = {
+    storage.registerTransitionBetweenNodes(nodeId, Some(nextNodeId))
     storage.updateResults(context, _.updateNodeOutputResult(nodeId, Some(nextNodeId), context, variableEncoder))
   }
 
@@ -33,6 +43,7 @@ class LiveDataCollectingListener(processName: ProcessName, maxSize: Int) extends
       context: Context,
       processMetaData: MetaData,
   ): Unit = {
+    storage.registerTransitionBetweenNodes(nodeId, None)
     storage.updateResults(context, _.updateNodeOutputResult(nodeId, None, context, variableEncoder))
   }
 

@@ -2,15 +2,14 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPreviewSupported, NoLiveDataPreviewSupport}
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ParametersDefinitionError,
   ScenarioTestDataGenerationError,
   TestingCapabilitiesError
 }
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -187,6 +186,7 @@ class ScenarioTestingApiHttpService(
             }
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
+            None,
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
             skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
           )
@@ -214,7 +214,7 @@ class ScenarioTestingApiHttpService(
                 case None                    => Left(NoScenario(scenarioName))
               }
             }
-            testResults <- EitherT[Future, TestingError, TestResults[Json]] {
+            liveDataPreview <- EitherT[Future, TestingError, LiveDataPreview] {
               deploymentManager.liveDataPreviewSupport match {
                 case supported: LiveDataPreviewSupported =>
                   supported.getLiveData(processIdWithName).map {
@@ -233,13 +233,14 @@ class ScenarioTestingApiHttpService(
               scenarioWithDetails.processingType
             )
             resultsWithCounts = scenarioTestService.resultsWithCounts(
-              testResults,
+              liveDataPreview.liveDataSamples,
               scenarioWithDetails.scenarioGraphUnsafe,
               scenarioWithDetails.processVersionUnsafe,
               scenarioWithDetails.isFragment
             )
           } yield ResultsWithCountsDto.from(
             resultsWithCounts,
+            Some(liveDataPreview.nodeTransitionFrequency),
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
             skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
           )

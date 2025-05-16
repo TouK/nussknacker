@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ResultContext
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{
+  NodeTransitionFrequencyDto,
   NodeTransitionResult,
   ResultsWithCountsDto,
   TestResultsDto
@@ -58,6 +59,8 @@ object TestResultsCodecs {
     }
 
   }
+
+  implicit val nodeTransitionFrequencyDto: Encoder[NodeTransitionFrequencyDto] = deriveConfiguredEncoder
 
   implicit val testResultsDecoder: Decoder[TestResultsDto] =
     Decoder.failed(DecodingFailure("Not implemented", List.empty))

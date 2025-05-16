@@ -217,6 +217,7 @@ class ManagementResources(
                                 mapResultsToHttpResponse(
                                   ResultsWithCountsDto.from(
                                     resultsWithCounts = value,
+                                    nodeTransitionFrequency = None,
                                     skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
                                     skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition)
                                   )

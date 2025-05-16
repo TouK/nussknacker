@@ -1,27 +1,47 @@
 package pl.touk.nussknacker.engine.management.jobrunner.livedata
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.circe.Json
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import scala.compat.java8.FunctionConverters.asJavaFunction
 
 object LiveDataCollectingListenerHolder {
 
-  private val listeners =
+  private val listenerStorages =
     Caffeine
       .newBuilder()
       .expireAfterAccess(java.time.Duration.ofMinutes(30))
       .build[String, LiveDataCollectingListenerStorage]()
 
-  def results(processName: ProcessName): Option[TestResults[Json]] = {
-    Option(listeners.getIfPresent(processName.value))
-      .map(storage => TestResults.aggregate(storage.values))
+  def createListenerFor(
+      processName: ProcessName,
+      maxNumberOfSamples: Int,
+      frequencyWindowInSeconds: Int,
+  ): LiveDataCollectingListener = {
+    // We want to store and present only the live data from the current deployment,
+    // so when we start a new job, we discard all old data
+    cleanResults(processName)
+    new LiveDataCollectingListener(processName, maxNumberOfSamples, frequencyWindowInSeconds)
   }
 
-  private[livedata] def storage(processName: ProcessName, maxSize: Int): LiveDataCollectingListenerStorage = {
-    listeners.get(processName.value, asJavaFunction((_: String) => new LiveDataCollectingListenerStorage(maxSize)))
+  def getLiveDataPreview(processName: ProcessName): Option[LiveDataPreview] = {
+    Option(listenerStorages.getIfPresent(processName.value)).map(_.getLiveDataPreview)
+  }
+
+  private[livedata] def cleanResults(processName: ProcessName): Unit = {
+    listenerStorages.invalidate(processName.value)
+  }
+
+  private[livedata] def storage(
+      processName: ProcessName,
+      maxNumberOfSamples: Int,
+      frequencyWindowInSeconds: Int,
+  ): LiveDataCollectingListenerStorage = {
+    listenerStorages.get(
+      processName.value,
+      asJavaFunction((_: String) => new LiveDataCollectingListenerStorage(maxNumberOfSamples, frequencyWindowInSeconds))
+    )
   }
 
 }

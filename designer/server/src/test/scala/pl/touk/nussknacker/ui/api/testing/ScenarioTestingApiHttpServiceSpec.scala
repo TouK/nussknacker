@@ -9,13 +9,13 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
@@ -93,7 +93,7 @@ trait ScenarioTestingApiHttpServiceSpec
         new LiveDataPreviewSupported {
           override def getLiveData(
               processIdWithName: ProcessIdWithName
-          ): Future[Option[TestProcess.TestResults[Json]]] = Future.successful(None)
+          ): Future[Option[LiveDataPreview]] = Future.successful(None)
         }
       )
       given()
@@ -434,7 +434,8 @@ trait ScenarioTestingApiHttpServiceSpec
 
   "The endpoint for live data preview should" - {
     "return present, but empty live data preview" in {
-      val mockedResults = TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
+      val mockedResults =
+        LiveDataPreview(TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty), Map.empty)
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -442,7 +443,7 @@ trait ScenarioTestingApiHttpServiceSpec
             new LiveDataPreviewSupported {
               override def getLiveData(
                   processIdWithName: ProcessIdWithName
-              ): Future[Option[TestProcess.TestResults[Json]]] = Future.successful(Some(mockedResults))
+              ): Future[Option[LiveDataPreview]] = Future.successful(Some(mockedResults))
             }
           )
         }

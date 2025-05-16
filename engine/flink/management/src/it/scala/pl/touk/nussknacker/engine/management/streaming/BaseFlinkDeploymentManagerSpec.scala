@@ -94,14 +94,14 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
 
       eventually {
         // Wait until first live data samples are collected
-        val liveDataOpt = LiveDataCollectingListenerHolder.results(processName)
+        val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName)
         liveDataOpt shouldBe defined
-        val liveData = liveDataOpt.get
+        val liveDataSamples = liveDataOpt.get.liveDataSamples
 
         // Wait until first 2 live data samples are collected
-        liveData.nodeResults.get("start").map(_.size) shouldBe Some(2)
+        liveDataSamples.nodeResults.get("start").map(_.size) shouldBe Some(2)
 
-        val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveData)
+        val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
 
         val expected = TestResults[Json](
           nodeResults = Map(

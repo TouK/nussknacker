@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
-import io.circe.Json
 import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
@@ -11,14 +10,11 @@ import pl.touk.nussknacker.engine.api.deployment.{
   LiveDataPreviewSupport,
   LiveDataPreviewSupported
 }
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
-import pl.touk.nussknacker.engine.management.jobrunner.livedata.{
-  LiveDataCollectingListener,
-  LiveDataCollectingListenerHolder
-}
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.management.jobrunner.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,8 +52,14 @@ class FlinkMiniClusterScenarioJobRunner(
           modelDataProvider.getCurrentModelData().modelConfig.liveDataCollectingMode match {
             case LiveDataCollectingMode.Disabled =>
               None
-            case LiveDataCollectingMode.Enabled(maxSize) =>
-              Some(new LiveDataCollectingListener(command.processVersion.processName, maxSize))
+            case LiveDataCollectingMode.Enabled(maxNumberOfSamples, frequencyWindowInSeconds) =>
+              Some(
+                LiveDataCollectingListenerHolder.createListenerFor(
+                  command.processVersion.processName,
+                  maxNumberOfSamples,
+                  frequencyWindowInSeconds
+                )
+              )
           }
         val jobID = jobInvoker
           .invokeStaticMethod(
@@ -75,8 +77,8 @@ class FlinkMiniClusterScenarioJobRunner(
   }
 
   override def liveDataPreviewSupport: LiveDataPreviewSupport = new LiveDataPreviewSupported {
-    override def getLiveData(processIdWithName: ProcessIdWithName): Future[Option[TestResults[Json]]] =
-      Future(LiveDataCollectingListenerHolder.results(processIdWithName.name))
+    override def getLiveData(processIdWithName: ProcessIdWithName): Future[Option[LiveDataPreview]] =
+      Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
   }
 
 }
