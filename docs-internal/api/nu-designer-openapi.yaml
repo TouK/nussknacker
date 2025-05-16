@@ -4613,7 +4613,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TestResultsDto'
+                $ref: '#/components/schemas/ResultsWithCountsDto'
         '400':
           description: ''
           content:
@@ -4765,6 +4765,8 @@ paths:
                           changesCanReloadParameters: false
                       status: AVAILABLE
                     testWithGeneratedData:
+                      status: AVAILABLE
+                    liveDataPreview:
                       status: AVAILABLE
         '400':
           description: ''
@@ -6595,6 +6597,21 @@ components:
             type: string
           type:
             $ref: '#/components/schemas/NodeTypes12'
+    NodeTransitionFrequencyDto:
+      title: NodeTransitionFrequencyDto
+      type: object
+      required:
+      - sourceNodeId
+      - frequency
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        frequency:
+          type: number
     NodeTransitionResult:
       title: NodeTransitionResult
       type: object
@@ -6789,6 +6806,7 @@ components:
       oneOf:
       - $ref: '#/components/schemas/InvalidScenario'
       - $ref: '#/components/schemas/NoSources'
+      - $ref: '#/components/schemas/NotSupportedByScenarioType'
       - $ref: '#/components/schemas/NotSupportedBySources'
     NotAvailable_T:
       title: NotAvailable_T
@@ -6798,6 +6816,9 @@ components:
       properties:
         reason:
           $ref: '#/components/schemas/NotAvailableReason'
+    NotSupportedByScenarioType:
+      title: NotSupportedByScenarioType
+      type: object
     NotSupportedBySources:
       title: NotSupportedBySources
       type: object
@@ -7062,10 +7083,14 @@ components:
       type: object
       required:
       - id
+      - timestamp
       - variables
       properties:
         id:
           type: string
+        timestamp:
+          type: string
+          format: date-time
         variables:
           $ref: '#/components/schemas/Map_Json'
     ResultsWithCountsDto:
@@ -7079,6 +7104,12 @@ components:
           $ref: '#/components/schemas/TestResultsDto'
         counts:
           $ref: '#/components/schemas/Map_NodeCount'
+        nodeTransitionFrequency:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/NodeTransitionFrequencyDto'
     RunDeploymentRequest:
       title: RunDeploymentRequest
       type: object
@@ -7331,10 +7362,13 @@ components:
       required:
       - testWithParameters
       - testWithGeneratedData
+      - liveDataPreview
       properties:
         testWithParameters:
           $ref: '#/components/schemas/CapabilityStatus_T'
         testWithGeneratedData:
+          $ref: '#/components/schemas/CapabilityStatus_T'
+        liveDataPreview:
           $ref: '#/components/schemas/CapabilityStatus_T'
     ScenarioTestData:
       title: ScenarioTestData

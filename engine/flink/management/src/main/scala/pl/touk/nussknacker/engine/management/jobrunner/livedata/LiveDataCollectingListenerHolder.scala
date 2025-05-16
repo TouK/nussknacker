@@ -11,7 +11,7 @@ object LiveDataCollectingListenerHolder {
   private val listenerStorages =
     Caffeine
       .newBuilder()
-      .expireAfterAccess(java.time.Duration.ofMinutes(30))
+      .expireAfterAccess(java.time.Duration.ofHours(1))
       .build[String, LiveDataCollectingListenerStorage]()
 
   def createListenerFor(
