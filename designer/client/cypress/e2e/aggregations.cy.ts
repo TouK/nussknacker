@@ -16,7 +16,7 @@ describe("Aggregations", () => {
         it(`should display updated UI for ${component}`, () => {
             cy.visitNewProcess(seed, "aggregations", "Default");
             cy.layoutScenario();
-            cy.getNode(component).should("be.visible").dblclick();
+            cy.getNode(component).dblclick();
             cy.get("[data-testid=window]").should("be.visible");
             cy.get("[title='Aggregations']")
                 .parent()

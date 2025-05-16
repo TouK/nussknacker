@@ -178,19 +178,19 @@ describe("Process", () => {
         });
 
         it("should display some node details in modal", () => {
-            cy.getNode("dynamicService").should("be.visible").trigger("dblclick");
+            cy.getNode("dynamicService").trigger("dblclick");
             cy.get("[data-testid=window]").contains("Dynamicservice").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.getNode("boundedSource").should("be.visible").trigger("dblclick");
+            cy.getNode("boundedSource").trigger("dblclick");
             cy.get("[data-testid=window]").contains("Boundedsource").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.getNode("sendSms").should("be.visible").trigger("dblclick");
+            cy.getNode("sendSms").trigger("dblclick");
             cy.get("[data-testid=window]").contains("Sendsms").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
         });
@@ -224,7 +224,7 @@ describe("Process", () => {
             force: true,
         });
 
-        cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`).trigger("mousedown");
+        cy.getNode("**false").find(`[end="target"].marker-arrowhead`).trigger("mousedown");
         cy.get("#nk-graph-main")
             .trigger("mousemove", x, y, {
                 clientX: x,
@@ -241,7 +241,7 @@ describe("Process", () => {
             .parent()
             .matchImage({ screenshotConfig: { padding: 16 } });
 
-        cy.get(`[model-id$="false"] .label`).dblclick();
+        cy.getNode("**false").find(`.label`).dblclick();
         cy.get("[data-testid=window]").should("be.visible");
         cy.contains(/^Conditions:$/)
             .parent()
@@ -279,7 +279,7 @@ describe("Process", () => {
             force: true,
         });
 
-        cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`).trigger("mousedown");
+        cy.getNode("**false").find(`[end="target"].marker-arrowhead`).trigger("mousedown");
         cy.get("#nk-graph-main")
             .trigger("mousemove", x, y, {
                 clientX: x,
