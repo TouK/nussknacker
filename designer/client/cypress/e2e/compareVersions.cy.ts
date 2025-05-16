@@ -45,8 +45,7 @@ describe("Compare versions", () => {
             .trigger("mouseup", { force: true });
 
         // Change fragment param and save changes
-        cy.openNodeWindow("e2e**fragment_xxx-test-process");
-        cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("4");
+        cy.openNodeWindow("e2e**fragment_xxx-test-process").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("4");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
@@ -55,8 +54,7 @@ describe("Compare versions", () => {
         cy.get("[data-testid=window]").should("not.exist");
 
         // Change fragment param again and save changes
-        cy.openNodeWindow("e2e**fragment_xxx-test-process");
-        cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("7");
+        cy.openNodeWindow("e2e**fragment_xxx-test-process").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("7");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();

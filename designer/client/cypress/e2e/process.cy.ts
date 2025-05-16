@@ -182,20 +182,17 @@ describe("Process", () => {
         });
 
         it("should display some node details in modal", () => {
-            cy.openNodeWindow("dynamicService");
-            cy.get("[data-testid=window]").contains("Dynamicservice").should("be.visible");
+            cy.openNodeWindow("dynamicService").contains("Dynamicservice").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.openNodeWindow("boundedSource");
-            cy.get("[data-testid=window]").contains("Boundedsource").should("be.visible");
+            cy.openNodeWindow("boundedSource").contains("Boundedsource").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.openNodeWindow("sendSms");
-            cy.get("[data-testid=window]").contains("Sendsms").should("be.visible");
+            cy.openNodeWindow("sendSms").contains("Sendsms").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
         });
     });
@@ -345,9 +342,7 @@ describe("Process", () => {
             .contains(/^test$/i)
             .should("be.enabled")
             .click();
-        cy.openNodeWindow("request");
-
-        cy.get("[data-testid=window]").matchImage();
+        cy.openNodeWindow("request").matchImage();
         cy.get("[data-testid=window]")
             .should("contain.text", "Test case")
             .then(($win) => {
