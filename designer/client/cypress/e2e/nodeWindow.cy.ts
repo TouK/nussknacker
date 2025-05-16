@@ -29,7 +29,7 @@ describe("Node window", () => {
                 force: true,
             });
 
-        cy.getNode("Event Generator").dblclick();
+        cy.openNodeWindow("Event Generator");
 
         // TODO: fix validation display in node windows
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");
@@ -76,7 +76,7 @@ describe("Node window", () => {
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.getNode("switch").dblclick();
+            cy.openNodeWindow("switch");
             cy.wait("@validation");
             cy.get("[data-testid=window]").should("be.visible");
 
@@ -154,7 +154,7 @@ describe("Node window", () => {
             }),
         );
         cy.cancelScenario("---");
-        cy.getNode("enricher").dblclick();
+        cy.openNodeWindow("enricher");
         cy.get("[data-testid=window]").should("be.visible");
         cy.location("search").should("match", /nodeId=enricher/i);
         cy.contains("canceled").should("be.visible");
@@ -169,7 +169,7 @@ describe("Node window", () => {
     it("should remove input focus and close the window on double escape click", () => {
         cy.intercept("POST", "/api/nodes/*/validation").as("inputValidation");
         cy.visitNewProcess(NAME, "testProcess");
-        cy.getNode("enricher").dblclick();
+        cy.openNodeWindow("enricher");
         cy.wait("@inputValidation");
         cy.get("[data-testid=window]").should("be.visible");
         cy.get("body").type("{esc}");

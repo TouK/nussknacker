@@ -22,7 +22,7 @@ describe("Table editor", () => {
             }
         });
 
-        cy.getNode("decision-table").dblclick();
+        cy.openNodeWindow("decision-table");
         cy.get("[data-testid=window]").should("be.visible").as("modal");
         cy.get("[title='Basic Decision Table']").next().as("editor");
         cy.get("[data-testid='table-container']").should("be.visible").as("table");
@@ -121,7 +121,7 @@ describe("Table editor", () => {
             }
         });
 
-        cy.getNode("decision-table").dblclick();
+        cy.openNodeWindow("decision-table");
         cy.get("[data-testid=window]").should("be.visible").as("modal");
         cy.get("[title='Decision Table']").next().as("editor");
         cy.get("[data-testid='table-container']").should("be.visible").as("table");
@@ -178,7 +178,7 @@ describe("Table editor", () => {
         // cy.contains(/^apply/i)
         //     .should("be.enabled")
         //     .click();
-        // cy.getNode("decision-table").dblclick();
+        // cy.openNodeWindow("decision-table");
         // snapshot();
     });
 });
