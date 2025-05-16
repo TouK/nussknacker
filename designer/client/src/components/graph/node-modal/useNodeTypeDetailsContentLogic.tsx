@@ -116,7 +116,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
         <P extends Paths<NodeType>, V extends PathValue<NodeType, P>>(path: P, value: V, fallbackValue?: V): void => {
             const nextValue = value === null && fallbackValue !== undefined ? fallbackValue : value;
             setEditedNode((currentNode) => {
-                function extractBasePathWithIndex(path) {
+                function extractBasePathWithIndex(path: string) {
                     const match = path.match(/^(.*?\[\d+])/);
                     return match ? match[1] : path;
                 }
