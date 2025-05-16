@@ -57,6 +57,7 @@ export interface UIParameter {
     hintText?: string;
     label: string;
     category?: ParameterCategory;
+    changesCanReloadParameters?: boolean;
 }
 
 export enum ParameterCategory {
