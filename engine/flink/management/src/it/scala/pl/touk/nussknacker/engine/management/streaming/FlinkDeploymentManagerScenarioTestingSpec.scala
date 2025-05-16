@@ -65,9 +65,9 @@ class FlinkDeploymentManagerScenarioTestingSpec
 
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
       r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) } shouldBe Map(
-        "startProcess" -> List(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))),
-        "nightFilter"  -> List(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))),
-        "endSend"      -> List(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))),
+        "startProcess" -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "nightFilter"  -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "endSend"      -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
       )
     }
   }

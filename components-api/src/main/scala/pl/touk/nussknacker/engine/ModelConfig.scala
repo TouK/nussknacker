@@ -46,7 +46,7 @@ object ModelConfig {
   private def parseLiveDataCollectingMode(config: Config): LiveDataCollectingMode = {
     if (config.getOrElse("liveDataCollecting.enabled", false)) {
       LiveDataCollectingMode.Enabled(
-        maxNumberOfSamples = config.getOrElse("liveDataCollecting.maxSize", 10),
+        maxNumberOfSamples = config.getOrElse("liveDataCollecting.maxNumberOfSamples", 10),
         frequencyWindowInSeconds = config.getOrElse("liveDataCollecting.frequencyWindowInSeconds", 60),
       )
     } else {

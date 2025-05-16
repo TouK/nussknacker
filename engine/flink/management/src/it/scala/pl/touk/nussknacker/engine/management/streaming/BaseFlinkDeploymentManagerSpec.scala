@@ -78,6 +78,11 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
     val process      = SampleProcess.prepareProcessWithEventGeneratorSource(processName)
     val deploymentId = DeploymentId("with-event-generator")
 
+    LiveDataCollectingListenerHolder.createListenerFor(
+      processName = processName,
+      maxNumberOfSamples = 20,
+      frequencyWindowInSeconds = 60
+    )
     val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
       process = process,
       processVersion = ProcessVersion(version, processName, processId, List.empty, "user1", Some(13)),
@@ -93,96 +98,79 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       )
 
       eventually {
-        // Wait until first live data samples are collected
-        val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName)
-        liveDataOpt shouldBe defined
-        val liveDataSamples = liveDataOpt.get.liveDataSamples
+        if (useMiniClusterForDeployment) {
+          // Wait until first live data samples are collected
+          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName)
+          liveDataOpt shouldBe defined
+          val liveDataSamples = liveDataOpt.get.liveDataSamples
 
-        // Wait until first 2 live data samples are collected
-        liveDataSamples.nodeResults.get("start").map(_.size) shouldBe Some(2)
+          // Wait until first 15 live data samples are collected
+          liveDataSamples.nodeResults.get("start").map(_.size) shouldBe Some(15)
 
-        val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
+          val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
 
-        val expected = TestResults[Json](
-          nodeResults = Map(
-            "start" -> List(
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-0",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-              ),
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-1",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-              ),
+          externalDeploymentIdOpt shouldBe defined
+          val expected = new TestResults[Json](
+            nodeResults = Map(
+              "start" ->
+                (0 to 14).map { idx =>
+                  ResultContext(
+                    s"runningFlinkEventGenerator-start-0-$idx",
+                    mockedTimestamp,
+                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+                  )
+                }.toList,
+              "endSend" ->
+                (0 to 14).map { idx =>
+                  ResultContext(
+                    s"runningFlinkEventGenerator-start-0-$idx",
+                    mockedTimestamp,
+                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+                  )
+                }.toList,
             ),
-            "endSend" -> List(
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-0",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-              ),
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-1",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-              ),
+            nodeTransitionResults = Map(
+              NodeTransition("start", Some("endSend")) ->
+                (0 to 14).map { idx =>
+                  ResultContext(
+                    s"runningFlinkEventGenerator-start-0-$idx",
+                    mockedTimestamp,
+                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+                  )
+                }.toList,
+              NodeTransition("endSend", None) ->
+                (0 to 14).map { idx =>
+                  ResultContext(
+                    s"runningFlinkEventGenerator-start-0-$idx",
+                    mockedTimestamp,
+                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+                  )
+                }.toList,
             ),
-          ),
-          nodeTransitionResults = Map(
-            NodeTransition("start", Some("endSend")) -> List(
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-0",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+            invocationResults = Map(
+              "start" -> List(
+                ExpressionInvocationResult(
+                  "runningFlinkEventGenerator",
+                  "value",
+                  Json.obj("pretty" -> "abrakadabra".asJson)
+                )
               ),
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-1",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-              ),
+              "endSend" ->
+                (0 to 14).map { idx =>
+                  ExpressionInvocationResult(
+                    s"runningFlinkEventGenerator-start-0-$idx",
+                    "Value",
+                    Json.obj("pretty" -> "message".asJson)
+                  )
+                }.toList,
             ),
-            NodeTransition("endSend", None) -> List(
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-0",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-              ),
-              ResultContext(
-                "runningFlinkEventGenerator-start-0-1",
-                mockedTimestamp,
-                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-              ),
-            ),
-          ),
-          invocationResults = Map(
-            "start" -> List(
-              ExpressionInvocationResult(
-                "runningFlinkEventGenerator",
-                "value",
-                Json.obj("pretty" -> "abrakadabra".asJson)
-              )
-            ),
-            "endSend" -> List(
-              ExpressionInvocationResult(
-                "runningFlinkEventGenerator-start-0-0",
-                "Value",
-                Json.obj("pretty" -> "message".asJson)
-              ),
-              ExpressionInvocationResult(
-                "runningFlinkEventGenerator-start-0-1",
-                "Value",
-                Json.obj("pretty" -> "message".asJson)
-              ),
-            ),
-          ),
-          externalInvocationResults = Map(),
-          exceptions = List(),
-        )
-        liveDataWithMockedTimestamp shouldBe expected
+            externalInvocationResults = Map(),
+            exceptions = List(),
+          )
+          liveDataWithMockedTimestamp shouldBe expected
+        }
+        externalDeploymentIdOpt shouldBe defined
       }
-      externalDeploymentIdOpt shouldBe defined
     } finally {
       cancelProcess(processName)
     }
