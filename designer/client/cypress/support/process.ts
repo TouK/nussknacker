@@ -304,7 +304,6 @@ function openNodeWindow(nameOrAlias: string) {
 
     cy.wait("@nodeValidation");
     cy.wait("@additionalInfo");
-    cy.wait("@nodeValidation");
     return cy.get("[data-testid=window]").should("be.visible");
 }
 
