@@ -85,6 +85,10 @@ trait WithAdHocTestsLogic {
        |    },
        |    "testWithGeneratedData": {
        |      "status": "AVAILABLE"
+       |    },
+       |    "liveDataPreview": {
+       |        "status": "NOT_AVAILABLE",
+       |        "reason": "NOT_SUPPORTED_BY_SCENARIO_TYPE"
        |    }
        |}""".stripMargin
 

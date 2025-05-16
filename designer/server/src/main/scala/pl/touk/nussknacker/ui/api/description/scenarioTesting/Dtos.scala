@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
 import sttp.tapir.derevo.schema
 
+import scala.collection.compat._
 import scala.collection.immutable
 
 object Dtos {

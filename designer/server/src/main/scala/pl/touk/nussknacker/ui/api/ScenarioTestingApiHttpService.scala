@@ -38,6 +38,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.ScenarioTestingApi
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
@@ -199,7 +200,10 @@ class ScenarioTestingApiHttpService(
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, skipResultsPerNode, skipResultsPerTransition) =>
           for {
-            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioWithDetails <- getScenarioWithDetailsByName(
+              scenarioName,
+              GetScenarioWithDetailsOptions.withScenarioGraph
+            )
             processId <- EitherT
               .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
             processIdWithName = ProcessIdWithName(processId, scenarioName)

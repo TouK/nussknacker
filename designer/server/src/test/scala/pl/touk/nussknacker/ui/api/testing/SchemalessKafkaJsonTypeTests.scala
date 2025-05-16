@@ -16,6 +16,7 @@ import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -73,6 +74,11 @@ class SchemalessKafkaJsonTypeTests
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     createKafkaTopics()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    MockableDeploymentManager.clean()
   }
 
   "The endpoint for adhoc validate should" - {

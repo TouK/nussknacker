@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import com.typesafe.scalalogging.StrictLogging
+import io.circe.Json
+import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
@@ -16,9 +18,12 @@ import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.management.jobrunner.livedata.LiveDataCollectingListenerHolder
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 
@@ -60,6 +65,123 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
           version = Some(version)
         )
       )
+      externalDeploymentIdOpt shouldBe defined
+    } finally {
+      cancelProcess(processName)
+    }
+  }
+
+  test("deploy scenario in running flink with event generator") {
+    val processName = ProcessName("runningFlinkEventGenerator")
+
+    val version      = VersionId(15)
+    val process      = SampleProcess.prepareProcessWithEventGeneratorSource(processName)
+    val deploymentId = DeploymentId("with-event-generator")
+
+    val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
+      process = process,
+      processVersion = ProcessVersion(version, processName, processId, List.empty, "user1", Some(13)),
+      deploymentId = deploymentId
+    )
+    try {
+      deploymentStatus(processName) shouldBe List(
+        DeploymentStatusDetails(
+          status = SimpleStateStatus.Running,
+          deploymentId = Some(deploymentId),
+          version = Some(version)
+        )
+      )
+
+      eventually {
+        // Wait until first live data samples are collected
+        val liveDataOpt = LiveDataCollectingListenerHolder.results(processName)
+        liveDataOpt shouldBe defined
+        val liveData = liveDataOpt.get
+
+        // Wait until first 2 live data samples are collected
+        liveData.nodeResults.get("start").map(_.size) shouldBe Some(2)
+
+        val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveData)
+
+        val expected = TestResults[Json](
+          nodeResults = Map(
+            "start" -> List(
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-0",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-1",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+            ),
+            "endSend" -> List(
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-0",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-1",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+            ),
+          ),
+          nodeTransitionResults = Map(
+            NodeTransition("start", Some("endSend")) -> List(
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-0",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-1",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+            ),
+            NodeTransition("endSend", None) -> List(
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-0",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+              ResultContext(
+                "runningFlinkEventGenerator-start-0-1",
+                mockedTimestamp,
+                Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+              ),
+            ),
+          ),
+          invocationResults = Map(
+            "start" -> List(
+              ExpressionInvocationResult(
+                "runningFlinkEventGenerator",
+                "value",
+                Json.obj("pretty" -> "abrakadabra".asJson)
+              )
+            ),
+            "endSend" -> List(
+              ExpressionInvocationResult(
+                "runningFlinkEventGenerator-start-0-0",
+                "Value",
+                Json.obj("pretty" -> "message".asJson)
+              ),
+              ExpressionInvocationResult(
+                "runningFlinkEventGenerator-start-0-1",
+                "Value",
+                Json.obj("pretty" -> "message".asJson)
+              ),
+            ),
+          ),
+          externalInvocationResults = Map(),
+          exceptions = List(),
+        )
+        liveDataWithMockedTimestamp shouldBe expected
+      }
       externalDeploymentIdOpt shouldBe defined
     } finally {
       cancelProcess(processName)
@@ -354,4 +476,43 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
 
   private def deploymentStatus(name: ProcessName): List[DeploymentStatusDetails] =
     deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value
+
+  // Test results (and live data results represented by the same data structures) contain timestamps
+  // In order to assert them in tests, we substitute them with fixed Instant.
+  private def withFixedTimestamp(testResults: TestResults[Json]): (TestResults[Json], Instant) = {
+    val fixedInstant = Instant.now
+    (
+      TestResults[Json](
+        nodeResults = withFixedTimestamp(testResults.nodeResults, fixedInstant),
+        nodeTransitionResults = withFixedTimestamp(testResults.nodeTransitionResults, fixedInstant),
+        invocationResults = testResults.invocationResults,
+        externalInvocationResults = testResults.externalInvocationResults,
+        exceptions = testResults.exceptions.map(withFixedTimestamp(_, fixedInstant)),
+      ),
+      fixedInstant
+    )
+  }
+
+  private def withFixedTimestamp(
+      exceptionResult: ExceptionResult[Json],
+      fixedTimestamp: Instant
+  ): ExceptionResult[Json] = {
+    ExceptionResult(
+      withFixedTimestamp(exceptionResult.context, fixedTimestamp),
+      exceptionResult.nodeId,
+      exceptionResult.throwable
+    )
+  }
+
+  private def withFixedTimestamp[K](
+      results: Map[K, List[ResultContext[Json]]],
+      fixedTimestamp: Instant
+  ): Map[K, List[ResultContext[Json]]] = {
+    results.map { case (k, v) => (k, v.map(withFixedTimestamp(_, fixedTimestamp))) }
+  }
+
+  private def withFixedTimestamp(resultContext: ResultContext[Json], fixedTimestamp: Instant): ResultContext[Json] = {
+    ResultContext(resultContext.id, fixedTimestamp, resultContext.variables)
+  }
+
 }
