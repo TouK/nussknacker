@@ -5,25 +5,24 @@ import type { ProcessName, ProcessVersionId, Scenario } from "../../components/P
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
-import type { ThunkAction } from "../reduxTypes";
+import type { Action, ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
 
-export type ScenarioActions = CorrectInvalidScenarioAction | DisplayProcessAction | UpdateImportedProcessAction;
-
-type CorrectInvalidScenarioAction = {
-    type: "CORRECT_INVALID_SCENARIO";
-    processDefinitionData: ProcessDefinitionData;
-};
-
-type DisplayProcessAction = {
-    type: "DISPLAY_PROCESS";
-    scenario: Scenario;
-};
-
-type UpdateImportedProcessAction = {
-    type: "UPDATE_IMPORTED_PROCESS";
-    scenario: Scenario;
-};
+export type ScenarioActions =
+    | {
+          type: "CORRECT_INVALID_SCENARIO";
+          processDefinitionData: ProcessDefinitionData;
+      }
+    | {
+          type: "DISPLAY_PROCESS";
+          scenario: Scenario;
+      }
+    | {
+          type: "UPDATE_IMPORTED_PROCESS";
+          scenario: Scenario;
+      }
+    | { type: "CLEAR_PROCESS" }
+    | { type: "HIDE_RUN_PROCESS_DETAILS" };
 
 export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
@@ -50,7 +49,7 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
         );
 }
 
-export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph) {
+export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph): ThunkAction {
     return (dispatch) =>
         HttpService.getTestCapabilities(processName, scenarioGraph).then(({ data }) =>
             dispatch({
@@ -60,7 +59,7 @@ export function displayTestCapabilities(processName: ProcessName, scenarioGraph:
         );
 }
 
-export function displayCurrentProcessVersion(processName: ProcessName) {
+export function displayCurrentProcessVersion(processName: ProcessName): ThunkAction {
     return fetchProcessToDisplay(processName);
 }
 
@@ -79,7 +78,7 @@ export function clearProcess(): ThunkAction {
     };
 }
 
-export function hideRunProcessDetails() {
+export function hideRunProcessDetails(): Action {
     replaceSearchQuery(omit(["from", "to", "refresh"]));
     return { type: "HIDE_RUN_PROCESS_DETAILS" };
 }
