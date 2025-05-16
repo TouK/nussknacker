@@ -2,7 +2,8 @@ import { get, identity, isEqual } from "lodash";
 import React, { type SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { nodeValidationDataUpdating, validateNodeData } from "../../../actions/nk";
+import { nodeValidationDynamicParametersLoading, nodeValidationDynamicParametersLoaded, validateNodeData } from "../../../actions/nk";
+import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType, Parameter } from "../../../types";
@@ -54,7 +55,9 @@ export function useNodeAdjust(
     const adjustedNode = useMemo<typeof node>(() => adjustNode(node), [adjustNode, node]);
 
     const adjustedOnChange = useCallback<typeof onChange>(
-        (setNodeAction, setEdgesAction) => onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction),
+        (setNodeAction, setEdgesAction) => {
+            return onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction);
+        },
         [onChange],
     );
 
@@ -72,6 +75,8 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables);
     const processName = useSelector(getProcessName);
     const processProperties = useSelector(getProcessProperties);
+    const [settings] = useUserSettings();
+    const autoApply = settings["node.autoApply"];
 
     const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
 
@@ -123,13 +128,14 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
                     (parameterDefinition) => parameterDefinition.name === editedParam?.name,
                 );
 
-                if (editedParamDefinition?.changesCanReloadParameters) {
-                    dispatch(nodeValidationDataUpdating(currentNode.id));
-                    setImmutable<NodeType, Paths<NodeType>>(currentNode, `${basePath}.isLoading`, true);
-                    console.log(get(currentNode, `${basePath}`));
+                const nextNode = setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue);
+                const detectChanges = !isEqual(nextNode, currentNode);
+
+                if (editedParamDefinition?.changesCanReloadParameters && detectChanges) {
+                    dispatch(nodeValidationDynamicParametersLoading(currentNode.id, [editedParamDefinition.name]));
                 }
 
-                return setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue);
+                return nextNode;
             });
         },
         [dispatch, parameterDefinitions, setEditedNode],
@@ -138,17 +144,25 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     useEffect(() => {
         if (showValidation) {
             dispatch(
-                validateNodeData(processName, {
-                    //see NODES_CONNECTED/NODES_DISCONNECTED
-                    outgoingEdges: edges.filter((e) => e.to != ""),
-                    nodeData: node,
-                    processProperties,
-                    branchVariableTypes: getBranchVariableTypes(node.id),
-                    variableTypes,
-                }),
+                validateNodeData(
+                    processName,
+                    {
+                        //see NODES_CONNECTED/NODES_DISCONNECTED
+                        outgoingEdges: edges.filter((e) => e.to != ""),
+                        nodeData: node,
+                        processProperties,
+                        branchVariableTypes: getBranchVariableTypes(node.id),
+                        variableTypes,
+                    },
+                    () => {
+                        if (!autoApply) {
+                            dispatch(nodeValidationDynamicParametersLoaded(node.id));
+                        }
+                    },
+                ),
             );
         }
-    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
+    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes, autoApply]);
 
     return {
         ...props,

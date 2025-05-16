@@ -67,7 +67,6 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
         if (!dynamicParameterDefinitions) {
             return ProcessUtils.extractComponentDefinition(node, components)?.parameters;
         }
-
         return dynamicParameterDefinitions || null;
     },
 );
@@ -79,3 +78,11 @@ export const getVariableTypes = createSelector(
     getNodeResults,
     (nodeResults) => (originalNodeId) => ProcessUtils.getVariablesFromValidation(nodeResults, originalNodeId) || {},
 );
+
+export const getDynamicParametersChanged =
+    (state: RootState) =>
+    (nodeId: string): string[] | undefined => {
+        const nodeDetails = getNodeDetails(state);
+        const nodeDetail = nodeDetails(nodeId);
+        return nodeDetail?.changingDynamicParameters;
+    };

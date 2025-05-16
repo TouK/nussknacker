@@ -39,10 +39,7 @@ export function adjustParameters(node: Readonly<NodeType>, parameterDefinitions:
                 name: def.name,
                 expression: def.defaultValue,
             };
-            return {
-                ...{ ...(currentParam || parameterFromDefinition) },
-                isLoading: false,
-            };
+            return currentParam || parameterFromDefinition;
         });
     return setImmutable(node, path, adjustedParameters);
 }

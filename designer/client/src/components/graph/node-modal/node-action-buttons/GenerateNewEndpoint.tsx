@@ -38,7 +38,7 @@ export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props)
                         branchVariableTypes: getBranchVariableTypes(node.id),
                         variableTypes,
                     },
-                    () => handleNewEndpointGenerated(newTopic),
+                    ({ status }) => status === "allowDataUpdate" && handleNewEndpointGenerated(newTopic),
                 ),
             );
         } catch (error) {
