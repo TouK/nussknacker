@@ -12,6 +12,7 @@ object ContextTypeHelpers {
       parentCtx: TypeInformation[Option[Context]]
   ): TypeInformation[Context] =
     ConcreteCaseClassTypeInfo(
+      ("initialId", TypeInformation.of(classOf[String])),
       ("id", TypeInformation.of(classOf[String])),
       ("variables", variables),
       ("parentContext", parentCtx)

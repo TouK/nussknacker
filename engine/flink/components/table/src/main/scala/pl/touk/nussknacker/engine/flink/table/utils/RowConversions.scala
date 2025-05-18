@@ -17,7 +17,7 @@ object RowConversions {
       parentValidationContext <- validationContext.parent
       parentContext           <- context.parentContext
     } yield contextToRow(parentContext, parentValidationContext)
-    val row          = Row.withPositions(parentContextAsRow.map(_ => 3).getOrElse(2))
+    val row          = Row.withPositions(parentContextAsRow.map(_ => 4).getOrElse(3))
     val variablesRow = encodeVariables(context.variables, validationContext)
     row.setField(0, context.initialId)
     row.setField(1, context.id)
@@ -49,7 +49,7 @@ object RowConversions {
       row.getField(0).asInstanceOf[String],
       row.getField(1).asInstanceOf[String],
       rowToScalaMap(row.getField(2).asInstanceOf[Row]),
-      Option(row).filter(_.getArity >= 3).map(_.getField(3).asInstanceOf[Row]).map(rowToContext)
+      Option(row).filter(_.getArity >= 4).map(_.getField(3).asInstanceOf[Row]).map(rowToContext)
     )
   }
 
