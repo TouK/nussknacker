@@ -27,6 +27,9 @@ object Context {
   def apply(id: String, variables: Map[String, Any]): Context =
     Context(id, variables, None)
 
+  def apply(id: String, variables: Map[String, Any], parentContext: Option[Context]): Context =
+    Context(id, id, variables, parentContext)
+
 }
 
 case class ContextId(value: String)
@@ -34,11 +37,13 @@ case class ContextId(value: String)
 /**
  * Context is container for variables used in expression evaluation
  *
+ * @param initialId     the initial id of the context (id may change during the processing, but the initial id is preserved in this field
  * @param id            correlation id/trace id used for tracing (logs, error presentation) and for tests mechanism, it should be always defined
  * @param variables     variables available in evaluation
  * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
  */
 case class Context(
+    initialId: String,
     id: String,
     variables: Map[String, Any],
     parentContext: Option[Context]
@@ -71,7 +76,7 @@ case class Context(
     copy(variables = variables ++ otherVariables)
 
   def pushNewContext(variables: Map[String, Any]): Context = {
-    Context(id, variables, Some(this))
+    Context(initialId, id, variables, Some(this))
   }
 
   // it returns all variables from context including parent tree

@@ -168,6 +168,17 @@
 * [#8004](https://github.com/TouK/nussknacker/pull/8004) Scenarios no longer have to end with final `Sink` node
   * set `modelConfig.allowEndingScenarioWithoutSink` of the scenarioType in the `scenarioTypes` config section to `true` in order to allow ending scenarios with nodes other than sinks
   * the flag is optional, the default value of the flag is `false` (no changes in behavior)
+* [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition frequencies
+    * live data preview is optional and available for now only for Flink minicluster 
+    * there is a new endpoint `/scenarioTesting/{scenarioName}/liveData`, which returns live data samples and frequencies
+    * the functionality can be configured by setting in the 'modelConfig' section of the scenario type:
+      ```hocon
+      liveDataPreview {              // optional config section, functionality disabled by default
+        enabled: true                // disabled by default
+        maxNumberOfSamples: 20       // max number of latest live data samples that will be returned
+        frequencyWindowInSeconds: 60 // the time windows, for which the node transition frequency will be calculated
+      }
+      ```
 
 ## 1.18
 

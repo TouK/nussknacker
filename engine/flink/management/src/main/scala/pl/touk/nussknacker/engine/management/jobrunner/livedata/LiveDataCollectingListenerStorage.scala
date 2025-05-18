@@ -15,7 +15,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
     frequencyWindowInSeconds: Int,
 ) {
 
-  private type K = Context
+  private type K = String
   private type V = TestResults[Json]
 
   private val results                             = new ConcurrentHashMap[K, V]()
@@ -27,16 +27,13 @@ private[livedata] class LiveDataCollectingListenerStorage(
 
   def updateResults(context: Context, action: TestResults[Json] => TestResults[Json]): Unit = {
     compute(
-      context,
-      (_: Context, maybeOldResults: Option[TestResults[Json]]) => {
+      context.initialId,
+      (_: String, maybeOldResults: Option[TestResults[Json]]) => {
         val oldResults = maybeOldResults match {
-          case Some(results) =>
-            results
-          case None =>
-            TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
+          case Some(results) => results
+          case None          => TestResults.empty[Json]
         }
-        val newResults = action(oldResults)
-        newResults
+        action(oldResults)
       }
     )
   }
@@ -52,26 +49,26 @@ private[livedata] class LiveDataCollectingListenerStorage(
     }
   }
 
-  private def compute(key: K, remappingFunction: (K, Option[V]) => V): V = synchronized {
+  private def compute(key: K, remappingFunction: (K, Option[V]) => V): Unit = synchronized {
     val currentValue = Option(results.get(key))
     val newValue     = remappingFunction(key, currentValue)
     val isNewKey     = !results.containsKey(key)
+    if (isNewKey) orderOfResults.add(key)
     results.put(key, newValue)
-    if (isNewKey) {
-      orderOfResults.add(key)
-      while (orderOfResults.size() > maxNumberOfSamples) {
-        val oldest = orderOfResults.poll()
-        if (oldest != null) results.remove(oldest)
-      }
+    while (orderOfResults.size() > maxNumberOfSamples) {
+      val oldest = orderOfResults.poll()
+      if (oldest != null) results.remove(oldest)
     }
-    newValue
   }
 
   private def getAggregatedResults: V =
     TestResults.aggregate(orderOfResults.asScala.toList.flatMap(key => Option(results.get(key))))
 
   private def getTransitionFrequencies: Map[NodeTransition, BigDecimal] = {
-    val cutoff = Instant.now().getEpochSecond - frequencyWindowInSeconds
+    val cutoff                  = Instant.now().getEpochSecond - frequencyWindowInSeconds
+    val oldestSampleEpochSecond = transitionsByEpochSecond.keys().asScala.min
+    val newestSampleEpochSecond = transitionsByEpochSecond.keys().asScala.max
+    val samplingInterval        = newestSampleEpochSecond - oldestSampleEpochSecond + 1
     transitionsByEpochSecond.asScala
       .filter { case (epoch, _) => epoch >= cutoff }
       .values
@@ -80,7 +77,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
       .map { case (transition, transitions) =>
         (
           transition,
-          BigDecimal(transitions.size)./(frequencyWindowInSeconds).setScale(4, BigDecimal.RoundingMode.HALF_UP)
+          BigDecimal(transitions.size)./(samplingInterval).setScale(4, BigDecimal.RoundingMode.HALF_UP)
         )
       }
   }

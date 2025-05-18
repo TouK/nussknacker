@@ -4,7 +4,7 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelDataProvider
-import pl.touk.nussknacker.engine.ModelConfig.LiveDataCollectingMode
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
   LiveDataPreviewSupport,
@@ -49,10 +49,10 @@ class FlinkMiniClusterScenarioJobRunner(
         }
         env.configure(conf)
         val liveDataCollectingListener =
-          modelDataProvider.getCurrentModelData().modelConfig.liveDataCollectingMode match {
-            case LiveDataCollectingMode.Disabled =>
+          modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
+            case LiveDataPreviewMode.Disabled =>
               None
-            case LiveDataCollectingMode.Enabled(maxNumberOfSamples, frequencyWindowInSeconds) =>
+            case LiveDataPreviewMode.Enabled(maxNumberOfSamples, frequencyWindowInSeconds) =>
               Some(
                 LiveDataCollectingListenerHolder.createListenerFor(
                   command.processVersion.processName,

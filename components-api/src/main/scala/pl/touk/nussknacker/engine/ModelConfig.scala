@@ -4,13 +4,13 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
-import pl.touk.nussknacker.engine.ModelConfig.LiveDataCollectingMode
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
     namingStrategy: NamingStrategy,
-    liveDataCollectingMode: LiveDataCollectingMode,
+    liveDataPreviewMode: LiveDataPreviewMode,
     // TODO: we should parse this underlying config as ModelConfig class fields instead of passing raw config
     underlyingConfig: Config,
 ) {
@@ -25,32 +25,32 @@ object ModelConfig {
     ModelConfig(
       allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
       namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
-      liveDataCollectingMode = parseLiveDataCollectingMode(rawModelConfig),
+      liveDataPreviewMode = parseLiveDataPreviewMode(rawModelConfig),
       underlyingConfig = rawModelConfig,
     )
   }
 
-  sealed trait LiveDataCollectingMode
+  sealed trait LiveDataPreviewMode
 
-  object LiveDataCollectingMode {
+  object LiveDataPreviewMode {
 
-    case object Disabled extends LiveDataCollectingMode
+    case object Disabled extends LiveDataPreviewMode
 
     final case class Enabled(
         maxNumberOfSamples: Int,
         frequencyWindowInSeconds: Int,
-    ) extends LiveDataCollectingMode
+    ) extends LiveDataPreviewMode
 
   }
 
-  private def parseLiveDataCollectingMode(config: Config): LiveDataCollectingMode = {
-    if (config.getOrElse("liveDataCollecting.enabled", false)) {
-      LiveDataCollectingMode.Enabled(
-        maxNumberOfSamples = config.getOrElse("liveDataCollecting.maxNumberOfSamples", 10),
-        frequencyWindowInSeconds = config.getOrElse("liveDataCollecting.frequencyWindowInSeconds", 60),
+  private def parseLiveDataPreviewMode(config: Config): LiveDataPreviewMode = {
+    if (config.getOrElse("liveDataPreview.enabled", false)) {
+      LiveDataPreviewMode.Enabled(
+        maxNumberOfSamples = config.getOrElse("liveDataPreview.maxNumberOfSamples", 10),
+        frequencyWindowInSeconds = config.getOrElse("liveDataPreview.frequencyWindowInSeconds", 60),
       )
     } else {
-      LiveDataCollectingMode.Disabled
+      LiveDataPreviewMode.Disabled
     }
   }
 

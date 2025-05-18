@@ -82,6 +82,8 @@ object TestProcess {
 
   object TestResults {
 
+    def empty[T]: TestResults[T] = TestResults[T](Map.empty, Map.empty, Map.empty, Map.empty, List.empty)
+
     def aggregate[T](testResults: Iterable[TestResults[T]]): TestResults[T] = {
       TestResults[T](
         nodeResults = mergeMaps(testResults.map(_.nodeResults)),
