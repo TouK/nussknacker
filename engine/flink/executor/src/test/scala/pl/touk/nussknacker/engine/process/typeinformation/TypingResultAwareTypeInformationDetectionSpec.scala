@@ -257,8 +257,8 @@ class TypingResultAwareTypeInformationDetectionSpec
       nested: (String, TypeSerializer[_] => Assertion)*
   ): Unit = {
     inside(serializer.asInstanceOf[TypeSerializer[Context]]) { case e: ScalaCaseClassSerializer[Context] @unchecked =>
-      e.getFieldSerializers should have length 3
-      assertNested(e.getFieldSerializers.apply(1), nested: _*)
+      e.getFieldSerializers should have length 4
+      assertNested(e.getFieldSerializers.apply(2), nested: _*)
 
     }
   }
