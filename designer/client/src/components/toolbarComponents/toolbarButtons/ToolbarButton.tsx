@@ -1,6 +1,6 @@
 import { alpha, decomposeColor, styled } from "@mui/material";
 import { blend } from "@mui/system/colorManipulator";
-import React from "react";
+import React, { forwardRef } from "react";
 import Dropzone from "react-dropzone";
 
 import { ButtonProgress } from "../../toolbars/test/buttons/ButtonProgress";
@@ -8,11 +8,11 @@ import { ButtonMenu } from "./ButtonMenu";
 import { ButtonRoot } from "./ButtonRoot";
 import type { ToolbarButtonProps } from "./index";
 
-function ToolbarButtonComponent(props: ToolbarButtonProps) {
+const ToolbarButtonComponent = forwardRef<HTMLButtonElement, ToolbarButtonProps>(function _ToolbarButtonComponent(props, ref) {
     if ("isLoading" in props) {
         const { isLoading, loadingProgress, loadingVariant, children, disabled, ...passProps } = props;
         return (
-            <ToolbarButtonComponent {...passProps} disabled={disabled || isLoading}>
+            <ToolbarButtonComponent {...passProps} ref={ref} disabled={disabled || isLoading}>
                 <ButtonProgress enabled={isLoading} variant={loadingVariant} value={loadingProgress} />
                 {children}
             </ToolbarButtonComponent>
@@ -21,7 +21,16 @@ function ToolbarButtonComponent(props: ToolbarButtonProps) {
 
     if ("presets" in props) {
         const { presets, selected, onPresetChange, className, ...passProps } = props;
-        return <ButtonMenu options={presets} selected={selected} onChange={onPresetChange} className={className} buttonProps={passProps} />;
+        return (
+            <ButtonMenu
+                ref={ref}
+                options={presets}
+                selected={selected}
+                onChange={onPresetChange}
+                className={className}
+                buttonProps={passProps}
+            />
+        );
     }
 
     if ("onDrop" in props) {
@@ -29,7 +38,7 @@ function ToolbarButtonComponent(props: ToolbarButtonProps) {
         return (
             <Dropzone disabled={passProps.disabled} onDrop={onDrop}>
                 {({ getRootProps, getInputProps, isDragActive }) => (
-                    <ButtonRoot {...passProps} {...getRootProps(passProps)} isActive={isDragActive}>
+                    <ButtonRoot {...passProps} {...getRootProps(passProps)} ref={ref} isActive={isDragActive}>
                         <input {...getInputProps()} />
                     </ButtonRoot>
                 )}
@@ -37,9 +46,8 @@ function ToolbarButtonComponent(props: ToolbarButtonProps) {
         );
     }
 
-    return <ButtonRoot {...props} />;
-}
-
+    return <ButtonRoot {...props} ref={ref} />;
+});
 function splitAlpha(base: string) {
     const colorObject = decomposeColor(base);
     return {

@@ -10,6 +10,7 @@ export type NodeDetailsState = Record<
         expressionType?: TypingResult;
         validationErrors: NodeValidationError[];
         validationPerformed: boolean;
+        changingDynamicParameters: string[];
     }
 >;
 
@@ -22,9 +23,33 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 [nodeId]: {
                     validationErrors: [],
                     validationPerformed: false,
+                    changingDynamicParameters: [],
                 },
             };
         }
+
+        case "NODE_VALIDATION_DYNAMIC_PARAMETERS_LOADING": {
+            const { nodeId, dynamicParametersChanged } = action;
+            return {
+                ...state,
+                [nodeId]: {
+                    ...state[nodeId],
+                    changingDynamicParameters: dynamicParametersChanged,
+                },
+            };
+        }
+
+        case "NODE_VALIDATION_DYNAMIC_PARAMETERS_LOADED": {
+            const { nodeId } = action;
+            return {
+                ...state,
+                [nodeId]: {
+                    ...state[nodeId],
+                    changingDynamicParameters: [],
+                },
+            };
+        }
+
         case "NODE_VALIDATION_UPDATED": {
             const { validationData, nodeId } = action;
             return {
@@ -35,6 +60,7 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 },
             };
         }
+
         case "NODE_DETAILS_CLOSED":
             return omit(state, action.nodeId);
         default:

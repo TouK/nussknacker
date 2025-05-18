@@ -1,5 +1,5 @@
-import { Box, Typography } from "@mui/material";
-import React, { useContext } from "react";
+import { Badge, Box, Typography } from "@mui/material";
+import React, { forwardRef, useContext } from "react";
 
 import { getEventTrackingProps, mapToolbarButtonToStatisticsEvent } from "../../../containers/event-tracking";
 import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
@@ -8,8 +8,8 @@ import { Icon } from "./Icon";
 import { ButtonsVariant, ToolbarButtonsContext } from "./ToolbarButtons";
 import type { ToolbarButtonProps } from "./types";
 
-export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps, "onDrop">>(function VariantWrapper(
-    { title, name, icon, type, className, hasError, isActive, children, ...props },
+export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps, "onDrop">>(function VariantWrapper(
+    { title, name, icon, type, className, hasError, isActive, children, showIndicator, ...props },
     ref,
 ) {
     const { variant } = useContext(ToolbarButtonsContext);
@@ -23,8 +23,8 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
             }}
         >
             <Button
-                ref={ref}
                 {...props}
+                ref={ref}
                 {...getEventTrackingProps({ selector: mapToolbarButtonToStatisticsEvent(type) })}
                 title={title || name}
                 className={"toolbarButton-Root"}
@@ -44,23 +44,25 @@ export const ButtonRoot = React.forwardRef<HTMLButtonElement, Omit<ToolbarButton
                     color: hasError ? theme.palette.error.main : isActive ? theme.palette.success.main : null,
                 })}
             >
-                <Icon
-                    title={title}
-                    className={"toolbarButton-Icon"}
-                    sx={
-                        variant === ButtonsVariant.horizontal
-                            ? {
-                                  "&, &>*": {
-                                      flex: "none",
-                                      height: "2em",
-                                      width: "2em",
-                                  },
-                              }
-                            : null
-                    }
-                >
-                    {icon}
-                </Icon>
+                <Badge color="warning" overlap={"circular"} variant={showIndicator ? "dot" : null}>
+                    <Icon
+                        title={title}
+                        className={"toolbarButton-Icon"}
+                        sx={
+                            variant === ButtonsVariant.horizontal
+                                ? {
+                                      "&, &>*": {
+                                          flex: "none",
+                                          height: "2em",
+                                          width: "2em",
+                                      },
+                                  }
+                                : null
+                        }
+                    >
+                        {icon}
+                    </Icon>
+                </Badge>
                 <Typography
                     variant={ButtonsVariant.horizontal === variant ? "button" : "overline"}
                     className={"toolbarButton-Label"}

@@ -2,7 +2,7 @@ import type { PropsOf } from "@emotion/react";
 import { ArrowDropDown } from "@mui/icons-material";
 import { Menu, MenuItem, styled } from "@mui/material";
 import type { PopoverPosition } from "@mui/material/Popover/Popover";
-import React, { useContext } from "react";
+import React, { forwardRef, useContext } from "react";
 
 import type { Option } from "../../graph/node-modal/fragment-input-definition/TypeSelect";
 import { Button } from "./Button";
@@ -30,17 +30,21 @@ const ExpandButton = styled(Button)(({ theme }) => {
     };
 });
 
-export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange, className, buttonProps }: ToolbarButtonMenuWrapperProps) {
+export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapperProps>(function ButtonMenu(
+    { options = [], selected, onChange, className, buttonProps },
+    ref,
+) {
     const [anchorPosition, setAnchorPosition] = React.useState<null | PopoverPosition>(null);
     const { variant } = useContext(ToolbarButtonsContext);
 
     if (options.length < 1) {
-        return <ToolbarButton {...buttonProps} className={className} />;
+        return <ToolbarButton {...buttonProps} ref={ref} className={className} />;
     }
 
     return (
         <ToolbarButton
             {...buttonProps}
+            ref={ref}
             className={className}
             sx={{
                 "&:has(.toolbarButton-MenuExpand:hover)": {
@@ -109,4 +113,4 @@ export const ButtonMenu = function ButtonMenu({ options = [], selected, onChange
             {buttonProps.children}
         </ToolbarButton>
     );
-};
+});
