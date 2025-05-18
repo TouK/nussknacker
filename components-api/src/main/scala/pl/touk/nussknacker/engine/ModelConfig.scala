@@ -17,6 +17,7 @@ final case class ModelConfig(
 
   def transformUnderlyingConfig(f: Config => Config): ModelConfig = ModelConfig.parse(f(underlyingConfig))
 
+  val a = 1
 }
 
 object ModelConfig {
