@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{
   PeriodicDeploymentStatus,
   PeriodicScenarioStatus
 }
-import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.ScheduledStatus
+import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 
 import java.net.URI
 
@@ -32,7 +32,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
       .getOrElse(input)
     periodicStatus.scenarioStatus match {
-      case _: ScheduledStatus =>
+      case _: ScheduledStatus | WaitingForScheduleStatus =>
         Set(
           ScenarioActionName.Cancel,
           ScenarioActionName.Redeploy,

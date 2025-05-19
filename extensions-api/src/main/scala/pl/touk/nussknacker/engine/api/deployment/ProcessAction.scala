@@ -95,7 +95,7 @@ object ScenarioActionName {
 
   val DefaultActions: Set[ScenarioActionName] = Set.empty
 
-  val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy)
+  val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Redeploy)
 
   def serialize(name: ScenarioActionName): String = name match {
     case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"

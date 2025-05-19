@@ -128,15 +128,16 @@ object SimpleStateStatus {
 
   }
 
-  val NotDeployed: StateStatus  = StateStatus("NOT_DEPLOYED")
-  val DuringDeploy: StateStatus = StateStatus("DURING_DEPLOY")
-  val Running: StateStatus      = StateStatus("RUNNING")
-  val Finished: StateStatus     = StateStatus("FINISHED")
-  val Restarting: StateStatus   = StateStatus("RESTARTING")
-  val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
-  val Canceled: StateStatus     = StateStatus("CANCELED")
+  val NotDeployed: StateStatus    = StateStatus("NOT_DEPLOYED")
+  val DuringDeploy: StateStatus   = StateStatus("DURING_DEPLOY")
+  val DuringRedeploy: StateStatus = StateStatus("DURING_REDEPLOY")
+  val Running: StateStatus        = StateStatus("RUNNING")
+  val Finished: StateStatus       = StateStatus("FINISHED")
+  val Restarting: StateStatus     = StateStatus("RESTARTING")
+  val DuringCancel: StateStatus   = StateStatus("DURING_CANCEL")
+  val Canceled: StateStatus       = StateStatus("CANCELED")
 
-  val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringDeploy, Running)
+  val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringRedeploy, DuringDeploy, Running)
 
   def isFinalOrTransitioningToFinalStatus(status: StateStatus): Boolean =
     List(SimpleStateStatus.Finished, SimpleStateStatus.DuringCancel, SimpleStateStatus.Canceled).contains(
@@ -146,7 +147,7 @@ object SimpleStateStatus {
     )
 
   val visibleActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
-    case SimpleStateStatus.Running | SimpleStateStatus.DuringCancel =>
+    case SimpleStateStatus.Running | SimpleStateStatus.DuringRedeploy =>
       Set(
         ScenarioActionName.Cancel,
         ScenarioActionName.Redeploy,
@@ -170,6 +171,8 @@ object SimpleStateStatus {
     case SimpleStateStatus.NotDeployed =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringDeploy =>
+      Set(ScenarioActionName.Cancel)
+    case SimpleStateStatus.DuringRedeploy =>
       Set(ScenarioActionName.Cancel)
     case SimpleStateStatus.Running =>
       Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Redeploy)
@@ -205,6 +208,12 @@ object SimpleStateStatus {
       icon = URI.create("/assets/states/deploy-running-animated.svg"),
       tooltip = "The scenario has been already started and currently is being deployed.",
       description = "The scenario is being deployed."
+    ),
+    SimpleStateStatus.DuringRedeploy.name -> StateDefinitionDetails(
+      displayableName = "During redeploy",
+      icon = URI.create("/assets/states/deploy-running-animated.svg"),
+      tooltip = "The scenario has been already started and currently is being redeployed.",
+      description = "The scenario is being redeployed."
     ),
     SimpleStateStatus.Running.name -> StateDefinitionDetails(
       displayableName = "Running",
