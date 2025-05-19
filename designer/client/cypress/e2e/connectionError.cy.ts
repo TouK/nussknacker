@@ -54,7 +54,10 @@ describe("Connection error", () => {
         const verifyNoBackendAccessWhenScenarioEditNodeModalOpens = () => {
             cy.log("verify no backend access when scenario edit modal opens");
             cy.visitNewProcess(NAME, "filter");
-            cy.openNodeWindow("filter");
+
+            cy.intercept("POST", "/api/nodes/*/validation").as("validation");
+            cy.get("[model-id='filter']").dblclick();
+            cy.wait("@validation");
 
             cy.intercept("/api/notifications?scenarioName=*", { statusCode: 502 });
             cy.contains(/Backend connection issue/).should("be.visible");

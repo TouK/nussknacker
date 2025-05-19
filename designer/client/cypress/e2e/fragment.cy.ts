@@ -211,8 +211,8 @@ describe("Fragment", () => {
             cy.intercept("POST", "/api/nodes/*/validation").as("fragmentInputValidation");
             cy.viewport(1600, 1200);
 
-            cy.openNodeWindow("@fragmentName");
-            cy.get("#nk-graph-fragment").scrollIntoView().getNode("input");
+            cy.getNode("@fragmentName").trigger("dblclick");
+            cy.get("#nk-graph-fragment [model-id='input']").scrollIntoView().should("be.visible");
 
             //FIXME flaky screenshot
             // cy.get("[data-testid=window]")
@@ -445,7 +445,7 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
-        cy.openNodeWindow(`e2e**-${seed2}-test-process`);
+        cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage({
             maxDiffThreshold: 0.04,
@@ -483,7 +483,7 @@ describe("Fragment", () => {
 
         cy.visitProcess("@fragmentName");
         cy.contains("sinks").should("exist").scrollIntoView();
-        cy.getNode("output").click().as("output");
+        cy.getNode("output").should("be.visible").click().as("output");
 
         cy.contains(/^dead end$/i)
             .first()
@@ -511,7 +511,7 @@ describe("Fragment", () => {
         cy.viewport(2000, 800);
         cy.layoutScenario();
 
-        cy.getNode("sendSms").click().as("sendSms");
+        cy.getNode("sendSms").should("be.visible").click().as("sendSms");
         cy.contains("fragments").should("exist").scrollIntoView();
         cy.get<string>("@deadEndFragmentName").then((name) => {
             cy.contains(name).last().should("be.visible").as("f2");
