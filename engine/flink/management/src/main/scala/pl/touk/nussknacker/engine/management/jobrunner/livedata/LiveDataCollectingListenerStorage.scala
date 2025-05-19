@@ -16,6 +16,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
 ) {
 
   private type K = String
+
   private type V = TestResults[Json]
 
   private val results                             = new ConcurrentHashMap[K, V]()
