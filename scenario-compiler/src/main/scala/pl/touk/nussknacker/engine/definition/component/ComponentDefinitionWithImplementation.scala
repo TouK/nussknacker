@@ -60,6 +60,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
     component match {
       case lifecycle: ComponentLifecycle =>
         lifecycle.closeComponent()
+      case _ =>
     }
   }
 
