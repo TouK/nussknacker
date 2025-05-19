@@ -403,7 +403,7 @@ function getModelIdSelector(name: string) {
             if (parts.length === 1) return `="${part}"`;
             if (index === 0) return `^="${part}"`;
             if (index >= parts.length - 1) return `$="${part}"`;
-            return `~="${part}"`;
+            return `*="${part}"`;
         })
         .filter(Boolean)
         .map((expr) => `[model-id${expr}]`)
