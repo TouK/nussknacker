@@ -74,4 +74,9 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     }
   }
 
+  override def close(): Unit = {
+    super.close()
+    client.close()
+  }
+
 }

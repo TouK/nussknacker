@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, Node
 import scala.concurrent.duration.FiniteDuration
 
 /*
-  This class prepares (in compile method) various objects needed to run process part on one Flink operator.
+  This class prepares (in prepareCompilerData method) various objects needed to run process part on one Flink operator.
 
   Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.

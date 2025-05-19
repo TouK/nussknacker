@@ -56,6 +56,13 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def allowedProcessingModes: AllowedProcessingModes = component.allowedProcessingModes
 
+  def close(): Unit = {
+    component match {
+      case lifecycle: ComponentLifecycle =>
+        lifecycle.closeComponent()
+    }
+  }
+
 }
 
 trait ObjectOperatingOnTypes {

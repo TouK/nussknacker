@@ -51,6 +51,8 @@ trait SchemaRegistryClient extends Serializable {
     }
   }
 
+  def close(): Unit = {}
+
 }
 
 object EmptySchemaRegistry extends SchemaRegistryClient {

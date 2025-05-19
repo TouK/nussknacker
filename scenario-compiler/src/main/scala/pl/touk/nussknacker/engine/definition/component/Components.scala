@@ -36,6 +36,10 @@ final case class Components private (
       throw new IllegalStateException("Basic components requested but they are not precomputed")
     )
 
+  def closeAll(): Unit = {
+    components.foreach(_.close())
+  }
+
 }
 
 object Components {

@@ -5,7 +5,7 @@ import cats.data.Writer
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentLifecycle}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
@@ -45,7 +45,8 @@ object KafkaUniversalComponentTransformer {
 
 abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValidationType]
     extends SingleInputDynamicComponent[T]
-    with LazyLogging {
+    with LazyLogging
+    with ComponentLifecycle {
   self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
@@ -57,7 +58,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  @transient private lazy val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
+  @transient private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {
@@ -259,5 +260,10 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
   @transient protected lazy val contentTypeParamName: ParameterName =
     KafkaUniversalComponentTransformer.contentTypeParamName
+
+  override def closeComponent(): Unit = {
+    super.closeComponent()
+    kafkaAdminClient.close()
+  }
 
 }

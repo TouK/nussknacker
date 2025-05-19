@@ -11,6 +11,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.commons.io.IOUtils
+import org.apache.kafka.clients.admin.Admin
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal._
@@ -44,9 +45,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     .credential(credential)
     .buildClient()
 
-  // TODO NU-2021: pass instead of creating
-  private lazy val kafkaAdminClient =
-    KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(config.kafkaProperties), None))
+  private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(config.kafkaProperties), None))
 
   // We need to create our own schemas service because some operations like schema listing are not exposed by default client
   // or even its Schemas inner class. Others like listing of versions are implemented incorrectly (it has wrong json field name in model)
@@ -215,6 +214,11 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     } catch {
       case NonFatal(ex) => Invalid(SchemaRegistryUnknownError(ex.getMessage, ex))
     }
+  }
+
+  override def close(): Unit = {
+    super.close()
+    kafkaAdminClient.close()
   }
 
 }

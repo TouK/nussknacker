@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.component.{ComponentLifecycle, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
@@ -46,7 +46,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 ) extends SourceFactory
     with SingleInputDynamicComponent[Source]
     with WithExplicitTypesToExtract
-    with UnboundedStreamComponent {
+    with UnboundedStreamComponent
+    with ComponentLifecycle {
 
   protected val topicNameSeparator = ","
 
@@ -66,7 +67,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   override type State = KafkaSourceFactoryState[K, V]
 
-  private lazy val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
+  private val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+  private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
   private lazy val topicsExistenceValidator =
     new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
 
@@ -206,14 +208,17 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   override def nodeDependencies: List[NodeDependency] =
     List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
-  private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-
   private def topicNamesFrom(value: String) = {
     val topicsList = value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toList
     NonEmptyList.fromList(topicsList) match {
       case Some(topicsNel) => topicsNel
       case None            => throw new IllegalStateException(s"Cannot extract topics from value '$value'")
     }
+  }
+
+  override def closeComponent(): Unit = {
+    super.closeComponent()
+    kafkaAdminClient.close()
   }
 
 }

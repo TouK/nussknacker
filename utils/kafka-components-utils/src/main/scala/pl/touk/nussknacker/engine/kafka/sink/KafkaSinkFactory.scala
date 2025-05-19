@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.kafka.sink
 
 import cats.data.NonEmptyList
+import org.apache.kafka.clients.admin.Admin
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.api.component.ComponentLifecycle
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.kafka.{
@@ -50,18 +52,26 @@ abstract class BaseKafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
     modelConfig: ModelConfig,
     implProvider: KafkaSinkImplFactory
-) extends SinkFactory {
+) extends SinkFactory
+    with ComponentLifecycle {
+
+  private var kafkaAdminClientOpt: Option[Admin] = None
 
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
     val preparedTopic    = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig)
     val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
     val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
+    kafkaAdminClientOpt = Some(kafkaAdminClient)
     new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
       .validateTopics(NonEmptyList.one(preparedTopic).map(_.prepared))
       .valueOr(err => throw err)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId            = s"${processMetaData.name}-${preparedTopic.prepared}"
     implProvider.prepareSink(preparedTopic, value, kafkaConfig, serializationSchema, clientId)
+  }
+
+  override def closeComponent(): Unit = {
+    kafkaAdminClientOpt.foreach(_.close())
   }
 
 }
