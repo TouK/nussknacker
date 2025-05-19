@@ -1,12 +1,14 @@
-import { identity, isEqual } from "lodash";
-import React, { type SetStateAction, useCallback, useEffect, useMemo } from "react";
+import { get, identity, isEqual } from "lodash";
+import React, { type SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { validateNodeData } from "../../../actions/nk";
+import { nodeValidationDynamicParametersLoading, nodeValidationDynamicParametersLoaded, validateNodeData } from "../../../actions/nk";
+import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
-import type { Edge, NodeType } from "../../../types";
+import type { Edge, NodeType, Parameter } from "../../../types";
 import { ParamFieldLabel } from "./FieldLabel";
+import type { NodeState } from "./node/useNodeState";
 import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
@@ -23,9 +25,20 @@ import type { Paths, PathValue } from "./typeHelpers";
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 export type SetProperty<O = NodeType> = <P extends Paths<O>, V extends PathValue<O, P>>(path: P, value: V, fallbackValue?: V) => void;
 
-export function useNodeAdjust() {
+function wrapSetState<T>(action: SetStateAction<T>, transform: (value: T) => T = identity): SetStateAction<T> {
+    function isPlainValue<T>(action: SetStateAction<T>): action is T {
+        return typeof action !== "function";
+    }
+    return (prev) => transform(isPlainValue(action) ? action : action(prev));
+}
+
+export function useNodeAdjust(
+    node: NodeType,
+    onChange: NodeState["onChange"],
+): [adjustedNode: typeof node, adjustedOnChange: typeof onChange] {
     const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
-    return useCallback(
+
+    const adjustNode = useCallback(
         (node: NodeType) => {
             const parameterDefinitions = getParameterDefinitions(node);
             const adjustedNode = adjustParameters(node, parameterDefinitions);
@@ -33,6 +46,20 @@ export function useNodeAdjust() {
         },
         [getParameterDefinitions],
     );
+
+    const adjustFn = useRef(adjustNode);
+    useLayoutEffect(() => {
+        adjustFn.current = adjustNode;
+    }, [adjustNode]);
+
+    const adjustedNode = useMemo<typeof node>(() => adjustNode(node), [adjustNode, node]);
+
+    const adjustedOnChange = useCallback<typeof onChange>(
+        (setNodeAction, setEdgesAction) => onChange(wrapSetState(setNodeAction, adjustFn?.current), setEdgesAction),
+        [onChange],
+    );
+
+    return [adjustedNode, adjustedOnChange];
 }
 
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
@@ -46,6 +73,8 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables);
     const processName = useSelector(getProcessName);
     const processProperties = useSelector(getProcessProperties);
+    const [settings] = useUserSettings();
+    const autoApply = settings["node.autoApply"];
 
     const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
 
@@ -84,25 +113,54 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const setProperty = useCallback<SetProperty>(
         <P extends Paths<NodeType>, V extends PathValue<NodeType, P>>(path: P, value: V, fallbackValue?: V): void => {
             const nextValue = value === null && fallbackValue !== undefined ? fallbackValue : value;
-            setEditedNode((currentNode) => setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue));
+            setEditedNode((currentNode) => {
+                function extractBasePathWithIndex(path: string) {
+                    const match = path.match(/^(.*?\[\d+])/);
+                    return match ? match[1] : path;
+                }
+
+                const basePath = extractBasePathWithIndex(path);
+
+                const editedParam: Parameter | undefined = get(currentNode, basePath);
+                const editedParamDefinition = parameterDefinitions.find(
+                    (parameterDefinition) => parameterDefinition.name === editedParam?.name,
+                );
+
+                const nextNode = setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue);
+                const detectChanges = !isEqual(nextNode, currentNode);
+
+                if (editedParamDefinition?.changesCanReloadParameters && detectChanges) {
+                    dispatch(nodeValidationDynamicParametersLoading(currentNode.id, [editedParamDefinition.name]));
+                }
+
+                return nextNode;
+            });
         },
-        [setEditedNode],
+        [dispatch, parameterDefinitions, setEditedNode],
     );
 
     useEffect(() => {
         if (showValidation) {
             dispatch(
-                validateNodeData(processName, {
-                    //see NODES_CONNECTED/NODES_DISCONNECTED
-                    outgoingEdges: edges.filter((e) => e.to != ""),
-                    nodeData: node,
-                    processProperties,
-                    branchVariableTypes: getBranchVariableTypes(node.id),
-                    variableTypes,
-                }),
+                validateNodeData(
+                    processName,
+                    {
+                        //see NODES_CONNECTED/NODES_DISCONNECTED
+                        outgoingEdges: edges.filter((e) => e.to != ""),
+                        nodeData: node,
+                        processProperties,
+                        branchVariableTypes: getBranchVariableTypes(node.id),
+                        variableTypes,
+                    },
+                    () => {
+                        if (!autoApply) {
+                            dispatch(nodeValidationDynamicParametersLoaded(node.id));
+                        }
+                    },
+                ),
             );
         }
-    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
+    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes, autoApply]);
 
     return {
         ...props,

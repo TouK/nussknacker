@@ -4,7 +4,7 @@ import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "
 import { useDispatch, useSelector } from "react-redux";
 import { useDebounce } from "rooks";
 
-import { editNode } from "../../../../actions/nk";
+import { editNode, nodeValidationDynamicParametersLoaded } from "../../../../actions/nk";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import { useUserSettings } from "../../../../common/userSettings";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
@@ -93,6 +93,10 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
             } catch (e) {
                 console.error(e);
                 setStatus("error");
+            } finally {
+                if (autoApply) {
+                    dispatch(nodeValidationDynamicParametersLoaded(node.id));
+                }
             }
         },
         [setStatus, dispatch, scenario, node, autoApply],
