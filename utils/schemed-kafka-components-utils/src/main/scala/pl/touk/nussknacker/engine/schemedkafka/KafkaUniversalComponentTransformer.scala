@@ -58,7 +58,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  @transient private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
+  @transient private lazy val kafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {

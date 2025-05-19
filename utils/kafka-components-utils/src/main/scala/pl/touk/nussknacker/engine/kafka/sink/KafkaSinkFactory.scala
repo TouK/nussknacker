@@ -55,13 +55,11 @@ abstract class BaseKafkaSinkFactory(
 ) extends SinkFactory
     with ComponentLifecycle {
 
-  private var kafkaAdminClientOpt: Option[Admin] = None
+  private lazy val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+  private lazy val kafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
 
   protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val preparedTopic    = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig)
-    val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-    val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
-    kafkaAdminClientOpt = Some(kafkaAdminClient)
+    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelConfig)
     new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
       .validateTopics(NonEmptyList.one(preparedTopic).map(_.prepared))
       .valueOr(err => throw err)
@@ -71,7 +69,7 @@ abstract class BaseKafkaSinkFactory(
   }
 
   override def closeComponent(): Unit = {
-    kafkaAdminClientOpt.foreach(_.close())
+    kafkaAdminClient.close()
   }
 
 }

@@ -36,6 +36,10 @@ trait KafkaUtils extends LazyLogging {
     AdminClient.create(withPropertiesFromConfig(new Properties, kafkaConfig))
   }
 
+  def createLazyKafkaAdminClient(kafkaConfig: KafkaConfig): LazyKafkaAdminClient = {
+    new LazyKafkaAdminClient(createKafkaAdminClient(kafkaConfig))
+  }
+
   def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
     // we don't use default close not to block indefinitely
     val releasable = new Releasable[Admin] {
@@ -225,3 +229,23 @@ trait KafkaUtils extends LazyLogging {
 }
 
 case class PreparedKafkaTopic[T <: TopicName](original: T, prepared: T)
+
+class LazyKafkaAdminClient private[kafka] (create: => Admin) {
+
+  @volatile private var created: Boolean = false
+
+  private lazy val client: Admin = {
+    val c = create
+    created = true
+    c
+  }
+
+  def getOrCreate: Admin = client
+
+  def close(): Unit = {
+    if (created) {
+      client.close()
+    }
+  }
+
+}

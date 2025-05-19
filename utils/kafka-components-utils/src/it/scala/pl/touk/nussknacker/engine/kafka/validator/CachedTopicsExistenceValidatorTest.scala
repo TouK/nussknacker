@@ -140,7 +140,7 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
     )
   )
 
-  private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(defaultKafkaConfig)
+  private val kafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(defaultKafkaConfig)
 
   val notExistingSourceTopic: TopicName.ForSource = TopicName.ForSource("source.not.existing")
 

@@ -67,8 +67,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   override type State = KafkaSourceFactoryState[K, V]
 
-  private val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-  private val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
+  private val kafkaConfig           = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+  private lazy val kafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
   private lazy val topicsExistenceValidator =
     new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
 
