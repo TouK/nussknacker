@@ -35,7 +35,7 @@ describe("Compare versions", () => {
             .drag("#nk-graph-main", { x, y, position: "right", force: true });
 
         // Connect Existing node to the fragment
-        cy.getNode("boundedSource").find("circle").trigger("mousedown");
+        cy.get(`[model-id="boundedSource"] circle`).trigger("mousedown");
         cy.get("#nk-graph-main")
             .trigger("mousemove", x, y, {
                 clientX: x,
@@ -45,7 +45,8 @@ describe("Compare versions", () => {
             .trigger("mouseup", { force: true });
 
         // Change fragment param and save changes
-        cy.openNodeWindow("e2e**fragment_xxx-test-process").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("4");
+        cy.get("[model-id^=e2e][model-id$=fragment_xxx-test-process]").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("4");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
@@ -54,7 +55,8 @@ describe("Compare versions", () => {
         cy.get("[data-testid=window]").should("not.exist");
 
         // Change fragment param again and save changes
-        cy.openNodeWindow("e2e**fragment_xxx-test-process").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("7");
+        cy.get("[model-id^=e2e][model-id$=fragment_xxx-test-process]").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").find('[title="i222"]').siblings().eq(0).find("#ace-editor").type("7");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();

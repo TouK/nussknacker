@@ -12,7 +12,9 @@ describe("Sql editor", () => {
 
     it("should display colorfull sql code", () => {
         cy.visitNewProcess(seed, "withSqlEditor");
-        cy.openNodeWindow("sql-source");
+        cy.getNode("sql-source").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").should("be.visible");
+        cy.get("#ace-editor").should("have.class", "tokenizer-working");
         cy.get("#ace-editor").should("not.have.class", "tokenizer-working");
         cy.get("#ace-editor").parent().matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]").matchImage();
@@ -23,7 +25,8 @@ describe("Sql editor", () => {
         cy.visitNewProcess(seed, "withSqlEditor2");
 
         cy.wrap(["sql-source", "sql-source2", "sql-source3"]).each((name: string) => {
-            cy.openNodeWindow(name);
+            cy.getNode(name).should("be.visible").trigger("dblclick");
+            cy.get("#ace-editor").should("have.class", "tokenizer-working");
             cy.get("#ace-editor").should("not.have.class", "tokenizer-working");
             cy.get("#ace-editor").parent().matchImage({ maxDiffThreshold });
             cy.get("[data-testid=window]")

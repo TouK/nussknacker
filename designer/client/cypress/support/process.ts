@@ -18,7 +18,7 @@ declare global {
             addLabelsToNewProcess: typeof addLabelsToNewProcess;
             postFormData: typeof postFormData;
             visitProcess: typeof visitProcess;
-            getNode: (nameOrAlias: string) => Cypress.Chainable<JQuery<HTMLElement>>;
+            getNode: typeof getNode;
             openNodeWindow: typeof openNodeWindow;
             dragNode: typeof dragNode;
             layoutScenario: typeof layoutScenario;
@@ -297,8 +297,14 @@ function getWrappedName(nameOrAlias: string) {
     return nameOrAlias.startsWith("@") ? cy.get<string>(nameOrAlias, { log: false }) : cy.wrap(nameOrAlias, { log: false });
 }
 
-function openNodeWindow(nameOrAlias: string) {
-    cy.getNode(nameOrAlias).dblclick();
+function getNode(nameOrAlias: string, end?: boolean) {
+    return getWrappedName(nameOrAlias).then((name) =>
+        cy.get(`[model-id${end ? "$=" : "="}"${name}"]`, { timeout: 30000, log: false }).should("be.visible"),
+    );
+}
+
+function openNodeWindow(nameOrAlias: string, end?: boolean) {
+    cy.getNode(nameOrAlias, end).dblclick();
     cy.intercept("POST", "/api/nodes/*/additionalInfo").as("additionalInfo");
     cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
     cy.get("[data-testid=window]").should("be.visible");
@@ -306,7 +312,7 @@ function openNodeWindow(nameOrAlias: string) {
     cy.wait("@nodeValidation");
     cy.wait("@additionalInfo");
     cy.wait("@nodeValidation");
-    return cy.get("[data-testid=window]");
+    return cy.get("[data-testid=window]").should("be.visible");
 }
 
 function dragNode(
@@ -319,7 +325,7 @@ function dragNode(
         y: number;
     },
 ) {
-    cy.getNode(name).trigger("mousedown", "center").trigger("mousemove", x, y, {
+    cy.getNode(name).should("be.visible").trigger("mousedown", "center").trigger("mousemove", x, y, {
         moveThreshold: 5,
         force: true,
         clientX: x,
@@ -372,31 +378,7 @@ Cypress.Commands.add("visitNewFragment", visitNewFragment);
 Cypress.Commands.add("addLabelsToNewProcess", addLabelsToNewProcess);
 Cypress.Commands.add("postFormData", postFormData);
 Cypress.Commands.add("visitProcess", visitProcess);
-
-function getModelIdSelector(name: string) {
-    return name
-        .split("**")
-        .map((part, index, parts) => {
-            if (part.length <= 0) return null;
-            if (parts.length === 1) return `="${part}"`;
-            if (index === 0) return `^="${part}"`;
-            if (index >= parts.length - 1) return `$="${part}"`;
-            return `*="${part}"`;
-        })
-        .filter(Boolean)
-        .map((expr) => `[model-id${expr}]`)
-        .join("");
-}
-
-Cypress.Commands.add("getNode", { prevSubject: ["optional", "element"] }, (subject, nameOrAlias) =>
-    getWrappedName(nameOrAlias)
-        .then((name) => {
-            const selector = getModelIdSelector(name);
-            const options = { timeout: 30000, log: false };
-            return subject ? cy.wrap(subject).find(selector, options) : cy.get(selector, options);
-        })
-        .should("be.visible"),
-);
+Cypress.Commands.add("getNode", getNode);
 Cypress.Commands.add("openNodeWindow", openNodeWindow);
 Cypress.Commands.add("dragNode", dragNode);
 Cypress.Commands.add("layoutScenario", layoutScenario);
