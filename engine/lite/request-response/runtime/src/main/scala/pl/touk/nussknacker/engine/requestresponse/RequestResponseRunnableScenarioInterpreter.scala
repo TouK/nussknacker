@@ -55,7 +55,6 @@ class RequestResponseRunnableScenarioInterpreter(
     synchronized {
       if (!closed) {
         interpreter.close()
-        modelData.close()
         closed = true
       }
     }

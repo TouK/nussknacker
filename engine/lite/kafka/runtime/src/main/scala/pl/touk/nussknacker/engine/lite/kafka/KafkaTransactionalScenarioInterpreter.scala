@@ -149,9 +149,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
   }
 
   override def close(): Unit = {
-    Using.resources(context, interpreter, taskRunner, modelData)((_, _, _, _) =>
-      ()
-    ) // empty "using" to ensure correct closing
+    Using.resources(context, interpreter, taskRunner)((_, _, _) => ()) // empty "using" to ensure correct closing
   }
 
   // to override in tests...

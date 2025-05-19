@@ -41,18 +41,24 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
             val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
             val jobData  = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
-            prepareScenarioInterpreter(
-              scenario,
-              runtimeConfig,
-              jobData,
-              deploymentData,
+            (
               modelData,
-              preparer
-            )(system)
+              prepareScenarioInterpreter(
+                scenario,
+                runtimeConfig,
+                jobData,
+                deploymentData,
+                modelData,
+                preparer
+              )(system)
+            )
           }
         )(
-          release = scenarioInterpreter => IO.delay(scenarioInterpreter.close())
+          release = { case (modelData, scenarioInterpreter) =>
+            IO.delay(scenarioInterpreter.close()) *> IO.delay(modelData.close())
+          }
         )
+        .map(_._2)
     } yield scenarioInterpreter
   }
 
