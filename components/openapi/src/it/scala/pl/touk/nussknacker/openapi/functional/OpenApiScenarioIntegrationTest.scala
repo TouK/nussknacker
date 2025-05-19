@@ -154,7 +154,7 @@ class OpenApiScenarioIntegrationTest
       .streaming("openapi-test")
       .parallelism(1)
       .source("start", TestScenarioRunner.testDataSource)
-      .enricher("customer", "customer", "getCustomer", params: _*)
+      .enricher("customer", "customer", "openAPI", params: _*)
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#customer".spel)
   }
 
@@ -188,7 +188,7 @@ class OpenApiScenarioIntegrationTest
       (_: ExecutionContext) => sttpBackend,
       new MockOpenApiDefinitionDiscovery(services)
     )
-    ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)
+    ComponentDefinition("openAPI", stubbedGetCustomerOpenApiService)
   }
 
   class MockOpenApiDefinitionDiscovery(services: List[SwaggerService]) extends OpenApiDefinitionDiscovery {
