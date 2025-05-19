@@ -469,7 +469,7 @@ object ProcessCompilationError {
   final case class IllegalCharactersId(illegalCharacterHumanReadable: String) extends IdErrorType
 
   // todo: it can be separated from ProcessCompilationError hierarchy (depends on if we finally put test compilation as part of process compilation)
-  trait TestCompilationError extends ProcessCompilationError
+  sealed trait TestCompilationError extends ProcessCompilationError
 
   sealed trait TestConfigurationPart
   object InputData extends TestConfigurationPart

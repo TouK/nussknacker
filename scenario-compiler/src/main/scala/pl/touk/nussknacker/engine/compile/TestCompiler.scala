@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.graph.{Assertion, EnricherMock, Test, TestSour
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.Spel
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
+import pl.touk.nussknacker.engine.testmode.TestProcess.{AssertionResult, FailedAssertion, SuccessfulAssertion}
 
 class TestCompiler(expressionCompiler: ExpressionCompiler) {
 
@@ -186,10 +187,3 @@ trait TestsFunctions extends HideToString {
   }
 
 }
-
-sealed trait AssertionResult
-
-object SuccessfulAssertion extends AssertionResult
-
-//todo: mby message can be easily hidden
-case class FailedAssertion(message: String) extends AssertionResult

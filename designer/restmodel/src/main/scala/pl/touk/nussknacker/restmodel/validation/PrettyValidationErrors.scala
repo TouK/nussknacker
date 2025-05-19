@@ -282,6 +282,11 @@ object PrettyValidationErrors {
             s"Incompatible change to the parameter's definition detected. $parameterEditor editor doesn't support '$language' language",
           paramName = Some(paramName)
         )
+      case TestConfigurationRefersToNotExistingNode(nodeId, testId, _) =>
+        node(
+          message = s"Test with id $testId refers to not existing node $nodeId",
+          description = s"Test configuration can't refer to not existing nodes",
+        )
     }
   }
 

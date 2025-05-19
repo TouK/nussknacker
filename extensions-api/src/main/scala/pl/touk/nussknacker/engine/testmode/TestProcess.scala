@@ -10,7 +10,8 @@ object TestProcess {
       nodeTransitionResults: Map[NodeTransition, List[ResultContext[T]]],
       invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
-      exceptions: List[ExceptionResult[T]]
+      exceptions: List[ExceptionResult[T]],
+      assertionsResults: Map[String, List[AssertionResult]]
   ) {
 
     def updateNodeResult(nodeId: String, context: Context, variableEncoder: Any => T): TestResults[T] =
@@ -107,4 +108,10 @@ object TestProcess {
     def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
   }
 
+  sealed trait AssertionResult
+
+  object SuccessfulAssertion extends AssertionResult
+
+  // todo: mby message can be easily hidden
+  case class FailedAssertion(message: String) extends AssertionResult
 }
