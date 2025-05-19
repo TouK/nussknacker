@@ -225,7 +225,7 @@ describe("Process", () => {
             force: true,
         });
 
-        cy.getNode("**false").find(`[end="target"].marker-arrowhead`).trigger("mousedown");
+        cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`).trigger("mousedown");
         cy.get("#nk-graph-main")
             .trigger("mousemove", x, y, {
                 clientX: x,
@@ -242,7 +242,7 @@ describe("Process", () => {
             .parent()
             .matchImage({ screenshotConfig: { padding: 16 } });
 
-        cy.getNode("**false").find(`.label`).dblclick();
+        cy.get(`[model-id$="false"] .label`).dblclick();
         cy.get("[data-testid=window]").should("be.visible");
         cy.contains(/^Conditions:$/)
             .parent()
@@ -280,7 +280,7 @@ describe("Process", () => {
             force: true,
         });
 
-        cy.getNode("**false").find(`[end="target"].marker-arrowhead`).trigger("mousedown");
+        cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`).trigger("mousedown");
         cy.get("#nk-graph-main")
             .trigger("mousemove", x, y, {
                 clientX: x,
