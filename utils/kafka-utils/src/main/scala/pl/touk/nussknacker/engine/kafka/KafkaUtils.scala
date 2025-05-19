@@ -32,10 +32,6 @@ trait KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def createLazyKafkaAdminClient(kafkaConfig: KafkaConfig): LazyKafkaAdminClient = {
-    new LazyKafkaAdminClient(LazyKafkaAdminClientCache.instance, kafkaConfig, createKafkaAdminClient(kafkaConfig))
-  }
-
   def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
     AdminClient.create(withPropertiesFromConfig(new Properties, kafkaConfig))
   }

@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, ListTopicsOptions}
 import org.apache.kafka.common.KafkaException
 import pl.touk.nussknacker.engine.api.util.ExceptionUtils
-import pl.touk.nussknacker.engine.kafka.{LazyKafkaAdminClient, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
 import java.util.concurrent.TimeoutException
@@ -30,7 +30,7 @@ class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaReg
 
 class AllNonHiddenTopicsSelectionStrategy(
     schemaRegistryClient: SchemaRegistryClient,
-    lazyKafkaAdminClient: LazyKafkaAdminClient,
+    kafkaAdminClient: Admin,
     fetchTimeout: FiniteDuration
 ) extends TopicSelectionStrategy
     with LazyLogging {
@@ -40,7 +40,7 @@ class AllNonHiddenTopicsSelectionStrategy(
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        lazyKafkaAdminClient.getOrCreate
+        kafkaAdminClient
           .listTopics(new ListTopicsOptions().timeoutMs(fetchTimeout.toMillis.toInt))
           .names()
           .get()

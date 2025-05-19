@@ -57,13 +57,13 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  @transient private lazy val lazyKafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
+  @transient private lazy val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {
       new AllNonHiddenTopicsSelectionStrategy(
         schemaRegistryClient,
-        lazyKafkaAdminClient,
+        kafkaAdminClient,
         kafkaConfig.topicsWithoutSchemaFetchTimeout
       )
     } else new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
@@ -77,7 +77,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     )
 
   @transient private lazy val topicsExistenceValidator =
-    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, lazyKafkaAdminClient)
+    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
 
   protected def prepareKafkaConfig: KafkaConfig = {
     KafkaConfig.parseConfig(modelConfig.underlyingConfig)

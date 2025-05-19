@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeConfigsOptions, ListTopicsOptions}
 import org.apache.kafka.common.config.ConfigResource
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.{LazyKafkaAdminClient, TopicsExistenceValidationConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{TopicsExistenceValidationConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
@@ -15,7 +15,7 @@ import scala.jdk.CollectionConverters._
 
 class CachedTopicsExistenceValidator(
     config: TopicsExistenceValidationConfig,
-    lazyKafkaAdminClient: LazyKafkaAdminClient
+    kafkaAdminClient: Admin
 ) extends TopicsExistenceValidator
     with LazyLogging {
 
@@ -85,7 +85,7 @@ class CachedTopicsExistenceValidator(
   }
 
   private def fetchAllTopicsAndCache() = {
-    val existingTopics = lazyKafkaAdminClient.getOrCreate
+    val existingTopics = kafkaAdminClient
       .listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
       .names()
       .get()
@@ -98,7 +98,7 @@ class CachedTopicsExistenceValidator(
 
   private def isAutoCreateEnabled: Boolean = autoCreateSettingCache.getOrCreate {
     val timeout = validatorConfig.adminClientTimeout.toMillis.toInt
-    val randomKafkaNodeId = lazyKafkaAdminClient.getOrCreate
+    val randomKafkaNodeId = kafkaAdminClient
       .describeCluster(new DescribeClusterOptions().timeoutMs(timeout))
       .nodes()
       .get()
@@ -106,7 +106,7 @@ class CachedTopicsExistenceValidator(
       .head
       .id()
       .toString
-    lazyKafkaAdminClient.getOrCreate
+    kafkaAdminClient
       .describeConfigs(
         List(new ConfigResource(ConfigResource.Type.BROKER, randomKafkaNodeId)).asJava,
         new DescribeConfigsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt)

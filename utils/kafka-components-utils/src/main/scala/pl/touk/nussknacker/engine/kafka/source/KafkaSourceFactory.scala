@@ -66,9 +66,9 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   override type State = KafkaSourceFactoryState[K, V]
 
-  private lazy val lazyKafkaAdminClient = KafkaUtils.createLazyKafkaAdminClient(kafkaConfig)
+  private lazy val kafkaAdminClient = KafkaUtils.createKafkaAdminClient(kafkaConfig)
   private lazy val topicsExistenceValidator =
-    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, lazyKafkaAdminClient)
+    new CachedTopicsExistenceValidator(kafkaConfig.topicsExistenceValidationConfig, kafkaAdminClient)
 
   private def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
