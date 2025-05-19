@@ -296,6 +296,9 @@ class PeriodicProcessService(
         case (_, _, deployment, Some(status))
             if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(status.status) =>
           deployment.id
+        // Without considering the `restarting` scenario status, we silently succeed cancelling of the scenario in Restarting status, without sending anything to Flink
+        case (_, _, deployment, Some(status)) if status.status == SimpleStateStatus.Restarting =>
+          deployment.id
       }.toSet
     } yield (followingDeployDeploymentsForSchedules, needRescheduleDeployments)
 
@@ -366,10 +369,10 @@ class PeriodicProcessService(
 
     if (scheduleActions.forall(_.isEmpty)) {
       logger.info(s"No scheduled deployments for periodic process: ${process.id.value}. Deactivating")
-      deactivateAction(process).flatMap { _ =>
-        markProcessActionExecutionFinished(processScheduleData.process.processActionId)
-      }
-
+      for {
+        markExecutionFinishedCallback <- markProcessActionExecutionFinished(processScheduleData.process.processActionId)
+        deactivateActionCallback      <- deactivateAction(process)
+      } yield () => markExecutionFinishedCallback().flatMap(_ => deactivateActionCallback())
     } else
       scheduleActions.flatten.sequence.as(emptyCallback)
   }

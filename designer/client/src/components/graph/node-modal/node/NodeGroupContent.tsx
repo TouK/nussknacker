@@ -1,6 +1,5 @@
 import { css } from "@emotion/css";
 import { isEqual } from "lodash";
-import type { SetStateAction } from "react";
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
 
@@ -12,11 +11,12 @@ import { useNodeAdjust } from "../useNodeTypeDetailsContentLogic";
 import { ContentSize } from "./ContentSize";
 import { FragmentContent } from "./FragmentContent";
 import { getNodeErrors } from "./selectors";
+import type { NodeState } from "./useNodeState";
 
 export interface NodeGroupContentProps {
     node: NodeType;
     edges: Edge[];
-    onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void;
+    onChange?: NodeState["onChange"];
 }
 
 export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): JSX.Element {
@@ -24,15 +24,15 @@ export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, on
         return getNodeErrors(state, node.id);
     }, isEqual);
 
-    const adjustNode = useNodeAdjust();
+    const [adjustedNode, adjustedOnChange] = useNodeAdjust(node, onChange);
 
     return (
         <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
             <ContentSize>
                 <NodeDetailsContent
-                    node={adjustNode(node)}
+                    node={adjustedNode}
                     edges={edges}
-                    onChange={onChange}
+                    onChange={adjustedOnChange}
                     nodeErrors={errors}
                     showValidation
                     showSwitch

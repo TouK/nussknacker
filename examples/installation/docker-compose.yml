@@ -209,6 +209,10 @@ services:
       retries: 10
     volumes:
       - nussknacker_flink_data:/opt/flink/data
+    deploy:
+      resources:
+        limits:
+          memory: 1500M
 
   flink-taskmanager:
     build:
