@@ -34,8 +34,11 @@ class RepositoryGauges(
       implicit val user: LoggedUser = NussknackerInternalUser.instance
       val result =
         processRepository.fetchLatestProcessesDetails[Unit](ScenarioQuery(isArchived = Some(false))).map { scenarios =>
-          val all       = scenarios.size
-          val deployed  = scenarios.count(_.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy))
+          val all = scenarios.size
+          val deployed = scenarios.count(
+            _.lastStateAction
+              .exists(a => List(ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(a.actionName))
+          )
           val fragments = scenarios.count(_.isFragment)
           Values(all, deployed, fragments)
         }
