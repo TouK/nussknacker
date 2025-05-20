@@ -9,6 +9,7 @@ import { ActivitiesPanel } from "../toolbars/activities";
 import { CreatorPanel } from "../toolbars/creator/CreatorPanel";
 import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
+import ScenarioStatusPanel from "../toolbars/scenarioDetails/ScenarioStatusPanel";
 import { SearchPanel } from "../toolbars/search/SearchPanel";
 import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { HorizontalButtonsToolbar } from "./HorizontalButtonsToolbar";
@@ -16,6 +17,8 @@ import type { ToolbarConfig } from "./types";
 
 export function getToolbarComponent(config?: ToolbarConfig): ComponentType<ToolbarPanelProps> {
     switch (config?.id) {
+        case "scenario-status-panel":
+            return ScenarioStatusPanel;
         case "process-info-panel":
             return ScenarioDetails;
         case "process-actions-panel":
