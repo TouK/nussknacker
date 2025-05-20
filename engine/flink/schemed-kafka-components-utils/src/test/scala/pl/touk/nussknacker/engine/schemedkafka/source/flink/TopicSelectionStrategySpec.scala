@@ -54,7 +54,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       testModelConfig,
       new FlinkKafkaSourceImplFactory(None)
     ) {
-      override def topicSelectionStrategy =
+      override lazy val topicSelectionStrategy =
         new TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(Pattern.compile("test-.*"), confluentClient)
     }
   }
