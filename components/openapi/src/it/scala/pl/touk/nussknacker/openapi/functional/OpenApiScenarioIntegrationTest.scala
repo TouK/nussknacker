@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.openapi.functional
 
+import cats.data.Validated
 import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
@@ -13,9 +14,10 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
-import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
-import pl.touk.nussknacker.openapi.parser.SwaggerParser
+import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter, SwaggerService}
+import pl.touk.nussknacker.openapi.discovery.OpenApiDefinitionDiscovery
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricherFactory
+import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 import sttp.client3.{Response, SttpBackend}
 import sttp.client3.testing.SttpBackendStub
@@ -71,14 +73,18 @@ class OpenApiScenarioIntegrationTest
             if headers.exists(_.name == HeaderNames.ContentType)
               && !headers.contains(Header(HeaderNames.ContentType, MediaType.ApplicationJson.toString())) =>
           Response("Unsupported media type", StatusCode.UnsupportedMediaType)
-        case _ => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+        case _ if request.method.method == "GET" && request.uri.path.last == "10" =>
+          Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+        case _ if request.method.method == "POST" =>
+          Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+        case _ => Response(null, StatusCode.BadRequest)
       }
   }
 
   it should "should enrich scenario with data" in withSwagger(stubbedBackend) { testScenarioRunner =>
     // given
     val data     = List("10")
-    val scenario = scenarioWithEnricher(("customer_id", "#input".spel))
+    val scenario = scenarioWithEnricher(("Service", "'getCustomer'".spel), ("customer_id", "#input".spel))
 
     // when
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -92,8 +98,11 @@ class OpenApiScenarioIntegrationTest
   it should "call enricher with primitive request body" in withPrimitiveRequestBody(stubbedBackend) {
     testScenarioRunner =>
       // given
-      val data     = List("10")
-      val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input".spel))
+      val data = List("10")
+      val scenario = scenarioWithEnricher(
+        ("Service", "'POST-customer'".spel),
+        (SingleBodyParameter.name, "#input".spel)
+      )
 
       // when
       val result = testScenarioRunner.runWithData(scenario, data)
@@ -107,8 +116,10 @@ class OpenApiScenarioIntegrationTest
   it should "call enricher with request body" in withRequestBody(stubbedBackend) { testScenarioRunner =>
     // given
     val data = List("10")
-    val scenario =
-      scenarioWithEnricher((SingleBodyParameter.name, """{{additionalKey:"sss", primaryKey:"dfgdf"}}""".spel))
+    val scenario = scenarioWithEnricher(
+      ("Service", "'POST-customer'".spel),
+      (SingleBodyParameter.name, """{{additionalKey:"sss", primaryKey:"dfgdf"}}""".spel)
+    )
 
     // when
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -125,8 +136,11 @@ class OpenApiScenarioIntegrationTest
     }
   ) { testScenarioRunner =>
     // given
-    val data     = List("10")
-    val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input".spel))
+    val data = List("10")
+    val scenario = scenarioWithEnricher(
+      ("Service", "'POST-customer'".spel),
+      (SingleBodyParameter.name, "#input".spel)
+    )
 
     // when
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -140,7 +154,7 @@ class OpenApiScenarioIntegrationTest
       .streaming("openapi-test")
       .parallelism(1)
       .source("start", TestScenarioRunner.testDataSource)
-      .enricher("customer", "customer", "getCustomer", params: _*)
+      .enricher("customer", "customer", "openAPI", params: _*)
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#customer".spel)
   }
 
@@ -169,9 +183,21 @@ class OpenApiScenarioIntegrationTest
     val services = SwaggerParser.parse(definition, openAPIsConfig).collect { case Valid(service) =>
       service
     }
-    val stubbedGetCustomerOpenApiService =
-      new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend, Nil)
-    ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)
+    val stubbedGetCustomerOpenApiService = new OpenAPIEnricherFactory(
+      openAPIsConfig,
+      (_: ExecutionContext) => sttpBackend,
+      new MockOpenApiDefinitionDiscovery(services)
+    )
+    ComponentDefinition("openAPI", stubbedGetCustomerOpenApiService)
+  }
+
+  class MockOpenApiDefinitionDiscovery(services: List[SwaggerService]) extends OpenApiDefinitionDiscovery {
+
+    override def getServices(
+        openAPIsConfig: OpenAPIServicesConfig
+    ): List[Validated[ServiceParseError, SwaggerService]] =
+      services.map(s => Valid(s))
+
   }
 
 }
