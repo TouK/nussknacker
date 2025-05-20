@@ -4317,6 +4317,13 @@ paths:
                       - delete_comment
                       - edit_comment
                       - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
@@ -4425,6 +4432,13 @@ paths:
                       supportedActions: []
                     - type: SCENARIO_DEPLOYED
                       displayableName: Deployment
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -6979,6 +6993,7 @@ components:
           - SCENARIO_ARCHIVED
           - SCENARIO_UNARCHIVED
           - SCENARIO_DEPLOYED
+          - SCENARIO_REDEPLOYED
           - SCENARIO_PAUSED
           - SCENARIO_CANCELED
           - SCENARIO_MODIFIED

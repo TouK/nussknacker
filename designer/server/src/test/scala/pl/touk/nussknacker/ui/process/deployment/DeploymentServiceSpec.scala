@@ -1128,7 +1128,7 @@ class DeploymentServiceSpec
       .withWaitForDeployFinish(scenarioId.name, result = Some(ExternalDeploymentId("1"))) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(
+            RunRedeploymentCommand(
               CommonCommandData(scenarioId, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty

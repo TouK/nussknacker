@@ -43,8 +43,10 @@ export function useActivityHistory(processName: string, processingMode: string):
                 processingMode.includes("batch")
                     ? activities.filter(
                           (activity) =>
-                              activity.type !== ActivityTypesRelatedToExecutions.ScenarioDeployed &&
-                              activity.type !== ActivityTypesRelatedToExecutions.ScenarioRedeployed,
+                              ![
+                                  ActivityTypesRelatedToExecutions.ScenarioDeployed,
+                                  ActivityTypesRelatedToExecutions.ScenarioRedeployed,
+                              ].includes(activity.type),
                       )
                     : activities,
             )
