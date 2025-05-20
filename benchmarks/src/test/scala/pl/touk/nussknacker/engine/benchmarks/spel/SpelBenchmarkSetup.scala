@@ -39,10 +39,10 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
       case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")
     }
 
-  private val ctx2 = Context(ContextId.dummy, vars, None)
+  private val ctx = Context(ContextId.dummy, vars, None)
 
   def test(): AnyRef = {
-    compiledExpression.evaluate[AnyRef](ctx2, Map.empty)
+    compiledExpression.evaluate[AnyRef](ctx, Map.empty)
   }
 
 }
