@@ -29,6 +29,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   should be added to distinguish the components. In the new version of the component, OpenAPI `Service` should be
   selected. For this reason, the existing scenario may not compile. The automatic migration for this parameter is not
   easy and has to be done manually or through updates in the DB if you can read the swagger service name.
+* [#8116](https://github.com/TouK/nussknacker/pull/8116) Kafka config entries `showTopicsWithoutSchema` and `topicsWithoutSchemaFetchTimeout`
+  were moved to new entry `topicsWithoutSchemaConfig`. 
+  
 
 ### REST API changes
 

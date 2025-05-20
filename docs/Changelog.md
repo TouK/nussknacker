@@ -175,6 +175,7 @@ description: Stay informed with detailed changelogs covering new features, impro
   * the flag is optional, the default value of the flag is `false` (no changes in behavior)
 * [#8076](https://github.com/TouK/nussknacker/pull/8076) Switching periodic job to finished status cleans jars from FS
 * [#8042](https://github.com/TouK/nussknacker/pull/8042) Merge OpenAPI components into one with multiple services.
+* [#8116](https://github.com/TouK/nussknacker/pull/8116) Cache topics when topics without schema enabled
 
 ## 1.18
 
