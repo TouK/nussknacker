@@ -95,14 +95,20 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
 
   private def isAutoCreateEnabled: Boolean = autoCreateSettingCache.getOrCreate {
     val timeout = validatorConfig.adminClientTimeout.toMillis.toInt
-    val randomKafkaNodeId = usingAdminClient {
-      _.describeCluster(new DescribeClusterOptions().timeoutMs(timeout)).nodes().get().asScala.head.id().toString
-    }
-    usingAdminClient {
-      _.describeConfigs(
-        List(new ConfigResource(ConfigResource.Type.BROKER, randomKafkaNodeId)).asJava,
-        new DescribeConfigsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt)
-      )
+    usingAdminClient { admin =>
+      val randomKafkaNodeId = admin
+        .describeCluster(new DescribeClusterOptions().timeoutMs(timeout))
+        .nodes()
+        .get()
+        .asScala
+        .head
+        .id()
+        .toString
+      admin
+        .describeConfigs(
+          List(new ConfigResource(ConfigResource.Type.BROKER, randomKafkaNodeId)).asJava,
+          new DescribeConfigsOptions().timeoutMs(timeout)
+        )
         .values()
         .values()
         .asScala
