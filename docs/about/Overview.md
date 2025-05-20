@@ -1,6 +1,7 @@
 ---
 title: What Nussknacker Is and How It Works
 description: Get a high-level introduction to Nussknacker. Learn what it does, how it works, and where it fits in your real-time data processing stack.
+sidebar_label: Overview
 ---
 
 ## What is Nussknacker

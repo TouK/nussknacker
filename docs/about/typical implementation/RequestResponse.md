@@ -1,6 +1,7 @@
 ---
 title: Request-Response Processing
 description: Explore how Nussknacker handles request response execution. Learn when to use it, how it works, and what benefits it offers for low latency flows.
+sidebar_label: Request-Response
 ---
 
 The diagram below shows architecture of a typical Nussknacker deployment in Request-Response mode. It shows not only 

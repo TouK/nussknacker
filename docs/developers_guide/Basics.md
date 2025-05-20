@@ -1,6 +1,7 @@
 ---
 title: Developer Basics for Customizing Logic
 description: Learn the basics of Nussknacker development including custom components, data handling, and system integration steps.
+sidebar_label: Overview
 ---
 
 # Overview

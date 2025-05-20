@@ -1,6 +1,7 @@
 ---
 title: Lite Operation Guide
 description: Learn how to deploy and operate real-time decision workflows using the lightweight Lite runtime environment.
+sidebar_label: Lite
 ---
 
 ## Prerequisites

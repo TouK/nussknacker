@@ -1,6 +1,7 @@
 ---
 title: Basics Model Configuration
 description: Learn how to use the ModelConfiguration class to define services, components, and behaviors in Scala-based Nussknacker deployments.
+sidebar_label: Basics
 sidebar_position: 1
 ---
 
