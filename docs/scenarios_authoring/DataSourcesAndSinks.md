@@ -1,6 +1,7 @@
 ---
 title: Sources and Sinks in Real Time Streaming
 description: Discover how to stream data through your automation pipelines using sources for input and sinks for output.
+sidebar_label: Streaming
 sidebar_position: 3
 ---
 

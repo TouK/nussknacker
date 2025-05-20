@@ -1,6 +1,7 @@
 ---
 title: Generic Functions Guide
 description: Learn how to define generic functions in Nussknacker to encapsulate reusable logic and simplify scenario development.
+sidebar_label: Generic functions
 ---
 
 # Generic functions

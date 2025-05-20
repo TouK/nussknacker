@@ -1,6 +1,7 @@
 ---
 title: Designer Configuration, Personalize Authoring UI
 description: Configure the Nussknacker Designer UI. Adjust available components, node groups, categories, and user experience for scenario authors.
+sidebar_label: Designer
 sidebar_position: 3
 ---
 # Designer configuration

@@ -1,6 +1,7 @@
 ---
 title: Install Nussknacker Using Binaries
 description: Download and run Nussknacker from binaries. Follow instructions for quick setup without Docker or external dependencies.
+sidebar_label: Binaries
 ---
 
 # Binary package installation

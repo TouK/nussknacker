@@ -1,6 +1,7 @@
 ---
 title: SpEL Syntax and Functions Guide
 description: Learn how to use SpEL to transform data and enrich workflow behavior in real-time streaming environments.
+sidebar_label: SpEL Cheat Sheet
 sidebar_position: 10
 ---
 

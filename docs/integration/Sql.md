@@ -1,6 +1,7 @@
 ---
 title: SQL Integration Guide
 description: Easily integrate SQL sources into decision pipelines to enhance automation with live external data.
+sidebar_label: SQL
 sidebar_position: 4
 ---
 

@@ -1,6 +1,7 @@
 ---
 title: Data Typing and Schema Support
 description: Understand how Nussknacker handles data types and schemas. Learn about validation, inference, and schema integration in scenarios.
+sidebar_label: Data Typing and Schemas Handling
 sidebar_position: 6
 ---
 

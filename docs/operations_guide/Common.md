@@ -1,6 +1,7 @@
 ---
 title: Common Operations for Workflows
 description: Explore common operational tasks like health checks, configuration, and component management for real-time systems.
+sidebar_label: Common
 ---
 
 ## Intended audience
