@@ -88,6 +88,13 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       dbioRunner
     )
 
+    val processService = newProcessService(
+      dbRef,
+      clock,
+      oldApproachScenarioStatusProvider,
+      dmDispatcher
+    )
+
     val actionService = new ActionService(
       fetchingScenarioDBIORepository,
       actionRepository,
@@ -95,7 +102,8 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       listener,
       oldApproachScenarioStatusProvider,
       deploymentCommentSettings,
-      clock
+      clock,
+      processService,
     )
 
     val deploymentsReconciler =

@@ -103,6 +103,16 @@ export type SourceWithParametersTest = {
 
 export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 
+export type ScenarioSource = {
+    type: ScenarioSourceType;
+    scenarioGraph?: ScenarioGraph;
+};
+
+export enum ScenarioSourceType {
+    LATEST_VERSION = "LatestVersion",
+    FROM_GRAPH = "FromGraph",
+}
+
 export type NodeUsageData = {
     fragmentNodeId?: string;
     nodeId: string;
@@ -342,8 +352,20 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
-        const runDeploymentRequest = { nodesDeploymentData, comment };
+    deploy(
+        processName: string,
+        comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
+        scenarioSource?: ScenarioSource,
+    ): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = {
+            nodesDeploymentData,
+            comment,
+            scenarioSource: {
+                ...scenarioSource,
+                scenarioGraph: scenarioSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioSource.scenarioGraph) : null,
+            },
+        };
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, LatestVersion}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
@@ -29,6 +29,7 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
@@ -127,7 +128,8 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            scenarioSource = LatestVersion,
           )
         )
         .flatten
@@ -183,7 +185,8 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            scenarioSource = LatestVersion,
           )
         )
         .flatten
@@ -255,7 +258,8 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            scenarioSource = LatestVersion,
           )
         )
         .flatten
@@ -312,6 +316,7 @@ class NotificationServiceTest
       TestFactory.newDeploymentRepository(testDbRef, clock),
       dbioRunner
     )
+    val processService = mock[ProcessService]
     val actionService = new ActionService(
       dbProcessRepository,
       actionRepository,
@@ -319,7 +324,8 @@ class NotificationServiceTest
       mock[ProcessChangeListener],
       oldApproachScenarioStatusProvider,
       None,
-      clock
+      clock,
+      processService,
     )
     val deploymentService = new DeploymentService(
       managerDispatcher,

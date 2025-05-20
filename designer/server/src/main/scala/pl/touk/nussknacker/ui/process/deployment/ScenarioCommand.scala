@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.RunOffScheduleResult
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, ScenarioSource}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -25,7 +25,8 @@ case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Opti
 case class RunDeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
-    nodesDeploymentData: NodesDeploymentData
+    nodesDeploymentData: NodesDeploymentData,
+    scenarioSource: ScenarioSource,
 ) extends CommonDeploymentCommand
     with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
 

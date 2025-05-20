@@ -1,13 +1,17 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
+import { disableToolTipsHighlight, displayCurrentProcessVersion, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
+import type { NodesDeploymentData, ScenarioSource} from "../../../../http/HttpService";
+import HttpService, { ScenarioSourceType } from "../../../../http/HttpService";
 import {
     getProcessName,
     getProcessVersionId,
@@ -20,8 +24,7 @@ import {
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsDeploying } from "../../../../reducers/selectors/scenarioState";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -74,11 +77,22 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { open, confirm } = useWindows();
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = useCallback(
-        (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
-            HttpService.deploy(name, comment, nodesDeploymentData).finally(() => dispatch(loadProcessState(name, versionId))),
-        [dispatch],
-    );
+    const action = (
+        name: ProcessName,
+        versionId: ProcessVersionId,
+        comment: string,
+        nodesDeploymentData?: NodesDeploymentData,
+        scenarioSource?: ScenarioSource,
+    ) =>
+        HttpService.deploy(name, comment, nodesDeploymentData, scenarioSource).finally(() => {
+            const isSavedWithDeploy = scenarioSource?.type === ScenarioSourceType.FROM_GRAPH;
+            if (isSavedWithDeploy) {
+                dispatch(UndoActionCreators.clearHistory());
+                dispatch(displayCurrentProcessVersion(processName));
+            } else {
+                dispatch(loadProcessState(name, versionId));
+            }
+        });
 
     const handleValidateScenarioVersion = useCallback(
         async (callback: () => Promise<void>) => {

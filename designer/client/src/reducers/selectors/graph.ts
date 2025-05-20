@@ -10,6 +10,8 @@ import type { ProcessCounts, TestData } from "../graph";
 import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 
+export const getUserSettings = (state: RootState) => state.userSettings;
+
 export const getGraph = (state: RootState) => state.graphReducer.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
@@ -52,8 +54,11 @@ export const isProcessRenamed = createSelector(
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeDeploy(state));
 export const isDeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment, getUserSettings],
+    (saveDisabled, error, state, fragment, userSettings) => {
+        const isAllowedByScenarioSave = userSettings["toolbar.enableDeployWithoutSave"] || saveDisabled;
+        return !fragment && isAllowedByScenarioSave && !error && ProcessStateUtils.canDeploy(state);
+    },
 );
 export const isRedeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRedeploy(state));
 export const isRedeployPossible = createSelector(

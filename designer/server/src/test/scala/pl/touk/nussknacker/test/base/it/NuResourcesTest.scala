@@ -134,52 +134,6 @@ trait NuResourcesTest
   protected val deploymentsStatusesProvider =
     new EngineSideDeploymentStatusesProvider(dmDispatcher, None)(executionContextWithIORuntime)
 
-  protected val oldApproachScenarioStatusProvider: OldApproachScenarioStatusProvider =
-    new OldApproachScenarioStatusProvider(
-      deploymentsStatusesProvider,
-      dmDispatcher,
-      fetchingProcessRepository,
-      actionRepository,
-      dbioRunner,
-    )
-
-  protected val newApproachScenarioStatusProvider: NewApproachScenarioStatusProvider =
-    new NewApproachScenarioStatusProvider(
-      mapProcessingTypeDataProvider(Streaming.stringify -> ()),
-      TestFactory.newDeploymentRepository(testDbRef, clock),
-      dbioRunner
-    )
-
-  protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
-
-  protected val actionService: ActionService = new ActionService(
-    fetchingProcessRepository,
-    actionRepository,
-    dbioRunner,
-    processChangeListener,
-    oldApproachScenarioStatusProvider,
-    deploymentCommentSettings,
-    Clock.systemUTC()
-  )
-
-  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
-
-  protected val deploymentService: DeploymentService =
-    new DeploymentService(
-      dispatcher = dmDispatcher,
-      processValidator = processValidatorByProcessingType(),
-      scenarioResolver = scenarioResolverByProcessingType(),
-      actionService = actionService,
-      additionalComponentConfigs = mapProcessingTypeDataProvider(),
-      limitsService = new LimitsService(
-        globalLimitsConfig = designerConfig.globalLimitsConfig,
-        perProcessingTypesLimitsProvider =
-          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
-        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
-        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
-      )
-    )(executionContextWithIORuntime)
-
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
@@ -234,7 +188,54 @@ trait NuResourcesTest
       .unsafeRunSync()
   }
 
+  protected val oldApproachScenarioStatusProvider: OldApproachScenarioStatusProvider =
+    new OldApproachScenarioStatusProvider(
+      deploymentsStatusesProvider,
+      dmDispatcher,
+      fetchingProcessRepository,
+      actionRepository,
+      dbioRunner,
+    )
+
+  protected val newApproachScenarioStatusProvider: NewApproachScenarioStatusProvider =
+    new NewApproachScenarioStatusProvider(
+      mapProcessingTypeDataProvider(Streaming.stringify -> ()),
+      TestFactory.newDeploymentRepository(testDbRef, clock),
+      dbioRunner
+    )
+
+  protected val scenarioStatusPresenter = new ScenarioStatusPresenter(dmDispatcher)
+
   protected val processService: DBProcessService = createDBProcessService(oldApproachScenarioStatusProvider)
+
+  protected val actionService: ActionService = new ActionService(
+    fetchingProcessRepository,
+    actionRepository,
+    dbioRunner,
+    processChangeListener,
+    oldApproachScenarioStatusProvider,
+    deploymentCommentSettings,
+    Clock.systemUTC(),
+    processService,
+  )
+
+  protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
+
+  protected val deploymentService: DeploymentService =
+    new DeploymentService(
+      dispatcher = dmDispatcher,
+      processValidator = processValidatorByProcessingType(),
+      scenarioResolver = scenarioResolverByProcessingType(),
+      actionService = actionService,
+      additionalComponentConfigs = mapProcessingTypeDataProvider(),
+      limitsService = new LimitsService(
+        globalLimitsConfig = designerConfig.globalLimitsConfig,
+        perProcessingTypesLimitsProvider =
+          TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
+        oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
+        newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
+      )
+    )(executionContextWithIORuntime)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
@@ -422,7 +423,7 @@ trait NuResourcesTest
       s"/processManagement/deploy/$processName",
       HttpEntity(
         ContentTypes.`application/json`,
-        DeployRequest(comment, None).asJson.noSpaces
+        DeployRequest(comment, None, None).asJson.noSpaces
       )
     ) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)

@@ -267,7 +267,7 @@ class ManagementResourcesSpec
       s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}",
       HttpEntity(
         ContentTypes.`application/json`,
-        DeployRequest(None, None).asJson.noSpaces
+        DeployRequest(None, None, None).asJson.noSpaces
       )
     ) ~> withPermissions(
       deployRoute(),

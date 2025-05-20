@@ -4,10 +4,13 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
+import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider,
   ScenarioStatusWithAllowedActions
@@ -34,7 +37,8 @@ class ActionService(
     processChangeListener: ProcessChangeListener,
     scenarioStatusProvider: ScenarioStatusProvider,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
-    clock: Clock
+    clock: Clock,
+    processService: ProcessService,
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -75,6 +79,14 @@ class ActionService(
       ] => Option[VersionId]
   ): ActionProcessor[LatestScenarioDetailsShape] =
     new ActionProcessor(extractVersionOnWhichActionIsDoneFromLatestScenarioDetails)
+
+  def actionProcessorForScenarioGraph[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
+      processIdWithName: ProcessIdWithName,
+      scenarioGraph: ScenarioGraph
+  )(implicit loggedUser: LoggedUser): Future[ActionProcessor[LatestScenarioDetailsShape]] =
+    processService
+      .updateProcess(processIdWithName, UpdateScenarioCommand(scenarioGraph, None, None))
+      .map(_ => actionProcessorForLatestVersion)
 
   private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType) = {
     for {

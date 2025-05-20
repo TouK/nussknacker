@@ -5,8 +5,9 @@ import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { NodesDeploymentData } from "../../../http/HttpService";
-import { getProcessName, getProcessVersionId } from "../../../reducers/selectors/graph";
+import type { NodesDeploymentData, ScenarioSource} from "../../../http/HttpService";
+import { ScenarioSourceType } from "../../../http/HttpService";
+import { getGraph, getProcessName, getProcessVersionId, isSaveDisabled } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import type { WindowKind } from "../../../windowManager";
 import { PromptContent } from "../../../windowManager";
@@ -34,8 +35,15 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const featureSettings = useSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
 
+    const unsavedScenarioSource: ScenarioSource = {
+        type: ScenarioSourceType.FROM_GRAPH,
+        scenarioGraph: useSelector(getGraph)?.scenario?.scenarioGraph,
+    };
+    const savedScenarioSource: ScenarioSource = { type: ScenarioSourceType.LATEST_VERSION };
+    const scenarioSource: ScenarioSource = useSelector(isSaveDisabled) ? savedScenarioSource : unsavedScenarioSource;
+
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment, parametersValues);
+        const response = await action(processName, processVersionId, comment, parametersValues, scenarioSource);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.Success:
             case ScenarioActionResultType.UnhandledError:
@@ -48,7 +56,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 console.log("Unexpected result type:", response.scenarioActionResultType);
                 break;
         }
-    }, [action, comment, processName, props, processVersionId, parametersValues]);
+    }, [action, comment, processName, props, processVersionId, parametersValues, scenarioSource]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

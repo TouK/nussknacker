@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.deployment.LatestVersion
 import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
@@ -63,7 +64,7 @@ class ManagementResources(
     entity(as[Option[String]]).flatMap { optStr =>
       {
         optStr match {
-          case None => provide(DeployRequest(None, None))
+          case None => provide(DeployRequest(None, None, None))
           case Some(body) =>
             io.circe.parser.parse(body) match {
               case Right(json) =>
@@ -75,7 +76,7 @@ class ManagementResources(
                 }
               case Left(notJson) =>
                 // assume deployment request contains plaintext comment only
-                provide(DeployRequest(Some(body), None))
+                provide(DeployRequest(Some(body), None, None))
             }
         }
       }
@@ -144,7 +145,8 @@ class ManagementResources(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
                         commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
                         nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
-                        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
+                        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath),
+                        scenarioSource = request.scenarioSource.getOrElse(LatestVersion),
                       )
                     )
                     .map(_ => ())
@@ -166,7 +168,8 @@ class ManagementResources(
                     RunDeploymentCommand(
                       commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
                       nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
-                      stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+                      stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+                      scenarioSource = request.scenarioSource.getOrElse(LatestVersion),
                     )
                   )
                   .map(_ => ())
