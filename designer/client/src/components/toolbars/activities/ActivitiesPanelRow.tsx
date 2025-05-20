@@ -26,10 +26,12 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     const rowRef = useRef<HTMLDivElement>(null);
     const activity = useMemo(() => activities[index], [activities, index]);
     const firstDeployedIndex = useMemo(
-        () => activities.findIndex((activeItem) => activeItem.uiType === "item" && activeItem.type === "SCENARIO_DEPLOYED"),
+        () =>
+            activities.findIndex(
+                (activeItem) => activeItem.uiType === "item" && activeItem.type === ActivityTypesRelatedToExecutions.ScenarioDeployed,
+            ),
         [activities],
     );
-    const scenarioStatusesToActiveDeploy = ["RUNNING", "SCHEDULED"];
     const isDeploymentActive = firstDeployedIndex === index && isRunning;
     const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
