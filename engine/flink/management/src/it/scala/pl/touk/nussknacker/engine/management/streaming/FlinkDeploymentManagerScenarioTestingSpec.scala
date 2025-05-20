@@ -8,7 +8,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{ContextId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures,
 import java.util.UUID
 import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
+import scala.language.implicitConversions
 
 class FlinkDeploymentManagerScenarioTestingSpec
     extends AnyFlatSpec
@@ -92,5 +93,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
 
   private def variable(value: String): Json =
     Json.obj("pretty" -> Json.fromString(value))
+
+  implicit def contextId(str: String): ContextId = ContextId.dummy
 
 }

@@ -15,7 +15,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
     frequencyWindowInSeconds: Int,
 ) {
 
-  private type K = String
+  private type K = ContextId
   private type V = TestResults[Json]
 
   private val results                             = new ConcurrentHashMap[K, V]()
@@ -28,7 +28,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
   def updateResults(context: Context, action: TestResults[Json] => TestResults[Json]): Unit = {
     compute(
       context.initialId,
-      (_: String, maybeOldResults: Option[TestResults[Json]]) => {
+      (_: ContextId, maybeOldResults: Option[TestResults[Json]]) => {
         val oldResults = maybeOldResults match {
           case Some(results) => results
           case None          => TestResults.empty[Json]

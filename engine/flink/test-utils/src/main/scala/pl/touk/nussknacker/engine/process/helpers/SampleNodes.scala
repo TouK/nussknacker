@@ -354,7 +354,7 @@ object SampleNodes {
               .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
               .keyBy((value: ValueWithContext[String]) => value.value)
               .map(
-                (_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context("new")),
+                (_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context.dummy),
                 context.valueWithContextInfo.forUnknown
               )
           })
@@ -529,7 +529,7 @@ object SampleNodes {
               .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
               .map(
-                (i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)),
+                (i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context.dummy),
                 context.valueWithContextInfo.forUnknown
               )
           })

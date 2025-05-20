@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.table.utils
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.RowTypeInfo
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -19,8 +19,8 @@ object RowConversions {
     } yield contextToRow(parentContext, parentValidationContext)
     val row          = Row.withPositions(parentContextAsRow.map(_ => 4).getOrElse(3))
     val variablesRow = encodeVariables(context.variables, validationContext)
-    row.setField(0, context.initialId)
-    row.setField(1, context.id)
+    row.setField(0, serializeContextId(context.initialId))
+    row.setField(1, serializeContextId(context.id))
     row.setField(2, variablesRow)
     parentContextAsRow.foreach(row.setField(3, _))
     row
@@ -46,8 +46,8 @@ object RowConversions {
       }.toMap
     }
     Context(
-      row.getField(0).asInstanceOf[String],
-      row.getField(1).asInstanceOf[String],
+      deserializeContextId(row.getField(0).asInstanceOf[String]),
+      deserializeContextId(row.getField(1).asInstanceOf[String]),
       rowToScalaMap(row.getField(2).asInstanceOf[Row]),
       Option(row).filter(_.getArity >= 4).map(_.getField(3).asInstanceOf[Row]).map(rowToContext)
     )
@@ -67,6 +67,49 @@ object RowConversions {
       )
     }
 
+  }
+
+  private def serializeContextId(contextId: ContextId) = {
+    List(
+      "v1",
+      contextId.scenarioId,
+      contextId.nodeId,
+      serializeOption[Long](contextId.taskId, _.toString),
+      serializeOption[Long](contextId.index, _.toString),
+      serializeOption[String](contextId.suffix, identity)
+    ).mkString("-")
+  }
+
+  private def deserializeContextId(str: String): ContextId = {
+    str.split("-").toList match {
+      case "v1" :: scenarioId :: nodeId :: taskIdStr :: indexStr :: suffixStr :: Nil =>
+        val taskId = deserializeOption(taskIdStr, _.toLongOption)
+        val index  = deserializeOption(indexStr, _.toLongOption)
+        val suffix = deserializeOption(suffixStr, Some(_))
+        ContextId(scenarioId, nodeId, taskId, index, suffix)
+      case _ =>
+        ContextId(str, "", None, None, None)
+    }
+  }
+
+  private def serializeOption[T](value: Option[T], f: T => String): String = {
+    value match {
+      case None    => "NONE"
+      case Some(v) => f(v)
+    }
+  }
+
+  private def deserializeOption[T](str: String, f: String => Option[T]): Option[T] = {
+    str match {
+      case "NONE" =>
+        None
+      case other =>
+        f(other) match {
+          case Some(deserialized) => Some(deserialized)
+          case None => throw new IllegalArgumentException(s"Cannot deserialize context, invalid $str value")
+        }
+
+    }
   }
 
 }

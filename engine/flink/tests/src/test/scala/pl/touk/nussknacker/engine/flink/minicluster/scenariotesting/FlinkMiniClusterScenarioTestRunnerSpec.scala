@@ -8,7 +8,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.{ContextId, DisplayJsonWithEncoder, FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
@@ -48,6 +48,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.language.implicitConversions
 
 class FlinkMiniClusterScenarioTestRunnerSpec
     extends AnyWordSpec
@@ -157,26 +158,42 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val invocationResults = results.invocationResults
 
       invocationResults("proc2") shouldBe
-        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "all", variable("0")))
+        List(
+          ExpressionInvocationResult(
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
+            "all",
+            variable("0")
+          )
+        )
 
       invocationResults("out") shouldBe
-        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", variable(11)))
+        List(
+          ExpressionInvocationResult(
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
+            "Value",
+            variable(11)
+          )
+        )
 
       results.externalInvocationResults("proc2") shouldBe List(
         ExternalInvocationResult(
-          s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+          ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
           "logService",
           variable("0-collectedDuringServiceInvocation")
         )
       )
 
       results.externalInvocationResults("out") shouldBe List(
-        ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "valueMonitor", variable(11))
+        ExternalInvocationResult(
+          ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
+          "valueMonitor",
+          variable(11)
+        )
       )
 
       results.externalInvocationResults("eager1") shouldBe List(
         ExternalInvocationResult(
-          s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+          ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
           "collectingEager",
           variable("static-s-dynamic-0")
         )
@@ -217,10 +234,20 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         val invocationResults = results.invocationResults
 
         invocationResults("out") shouldBe
-          List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable(11)))
+          List(
+            ExpressionInvocationResult(
+              ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(0), None),
+              "Value",
+              variable(11)
+            )
+          )
 
         results.externalInvocationResults("out") shouldBe List(
-          ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "valueMonitor", variable(11))
+          ExternalInvocationResult(
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(0), None),
+            "valueMonitor",
+            variable(11)
+          )
         )
       }
 
@@ -291,25 +318,41 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       invocationResults("cid") shouldBe
         List(
           // we record only LazyParameter execution results
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "groupBy", variable("0")),
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "groupBy", variable("0"))
+          ExpressionInvocationResult(
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(0), None),
+            "groupBy",
+            variable("0")
+          ),
+          ExpressionInvocationResult(
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
+            "groupBy",
+            variable("0")
+          )
         )
 
       invocationResults("out") shouldBe
         List(
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable("1 0")),
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", variable("11 1"))
+          ExpressionInvocationResult(
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(0), None),
+            "Value",
+            variable("1 0")
+          ),
+          ExpressionInvocationResult(
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
+            "Value",
+            variable("11 1")
+          )
         )
 
       results.externalInvocationResults("out") shouldBe
         List(
           ExternalInvocationResult(
-            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(0), None),
             "valueMonitor",
             variable("1 0")
           ),
           ExternalInvocationResult(
-            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
             "valueMonitor",
             variable("11 1")
           )
@@ -479,17 +522,17 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       results.externalInvocationResults("out") shouldBe
         List(
           ExternalInvocationResult(
-            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(0), None),
             "valueMonitor",
             variable(SimpleJsonRecord("1", "11"))
           ),
           ExternalInvocationResult(
-            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(1), None),
             "valueMonitor",
             variable(SimpleJsonRecord("2", "22"))
           ),
           ExternalInvocationResult(
-            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2",
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(2), None),
             "valueMonitor",
             variable(SimpleJsonRecord("3", "33"))
           )
@@ -510,7 +553,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       results.externalInvocationResults("out") shouldBe
         List(
           ExternalInvocationResult(
-            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            ContextId(scenarioName, sourceNodeId, Some(firstSubtaskIndex), Some(0), None),
             "valueMonitor",
             variable("transformed:abc|3")
           )
@@ -651,7 +694,13 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       invocationResults("switch").filter(_.name == "expression").head.value shouldBe variable(true)
       invocationResults("switch").filter(_.name == "expression").last.value shouldBe variable(false)
       // first record was filtered out
-      invocationResults("out").head.contextId shouldBe s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1"
+      invocationResults("out").head.contextId shouldBe ContextId(
+        scenarioName,
+        sourceNodeId,
+        Some(firstSubtaskIndex),
+        Some(1),
+        None
+      )
     }
 
     "should handle joins for one input (diamond-like) " in {
@@ -687,7 +736,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .runTests(process, ScenarioTestData(List(recA, recB, recC)))
           .futureValue
 
-      results.invocationResults("proc2").map(_.contextId) should contain only (
+      results.invocationResults("proc2").map(_.contextId.serialize) should contain only (
         s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1-end1",
         s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-end1",
         s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0-end2",
@@ -770,9 +819,21 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       )
 
       results.invocationResults("proc2") should contain only (
-        ExpressionInvocationResult(s"$scenarioName-source1-$firstSubtaskIndex-1-end1", "all", variable("d")),
-        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-0-end2", "all", variable("a")),
-        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-2-end2", "all", variable("c"))
+        ExpressionInvocationResult(
+          ContextId(scenarioName, "source1", Some(firstSubtaskIndex), Some(1), Some("end1")),
+          "all",
+          variable("d")
+        ),
+        ExpressionInvocationResult(
+          ContextId(scenarioName, "source2", Some(firstSubtaskIndex), Some(0), Some("end2")),
+          "all",
+          variable("a")
+        ),
+        ExpressionInvocationResult(
+          ContextId(scenarioName, "source2", Some(firstSubtaskIndex), Some(2), Some("end2")),
+          "all",
+          variable("c")
+        )
       )
 
       results
@@ -924,20 +985,23 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     )
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): (String, Map[String, Json]) =
+  private def nodeResult(count: Int, vars: (String, Any)*): (ContextId, Map[String, Json]) =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): (String, Map[String, Json]) =
-    (s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*).mapValuesNow(variable))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): (ContextId, Map[String, Json]) =
+    (
+      ContextId(scenarioName, sourceId, Some(firstSubtaskIndex), Some(count), None),
+      Map(vars: _*).mapValuesNow(variable)
+    )
 
   private def nodeResult(
       count: Int,
       sourceId: String,
       branchId: String,
       vars: (String, Any)*
-  ): (String, Map[String, Json]) =
+  ): (ContextId, Map[String, Json]) =
     (
-      s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId",
+      ContextId(scenarioName, sourceId, Some(firstSubtaskIndex), Some(count), Some(branchId)),
       Map(vars: _*).mapValuesNow(variable)
     )
 

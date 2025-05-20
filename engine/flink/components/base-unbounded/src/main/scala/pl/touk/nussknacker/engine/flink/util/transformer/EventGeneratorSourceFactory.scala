@@ -36,6 +36,7 @@ import java.time.temporal.ChronoUnit
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
 import scala.jdk.CollectionConverters._
+import scala.util.Random
 
 // TODO: add testing capabilities
 object EventGeneratorSourceFactory
@@ -98,8 +99,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
           .addSource(new PeriodicFunction(schedule))
           .flatMap(
             (_: Unit, out: Collector[Context]) => {
-              val temporaryContextForEvaluation = Context(flinkNodeContext.metaData.name.value)
-              (1 to count).foreach(_ => out.collect(temporaryContextForEvaluation))
+              (1 to count).foreach(_ => out.collect(Context.dummy))
             },
             TypeInformationDetection.instance.forClass[Context]
           )
@@ -130,7 +130,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = None
 
-      private def generateSample(): AnyRef = value.evaluate(Context("dummy_context"))
+      private def generateSample(): AnyRef = value.evaluate(Context.dummy)
 
       private def encodeValueUnsafe(value: AnyRef) =
         ToJsonEncoderWithFallback

@@ -1,38 +1,42 @@
 package pl.touk.nussknacker.engine.api
 
-import java.util.UUID
 import scala.util.Random
 
 object Context {
 
-  // prefix is to distinguish between externally provided and internal (initially created) id
-  private val initialContextIdPrefix = "initial-"
+  def apply(id: ContextId): Context = Context(id, Map.empty, None)
 
-  /**
-   * For performance reasons, is used unsecure random - see UUIDBenchmark for details. In this case random correlation id
-   * is used only for internal purpose so is not important in security context.
-   */
-  private val random = new Random()
-
-  /**
-   * Deprecated: should be used ContextIdGenerator e.g. via EngineRuntimeContext.contextIdGenerator
-   * Should be used for newly created context - when there is no suitable external correlation / tracing id
-   */
-  def withInitialId: Context = {
-    Context(initialContextIdPrefix + new UUID(random.nextLong(), random.nextLong()).toString)
-  }
-
-  def apply(id: String): Context = Context(id, Map.empty, None)
-
-  def apply(id: String, variables: Map[String, Any]): Context =
+  def apply(id: ContextId, variables: Map[String, Any]): Context =
     Context(id, variables, None)
 
-  def apply(id: String, variables: Map[String, Any], parentContext: Option[Context]): Context =
+  def apply(id: ContextId, variables: Map[String, Any], parentContext: Option[Context]): Context =
     Context(id, id, variables, parentContext)
+
+  def dummy: Context = Context(ContextId.dummy)
 
 }
 
-case class ContextId(value: String)
+final case class ContextId(
+    scenarioId: String,
+    nodeId: String,
+    taskId: Option[Long],
+    index: Option[Long],
+    suffix: Option[String]
+) {
+
+  def serialize: String = List(
+    Some(scenarioId),
+    Some(nodeId),
+    taskId.map(_.toString),
+    index.map(_.toString),
+    suffix
+  ).flatten.mkString("-")
+
+}
+
+object ContextId {
+  def dummy: ContextId = ContextId("dummy", "dummy", None, None, None)
+}
 
 /**
  * Context is container for variables used in expression evaluation
@@ -43,14 +47,14 @@ case class ContextId(value: String)
  * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
  */
 case class Context(
-    initialId: String,
-    id: String,
+    initialId: ContextId,
+    id: ContextId,
     variables: Map[String, Any],
     parentContext: Option[Context]
 ) {
 
   def appendIdSuffix(suffix: String): Context =
-    copy(id = s"$id-$suffix")
+    copy(id = id.copy(suffix = id.suffix.map(s => s"$s-$suffix").orElse(Some(suffix))))
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing
   //       into parameter

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.lite.sample.SampleInputWithListAndMap
+import pl.touk.nussknacker.engine.lite.sample._
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult}
@@ -55,13 +55,13 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     )
 
     results.invocationResults("sum") shouldBe List(
-      ExpressionInvocationResult("A", "value", variable(2)),
-      ExpressionInvocationResult("C", "value", variable(3))
+      expressionInvocationResult("A", "value", variable(2)),
+      expressionInvocationResult("C", "value", variable(3))
     )
 
     results.externalInvocationResults("end") shouldBe List(
-      ExternalInvocationResult("A", "end", variable("2:2.0")),
-      ExternalInvocationResult("C", "end", variable("3:5.0"))
+      externalInvocationResult("A", "end", variable("2:2.0")),
+      externalInvocationResult("C", "end", variable("3:5.0"))
     )
   }
 
@@ -89,10 +89,10 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     nodeResults(results, "source2") shouldBe List(("C", Map("input" -> variable(3))))
 
     results.externalInvocationResults("end1") shouldBe List(
-      ExternalInvocationResult("A", "end1", variable(1)),
-      ExternalInvocationResult("B", "end1", variable(2))
+      externalInvocationResult("A", "end1", variable(1)),
+      externalInvocationResult("B", "end1", variable(2))
     )
-    results.externalInvocationResults("end2") shouldBe List(ExternalInvocationResult("C", "end2", variable(3)))
+    results.externalInvocationResults("end2") shouldBe List(externalInvocationResult("C", "end2", variable(3)))
   }
 
   test("should accept and run scenario test with parameters") {
@@ -110,11 +110,11 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     nodeResults(results, "source1") shouldBe List(
       (
-        "some-ctx-id",
+        dummyContextId("some-ctx-id"),
         Map(
           "input" -> variable(
             SampleInputWithListAndMap(
-              "some-ctx-id",
+              dummyContextId("some-ctx-id"),
               List(1L, 2L, 3L).asJava,
               Map[String, Any]("unoDosTres" -> 123).asJava
             )
@@ -145,11 +145,11 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     nodeResults(results, "source1") shouldBe List(
       (
-        "some-ctx-id",
+        dummyContextId("some-ctx-id"),
         Map(
           "input" -> variable(
             SampleInputWithListAndMap(
-              "some-ctx-id",
+              dummyContextId("some-ctx-id"),
               List(1L, 2L, 3L, 4L, 5L).asJava,
               Map[String, Any]("extraValue" -> 100).asJava
             )
@@ -159,11 +159,11 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     )
 
     results.invocationResults("sumNumbers") shouldBe List(
-      ExpressionInvocationResult("some-ctx-id", "value", variable(List(1, 2, 3, 4, 5)))
+      expressionInvocationResult("some-ctx-id", "value", variable(List(1, 2, 3, 4, 5)))
     )
 
     results.externalInvocationResults("end") shouldBe List(
-      ExternalInvocationResult("some-ctx-id", "end", variable(120))
+      externalInvocationResult("some-ctx-id", "end", variable(120))
     )
   }
 
@@ -184,7 +184,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ("fragment1", Map("in" -> variable("some-text-id"), "out" -> variable("some-text-id")))
     )
     results.invocationResults("fragmentEnd") shouldBe List(
-      ExpressionInvocationResult("fragment1", "out", variable("some-text-id"))
+      expressionInvocationResult("fragment1", "out", variable("some-text-id"))
     )
     results.exceptions shouldBe empty
   }
@@ -234,5 +234,13 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
   private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
     results.nodeResults(key).map(r => (r.id, r.variables))
+
+  private def externalInvocationResult[T](contextId: String, name: String, value: T) = {
+    ExternalInvocationResult(dummyContextId(contextId), name, value)
+  }
+
+  private def expressionInvocationResult[T](contextId: String, name: String, value: T) = {
+    ExpressionInvocationResult(dummyContextId(contextId), name, value)
+  }
 
 }

@@ -183,7 +183,7 @@ object ScenarioInterpreterFactory {
               NuExceptionInfo(
                 Some(NodeComponentInfo(source.value, ComponentType.Source, "source")),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
-                Context("")
+                Context.dummy,
               ) :: Nil,
               Nil
             )
@@ -405,7 +405,9 @@ object ScenarioInterpreterFactory {
           override def createTransformation[F[_]: Monad](
               evaluateLazyParameter: CustomComponentContext[F]
           ): Input => ValidatedNel[ErrorType, Context] = { input =>
-            Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
+            Valid(
+              Context(ContextId(fragmentInputDef.id, "", None, None, None), input.asInstanceOf[Map[String, Any]], None)
+            )
           }
 
         }

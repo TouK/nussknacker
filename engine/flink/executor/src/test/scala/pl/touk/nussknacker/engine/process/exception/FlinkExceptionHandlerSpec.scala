@@ -46,7 +46,7 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
   }
 
   test("should use handler from configuration") {
-    val info = NuExceptionInfo(None, new Exception, Context(""))
+    val info = NuExceptionInfo(None, new Exception, Context.dummy)
 
     configurableExceptionHandler.handle(info)
     TestExceptionConsumerProvider.threadLocal.get() shouldBe (metaData, config.getConfig("exceptionHandler"), info)

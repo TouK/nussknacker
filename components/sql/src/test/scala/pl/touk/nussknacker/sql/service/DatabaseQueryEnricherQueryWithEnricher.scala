@@ -41,7 +41,7 @@ trait DatabaseQueryEnricherQueryWithEnricher extends BaseDatabaseQueryEnricherTe
       finalState = Some(state)
     )
     returnType(databaseQueryEnricher, state).display shouldBe expectedDisplayType
-    val resultFuture = implementation.invoke(Context.withInitialId)
+    val resultFuture = implementation.invoke(Context.dummy)
     Await.result(resultFuture, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
   }
 
@@ -68,7 +68,7 @@ trait DatabaseQueryEnricherQueryWithEnricher extends BaseDatabaseQueryEnricherTe
       finalState = Some(state)
     )
     returnType(databaseQueryEnricher, state).display shouldBe "Integer"
-    val resultFuture = implementation.invoke(Context.withInitialId)
+    val resultFuture = implementation.invoke(Context.dummy)
     val result       = Await.result(resultFuture, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
   }

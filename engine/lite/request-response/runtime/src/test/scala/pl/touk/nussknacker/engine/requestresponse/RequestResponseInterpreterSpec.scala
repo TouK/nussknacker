@@ -7,7 +7,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.RuntimeMode
-import pl.touk.nussknacker.engine.api.{Context, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
@@ -270,7 +270,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     val creator   = new RequestResponseSampleComponents
     val contextId = firstIdForFirstSource(scenario)
-    val result    = runScenario(scenario, Request1("a", "b"), creator, contextId = Some(contextId))
+    val result    = runScenario(scenario, Request1("a", "b"), creator)
 
     result.invalidValue.toList should matchPattern {
       case NuExceptionInfo(
@@ -371,7 +371,6 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       input: Any,
       creator: RequestResponseSampleComponents = new RequestResponseSampleComponents,
       metricRegistry: MetricRegistry = new MetricRegistry,
-      contextId: Option[String] = None
   ): ValidatedNel[ErrorType, List[Any]] =
     Using.resource(
       prepareInterpreter(
@@ -429,7 +428,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     interpreter.invokeToOutput(input).futureValue
   }
 
-  private def firstIdForFirstSource(scenario: CanonicalProcess): String =
+  private def firstIdForFirstSource(scenario: CanonicalProcess): ContextId =
     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.nodes.head.id).nextContextId()
 
 }

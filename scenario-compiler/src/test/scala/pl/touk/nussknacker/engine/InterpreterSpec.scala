@@ -126,7 +126,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     def compileNode(part: ProcessPart) =
       failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
 
-    val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
+    val initialCtx                    = Context.dummy.withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
     implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.syncIoRuntime
 

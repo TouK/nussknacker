@@ -95,7 +95,7 @@ object LoggingListener extends ProcessListener with Serializable {
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo): Unit = {
     debug(
-      List(exceptionInfo.context.id, "exception"),
+      List(exceptionInfo.context.id.serialize, "exception"),
       "Exception occurred",
       Some(exceptionInfo.throwable)
     )

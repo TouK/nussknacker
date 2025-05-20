@@ -55,7 +55,7 @@ object TestProcess {
         result: Any,
         variableEncoder: Any => T
     ): TestResults[T] = {
-      val invocation = ExternalInvocationResult(contextId.value, name, variableEncoder(result))
+      val invocation = ExternalInvocationResult(contextId, name, variableEncoder(result))
       copy(externalInvocationResults =
         externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation))
       )
@@ -106,9 +106,9 @@ object TestProcess {
 
   final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
 
-  case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
+  case class ExpressionInvocationResult[T](contextId: ContextId, name: String, value: T)
 
-  case class ExternalInvocationResult[T](contextId: String, name: String, value: T)
+  case class ExternalInvocationResult[T](contextId: ContextId, name: String, value: T)
 
   object ExceptionResult {
 
@@ -132,7 +132,7 @@ object TestProcess {
       ResultContext(context.id, timestamp, context.variables.map { case (k, v) => k -> variableEncoder(v) })
   }
 
-  case class ResultContext[T](id: String, timestamp: Instant, variables: Map[String, T]) {
+  case class ResultContext[T](id: ContextId, timestamp: Instant, variables: Map[String, T]) {
     def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
   }
 

@@ -33,7 +33,7 @@ class OpenAPIServiceSpec
 
   implicit val componentUseContext: ComponentUseContext = ComponentUseContext.LiveRuntime(None)
   implicit val metaData: MetaData                       = MetaData("testProc", StreamMetaData())
-  implicit val context: Context                         = Context("testContextId", Map.empty)
+  implicit val context: Context                         = Context.dummy
   val jobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType
@@ -69,7 +69,7 @@ class OpenAPIServiceSpec
   }
 
   test("service returns customers") { service =>
-    implicit val contextId: ContextId = ContextId("1")
+    implicit val contextId: ContextId = ContextId.dummy
     val valueWithChosenFields =
       service
         .invoke(Map(ParameterName("customer_id") -> "10"))

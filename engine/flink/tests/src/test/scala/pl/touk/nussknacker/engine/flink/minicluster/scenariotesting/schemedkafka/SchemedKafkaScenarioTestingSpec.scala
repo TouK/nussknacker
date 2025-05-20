@@ -11,6 +11,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -44,6 +45,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigPropert
 import java.util.Collections
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
+import scala.language.implicitConversions
 
 class SchemedKafkaScenarioTestingSpec
     extends AnyFunSuite
@@ -232,6 +234,8 @@ class SchemedKafkaScenarioTestingSpec
 
   private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
     results.nodeResults(key).map(r => (r.id, r.variables))
+
+  implicit def contextId(str: String): ContextId = ContextId.dummy
 
 }
 

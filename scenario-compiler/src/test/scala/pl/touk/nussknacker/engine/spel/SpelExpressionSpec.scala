@@ -15,7 +15,14 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.util.{NumberUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList, TemplateEvaluationResult}
+import pl.touk.nussknacker.engine.api.{
+  Context,
+  ContextId,
+  Hidden,
+  NodeId,
+  SpelExpressionExcludeList,
+  TemplateEvaluationResult
+}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -109,7 +116,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
-  private val ctx = Context("abc").withVariables(
+  private val ctx = Context.dummy.withVariables(
     Map(
       "obj"                                         -> testValue,
       "strVal"                                      -> "",
@@ -274,14 +281,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[T](expr = expr, context = context).validExpression.evaluateSync[T](context)
 
   test("should be able to dynamically index record") {
-    evaluate[Int]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "a")) shouldBe 5
-    evaluate[Integer]("{a: 5, b: 10}[#input.toString()]", Context("abc").withVariable("input", "asdf")) shouldBe null
+    evaluate[Int]("{a: 5, b: 10}[#input.toString()]", Context.dummy.withVariable("input", "a")) shouldBe 5
+    evaluate[Integer]("{a: 5, b: 10}[#input.toString()]", Context.dummy.withVariable("input", "asdf")) shouldBe null
   }
 
   test("should figure out result type when dynamically indexing record") {
     evaluate[Int](
       "{a: {g: 5, h: 10}, b: {g: 50, h: 100}}[#input.toString()].h",
-      Context("abc").withVariable("input", "b")
+      Context.dummy.withVariable("input", "b")
     ) shouldBe 100
   }
 
@@ -386,7 +393,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should set scale at least default when creating big decimal from big int") {
-    val result = evaluate[Any]("""#a.toBigDecimal""".stripMargin, Context("asd", Map("a" -> JBigInteger.ONE)))
+    val result = evaluate[Any]("""#a.toBigDecimal""".stripMargin, Context(ContextId.dummy, Map("a" -> JBigInteger.ONE)))
     result.asInstanceOf[java.math.BigDecimal].scale() shouldBe BigDecimalScaleEnsurer.DEFAULT_BIG_DECIMAL_SCALE
   }
 
@@ -1013,7 +1020,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should handle map indexing with unknown key type") {
-    val context = Context("sth").withVariables(
+    val context = Context.dummy.withVariables(
       Map(
         "unknownString" -> ContainerOfUnknown("a"),
       )
@@ -1172,7 +1179,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .toOption
       .get
 
-    val ctx = Context("").withVariable("input", TypedMap(Map("int" -> 1)))
+    val ctx = Context.dummy.withVariable("input", TypedMap(Map("int" -> 1)))
 
     parseV[Long]("#input.int.longValue", ctxWithMap).validExpression.evaluateSync[Long](ctx) shouldBe 1L
   }
@@ -1187,7 +1194,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .toOption
       .get
 
-    val ctx = Context("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
+    val ctx = Context.dummy.withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
 
     parseV[String]("#input.str", valCtxWithMap).validExpression.evaluateSync[String](ctx) shouldBe "aaa"
     parseV[Long]("#input.lon", valCtxWithMap).validExpression.evaluateSync[Long](ctx) shouldBe 3444
@@ -2275,7 +2282,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     val containerWithMapWithIntValues            = Map("foo" -> 123, "bar" -> 234).asJava
     val containerWithMapWithDifferentTypesValues = Map("foo" -> 123, "bar" -> "baz").asJava
-    val customCtx = Context("someContextId")
+    val customCtx = Context.dummy
       .withVariable("containerWithMapWithIntValues", ContainerOfGenericMap(containerWithMapWithIntValues))
       .withVariable(
         "containerWithMapWithDifferentTypesValues",
@@ -2356,7 +2363,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         try {
           Thread.sleep(100)
           // evaluate calls getValue on problematic SpelExpression object
-          spelExpression.evaluate[LocalDateTime](Context("fooId"), Map.empty)
+          spelExpression.evaluate[LocalDateTime](Context.dummy, Map.empty)
         } catch {
           // The real problematic exception is wrapped in SpelExpressionEvaluationException by evaluate method
           case e: SpelExpressionEvaluationException =>

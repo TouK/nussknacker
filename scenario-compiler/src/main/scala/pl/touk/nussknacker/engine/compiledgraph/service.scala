@@ -30,7 +30,7 @@ object service {
         componentUseContext: ComponentUseContext,
     ): Future[Any] = {
 
-      val contextId = ContextId(ctx.id)
+      val contextId = ctx.id
       val collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
       invoker.invoke(ctx)(
         serviceExecutionContext.executionContext,

@@ -7,7 +7,7 @@ import org.apache.flink.api.common.JobID
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{ContextId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -115,7 +115,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
               "start" ->
                 (0 to 14).map { idx =>
                   ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
+                    ContextId("runningFlinkEventGenerator", "start", Some(0), Some(idx), None),
                     mockedTimestamp,
                     Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
                   )
@@ -123,7 +123,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
               "endSend" ->
                 (0 to 14).map { idx =>
                   ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
+                    ContextId("runningFlinkEventGenerator", "start", Some(0), Some(idx), None),
                     mockedTimestamp,
                     Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
                   )
@@ -133,7 +133,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
               NodeTransition("start", Some("endSend")) ->
                 (0 to 14).map { idx =>
                   ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
+                    ContextId("runningFlinkEventGenerator", "start", Some(0), Some(idx), None),
                     mockedTimestamp,
                     Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
                   )
@@ -141,7 +141,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
               NodeTransition("endSend", None) ->
                 (0 to 14).map { idx =>
                   ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
+                    ContextId("runningFlinkEventGenerator", "start", Some(0), Some(idx), None),
                     mockedTimestamp,
                     Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
                   )
@@ -150,7 +150,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
             invocationResults = Map(
               "start" -> List(
                 ExpressionInvocationResult(
-                  "runningFlinkEventGenerator",
+                  ContextId("dummy", "dummy", None, None, None),
                   "value",
                   Json.obj("pretty" -> "abrakadabra".asJson)
                 )
@@ -158,7 +158,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
               "endSend" ->
                 (0 to 14).map { idx =>
                   ExpressionInvocationResult(
-                    s"runningFlinkEventGenerator-start-0-$idx",
+                    ContextId("runningFlinkEventGenerator", "start", Some(0), Some(idx), None),
                     "Value",
                     Json.obj("pretty" -> "message".asJson)
                   )

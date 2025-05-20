@@ -8,6 +8,7 @@ import io.circe
 import io.circe._
 import io.circe.derivation.deriveCodec
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -276,6 +277,7 @@ object Dtos {
 
   }
 
+  implicit def contextIdSchema: Schema[ContextId]                                         = Schema.string
   implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
   implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
   implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived

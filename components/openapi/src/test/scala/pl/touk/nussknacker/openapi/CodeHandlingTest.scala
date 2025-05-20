@@ -37,7 +37,7 @@ class CodeHandlingTest
     val service         = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
     def runWithCode(code: Int) = {
-      implicit val contextId: ContextId = ContextId("1")
+      implicit val contextId: ContextId = ContextId.dummy
       service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
     }
 

@@ -32,7 +32,6 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
   ): DataStreamSource[String] = {
     val flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
       var running       = true
-      var counter       = new AtomicLong()
       val afterFirstRun = new AtomicBoolean(false)
 
       override def cancel(): Unit = {

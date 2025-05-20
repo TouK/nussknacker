@@ -49,7 +49,7 @@ object sample {
   case class SampleInput(contextId: String, value: Int)
 
   case class SampleInputWithListAndMap(
-      contextId: String,
+      contextId: ContextId,
       numbers: java.util.List[Long],
       additionalParams: java.util.Map[String, Any]
   )
@@ -190,7 +190,7 @@ object sample {
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
       ): SampleInput => ValidatedNel[ErrorType, Context] =
-        input => Valid(Context(input.contextId, Map("input" -> input.value), None))
+        input => Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None))
 
       override def testRecordParser: TestRecordParser[SampleInput] = (testRecords: List[TestRecord]) =>
         testRecords.map { testRecord =>
@@ -216,11 +216,11 @@ object sample {
               NuExceptionInfo(
                 Some(NodeComponentInfo(nodeId.id, ComponentType.Source, "failOnNumber1SourceFactory")),
                 SourceFailure,
-                Context(input.contextId)
+                Context(dummyContextId(input.contextId))
               )
             ).toValidatedNel
           } else {
-            Valid(Context(input.contextId, Map("input" -> input.value), None))
+            Valid(Context(dummyContextId(input.contextId), Map("input" -> input.value), None))
           }
         }
 
@@ -255,7 +255,7 @@ object sample {
 
       override def parametersToTestData(params: Map[ParameterName, AnyRef]): SampleInputWithListAndMap =
         SampleInputWithListAndMap(
-          params(ParameterName("contextId")).asInstanceOf[String],
+          dummyContextId(params(ParameterName("contextId")).asInstanceOf[String]),
           params(ParameterName("numbers")).asInstanceOf[java.util.List[Long]],
           params(ParameterName("additionalParams")).asInstanceOf[java.util.Map[String, Any]]
         )
@@ -274,5 +274,7 @@ object sample {
     }
 
   }
+
+  def dummyContextId(str: String): ContextId = ContextId(str, "", None, None, None)
 
 }

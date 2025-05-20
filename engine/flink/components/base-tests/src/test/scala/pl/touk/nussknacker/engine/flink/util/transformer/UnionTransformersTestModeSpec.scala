@@ -134,7 +134,7 @@ class UnionTransformersTestModeSpec
 
   private def extractContextIds(results: TestProcess.TestResults[_]): List[String] = results
     .nodeResults(endSinkId)
-    .map(_.id)
+    .map(_.id.serialize)
 
   private def runScenario(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>

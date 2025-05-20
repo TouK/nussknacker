@@ -96,7 +96,7 @@ class SecurityTest
       )
     stubbedSecretCheckingLogics.foreach { logic =>
       withClue(logic.operationId) {
-        implicit val contextId: ContextId = ContextId("1")
+        implicit val contextId: ContextId = ContextId.dummy
         enricherWithCorrectConfig(ServiceName(logic.operationId))
           .invoke(Map.empty)
           .futureValue shouldBe TypedMap(Map.empty)
@@ -114,7 +114,7 @@ class SecurityTest
     stubbedSecretCheckingLogics.foreach { logic =>
       withClue(logic.operationId) {
         intercept[Exception] {
-          implicit val contextId: ContextId = ContextId("1")
+          implicit val contextId: ContextId = ContextId.dummy
           enricherWithBadConfig(ServiceName(logic.operationId)).invoke(Map.empty).futureValue
         }
       }
@@ -129,7 +129,7 @@ class SecurityTest
           backend,
           baseConfig.copy(secret = Some(config.expectedSecret))
         )
-        implicit val contextId: ContextId = ContextId("1")
+        implicit val contextId: ContextId = ContextId.dummy
         enricherWithSingleSecurityConfig(ServiceName(config.operationId))
           .invoke(Map.empty)
           .futureValue shouldBe TypedMap(Map.empty)
@@ -155,7 +155,7 @@ class SecurityTest
       backend,
       baseConfig.copy(secret = Some(secretMatchesEveryScheme))
     )
-    implicit val contextId: ContextId = ContextId("1")
+    implicit val contextId: ContextId = ContextId.dummy
     enricherWithSingleSecurityConfig(ServiceName("root"))
       .invoke(Map.empty)
       .futureValue shouldBe TypedMap(Map.empty)

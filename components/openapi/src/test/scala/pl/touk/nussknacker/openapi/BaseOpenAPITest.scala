@@ -21,7 +21,7 @@ trait BaseOpenAPITest {
 
   implicit val componentUseContext: ComponentUseContext = ComponentUseContext.LiveRuntime(None)
   implicit val metaData: MetaData                       = MetaData("testProc", StreamMetaData())
-  implicit val context: Context                         = Context("testContextId", Map.empty)
+  implicit val context: Context                         = Context.dummy
   private val jobData        = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
   private val runtimeContext = TestEngineRuntimeContext(jobData)
 

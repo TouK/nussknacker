@@ -54,7 +54,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     None
   )
 
-  private val evaluationContext = Context("test").withVariables(
+  private val evaluationContext = Context.dummy.withVariables(
     Map(
       "name"       -> "John",
       "age"        -> 50,
@@ -175,7 +175,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         )
       ).validValue.expression
         .evaluate[Any](
-          Context("test").withVariables(
+          Context.dummy.withVariables(
             Map(
               "products" -> List("a", "b").asJava,
               "pricing"  -> Map("a" -> 1000, "b" -> 500).asJava,
