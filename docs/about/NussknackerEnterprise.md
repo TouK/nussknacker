@@ -1,5 +1,6 @@
 ---
-title: Nussknacker Enterprise
+title: Enterprise Edition, Advanced Features and Support
+description: Discover the benefits of Nussknacker Enterprise. Gain access to premium features, enhanced security, expert support, and scalability options.
 ---
 
 The **Nussknacker Enterprise** version includes additional features, components and services provided 

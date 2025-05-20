@@ -1,6 +1,6 @@
 ---
-sidebar_label: "Flink"
-description: Flink specific model configuration
+sidebar_label: Apache Flink Model Settings and Extensions
+description: Configure custom components and services for Flink-based deployments. Learn how to tailor your Nussknacker model for Apache Flink runtime.
 ---
 
 # Flink specific model configuration

@@ -1,4 +1,6 @@
 ---
+title: Real Time Aggregates in Streaming
+description: Learn how to use time window aggregations in real-time workflows to power dynamic, data-driven decisions.
 sidebar_position: 5
 ---
 

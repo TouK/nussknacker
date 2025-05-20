@@ -1,3 +1,8 @@
+---
+title: Common Operations for Workflows
+description: Explore common operational tasks like health checks, configuration, and component management for real-time systems.
+---
+
 ## Intended audience
 
 This manual is intended mainly for those who are going to support Nussknacker deployments (especially production ones). We assume prior knowledge of Kafka, Flink, InfluxDB, Kubernetes

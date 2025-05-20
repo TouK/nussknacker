@@ -1,5 +1,6 @@
 ---
-title: Environment Variables
+title: Common Configuration, Shared Settings and Options
+description: Define shared settings for Nussknacker components. Configure common parameters used across models, deployments, and runtime environments.
 sidebar_position: 4
 ---
 

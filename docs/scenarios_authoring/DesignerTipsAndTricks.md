@@ -1,4 +1,6 @@
 ---
+title: Boost Automation with Tips and Tricks
+description: Learn practical design strategies to build cleaner, more efficient, and easier-to-maintain real-time decision workflows.
 sidebar_position: 9
 ---
 

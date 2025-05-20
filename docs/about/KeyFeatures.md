@@ -1,5 +1,6 @@
 ---
-title: Key features
+title: Key Features, Low-Code, Streaming, Integration-Ready
+description: Explore Nussknacker’s key features, including visual scenario design, real-time processing, integrations, and extensibility for developers.
 ---
 
 ## Scenario authoring

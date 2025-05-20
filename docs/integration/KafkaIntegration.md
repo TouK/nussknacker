@@ -1,4 +1,6 @@
 ---
+title: Kafka Integration for Real Time Data
+description: Learn how to integrate Nussknacker with Kafka. Configure topics, serialization, and ensure smooth data flow for streaming scenarios.
 sidebar_position: 1
 ---
 

@@ -1,5 +1,6 @@
 ---
-title: Processing modes
+title: Available Processing Modes
+description: Learn about available processing modes in Nussknacker. Compare Flink and Lite runtimes to choose the best fit for your streaming use case.
 ---
 
 Nussknacker was created with stream processing in mind. However, it's also suitable for other use cases - e.g. requiring 
