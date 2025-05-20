@@ -13,7 +13,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, TopicsWithoutSchemaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
@@ -39,7 +39,8 @@ class AzureTestsFromFileIntegrationTest
   private val schemaRegistryConfigMap =
     Map("schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net", "schema.group" -> "test-group")
 
-  private val kafkaConfig = KafkaConfig(Some(schemaRegistryConfigMap), None, showTopicsWithoutSchema = false)
+  private val kafkaConfig =
+    KafkaConfig(Some(schemaRegistryConfigMap), None, topicsWithoutSchemaConfig = TopicsWithoutSchemaConfig.Disabled)
 
   test("test from file round-trip") {
     val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(kafkaConfig.schemaRegistryClientKafkaConfig)

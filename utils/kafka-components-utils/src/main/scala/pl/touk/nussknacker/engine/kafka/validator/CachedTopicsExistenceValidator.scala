@@ -13,19 +13,6 @@ import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import scala.jdk.CollectionConverters._
 
-trait WithCachedTopicsExistenceValidator extends TopicsExistenceValidator {
-
-  protected val kafkaConfig: KafkaConfig
-
-  private lazy val validator = new CachedTopicsExistenceValidator(kafkaConfig)
-
-  final override def validateTopics[T <: TopicName: TopicValidationType](
-      topics: NonEmptyList[T]
-  ): Validated[TopicExistenceValidationException[T], NonEmptyList[T]] =
-    validator.validateTopics(topics)
-
-}
-
 class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExistenceValidator with LazyLogging {
 
   private val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig

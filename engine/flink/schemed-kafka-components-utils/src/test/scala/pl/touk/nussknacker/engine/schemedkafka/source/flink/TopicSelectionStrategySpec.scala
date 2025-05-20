@@ -24,8 +24,8 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   private lazy val confluentClient = schemaRegistryClientFactory.create(kafkaConfig)
 
   test("all topic strategy test") {
-    val strategy = new TopicsWithExistingSubjectSelectionStrategy()
-    strategy.getTopics(confluentClient, kafkaConfig).toList.map(_.toSet) shouldBe List(
+    val strategy = new TopicsWithExistingSubjectSelectionStrategy(confluentClient)
+    strategy.getTopics.toList.map(_.toSet) shouldBe List(
       Set(
         RecordTopic,
         RecordTopicWithKey,
@@ -40,8 +40,9 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("topic filtering strategy test") {
-    val strategy = new TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(Pattern.compile(".*Record.*"))
-    strategy.getTopics(confluentClient, kafkaConfig).toList shouldBe List(
+    val strategy =
+      new TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(Pattern.compile(".*Record.*"), confluentClient)
+    strategy.getTopics.toList shouldBe List(
       List(ArrayOfRecordsTopic, RecordTopic, RecordTopicWithKey)
     )
   }
@@ -54,7 +55,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       new FlinkKafkaSourceImplFactory(None)
     ) {
       override def topicSelectionStrategy =
-        new TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(Pattern.compile("test-.*"))
+        new TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(Pattern.compile("test-.*"), confluentClient)
     }
   }
 

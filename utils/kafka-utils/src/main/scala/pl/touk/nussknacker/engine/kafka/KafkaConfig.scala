@@ -32,8 +32,7 @@ case class KafkaConfig(
     kafkaAddress: Option[String] = None,
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
-    showTopicsWithoutSchema: Boolean = true,
-    topicsWithoutSchemaFetchTimeout: FiniteDuration = 1 second
+    topicsWithoutSchemaConfig: TopicsWithoutSchemaConfig = TopicsWithoutSchemaConfig.Default,
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -136,4 +135,15 @@ object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
   case object None       extends OffsetResetStrategy
   case object ToEarliest extends OffsetResetStrategy
   case object ToLatest   extends OffsetResetStrategy
+}
+
+final case class TopicsWithoutSchemaConfig(
+    showTopicsWithoutSchema: Boolean = true,
+    topicsFetchTimeout: FiniteDuration = 10 seconds,
+    topicsFetchCacheTtl: FiniteDuration = 30 seconds,
+)
+
+object TopicsWithoutSchemaConfig {
+  val Default: TopicsWithoutSchemaConfig  = TopicsWithoutSchemaConfig()
+  val Disabled: TopicsWithoutSchemaConfig = TopicsWithoutSchemaConfig(showTopicsWithoutSchema = false)
 }

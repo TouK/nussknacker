@@ -8,50 +8,55 @@ import org.apache.kafka.common.errors.TimeoutException
 import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
+import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import java.util.regex.Pattern
 import scala.jdk.CollectionConverters._
 
 trait TopicSelectionStrategy extends Serializable {
 
-  def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]]
+  def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 
 }
 
-class TopicsWithExistingSubjectSelectionStrategy extends TopicSelectionStrategy {
+class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaRegistryClient)
+    extends TopicSelectionStrategy {
 
-  override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
+  override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     schemaRegistryClient.getAllTopics
   }
 
 }
 
-class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy with LazyLogging {
+class AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient: SchemaRegistryClient, kafkaConfig: KafkaConfig)
+    extends TopicSelectionStrategy
+    with LazyLogging {
 
-  override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
+  private val strategyConfig = kafkaConfig.topicsWithoutSchemaConfig
+
+  private lazy val topicsCache = new SingleValueCache[Set[UnspecializedTopicName]](
+    expireAfterAccess = None,
+    expireAfterWrite = Some(strategyConfig.topicsFetchCacheTtl)
+  )
+
+  override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     val topicsFromSchemaRegistry = schemaRegistryClient.getAllTopics
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        KafkaUtils.usingAdminClient(kafkaConfig) {
-          _.listTopics(new ListTopicsOptions().timeoutMs(kafkaConfig.topicsWithoutSchemaFetchTimeout.toMillis.toInt))
-            .names()
-            .get()
-            .asScala
-            .toSet
-            .map(UnspecializedTopicName.apply)
-            .filterNot(topic => topic.name.startsWith("_"))
-            .toList
+        val allTopics = topicsCache.getOrCreate {
+          KafkaUtils.usingAdminClient(kafkaConfig) {
+            _.listTopics(new ListTopicsOptions().timeoutMs(strategyConfig.topicsFetchTimeout.toMillis.toInt))
+              .names()
+              .get()
+              .asScala
+              .toSet
+              .map(UnspecializedTopicName.apply)
+          }
         }
+        allTopics
+          .filterNot(topic => topic.name.startsWith("_"))
+          .toList
       } catch {
         // In some tests we pass dummy kafka address, so when we try to get topics from kafka it fails
         case err if ExceptionUtils.unwrapCommonWrappingExceptions(err).isInstanceOf[TimeoutException] =>
@@ -67,13 +72,12 @@ class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy with La
 
 }
 
-class TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(val topicPattern: Pattern)
-    extends TopicSelectionStrategy {
+class TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(
+    val topicPattern: Pattern,
+    schemaRegistryClient: SchemaRegistryClient
+) extends TopicSelectionStrategy {
 
-  override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
+  override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
     schemaRegistryClient.getAllTopics.map(_.filter(topic => topicPattern.matcher(topic.name).matches()))
 
 }
