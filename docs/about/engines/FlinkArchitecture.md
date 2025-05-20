@@ -1,5 +1,6 @@
 ---
-title: Flink engine
+title: Flink Engine Architecture
+description: Understand how Nussknacker uses Apache Flink. Learn about the internal architecture, job structure, and execution flow of Flink-based scenarios.
 ---
 
 ## Architecture overview

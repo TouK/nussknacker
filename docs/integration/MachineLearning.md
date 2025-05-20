@@ -1,4 +1,6 @@
 ---
+title: Machine Learning Integration Guide
+description: Learn how to integrate machine learning models into automated workflows for real-time decision-making with low-code configuration.
 sidebar_position: 5
 ---
 

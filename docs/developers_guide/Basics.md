@@ -1,3 +1,8 @@
+---
+title: Developer Basics for Customizing Logic
+description: Learn the basics of Nussknacker development including custom components, data handling, and system integration steps.
+---
+
 # Overview
 
 Please make sure you know common [Glossary](../about/GLOSSARY.md) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further. 

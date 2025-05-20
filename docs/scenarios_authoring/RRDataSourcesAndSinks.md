@@ -1,4 +1,6 @@
 ---
+title: Request Response Sources and Sinks
+description: This guide shows how to define inputs and outputs for low-latency request-response scenarios using APIs.
 sidebar_position: 4
 ---
 

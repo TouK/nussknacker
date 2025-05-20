@@ -1,3 +1,8 @@
+---
+title: Lite Engine Components Guide
+description: Build custom components for the Lite engine in Nussknacker. Add sources, sinks, and services for lightweight cloud deployments.
+---
+
 # Lite components
 
 :::caution

@@ -1,4 +1,6 @@
 ---
+title: Reusable Fragments of Business Logic
+description: Use fragments to encapsulate logic and streamline the design of scalable real-time decision workflows.
 sidebar_position: 7
 ---
 

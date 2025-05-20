@@ -1,4 +1,6 @@
 ---
+title: Streamline Scenario Testing and Debugging
+description: Use visual tools to test, debug, and refine automation flows before deployment. Ensure accuracy and reliability in real-time decisions.
 sidebar_position: 8
 ---
 

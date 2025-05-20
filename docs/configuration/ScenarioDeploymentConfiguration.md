@@ -1,5 +1,6 @@
 ---
-title: Deployment
+title: Deployment Configuration for Scenarios
+description: Configure how scenarios are deployed in Nussknacker. Control runtime, deployment settings, and environment-specific behavior with flexibility.
 sidebar_position: 2
 ---
 

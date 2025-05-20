@@ -1,3 +1,8 @@
+---
+title: Migration Guide Manual
+description: Follow detailed steps to migrate automation scenarios and configurations between platform versions with minimal risk and downtime.
+---
+
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).

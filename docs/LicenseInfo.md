@@ -1,3 +1,8 @@
+---
+title: Platform Licensing Details
+description: Review detailed licensing terms, usage rights, and distribution conditions to ensure compliant and effective platform use.
+---
+
 ## License info
 
 ### Community edition

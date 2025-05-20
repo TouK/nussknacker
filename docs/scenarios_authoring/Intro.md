@@ -1,4 +1,6 @@
 ---
+title: Getting Started with Real Time Flow Design
+description: Learn the basics of scenario authoring and start building real-time automation flows with a low-code interface.
 sidebar_position: 1
 ---
 

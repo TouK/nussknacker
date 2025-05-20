@@ -1,4 +1,6 @@
 ---
+title: OpenAPI Integration Guide
+description: Learn how to integrate OpenAPI services into real-time workflows to enable external data calls within decision logic.
 sidebar_position: 3
 ---
 

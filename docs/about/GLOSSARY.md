@@ -1,5 +1,6 @@
 ---
-title: Glossary
+title: Glossary, Key Terms and Concepts Explained
+description: Understand essential Nussknacker terminology. This glossary explains key terms used across the platform, docs, and real-time processing.
 ---
 
 ### Component
