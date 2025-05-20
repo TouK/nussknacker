@@ -14,6 +14,7 @@ export enum ButtonsVariant {
     small = "small",
     label = "label",
     horizontal = "horizontal",
+    menu = "menu",
 }
 
 export const ToolbarButtonsContext = createContext<{ variant: ButtonsVariant }>({ variant: ButtonsVariant.label });

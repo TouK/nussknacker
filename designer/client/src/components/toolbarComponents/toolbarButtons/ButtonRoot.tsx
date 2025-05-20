@@ -29,16 +29,18 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                 title={title || name}
                 className={"toolbarButton-Root"}
                 sx={(theme) => ({
-                    width: [ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant)
+                    width: [ButtonsVariant.menu, ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant)
                         ? "auto"
                         : `calc(${ButtonsVariant.small === variant ? PANEL_BUTTON_SMALL_SIZE : PANEL_BUTTON_SIZE}px - 2 * var(--margin))`,
                     padding:
-                        variant === ButtonsVariant.horizontal
+                        ButtonsVariant.menu === variant
+                            ? "0 8px 0 0"
+                            : ButtonsVariant.horizontal === variant
                             ? "4px 8px"
                             : [ButtonsVariant.small, ButtonsVariant.xs].includes(variant)
                             ? 0
                             : "4px 0",
-                    flexDirection: [ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant) ? "row" : null,
+                    flexDirection: [ButtonsVariant.menu, ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant) ? "row" : null,
                     zoom: variant === ButtonsVariant.xs ? 0.75 : null,
                     borderColor: hasError ? theme.palette.error.main : null,
                     color: hasError ? theme.palette.error.main : isActive ? theme.palette.success.main : null,
@@ -49,7 +51,15 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                         title={title}
                         className={"toolbarButton-Icon"}
                         sx={
-                            variant === ButtonsVariant.horizontal
+                            [ButtonsVariant.menu].includes(variant)
+                                ? {
+                                      "&, &>*": {
+                                          flex: "none",
+                                          height: "1.5em",
+                                          width: "1.5em",
+                                      },
+                                  }
+                                : [ButtonsVariant.horizontal].includes(variant)
                                 ? {
                                       "&, &>*": {
                                           flex: "none",
@@ -64,14 +74,24 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                     </Icon>
                 </Badge>
                 <Typography
-                    variant={ButtonsVariant.horizontal === variant ? "button" : "overline"}
+                    variant={
+                        [ButtonsVariant.menu].includes(variant)
+                            ? "caption"
+                            : [ButtonsVariant.horizontal].includes(variant)
+                            ? "button"
+                            : "overline"
+                    }
                     className={"toolbarButton-Label"}
                     sx={{
                         color: "inherit",
                         display: [ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? "none" : null,
-                        whiteSpace: variant === ButtonsVariant.horizontal ? "nowrap" : null,
-                        textTransform: variant === ButtonsVariant.label ? "lowercase" : null,
-                        marginLeft: variant === ButtonsVariant.horizontal ? 1 : null,
+                        whiteSpace: [ButtonsVariant.menu, ButtonsVariant.horizontal].includes(variant) ? "nowrap" : null,
+                        textTransform: [ButtonsVariant.label].includes(variant) ? "lowercase" : "capitalize",
+                        marginLeft: [ButtonsVariant.menu].includes(variant)
+                            ? 0.5
+                            : [ButtonsVariant.horizontal].includes(variant)
+                            ? 1
+                            : null,
                     }}
                 >
                     {name}
