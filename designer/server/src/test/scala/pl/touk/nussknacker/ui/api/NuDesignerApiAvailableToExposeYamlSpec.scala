@@ -170,7 +170,7 @@ object NuDesignerApiAvailableToExpose {
     val docs = OpenAPIDocsInterpreter(NuDesignerExposedApiHttpService.openAPIDocsOptions).toOpenAPI(
       es = endpoints,
       title = NuDesignerExposedApiHttpService.openApiDocumentTitle,
-      version = ""
+      version = "",
     )
     docs.toYaml
   }
