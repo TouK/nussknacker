@@ -41,6 +41,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
                 const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
                 const processName = isRenamed ? unsavedNewName : currentProcessName;
 
+                await dispatch(UndoActionCreators.clearHistory());
                 await dispatch(displayCurrentProcessVersion(processName));
                 await dispatch(await getScenarioActivities(processName));
 
@@ -54,7 +55,6 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
                         { replace: true },
                     );
                 }
-                await dispatch(UndoActionCreators.clearHistory());
             };
         },
         [location, navigate],

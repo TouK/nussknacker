@@ -1,12 +1,17 @@
 import { alpha } from "@mui/material";
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { updateTestType } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
-import { getTestCapabilities, getTestResultsLoading, getTestType, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
+import {
+    getPerformedTestType,
+    getTestCapabilities,
+    getTestResultsLoading,
+    isLatestProcessVersion,
+} from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
@@ -53,14 +58,12 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         return [...options, retest];
     }, [t, testingState.action, testingState.options]);
 
-    const storedTestType = useSelector(getTestType);
-    const [preset, setPreset] = useState<Preset>();
-    useEffect(() => {
-        setPreset((prev) => {
-            const expected = testingState.action && storedTestType === prev?.value ? RERUN_PREVIOUS : storedTestType;
-            return presets.find((p) => p.value === expected);
-        });
-    }, [storedTestType, presets, testingState.action]);
+    const performedTestType = useSelector(getPerformedTestType);
+    const isLoading = useSelector(getTestResultsLoading);
+
+    const preset = useMemo(() => {
+        return presets.find((p) => p.value === performedTestType);
+    }, [performedTestType, presets]);
 
     // Availability of adhoc testing
     const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
@@ -80,7 +83,6 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         (preset?: Preset) => {
             if (preset?.value === RERUN_PREVIOUS) {
                 testingState.action();
-                setPreset(preset);
                 return;
             }
             dispatch(updateTestType(preset?.value));
@@ -102,8 +104,6 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         },
         [dispatch, docs, markdownContent, open, t, testingState],
     );
-
-    const isLoading = useSelector(getTestResultsLoading);
 
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
@@ -132,7 +132,9 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             sx={(theme) => {
                 const normal = theme.palette.primary.main;
                 const highlight = theme.palette.primary.light;
-                const isHorizontal = variant === ButtonsVariant.xs && [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom].includes(side);
+                const isHorizontal =
+                    variant === ButtonsVariant.xs &&
+                    [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom, ToolbarsSide.AboveNodeWindow].includes(side);
                 return {
                     color: alpha(theme.palette.getContrastText(normal), 0.75),
 
@@ -161,7 +163,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
                 };
             }}
             isLoading={isLoading}
-            disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges}
+            disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges || isLoading}
             onClick={() => openDialog(preset)}
             type={type}
             presets={presets}

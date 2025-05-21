@@ -12,13 +12,14 @@ import type {
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { alpha, styled } from "@mui/material";
 import type { CSSProperties, PropsWithChildren } from "react";
-import React, { createContext, Suspense, useCallback, useContext, useMemo } from "react";
+import React, { createContext, Suspense, useCallback, useContext, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { DraggableIdContext, TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
+import { isInInertTree } from "./inertHelpers";
 import type { Toolbar } from "./toolbar";
 
 export const StyledDraggableItem = styled("div")(({ theme }) => ({
@@ -83,6 +84,7 @@ type Props = {
     side: ToolbarsSide;
     availableToolbars: Toolbar[];
     className?: string;
+    disableDnd?: boolean;
 };
 
 export const DRAGGABLE_LIST_CLASSNAME = "draggable-list";
@@ -122,7 +124,7 @@ const CloneWrapper = (
 export const ToolbarSideContext = createContext<ToolbarsSide>(null);
 
 export function ToolbarsContainer(props: Props): JSX.Element {
-    const { side, availableToolbars, className } = props;
+    const { side, availableToolbars, className, disableDnd } = props;
 
     const selector = useMemo(() => getOrderForPosition(side), [side]);
     const order = useSelector(selector);
@@ -139,7 +141,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
             const finalElement = isHorizontal(side) ? horizontalComponent : component;
             return (
                 <div ref={p.innerRef} {...p.draggableProps} style={getStyle(p.draggableProps.style, s)} className={DRAGGABLE_CLASSNAME}>
-                    <DragHandlerContext.Provider value={p.dragHandleProps}>
+                    <DragHandlerContext.Provider value={p.dragHandleProps || false}>
                         <StyledDraggableItem
                             className={cx(
                                 s.isDragging && DRAGGING_CLASSNAME,
@@ -179,9 +181,13 @@ export function ToolbarsContainer(props: Props): JSX.Element {
         [availableToolbars, draggedId],
     );
 
+    const ref = useRef();
+
     const dropDisabled = useMemo(() => {
+        if (disableDnd) return true;
+        if (isInInertTree(ref.current)) return true;
         return !(isHorizontal(side) ? draggedToolbar?.horizontalComponent : draggedToolbar?.component);
-    }, [draggedToolbar?.component, draggedToolbar?.horizontalComponent, side]);
+    }, [disableDnd, draggedToolbar?.component, draggedToolbar?.horizontalComponent, side]);
 
     const renderDroppable: DroppableProps["children"] = useCallback(
         (p: DroppableProvided, s: DroppableStateSnapshot) => (
@@ -194,13 +200,13 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                     className,
                 )}
             >
-                <DraggableList {...p.droppableProps} className={DRAGGABLE_LIST_CLASSNAME}>
+                <DraggableList ref={ref} {...p.droppableProps} className={DRAGGABLE_LIST_CLASSNAME}>
                     {ordered.map(({ id, isHidden }, index) => {
                         if (isHidden) {
                             return null;
                         }
                         return (
-                            <Draggable key={id} draggableId={id} index={index}>
+                            <Draggable key={id} draggableId={id} index={index} isDragDisabled={disableDnd}>
                                 {renderDraggable}
                             </Draggable>
                         );
@@ -209,7 +215,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                 </DraggableList>
             </DroppableContainer>
         ),
-        [className, dropDisabled, ordered, renderDraggable],
+        [className, disableDnd, dropDisabled, ordered, renderDraggable],
     );
 
     return (

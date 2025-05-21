@@ -1,5 +1,6 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
+import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -124,7 +125,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     const [settings] = useUserSettings();
     const [PortalWrapper, portalRef] = usePortal();
-    const components = useMemo(
+    const components: DefaultContentProps["components"] = useMemo(
         () =>
             settings["node.showInputsAndOutputs"]
                 ? {

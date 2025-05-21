@@ -1,4 +1,5 @@
 import type { Layout, RefreshData } from "../../actions/nk";
+import type { PerformedTestType } from "../../actions/nk/displayTestResults";
 import type { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService";
@@ -22,6 +23,7 @@ export type GraphState = {
     layout: Layout;
     testCapabilities?: TestCapabilities;
     testType?: string;
+    performedTestType?: PerformedTestType;
     testFormParameters?: TestFormParameters[];
     testResults: TestResults;
     testResultsLoading?: boolean;
