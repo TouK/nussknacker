@@ -141,6 +141,7 @@ abstract class FlinkWithKafkaSuite
         s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
         fromAnyRef(false)
       )
+      .withValue("config.topicsWithoutSchemaConfig.topicsFetchCacheTtl", fromAnyRef(0))
     maybeAddSchemaRegistryUrl(config)
   }
 
