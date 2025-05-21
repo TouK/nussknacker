@@ -25,7 +25,22 @@ class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
         const scenario: Scenario = getScenario(state);
         const savedProcessState: Scenario = getHistoryPast(state)?.[0]?.scenario || scenario;
-        const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
+
+        /**
+         * It's a fix of https://touk-jira.atlassian.net/browse/NU-2194
+         * When node is added from a toolbar, branchParametersTemplate are initially added to the node, but when we perform a scenario save, node has no branchParametersTemplate
+         * Let's ignore branchParametersTemplate in a button save state checking
+         */
+        const omitBranchParametersTemplate = (details: ScenarioGraph) => {
+            if (!details.nodes?.length) {
+                return details;
+            }
+
+            return {
+                ...details,
+                nodes: details.nodes.map((node) => omit(node, ["branchParametersTemplate"])),
+            };
+        };
         const processRenamed = isProcessRenamed(state);
 
         if (processRenamed) {
@@ -40,7 +55,10 @@ class ProcessUtils {
             return scenario.labels ? scenario.labels.slice().sort((a, b) => a.localeCompare(b)) : [];
         };
 
-        const isGraphUpdated = isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
+        const isGraphUpdated = isEqual(
+            omitBranchParametersTemplate(scenario.scenarioGraph),
+            omitBranchParametersTemplate(savedProcessState.scenarioGraph),
+        );
         const areScenarioLabelsUpdated = isEqual(labelsFor(scenario), labelsFor(savedProcessState));
 
         return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
