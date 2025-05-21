@@ -34,7 +34,7 @@ class AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient: SchemaRegistryCl
 
   private val strategyConfig = kafkaConfig.topicsWithoutSchemaConfig
 
-  private lazy val topicsCache = new SingleValueCache[Set[UnspecializedTopicName]](
+  @transient private lazy val topicsCache = new SingleValueCache[Set[UnspecializedTopicName]](
     expireAfterAccess = None,
     expireAfterWrite = Some(strategyConfig.topicsFetchCacheTtl)
   )

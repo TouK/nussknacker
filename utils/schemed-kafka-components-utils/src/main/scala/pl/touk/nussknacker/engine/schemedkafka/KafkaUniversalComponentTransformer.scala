@@ -51,7 +51,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   @transient protected lazy val cachedTopicsExistenceValidator = new CachedTopicsExistenceValidator(kafkaConfig)
 
-  protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
+  @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.topicsWithoutSchemaConfig.showTopicsWithoutSchema) {
       new AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaConfig)
     } else {
