@@ -132,7 +132,9 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             sx={(theme) => {
                 const normal = theme.palette.primary.main;
                 const highlight = theme.palette.primary.light;
-                const isHorizontal = variant === ButtonsVariant.xs && [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom].includes(side);
+                const isHorizontal =
+                    variant === ButtonsVariant.xs &&
+                    [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom, ToolbarsSide.AboveNodeWindow].includes(side);
                 return {
                     color: alpha(theme.palette.getContrastText(normal), 0.75),
 
