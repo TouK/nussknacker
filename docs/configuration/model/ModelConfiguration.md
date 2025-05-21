@@ -1,7 +1,10 @@
 ---
-title: Basics
+title: Basics Model Configuration
+description: Learn how to use the ModelConfiguration class to define services, components, and behaviors in Scala-based Nussknacker deployments.
+sidebar_label: Basics
 sidebar_position: 1
 ---
+
 # Model configuration
 
 Model definition is part of a scenario type definition. There can be multiple scenario types in one Nussknacker installation, consequently there will also be multiple model definitions in such a case. 

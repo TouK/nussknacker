@@ -1,4 +1,10 @@
-# Docker based installation
+---
+title: Install Nussknacker with Docker
+description: Set up Nussknacker quickly using Docker. Use predefined images to run the Designer, Lite engine, and required services with minimal effort.
+sidebar_label: Docker
+---
+
+Docker based installation
 
 Nussknacker is available at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/).
 You can look at the example installation

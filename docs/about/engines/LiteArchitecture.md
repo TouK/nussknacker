@@ -1,5 +1,7 @@
 ---
-title: Lite engine
+title: Lite Engine Architecture
+description: Learn how the Lite engine works in Nussknacker. Explore its lightweight architecture, processing model, and use cases for cloud native scenarios.
+sidebar_label: Lite engine
 ---
 
 ## Architecture overview

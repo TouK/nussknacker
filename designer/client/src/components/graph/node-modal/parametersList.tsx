@@ -29,9 +29,11 @@ export const ParametersList = (props: ParametersListProps) => {
             {parameters.map((paramWithIndex) => (
                 <Fragment key={node.id + paramWithIndex.param.name + paramWithIndex.index}>
                     {dynamicParametersChanged?.length > 0 && !dynamicParametersChanged.includes(paramWithIndex.param.name) ? (
-                        <Box display={"flex"} justifyContent={"space-between"} mt={2}>
-                            <Skeleton variant="rectangular" height={15} width={"100%"} sx={{ flexBasis: "10%", mt: "9px" }} />
-                            <Skeleton variant="rectangular" height={35} width={"100%"} sx={{ flexBasis: "80%" }} />
+                        <Box display={"flex"} justifyContent={"space-between"} mt={2} fontSize={14}>
+                            <Box height={15} sx={{ flexBasis: "20%", mt: "9px", maxWidth: "20em" }}>
+                                <Skeleton variant="rectangular" sx={{ maxWidth: "75px" }} />
+                            </Box>
+                            <Skeleton variant="rectangular" height={35} width={"100%"} sx={{ flexBasis: "60%", flex: 1 }} />
                         </Box>
                     ) : (
                         <ParametersListField {...props} paramWithIndex={paramWithIndex} />

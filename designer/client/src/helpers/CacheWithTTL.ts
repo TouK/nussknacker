@@ -8,7 +8,7 @@ type Entry<V> = {
 export class CacheWithTTL<K extends any[], V> {
     private map = new ArrayKeyedMapLike<K, Entry<V>>();
 
-    constructor(private ttl = 60000, private maxSize = 10) {}
+    constructor(private ttl = 600000, private maxSize = 10) {}
 
     private now(): number {
         return Date.now();

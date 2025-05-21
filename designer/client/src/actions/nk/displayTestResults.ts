@@ -1,12 +1,15 @@
 import type { ProcessName } from "src/components/Process/types";
 
 import type { TestResults } from "../../common/TestResultUtils";
+import type { TestType } from "../../components/modals/Testing/useTestOptions";
 import type { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types";
 import type { Action, ThunkAction } from "../reduxTypes";
 import { displayProcessCounts } from "./displayProcessCounts";
+
+export type PerformedTestType = TestType | "rerunPrevious";
 
 export function testProcessFromFile(testDataFile: File): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
@@ -58,6 +61,10 @@ export type TestsActions =
     | {
           type: "SET_TEST_DATA";
           testData: SourceWithParametersTest;
+      }
+    | {
+          type: "SET_PERFORMED_TEST_TYPE";
+          performedTestType: PerformedTestType;
       };
 
 function wrapWithTestAction(
@@ -95,10 +102,18 @@ export function updateTestType(testType: string): Action {
     };
 }
 
+export function setPerformedTestType(performedTestType: PerformedTestType): Action {
+    return {
+        type: "SET_PERFORMED_TEST_TYPE",
+        performedTestType,
+    };
+}
+
 function displayTestResults({ counts, results }: TestProcessResponse, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
         dispatch(displayTestResultsDetails(results, testData));
         dispatch(displayProcessCounts(counts));
+        dispatch(setPerformedTestType("rerunPrevious"));
     };
 }
 

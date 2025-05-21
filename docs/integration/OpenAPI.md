@@ -1,4 +1,7 @@
 ---
+title: OpenAPI Integration Guide
+description: Learn how to integrate OpenAPI services into real-time workflows to enable external data calls within decision logic.
+sidebar_label: OpenAPI Enrichers
 sidebar_position: 3
 ---
 
@@ -12,9 +15,6 @@ We use Swagger to parse OpenAPI, versions 2.x and 3.x are supported
 
 Nussknacker applies following rules when mapping OpenAPI services to enrichers:
 
-- Each operation is mapped to one enricher
-- If operationId is configured it's used as enricher name, otherwise we create it as concatenation
-  of HTTP method, path and parameters (to provide some level of uniqueness)
 - Parameters (path, query of header) are used to define enricher parameters
 - If specification declares body parameter as object, we expand to parameter list
 - We expect operation to define 200/201 response, returned object is the one that is the result of enricher
@@ -74,7 +74,7 @@ components {
 | url                    | true     |         | URL of the [*OpenAPI interface definition*](https://swagger.io/specification/v3/). It contains definition of the service you want to interact with.                                                                                                              |
 | rootUrl                | false    |         | The URL of the service. If not specified, the URL of the service is taken from the *OpenAPI interface definition*.                                                                                                                                               |
 | allowedMethods         | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                                                                                                                                                             |
-| namePattern            | false    | .*      | Regexp for filtering operations by operationId (i.e. enricher name)                                                                                                                                                                                              |
+| namePattern            | false    | .*      | Regexp for filtering operations by operationId or by created service name (concatenation of HTTP method, path and parameters)                                                                                                                                    |
 | security               | false    |         | Configuration for [authentication](https://swagger.io/docs/specification/authentication/) for each `securitySchemas` defined in the *OpenAPI interface definition*                                                                                               |
 | security.*.type        | false    |         | Type of security configuration for a given security schema. Currently only `apiKey` is supported                                                                                                                                                                 |
 | security.*.apiKeyValue | false    |         | API key that will be passed into the service via header, query parameter or cookie (depending on definition provided in OpenAPI)                                                                                                                                 |

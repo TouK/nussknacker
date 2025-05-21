@@ -1,3 +1,9 @@
+---
+title: Custom Components Management
+description: Learn how to build and register custom components in Nussknacker to extend scenario logic and integrate with external systems.
+sidebar_label: ComponentProvider API
+---
+
 # Components Management
 
 ## ComponentProvider API

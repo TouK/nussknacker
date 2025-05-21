@@ -1,3 +1,9 @@
+---
+title: Flink Operation Guide
+description: Discover how to use Apache Flink to run low-latency workflows and manage real-time automation efficiently.
+sidebar_label: Flink
+---
+
 ## Prerequisites
 
 ### Working with Flink state

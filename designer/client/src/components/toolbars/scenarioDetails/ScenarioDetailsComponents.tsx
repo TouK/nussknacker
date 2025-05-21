@@ -5,7 +5,7 @@ export const PanelScenarioDetails = styled("div")(
     ({ theme }) => css`
         display: flex;
         flex-direction: column;
-        padding: ${theme.spacing(1.5, 2, 0.5)};
+        padding: ${theme.spacing(1.5, 2)};
         gap: ${theme.spacing(1)};
     `,
 );
@@ -14,7 +14,6 @@ export const PanelScenarioDetailsIcon = styled("div")(({ theme }) => ({
     display: "inline-block",
     width: "1rem",
     height: "1rem",
-    marginTop: theme.spacing(0.5),
 }));
 
 export const ScenarioDetailsItemWrapper = styled("div")(
