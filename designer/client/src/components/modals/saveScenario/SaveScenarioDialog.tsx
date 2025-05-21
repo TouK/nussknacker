@@ -15,9 +15,9 @@ export function SaveScenarioDialog(props: WindowContentProps): JSX.Element {
     const [comment, setState] = useState("");
 
     const confirmAction = useCallback(async () => {
-        await handleSaveScenarioAction();
+        await handleSaveScenarioAction(comment);
         props.close();
-    }, [props, handleSaveScenarioAction]);
+    }, [props, handleSaveScenarioAction, comment]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
