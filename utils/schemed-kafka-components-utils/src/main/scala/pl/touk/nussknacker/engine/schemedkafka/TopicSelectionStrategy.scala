@@ -2,16 +2,13 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.admin.ListTopicsOptions
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
 import pl.touk.nussknacker.engine.api.util.ExceptionUtils
 import pl.touk.nussknacker.engine.kafka.{CachingKafkaAdminClient, KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
-import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import java.util.regex.Pattern
-import scala.jdk.CollectionConverters._
 
 trait TopicSelectionStrategy extends Serializable {
 
