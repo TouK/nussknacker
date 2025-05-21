@@ -4,7 +4,6 @@ import cats.data.OptionT
 import cats.instances.all._
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigValueFactory}
-import io.circe.syntax.EncoderOps
 import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -57,15 +56,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
   NotAvailable
 }
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
-  CreatorPanel,
-  ProcessActionsPanel,
-  SearchPanel,
-  TipsPanel
-}
-import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -93,7 +85,6 @@ class ProcessesResourcesSpec
     with EitherValues {
 
   import io.circe._
-  import io.circe.parser._
 
   import ProcessesQueryEnrichments._
 
@@ -1325,8 +1316,6 @@ class ProcessesResourcesSpec
              |      "additionalParams" : null
              |    }
              |  ],
-             |  "topCenter" : [
-             |  ],
              |  "topRight" : [
              |    {
              |      "id" : "process-actions-panel",
@@ -1366,12 +1355,6 @@ class ProcessesResourcesSpec
              |      ],
              |      "additionalParams" : null
              |    }
-             |  ],
-             |  "bottomLeft" : [
-             |  ],
-             |  "bottomCenter" : [
-             |  ],
-             |  "bottomRight" : [
              |  ]
              |}""".stripMargin
         )

@@ -3,14 +3,12 @@ package pl.touk.nussknacker.ui.api
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import org.apache.pekko.http.scaladsl.marshalling.ToResponseMarshallable
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import org.apache.pekko.http.scaladsl.server._
 import org.apache.pekko.stream.Materializer
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioStatusDto
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -223,7 +221,7 @@ class ProcessesResources(
             processService
               .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
               .map(_.toEntity)
-              .map(processToolbarService.getScenarioToolbarSettings)
+              .map(processToolbarService.getScenarioToolbarSettings(_).asJson)
           }
         }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {

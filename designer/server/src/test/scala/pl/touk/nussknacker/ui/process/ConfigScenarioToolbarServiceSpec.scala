@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.ConfigFactory
-import io.circe.{parser, Json}
-import io.circe.syntax.EncoderOps
+import io.circe.{parser, Json, Printer}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -14,10 +13,6 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
-
-  import ToolbarButtonConfigType._
-  import ToolbarButtonsConfigVariant._
-  import ToolbarPanelTypeConfig._
 
   private lazy val parsedConfig = CategoriesScenarioToolbarsConfigParser.parse(
     ConfigFactory.parseString(
@@ -175,12 +170,12 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
     forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>
       val result   = service.getScenarioToolbarSettings(process).asJson
-      val expected = prepareExpectedProcessToolbarSettings(process)
+      val expected = prepareExpectedProcessToolbarSettingsJson(process)
       result shouldBe expected
     }
   }
 
-  private def prepareExpectedProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): Json = {
+  private def prepareExpectedProcessToolbarSettingsJson(process: ScenarioWithDetailsEntity[_]): Json = {
     val processToolbarConfig = parsedConfig.getConfig(process.processCategory)
     val id                   = ToolbarHelper.createScenarioToolbarId(processToolbarConfig, process)
 
@@ -207,8 +202,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      "buttons" : null,
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "bottomLeft" : [
                |  ],
                |  "topRight" : [
                |    {
@@ -267,12 +260,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      ],
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "bottomRight" : [
-               |  ],
-               |  "topCenter" : [
-               |  ],
-               |  "bottomCenter" : [
                |  ]
                |}""".stripMargin
           )
@@ -297,8 +284,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      "buttons" : null,
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "topCenter" : [
                |  ],
                |  "topRight" : [
                |    {
@@ -339,12 +324,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      ],
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "bottomLeft" : [
-               |  ],
-               |  "bottomCenter" : [
-               |  ],
-               |  "bottomRight" : [
                |  ]
                |}""".stripMargin
           )
@@ -362,8 +341,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      "buttons" : null,
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "topCenter" : [
                |  ],
                |  "topRight" : [
                |    {
@@ -450,12 +427,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      ],
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "bottomLeft" : [
-               |  ],
-               |  "bottomCenter" : [
-               |  ],
-               |  "bottomRight" : [
                |  ]
                |}""".stripMargin
           )
@@ -480,8 +451,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      "buttons" : null,
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "topCenter" : [
                |  ],
                |  "topRight" : [
                |    {
@@ -540,12 +509,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      ],
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "bottomLeft" : [
-               |  ],
-               |  "bottomCenter" : [
-               |  ],
-               |  "bottomRight" : [
                |  ]
                |}""".stripMargin
           )
@@ -563,8 +526,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      "buttons" : null,
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "topCenter" : [
                |  ],
                |  "topRight" : [
                |    {
@@ -623,12 +584,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                |      ],
                |      "additionalParams" : null
                |    }
-               |  ],
-               |  "bottomLeft" : [
-               |  ],
-               |  "bottomCenter" : [
-               |  ],
-               |  "bottomRight" : [
                |  ]
                |}""".stripMargin
           )
