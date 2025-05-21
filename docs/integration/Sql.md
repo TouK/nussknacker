@@ -1,6 +1,6 @@
 ---
 title: SQL Integration Guide
-description: Easily integrate SQL sources into decision pipelines to enhance automation with live external data.
+description: Learn how to connect SQL databases to real-time decision flows using low-code tools and streaming data integration best practices.
 sidebar_label: SQL
 sidebar_position: 4
 ---
