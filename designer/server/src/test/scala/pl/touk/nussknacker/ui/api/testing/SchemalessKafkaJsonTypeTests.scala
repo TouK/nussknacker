@@ -10,12 +10,14 @@ import com.dimafeng.testcontainers.{
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromMap
 import com.typesafe.scalalogging.StrictLogging
-import io.circe.{Decoder, Json, JsonObject}
+import io.circe.{Decoder, Encoder, Json, JsonObject}
 import io.circe.parser._
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -27,8 +29,11 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
-import pl.touk.nussknacker.test.{PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
-import pl.touk.nussknacker.test.NuRestAssureExtensions.{AppConfiguration, JsonBody}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  PatientScalaFutures,
+  RestAssuredVerboseLoggingIfValidationFails
+}
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
@@ -68,7 +73,8 @@ class SchemalessKafkaJsonTypeTests
     with WithAdHocInvalidParametersTestsLogic
     with WithDockerContainers
     with ForAllTestContainer
-    with StrictLogging {
+    with StrictLogging
+    with NuRestAssureExtensions {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -127,6 +133,27 @@ class SchemalessKafkaJsonTypeTests
           case _ => fail
         }
       }
+    }
+  }
+
+  "The endpoint for test data generation should" - {
+    "return error if no live data available" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          testDataGenerationRequest(
+            Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(exampleScenario)).toString(),
+            3
+          )
+        )
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
+        .Then()
+        .statusCode(200)
+        .equalsPlainBody("ddd")
     }
   }
 
@@ -193,6 +220,15 @@ class SchemalessKafkaJsonTypeTests
         name -> result
       }
   }
+
+  private def testDataGenerationRequest(
+      scenarioGraphStr: String,
+      numberOfSamples: Int,
+  ) =
+    s"""{
+       |  "scenarioGraph": $scenarioGraphStr,
+       |  "numberOfSamples": $numberOfSamples
+       |}""".stripMargin
 
 }
 
