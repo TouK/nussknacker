@@ -1,3 +1,9 @@
+---
+title: Flink Engine Components Guide
+description: Develop custom components for Flink in Nussknacker. Extend processing logic with custom sources, services, and enrichers.
+sidebar_label: Flink components
+---
+
 # Flink components
 
 [Sources, sinks and custom transformations](./Basics.md#components-and-componentproviders) are based on Flink API.

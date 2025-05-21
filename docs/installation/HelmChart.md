@@ -1,3 +1,9 @@
+---
+title: Install Nussknacker on Kubernetes
+description: Deploy Nussknacker to Kubernetes with Helm. Use official charts to configure, install, and manage Nussknacker in a cloud environment.
+sidebar_label: Helm Chart
+---
+
 # Kubernetes - Helm chart
 
 We provide [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker) with basic Nussknacker setup, including:

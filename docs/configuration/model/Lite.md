@@ -1,5 +1,7 @@
 ---
-sidebar_label: "Lite"
+title: Lite Deployment, Model Configuration Guid
+description: Set up models for Nussknacker Lite. Learn how to configure components, services, and logic for lightweight, cloud-native deployments.
+sidebar_label: Lite
 ---
 
 # Lite Model configuration

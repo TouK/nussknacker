@@ -1,5 +1,7 @@
 ---
-title: Streaming
+title: Real Time Streaming
+description: Learn how Nussknacker processes data in streaming mode. Understand use cases, benefits, and architecture for handling continuous event flows.
+sidebar_label: Streaming
 ---
 
 Diagrams below show architecture of typical Nussknacker deployment in Streaming mode. They show not only
