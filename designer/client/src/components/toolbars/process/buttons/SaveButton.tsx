@@ -42,10 +42,10 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
 
     const { open, confirm } = useWindows();
     const handleValidateScenarioVersion = useCallback(
-        async (action: () => Promise<void>) => {
+        async (callback: () => Promise<void>) => {
             await HttpService.validateProcessVersion(processName, processVersionId).then(async (res) => {
                 if (!res.data.isLatest) {
-                    confirm({
+                    await confirm({
                         text: t(
                             "panels.actions.confirm-unsafe-save.message",
                             `Your local scenario version #${processVersionId} is outdated.
@@ -55,13 +55,13 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
                         denyText: t("panels.actions.confirm-unsafe-save.cancelButton", "Cancel"),
                         onConfirmCallback: async (confirmed) => {
                             if (confirmed) {
-                                await action();
+                                await callback();
                             }
                         },
                         width: window.innerWidth / 3,
                     });
                 } else {
-                    await action();
+                    await callback();
                 }
             });
         },
