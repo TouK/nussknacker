@@ -72,11 +72,15 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                         whiteSpace: variant === ButtonsVariant.horizontal ? "nowrap" : null,
                         textTransform: variant === ButtonsVariant.label ? "lowercase" : null,
                         marginLeft: variant === ButtonsVariant.horizontal ? 1 : null,
+                        position: "relative",
                         ...(showIndicator && {
                             "&::after": {
                                 content: '"*"',
                                 color: "warning.main",
                                 marginLeft: "2px",
+                                position: "absolute",
+                                right: -8, // Position to the right of text
+                                top: 0,
                             },
                         }),
                     }}
