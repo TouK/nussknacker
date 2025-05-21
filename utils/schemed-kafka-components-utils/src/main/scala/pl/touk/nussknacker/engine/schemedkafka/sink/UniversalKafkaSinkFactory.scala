@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import org.apache.avro.generic.GenericRecord
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.{
@@ -30,7 +32,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaBasedSerdeProvider,
   SchemaRegistryClientFactory
 }
-import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
+import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.{
+  convertGenericRecordParam,
+  TransformationState
+}
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
@@ -40,6 +45,8 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
  */
 object UniversalKafkaSinkFactory {
 
+  private val genericRecordClass = classOf[GenericRecord]
+
   private val paramsDeterminedAfterSchema = List(
     Parameter.optional[CharSequence](sinkKeyParamName).copy(isLazyParameter = true),
     Parameter[Boolean](sinkRawEditorParamName).copy(
@@ -48,6 +55,18 @@ object UniversalKafkaSinkFactory {
       validators = List(MandatoryParameterValidator)
     )
   )
+
+  private def convertGenericRecordParam(parameters: List[Parameter]): List[Parameter] =
+    parameters.map { parameter =>
+      parameter.typ match {
+        case typed @ TypedObjectTypingResult(_, TypedClass(`genericRecordClass`, Nil), _) =>
+          parameter.copy(typ =
+            typed
+              .copy(runtimeObjType = Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
+          )
+        case _ => parameter
+      }
+    }
 
   case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], schemaBasedParameter: SchemaBasedParameter)
 }
@@ -239,7 +258,7 @@ class UniversalKafkaSinkFactory(
               if (valueParam.toParameters.isEmpty) {
                 FinalResults(context, Nil, Some(state))
               } else {
-                NextParameters(valueParam.toParameters, state = Some(state))
+                NextParameters(convertGenericRecordParam(valueParam.toParameters), state = Some(state))
               }
             }
         }
