@@ -152,7 +152,13 @@ export const VariableContextTree = memo(function ValuesContextTree({
                         disabled={r.disabled}
                         expanded={value === r.id && !r.disabled}
                         onToggle={() => setContext(r)}
-                        title={<ContextTitle context={r} showNodes={transitionNodesIds.length > 1} />}
+                        title={
+                            <ContextTitle
+                                reversed={direction === "input"}
+                                context={r}
+                                showNodes={transitionNodesIds.filter((t) => t.id).length > 1}
+                            />
+                        }
                     >
                         {direction === "output" ? <>{r.error}</> : null}
                         <ContextTree context={r} oldFields={inputVariables} />
