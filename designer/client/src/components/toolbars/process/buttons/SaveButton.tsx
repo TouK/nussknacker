@@ -110,9 +110,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
 
     return (
         <ToolbarButton
-            name={
-                unsavedChanges ? t("panels.actions.process-save.buttonUnsaved", "save*") : t("panels.actions.process-save.button", "save")
-            }
+            name={t("panels.actions.process-save.button", "save")}
             showIndicator={unsavedChanges}
             icon={<Icon />}
             disabled={!available}
