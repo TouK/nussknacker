@@ -36,6 +36,7 @@ export const useSaveScenario = () => {
                 const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
                 const processName = isRenamed ? unsavedNewName : currentProcessName;
 
+                await dispatch(UndoActionCreators.clearHistory());
                 await dispatch(displayCurrentProcessVersion(processName));
                 await dispatch(await getScenarioActivities(processName));
 
@@ -49,7 +50,6 @@ export const useSaveScenario = () => {
                         { replace: true },
                     );
                 }
-                await dispatch(UndoActionCreators.clearHistory());
             };
         },
         [location, navigate],
