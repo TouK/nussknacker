@@ -41,7 +41,7 @@ class CachedTopicsExistenceValidator(enabled: Boolean, cachingKafkaAdminClient: 
   }
 
   private def validateSinkTopics[T <: TopicName: TopicValidationType](topics: NonEmptyList[T]) = {
-    if (enabled && !cachingKafkaAdminClient.getAutoCreateSetting) {
+    if (enabled && !cachingKafkaAdminClient.getOrFetchAutoCreateTopicsSetting) {
       doValidate(topics)
     } else {
       Valid(topics)

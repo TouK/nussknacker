@@ -44,7 +44,7 @@ class AllNonHiddenTopicsSelectionStrategy(
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        cachingKafkaAdminClient.getTopics
+        cachingKafkaAdminClient.getOrFetchTopics
           .filterNot(topic => topic.name.startsWith("_"))
           .toList
       } catch {

@@ -14,17 +14,9 @@ class CachingKafkaAdminClient(
     usingKafkaAdminClient: UsingKafkaAdminClient
 ) extends LazyLogging {
 
-  def getTopics: Set[UnspecializedTopicName] = {
+  def getOrFetchTopics: Set[UnspecializedTopicName] = {
     caches.topicsCache.getOrCreate {
-      usingKafkaAdminClient { admin =>
-        admin
-          .listTopics(new ListTopicsOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
-          .names()
-          .get()
-          .asScala
-          .toSet
-          .map(UnspecializedTopicName.apply)
-      }
+      fetchFreshTopics
     }
   }
 
@@ -39,6 +31,7 @@ class CachingKafkaAdminClient(
   }
 
   private def fetchFreshTopics: Set[UnspecializedTopicName] = {
+    logger.debug("Fetching topics from Kafka")
     usingKafkaAdminClient { admin =>
       admin
         .listTopics(new ListTopicsOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
@@ -50,8 +43,9 @@ class CachingKafkaAdminClient(
     }
   }
 
-  def getAutoCreateSetting: Boolean = {
+  def getOrFetchAutoCreateTopicsSetting: Boolean = {
     caches.autoCreateSettingCache.getOrCreate {
+      logger.debug("Fetching auto.create.topics.enable setting from Kafka")
       usingKafkaAdminClient { admin =>
         val randomKafkaNodeId = admin
           .describeCluster(new DescribeClusterOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
