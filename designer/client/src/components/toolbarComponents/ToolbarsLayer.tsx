@@ -121,14 +121,14 @@ export const OverlayGrid9 = Overlay.withComponent(Grid9);
 export const AbsoluteOverlayGrid9 = AbsolutePanel.withComponent(OverlayGrid9);
 
 const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
-    const padding = `calc(${theme.spacing(0.375)} / 2)`;
+    const padding = theme.spacing(0.25);
     switch (side) {
         case ToolbarsSide.LeftTop:
         case ToolbarsSide.RightTop:
-            return { paddingBottom: padding };
+            return { paddingTop: padding, paddingBottom: padding };
         case ToolbarsSide.LeftBottom:
         case ToolbarsSide.RightBottom:
-            return { paddingTop: padding };
+            return { paddingTop: padding, paddingBottom: padding };
         default:
             return {
                 padding: theme.spacing(0.5),

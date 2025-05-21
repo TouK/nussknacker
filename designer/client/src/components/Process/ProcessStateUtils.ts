@@ -1,3 +1,5 @@
+import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
+import { WrapAllMethods } from "../../WrapAllMethods";
 import { descriptionProcessArchived, unknownDescription, unknownTooltip } from "./messages";
 import type { ActionName, ProcessStateType, Scenario } from "./types";
 import { PredefinedActionName } from "./types";
@@ -5,6 +7,7 @@ import { PredefinedActionName } from "./types";
 export const unknownIcon = "/assets/states/status-unknown.svg";
 const archivedIcon = "/assets/process/archived.svg";
 
+@WrapAllMethods(memoizeByArgsWithTTL)
 class ProcessStateUtils {
     public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Deploy);
 
