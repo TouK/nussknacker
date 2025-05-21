@@ -17,6 +17,7 @@ trait KafkaAvroSinkSpecMixin {
       .register(fullnameTopic, FullNameV1.schema, 1, isKey = false)
       .register(fullnameTopic, FullNameV2.schema, 2, isKey = false)
       .register(fullnameTopic, PaymentV1.schema, 3, isKey = false)
+      .register(fullnameTopic, NestedRecord.schema, 4, isKey = false)
       .build
 
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
