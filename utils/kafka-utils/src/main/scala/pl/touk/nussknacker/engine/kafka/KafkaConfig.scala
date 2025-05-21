@@ -33,6 +33,7 @@ case class KafkaConfig(
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     topicsWithoutSchemaConfig: TopicsWithoutSchemaConfig = TopicsWithoutSchemaConfig.Default,
+    kafkaAdminConfig: KafkaAdminConfig = KafkaAdminConfig(),
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -147,3 +148,13 @@ object TopicsWithoutSchemaConfig {
   val Default: TopicsWithoutSchemaConfig  = TopicsWithoutSchemaConfig()
   val Disabled: TopicsWithoutSchemaConfig = TopicsWithoutSchemaConfig(showTopicsWithoutSchema = false)
 }
+
+final case class KafkaAdminConfig(
+    clientTimeout: FiniteDuration = 10 seconds,
+    cacheConfig: KafkaAdminCacheConfig = KafkaAdminCacheConfig(),
+)
+
+final case class KafkaAdminCacheConfig(
+    topicsExpirationTime: FiniteDuration = 30 seconds,
+    autoCreateFlagExpirationTime: FiniteDuration = 5 minutes,
+)

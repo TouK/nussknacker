@@ -4,25 +4,6 @@ services:
 
   ### Wait for other images
 
-  wait-for-all:
-    image: busybox:1.36.1
-    entrypoint: /bin/sh -c "tail -f /dev/null"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      influxdb:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      schema-registry:
-        condition: service_healthy
-      akhq:
-        condition: service_healthy
-      flink-jobmanager:
-        condition: service_healthy
-      telegraf:
-        condition: service_healthy
-
   postgres:
     image: postgres:13
     restart: unless-stopped
@@ -133,64 +114,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
-
-  ### FLINK-related services
-
-  flink-jobmanager:
-    build:
-      context: flink/
-      args:
-        FLINK_VERSION: "1.19.2-scala_2.12-java11"
-    restart: unless-stopped
-    command: jobmanager
-    ports:
-      - 3031:8081
-    environment:
-      JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
-      interval: 10s
-      retries: 10
-    volumes:
-      - nussknacker_flink_data:/opt/flink/data
-
-  flink-taskmanager:
-    build:
-      context: flink/
-      args:
-        FLINK_VERSION: "1.19.2-scala_2.12-java11"
-    restart: unless-stopped
-    command: taskmanager
-    environment:
-      JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
-    depends_on:
-      flink-jobmanager:
-        condition: service_healthy
-      telegraf:
-        condition: service_healthy
-    volumes_from:
-      - flink-jobmanager
-    deploy:
-      resources:
-        limits:
-          memory: 1024M
-
-  telegraf:
-    image: telegraf:1.30.2
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8087/write" ]
-      interval: 10s
-      retries: 10
-    ports:
-      - 3087:8087
-    volumes:
-      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
-    deploy:
-      resources:
-        limits:
-          memory: 256M
+          memory: 768M
 
 volumes:
   nussknacker_designer_data:
