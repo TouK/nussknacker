@@ -44,7 +44,7 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                     color: hasError ? theme.palette.error.main : isActive ? theme.palette.success.main : null,
                 })}
             >
-                <Badge color="warning" overlap={"circular"} variant={showIndicator ? "dot" : null}>
+                <Box position="relative" display="flex" alignItems="center">
                     <Icon
                         title={title}
                         className={"toolbarButton-Icon"}
@@ -62,7 +62,25 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                     >
                         {icon}
                     </Icon>
-                </Badge>
+
+                    {showIndicator && (
+                        <Badge
+                            color="warning"
+                            variant="dot"
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: -3,
+                                "& .MuiBadge-badge": {
+                                    position: "relative",
+                                    transform: "none",
+                                    minWidth: 8,
+                                    height: 8,
+                                },
+                            }}
+                        />
+                    )}
+                </Box>
                 <Typography
                     variant={ButtonsVariant.horizontal === variant ? "button" : "overline"}
                     className={"toolbarButton-Label"}
