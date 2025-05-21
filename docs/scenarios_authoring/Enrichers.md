@@ -1,4 +1,7 @@
 ---
+title: Data Enrichment for Streaming
+description: Learn how to enrich streaming data by calling external services and databases within your decision workflows.
+sidebar_label: Enrichers
 sidebar_position: 6
 ---
 

@@ -13,10 +13,10 @@ import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
-import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
+import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.openapi.{ApiKeySecret, OpenAPIServicesConfig, SecuritySchemeName}
-import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
+import pl.touk.nussknacker.openapi.enrichers.OpenAPIEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -36,7 +36,7 @@ class OpenAPIServiceSpec
   implicit val context: Context                         = Context("testContextId", Map.empty)
   val jobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
-  type FixtureParam = EagerServiceWithStaticParametersAndReturnType
+  type FixtureParam = ServiceInvoker
 
   def withFixture(test: OneArgTest): Outcome = {
     val definition = ResourceLoader.load("/customer-swagger.json")
@@ -54,12 +54,14 @@ class OpenAPIServiceSpec
           service
         }
 
-        val enricher = SwaggerEnrichers
-          .prepare(config, services, new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
-          .head
-          .service
-          .asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
-        enricher.open(TestEngineRuntimeContext(jobData))
+        val enricher = OpenAPIEnricher(
+          service = services.head,
+          config = config,
+          clientProvider = new FixedAsyncHttpClientBackendProvider(client),
+          params = Params.fromRawValuesMap(Map(ParameterName("customer_id") -> "10")),
+          getTimeMeasurement =
+            () => new AsyncExecutionTimeMeasurement(TestEngineRuntimeContext(jobData), "openAPI", Map.empty)
+        )
 
         withFixture(test.toNoArgTest(enricher))
       }
@@ -69,10 +71,9 @@ class OpenAPIServiceSpec
   }
 
   test("service returns customers") { service =>
-    implicit val contextId: ContextId = ContextId("1")
     val valueWithChosenFields =
       service
-        .invoke(Map(ParameterName("customer_id") -> "10"))
+        .invoke(context)
         .futureValue
         .asInstanceOf[TypedMap]
         .asScala

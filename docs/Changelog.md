@@ -1,3 +1,8 @@
+---
+title: Explore the Latest Updates and Features
+description: Stay informed with detailed changelogs covering new features, improvements, and fixes across all Nussknacker platform releases.
+---
+
 # Changelog
 
 ## 1.19
@@ -169,6 +174,7 @@
   * set `modelConfig.allowEndingScenarioWithoutSink` of the scenarioType in the `scenarioTypes` config section to `true` in order to allow ending scenarios with nodes other than sinks
   * the flag is optional, the default value of the flag is `false` (no changes in behavior)
 * [#8076](https://github.com/TouK/nussknacker/pull/8076) Switching periodic job to finished status cleans jars from FS
+* [#8042](https://github.com/TouK/nussknacker/pull/8042) Merge OpenAPI components into one with multiple services.
 
 ## 1.18
 
