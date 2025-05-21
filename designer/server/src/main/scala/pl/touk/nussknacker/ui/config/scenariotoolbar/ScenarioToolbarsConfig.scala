@@ -24,7 +24,7 @@ object ScenarioToolbarsConfig {
 
   def parse(rawConfig: Config): ScenarioToolbarsConfig = {
     val uuid             = rawConfig.getAs[UUID]("uuid")
-    val panelAreasConfig = rawConfig.rootAs[Map[PanelsAreaName, List[ToolbarPanelConfig]]]
+    val panelAreasConfig = rawConfig.withoutPath("uuid").rootAs[Map[PanelsAreaName, List[ToolbarPanelConfig]]]
     ScenarioToolbarsConfig(uuid, panelAreasConfig)
   }
 
