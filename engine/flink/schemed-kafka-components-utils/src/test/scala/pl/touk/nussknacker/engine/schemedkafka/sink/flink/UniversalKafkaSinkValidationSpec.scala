@@ -64,6 +64,19 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     result.errors shouldBe Nil
   }
 
+  test("should validate nested record") {
+    val result = validate(
+      sinkKeyParamName.value            -> "".spel,
+      "mapSimple"                       -> """{id:"10"}""".spel,
+      sinkRawEditorParamName.value      -> "false".spel,
+      sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+      topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
+      schemaVersionParamName.value      -> "'4'".spel
+    )
+
+    result.errors shouldBe Nil
+  }
+
   test("should validate latest version") {
     val result = validate(
       sinkKeyParamName.value            -> "".spel,
@@ -71,7 +84,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkRawEditorParamName.value      -> "true".spel,
       sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
       topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
-      schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel
+      schemaVersionParamName.value      -> s"'3'".spel
     )
 
     result.errors shouldBe Nil
@@ -81,7 +94,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val result = validate(
       sinkKeyParamName.value            -> "".spel,
       sinkValueParamName.value          -> "null".spel,
-      sinkRawEditorParamName.value      -> "true".spel,
+      sinkRawEditorParamName.value      -> "false".spel,
       sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
       topicParamName.value              -> "'tereferer'".spel,
       schemaVersionParamName.value      -> "'1'".spel
@@ -109,7 +122,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val result = validate(
       sinkKeyParamName.value            -> "".spel,
       sinkValueParamName.value          -> "null".spel,
-      sinkRawEditorParamName.value      -> "true".spel,
+      sinkRawEditorParamName.value      -> "false".spel,
       sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
       topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
       schemaVersionParamName.value      -> "'343543'".spel
@@ -119,7 +132,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       paramName = schemaVersionParamName,
       label = None,
       value = "'343543'",
-      values = List("'latest'", "'1'", "'2'", "'3'"),
+      values = List("'latest'", "'1'", "'2'", "'3'", "'4'"),
       nodeId = "id"
     ) :: Nil
   }
@@ -131,7 +144,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       sinkRawEditorParamName.value      -> "true".spel,
       sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
       topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
-      schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel
+      schemaVersionParamName.value      -> s"'3'".spel
     )
 
     result.errors shouldBe CustomNodeError(
