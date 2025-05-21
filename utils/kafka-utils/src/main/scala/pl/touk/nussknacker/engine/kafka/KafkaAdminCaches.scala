@@ -22,9 +22,9 @@ class KafkaAdminCaches(cacheConfig: KafkaAdminCacheConfig) {
     expireAfterWrite = Some(cacheConfig.topicsExpirationTime)
   )
 
-  val autoCreateSettingCache = new SingleValueCache[Boolean](
+  val autoCreateTopicSettingCache = new SingleValueCache[Boolean](
     expireAfterAccess = None,
-    expireAfterWrite = Some(cacheConfig.autoCreateTopicFlagExpirationTime)
+    expireAfterWrite = Some(cacheConfig.autoCreateTopicSettingExpirationTime)
   )
 
 }

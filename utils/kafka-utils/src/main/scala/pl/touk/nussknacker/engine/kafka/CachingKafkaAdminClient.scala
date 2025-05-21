@@ -44,7 +44,7 @@ class CachingKafkaAdminClient(
   }
 
   def getOrFetchAutoCreateTopicsSetting: Boolean = {
-    caches.autoCreateSettingCache.getOrCreate {
+    caches.autoCreateTopicSettingCache.getOrCreate {
       logger.debug("Fetching auto.create.topics.enable setting from Kafka")
       usingKafkaAdminClient { admin =>
         val randomKafkaNodeId = admin

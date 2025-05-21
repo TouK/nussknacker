@@ -34,7 +34,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `kafkaConfig.topicsExistenceValidationConfig.validatorConfig` and `kafkaConfig.topicsWithoutSchemaFetchTimeout` were moved to
     common Kafka admin configuration `kafkaConfig.kafkaAdminConfig` - see [Kafka integration](integration/KafkaIntegration.md)
     for more details. The properties were moved as follows:
-    * `topicsExistenceValidationConfig.validatorConfig.autoCreateFlagFetchCacheTtl` -> `kafkaAdminConfig.cacheConfig.autoCreateTopicFlagExpirationTime`
+    * `topicsExistenceValidationConfig.validatorConfig.autoCreateFlagFetchCacheTtl` -> `kafkaAdminConfig.cacheConfig.autoCreateTopicSettingExpirationTime`
     * `topicsExistenceValidationConfig.validatorConfig.topicsFetchCacheTtl` -> `kafkaAdminConfig.cacheConfig.topicsExpirationTime`
     * `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` -> `kafkaAdminConfig.clientTimeout`
     * `topicsWithoutSchemaFetchTimeout` -> `kafkaAdminConfig.clientTimeout`
