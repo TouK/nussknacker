@@ -4,6 +4,7 @@ import cats.data.OptionT
 import cats.instances.all._
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.config.{Config, ConfigValueFactory}
+import io.circe.syntax.EncoderOps
 import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -1297,40 +1298,85 @@ class ProcessesResourcesSpec
     val id            = createEmptyScenario(processName, category = Category1)
 
     withProcessToolbars(processName) { toolbar =>
-      toolbar shouldBe ScenarioToolbarSettings(
-        id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
-        topLeft = List(
-          ToolbarPanel(SearchPanel, None, None, None, None),
-          ToolbarPanel(TipsPanel, None, None, None, None),
-          ToolbarPanel(CreatorPanel, None, None, None, None)
-        ),
-        bottomLeft = List(),
-        topRight = List(
-          ToolbarPanel(
-            ProcessActionsPanel,
-            None,
-            None,
-            Some(
-              List(
-                ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
-                ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
-                ToolbarButton(
-                  CustomLink,
-                  Some("custom"),
-                  Some(s"Custom link for $processName"),
-                  None,
-                  Some(s"/test/${id.value}"),
-                  disabled = false
-                )
-              )
-            ),
-            None
-          )
-        ),
-        bottomRight = List.empty,
-        topCenter = List.empty,
-        bottomCenter = List.empty,
-      )
+      val expected = parser
+        .parse(
+          s"""{
+             |  "id" : "${toolbarConfig.uuidCode}-not-archived-scenario",
+             |  "topLeft" : [
+             |    {
+             |      "id" : "search-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : null,
+             |      "additionalParams" : null
+             |    },
+             |    {
+             |      "id" : "tips-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : null,
+             |      "additionalParams" : null
+             |    },
+             |    {
+             |      "id" : "creator-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : null,
+             |      "additionalParams" : null
+             |    }
+             |  ],
+             |  "topCenter" : [
+             |  ],
+             |  "topRight" : [
+             |    {
+             |      "id" : "process-actions-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : [
+             |        {
+             |          "type" : "process-save",
+             |          "name" : null,
+             |          "title" : null,
+             |          "icon" : null,
+             |          "url" : null,
+             |          "disabled" : true,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        },
+             |        {
+             |          "type" : "process-deploy",
+             |          "name" : null,
+             |          "title" : null,
+             |          "icon" : null,
+             |          "url" : null,
+             |          "disabled" : false,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        },
+             |        {
+             |          "type" : "custom-link",
+             |          "name" : "custom",
+             |          "title" : "Custom link for $processName",
+             |          "icon" : null,
+             |          "url" : "/test/${id.value}",
+             |          "disabled" : false,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        }
+             |      ],
+             |      "additionalParams" : null
+             |    }
+             |  ],
+             |  "bottomLeft" : [
+             |  ],
+             |  "bottomCenter" : [
+             |  ],
+             |  "bottomRight" : [
+             |  ]
+             |}""".stripMargin
+        )
+        .fold(throw _, identity)
+      toolbar shouldBe expected
     }
   }
 
@@ -1386,12 +1432,12 @@ class ProcessesResourcesSpec
     }
 
   protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(
-      callback: ScenarioToolbarSettings => Unit
+      callback: Json => Unit
   ): Unit =
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val toolbar = decode[ScenarioToolbarSettings](responseAs[String]).toOption.get
-      callback(toolbar)
+      val toolbarSettingsJson = responseAs[Json]
+      callback(toolbarSettingsJson)
     }
 
   private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =

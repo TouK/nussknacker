@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.ConfigFactory
+import io.circe.{parser, Json}
+import io.circe.syntax.EncoderOps
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -19,58 +21,48 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
   private lazy val parsedConfig = CategoriesScenarioToolbarsConfigParser.parse(
     ConfigFactory.parseString(
-      """
-      |{
-      |  processToolbarConfig {
-      |    defaultConfig {
-      |      topLeft: [
-      |        { type: "tips-panel", hidden: {fragment: true} }
-      |      ]
-      |      topRight: [
-      |        {
-      |          type: "process-actions-panel"
-      |          title: "Process Actions $processName"
-      |          buttons: [
-      |            { type: "process-save", icon: "/assets/$processId/buttons/save.svg", title: "save", disabled: {archived: true} }
-      |            { type: "custom-link", name: "metrics", title: "metrics for process", url: "/metrics/$processName" }
-      |            { type: "custom-link", name: "analytics", url: "/analytics/$processId", disabled: {archived: true, fragment: true, type: "allof"} }
-      |          ]
-      |        }
-      |        {
-      |           id: "buttons1"
-      |           type: "buttons-panel"
-      |           hidden: {fragment: false}
-      |           buttonsVariant: "small"
-      |           buttons: [ { type: "process-deploy" }, { type: "process-pdf", hidden: {archived: true} }]
-      |        }
-      |        {
-      |           id: "buttons2"
-      |           type: "buttons-panel"
-      |           hidden: { archived: true }
-      |           buttons: [ { type: "process-cancel" } ]
-      |        }
-      |      ]
-      |    }
-      |    categoryConfig {
-      |      "Category1" {
-      |        topLeft: [
-      |          { type: "creator-panel", hidden: {fragment: true, archived: false, type: "allof"} }
-      |          { type: "activities-panel" }
-      |        ]
-      |        bottomRight: []
-      |      },
-      |      "Category3" {
-      |        uuid: "68013242-2007-462b-9526-7a9f8684227c"
-      |        topLeft: [
-      |          { type: "creator-panel", hidden: {fragment: true, archived: false} }
-      |          { type: "activities-panel" }
-      |        ]
-      |        bottomRight: []
-      |      }
-      |    }
-      |  }
-      |}
-      |""".stripMargin
+      """{
+        |  processToolbarConfig {
+        |    defaultConfig {
+        |      topLeft: [
+        |        { type: "tips-panel", hidden: {fragment: true} }
+        |      ]
+        |      topRight: [
+        |        {
+        |          type: "process-actions-panel"
+        |          title: "Process Actions $processName"
+        |          buttons: [
+        |            { type: "process-save", icon: "/assets/$processId/buttons/save.svg", title: "save", disabled: {archived: true} }
+        |            { type: "custom-link", name: "metrics", title: "metrics for process", url: "/metrics/$processName" }
+        |            { type: "custom-link", name: "analytics", url: "/analytics/$processId", disabled: {archived: true, fragment: true, type: "allof"} }
+        |          ]
+        |        }
+        |        {
+        |           id: "buttons1"
+        |           type: "buttons-panel"
+        |           hidden: {fragment: false}
+        |           buttonsVariant: "small"
+        |           buttons: [ { type: "process-deploy" }, { type: "process-pdf", hidden: {archived: true} }]
+        |        }
+        |        {
+        |           id: "buttons2"
+        |           type: "buttons-panel"
+        |           hidden: { archived: true }
+        |           buttons: [ { type: "process-cancel" } ]
+        |        }
+        |      ]
+        |    }
+        |    categoryConfig {
+        |      "Category1" {
+        |        topLeft: [
+        |          { type: "creator-panel", hidden: {fragment: true, archived: false, type: "allof"} }
+        |          { type: "activities-panel" }
+        |        ]
+        |        bottomRight: []
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
     )
   )
 
@@ -182,373 +174,467 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
     )
 
     forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>
-      val result   = service.getScenarioToolbarSettings(process)
-      val expected = createProcessToolbarSettings(process)
+      val result   = service.getScenarioToolbarSettings(process).asJson
+      val expected = prepareExpectedProcessToolbarSettings(process)
       result shouldBe expected
     }
   }
 
-  private def createProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): ScenarioToolbarSettings = {
+  private def prepareExpectedProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): Json = {
     val processToolbarConfig = parsedConfig.getConfig(process.processCategory)
     val id                   = ToolbarHelper.createScenarioToolbarId(processToolbarConfig, process)
 
-    def processName(process: ScenarioWithDetailsEntity[_]) = UriUtils.encodeURIComponent(process.name.value)
+    def urlEncodedProcessName(process: ScenarioWithDetailsEntity[_]) = UriUtils.encodeURIComponent(process.name.value)
 
     (process.isFragment, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") =>
-        ScenarioToolbarSettings(
-          id = id,
-          topLeft = List(
-            ToolbarPanel(CreatorPanel, None, None, None, None),
-            ToolbarPanel(ActivitiesPanel, None, None, None, None),
-          ),
-          bottomLeft = Nil,
-          topRight = List(
-            ToolbarPanel(
-              ProcessActionsPanel,
-              Some(s"Process Actions ${process.name}"),
-              None,
-              Some(
-                List(
-                  ToolbarButton(
-                    ProcessSave,
-                    None,
-                    Some("save"),
-                    Some(s"/assets/${process.processId.value}/buttons/save.svg"),
-                    None,
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("metrics"),
-                    Some("metrics for process"),
-                    None,
-                    Some(s"/metrics/${processName(process)}"),
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("analytics"),
-                    None,
-                    None,
-                    Some(s"/analytics/${process.processId.value}"),
-                    disabled = false
-                  )
-                )
-              ),
-              None
-            ),
-            ToolbarPanel(
-              "buttons2",
-              None,
-              None,
-              Some(
-                List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
-                )
-              ),
-              None
-            )
-          ),
-          bottomRight = List.empty,
-          topCenter = List.empty,
-          bottomCenter = List.empty
-        )
+        parser
+          .parse(
+            s"""{
+               |  "id" : "$id",
+               |  "topLeft" : [
+               |    {
+               |      "id" : "creator-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "activities-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "bottomLeft" : [
+               |  ],
+               |  "topRight" : [
+               |    {
+               |      "id" : "process-actions-panel",
+               |      "title" : "Process Actions ${process.name}",
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-save",
+               |          "name" : null,
+               |          "title" : "save",
+               |          "icon" : "/assets/${process.processId.value}/buttons/save.svg",
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "metrics",
+               |          "title" : "metrics for process",
+               |          "icon" : null,
+               |          "url" : "/metrics/${urlEncodedProcessName(process)}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "analytics",
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : "/analytics/${process.processId.value}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "buttons2",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-cancel",
+               |          "name" : null,
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "bottomRight" : [
+               |  ],
+               |  "topCenter" : [
+               |  ],
+               |  "bottomCenter" : [
+               |  ]
+               |}""".stripMargin
+          )
+          .fold(throw _, identity)
       case (false, true, "Category1") =>
-        ScenarioToolbarSettings(
-          id = id,
-          topLeft = List(
-            ToolbarPanel(CreatorPanel, None, None, None, None),
-            ToolbarPanel(ActivitiesPanel, None, None, None, None)
-          ),
-          bottomLeft = Nil,
-          topRight = List(
-            ToolbarPanel(
-              ProcessActionsPanel,
-              Some(s"Process Actions ${process.name}"),
-              None,
-              Some(
-                List(
-                  ToolbarButton(
-                    ProcessSave,
-                    None,
-                    Some("save"),
-                    Some(s"/assets/${process.processId.value}/buttons/save.svg"),
-                    None,
-                    disabled = true
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("metrics"),
-                    Some("metrics for process"),
-                    None,
-                    Some(s"/metrics/${processName(process)}"),
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("analytics"),
-                    None,
-                    None,
-                    Some(s"/analytics/${process.processId.value}"),
-                    disabled = false
-                  )
-                )
-              ),
-              None
-            )
-          ),
-          bottomRight = List.empty,
-          topCenter = List.empty,
-          bottomCenter = List.empty,
-        )
+        parser
+          .parse(
+            s"""{
+               |  "id" : "$id",
+               |  "topLeft" : [
+               |    {
+               |      "id" : "creator-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "activities-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "topCenter" : [
+               |  ],
+               |  "topRight" : [
+               |    {
+               |      "id" : "process-actions-panel",
+               |      "title" : "Process Actions ${process.name}",
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-save",
+               |          "name" : null,
+               |          "title" : "save",
+               |          "icon" : "/assets/${process.processId.value}/buttons/save.svg",
+               |          "url" : null,
+               |          "disabled" : true,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "metrics",
+               |          "title" : "metrics for process",
+               |          "icon" : null,
+               |          "url" : "/metrics/${urlEncodedProcessName(process)}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "analytics",
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : "/analytics/${process.processId.value}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "bottomLeft" : [
+               |  ],
+               |  "bottomCenter" : [
+               |  ],
+               |  "bottomRight" : [
+               |  ]
+               |}""".stripMargin
+          )
+          .fold(throw _, identity)
       case (true, false, "Category1") =>
-        ScenarioToolbarSettings(
-          id = id,
-          topLeft = List(
-            ToolbarPanel(ActivitiesPanel, None, None, None, None),
-          ),
-          bottomLeft = Nil,
-          topRight = List(
-            ToolbarPanel(
-              ProcessActionsPanel,
-              Some(s"Process Actions ${process.name}"),
-              None,
-              Some(
-                List(
-                  ToolbarButton(
-                    ProcessSave,
-                    None,
-                    Some("save"),
-                    Some(s"/assets/${process.processId.value}/buttons/save.svg"),
-                    None,
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("metrics"),
-                    Some("metrics for process"),
-                    None,
-                    Some(s"/metrics/${processName(process)}"),
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("analytics"),
-                    None,
-                    None,
-                    Some(s"/analytics/${process.processId.value}"),
-                    disabled = false
-                  )
-                )
-              ),
-              None
-            ),
-            ToolbarPanel(
-              "buttons1",
-              None,
-              Some(Small),
-              Some(
-                List(
-                  ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
-                  ToolbarButton(ProcessPDF, None, None, None, None, disabled = false)
-                )
-              ),
-              None
-            ),
-            ToolbarPanel(
-              "buttons2",
-              None,
-              None,
-              Some(
-                List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
-                )
-              ),
-              None
-            )
-          ),
-          bottomRight = List.empty,
-          topCenter = List.empty,
-          bottomCenter = List.empty,
-        )
+        parser
+          .parse(
+            s"""{
+               |  "id" : "$id",
+               |  "topLeft" : [
+               |    {
+               |      "id" : "activities-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "topCenter" : [
+               |  ],
+               |  "topRight" : [
+               |    {
+               |      "id" : "process-actions-panel",
+               |      "title" : "Process Actions ${process.name}",
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-save",
+               |          "name" : null,
+               |          "title" : "save",
+               |          "icon" : "/assets/${process.processId.value}/buttons/save.svg",
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "metrics",
+               |          "title" : "metrics for process",
+               |          "icon" : null,
+               |          "url" : "/metrics/${urlEncodedProcessName(process)}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "analytics",
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : "/analytics/${process.processId.value}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "buttons1",
+               |      "title" : null,
+               |      "buttonsVariant" : "small",
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-deploy",
+               |          "name" : null,
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "process-pdf",
+               |          "name" : null,
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "buttons2",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-cancel",
+               |          "name" : null,
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "bottomLeft" : [
+               |  ],
+               |  "bottomCenter" : [
+               |  ],
+               |  "bottomRight" : [
+               |  ]
+               |}""".stripMargin
+          )
+          .fold(throw _, identity)
       case (true, true, "Category1") =>
-        ScenarioToolbarSettings(
-          id = id,
-          topLeft = List(
-            ToolbarPanel(CreatorPanel, None, None, None, None),
-            ToolbarPanel(ActivitiesPanel, None, None, None, None)
-          ),
-          bottomLeft = Nil,
-          topRight = List(
-            ToolbarPanel(
-              ProcessActionsPanel,
-              Some(s"Process Actions ${process.name}"),
-              None,
-              Some(
-                List(
-                  ToolbarButton(
-                    ProcessSave,
-                    None,
-                    Some("save"),
-                    Some(s"/assets/${process.processId.value}/buttons/save.svg"),
-                    None,
-                    disabled = true
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("metrics"),
-                    Some("metrics for process"),
-                    None,
-                    Some(s"/metrics/${processName(process)}"),
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("analytics"),
-                    None,
-                    None,
-                    Some(s"/analytics/${process.processId.value}"),
-                    disabled = true
-                  )
-                )
-              ),
-              None
-            ),
-            ToolbarPanel(
-              "buttons1",
-              None,
-              Some(Small),
-              Some(
-                List(
-                  ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false)
-                )
-              ),
-              None
-            )
-          ),
-          bottomRight = List.empty,
-          topCenter = List.empty,
-          bottomCenter = List.empty,
-        )
+        parser
+          .parse(
+            s"""{
+               |  "id" : "$id",
+               |  "topLeft" : [
+               |    {
+               |      "id" : "creator-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "activities-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "topCenter" : [
+               |  ],
+               |  "topRight" : [
+               |    {
+               |      "id" : "process-actions-panel",
+               |      "title" : "Process Actions ${process.name}",
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-save",
+               |          "name" : null,
+               |          "title" : "save",
+               |          "icon" : "/assets/${process.processId.value}/buttons/save.svg",
+               |          "url" : null,
+               |          "disabled" : true,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "metrics",
+               |          "title" : "metrics for process",
+               |          "icon" : null,
+               |          "url" : "/metrics/${urlEncodedProcessName(process)}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "analytics",
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : "/analytics/${process.processId.value}",
+               |          "disabled" : true,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "buttons1",
+               |      "title" : null,
+               |      "buttonsVariant" : "small",
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-deploy",
+               |          "name" : null,
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "bottomLeft" : [
+               |  ],
+               |  "bottomCenter" : [
+               |  ],
+               |  "bottomRight" : [
+               |  ]
+               |}""".stripMargin
+          )
+          .fold(throw _, identity)
       case (false, false, "Category2") =>
-        ScenarioToolbarSettings(
-          id = id,
-          topLeft = List(
-            ToolbarPanel(TipsPanel, None, None, None, None)
-          ),
-          bottomLeft = Nil,
-          topRight = List(
-            ToolbarPanel(
-              ProcessActionsPanel,
-              Some(s"Process Actions ${process.name}"),
-              None,
-              Some(
-                List(
-                  ToolbarButton(
-                    ProcessSave,
-                    None,
-                    Some("save"),
-                    Some(s"/assets/${process.processId.value}/buttons/save.svg"),
-                    None,
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("metrics"),
-                    Some("metrics for process"),
-                    None,
-                    Some(s"/metrics/${processName(process)}"),
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("analytics"),
-                    None,
-                    None,
-                    Some(s"/analytics/${process.processId.value}"),
-                    disabled = false
-                  )
-                )
-              ),
-              None
-            ),
-            ToolbarPanel(
-              "buttons2",
-              None,
-              None,
-              Some(
-                List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
-                )
-              ),
-              None
-            )
-          ),
-          bottomRight = List.empty,
-          topCenter = List.empty,
-          bottomCenter = List.empty,
-        )
-      case (false, false, "Category3") =>
-        ScenarioToolbarSettings(
-          id = id,
-          topLeft = List(
-            ToolbarPanel(ActivitiesPanel, None, None, None, None)
-          ),
-          bottomLeft = Nil,
-          topRight = List(
-            ToolbarPanel(
-              ProcessActionsPanel,
-              Some(s"Process Actions ${process.name}"),
-              None,
-              Some(
-                List(
-                  ToolbarButton(
-                    ProcessSave,
-                    None,
-                    Some("save"),
-                    Some(s"/assets/${process.processId.value}/buttons/save.svg"),
-                    None,
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("metrics"),
-                    Some("metrics for process"),
-                    None,
-                    Some(s"/metrics/${processName(process)}"),
-                    disabled = false
-                  ),
-                  ToolbarButton(
-                    CustomLink,
-                    Some("analytics"),
-                    None,
-                    None,
-                    Some(s"/analytics/${process.processId.value}"),
-                    disabled = false
-                  )
-                )
-              ),
-              None
-            ),
-            ToolbarPanel(
-              "buttons2",
-              None,
-              None,
-              Some(
-                List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
-                )
-              ),
-              None
-            )
-          ),
-          bottomRight = List.empty,
-          topCenter = List.empty,
-          bottomCenter = List.empty,
-        )
-      case (_, _, _) =>
-        ScenarioToolbarSettings("not-exist", Nil, Nil, Nil, Nil, Nil, Nil)
+        parser
+          .parse(
+            s"""{
+               |  "id" : "$id",
+               |  "topLeft" : [
+               |    {
+               |      "id" : "tips-panel",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : null,
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "topCenter" : [
+               |  ],
+               |  "topRight" : [
+               |    {
+               |      "id" : "process-actions-panel",
+               |      "title" : "Process Actions ${process.name}",
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-save",
+               |          "name" : null,
+               |          "title" : "save",
+               |          "icon" : "/assets/${process.processId.value}/buttons/save.svg",
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "metrics",
+               |          "title" : "metrics for process",
+               |          "icon" : null,
+               |          "url" : "/metrics/${urlEncodedProcessName(process)}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        },
+               |        {
+               |          "type" : "custom-link",
+               |          "name" : "analytics",
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : "/analytics/${process.processId.value}",
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    },
+               |    {
+               |      "id" : "buttons2",
+               |      "title" : null,
+               |      "buttonsVariant" : null,
+               |      "buttons" : [
+               |        {
+               |          "type" : "process-cancel",
+               |          "name" : null,
+               |          "title" : null,
+               |          "icon" : null,
+               |          "url" : null,
+               |          "disabled" : false,
+               |          "markdownContent" : null,
+               |          "docs" : null
+               |        }
+               |      ],
+               |      "additionalParams" : null
+               |    }
+               |  ],
+               |  "bottomLeft" : [
+               |  ],
+               |  "bottomCenter" : [
+               |  ],
+               |  "bottomRight" : [
+               |  ]
+               |}""".stripMargin
+          )
+          .fold(throw _, identity)
+      case other =>
+        throw new IllegalStateException(s"Not expected input: $other")
     }
   }
 
