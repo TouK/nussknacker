@@ -41,7 +41,7 @@ trait SchemaRegistryClient extends Serializable {
   def getAllVersions(topic: UnspecializedTopicName, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
 
   def isTopicWithSchema(topic: String, kafkaConfig: KafkaConfig): Boolean = {
-    if (!kafkaConfig.topicsWithoutSchemaConfig.showTopicsWithoutSchema) {
+    if (!kafkaConfig.showTopicsWithoutSchema) {
       true
     } else {
       val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy(this).getTopics

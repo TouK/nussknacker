@@ -28,6 +28,28 @@ class CachingKafkaAdminClient(
     }
   }
 
+  def getCachedTopics: Option[Set[UnspecializedTopicName]] = {
+    caches.topicsCache.get()
+  }
+
+  def fetchFreshTopicsAndCache: Set[UnspecializedTopicName] = {
+    val topics = fetchFreshTopics
+    caches.topicsCache.put(topics)
+    topics
+  }
+
+  private def fetchFreshTopics: Set[UnspecializedTopicName] = {
+    usingKafkaAdminClient { admin =>
+      admin
+        .listTopics(new ListTopicsOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
+        .names()
+        .get()
+        .asScala
+        .toSet
+        .map(UnspecializedTopicName.apply)
+    }
+  }
+
   def getAutoCreateSetting: Boolean = {
     caches.autoCreateSettingCache.getOrCreate {
       usingKafkaAdminClient { admin =>

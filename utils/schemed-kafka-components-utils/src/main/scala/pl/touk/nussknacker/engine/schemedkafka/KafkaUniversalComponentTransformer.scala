@@ -49,11 +49,11 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  @transient protected lazy val cachedTopicsExistenceValidator = new CachedTopicsExistenceValidator(kafkaConfig)
+  @transient protected lazy val cachedTopicsExistenceValidator = CachedTopicsExistenceValidator(kafkaConfig)
 
   @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
-    if (kafkaConfig.topicsWithoutSchemaConfig.showTopicsWithoutSchema) {
-      new AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaConfig)
+    if (kafkaConfig.showTopicsWithoutSchema) {
+      AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaConfig)
     } else {
       new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
     }

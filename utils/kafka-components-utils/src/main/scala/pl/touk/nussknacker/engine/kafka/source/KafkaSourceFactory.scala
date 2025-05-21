@@ -204,7 +204,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
 
-  protected lazy val cachedTopicsExistenceValidator = new CachedTopicsExistenceValidator(kafkaConfig)
+  protected lazy val cachedTopicsExistenceValidator = CachedTopicsExistenceValidator(kafkaConfig)
 
   private def topicNamesFrom(value: String) = {
     val topicsList = value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toList

@@ -32,7 +32,7 @@ case class KafkaConfig(
     kafkaAddress: Option[String] = None,
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
-    topicsWithoutSchemaConfig: TopicsWithoutSchemaConfig = TopicsWithoutSchemaConfig.Default,
+    showTopicsWithoutSchema: Boolean = true,
     kafkaAdminConfig: KafkaAdminConfig = KafkaAdminConfig(),
 ) {
 
@@ -96,24 +96,7 @@ object KafkaConfig {
 
 final case class TopicsExistenceValidationConfig(
     enabled: Boolean,
-    validatorConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig
 )
-
-final case class CachedTopicsExistenceValidatorConfig(
-    autoCreateFlagFetchCacheTtl: FiniteDuration,
-    topicsFetchCacheTtl: FiniteDuration,
-    adminClientTimeout: FiniteDuration
-)
-
-object CachedTopicsExistenceValidatorConfig {
-
-  val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
-    autoCreateFlagFetchCacheTtl = 5 minutes,
-    topicsFetchCacheTtl = 30 seconds,
-    adminClientTimeout = 10 seconds
-  )
-
-}
 
 case class IdlenessConfig(enabled: Boolean, duration: FiniteDuration = DefaultDuration)
 
@@ -136,17 +119,6 @@ object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
   case object None       extends OffsetResetStrategy
   case object ToEarliest extends OffsetResetStrategy
   case object ToLatest   extends OffsetResetStrategy
-}
-
-final case class TopicsWithoutSchemaConfig(
-    showTopicsWithoutSchema: Boolean = true,
-    topicsFetchTimeout: FiniteDuration = 10 seconds,
-    topicsFetchCacheTtl: FiniteDuration = 30 seconds,
-)
-
-object TopicsWithoutSchemaConfig {
-  val Default: TopicsWithoutSchemaConfig  = TopicsWithoutSchemaConfig()
-  val Disabled: TopicsWithoutSchemaConfig = TopicsWithoutSchemaConfig(showTopicsWithoutSchema = false)
 }
 
 final case class KafkaAdminConfig(

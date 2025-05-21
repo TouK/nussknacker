@@ -6,7 +6,7 @@ import org.apache.kafka.clients.admin.ListTopicsOptions
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
 import pl.touk.nussknacker.engine.api.util.ExceptionUtils
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{CachingKafkaAdminClient, KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
@@ -28,34 +28,23 @@ class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaReg
 
 }
 
-class AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient: SchemaRegistryClient, kafkaConfig: KafkaConfig)
-    extends TopicSelectionStrategy
+object AllNonHiddenTopicsSelectionStrategy {
+  def apply(schemaRegistryClient: SchemaRegistryClient, kafkaConfig: KafkaConfig): AllNonHiddenTopicsSelectionStrategy =
+    new AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, KafkaUtils.createCachingAdminClient(kafkaConfig))
+}
+
+class AllNonHiddenTopicsSelectionStrategy(
+    schemaRegistryClient: SchemaRegistryClient,
+    cachingKafkaAdminClient: CachingKafkaAdminClient
+) extends TopicSelectionStrategy
     with LazyLogging {
-
-  private val strategyConfig = kafkaConfig.topicsWithoutSchemaConfig
-
-  @transient private lazy val topicsCache = new SingleValueCache[Set[UnspecializedTopicName]](
-    expireAfterAccess = None,
-    expireAfterWrite = Some(strategyConfig.topicsFetchCacheTtl)
-  )
 
   override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     val topicsFromSchemaRegistry = schemaRegistryClient.getAllTopics
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        val allTopics = topicsCache.getOrCreate {
-          logger.debug("Fetching and caching topics from Kafka")
-          KafkaUtils.usingAdminClient(kafkaConfig) {
-            _.listTopics(new ListTopicsOptions().timeoutMs(strategyConfig.topicsFetchTimeout.toMillis.toInt))
-              .names()
-              .get()
-              .asScala
-              .toSet
-              .map(UnspecializedTopicName.apply)
-          }
-        }
-        allTopics
+        cachingKafkaAdminClient.getTopics
           .filterNot(topic => topic.name.startsWith("_"))
           .toList
       } catch {

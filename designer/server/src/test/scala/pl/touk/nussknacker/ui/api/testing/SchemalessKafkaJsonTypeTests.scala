@@ -155,7 +155,7 @@ class SchemalessKafkaJsonTypeTests
       ConfigValueFactory.fromAnyRef(true)
     )
     .withValue(
-      "scenarioTypes.streaming.modelConfig.components.kafka.config.topicsWithoutSchemaConfig.topicsFetchCacheTtl",
+      "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaAdminConfig.cacheConfig.topicsExpirationTime",
       ConfigValueFactory.fromAnyRef(0)
     )
 
