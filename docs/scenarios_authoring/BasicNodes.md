@@ -1,4 +1,7 @@
 ---
+title: Introduction to Basic Components
+description: Learn how to use basic components to build and manage real-time decision workflows with low-code tools.
+sidebar_label: Basic Components
 sidebar_position: 2
 ---
 

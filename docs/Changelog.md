@@ -1,3 +1,8 @@
+---
+title: Explore the Latest Updates and Features
+description: Stay informed with detailed changelogs covering new features, improvements, and fixes across all Nussknacker platform releases.
+---
+
 # Changelog
 
 ## 1.18

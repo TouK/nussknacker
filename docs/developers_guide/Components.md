@@ -1,3 +1,9 @@
+---
+title: Create Custom Components
+description: Learn how to build and register custom components in Nussknacker to extend scenario logic and integrate with external systems.
+sidebar_label: ComponentProvider API
+---
+
 # ComponentProvider API
               
 Check [nussknacker-sample-components](https://github.com/touk/nussknacker-sample-components) project for self-contained samples of custom Components.
