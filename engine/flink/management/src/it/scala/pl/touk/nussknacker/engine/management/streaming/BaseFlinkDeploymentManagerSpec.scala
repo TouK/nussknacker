@@ -81,7 +81,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
     LiveDataCollectingListenerHolder.createListenerFor(
       processName = processName,
       maxNumberOfSamples = 20,
-      frequencyWindowInSeconds = 60
+      throughputTimeWindowInSeconds = 60
     )
     val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
       process = process,

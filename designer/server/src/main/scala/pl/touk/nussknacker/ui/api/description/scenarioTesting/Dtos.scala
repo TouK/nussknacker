@@ -201,21 +201,21 @@ object Dtos {
   final case class ResultsWithCountsDto(
       results: TestResultsDto,
       counts: Map[String, NodeCount],
-      nodeTransitionFrequency: Option[List[NodeTransitionFrequencyDto]],
+      nodeTransitionThroughput: Option[List[NodeTransitionThroughputDto]],
   )
 
   object ResultsWithCountsDto {
 
     def from(
         resultsWithCounts: ResultsWithCounts,
-        nodeTransitionFrequency: Option[Map[NodeTransition, BigDecimal]],
+        nodeTransitionThroughput: Option[Map[NodeTransition, BigDecimal]],
         skipResultsPerNode: SkipResultsPerNode,
         skipResultsPerTransition: SkipResultsPerTransition
     ): ResultsWithCountsDto = {
       ResultsWithCountsDto(
         results = TestResultsDto.from(resultsWithCounts.results, skipResultsPerNode, skipResultsPerTransition),
         counts = resultsWithCounts.counts,
-        nodeTransitionFrequency = nodeTransitionFrequency.map(NodeTransitionFrequency.from),
+        nodeTransitionThroughput = nodeTransitionThroughput.map(NodeTransitionThroughput.from),
       )
     }
 
@@ -260,17 +260,17 @@ object Dtos {
       results: List[ResultContext[Json]]
   )
 
-  final case class NodeTransitionFrequencyDto(
+  final case class NodeTransitionThroughputDto(
       sourceNodeId: String,
       destinationNodeId: Option[String],
-      frequency: BigDecimal,
+      throughput: BigDecimal,
   )
 
-  object NodeTransitionFrequency {
+  object NodeTransitionThroughput {
 
-    def from(nodeTransitionFrequency: Map[NodeTransition, BigDecimal]): List[NodeTransitionFrequencyDto] = {
-      nodeTransitionFrequency.map { case (k, v) =>
-        NodeTransitionFrequencyDto(k.sourceNodeId, k.destinationNodeId, v)
+    def from(nodeTransitionThroughput: Map[NodeTransition, BigDecimal]): List[NodeTransitionThroughputDto] = {
+      nodeTransitionThroughput.map { case (k, v) =>
+        NodeTransitionThroughputDto(k.sourceNodeId, k.destinationNodeId, v)
       }.toList
     }
 
@@ -284,7 +284,7 @@ object Dtos {
   implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
   implicit def testResultsSchema: Schema[TestResultsDto]                                  = Schema.derived
   implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
-  implicit def nodeTransitionFrequencyDtoSchema: Schema[NodeTransitionFrequencyDto]       = Schema.derived
+  implicit def nodeTransitionThroughputDtoSchema: Schema[NodeTransitionThroughputDto]     = Schema.derived
   implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject

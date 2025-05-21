@@ -109,7 +109,7 @@ object LiveDataPreviewSupported {
 
   final case class LiveDataPreview(
       liveDataSamples: TestResults[Json],
-      nodeTransitionFrequency: Map[NodeTransition, BigDecimal],
+      nodeTransitionThroughput: Map[NodeTransition, BigDecimal],
   )
 
 }

@@ -195,10 +195,10 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
     Any
   ] =
     baseNuApiEndpoint
-      .summary("Perform test")
-      .tag("Testing")
+      .summary("Preview of the data samples currently processed by the scenario")
+      .tag("Live data")
       .get
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "liveData")
+      .in("liveData" / path[ProcessName]("scenarioName"))
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
       .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))

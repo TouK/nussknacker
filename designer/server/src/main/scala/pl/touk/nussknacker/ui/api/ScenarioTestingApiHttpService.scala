@@ -240,7 +240,7 @@ class ScenarioTestingApiHttpService(
             )
           } yield ResultsWithCountsDto.from(
             resultsWithCounts,
-            Some(liveDataPreview.nodeTransitionFrequency),
+            Some(liveDataPreview.nodeTransitionThroughput),
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
             skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
           )

@@ -12,7 +12,7 @@ import scala.jdk.CollectionConverters._
 
 private[livedata] class LiveDataCollectingListenerStorage(
     maxNumberOfSamples: Int,
-    frequencyWindowInSeconds: Int,
+    throughputTimeWindowInSeconds: Int,
 ) {
 
   private type K = String
@@ -65,7 +65,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
     TestResults.aggregate(orderOfResults.asScala.toList.flatMap(key => Option(results.get(key))))
 
   private def getTransitionFrequencies: Map[NodeTransition, BigDecimal] = {
-    val cutoff                  = Instant.now().getEpochSecond - frequencyWindowInSeconds
+    val cutoff                  = Instant.now().getEpochSecond - throughputTimeWindowInSeconds
     val oldestSampleEpochSecond = transitionsByEpochSecond.keys().asScala.min
     val newestSampleEpochSecond = transitionsByEpochSecond.keys().asScala.max
     val samplingInterval        = newestSampleEpochSecond - oldestSampleEpochSecond + 1
@@ -83,7 +83,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
   }
 
   private def cleanOldTransitions(currentEpochSecond: Long): Unit = {
-    val cutoff = currentEpochSecond - frequencyWindowInSeconds
+    val cutoff = currentEpochSecond - throughputTimeWindowInSeconds
     transitionsByEpochSecond
       .keySet()
       .asScala

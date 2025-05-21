@@ -38,7 +38,7 @@ object ModelConfig {
 
     final case class Enabled(
         maxNumberOfSamples: Int,
-        frequencyWindowInSeconds: Int,
+        throughputTimeWindowInSeconds: Int,
     ) extends LiveDataPreviewMode
 
   }
@@ -47,7 +47,7 @@ object ModelConfig {
     if (config.getOrElse("liveDataPreview.enabled", false)) {
       LiveDataPreviewMode.Enabled(
         maxNumberOfSamples = config.getOrElse("liveDataPreview.maxNumberOfSamples", 10),
-        frequencyWindowInSeconds = config.getOrElse("liveDataPreview.frequencyWindowInSeconds", 60),
+        throughputTimeWindowInSeconds = config.getOrElse("liveDataPreview.throughputTimeWindowInSeconds", 60),
       )
     } else {
       LiveDataPreviewMode.Disabled

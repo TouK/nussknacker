@@ -4574,12 +4574,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarioTesting/{scenarioName}/liveData:
+  /api/liveData/{scenarioName}:
     get:
       tags:
-      - Testing
-      summary: Perform test
-      operationId: getApiScenariotestingScenarionameLivedata
+      - Live data
+      summary: Preview of the data samples currently processed by the scenario
+      operationId: getApiLivedataScenarioname
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -6597,21 +6597,6 @@ components:
             type: string
           type:
             $ref: '#/components/schemas/NodeTypes12'
-    NodeTransitionFrequencyDto:
-      title: NodeTransitionFrequencyDto
-      type: object
-      required:
-      - sourceNodeId
-      - frequency
-      properties:
-        sourceNodeId:
-          type: string
-        destinationNodeId:
-          type:
-          - string
-          - 'null'
-        frequency:
-          type: number
     NodeTransitionResult:
       title: NodeTransitionResult
       type: object
@@ -6628,6 +6613,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResultContext_Json'
+    NodeTransitionThroughputDto:
+      title: NodeTransitionThroughputDto
+      type: object
+      required:
+      - sourceNodeId
+      - throughput
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        throughput:
+          type: number
     NodeTypes:
       title: NodeTypes
       type: string
@@ -7104,12 +7104,12 @@ components:
           $ref: '#/components/schemas/TestResultsDto'
         counts:
           $ref: '#/components/schemas/Map_NodeCount'
-        nodeTransitionFrequency:
+        nodeTransitionThroughput:
           type:
           - array
           - 'null'
           items:
-            $ref: '#/components/schemas/NodeTransitionFrequencyDto'
+            $ref: '#/components/schemas/NodeTransitionThroughputDto'
     RunDeploymentRequest:
       title: RunDeploymentRequest
       type: object

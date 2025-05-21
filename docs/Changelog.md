@@ -177,13 +177,13 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8042](https://github.com/TouK/nussknacker/pull/8042) Merge OpenAPI components into one with multiple services.
 * [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition frequencies
     * live data preview is optional and available for now only for Flink minicluster 
-    * there is a new endpoint `/scenarioTesting/{scenarioName}/liveData`, which returns live data samples and frequencies
+    * there is a new endpoint `/liveData/{scenarioName}`, which returns live data samples and throughput information
     * the functionality can be configured by setting in the 'modelConfig' section of the scenario type:
       ```hocon
       liveDataPreview {              // optional config section, functionality disabled by default
         enabled: true                // disabled by default
         maxNumberOfSamples: 20       // max number of latest live data samples that will be returned
-        frequencyWindowInSeconds: 60 // the time windows, for which the node transition frequency will be calculated
+        throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated
       }
       ```
 
