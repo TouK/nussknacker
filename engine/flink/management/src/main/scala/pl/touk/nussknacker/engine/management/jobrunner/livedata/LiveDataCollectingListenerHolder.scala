@@ -17,12 +17,12 @@ object LiveDataCollectingListenerHolder {
   def createListenerFor(
       processName: ProcessName,
       maxNumberOfSamples: Int,
-      frequencyWindowInSeconds: Int,
+      throughputTimeWindowInSeconds: Int,
   ): LiveDataCollectingListener = {
     // We want to store and present only the live data from the current deployment,
     // so when we start a new job, we discard all old data
     cleanResults(processName)
-    new LiveDataCollectingListener(processName, maxNumberOfSamples, frequencyWindowInSeconds)
+    new LiveDataCollectingListener(processName, maxNumberOfSamples, throughputTimeWindowInSeconds)
   }
 
   def getLiveDataPreview(processName: ProcessName): Option[LiveDataPreview] = {
@@ -36,11 +36,13 @@ object LiveDataCollectingListenerHolder {
   private[livedata] def storage(
       processName: ProcessName,
       maxNumberOfSamples: Int,
-      frequencyWindowInSeconds: Int,
+      throughputTimeWindowInSeconds: Int,
   ): LiveDataCollectingListenerStorage = {
     listenerStorages.get(
       processName.value,
-      asJavaFunction((_: String) => new LiveDataCollectingListenerStorage(maxNumberOfSamples, frequencyWindowInSeconds))
+      asJavaFunction((_: String) =>
+        new LiveDataCollectingListenerStorage(maxNumberOfSamples, throughputTimeWindowInSeconds)
+      )
     )
   }
 

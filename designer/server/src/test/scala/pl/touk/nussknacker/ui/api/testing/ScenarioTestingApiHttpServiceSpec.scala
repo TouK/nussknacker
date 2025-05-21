@@ -449,7 +449,7 @@ trait ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/liveData")
+        .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
         .Then()
         .statusCode(StatusCodes.OK.intValue)
         .body(

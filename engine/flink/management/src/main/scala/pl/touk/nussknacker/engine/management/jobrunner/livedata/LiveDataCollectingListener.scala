@@ -12,7 +12,7 @@ import scala.util.Try
 class LiveDataCollectingListener private[livedata] (
     processName: ProcessName,
     maxNumberOfSamples: Int,
-    frequencyWindowInSeconds: Int,
+    throughputTimeWindowInSeconds: Int,
 ) extends ProcessListener
     with Serializable {
 
@@ -21,7 +21,7 @@ class LiveDataCollectingListener private[livedata] (
   private def storage = LiveDataCollectingListenerHolder.storage(
     processName = processName,
     maxNumberOfSamples = maxNumberOfSamples,
-    frequencyWindowInSeconds = frequencyWindowInSeconds,
+    throughputTimeWindowInSeconds = throughputTimeWindowInSeconds,
   )
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {

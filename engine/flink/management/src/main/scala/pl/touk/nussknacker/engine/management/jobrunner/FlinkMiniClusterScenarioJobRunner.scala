@@ -52,12 +52,12 @@ class FlinkMiniClusterScenarioJobRunner(
           modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
             case LiveDataPreviewMode.Disabled =>
               None
-            case LiveDataPreviewMode.Enabled(maxNumberOfSamples, frequencyWindowInSeconds) =>
+            case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds) =>
               Some(
                 LiveDataCollectingListenerHolder.createListenerFor(
                   command.processVersion.processName,
                   maxNumberOfSamples,
-                  frequencyWindowInSeconds
+                  throughputTimeWindowInSeconds
                 )
               )
           }
