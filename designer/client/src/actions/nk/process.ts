@@ -1,7 +1,7 @@
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
-import type { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
+import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
@@ -9,6 +9,10 @@ import type { Action, ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
 
 export type ScenarioActions =
+    | {
+          type: "PROCESS_STATE_LOADED";
+          processState: ProcessStateType;
+      }
     | {
           type: "CORRECT_INVALID_SCENARIO";
           processDefinitionData: ProcessDefinitionData;

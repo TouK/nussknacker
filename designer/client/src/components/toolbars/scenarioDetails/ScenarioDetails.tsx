@@ -3,12 +3,8 @@ import React, { memo } from "react";
 import { useSelector } from "react-redux";
 import { SwitchTransition } from "react-transition-group";
 
-import BatchIcon from "../../../assets/img/batch.svg";
-import RequestResponseIcon from "../../../assets/img/request-response.svg";
-import StreamingIcon from "../../../assets/img/streaming.svg";
-import { ProcessingMode } from "../../../http/HttpService";
 import type { RootState } from "../../../reducers";
-import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
+import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { getLoggedUser } from "../../../reducers/selectors/settings";
 import { CssFade } from "../../CssFade";
@@ -17,31 +13,16 @@ import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
 import { CategoryDetails } from "./CategoryDetails";
-import { getProcessingModeVariantName } from "./getProcessingModeVariantName";
-import {
-    PanelScenarioDetails,
-    PanelScenarioDetailsIcon,
-    ProcessName,
-    ProcessRename,
-    ScenarioDetailsItemWrapper,
-} from "./ScenarioDetailsComponents";
+import { PanelScenarioDetails, ScenarioDetailsItemWrapper } from "./ScenarioDetailsComponents";
 import { ScenarioLabels } from "./ScenarioLabels";
+import { ScenarioNameItem } from "./ScenarioNameItem";
 
-const ScenarioDetails = memo((props: ToolbarPanelProps) => {
+const ScenarioDetails = memo(function ScenarioDetails(props: ToolbarPanelProps) {
     const scenario = useSelector((state: RootState) => getScenario(state));
-    const isRenamePending = useSelector((state: RootState) => isProcessRenamed(state));
-    const unsavedNewName = useSelector((state: RootState) => getProcessUnsavedNewName(state));
     const processState = useSelector((state: RootState) => getProcessState(state));
     const loggedUser = useSelector((state: RootState) => getLoggedUser(state));
 
     const transitionKey = ProcessStateUtils.getTransitionKey(scenario, processState);
-
-    const ProcessingModeIcon =
-        scenario.processingMode === ProcessingMode.streaming
-            ? StreamingIcon
-            : scenario.processingMode === ProcessingMode.batch
-            ? BatchIcon
-            : RequestResponseIcon;
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.scenarioDetails.title", "Scenario details")}>
@@ -50,16 +31,7 @@ const ScenarioDetails = memo((props: ToolbarPanelProps) => {
                     <PanelScenarioDetails>
                         <CategoryDetails scenario={scenario} />
                         <ScenarioDetailsItemWrapper>
-                            <PanelScenarioDetailsIcon title={getProcessingModeVariantName(scenario.processingMode)}>
-                                <ProcessingModeIcon />
-                            </PanelScenarioDetailsIcon>
-                            {isRenamePending ? (
-                                <ProcessRename variant={"subtitle2"} title={scenario.name}>
-                                    {unsavedNewName}*
-                                </ProcessRename>
-                            ) : (
-                                <ProcessName variant={"subtitle2"}>{scenario.name}</ProcessName>
-                            )}
+                            <ScenarioNameItem />
                         </ScenarioDetailsItemWrapper>
                         <ScenarioLabels readOnly={!loggedUser.isWriter()} />
                         <MoreScenarioDetailsButton scenario={scenario} processState={processState} />
@@ -69,7 +41,5 @@ const ScenarioDetails = memo((props: ToolbarPanelProps) => {
         </ToolbarWrapper>
     );
 });
-
-ScenarioDetails.displayName = "ScenarioDetails";
 
 export default ScenarioDetails;
