@@ -31,7 +31,7 @@ import type { ProcessCounts } from "../reducers/graph";
 import type { AuthenticationSettings } from "../reducers/settings";
 import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import type { Instant, WithId } from "../types/common";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import { fixAggregateParameters } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -246,7 +246,7 @@ class HttpService {
                     ...data,
                     componentGroups: data.componentGroups.map(({ components, ...group }) => ({
                         ...group,
-                        components: components.map(fixBranchParametersTemplate).map(fixAggregateParameters),
+                        components: components.map(fixAggregateParameters),
                     })),
                 },
             }),
