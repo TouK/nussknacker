@@ -56,7 +56,11 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
     topicsCache.get() match {
       case Some(cachedTopics) if doAllExist(topics, cachedTopics).isRight =>
         Valid(topics)
-      case Some(_) | None =>
+      case Some(_) =>
+        logger.debug("Topics do not exist, fetch topics from Kafka and validate")
+        fetchTopicsAndValidate(topics)
+      case None =>
+        logger.debug("Empty topics cache, fetch topics from Kafka and validate")
         fetchTopicsAndValidate(topics)
     }
   }
@@ -81,6 +85,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
   }
 
   private def fetchAllTopicsAndCache() = {
+    logger.debug("Fetching and caching topics from Kafka")
     val existingTopics = usingAdminClient {
       _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
         .names()

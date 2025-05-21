@@ -45,6 +45,7 @@ class AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient: SchemaRegistryCl
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
         val allTopics = topicsCache.getOrCreate {
+          logger.debug("Fetching and caching topics from Kafka")
           KafkaUtils.usingAdminClient(kafkaConfig) {
             _.listTopics(new ListTopicsOptions().timeoutMs(strategyConfig.topicsFetchTimeout.toMillis.toInt))
               .names()
