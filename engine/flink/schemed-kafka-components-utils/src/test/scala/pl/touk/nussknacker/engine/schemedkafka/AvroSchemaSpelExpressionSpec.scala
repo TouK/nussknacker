@@ -199,6 +199,10 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
 
   }
 
+  it("should recognize spel map as GenericRecord") {
+    parse[GenericRecord]("""{test:"test"}""", ValidationContext.empty).map(_.returnType) should be(Symbol("valid"))
+  }
+
   it("should recognize date types") {
     val schema = wrapWithRecordSchema("""[
         |  { "name": "date", "type": { "type": "int", "logicalType": "date" } },

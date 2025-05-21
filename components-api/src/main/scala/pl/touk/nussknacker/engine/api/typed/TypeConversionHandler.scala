@@ -12,7 +12,6 @@ import java.nio.charset.Charset
 import java.time._
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util.{Currency, UUID}
-import scala.collection.compat._
 import scala.reflect.{classTag, ClassTag}
 import scala.util.Try
 
@@ -160,6 +159,11 @@ private[engine] object TypeConversionHandler {
       implicit conversionStrategy: NonEmptyConversionStrategy
   ): Option[SingleTypingResult] =
     (from.withoutValue, to) match {
+      case (
+            _: TypedObjectTypingResult,
+            result @ TypedClass(klass, Nil)
+          ) if klass.getName == "org.apache.avro.generic.GenericRecord" =>
+        Some(result)
       case (
             TypedObjectTypingResult(fromFields, TypedClass(fromRuntimeObjClass, _), _),
             TypedClass(`javaMapClass`, mapKeyParam :: mapValueParam :: Nil)
