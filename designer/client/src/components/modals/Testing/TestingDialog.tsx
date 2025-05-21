@@ -2,7 +2,9 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
 
+import { setPerformedTestType } from "../../../actions/nk/displayTestResults";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
@@ -37,14 +39,22 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         meta: { viewParams },
         kind,
     } = data;
-    const { isValid, action } = useTestingContext();
+    const { isValid, action, testType } = useTestingContext();
+    const dispatch = useDispatch();
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("testingForm.cancelButton.label", "Cancel"), action: () => close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("testingForm.testButton.label", "Test"), action: () => action(), disabled: !isValid },
+            {
+                title: t("testingForm.testButton.label", "Test"),
+                action: () => {
+                    dispatch(setPerformedTestType(testType));
+                    return action();
+                },
+                disabled: !isValid,
+            },
         ],
-        [action, close, isValid, t],
+        [action, close, dispatch, isValid, t, testType],
     );
 
     return (
