@@ -81,23 +81,27 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
     );
 
     const inputs = useMemo(() => {
-        return NodeUtils.getNodesConnectedToInput(nodeId, scenario).map(({ id }) => {
-            const transitionResults = nodeTransitionResults?.find((r) => r.destinationNodeId === nodeId && r.sourceNodeId === id);
-            return {
-                id,
-                ...transitionResults,
-            };
-        });
+        const transitionResults = nodeTransitionResults?.filter((r) => r.destinationNodeId === nodeId);
+        const connectedNodes = NodeUtils.getNodesConnectedToInput(nodeId, scenario).map((n) => n.id);
+
+        return connectedNodes.map((id) => ({
+            id,
+            ...transitionResults?.find((r) => r.sourceNodeId === id),
+        }));
     }, [nodeId, nodeTransitionResults, scenario]);
 
     const outputs = useMemo(() => {
-        return NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map(({ id }) => {
-            const transitionResults = nodeTransitionResults?.find((r) => r.sourceNodeId === nodeId && r.destinationNodeId === id);
-            return {
-                id,
-                ...transitionResults,
-            };
-        });
+        const connectedNodes: (string | null)[] = NodeUtils.getNodesConnectedToOutput(nodeId, scenario).map((n) => n.id);
+        const transitionResults = nodeTransitionResults?.filter((r) => r.sourceNodeId === nodeId);
+
+        if (transitionResults?.length) {
+            connectedNodes.push(null); // connection to "void"
+        }
+
+        return connectedNodes.map((id) => ({
+            id,
+            ...transitionResults?.find((r) => r.destinationNodeId === id),
+        }));
     }, [nodeId, nodeTransitionResults, scenario]);
 
     const isContextDisabled = useCallback(

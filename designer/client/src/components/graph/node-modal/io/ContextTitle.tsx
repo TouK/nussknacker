@@ -5,10 +5,10 @@ import { useSelector } from "react-redux";
 
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getShadow } from "../../graphStyledWrapper";
-import { NextNodes } from "./CountsForNodes";
+import { RelatedNodes } from "./CountsForNodes";
 import type { VariableContextType } from "./VariableContextTree";
 
-export function ContextTitle({ context, showNodes }: { context: VariableContextType; showNodes?: boolean }) {
+export function ContextTitle({ context, showNodes, reversed }: { context: VariableContextType; showNodes?: boolean; reversed?: boolean }) {
     const scenarioName = useSelector(getProcessName);
     const label = useMemo(() => context.id.replace(new RegExp(`^${scenarioName}-`), ""), [context.id, scenarioName]);
 
@@ -25,7 +25,7 @@ export function ContextTitle({ context, showNodes }: { context: VariableContextT
                     />
                 ) : null}
             </Stack>
-            {showNodes ? <NextNodes nodeIds={context.nodeIds} /> : null}
+            {showNodes ? <RelatedNodes nodeIds={context.nodeIds} reversed={reversed} /> : null}
         </Stack>
     );
 }
