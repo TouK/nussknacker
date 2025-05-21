@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.process
 
+import io.circe.Json
 import io.circe.generic.JsonCodec
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.ui.config.scenariotoolbar._
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.ToolbarButtonType
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 trait ScenarioToolbarService {
@@ -29,54 +28,29 @@ object ScenarioToolbarSettings {
   def fromConfig(
       scenarioToolbarConfig: ScenarioToolbarsConfig,
       scenario: ScenarioWithDetailsEntity[_]
-  ): ScenarioToolbarSettings =
-    ScenarioToolbarSettings(
-      id = createScenarioToolbarId(scenarioToolbarConfig, scenario),
-      topLeft = scenarioToolbarConfig.topLeft
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      topCenter = scenarioToolbarConfig.topCenter
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      topRight = scenarioToolbarConfig.topRight
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      bottomLeft = scenarioToolbarConfig.bottomLeft
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      bottomCenter = scenarioToolbarConfig.bottomCenter
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario)),
-      bottomRight = scenarioToolbarConfig.bottomRight
-        .filterNot(tp => verifyCondition(tp.hidden, scenario))
-        .map(tp => ToolbarPanel.fromConfig(tp, scenario))
+  ): ScenarioToolbarSettings = {
+    val id = createScenarioToolbarId(scenarioToolbarConfig, scenario)
+    new ScenarioToolbarSettings(
+      id,
+      scenarioToolbarConfig.panelAreasConfig.toList.flatMap { case (panelAreaName, panels) =>
+        Option(
+          panels
+            .filterNot(panel => verifyCondition(panel.hidden, scenario))
+            .map(ToolbarPanel.fromConfig(_, scenario))
+        ).filterNot(_.isEmpty).map(panelAreaName -> _)
+      }.toMap
     )
+  }
 
 }
 
-@JsonCodec
-final case class ScenarioToolbarSettings(
-    id: String,
-    topLeft: List[ToolbarPanel],
-    topCenter: List[ToolbarPanel],
-    topRight: List[ToolbarPanel],
-    bottomLeft: List[ToolbarPanel],
-    bottomCenter: List[ToolbarPanel],
-    bottomRight: List[ToolbarPanel]
-)
+final class ScenarioToolbarSettings(id: String, panelAreas: Map[String, List[ToolbarPanel]]) {
+  def asJson: Json = panelAreas.asJson.asObject.get.add("id", Json.fromString(id)).toJson
+}
 
 object ToolbarPanel {
 
   import ToolbarHelper._
-
-  def apply(
-      `type`: ToolbarPanelType,
-      title: Option[String],
-      buttonsVariant: Option[ToolbarButtonVariant],
-      buttons: Option[List[ToolbarButton]],
-      additionalParams: Option[Map[String, String]]
-  ): ToolbarPanel =
-    ToolbarPanel(`type`.toString, title, buttonsVariant, buttons, additionalParams)
 
   def fromConfig(config: ToolbarPanelConfig, scenario: ScenarioWithDetailsEntity[_]): ToolbarPanel =
     ToolbarPanel(
@@ -99,7 +73,7 @@ object ToolbarPanel {
 final case class ToolbarPanel(
     id: String,
     title: Option[String],
-    buttonsVariant: Option[ToolbarButtonVariant],
+    buttonsVariant: Option[String],
     buttons: Option[List[ToolbarButton]],
     additionalParams: Option[Map[String, String]]
 )
@@ -128,7 +102,7 @@ object ToolbarButton {
 
 @JsonCodec
 final case class ToolbarButton(
-    `type`: ToolbarButtonType,
+    `type`: String,
     name: Option[String],
     title: Option[String],
     icon: Option[String],
@@ -146,9 +120,10 @@ final case class DocsButtonConfig(
 
 private[process] object ToolbarHelper {
 
-  def createScenarioToolbarId(config: ScenarioToolbarsConfig, scenario: ScenarioWithDetailsEntity[_]): String =
+  def createScenarioToolbarId(config: ScenarioToolbarsConfig, scenario: ScenarioWithDetailsEntity[_]): String = {
     s"${config.uuidCode}-${if (scenario.isArchived) "archived" else "not-archived"}-${if (scenario.isFragment) "fragment"
       else "scenario"}"
+  }
 
   def fillByScenarioData(text: String, scenario: ScenarioWithDetailsEntity[_], urlOption: Boolean = false): String = {
     val scenarioName = if (urlOption) UriUtils.encodeURIComponent(scenario.name.value) else scenario.name.value
