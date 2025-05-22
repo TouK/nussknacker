@@ -1,12 +1,15 @@
-package pl.touk.nussknacker.engine.management.jobrunner.livedata
+package pl.touk.nussknacker.engine.livedata
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
-import scala.compat.java8.FunctionConverters.asJavaFunction
+import java.time.Clock
+import scala.compat.java8.FunctionConverters._
 
 object LiveDataCollectingListenerHolder {
+
+  private implicit val clock: Clock = Clock.systemUTC()
 
   private val listenerStorages =
     Caffeine
@@ -29,10 +32,6 @@ object LiveDataCollectingListenerHolder {
     Option(listenerStorages.getIfPresent(processName.value)).map(_.getLiveDataPreview)
   }
 
-  private[livedata] def cleanResults(processName: ProcessName): Unit = {
-    listenerStorages.invalidate(processName.value)
-  }
-
   private[livedata] def storage(
       processName: ProcessName,
       maxNumberOfSamples: Int,
@@ -44,6 +43,10 @@ object LiveDataCollectingListenerHolder {
         new LiveDataCollectingListenerStorage(maxNumberOfSamples, throughputTimeWindowInSeconds)
       )
     )
+  }
+
+  private def cleanResults(processName: ProcessName): Unit = {
+    listenerStorages.invalidate(processName.value)
   }
 
 }

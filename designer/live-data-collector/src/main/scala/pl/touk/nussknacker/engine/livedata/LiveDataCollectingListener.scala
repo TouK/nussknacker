@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management.jobrunner.livedata
+package pl.touk.nussknacker.engine.livedata
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo

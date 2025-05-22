@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.management.jobrunner.livedata.LiveDataCollectingListenerHolder
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.net.URI

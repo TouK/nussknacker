@@ -647,8 +647,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
   )
   .dependsOn(
     deploymentManagerApi % Provided,
-    // For testResultsVariableEncoder purpose
-    scenarioCompiler     % Provided,
+    liveDataCollector    % Provided,
     scenarioCompilerFlinkDeps,
     flinkMiniCluster,
     commonUtils          % Provided,
@@ -2025,6 +2024,20 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
   )
   .dependsOn(extensionsApi, testUtils % Test)
 
+lazy val liveDataCollector = (project in file("designer/live-data-collector"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-live-data-collector",
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest" % scalaTestV % Test,
+    ),
+  )
+  .dependsOn(
+    deploymentManagerApi % Provided,
+    // For testResultsVariableEncoder purpose
+    scenarioCompiler     % Provided,
+  )
+
 lazy val prepareDesignerTests     = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")
 lazy val prepareDesignerSlowTests =
   taskKey[Unit]("Prepare all necessary artifacts before running designer module slow tests")
@@ -2319,6 +2332,7 @@ lazy val modules = List[ProjectReference](
   customHttpServiceApi,
   configLoaderApi,
   deploymentManagerApi,
+  liveDataCollector,
   designer,
   sqlComponents,
   schemedKafkaComponentsUtils,

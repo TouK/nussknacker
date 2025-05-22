@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
-import pl.touk.nussknacker.engine.management.jobrunner.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
