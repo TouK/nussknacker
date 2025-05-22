@@ -29,25 +29,25 @@ export const useTestOptions = (): {
     const options: TestingOption[] = useMemo(
         () => [
             {
-                label: t("testingForm.withParameters.label", "Form"),
-                menuLabel: t("testingForm.withParameters.menu.label", "Test with form"),
+                label: t("testingForm.withParameters.label", "Custom input"),
+                menuLabel: t("testingForm.withParameters.menu.label", "Test with custom data"),
                 value: TestType.withParameters,
                 Icon: DryRunTestingIcon,
                 disabled: testCapabilities?.testWithParameters.status !== TestCapabilityStatus.AVAILABLE,
                 disableReason: t(
                     "testingForm.withParameters.disableReason",
-                    "Currently configured scenario sources do not support testing with form",
+                    "Currently configured scenario sources do not support testing with custom input",
                 ),
             },
             {
-                label: t("testingForm.withGeneratedData.label", "Live samples"),
+                label: t("testingForm.withGeneratedData.label", "Live data"),
                 menuLabel: t("testingForm.withGeneratedData.menu.label", "Test with live data"),
                 value: TestType.withGeneratedData,
                 Icon: GenerateAndTestIcon,
                 disabled: testCapabilities?.testWithGeneratedData.status !== TestCapabilityStatus.AVAILABLE,
                 disableReason: t(
                     "testingForm.withGeneratedData.disableReason",
-                    "Currently configured scenario sources do not support testing with live samples",
+                    "Currently configured scenario sources do not support testing with live data",
                 ),
             },
         ],

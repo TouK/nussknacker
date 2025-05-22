@@ -46,7 +46,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     const presets: Preset[] = useMemo(() => {
         const retest = {
-            label: t("testingForm.retest.menu.label", "Retest scenario"),
+            label: t("testingForm.retest.menu.label", "Rerun test with last data"),
             value: RERUN_PREVIOUS,
             isDisabled: !testingState.action,
         };
@@ -124,7 +124,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         <ToolbarButton
             name={
                 preset?.value === RERUN_PREVIOUS
-                    ? t("panels.actions.scenarioTest.button.nameAlt", "Retest")
+                    ? t("panels.actions.scenarioTest.button.nameAlt", "Rerun test")
                     : name || t("panels.actions.scenarioTest.button.name", "Test")
             }
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
