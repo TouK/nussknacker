@@ -15,7 +15,6 @@ export enum TestType {
 
 export type TestingOption = CustomRadioProps & {
     disableReason: string;
-    menuLabel: string;
 };
 
 export const useTestOptions = (): {
@@ -30,7 +29,7 @@ export const useTestOptions = (): {
         () => [
             {
                 label: t("testingForm.withParameters.label", "Custom input"),
-                menuLabel: t("testingForm.withParameters.menu.label", "Test with custom data"),
+                title: t("testingForm.withParameters.title", "The form will be used to specify the input data for the sources."),
                 value: TestType.withParameters,
                 Icon: DryRunTestingIcon,
                 disabled: testCapabilities?.testWithParameters.status !== TestCapabilityStatus.AVAILABLE,
@@ -41,7 +40,10 @@ export const useTestOptions = (): {
             },
             {
                 label: t("testingForm.withGeneratedData.label", "Live data"),
-                menuLabel: t("testingForm.withGeneratedData.menu.label", "Test with live data"),
+                title: t(
+                    "testingForm.withGeneratedData.title",
+                    "A specified number of samples will be retrieved from the underlying sources and used as an input data. The test will fail if no data is available.",
+                ),
                 value: TestType.withGeneratedData,
                 Icon: GenerateAndTestIcon,
                 disabled: testCapabilities?.testWithGeneratedData.status !== TestCapabilityStatus.AVAILABLE,

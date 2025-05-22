@@ -46,16 +46,17 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
 
     const presets: Preset[] = useMemo(() => {
         const retest = {
-            label: t("testingForm.retest.menu.label", "Rerun test with last data"),
+            label: t("testingForm.retest.menu.label", "Rerun last test"),
             value: RERUN_PREVIOUS,
             isDisabled: !testingState.action,
         };
-        const options = testingState.options.map(({ value, menuLabel, disabled }) => ({
-            value,
-            label: menuLabel,
-            isDisabled: disabled,
-        }));
-        return [...options, retest];
+        const firstEnabledOption = testingState.options.find((option) => !option.disabled);
+        const test = {
+            label: t("testingForm.test.menu.label", "Run a new test"),
+            value: firstEnabledOption?.value,
+            isDisabled: !firstEnabledOption,
+        };
+        return [test, retest];
     }, [t, testingState.action, testingState.options]);
 
     const performedTestType = useSelector(getPerformedTestType);
