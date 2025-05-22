@@ -20,7 +20,6 @@ import SelectionContextProvider from "../components/graph/SelectionContextProvid
 import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
-import { TestingButtonProvider } from "../components/toolbars/test/buttons/TestButtonContext";
 import Toolbars from "../components/toolbars/Toolbars";
 import type { RootState } from "../reducers";
 import { getGraph, getProcessVersionId, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
@@ -177,11 +176,9 @@ function Visualization() {
                 <GraphProvider graph={getGraphInstance}>
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
-                        <TestingButtonProvider>
-                            <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
-                                <ScenarioDescription />
-                            </Toolbars>
-                        </TestingButtonProvider>
+                        <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
+                            <ScenarioDescription />
+                        </Toolbars>
                     </SelectionContextProvider>
                 </GraphProvider>
             </GraphPage>
