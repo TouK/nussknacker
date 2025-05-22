@@ -51,7 +51,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, InternalServerError, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
@@ -103,7 +103,6 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
             )
         )
       )
-      // TODO NU-2202: można ograniczyć
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
@@ -227,7 +226,6 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .withSecurity(auth)
   }
 
-  // TODO NU-2202: brakuje niektórych errorów
   private val testingErrorOutput = oneOf[TestingError](
     oneOfVariantFromMatchType[NotFoundTestingError](
       NotFound,

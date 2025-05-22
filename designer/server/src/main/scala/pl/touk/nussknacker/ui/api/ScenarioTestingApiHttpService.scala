@@ -189,7 +189,7 @@ class ScenarioTestingApiHttpService(
                         scenarioWithDetails.isFragment
                       )
                       .left
-                      .map[TestingError](error => TestingError.UnsupportedOperation(error.message))
+                      .map[TestingError](error => BadRequestTestingError.UnsupportedOperation(error.message))
                   )
                   .map(validator.validate(sourceParameters, _)(metaData))
               case ScenarioTestData.WithGeneratedData(numberOfSamples) =>

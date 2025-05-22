@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError.UnsupportedOperation
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.processreport.NodeCount
@@ -271,6 +272,8 @@ object Dtos {
       final case class TooManyCharactersGenerated(length: Int, limit: Int)    extends BadRequestTestingError
       final case class TooManySamplesRequested(maxSamples: Int)               extends BadRequestTestingError
       final case class ScenarioGraphValidationError(errors: ValidationErrors) extends BadRequestTestingError
+      final case class UnsupportedOperation(message: String)                  extends BadRequestTestingError
+      final case class ErrorResult(message: String)                           extends BadRequestTestingError
 
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
@@ -280,6 +283,10 @@ object Dtos {
             TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
           case TooManySamplesRequested(maxSamples) =>
             TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
+          case UnsupportedOperation(message) =>
+            message
+          case ErrorResult(message) =>
+            message
         }
       }
 
@@ -307,18 +314,6 @@ object Dtos {
         )
       }
 
-    }
-
-    final case class UnsupportedOperation(message: String) extends TestingError
-
-    implicit val UnsupportedOperationCodec: Codec[String, UnsupportedOperation, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[UnsupportedOperation](_.message)
-    }
-
-    final case class ErrorResult(message: String) extends TestingError
-
-    implicit val ErrorResultCodec: Codec[String, ErrorResult, CodecFormat.TextPlain] = {
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[ErrorResult](_.message)
     }
 
   }
