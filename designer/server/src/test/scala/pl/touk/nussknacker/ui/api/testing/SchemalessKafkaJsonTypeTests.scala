@@ -146,14 +146,35 @@ class SchemalessKafkaJsonTypeTests
         .basicAuthAllPermUser()
         .jsonBody(
           testDataGenerationRequest(
-            Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(exampleScenario)).toString(),
-            3
+            Encoder[ScenarioGraph].apply(toScenarioGraph(exampleScenario)).toString(),
+            numberOfSamples = 3
           )
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
-        .statusCode(200)
-        .equalsPlainBody("ddd")
+        .statusCode(404)
+        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live sample data available")
+    }
+  }
+
+  "The endpoint for test with live data should" - {
+    "return error if no live data available" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          ScenarioTestValidationRequest(
+            testData = ScenarioTestData.WithGeneratedData(10),
+            scenarioGraph = toScenarioGraph(exampleScenario)
+          ).asJson.toString()
+        )
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live sample data available")
     }
   }
 

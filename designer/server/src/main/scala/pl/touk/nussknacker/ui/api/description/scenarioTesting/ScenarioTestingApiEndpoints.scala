@@ -20,7 +20,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError
-import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.{BadRequestTestingError, NotFoundTestingError}
+import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.{
+  BadRequestTestingError,
+  NotFoundTestingError
+}
 import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.BadRequestTestingError.{
   ScenarioGraphValidationError,
   TooManyCharactersGenerated,
@@ -101,11 +104,8 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
             )
         )
       )
-      .errorOut(
-        oneOf[TestingError](
-          noScenarioErrorOutput
-        )
-      )
+      // TODO NU-2202: można ograniczyć
+      .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
   def scenarioTestValidationEndpoint: SecuredEndpoint[
@@ -169,11 +169,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
             )
         )
       )
-      .errorOut(
-        oneOf[TestingError](
-          noScenarioErrorOutput,
-        )
-      )
+      .errorOut(testingErrorOutput)
       .withSecurity(auth)
   }
 
@@ -192,11 +188,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .in(skipResultsPerNodeQueryParam)
       .in(skipResultsPerTransitionQueryParam)
       .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
-      .errorOut(
-        oneOf[TestingError](
-          noScenarioErrorOutput
-        )
-      )
+      .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
   implicit def skipResultsPerNodeQueryParam: EndpointInput.Query[Option[SkipResultsPerNode]] =
@@ -232,66 +224,67 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
             )
         )
       )
-      .errorOut(
-        oneOf[TestingError](
-          oneOfVariantFromMatchType[NotFoundTestingError](
-            NotFound,
-            plainBody[NotFoundTestingError]
-              .examples(
-                List(
-                  noScenarioExample,
-                  Example.of(
-                    summary = Some("No data was generated"),
-                    value = NoDataGenerated
-                  ),
-                  Example.of(
-                    summary = Some("No sources with test data generation available"),
-                    value = NoSourcesWithTestDataGeneration
-                  )
-                )
-              )
-          ),
-          oneOfVariant[BadRequestTestingError](
-            BadRequest,
-            plainBody[BadRequestTestingError]
-              .examples(
-                List(
-                  Example.of(
-                    summary = Some("Too many characters were generated"),
-                    value = TooManyCharactersGenerated(length = 5000, limit = 2000)
-                  ),
-                  Example.of(
-                    summary = Some("Too many samples requested"),
-                    value = TooManySamplesRequested(maxSamples = 1000)
-                  ),
-                  Example.of(
-                    summary = Some("Scenario validation error"),
-                    value = ScenarioGraphValidationError(
-                      ValidationErrors(
-                        invalidNodes = Map(
-                          "source" -> List(
-                            PrettyValidationErrors.formatErrorMessage(
-                              ExpressionParserCompilationError(
-                                message = "Bad expression",
-                                paramName = None,
-                                originalExpr = "",
-                                details = None
-                              )(NodeId("source"))
-                            )
-                          )
-                        ),
-                        globalErrors = List.empty,
-                        processPropertiesErrors = List.empty
-                      )
-                    )
-                  )
-                )
-              )
-          )
-        )
-      )
+      .errorOut(testingErrorOutput)
       .withSecurity(auth)
   }
+
+  // TODO NU-2202: brakuje niektórych errorów
+  private val testingErrorOutput = oneOf[TestingError](
+    oneOfVariantFromMatchType[NotFoundTestingError](
+      NotFound,
+      plainBody[NotFoundTestingError]
+        .examples(
+          List(
+            noScenarioExample,
+            Example.of(
+              summary = Some("No data was generated"),
+              value = NoDataGenerated
+            ),
+            Example.of(
+              summary = Some("No sources with test data generation available"),
+              value = NoSourcesWithTestDataGeneration
+            )
+          )
+        )
+    ),
+    oneOfVariant[BadRequestTestingError](
+      BadRequest,
+      plainBody[BadRequestTestingError]
+        .examples(
+          List(
+            Example.of(
+              summary = Some("Too many characters were generated"),
+              value = TooManyCharactersGenerated(length = 5000, limit = 2000)
+            ),
+            Example.of(
+              summary = Some("Too many samples requested"),
+              value = TooManySamplesRequested(maxSamples = 1000)
+            ),
+            Example.of(
+              summary = Some("Scenario validation error"),
+              value = ScenarioGraphValidationError(
+                ValidationErrors(
+                  invalidNodes = Map(
+                    "source" -> List(
+                      PrettyValidationErrors.formatErrorMessage(
+                        ExpressionParserCompilationError(
+                          message = "Bad expression",
+                          paramName = None,
+                          originalExpr = "",
+                          details = None
+                        )(NodeId("source"))
+                      )
+                    )
+                  ),
+                  globalErrors = List.empty,
+                  processPropertiesErrors = List.empty
+                )
+              )
+            )
+          )
+        )
+    )
+  )
 
   private val simpleGraphExample: Example[ScenarioGraph] = Example.of(
     ScenarioGraph(

@@ -356,6 +356,7 @@ object ScenarioTestingApiHttpService {
       value = NoScenario(ProcessName("'example scenario'"))
     )
 
+    // TODO
     val noScenarioErrorOutput: EndpointOutput.OneOfVariant[NoScenario] =
       oneOfVariant(
         NotFound,
