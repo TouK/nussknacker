@@ -13,6 +13,7 @@ export enum ToolbarsSide {
     LeftBottom = "bottomLeft",
     CenterTop = "topCenter",
     CenterBottom = "bottomCenter",
+    AboveNodeWindow = "aboveNodeWindow",
 }
 
 type ComponentGroupToolbox = {

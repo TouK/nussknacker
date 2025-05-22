@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.db.timeseries.questdb
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
+import pl.touk.nussknacker.ui.config.Implicits.ConfigExt
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
@@ -30,24 +30,28 @@ object QuestDbConfig {
       queueCapacity: Int
   )
 
-  def parse(config: Config): QuestDbConfig = parseOptionalConfig[Boolean](config, "questDbSettings.enabled") match {
+  def parse(config: Config): QuestDbConfig = config.getAsWithLogging[Boolean]("questDbSettings.enabled") match {
     case Some(false) => Disabled
     case _ =>
       Enabled(
-        instanceId = parseOptionalConfig[String](config, "questDbSettings.instanceId").getOrElse("designer-statistics"),
-        directory = parseOptionalConfig[String](config, "questDbSettings.directory"),
-        tasksExecutionDelay = parseOptionalConfig[FiniteDuration](config, "questDbSettings.tasksExecutionDelay")
+        instanceId = config.getAsWithLogging[String]("questDbSettings.instanceId").getOrElse("designer-statistics"),
+        directory = config.getAsWithLogging[String]("questDbSettings.directory"),
+        tasksExecutionDelay = config
+          .getAsWithLogging[FiniteDuration]("questDbSettings.tasksExecutionDelay")
           .getOrElse(30 seconds),
-        retentionDelay = parseOptionalConfig[FiniteDuration](config, "questDbSettings.retentionDelay")
+        retentionDelay = config
+          .getAsWithLogging[FiniteDuration]("questDbSettings.retentionDelay")
           .getOrElse(24 hours),
-        poolConfig = parseOptionalConfig[QuestDbPoolConfig](config, "questDbSettings.poolConfig").getOrElse(
-          QuestDbPoolConfig(
-            corePoolSize = 2,
-            maxPoolSize = 4,
-            keepAliveTimeInSeconds = 60,
-            queueCapacity = 8
+        poolConfig = config
+          .getAsWithLogging[QuestDbPoolConfig]("questDbSettings.poolConfig")
+          .getOrElse(
+            QuestDbPoolConfig(
+              corePoolSize = 2,
+              maxPoolSize = 4,
+              keepAliveTimeInSeconds = 60,
+              queueCapacity = 8
+            )
           )
-        )
       )
   }
 

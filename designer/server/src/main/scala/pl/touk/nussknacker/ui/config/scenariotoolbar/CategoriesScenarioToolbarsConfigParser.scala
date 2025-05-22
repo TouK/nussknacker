@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object CategoriesScenarioToolbarsConfigParser extends LazyLogging {
 
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   import ScenarioToolbarsConfig._

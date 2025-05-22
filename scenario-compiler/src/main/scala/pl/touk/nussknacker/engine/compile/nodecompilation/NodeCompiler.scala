@@ -74,11 +74,17 @@ class NodeCompiler(
   def missingSinkHandler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): MissingSinkHandler = {
+    if (scenarioIsAllowedToEndWithoutSink) MissingSinkHandler.AllowMissingSinkHandler
+    else MissingSinkHandler.DoNotAllowMissingSinkHandler
+  }
+
+  def scenarioIsAllowedToEndWithoutSink(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ) = {
     import scenarioCompilationDependencies._
     lazy val allowEndingScenarioWithoutSink = definitions.allowEndingScenarioWithoutSink
     lazy val isFragment                     = metaData.typeSpecificData.isFragment
-    if (allowEndingScenarioWithoutSink && !isFragment) MissingSinkHandler.AllowMissingSinkHandler
-    else MissingSinkHandler.DoNotAllowMissingSinkHandler
+    allowEndingScenarioWithoutSink && !isFragment
   }
 
   def withLabelsDictTyper: NodeCompiler = {
@@ -253,7 +259,7 @@ class NodeCompiler(
 
     definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
       case Some(componentDefinition)
-          if ending && !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
+          if ending && !scenarioIsAllowedToEndWithoutSink && !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some(componentDefinition) =>
