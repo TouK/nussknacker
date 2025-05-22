@@ -308,12 +308,6 @@ object Dtos {
         }
       }
 
-      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
-          s"No scenario ${e.scenarioName} found"
-        )
-      }
-
     }
 
   }
