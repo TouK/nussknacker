@@ -1,4 +1,4 @@
-import { get, uniqBy } from "lodash";
+import { get, isEqual, uniqBy } from "lodash";
 import type { PropsWithChildren } from "react";
 import React, { createContext, useCallback, useMemo, useState } from "react";
 
@@ -43,12 +43,15 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
 
     const onAggChange = useCallback(
         (values: AggregateValue[]) => {
-            setAggValues(values);
-            const validValues = values.filter(({ name, agg, expression }) => name && agg && expression);
-            const aggregator = Object.fromEntries(validValues.map(({ name, agg }) => [name, agg]));
-            const aggregateBy = Object.fromEntries(validValues.map(({ name, expression }) => [name, expression]));
-            setProperty(aggregatorPath, serializeAggregate("aggregator", aggregator));
-            setProperty(aggregateByPath, serializeAggregate("aggregateBy", aggregateBy));
+            setAggValues((currentValues) => {
+                if (isEqual(currentValues, values)) return currentValues;
+                const validValues = values.filter(({ name, agg, expression }) => name && agg && expression);
+                const aggregator = Object.fromEntries(validValues.map(({ name, agg }) => [name, agg]));
+                const aggregateBy = Object.fromEntries(validValues.map(({ name, expression }) => [name, expression]));
+                setProperty(aggregatorPath, serializeAggregate("aggregator", aggregator));
+                setProperty(aggregateByPath, serializeAggregate("aggregateBy", aggregateBy));
+                return values;
+            });
         },
         [aggregateByPath, aggregatorPath, serializeAggregate, setProperty],
     );
@@ -73,17 +76,25 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
         return value ? deserializeGroupBy(value) : [];
     });
 
+    const onGroupByChange = useCallback(
+        (values: string[]) => {
+            setGroupByValues((currentValues) => {
+                if (isEqual(currentValues, values)) return currentValues;
+                setProperty(groupByPath, serializeGroupBy(values));
+                return values;
+            });
+        },
+        [groupByPath, serializeGroupBy, setProperty],
+    );
+
     const groupBy = useMemo(
         () => ({
             values: groupByValues,
-            onChange: (values) => {
-                setGroupByValues(values);
-                setProperty(groupByPath, serializeGroupBy(values));
-            },
+            onChange: onGroupByChange,
             isMarked: diffMark(groupByPath),
             fieldErrors: errors.filter(({ fieldName }) => ["groupBy"].includes(fieldName)),
         }),
-        [diffMark, errors, groupByPath, groupByValues, serializeGroupBy, setProperty],
+        [diffMark, errors, groupByPath, groupByValues, onGroupByChange],
     );
 
     return (
