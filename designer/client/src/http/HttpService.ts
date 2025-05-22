@@ -991,7 +991,10 @@ class HttpService {
             return response.data;
         } catch (error) {
             return await Promise.reject(
-                this.#addError(i18next.t("notification.error.failedToSendNodeAction", `Failed to send ${actionName} action`), error),
+                this.#addError(
+                    i18next.t("notification.error.failedToSendNodeAction", "Failed to send {{actionName}} action", { actionName }),
+                    error,
+                ),
             );
         }
     }
