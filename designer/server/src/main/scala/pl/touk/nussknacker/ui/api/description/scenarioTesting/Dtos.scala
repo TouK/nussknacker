@@ -24,13 +24,13 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError.UnsupportedOperation
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.{Codec, CodecFormat, Schema}
 import sttp.tapir.derevo.schema
 
+import scala.collection.compat._
 import scala.collection.immutable
 
 object Dtos {
