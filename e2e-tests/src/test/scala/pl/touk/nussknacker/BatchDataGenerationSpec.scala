@@ -166,26 +166,6 @@ class BatchDataGenerationSpec
            |          }
            |        }
            |        ]
-           |      },
-           |      {
-           |        "sourceNodeId": "end",
-           |        "destinationNodeId": null,
-           |        "results": [
-           |        {
-           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
-           |          "variables": {
-           |            "input": {
-           |              "pretty": {
-           |                "datetime": "2024-01-01T10:00:00",
-           |                "client_id": "client1",
-           |                "amount": 100.10,
-           |                "amountDoubled": 200.20,
-           |                "file.name": "transactions.ndjson"
-           |              }
-           |            }
-           |          }
-           |        }
-           |        ]
            |      }
            |    ],
            |    "invocationResults": {},
@@ -269,26 +249,6 @@ class BatchDataGenerationSpec
            |      {
            |        "sourceNodeId": "sourceId",
            |        "destinationNodeId": "end",
-           |        "results": [
-           |        {
-           |          "id": "E2ETest-SumTransactions-sourceId-0-0",
-           |          "variables": {
-           |            "input": {
-           |              "pretty": {
-           |                "datetime": "2024-07-19T08:56:08.485",
-           |                "client_id": "aClientId",
-           |                "amount": 123123.12,
-           |                "amountDoubled": 246246.24,
-           |                "file.name": "foo.ndjson"
-           |              }
-           |            }
-           |          }
-           |        }
-           |        ]
-           |      },
-           |      {
-           |        "sourceNodeId": "end",
-           |        "destinationNodeId": null,
            |        "results": [
            |        {
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
