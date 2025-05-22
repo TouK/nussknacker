@@ -29,7 +29,7 @@ export const useTestOptions = (): {
         () => [
             {
                 label: t("testingForm.withParameters.label", "Custom input"),
-                title: t("testingForm.withParameters.title", "The form will be used to specify the input data for the sources."),
+                title: t("testingForm.withParameters.title", "Enter input data for the sources manually."),
                 value: TestType.withParameters,
                 Icon: DryRunTestingIcon,
                 disabled: testCapabilities?.testWithParameters.status !== TestCapabilityStatus.AVAILABLE,
