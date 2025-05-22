@@ -183,10 +183,10 @@ private class InterpreterInternal[F[_]: Monad](
             interpretOptionalNext(node, defaultNext, accCtx)
         }
       case Sink(id, _, true) =>
-        interpretationResult(node, EndReference(id), ctx)
+        sinkInterpretationResult(EndReference(id), ctx)
       case Sink(id, ref, false) =>
         listeners.foreach(_.endEncountered(id, ref, ctx, jobData.metaData))
-        interpretationResult(node, EndReference(id), ctx)
+        sinkInterpretationResult(EndReference(id), ctx)
       case BranchEnd(e) =>
         Monad[F].pure(List(Left(InterpretationResult(e.joinReference, ctx))))
       case CustomNode(_, _, next) =>
@@ -201,6 +201,13 @@ private class InterpreterInternal[F[_]: Monad](
         import cats.implicits._
         nexts.map(interpretNext(node, _, ctx)).sequence.map(_.flatten)
     }
+  }
+
+  private def sinkInterpretationResult[FF[_]: Applicative](
+      reference: PartReference,
+      ctx: Context
+  ): FF[List[Result[InterpretationResult]]] = {
+    Applicative[FF].pure(List(Left(InterpretationResult(reference, ctx))))
   }
 
   private def interpretationResult[FF[_]: Applicative](
