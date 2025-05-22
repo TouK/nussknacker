@@ -15,7 +15,6 @@ export enum TestType {
 
 export type TestingOption = CustomRadioProps & {
     disableReason: string;
-    menuLabel: string;
 };
 
 export const useTestOptions = (): {
@@ -29,25 +28,28 @@ export const useTestOptions = (): {
     const options: TestingOption[] = useMemo(
         () => [
             {
-                label: t("testingForm.withParameters.label", "Form"),
-                menuLabel: t("testingForm.withParameters.menu.label", "Test with form"),
+                label: t("testingForm.withParameters.label", "Custom input"),
+                title: t("testingForm.withParameters.title", "Enter input data for the sources manually."),
                 value: TestType.withParameters,
                 Icon: DryRunTestingIcon,
                 disabled: testCapabilities?.testWithParameters.status !== TestCapabilityStatus.AVAILABLE,
                 disableReason: t(
                     "testingForm.withParameters.disableReason",
-                    "Currently configured scenario sources do not support testing with form",
+                    "Currently configured scenario sources do not support testing with custom input",
                 ),
             },
             {
-                label: t("testingForm.withGeneratedData.label", "Live samples"),
-                menuLabel: t("testingForm.withGeneratedData.menu.label", "Test with live data"),
+                label: t("testingForm.withGeneratedData.label", "Live data"),
+                title: t(
+                    "testingForm.withGeneratedData.title",
+                    "A specified number of samples will be retrieved from the underlying sources and used as an input data. The test will fail if no data is available.",
+                ),
                 value: TestType.withGeneratedData,
                 Icon: GenerateAndTestIcon,
                 disabled: testCapabilities?.testWithGeneratedData.status !== TestCapabilityStatus.AVAILABLE,
                 disableReason: t(
                     "testingForm.withGeneratedData.disableReason",
-                    "Currently configured scenario sources do not support testing with live samples",
+                    "Currently configured scenario sources do not support testing with live data",
                 ),
             },
         ],

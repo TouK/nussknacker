@@ -37,7 +37,7 @@ object TestingApiErrorMessages {
       s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
 
     val couldNotProvideTestDataSample =
-      "Could not provide a sample of test data. Possible cause: no live sample data available"
+      "Could not provide a sample of test data. Possible cause: no live data available"
 
     val noSourcesWithTestDataGeneration = "No sources with test data generation available"
 

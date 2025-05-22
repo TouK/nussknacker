@@ -2325,7 +2325,7 @@ paths:
                 Example1:
                   summary: No test data generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4898,7 +4898,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
