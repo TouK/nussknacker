@@ -32,7 +32,7 @@ const ExpandButton = styled(Button)(({ theme }) => {
 
 export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapperProps>(function ButtonMenu(
     { options = [], selected, onChange, className, buttonProps },
-    ref
+    ref,
 ) {
     const [anchorPosition, setAnchorPosition] = React.useState<null | PopoverPosition>(null);
     const { variant } = useContext(ToolbarButtonsContext);
@@ -58,24 +58,31 @@ export const ButtonMenu = forwardRef<HTMLButtonElement, ToolbarButtonMenuWrapper
                     },
                 },
                 ".toolbarButton-Root": {
-                    paddingRight: ButtonsVariant.horizontal === variant ? 3.5 : ButtonsVariant.xs === variant ? 2.5 : null,
+                    paddingRight: [ButtonsVariant.menu, ButtonsVariant.horizontal].includes(variant)
+                        ? 3.5
+                        : ButtonsVariant.xs === variant
+                        ? 2.5
+                        : null,
                 },
             }}
         >
             <ExpandButton
                 sx={{
                     height: ButtonsVariant.small === variant ? 20 : ButtonsVariant.label !== variant ? "auto" : null,
-                    width:
-                        ButtonsVariant.horizontal === variant
-                            ? 26
-                            : [ButtonsVariant.small, ButtonsVariant.xs].includes(variant)
-                            ? 20
-                            : null,
+                    width: [ButtonsVariant.menu, ButtonsVariant.horizontal].includes(variant)
+                        ? 26
+                        : [ButtonsVariant.small, ButtonsVariant.xs].includes(variant)
+                        ? 20
+                        : null,
                     justifyContent: "center",
                     zoom: variant === ButtonsVariant.xs ? 0.75 : null,
                     borderTopLeftRadius: 0,
-                    borderBottomLeftRadius: [ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant) ? 0 : null,
-                    borderBottomRightRadius: [ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant) ? null : 0,
+                    borderBottomLeftRadius: [ButtonsVariant.menu, ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant)
+                        ? 0
+                        : null,
+                    borderBottomRightRadius: [ButtonsVariant.menu, ButtonsVariant.horizontal, ButtonsVariant.xs].includes(variant)
+                        ? null
+                        : 0,
                 }}
                 className={"toolbarButton-MenuExpand"}
                 disabled={buttonProps.disabled}

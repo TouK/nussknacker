@@ -101,6 +101,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testType: action.testType,
             };
         }
+        case "SET_PERFORMED_TEST_TYPE": {
+            return {
+                ...state,
+                performedTestType: action.performedTestType,
+            };
+        }
         case "DISPLAY_PROCESS": {
             const scenario = addStickyNotesToNodes(action.scenario);
             return {
@@ -140,6 +146,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testResultsLoading: false,
+                performedTestType: "rerunPrevious",
             };
         }
         case "LOADING_FAILED": {

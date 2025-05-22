@@ -17,7 +17,7 @@ export const MoreScenarioDetailsButton = ({ scenario, processState }: Props) => 
         <Typography
             component={Link}
             variant={"caption"}
-            sx={(theme) => ({ cursor: "pointer", color: theme.palette.primary.main, py: 0.5, textDecoration: "none" })}
+            sx={(theme) => ({ cursor: "pointer", color: theme.palette.primary.main, textDecoration: "none" })}
             onClick={() =>
                 open({
                     kind: WindowKind.scenarioDetails,

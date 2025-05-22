@@ -12,7 +12,7 @@ const ToolbarButtonComponent = forwardRef<HTMLButtonElement, ToolbarButtonProps>
     if ("isLoading" in props) {
         const { isLoading, loadingProgress, loadingVariant, children, disabled, ...passProps } = props;
         return (
-            <ToolbarButtonComponent {...passProps} ref={ref} disabled={disabled || isLoading}>
+            <ToolbarButtonComponent {...passProps} ref={ref} disabled={disabled}>
                 <ButtonProgress enabled={isLoading} variant={loadingVariant} value={loadingProgress} />
                 {children}
             </ToolbarButtonComponent>
