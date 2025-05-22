@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.{
@@ -57,17 +57,21 @@ object UniversalKafkaSinkFactory {
     )
   )
 
-  private def convertGenericRecordParam(parameters: List[Parameter]): List[Parameter] =
-    parameters.map { parameter =>
-      parameter.typ match {
-        case typed @ TypedObjectTypingResult(_, TypedClass(`genericRecordClass`, Nil), _) =>
-          parameter.copy(typ =
-            typed
-              .copy(runtimeObjType = Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
+  private def convertGenericRecordParam(parameters: List[Parameter]): List[Parameter] = {
+    def convertTyping(fieldTyping: TypingResult): TypingResult = fieldTyping match {
+      case typed @ TypedObjectTypingResult(fields, TypedClass(`genericRecordClass`, Nil), _) =>
+        typed
+          .copy(
+            fields = fields.map { case (id, typing) => id -> convertTyping(typing) },
+            runtimeObjType = Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown))
           )
-        case _ => parameter
-      }
+      case typing => typing
     }
+
+    parameters.map { parameter =>
+      parameter.copy(typ = convertTyping(parameter.typ))
+    }
+  }
 
   case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], schemaBasedParameter: SchemaBasedParameter)
 }

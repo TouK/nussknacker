@@ -20,7 +20,20 @@ object NestedRecord extends TestSchemaWithRecord {
       |              "name": "id",
       |              "type": [
       |                "null",
-      |                "string"
+      |                {
+      |                  "type": "record",
+      |                  "name": "messageSimple2",
+      |                  "fields": [
+      |                    {
+      |                      "name": "id",
+      |                      "type": [
+      |                        "null",
+      |                        "string"
+      |                      ],
+      |                      "default": null
+      |                    }
+      |                  ]
+      |                }
       |              ],
       |              "default": null
       |            }
