@@ -18,21 +18,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors
 }
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.Examples.{noScenarioErrorOutput, noScenarioExample}
-import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError
-import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.{
-  BadRequestTestingError,
-  NotFoundTestingError
-}
-import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.BadRequestTestingError.{
-  ScenarioGraphValidationError,
-  TooManyCharactersGenerated,
-  TooManySamplesRequested
-}
-import pl.touk.nussknacker.ui.api.ScenarioTestingApiHttpService.TestingError.NotFoundTestingError.{
-  NoDataGenerated,
-  NoSourcesWithTestDataGeneration
-}
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   ParametersValidationResultDto,
@@ -50,6 +35,20 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   SkipResultsPerTransition
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.PerformTestRequest._
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.{
+  BadRequestTestingError,
+  NotFoundTestingError
+}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError.{
+  ScenarioGraphValidationError,
+  TooManyCharactersGenerated,
+  TooManySamplesRequested
+}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError.{
+  NoDataGenerated,
+  NoScenario,
+  NoSourcesWithTestDataGeneration
+}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
@@ -235,7 +234,10 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       plainBody[NotFoundTestingError]
         .examples(
           List(
-            noScenarioExample,
+            Example.of(
+              summary = Some("No scenario {scenarioName} found"),
+              value = NoScenario(ProcessName("'example scenario'"))
+            ),
             Example.of(
               summary = Some("No data was generated"),
               value = NoDataGenerated
