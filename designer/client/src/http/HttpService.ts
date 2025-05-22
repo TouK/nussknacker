@@ -106,6 +106,7 @@ export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 export type ScenarioSource = {
     type: ScenarioSourceType;
     scenarioGraph?: ScenarioGraph;
+    scenarioLabels?: string[];
 };
 
 export enum ScenarioSourceType {

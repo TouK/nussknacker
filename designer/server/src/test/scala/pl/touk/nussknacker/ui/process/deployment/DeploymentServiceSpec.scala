@@ -1310,7 +1310,7 @@ class DeploymentServiceSpec
       val scenarioGraph = parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson).rightValue
 
       val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
-        deployExistingScenario(scenario, FromGraph(scenarioGraph))
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None))
       }
       val lastFinishedAction = actionRepository.getFinishedProcessActions(scenario.id, None).dbioActionValues.head
 
@@ -1500,25 +1500,6 @@ class DeploymentServiceSpec
       .saveNewProcess(action)
       .map(_.value.processId)
       .map(ProcessIdWithName(_, ProcessName(scenarioName)))
-      .dbioActionValues
-  }
-
-  private def updateScenario(scenario: ProcessIdWithName): Option[VersionId] = {
-    val canonicalProcess = ScenarioBuilder
-      .streaming(scenario.name.value)
-      .source("source", ProcessTestData.existingSourceFactory)
-      .buildSimpleVariable("newVariableAdded", "newVar", "updated process with new variable".spelTemplate)
-      .emptySink("sink", ProcessTestData.existingSinkFactory)
-    val action = UpdateProcessAction(
-      processId = scenario.id,
-      canonicalProcess = canonicalProcess,
-      comment = Comment.from("Update Comment"),
-      labels = Nil,
-      increaseVersionWhenJsonNotChanged = true
-    )
-    writeProcessRepository
-      .updateProcess(action)
-      .map(_.newVersion)
       .dbioActionValues
   }
 

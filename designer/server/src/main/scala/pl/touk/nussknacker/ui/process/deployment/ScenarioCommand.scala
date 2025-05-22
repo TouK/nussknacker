@@ -33,7 +33,8 @@ case class RunDeploymentCommand(
 case class RunRedeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
-    nodesDeploymentData: NodesDeploymentData
+    nodesDeploymentData: NodesDeploymentData,
+    scenarioSource: ScenarioSource,
 ) extends CommonDeploymentCommand
     with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
 
@@ -41,6 +42,7 @@ trait CommonDeploymentCommand {
   val commonData: CommonCommandData
   val stateRestoringStrategy: StateRestoringStrategy
   val nodesDeploymentData: NodesDeploymentData
+  val scenarioSource: ScenarioSource
 }
 
 case class RunOffScheduleCommand(

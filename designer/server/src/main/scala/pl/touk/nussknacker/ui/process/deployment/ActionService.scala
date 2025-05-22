@@ -80,12 +80,13 @@ class ActionService(
   ): ActionProcessor[LatestScenarioDetailsShape] =
     new ActionProcessor(extractVersionOnWhichActionIsDoneFromLatestScenarioDetails)
 
-  def actionProcessorForScenarioGraph[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
+  def actionProcessorForNotSavedScenario[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
       processIdWithName: ProcessIdWithName,
-      scenarioGraph: ScenarioGraph
+      scenarioGraph: ScenarioGraph,
+      scenarioLabels: Option[List[String]],
   )(implicit loggedUser: LoggedUser): Future[ActionProcessor[LatestScenarioDetailsShape]] =
     processService
-      .updateProcess(processIdWithName, UpdateScenarioCommand(scenarioGraph, None, None))
+      .updateProcess(processIdWithName, UpdateScenarioCommand(scenarioGraph, None, scenarioLabels))
       .map(_ => actionProcessorForLatestVersion)
 
   private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType) = {

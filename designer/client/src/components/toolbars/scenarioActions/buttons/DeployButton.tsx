@@ -11,6 +11,7 @@ import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
 import type { NodesDeploymentData, ScenarioSource} from "../../../../http/HttpService";
+import type { NodesDeploymentData, ScenarioSource } from "../../../../http/HttpService";
 import HttpService, { ScenarioSourceType } from "../../../../http/HttpService";
 import {
     getProcessName,
@@ -87,7 +88,6 @@ export default function DeployButton(props: ToolbarButtonProps) {
         HttpService.deploy(name, comment, nodesDeploymentData, scenarioSource).finally(() => {
             const isSavedWithDeploy = scenarioSource?.type === ScenarioSourceType.FROM_GRAPH;
             if (isSavedWithDeploy) {
-                dispatch(UndoActionCreators.clearHistory());
                 dispatch(displayCurrentProcessVersion(processName));
             } else {
                 dispatch(loadProcessState(name, versionId));

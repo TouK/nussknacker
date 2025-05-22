@@ -93,15 +93,22 @@ class DeploymentService(
     val actionProcessor = command.scenarioSource match {
       case LatestVersion =>
         Future.successful(actionService.actionProcessorForLatestVersion[CanonicalProcess])
-      case FromGraph(scenarioGraph) =>
+      case FromGraph(scenarioGraph, labels) =>
         actionService
-          .actionProcessorForScenarioGraph[CanonicalProcess](command.commonData.processIdWithName, scenarioGraph)
+          .actionProcessorForNotSavedScenario[CanonicalProcess](
+            command.commonData.processIdWithName,
+            scenarioGraph,
+            labels
+          )
     }
     actionProcessor.flatMap { processor =>
       processor
-        .processActionWithCustomFinalization[RunDeploymentCommand, Future[Option[ExternalDeploymentId]]](
+        .processActionWithCustomFinalization[T, Future[Option[ExternalDeploymentId]]](
           command = command,
-          actionName = ScenarioActionName.Deploy
+          actionName = command match {
+            case _: RunDeploymentCommand   => ScenarioActionName.Deploy
+            case _: RunRedeploymentCommand => ScenarioActionName.Redeploy
+          }
         ) { case (ctx, actionFinalizer) =>
           implicit class FinalizerExt[T](val future: Future[T]) {
             def removeInvalidActionOnFailure(): Future[T] = {

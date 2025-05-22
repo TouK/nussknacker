@@ -5,9 +5,9 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { NodesDeploymentData, ScenarioSource} from "../../http/HttpService";
+import type { NodesDeploymentData, ScenarioSource } from "../../http/HttpService";
 import { ScenarioSourceType } from "../../http/HttpService";
-import { getGraph, getProcessName, getProcessVersionId, isSaveDisabled } from "../../reducers/selectors/graph";
+import { getGraph, getProcessName, getProcessVersionId, getScenarioLabels, isSaveDisabled } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import type { WindowKind } from "../../windowManager";
 import { PromptContent } from "../../windowManager";
@@ -44,6 +44,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const unsavedScenarioSource: ScenarioSource = {
         type: ScenarioSourceType.FROM_GRAPH,
         scenarioGraph: useSelector(getGraph)?.scenario?.scenarioGraph,
+        scenarioLabels: useSelector(getScenarioLabels),
     };
     const savedScenarioSource: ScenarioSource = { type: ScenarioSourceType.LATEST_VERSION };
     const scenarioSource: ScenarioSource = useSelector(isSaveDisabled) ? savedScenarioSource : unsavedScenarioSource;

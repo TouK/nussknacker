@@ -188,7 +188,8 @@ class ManagementResources(
                       RunRedeploymentCommand(
                         commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
                         nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
-                        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+                        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+                        scenarioSource = LatestVersion
                       )
                     )
                     .map(_ => ())

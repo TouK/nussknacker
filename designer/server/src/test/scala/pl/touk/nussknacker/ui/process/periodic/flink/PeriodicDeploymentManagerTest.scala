@@ -152,7 +152,8 @@ class PeriodicDeploymentManagerTest
         RunRedeploymentCommand(
           CommonCommandData(ProcessIdWithName(id, processName), None, user),
           RestoreStateFromReplacedJobSavepoint,
-          NodesDeploymentData.empty
+          NodesDeploymentData.empty,
+          LatestVersion
         )
       )
       .futureValue
