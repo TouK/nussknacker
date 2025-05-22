@@ -63,7 +63,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
   test("should validate nested record") {
     val result = validate(
       sinkKeyParamName.value            -> "".spel,
-      "mapSimple"                       -> """{id:"10"}""".spel,
+      "mapSimple"                       -> """{id:{id:"10"}}""".spel,
       sinkRawEditorParamName.value      -> "false".spel,
       sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
       topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'".spel,
