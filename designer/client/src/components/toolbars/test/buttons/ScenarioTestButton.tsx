@@ -16,11 +16,11 @@ import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
-import { useTestingState } from "../../../modals/Testing/TestingContext";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import { useTestingButtonContext } from "./TestButtonContext";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -42,7 +42,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const { t } = useTranslation();
     const { open } = useWindows();
 
-    const testingState = useTestingState();
+    const testingState = useTestingButtonContext();
 
     const presets: Preset[] = useMemo(() => {
         const retest = {

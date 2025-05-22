@@ -7,7 +7,7 @@ import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 
-import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
+import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import ProcessUtils from "../common/ProcessUtils";
 import { useDecodedParams } from "../common/routerUtils";
