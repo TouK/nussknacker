@@ -13,7 +13,13 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{
+  ScenarioTestJsonRecord,
+  SimpleScenarioTestData,
+  TestData,
+  TestRecord,
+  TestRecordParser
+}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{
@@ -276,7 +282,7 @@ class ModelDataTestInfoProviderSpec
     val scenarioTestData =
       testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithMultipleSources()).rightValue
 
-    scenarioTestData.testRecords shouldBe List(
+    scenarioTestData.asInstanceOf[SimpleScenarioTestData].testRecords shouldBe List(
       ScenarioTestJsonRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
       ScenarioTestJsonRecord("source2", Json.fromString("record 2")),
     )
@@ -293,7 +299,7 @@ class ModelDataTestInfoProviderSpec
     val scenarioTestData =
       testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithSingleSource()).rightValue
 
-    scenarioTestData.testRecords shouldBe List(
+    scenarioTestData.asInstanceOf[SimpleScenarioTestData].testRecords shouldBe List(
       ScenarioTestJsonRecord("source1", Json.fromString("record 1")),
       ScenarioTestJsonRecord("source1", Json.fromString("record 2")),
     )

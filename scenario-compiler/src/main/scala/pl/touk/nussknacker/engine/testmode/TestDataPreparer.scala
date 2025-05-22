@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, ScenarioTestParametersRecord, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   EvaluableLazyParameterCreator,
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph.TestSourceInput
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -107,6 +109,26 @@ class TestDataPreparer(
       .map { typedExpression =>
         val param = CompiledParameter(typedExpression, parameter)
         evaluator.evaluateParameter(param, dumbContext)(nodeId, jobData).value
+      }
+  }
+
+  def prepareRecordsForTestCase(testCaseSourceInputs: List[TestSourceInput])(implicit nodeId: NodeId): List[Object] = {
+    val evaluationResults = testCaseSourceInputs.map { record =>
+      evaluateExpression(record.expression)
+    }
+    evaluationResults.sequence match {
+      case Valid(evaluatedParams) => evaluatedParams
+      case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
+    }
+  }
+
+  private def evaluateExpression(expression: Expression)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, Object] = {
+    expressionCompiler
+      .compile(expression, None, validationContext, Unknown)(nodeId) // todo: change Unknown to sth better
+      .map { typedExpression =>
+        evaluator.evaluate[Object](typedExpression.expression, "testInput", nodeId.id, dumbContext)(jobData).value
       }
   }
 

@@ -12,7 +12,12 @@ import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{
+  ScenarioTestData,
+  ScenarioTestJsonRecord,
+  SimpleScenarioTestData,
+  TestCaseScenarioTestData
+}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
@@ -20,7 +25,9 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClu
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.schemedkafka.SchemedKafkaScenarioTestingSpec._
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverter
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
+import pl.touk.nussknacker.engine.graph.{Test, TestSourceInput}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
@@ -141,7 +148,7 @@ class SchemedKafkaScenarioTestingSpec
         _.add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa")))
       )
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
-    val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson) :: Nil)
+    val scenarioTestData = SimpleScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson) :: Nil)
 
     val results = testRunner.runTests(process, scenarioTestData).futureValue
 
@@ -221,6 +228,69 @@ class SchemedKafkaScenarioTestingSpec
     )
 
     results.exceptions shouldBe empty
+  }
+
+  test("Should run test case") { // todo: to be moved
+    val topic             = UnspecializedTopicName("address")
+    val expectedTimestamp = System.currentTimeMillis()
+    val inputMeta = InputMeta(
+      key = null,
+      topic = topic.name,
+      partition = 0,
+      offset = 1,
+      timestamp = expectedTimestamp,
+      timestampType = TimestampType.CREATE_TIME,
+      headers = Collections.emptyMap(),
+      leaderEpoch = 0
+    )
+    val inputMetaAsJson = Json.fromFields(
+      Map(
+        "key"           -> Json.Null,
+        "topic"         -> Json.fromString(topic.name),
+        "partition"     -> Json.fromInt(0),
+        "offset"        -> Json.fromInt(1),
+        "timestamp"     -> Json.fromLong(expectedTimestamp),
+        "timestampType" -> Json.fromString("CreateTime"),
+        "headers"       -> Json.fromFields(List.empty),
+        "leaderEpoch"   -> Json.fromInt(0)
+      )
+    )
+    val id: Int = registerSchema(topic, Address.schema)
+
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source(
+        "start",
+        "kafka",
+        topicParamName.value         -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
+      )
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
+
+    val scenarioTestData = TestCaseScenarioTestData(
+      Test(
+        "someTest",
+        Map(
+          "start" -> List(
+            TestSourceInput(
+              Expression(
+                JsonTemplate,
+                s"""{"keySchemaId": null, "valueSchemaId": $id, "consumerRecord": {"value": {"city": "Lublin", "street": "Lipowa"}}}"""
+              )
+            )
+          )
+        ),
+        Map.empty,
+        Map.empty
+      )
+    )
+
+    val results = testRunner.runTests(process, scenarioTestData).futureValue
+
+    val testResultVars = results.nodeResults("end").head.variables
+    testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
+    testResultVars("inputMeta").hcursor.downField("pretty").focus.value shouldBe inputMetaAsJson
   }
 
   private def registerSchema(topic: UnspecializedTopicName, schema: Schema) = {

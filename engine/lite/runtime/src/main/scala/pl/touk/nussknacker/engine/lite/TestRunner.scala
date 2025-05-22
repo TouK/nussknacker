@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process.Source
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, SimpleScenarioTestData, TestCaseScenarioTestData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
@@ -81,17 +81,23 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
       )
 
       val testDataPreparer = TestDataPreparer(modelData, jobData)
-      val inputs = ScenarioInputBatch(
-        scenarioTestData.testRecords
-          .groupBy(_.sourceId)
-          .toList
-          .flatMap { case (nodeId, scenarioTestRecords) =>
-            val sourceId                     = SourceId(nodeId.id)
-            val source                       = getSourceById(sourceId)
-            val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
-            preparedRecords.map(record => sourceId -> record)
-          }
-      )
+
+      val inputs = scenarioTestData match {
+        case SimpleScenarioTestData(testRecords) =>
+          val tuples: List[(SourceId, Input)] = testRecords
+            .groupBy(_.sourceId)
+            .toList
+            .flatMap { case (nodeId, scenarioTestRecords) =>
+              val sourceId                     = SourceId(nodeId.id)
+              val source                       = getSourceById(sourceId)
+              val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
+              preparedRecords.map(record => sourceId -> record)
+            }
+          ScenarioInputBatch(
+            tuples
+          )
+        case TestCaseScenarioTestData(test) => ???
+      }
 
       try {
         scenarioInterpreter.open(testContext)

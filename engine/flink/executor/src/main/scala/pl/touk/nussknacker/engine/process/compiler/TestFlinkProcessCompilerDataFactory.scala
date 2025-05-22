@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, SimpleScenarioTestData, TestCaseScenarioTestData}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreator
@@ -159,8 +159,12 @@ class StubbedSourcePreparer(
   }
 
   private def collectSamples(originalSource: Source, nodeId: NodeId): List[Object] = {
-    val testRecordsForSource = scenarioTestData.testRecords.filter(_.sourceId == nodeId)
-    testDataPreparer.prepareRecordsForTest(originalSource, testRecordsForSource)
+    scenarioTestData match {
+      case SimpleScenarioTestData(testRecords) =>
+        testDataPreparer.prepareRecordsForTest(originalSource, testRecords.filter(_.sourceId == nodeId))
+      case TestCaseScenarioTestData(test) =>
+        testDataPreparer.prepareRecordsForTestCase(test.inputs.getOrElse(nodeId.id, List.empty))(nodeId)
+    }
   }
 
 }

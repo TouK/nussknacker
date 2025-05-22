@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor
 }
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, SimpleScenarioTestData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -105,7 +105,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       def runTests = testRunner
         .runTests(
           process,
-          ScenarioTestData(
+          SimpleScenarioTestData(
             List(
               ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
             )
@@ -136,7 +136,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(
           process,
-          ScenarioTestData(
+          SimpleScenarioTestData(
             List(
               ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")),
               ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
@@ -200,7 +200,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         val results = testRunner
           .runTests(
             process,
-            ScenarioTestData(
+            SimpleScenarioTestData(
               List(
                 ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|11|2|3|4|5|6"))
               )
@@ -237,7 +237,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(
           process,
-          ScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
+          SimpleScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
         )
         .futureValue
 
@@ -272,7 +272,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(
           process,
-          ScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
+          SimpleScenarioTestData(List(createTestRecord(), createTestRecord(value1 = 11))),
         )
         .futureValue
 
@@ -327,7 +327,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter)
           .runTests(
             process,
-            ScenarioTestData(createTestRecord() :: List.fill(4)(createTestRecord(value1 = 11))),
+            SimpleScenarioTestData(createTestRecord() :: List.fill(4)(createTestRecord(value1 = 11))),
           )
           .futureValue
 
@@ -348,7 +348,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(
           process,
-          ScenarioTestData(
+          SimpleScenarioTestData(
             List(
               createTestRecord(id = "0", value1 = 1),
               createTestRecord(id = "1", value1 = 0),
@@ -408,7 +408,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         enrichDefaultConfig = RecordingExceptionConsumerProvider.configWithProvider(_, exceptionConsumerId)
       ).runTests(
         process,
-        scenarioTestData = ScenarioTestData(
+        scenarioTestData = SimpleScenarioTestData(
           List(
             createTestRecord(id = "0", value1 = 1),
             createTestRecord(id = "1", value1 = 0),
@@ -439,7 +439,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       def runTests = runner
         .runTests(
           process,
-          ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
+          SimpleScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
         )
         .futureValue
 
@@ -454,7 +454,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .streaming(scenarioName)
           .source(sourceNodeId, "jsonInput")
           .emptySink("out", "valueMonitor", "Value" -> "#input".spel)
-      val testData = ScenarioTestData(
+      val testData = SimpleScenarioTestData(
         List(
           ScenarioTestJsonRecord(
             sourceNodeId,
@@ -500,7 +500,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         .streaming(scenarioName)
         .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}".spel)
         .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo".spel)
-      val testData = ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("abc"))))
+      val testData = SimpleScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("abc"))))
 
       val results =
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
@@ -527,7 +527,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter)
           .runTests(
             process,
-            ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
+            SimpleScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
           )
           .futureValue
 
@@ -550,7 +550,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(
           process,
-          ScenarioTestData(
+          SimpleScenarioTestData(
             List(
               recordWithSeconds(1 second),
               recordWithSeconds(2 second),
@@ -582,7 +582,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(
           process,
-          ScenarioTestData(
+          SimpleScenarioTestData(
             ScenarioTestJsonRecord(
               sourceNodeId,
               Json.obj("field1" -> Json.fromString("abc"), "field2" -> Json.fromString("def"))
@@ -615,7 +615,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter)
           .runTests(
             process,
-            ScenarioTestData(List(createTestRecord(value1 = valueToReturn)))
+            SimpleScenarioTestData(List(createTestRecord(value1 = valueToReturn)))
           )
           .futureValue
 
@@ -642,7 +642,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val results =
         prepareTestRunner(useIOMonadInInterpreter)
-          .runTests(process, ScenarioTestData(List(recordTrue, recordFalse)))
+          .runTests(process, SimpleScenarioTestData(List(recordTrue, recordFalse)))
           .futureValue
 
       val invocationResults = results.invocationResults
@@ -683,7 +683,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val results =
         prepareTestRunner(useIOMonadInInterpreter)
-          .runTests(process, ScenarioTestData(List(recA, recB, recC)))
+          .runTests(process, SimpleScenarioTestData(List(recA, recB, recC)))
           .futureValue
 
       results.invocationResults("proc2").map(_.contextId) should contain only (
@@ -727,7 +727,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             )
             .processorEnd("proc2", "logService", "all" -> "#joinInput.id".spel)
         )
-      val scenarioTestData = ScenarioTestData(
+      val scenarioTestData = SimpleScenarioTestData(
         List(
           createTestRecord(sourceId = "source1", id = "a"),
           createTestRecord(sourceId = "source2", id = "a"),
@@ -801,7 +801,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter)
           .runTests(
             process,
-            ScenarioTestData(List(createTestRecord(sourceId = "start")))
+            SimpleScenarioTestData(List(createTestRecord(sourceId = "start")))
           )
           .futureValue
 
@@ -827,7 +827,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter)
           .runTests(
             process,
-            ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
+            SimpleScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))
           )
           .futureValue
       }.getCause
@@ -868,7 +868,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             )
           )
         )
-      ).runTests(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))).futureValue
+      ).runTests(process, SimpleScenarioTestData(List(createTestRecord(id = "2", value1 = 2)))).futureValue
       results.exceptions should have length 0
     }
 
@@ -884,7 +884,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results = prepareTestRunner(useIOMonadInInterpreter)
         .runTests(
           resolved.valueOr { _ => throw new IllegalArgumentException("Won't happen") },
-          ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")))),
+          SimpleScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")))),
         )
         .futureValue
       results.exceptions.length shouldBe 0

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.test
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.graph.Test
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 sealed trait ScenarioTestRecord {
@@ -21,15 +22,19 @@ object ScenarioTestJsonRecord {
 
 }
 
+sealed trait ScenarioTestData
+
 /**
  * Holds test records for a scenario. The difference to [[TestData]] is that records are assigned to the individual sources in the scenario.
  */
-case class ScenarioTestData(testRecords: List[ScenarioTestRecord])
+//todo: merge together
+case class SimpleScenarioTestData(testRecords: List[ScenarioTestRecord]) extends ScenarioTestData
+case class TestCaseScenarioTestData(test: Test)                          extends ScenarioTestData
 
 object ScenarioTestData {
 
   def apply(sourceId: String, parameterExpressions: Map[ParameterName, Expression]): ScenarioTestData = {
-    ScenarioTestData(List(ScenarioTestParametersRecord(NodeId(sourceId), parameterExpressions)))
+    SimpleScenarioTestData(List(ScenarioTestParametersRecord(NodeId(sourceId), parameterExpressions)))
   }
 
 }

@@ -11,7 +11,7 @@ import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, SimpleScenarioTestData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
@@ -119,7 +119,7 @@ class KafkaScenarioTestingSpec
       )
 
     val results = testRunner
-      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
+      .runTests(process, SimpleScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
       .futureValue
 
     val testResultVars = results.nodeResults("end").head.variables
@@ -150,7 +150,7 @@ class KafkaScenarioTestingSpec
       )
 
     val results = testRunner
-      .runTests(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
+      .runTests(process, SimpleScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
       .futureValue
 
     results.nodeResults shouldBe Symbol("nonEmpty")

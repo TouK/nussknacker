@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, SimpleScenarioTestData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
@@ -49,7 +49,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .processor("eagerProcessor", "collectingEager", "static" -> "'s'".spel, "dynamic" -> "#input.field1()".spel)
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1".spel)
 
-    val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b"), createTestRecord("c", "d")))
+    val scenarioTestData = SimpleScenarioTestData(List(createTestRecord("a", "b"), createTestRecord("c", "d")))
 
     val results = runTest(process, scenarioTestData)
 
@@ -92,7 +92,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .processor("processor", "processorService")
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1".spel)
 
-    val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b"), createTestRecord("c", "d'")))
+    val scenarioTestData = SimpleScenarioTestData(List(createTestRecord("a", "b"), createTestRecord("c", "d'")))
 
     val contextIds = contextIdGenForFirstSource(process)
     val firstId    = contextIds.nextContextId()
@@ -119,7 +119,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .source(sourceId, "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()".spel)
 
-    val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
+    val scenarioTestData = SimpleScenarioTestData(List(createTestRecord("a", "b")))
     val jobData          = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
 
     val contextIds = contextIdGenForFirstSource(process)
@@ -168,7 +168,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
           .customNode("collect1", "outCollector", "collect", "Input expression" -> "#unionOutput".spel)
           .emptySink("endNodeIID", "response-sink", "value" -> "#outCollector.![#this.a]".spel)
       )
-    val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
+    val scenarioTestData = SimpleScenarioTestData(List(createTestRecord("a", "b")))
 
     val results = runTest(process, scenarioTestData)
 

@@ -11,8 +11,11 @@ import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, SimpleScenarioTestData, TestCaseScenarioTestData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.graph.{Test, TestSourceInput}
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
 
@@ -43,7 +46,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
       .withValue("category", fromAnyRef("Category1"))
   }
 
-  private val scenarioTestData = ScenarioTestData(
+  private val scenarioTestData = SimpleScenarioTestData(
     List(ScenarioTestJsonRecord("startProcess", Json.fromString("terefere")))
   )
 
@@ -65,6 +68,30 @@ class FlinkDeploymentManagerScenarioTestingSpec
     val process = SampleProcess.prepareProcess(processName)
 
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
+      r.nodeResults shouldBe Map(
+        "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "endSend"      -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))))
+      )
+    }
+  }
+
+  it should "run scenario as a test case" in {
+    val testCaseTestData = TestCaseScenarioTestData(
+      Test(
+        "someTest",
+        Map("startProcess" -> List(TestSourceInput(Expression(JsonTemplate, "\"terefere\"")))),
+        Map.empty,
+        Map.empty
+      )
+    )
+
+    val processName    = ProcessName(UUID.randomUUID().toString)
+    val processVersion = ProcessVersion.empty.copy(processName = processName)
+
+    val process = SampleProcess.prepareProcess(processName)
+
+    whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, testCaseTestData))) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
         "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),

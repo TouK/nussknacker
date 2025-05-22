@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestCaseScenarioTestData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   SourceTestDataGenerationError,
   TestingCapabilitiesError
 }
+import pl.touk.nussknacker.engine.graph.Test
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
@@ -115,6 +116,30 @@ class ScenarioTestService(
         .serialize(result)
         .leftMap(serializationError => SourceTestError.ScenarioTestDataSerializationError(serializationError))
     } yield rawTestData
+  }
+
+  def performTest(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+      test: Test,
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    val canonical = toCanonicalProcess(
+      scenarioGraph,
+      processVersion,
+      isFragment
+    )
+    val scenarioTestData = TestCaseScenarioTestData(test)
+    (for {
+      testResults <- EitherT.liftF(
+        testExecutorService.testProcess(
+          processVersion,
+          canonical,
+          scenarioTestData,
+        )
+      )
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def performTest(

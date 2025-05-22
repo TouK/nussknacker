@@ -102,7 +102,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
 
   test("stubbing for test purpose should work for one source") {
     val scenarioTestData =
-      ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestJsonRecord("left-source", Json.fromLong(v))))
+      SimpleScenarioTestData(List(1, 2, 3).map(v => ScenarioTestJsonRecord("left-source", Json.fromLong(v))))
     val compiledProcess = testCompile(scenarioWithSingleSource, scenarioTestData)
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
@@ -112,7 +112,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   }
 
   test("stubbing for test purpose should work for multiple sources") {
-    val scenarioTestData = ScenarioTestData(
+    val scenarioTestData = SimpleScenarioTestData(
       List(
         ScenarioTestJsonRecord("left-source", Json.fromLong(11)),
         ScenarioTestJsonRecord("right-source", Json.fromLong(21)),
@@ -137,7 +137,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   }
 
   test("stubbing for test purpose should work for one source using parameter record") {
-    val scenarioTestData = ScenarioTestData(
+    val scenarioTestData = SimpleScenarioTestData(
       List(1, 2, 3).map(v =>
         ScenarioTestParametersRecord(
           NodeId("left-source"),
