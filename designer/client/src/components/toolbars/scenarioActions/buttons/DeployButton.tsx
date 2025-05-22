@@ -58,9 +58,10 @@ export default function DeployButton(props: ToolbarButtonProps) {
                 confirm({
                     text: t(
                         "panels.actions.confirm-unsafe-deployment.message",
-                        `There is newer version #${res.data.latestVersion} created by ${res.data.modifiedBy} available. Scenario will be deployed using the newest version.
-                         You're currently checked out on version #${res.data.localVersion}. 
+                        `There is newer version #{{latestVersion}} created by {{modifyBy}} available. Scenario will be deployed using the newest version.
+                         You're currently checked out on version #{{ localVersion }}. 
                          Are you sure you want to perform this action?`,
+                        { latestVersion: res.data.latestVersion, modifyBy: res.data.modifiedBy, localVersion: res.data.localVersion },
                     ),
                     confirmText: t("panels.actions.confirm-unsafe-deployment.confirmButton", "Confirm"),
                     denyText: t("panels.actions.confirm-unsafe-deployment.cancelButton", "Cancel"),
