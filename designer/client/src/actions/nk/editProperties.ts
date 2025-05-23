@@ -1,6 +1,9 @@
+import { getNodeResults } from "src/common/ProcessUtilsAsSelectors";
+
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
+import { updateValidationResult } from "../../reducers/graph";
 import type { ProcessDefinitionData, PropertiesType, ScenarioGraph, ValidationResult } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import { fetchProcessDefinition } from "./processDefinitionData";
@@ -28,18 +31,24 @@ const calculateProperties = (scenario: Scenario, changedProperties: PropertiesTy
         const processDefinitionData = await dispatch(fetchProcessDefinition(scenario.processingType, scenario.isFragment));
         const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.scenarioGraph, processDefinitionData);
 
-        return { ...processWithNewFragmentSchema, properties: changedProperties };
+        return {
+            ...processWithNewFragmentSchema,
+            properties: changedProperties,
+        };
     };
 };
 
 export function editProperties(scenario: Scenario, changedProperties: PropertiesType): ThunkAction {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
         const scenarioGraph = await dispatch(calculateProperties(scenario, changedProperties));
-        const response = await HttpService.validateProcess(scenario.name, scenarioGraph.properties.name, scenarioGraph);
+        const { data } = await HttpService.validateProcess(scenario.name, scenarioGraph.properties.name, scenarioGraph);
+        const state = getState();
+        const currentNodeResults = getNodeResults(state);
+        const validationResult = updateValidationResult(currentNodeResults, data);
 
         dispatch({
             type: "EDIT_PROPERTIES",
-            validationResult: response.data,
+            validationResult,
             scenarioGraphAfterChange: scenarioGraph,
         });
     };

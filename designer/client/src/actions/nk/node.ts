@@ -1,8 +1,10 @@
 import type { dia } from "jointjs";
 import type { Dictionary } from "lodash";
 import { flushSync } from "react-dom";
+import { getNodeResults } from "src/common/ProcessUtilsAsSelectors";
 
 import NodeUtils from "../../components/graph/NodeUtils";
+import { updateValidationResult } from "../../reducers/graph";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
 import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
@@ -22,7 +24,10 @@ import type { EditNodeAction, EditScenarioLabels } from "./editNode";
 import type { NodePosition, Position } from "./ui/layout";
 import { layoutChanged } from "./ui/layout";
 
-export type NodesWithPositions = { node: NodeType; position: Position }[];
+export type NodesWithPositions = {
+    node: NodeType;
+    position: Position;
+}[];
 
 type DeleteNodesAction = {
     type: "DELETE_NODES";
@@ -96,6 +101,20 @@ export function nodesConnected(fromNode: NodeType, toNode: NodeType, edgeType?: 
     };
 }
 
+export function validationResult(data: ValidationResult): ThunkAction {
+    return (dispatch, getState) => {
+        const state = getState();
+
+        const currentNodeResults = getNodeResults(state);
+        const validationResult = updateValidationResult(currentNodeResults, data);
+
+        return dispatch({
+            type: "VALIDATION_RESULT",
+            validationResult,
+        });
+    };
+}
+
 export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
     return (dispatch) => {
         dispatch({
@@ -153,7 +172,16 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
         // since it breaks redux undo in this case
         flushSync(() => {
             const currentNodes = getNodes(getState());
-            const { nodes, layout } = prepareNewNodesWithLayout(currentNodes, [{ node, position }], false);
+            const { nodes, layout } = prepareNewNodesWithLayout(
+                currentNodes,
+                [
+                    {
+                        node,
+                        position,
+                    },
+                ],
+                false,
+            );
 
             dispatch({
                 type: "NODE_ADDED",

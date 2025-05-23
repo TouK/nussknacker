@@ -6,7 +6,6 @@ import type { RootState } from "../reducers";
 import { getScenario } from "../reducers/selectors/graph";
 import {
     getLabelsErrors as _getLabelsErrors,
-    getNodeResults as _getNodeResults,
     getValidationErrors as _getValidationErrors,
     getValidationResult as _getValidationResult,
     hasNoErrors as _hasNoErrors,
@@ -32,4 +31,4 @@ export const hasNoWarnings = createSelector(getScenario, (scenario) => _hasNoWar
 export const hasNoPropertiesErrors = createSelector(getScenario, (scenario) => _hasNoPropertiesErrors(scenario));
 export const getLabelsErrors = createSelector(getScenario, (scenario) => _getLabelsErrors(scenario));
 export const getValidationErrors = createSelector(getScenario, (scenario) => _getValidationErrors(scenario));
-export const getNodeResults = createSelector(getScenario, (scenario) => _getNodeResults(scenario));
+export const getNodeResults = createSelector(getValidationResult, (results) => results.nodeResults);

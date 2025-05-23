@@ -2,6 +2,7 @@ import type { ProcessName } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import type { ThunkAction } from "../reduxTypes";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
+import { validationResult } from "./node";
 import { displayTestCapabilities } from "./process";
 import { fetchProcessDefinition } from "./processDefinitionData";
 
@@ -30,9 +31,9 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
             });
             dispatch(loadProcessToolbarsConfiguration(name));
             dispatch(displayTestCapabilities(name, scenario.scenarioGraph));
-            HttpService.validateProcess(name, name, scenario.scenarioGraph).then(({ data }) =>
-                dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
-            );
+            HttpService.validateProcess(name, name, scenario.scenarioGraph).then(({ data }) => {
+                return dispatch(validationResult(data));
+            });
             onSuccess();
             return scenario;
         } catch (error) {

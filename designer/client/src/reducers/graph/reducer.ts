@@ -4,11 +4,10 @@ import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
 import type { Action, Reducer } from "../../actions/reduxTypes";
-import { getValidationResult } from "../../common/ProcessUtils2";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
-import type { ValidationResult } from "../../types";
+import type { NodeResults, ValidationResult } from "../../types";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
@@ -46,14 +45,11 @@ const emptyGraphState: GraphState = {
     testResults: null,
 };
 
-export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
+export function updateValidationResult(currentNodeResults: NodeResults, { nodeResults, ...validationResult }: ValidationResult) {
     return {
-        ...action.validationResult,
+        ...validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
-        nodeResults: {
-            ...getValidationResult(state.scenario).nodeResults,
-            ...action.validationResult.nodeResults,
-        },
+        nodeResults: { ...currentNodeResults, ...nodeResults },
     };
 }
 
@@ -138,7 +134,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    history: history,
+                    history,
                 },
             };
         }
@@ -167,8 +163,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    scenarioGraph: { ...action.scenarioGraphAfterChange },
-                    validationResult: updateValidationResult(state, action),
+                    scenarioGraph: action.scenarioGraphAfterChange,
+                    validationResult: action.validationResult,
                 },
             };
         }
@@ -177,8 +173,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    scenarioGraph: { ...action.scenarioGraphAfterChange },
-                    validationResult: updateValidationResult(state, action),
+                    scenarioGraph: action.scenarioGraphAfterChange,
+                    validationResult: action.validationResult,
                 },
             };
         }
@@ -325,7 +321,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    validationResult: updateValidationResult(state, action),
+                    validationResult: action.validationResult,
                 },
             };
         }

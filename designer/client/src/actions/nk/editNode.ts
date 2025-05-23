@@ -1,7 +1,10 @@
+import { getNodeResults } from "src/common/ProcessUtilsAsSelectors";
+
 import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
+import { updateValidationResult } from "../../reducers/graph";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
 import { getGraph } from "../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
@@ -30,16 +33,19 @@ export function editScenarioLabels(scenarioLabels: string[]) {
 }
 
 export function editNode(scenarioBefore: Scenario, before: NodeType, after: NodeType, outputEdges?: Edge[]): ThunkAction {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
         const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
-        const response = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph);
+        const { data } = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph);
+        const state = getState();
+        const currentNodeResults = getNodeResults(state);
+        const validationResult = updateValidationResult(currentNodeResults, data);
 
         dispatch(clearProcessCounts());
         dispatch({
             type: "EDIT_NODE",
             before,
             after,
-            validationResult: response.data,
+            validationResult,
             scenarioGraphAfterChange: scenarioGraph,
         });
     };

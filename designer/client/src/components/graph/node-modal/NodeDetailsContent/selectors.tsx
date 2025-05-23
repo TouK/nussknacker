@@ -2,7 +2,7 @@ import { isEqual } from "lodash";
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
 
 import ProcessUtils from "../../../../common/ProcessUtils";
-import { getNodeResults as getNodeResults1 } from "../../../../common/ProcessUtils2";
+import { getNodeResults } from "../../../../common/ProcessUtilsAsSelectors";
 import type { RootState } from "../../../../reducers";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
@@ -15,7 +15,6 @@ export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
     (s) => (s.scenarioProperties || {}) as UiScenarioProperties,
 );
-const getNodeResults = createSelector(getScenario, (scenario) => getNodeResults1(scenario));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
@@ -74,10 +73,6 @@ export const getDynamicParameterDefinitions = createDeepEqualSelector(
 
 export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenario, (processDefinition, scenario) =>
     ProcessUtils.findAvailableVariables(processDefinition, scenario),
-);
-export const getVariableTypes = createSelector(
-    getNodeResults,
-    (nodeResults) => (originalNodeId) => ProcessUtils.getVariablesFromValidation(nodeResults, originalNodeId) || {},
 );
 
 export const getDynamicParametersChanged =

@@ -2,6 +2,7 @@ import { debounce } from "lodash";
 import type { Middleware } from "redux";
 import { ActionTypes as UndoActionTypes } from "redux-undo";
 
+import { validationResult } from "../actions/nk";
 import type { Action, ThunkDispatch } from "../actions/reduxTypes";
 import HttpService from "../http/HttpService";
 import type { RootState } from "../reducers";
@@ -14,9 +15,9 @@ const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => Roo
     const scenarioName = getProcessName(state);
     const scenarioGraph = getScenarioGraph(state);
     const unsavedOrCurrentName = getUnsavedOrCurrentName(state);
-    return HttpService.validateProcess(scenarioName, unsavedOrCurrentName, scenarioGraph).then(({ data }) =>
-        dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
-    );
+    return HttpService.validateProcess(scenarioName, unsavedOrCurrentName, scenarioGraph).then(({ data }) => {
+        return dispatch(validationResult(data));
+    });
 }, 500);
 
 export function nodeValidationMiddleware(
