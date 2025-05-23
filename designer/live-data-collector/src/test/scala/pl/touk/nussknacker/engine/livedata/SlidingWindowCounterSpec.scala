@@ -1,33 +1,26 @@
 package pl.touk.nussknacker.engine.livedata
 
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 
 import java.time.Instant
 
-class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers with BeforeAndAfterEach {
+class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
 
   private val startTime =
     Instant.parse("2025-04-06T13:18:00Z")
 
-  private implicit val mutableClock: MutableClock = new MutableClock(startTime)
-
-  private val counter =
-    new SlidingWindowCounter[Int](startTime, 10)
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    mutableClock.setTime(startTime)
-  }
-
   test("return counts when 1 event per second added for each event type") {
-    1 to 10 foreach { i =>
+    implicit val mutableClock: MutableClock = new MutableClock(startTime)
+    val counter                             = new SlidingWindowCounter[Int](startTime, 10)
+
+    1 to 10 foreach { _ =>
+      mutableClock.advanceBySeconds(1)
       1 to 10 foreach { i =>
         counter.add(i)
       }
-      mutableClock.advanceBySeconds(1)
     }
+
     counter.getThroughput.toSet shouldBe Set(
       1  -> BigDecimal(1),
       2  -> BigDecimal(1),
@@ -43,6 +36,9 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers with Before
   }
 
   test("throughput is correctly calculated for single event during consecutive seconds") {
+    implicit val mutableClock: MutableClock = new MutableClock(startTime)
+    val counter                             = new SlidingWindowCounter[Int](startTime, 10)
+
     // Empty result before event is received
     counter.getThroughput.toSet shouldBe Set.empty
 

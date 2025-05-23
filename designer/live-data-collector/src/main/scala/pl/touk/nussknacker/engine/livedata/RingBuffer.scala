@@ -18,4 +18,8 @@ private[livedata] class RingBuffer[K, V](maxSize: Int) {
     underlying.compute(key, (_: K, output: V) => f(Option(output)))
   }
 
+  def clear(): Unit = underlying.synchronized {
+    underlying.clear()
+  }
+
 }
