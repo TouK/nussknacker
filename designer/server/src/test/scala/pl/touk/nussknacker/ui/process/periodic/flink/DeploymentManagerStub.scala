@@ -33,7 +33,6 @@ class DeploymentManagerStub extends BaseDeploymentManager {
         DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           status = status,
-          version = None,
         )
       )
     )
@@ -50,7 +49,6 @@ class DeploymentManagerStub extends BaseDeploymentManager {
         DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           status = status,
-          version = None,
         )
       )
     )

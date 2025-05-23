@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.{BaseEntityFactory, ProcessEntityData, ProcessEntityFactory}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{DeploymentEntityData, WithModifiedAt}
@@ -33,6 +33,10 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
 
     def statusModifiedAt: Rep[Timestamp] = column[Timestamp]("status_modified_at", NotNull)
 
+    def versionId: Rep[Option[VersionId]] = column[Option[VersionId]]("scenario_version_id")
+
+    def startedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("started_at")
+
     override def * : ProvenShape[DeploymentEntityData] =
       (
         id,
@@ -41,7 +45,9 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
         createdBy,
         statusName,
         statusProblemDescription,
-        statusModifiedAt
+        statusModifiedAt,
+        versionId,
+        startedAt
       ) <> (createEntity _ tupled, extractFieldsFromEntity)
 
     private def scenarios_fk: ForeignKeyQuery[ProcessEntityFactory#ProcessEntity, ProcessEntityData] =
@@ -60,9 +66,17 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       createdBy: String,
       statusName: DeploymentStatusName,
       statusProblemDescription: Option[String],
-      statusModifiedAt: Timestamp
+      statusModifiedAt: Timestamp,
+      versionId: Option[VersionId],
+      startedAt: Option[Timestamp]
   ) = {
-    val status = DeploymentStatus.from(statusName, statusProblemDescription)
+    val status = DeploymentStatus.from(
+      name = statusName,
+      description = statusProblemDescription,
+      startedAt = startedAt.map(_.toInstant),
+      modifiedAt = statusModifiedAt.toInstant,
+      version = versionId
+    )
     DeploymentEntityData(id, scenarioId, createdAt, createdBy, WithModifiedAt(status, statusModifiedAt))
   }
 
@@ -74,7 +88,9 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       entity.createdBy,
       entity.statusWithModifiedAt.value.name,
       entity.statusWithModifiedAt.value.problemDescription,
-      entity.statusWithModifiedAt.modifiedAt
+      entity.statusWithModifiedAt.modifiedAt,
+      entity.statusWithModifiedAt.value.version,
+      entity.statusWithModifiedAt.value.startedAt.map(Timestamp.from),
     )
   }
 

@@ -8,10 +8,12 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.management.FlinkStatusDetailsDeterminer.{toDeploymentStatus, ParsedJobConfig}
+import pl.touk.nussknacker.engine.management.rest.FlinkClient.ExecutionConfigOps
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkStatusDetailsDeterminer(
@@ -31,20 +33,25 @@ class FlinkStatusDetailsDeterminer(
         } yield withParsedJobConfig(job.jid, name).map { jobConfigOpt =>
           val details = jobConfigOpt.map { jobConfig =>
             DeploymentStatusDetails(
-              status =
-                SimpleStateStatus.fromDeploymentStatus(toDeploymentStatus(JobStatus.valueOf(job.state), job.tasks)),
-              deploymentId = jobConfig.deploymentId,
-              version = Some(jobConfig.version)
+              status = SimpleStateStatus
+                .fromDeploymentStatus(
+                  toDeploymentStatus(
+                    JobStatus.valueOf(job.state),
+                    job.tasks,
+                    Instant.ofEpochMilli(job.`start-time`),
+                    jobConfig.version
+                  ),
+                ),
+              deploymentId = jobConfig.deploymentId
             )
           } getOrElse {
             logger.debug(
               s"No correct job config in deployed scenario: $name. Returning ${SimpleStateStatus.DuringDeploy} without version"
             )
             DeploymentStatusDetails(
-              SimpleStateStatus.DuringDeploy,
+              SimpleStateStatus.DuringDeploy(VersionId(0)),
               // For scheduling mechanism this fallback is probably wrong // TODO: switch scheduling mechanism deployment ids to UUIDs
-              Some(DeploymentId(job.jid.toHexString)),
-              version = None,
+              Some(DeploymentId(job.jid.toHexString))
             )
           }
           name -> (details, job)
@@ -54,10 +61,9 @@ class FlinkStatusDetailsDeterminer(
 
   private def withParsedJobConfig(jobId: JobID, name: ProcessName): Future[Option[ParsedJobConfig]] = {
     getJobConfig(jobId).map { executionConfig =>
-      val userConfig = executionConfig.`user-config`
       for {
-        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
-        deploymentId = userConfig.get("deploymentId").flatMap(_.asString).map(DeploymentId(_))
+        version <- executionConfig.versionId
+        deploymentId = executionConfig.deploymentId
       } yield {
         ParsedJobConfig(version, deploymentId)
       }
@@ -74,17 +80,19 @@ object FlinkStatusDetailsDeterminer {
 
   private[management] def toDeploymentStatus(
       jobStatus: JobStatus,
-      jobStatusCounts: BaseJobStatusCounts
+      jobStatusCounts: BaseJobStatusCounts,
+      startedAt: Instant,
+      version: VersionId
   ): DeploymentStatus = {
     jobStatus match {
-      case JobStatus.RUNNING if ensureTasksRunning(jobStatusCounts)       => DeploymentStatus.Running
-      case JobStatus.RUNNING | JobStatus.INITIALIZING | JobStatus.CREATED => DeploymentStatus.DuringDeploy
-      case JobStatus.FINISHED                                             => DeploymentStatus.Finished
+      case JobStatus.RUNNING if ensureTasksRunning(jobStatusCounts) => DeploymentStatus.Running(version, startedAt)
+      case JobStatus.RUNNING | JobStatus.INITIALIZING | JobStatus.CREATED => DeploymentStatus.DuringDeploy(version)
+      case JobStatus.FINISHED                                             => DeploymentStatus.Finished(version)
       case JobStatus.RESTARTING                                           => DeploymentStatus.Restarting
       case JobStatus.CANCELED                                             => DeploymentStatus.Canceled
       case JobStatus.CANCELLING                                           => DeploymentStatus.DuringCancel
       // The job is not technically running, but should be in a moment
-      case JobStatus.RECONCILING | JobStatus.SUSPENDED => DeploymentStatus.Running
+      case JobStatus.RECONCILING | JobStatus.SUSPENDED => DeploymentStatus.Running(version, startedAt)
       case JobStatus.FAILING | JobStatus.FAILED =>
         DeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
     }

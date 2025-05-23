@@ -32,12 +32,30 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
           scenarioMetadata.processingType inSet processingTypes
         }
         .map { case (deployment, scenarioMetadata) =>
-          (deployment.id, scenarioMetadata.name, deployment.statusName, deployment.statusProblemDescription)
+          (
+            deployment.id,
+            scenarioMetadata.name,
+            deployment.statusName,
+            deployment.statusProblemDescription,
+            deployment.versionId,
+            deployment.startedAt,
+            deployment.statusModifiedAt
+          )
         }
         .result
         .map(
-          _.map { case (id, scenarioName, statusName, statusDescription) =>
-            Deployment(id, scenarioName, DeploymentStatus.from(statusName, statusDescription))
+          _.map { case (id, scenarioName, statusName, statusDescription, versionId, startedAt, statusModifiedAt) =>
+            Deployment(
+              id,
+              scenarioName,
+              DeploymentStatus.from(
+                name = statusName,
+                description = statusDescription,
+                startedAt = startedAt.map(_.toInstant),
+                modifiedAt = statusModifiedAt.toInstant,
+                version = versionId
+              )
+            )
           }.toSet
         )
     )
@@ -103,13 +121,14 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
   }
 
   def updateDeploymentStatus(id: DeploymentId, status: DeploymentStatus): DB[Boolean] = {
+    val maybeStartedAt = status.startedAt.map(Timestamp.from)
     toEffectAll(
       deploymentsTable
         .filter(d =>
-          d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= status.problemDescription)
+          d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= status.problemDescription || d.startedAt =!= maybeStartedAt)
         )
-        .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt))
-        .update((status.name, status.problemDescription, Timestamp.from(clock.instant())))
+        .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt, d.startedAt))
+        .update((status.name, status.problemDescription, Timestamp.from(clock.instant()), maybeStartedAt))
         .map(_ > 0)
     )
   }

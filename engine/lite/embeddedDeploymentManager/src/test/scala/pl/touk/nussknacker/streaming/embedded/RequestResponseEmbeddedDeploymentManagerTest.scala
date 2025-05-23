@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
@@ -25,6 +25,10 @@ import pl.touk.nussknacker.test.{AvailablePortFinder, ValidatedValuesDetailedMes
 import sttp.client3.{basicRequest, HttpURLConnectionBackend, Identity, SttpBackend, UriContext}
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
+
+import java.time.Instant
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration._
 
 class RequestResponseEmbeddedDeploymentManagerTest
     extends AnyFunSuite
@@ -126,9 +130,9 @@ class RequestResponseEmbeddedDeploymentManagerTest
     fixture.deployScenario(scenario)
 
     eventually {
-      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
-        SimpleStateStatus.Running
-      )
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithingLast(startedAt, 1 second) =>
+      }
     }
 
     request.body("""{ productId: 15 }""").send(backend).body shouldBe Right("""{"transformed":15}""")
@@ -150,6 +154,10 @@ class RequestResponseEmbeddedDeploymentManagerTest
 
     manager.getScenarioDeploymentsStatuses(name).futureValue.value shouldBe List.empty
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
+  }
+
+  private def isWithingLast(instant: Instant, duration: FiniteDuration): Boolean = {
+    FiniteDuration(Instant.now().minusMillis(instant.toEpochMilli).toEpochMilli, TimeUnit.MILLISECONDS) < duration
   }
 
 }

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClu
 import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyConverterOps._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Future, Promise}
@@ -93,7 +94,7 @@ class DevelopmentDeploymentManager(
     import command._
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
     val previous                = memory.get(processVersion.processName)
-    val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)
+    val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy(processVersion.versionId), processVersion)
     val result                  = Promise[Option[ExternalDeploymentId]]()
     actorSystem.scheduler.scheduleOnce(
       sleepingTimeSeconds,
@@ -108,7 +109,10 @@ class DevelopmentDeploymentManager(
             }
           } else {
             result.complete(Success(duringDeployStateStatus.deploymentId.map(_.value).map(ExternalDeploymentId(_))))
-            asyncChangeState(processVersion.processName, Running)
+            asyncChangeState(
+              processVersion.processName,
+              Running(version = processVersion.versionId, startedAt = Instant.now())
+            )
           }
         }
       }
@@ -120,7 +124,17 @@ class DevelopmentDeploymentManager(
   private def stopScenario(command: DMStopScenarioCommand): Future[SavepointResult] = {
     import command._
     logger.debug(s"Starting stopping scenario: $scenarioName..")
-    asyncChangeState(scenarioName, Finished)
+    val scenarioVersion = memory
+      .get(scenarioName)
+      .map(_.status)
+      .flatMap {
+        case Finished(version)     => Some(version)
+        case DuringDeploy(version) => Some(version)
+        case Running(version, _)   => Some(version)
+        case _                     => None
+      }
+      .getOrElse(VersionId(0))
+    asyncChangeState(scenarioName, Finished(scenarioVersion))
     logger.debug(s"Finished stopping scenario: $scenarioName.")
     Future.successful(SavepointResult(""))
   }
@@ -178,7 +192,6 @@ class DevelopmentDeploymentManager(
     val statusDetails = DeploymentStatusDetails(
       status = stateStatus,
       deploymentId = None,
-      version = Some(processVersion.versionId),
     )
 
     memory.update(processVersion.processName, statusDetails)

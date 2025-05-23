@@ -70,8 +70,10 @@ class ScenarioDeploymentReconciler(
       deploymentStatuses = bulkQueriedStatuses.getAllDeploymentStatuses
       // We compare status by instances instead of by names. Thanks to that, PeriodicStateStatus won't be handled.
       // It is an expected behaviour because schedules finished status is handled inside PeriodicProcessService
-      finishedDeploymentIds = deploymentStatuses.filter(_.status == SimpleStateStatus.Finished).flatMap(_.deploymentId)
-      actionsIds            = finishedDeploymentIds.flatMap(_.toActionIdOpt)
+      finishedDeploymentIds = deploymentStatuses
+        .filter(status => SimpleStateStatus.isFinished(status.status))
+        .flatMap(_.deploymentId)
+      actionsIds = finishedDeploymentIds.flatMap(_.toActionIdOpt)
       actionsWithMarkingExecutionFinishedResult <- dbioActionRunner.run(DBIOAction.sequence(actionsIds.map { actionId =>
         actionRepository.markFinishedActionAsExecutionFinished(actionId).map(actionId -> _)
       }))
@@ -158,7 +160,7 @@ class ScenarioDeploymentReconciler(
         case (scenario, deploymentId) =>
           val bulkQueriedStatusForScenario = bulkQueriedStatuses.getDeploymentStatusesUnsafe(scenario.idData).value
           !bulkQueriedStatusForScenario.exists(status =>
-            status.deploymentId.contains(deploymentId) && SimpleStateStatus.DefaultFollowingDeployStatuses.contains(
+            status.deploymentId.contains(deploymentId) && SimpleStateStatus.isDefaultFollowingDeployStatus(
               status.status
             )
           )

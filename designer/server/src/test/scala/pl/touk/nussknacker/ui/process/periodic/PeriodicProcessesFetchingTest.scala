@@ -8,7 +8,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRe
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 import java.util.UUID
 import scala.concurrent.Future
 
@@ -80,7 +80,11 @@ class PeriodicProcessesFetchingTest
     for (i <- 1 to n) {
       val deploymentId =
         f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
-      f.delegateDeploymentManagerStub.addStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
+      f.delegateDeploymentManagerStub.addStateStatus(
+        processName(i),
+        SimpleStateStatus.Running(VersionId(1), Instant.now),
+        Some(deploymentId)
+      )
     }
 
     getLatestDeploymentQueryCount.set(0)
@@ -105,7 +109,11 @@ class PeriodicProcessesFetchingTest
     for (i <- 1 to n) {
       val deploymentId =
         f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
-      f.delegateDeploymentManagerStub.addStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
+      f.delegateDeploymentManagerStub.addStateStatus(
+        processName(i),
+        SimpleStateStatus.Running(VersionId(1), Instant.now),
+        Some(deploymentId)
+      )
     }
 
     getLatestDeploymentQueryCount.set(0)

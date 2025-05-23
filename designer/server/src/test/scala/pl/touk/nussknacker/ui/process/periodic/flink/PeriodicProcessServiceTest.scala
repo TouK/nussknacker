@@ -227,7 +227,11 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deploymentId)
+    )
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -262,7 +266,11 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.DuringDeploy, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.DuringDeploy(VersionId(1)),
+      Some(deploymentId)
+    )
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -279,7 +287,11 @@ class PeriodicProcessServiceTest
       scheduleProperty = cronInPast,
       processActionId = Some(processActionId)
     )
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deploymentId)
+    )
 
     f.periodicProcessService.handleFinished.futureValue
 

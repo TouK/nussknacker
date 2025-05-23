@@ -5,6 +5,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, ScenarioVersionId}
 
 import java.net.URI
+import java.time.Instant
 
 /**
   * Represents status of a scenario.
@@ -19,8 +20,7 @@ import java.net.URI
   *                May contain longer, detailed status description.
   */
 @JsonCodec case class ScenarioStatusDto(
-    // TODO: flatten it
-    status: ScenarioStatusNameWrapperDto,
+    status: ScenarioStatusDetailsDto,
     visibleActions: List[ScenarioActionName],
     allowedActions: List[ScenarioActionName],
     actionTooltips: Map[ScenarioActionName, String],
@@ -30,6 +30,59 @@ import java.net.URI
 )
 
 @JsonCodec case class ScenarioStatusNameWrapperDto(name: String)
+
+sealed trait ScenarioStatusDetailsDto {
+  val name: String
+}
+
+object ScenarioStatusDetailsDto {
+
+  final case class Running(versionId: String, startedAt: Instant) extends ScenarioStatusDetailsDto {
+    override val name: String = "RUNNING"
+  }
+
+  final case class NoAttributesStatus(override val name: String) extends ScenarioStatusDetailsDto
+
+  implicit val statusCodec: Codec[ScenarioStatusDetailsDto] = {
+    implicit val runningEncoder: Encoder[Running] = Encoder.encodeJson.contramap(status =>
+      Json.obj(
+        "name"      -> Json.fromString(status.name),
+        "versionId" -> Json.fromString(status.versionId),
+        "startedAt" -> Encoder[Instant].apply(status.startedAt)
+      )
+    )
+
+    implicit val runningDecoder: Decoder[Running] = (c: HCursor) => {
+      for {
+        name      <- c.downField("name").as[String]
+        _         <- Either.cond(name == "RUNNING", (), DecodingFailure("Expected name to be RUNNING", c.history))
+        version   <- c.downField("versionId").as[String]
+        startedAt <- c.downField("startedAt").as[Instant]
+      } yield Running(version, startedAt)
+    }
+
+    implicit val noAttributesStatusEncoder: Encoder[NoAttributesStatus] = Encoder.forProduct1("name")(_.name)
+    implicit val noAttributesStatusDecoder: Decoder[NoAttributesStatus] =
+      Decoder.forProduct1("name")(NoAttributesStatus.apply)
+
+    implicit val statusEncoder: Encoder[ScenarioStatusDetailsDto] = Encoder.instance {
+      case status: Running            => runningEncoder(status)
+      case status: NoAttributesStatus => noAttributesStatusEncoder(status)
+    }
+
+    implicit val statusDecoder: Decoder[ScenarioStatusDetailsDto] = {
+
+      Decoder.instance { cursor =>
+        cursor.downField("name").as[String].flatMap {
+          case "RUNNING" => runningDecoder(cursor)
+          case other     => noAttributesStatusDecoder(cursor)
+        }
+      }
+    }
+    Codec.from(statusDecoder, statusEncoder)
+  }
+
+}
 
 object ScenarioStatusDto {
   implicit val uriEncoder: Encoder[URI]                             = Encoder.encodeString.contramap(_.toString)

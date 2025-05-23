@@ -21,8 +21,11 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.{FailingContextClassloader, VeryPatientScalaFutures}
 
+import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
 trait BaseStreamingEmbeddedDeploymentManagerTest
@@ -127,6 +130,10 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       val manager = new EmbeddedDeploymentManager(modelData.toModelDataProvider, strategy)
       FixtureParam(manager, modelData, inputTopic, outputTopic)
     }
+  }
+
+  protected def isWithingLast(instant: Instant, duration: FiniteDuration): Boolean = {
+    FiniteDuration(Instant.now().minusMillis(instant.toEpochMilli).toEpochMilli, TimeUnit.MILLISECONDS) < duration
   }
 
 }

@@ -1,9 +1,10 @@
+import { formatDateTime } from "../../common/DateUtils";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import { WrapAllMethods } from "../../WrapAllMethods";
 import { descriptionProcessArchived, unknownDescription, unknownTooltip } from "./messages";
 import type { ActionName, ProcessStateType, Scenario } from "./types";
+import { isStatusRunning } from "./types";
 import { PredefinedActionName } from "./types";
-
 export const unknownIcon = "/assets/states/status-unknown.svg";
 const archivedIcon = "/assets/process/archived.svg";
 
@@ -34,7 +35,15 @@ class ProcessStateUtils {
             return descriptionProcessArchived();
         }
 
-        return processState?.description || unknownDescription();
+        if (processState?.status && isStatusRunning(processState?.status)) {
+            const values: Record<string, string> = {
+                versionId: processState.status.versionId,
+                startedAt: formatDateTime(processState.status.startedAt),
+            };
+            return renderHandlebarsTemplate(processState.description, values);
+        } else {
+            return processState?.description || unknownDescription();
+        }
     }
 
     getStatusIcon({ isArchived, state }: Scenario, processState: ProcessStateType): string {
@@ -66,3 +75,9 @@ class ProcessStateUtils {
 }
 
 export default new ProcessStateUtils();
+
+export function renderHandlebarsTemplate(template: string, values: Record<string, string>): string {
+    return template.replace(/{{\s*(\w+)\s*}}/g, (_, key) => {
+        return values[key] ?? "";
+    });
+}

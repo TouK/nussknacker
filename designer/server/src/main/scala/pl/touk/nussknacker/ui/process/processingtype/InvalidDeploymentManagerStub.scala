@@ -18,7 +18,6 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   private val stubbedStatus = DeploymentStatusDetails(
     GeneralProblemStateStatus("Error in deployment configuration", allowedActions = Set.empty),
     deploymentId = None,
-    version = None
   )
 
   override def getScenarioDeploymentsStatuses(scenarioName: ProcessName)(

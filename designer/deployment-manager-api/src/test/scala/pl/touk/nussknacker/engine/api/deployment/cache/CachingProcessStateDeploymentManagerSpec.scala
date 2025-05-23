@@ -9,10 +9,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -96,9 +97,8 @@ class CachingProcessStateDeploymentManagerSpec
     when(delegate.getScenarioDeploymentsStatuses(any[ProcessName])(any[DataFreshnessPolicy])).thenAnswer {
       _: InvocationOnMock =>
         val randomState = DeploymentStatusDetails(
-          SimpleStateStatus.Running,
+          SimpleStateStatus.Running(VersionId(1), Instant.now()),
           deploymentId = Some(DeploymentId(UUID.randomUUID().toString)),
-          version = None,
         )
         Future.successful(WithDataFreshnessStatus.fresh(List(randomState)))
     }

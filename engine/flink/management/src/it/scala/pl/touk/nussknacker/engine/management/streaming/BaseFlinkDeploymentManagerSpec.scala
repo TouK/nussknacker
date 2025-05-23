@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 
@@ -53,13 +54,9 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       deploymentId = deploymentId
     )
     try {
-      deploymentStatus(processName) shouldBe List(
-        DeploymentStatusDetails(
-          status = SimpleStateStatus.Running,
-          deploymentId = Some(deploymentId),
-          version = Some(version)
-        )
-      )
+      deploymentStatus(processName) should matchPattern {
+        case List(DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`))) =>
+      }
       externalDeploymentIdOpt shouldBe defined
     } finally {
       cancelProcess(processName)
@@ -80,13 +77,9 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       deploymentId = deploymentId
     )
     try {
-      deploymentStatus(processName) shouldBe List(
-        DeploymentStatusDetails(
-          status = SimpleStateStatus.Running,
-          deploymentId = Some(deploymentId),
-          version = Some(version)
-        )
-      )
+      deploymentStatus(processName) should matchPattern {
+        case List(DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`))) =>
+      }
       externalDeploymentIdOpt.value shouldBe ExternalDeploymentId(
         new JobID(deploymentIdUuid.getLeastSignificantBits, deploymentIdUuid.getMostSignificantBits).toHexString
       )
