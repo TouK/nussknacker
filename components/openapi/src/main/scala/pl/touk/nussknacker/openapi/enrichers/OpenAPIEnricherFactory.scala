@@ -56,7 +56,7 @@ class OpenAPIEnricherFactory(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition =
     initializeParamsStep(context) orElse
-      selectedServiceStep(context) orElse
+      selectedServiceStep(context, dependencies) orElse
       finalStep(context, dependencies)
 
   override def implementation(
@@ -91,7 +91,8 @@ class OpenAPIEnricherFactory(
   }
 
   private def selectedServiceStep(
-      context: ValidationContext
+      context: ValidationContext,
+      dependencies: List[NodeDependencyValue]
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
           (ServiceParamName, DefinedEagerParameter(serviceName: String, _)) :: Nil,
@@ -100,8 +101,12 @@ class OpenAPIEnricherFactory(
       val swaggerServices = openApiDefinitionDiscovery.getValidServices(config)
       swaggerServices.find(_.name.value == serviceName) match {
         case Some(service) =>
-          val extractor = new ParametersExtractor(service, fixedParameters)
-          NextParameters(extractor.parameterDefinition, Nil, Some(SelectedServiceState(service, extractor)))
+          val extractor            = new ParametersExtractor(service, fixedParameters)
+          val selectedServiceState = SelectedServiceState(service, extractor)
+          extractor.parameterDefinition match {
+            case Nil => createFinalResults(context, dependencies, selectedServiceState)
+            case _   => NextParameters(extractor.parameterDefinition, Nil, Some(selectedServiceState))
+          }
         case None =>
           FinalResults(
             context,
@@ -117,19 +122,26 @@ class OpenAPIEnricherFactory(
 
   private def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): ContextTransformationDefinition = {
-    case TransformationStep(params, Some(SelectedServiceState(service, extractor))) =>
-      FinalResults.forValidation(
-        context = context,
-        errors = List.empty,
-        state = Some(TransformationState.FinalState(service, extractor))
-      )(ctx =>
-        ctx.withVariable(
-          name = OutputVariableNameDependency.extract(dependencies),
-          value = service.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit]),
-          paramName = Some(ParameterName(OutputVar.CustomNodeFieldName))
-        )
+  ): ContextTransformationDefinition = { case TransformationStep(_, Some(state @ SelectedServiceState(_, _))) =>
+    createFinalResults(context, dependencies, state)
+  }
+
+  private def createFinalResults(
+      context: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      selectedServiceState: SelectedServiceState
+  )(implicit nodeId: NodeId) = {
+    FinalResults.forValidation(
+      context = context,
+      errors = List.empty,
+      state = Some(TransformationState.FinalState(selectedServiceState.service, selectedServiceState.extractor))
+    )(ctx =>
+      ctx.withVariable(
+        name = OutputVariableNameDependency.extract(dependencies),
+        value = selectedServiceState.service.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit]),
+        paramName = Some(ParameterName(OutputVar.CustomNodeFieldName))
       )
+    )
   }
 
   override def open(context: EngineRuntimeContext): Unit = {
