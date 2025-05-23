@@ -108,7 +108,7 @@ trait ScenarioTestingApiHttpServiceSpec
              |}""".stripMargin
         )
     }
-    "return valid capabilities for scenario with all capabilities, but use not allowed to deploy" in {
+    "return valid capabilities for scenario with all capabilities, but user not allowed to deploy" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
