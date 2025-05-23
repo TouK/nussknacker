@@ -201,3 +201,5 @@ export function enrichNodeWithProcessDependentData(
 
     return node;
 }
+
+export const hasLooseNode = (currentEdge: Edge, newEdge: Edge) => currentEdge.from === newEdge.from && currentEdge.to === "";
