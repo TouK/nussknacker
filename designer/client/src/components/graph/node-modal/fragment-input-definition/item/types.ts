@@ -51,7 +51,7 @@ export interface ValueEditor {
 
 export interface DefaultParameterVariant extends GenericParameterVariant, FragmentValidation {
     name: string;
-    valueEditor: null;
+    valueEditor: undefined;
 }
 
 export interface FixedListParameterVariant extends GenericParameterVariant, FragmentValidation {
@@ -64,7 +64,7 @@ export interface AnyValueWithSuggestionsParameterVariant extends GenericParamete
 }
 export interface AnyValueParameterVariant extends GenericParameterVariant, FragmentValidation {
     fixedValuesType: FixedValuesType;
-    valueEditor: null;
+    valueEditor: undefined;
 }
 
 export type PermittedTypeParameterVariant = FixedListParameterVariant | AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant;

@@ -1,4 +1,4 @@
-import { get, has, omit } from "lodash";
+import { get, has } from "lodash";
 import type { Scenario } from "src/components/Process/types";
 import { v4 as uuid4 } from "uuid";
 
@@ -23,20 +23,6 @@ export function generateUUIDs(editedNode: Readonly<NodeType>, properties: Readon
                     ),
                 ),
             editedNode,
-        );
-}
-
-export function removeUUIDs(node: Readonly<NodeType>, properties: Readonly<string[]>): NodeType {
-    return properties
-        .filter((property) => has(node, property))
-        .reduce(
-            (modifiedNode, property) =>
-                setImmutable(
-                    modifiedNode,
-                    property,
-                    get(modifiedNode, property, []).map((item) => (item.uuid ? omit(item, ["uuid"]) : item)),
-                ),
-            node,
         );
 }
 

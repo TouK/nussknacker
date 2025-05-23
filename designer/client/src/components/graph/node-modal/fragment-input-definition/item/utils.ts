@@ -15,9 +15,9 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         name: "",
         required: false,
         hintText: "",
-        initialValue: null,
-        valueEditor: null,
-        valueCompileTimeValidation: null,
+        initialValue: undefined,
+        valueEditor: undefined,
+        valueCompileTimeValidation: undefined,
         typ: { refClazzName } as ReturnedType,
     };
 };

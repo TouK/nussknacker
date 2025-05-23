@@ -36,9 +36,9 @@ describe("FixedValuesGroup", () => {
                         name: "",
                         required: false,
                         hintText: "",
-                        initialValue: null,
-                        valueEditor: null,
-                        valueCompileTimeValidation: null,
+                        initialValue: undefined,
+                        valueEditor: undefined,
+                        valueCompileTimeValidation: undefined,
                         typ: {
                             refClazzName: "java.lang.String",
                         } as ReturnedType,

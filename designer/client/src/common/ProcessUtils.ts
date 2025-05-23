@@ -28,19 +28,24 @@ class ProcessUtils {
 
         /**
          * It's a fix of https://touk-jira.atlassian.net/browse/NU-2194
-         * When node is added from a toolbar, branchParametersTemplate are initially added to the node, but when we perform a scenario save, node has no branchParametersTemplate
-         * Let's ignore branchParametersTemplate in a button save state checking
+         * 1. When node is added from a toolbar, branchParametersTemplate are initially added to the node, but when we perform a scenario save, node has no branchParametersTemplate
+         * 2. We add UUID on a frontend side, and backend doesn't return it again
+         * Let's ignore specific properties in a button save state checking
          */
-        const omitBranchParametersTemplate = (details: ScenarioGraph) => {
+        const prepareGraphForComparison = (details: ScenarioGraph) => {
             if (!details.nodes?.length) {
                 return details;
             }
 
             return {
                 ...details,
-                nodes: details.nodes.map((node) => omit(node, ["branchParametersTemplate"])),
+                nodes: details.nodes.map((node) => ({
+                    ...omit(node, ["branchParametersTemplate"]),
+                    parameters: node.parameters?.map((param) => omit(param, ["uuid"])),
+                })),
             };
         };
+
         const processRenamed = isProcessRenamed(state);
 
         if (processRenamed) {
@@ -56,8 +61,8 @@ class ProcessUtils {
         };
 
         const isGraphUpdated = isEqual(
-            omitBranchParametersTemplate(scenario.scenarioGraph),
-            omitBranchParametersTemplate(savedProcessState.scenarioGraph),
+            prepareGraphForComparison(scenario.scenarioGraph),
+            prepareGraphForComparison(savedProcessState.scenarioGraph),
         );
         const areScenarioLabelsUpdated = isEqual(labelsFor(scenario), labelsFor(savedProcessState));
 
