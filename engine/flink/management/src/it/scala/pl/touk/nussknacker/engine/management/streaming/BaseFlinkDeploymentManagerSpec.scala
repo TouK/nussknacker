@@ -138,23 +138,8 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
                     Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
                   )
                 }.toList,
-              NodeTransition("endSend", None) ->
-                (0 to 14).map { idx =>
-                  ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
-                    mockedTimestamp,
-                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-                  )
-                }.toList,
             ),
             invocationResults = Map(
-              "start" -> List(
-                ExpressionInvocationResult(
-                  "runningFlinkEventGenerator",
-                  "value",
-                  Json.obj("pretty" -> "abrakadabra".asJson)
-                )
-              ),
               "endSend" ->
                 (0 to 14).map { idx =>
                   ExpressionInvocationResult(
