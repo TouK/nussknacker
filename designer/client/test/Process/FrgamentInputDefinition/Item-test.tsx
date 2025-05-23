@@ -34,9 +34,9 @@ describe(Item.name, () => {
                             name: "",
                             required: false,
                             hintText: "",
-                            initialValue: undefined,
-                            valueEditor: undefined,
-                            valueCompileTimeValidation: undefined,
+                            initialValue: null,
+                            valueEditor: null,
+                            valueCompileTimeValidation: null,
                             typ: {
                                 refClazzName: "java.lang.String",
                             } as ReturnedType,

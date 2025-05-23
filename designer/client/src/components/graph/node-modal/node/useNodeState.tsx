@@ -1,4 +1,4 @@
-import { cloneDeep, identity, isEqual, omit } from "lodash";
+import { identity, isEqual, omit } from "lodash";
 import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,6 +14,7 @@ import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import type { EditedNode } from "../IdField";
 import { applyIdFromFakeName } from "../IdField";
+import { removeUUIDs } from "../nodeUtils";
 import type { NodeDetailsMeta } from "./NodeDetails";
 import { useEditState } from "./useEditState";
 
@@ -114,7 +115,10 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
             const outputEdges$ = new PendingPromise<[Edge[], boolean]>();
 
             setEditedNode((currentEditedNode) => {
-                let nextEditedNode = typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange;
+                let nextEditedNode = removeUUIDs(typeof nodeChange === "function" ? nodeChange(currentEditedNode) : nodeChange, [
+                    "fields",
+                    "parameters",
+                ]);
                 const equal = isEqual(currentEditedNode, nextEditedNode);
                 if (equal) {
                     nextEditedNode = currentEditedNode;
