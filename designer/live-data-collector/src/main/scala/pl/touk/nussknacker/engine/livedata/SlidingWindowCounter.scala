@@ -48,12 +48,12 @@ private[livedata] class SlidingWindowCounter[T](
       buckets
         .keySet()
         .asScala
-        .filter(_ <= cutoff(now))
+        .filter(_ < cutoff(now))
         .foreach(buckets.remove)
     }
   }
 
-  private def cutoff(now: Long): Long = now - windowSizeSeconds
+  private def cutoff(now: Long): Long = now - windowSizeSeconds + 1
 
   private def now(): Long = Instant.now(clock).getEpochSecond
 

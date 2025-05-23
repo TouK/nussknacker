@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.livedata
 
 import io.circe.Json
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 
@@ -22,9 +21,9 @@ private[livedata] class LiveDataCollectingListenerStorage(
     )
   }
 
-  def updateResults(context: Context, action: TestResults[Json] => TestResults[Json]): Unit = {
+  def updateResults(contextId: String, action: TestResults[Json] => TestResults[Json]): Unit = {
     results.update(
-      context.initialId,
+      contextId,
       {
         case Some(resultsSoFar) => action(resultsSoFar)
         case None               => action(TestResults.empty[Json])

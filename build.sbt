@@ -2181,6 +2181,7 @@ lazy val designer = (project in file("designer/server"))
     processReports,
     security,
     deploymentManagerApi,
+    liveDataCollector,
     componentsApi,
     restmodel,
     listenerApi,
