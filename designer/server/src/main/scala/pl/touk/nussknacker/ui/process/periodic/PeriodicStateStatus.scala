@@ -30,6 +30,8 @@ object PeriodicStateStatus {
 
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
 
+  val customVisibleActions: Set[ScenarioActionName] = Set(ScenarioActionName.RunOffSchedule)
+
   val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] =
     Function.unlift((input: ScenarioStatusWithScenarioContext) =>
       (input.scenarioStatus, input.deployedVersionId, input.currentlyPresentedVersionId) match {
@@ -38,13 +40,13 @@ object PeriodicStateStatus {
           Some(Set(ScenarioActionName.Cancel))
         case (_: ScheduledStatus, deployedVersionId, Some(currentlyPresentedVersionId))
             if deployedVersionId.contains(currentlyPresentedVersionId) =>
-          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunOffSchedule))
+          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Redeploy, ScenarioActionName.RunOffSchedule))
         case (_: ScheduledStatus, _, None) =>
           // At the moment of deployment or validation, we may not have the information about the currently displayed version
           // In that case we assume, that it was validated before the deployment was initiated.
-          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunOffSchedule))
+          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Redeploy, ScenarioActionName.RunOffSchedule))
         case (_: ScheduledStatus, _, _) =>
-          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Deploy))
+          Some(Set(ScenarioActionName.Cancel, ScenarioActionName.Redeploy))
         case (WaitingForScheduleStatus, _, _) =>
           Some(Set(ScenarioActionName.Cancel)) // or maybe should it be empty??
         case (_: ProblemStateStatus, _, _) =>

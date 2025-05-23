@@ -191,6 +191,16 @@ object ScenarioActivity {
       result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
+  final case class ScenarioRedeployed(
+      scenarioId: ScenarioId,
+      scenarioActivityId: ScenarioActivityId,
+      user: ScenarioUser,
+      date: Instant,
+      scenarioVersionId: Option[ScenarioVersionId],
+      comment: ScenarioComment,
+      result: DeploymentResult,
+  ) extends DeploymentRelatedActivity
+
   final case class ScenarioPaused(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,

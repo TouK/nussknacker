@@ -25,6 +25,7 @@ export type ToggleProcessActionModalData = {
         nodeData?: NodesDeploymentData,
     ) => Promise<ScenarioActionResult>;
     displayWarnings?: boolean;
+    actionName?: string;
 };
 
 export function DeployProcessDialog(props: WindowContentProps<WindowKind, ToggleProcessActionModalData>): JSX.Element {

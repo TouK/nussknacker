@@ -40,9 +40,10 @@ class DeploymentService(
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
-      case command: RunDeploymentCommand  => runDeployment(command)
-      case command: CancelScenarioCommand => cancelScenario(command)
-      case command: RunOffScheduleCommand => runOffSchedule(command)
+      case command: RunDeploymentCommand   => runDeploymentOrRedeploy(command)
+      case command: RunRedeploymentCommand => runDeploymentOrRedeploy(command)
+      case command: CancelScenarioCommand  => cancelScenario(command)
+      case command: RunOffScheduleCommand  => runOffSchedule(command)
     }
   }
 
@@ -83,13 +84,20 @@ class DeploymentService(
       }
   }
 
-  private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
+  private def runDeploymentOrRedeploy[T <: CommonDeploymentCommand with ScenarioCommand[
+    Future[Option[ExternalDeploymentId]]
+  ]](
+      command: T
+  ): Future[Future[Option[ExternalDeploymentId]]] = {
     import command.commonData._
     actionService
       .actionProcessorForLatestVersion[CanonicalProcess]
-      .processActionWithCustomFinalization[RunDeploymentCommand, Future[Option[ExternalDeploymentId]]](
+      .processActionWithCustomFinalization[T, Future[Option[ExternalDeploymentId]]](
         command = command,
-        actionName = ScenarioActionName.Deploy
+        actionName = command match {
+          case _: RunDeploymentCommand   => ScenarioActionName.Deploy
+          case _: RunRedeploymentCommand => ScenarioActionName.Redeploy
+        }
       ) { case (ctx, actionFinalizer) =>
         implicit class FinalizerExt[T](val future: Future[T]) {
           def removeInvalidActionOnFailure(): Future[T] = {
@@ -137,7 +145,7 @@ class DeploymentService(
 
   private def validateScenario(
       scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess]
-  )(implicit user: LoggedUser) = Future {
+  )(implicit user: LoggedUser): Future[Unit] = Future {
     processValidator
       .forProcessingTypeUnsafe(scenarioDetails.processingType)
       .validateCanonicalProcess(
@@ -165,7 +173,7 @@ class DeploymentService(
   protected def validateUsingDeploymentManager(
       scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       runDeploymentCommand: DMRunDeploymentCommand,
-  )(implicit user: LoggedUser) = {
+  )(implicit user: LoggedUser): Future[Unit] = {
     dispatcher
       .deploymentManagerUnsafe(scenarioDetails.processingType)
       .processCommand(
@@ -181,7 +189,7 @@ class DeploymentService(
   private def prepareDMRunDeploymentCommand(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
-      command: RunDeploymentCommand,
+      command: CommonDeploymentCommand,
   )(implicit user: LoggedUser): Future[DMRunDeploymentCommand] = {
     for {
       resolvedCanonicalProcess <- scenarioResolver
