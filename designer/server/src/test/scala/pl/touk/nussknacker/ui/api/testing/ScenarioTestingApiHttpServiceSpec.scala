@@ -108,6 +108,30 @@ trait ScenarioTestingApiHttpServiceSpec
              |}""".stripMargin
         )
     }
+    "return valid capabilities for scenario with all capabilities, but user not allowed to deploy" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthWriter()
+        .jsonBody(exampleScenarioGraphStr)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |    "testWithParameters": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
+             |    },
+             |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
+             |    }
+             |}""".stripMargin
+        )
+    }
     "return Forbidden for user without permissions" in {
       // TODO lets talk about it, I've changed behaviour of API, in old definition user without permission still got response, but with capabilities disabled.
       // I thought it might be confusing to return valid response rather then inform user that he cannot get that information.

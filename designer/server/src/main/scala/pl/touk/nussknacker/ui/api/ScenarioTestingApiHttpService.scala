@@ -66,6 +66,10 @@ class ScenarioTestingApiHttpService(
         { case (scenarioName, scenarioGraph) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT.fromOption[Future](
+              scenarioWithDetails.processId,
+              noScenarioError(scenarioName),
+            )
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
@@ -73,6 +77,7 @@ class ScenarioTestingApiHttpService(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
             )
+            canDeploy <- EitherT.right(scenarioAuthorizer.check(processId, Permission.Deploy, loggedUser))
             result = capabilities match {
               case Left(TestingCapabilitiesError.NoSourcesError) =>
                 def status[T <: TestCapabilityDetails] =
@@ -84,24 +89,36 @@ class ScenarioTestingApiHttpService(
                 ScenarioTestCapabilities(status, status)
               case Right(capabilities) =>
                 ScenarioTestCapabilities(
-                  testWithParameters = if (capabilities.canTestWithForm) {
-                    scenarioTestService.testUISourceParametersDefinition(
-                      scenarioGraph,
-                      scenarioWithDetails.processVersionUnsafe,
-                    ) match {
-                      case Right(parameters) =>
-                        CapabilityStatus.Available(TestWithParametersDetails(parameters))
-                      case Left(ParametersDefinitionError.NotSupportedBySource(_)) =>
+                  testWithParameters = {
+                    (canDeploy, capabilities.canTestWithForm) match {
+                      case (false, _) =>
+                        CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
+                      case (true, false) =>
                         CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
-                      case Left(ParametersDefinitionError.SourceValidationError(_)) =>
-                        CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+                      case (true, true) =>
+                        scenarioTestService.testUISourceParametersDefinition(
+                          scenarioGraph,
+                          scenarioWithDetails.processVersionUnsafe,
+                        ) match {
+                          case Right(parameters) =>
+                            CapabilityStatus.Available(TestWithParametersDetails(parameters))
+                          case Left(ParametersDefinitionError.NotSupportedBySource(_)) =>
+                            CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                          case Left(ParametersDefinitionError.SourceValidationError(_)) =>
+                            CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+                        }
                     }
-                  } else {
-                    CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                   },
-                  testWithGeneratedData =
-                    if (capabilities.canBeTested && capabilities.canGenerateTestData) CapabilityStatus.available
-                    else CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources),
+                  testWithGeneratedData = {
+                    (canDeploy, capabilities.canBeTested && capabilities.canGenerateTestData) match {
+                      case (false, _) =>
+                        CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
+                      case (true, false) =>
+                        CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                      case (true, true) =>
+                        CapabilityStatus.available
+                    }
+                  }
                 )
             }
           } yield result

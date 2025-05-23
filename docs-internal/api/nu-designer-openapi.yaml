@@ -6682,6 +6682,7 @@ components:
       - $ref: '#/components/schemas/InvalidScenario'
       - $ref: '#/components/schemas/NoSources'
       - $ref: '#/components/schemas/NotSupportedBySources'
+      - $ref: '#/components/schemas/UserDoesNotHavePermission'
     NotAvailable_T:
       title: NotAvailable_T
       type: object
@@ -7820,6 +7821,9 @@ components:
           anyOf:
           - $ref: '#/components/schemas/LayoutData'
           - type: 'null'
+    UserDoesNotHavePermission:
+      title: UserDoesNotHavePermission
+      type: object
     ValidationError:
       title: ValidationError
       type: object
