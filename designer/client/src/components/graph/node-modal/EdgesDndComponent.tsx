@@ -1,4 +1,3 @@
-import { produce } from "immer";
 import { defaultsDeep } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
@@ -34,12 +33,12 @@ interface Props {
 
 export type WithTempId<T> = T & { _id?: string };
 
+//mutate to avoid unnecessary renders
 function withFakeId(edge: WithTempId<Edge>): WithTempId<Edge> {
-    return edge._id
-        ? edge
-        : produce(edge, (draft) => {
-              draft._id = `id${Math.random()}`;
-          });
+    if (!edge._id) {
+        edge._id = `id${Math.random()}`;
+    }
+    return edge;
 }
 
 function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
@@ -70,7 +69,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     const process = useSelector(getScenarioGraph);
     const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => {
         const edges1 = value || process.edges.filter(({ from }) => from === nodeId);
-        return edges1.map(withFakeId);
+        return edges1.map((edge) => withFakeId({ ...edge }));
     });
 
     const edgeTypes = useMemo(
