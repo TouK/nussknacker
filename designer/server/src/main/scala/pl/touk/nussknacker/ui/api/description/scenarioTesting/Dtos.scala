@@ -9,19 +9,25 @@ import io.circe._
 import io.circe.derivation.deriveCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.testmode.TestProcess._
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.TestingApiErrorMessages
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
   EmptyDetails,
   TestWithParametersDetails
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.processreport.NodeCount
-import sttp.tapir.Schema
+import sttp.tapir.{Codec, CodecFormat, Schema}
 import sttp.tapir.derevo.schema
 
 import scala.collection.compat._
@@ -40,8 +46,8 @@ object Dtos {
     )
 
     object ScenarioTestCapabilities {
-      implicit def codec: Codec[ScenarioTestCapabilities]   = deriveCodec
-      implicit def schema: Schema[ScenarioTestCapabilities] = Schema.derived
+      implicit def codec: circe.Codec[ScenarioTestCapabilities] = deriveCodec
+      implicit def schema: Schema[ScenarioTestCapabilities]     = Schema.derived
     }
 
     sealed trait CapabilityStatus[T <: TestCapabilityDetails]
@@ -51,33 +57,34 @@ object Dtos {
       final case class Available[T <: TestCapabilityDetails](data: T)                       extends CapabilityStatus[T]
       def available: Available[EmptyDetails] = Available(EmptyDetails())
 
-      implicit def codec[DATA <: TestCapabilityDetails: Codec]: circe.Codec[CapabilityStatus[DATA]] = circe.Codec.from(
-        Decoder.instance(c =>
-          for {
-            statusStr <- c.downField("status").as[String]
-            status <- statusStr match {
-              case "NOT_AVAILABLE" =>
-                c.downField("reason").as[NotAvailableReason].map(CapabilityStatus.NotAvailable[DATA](_))
-              case "AVAILABLE" =>
-                c.as[DATA].map(CapabilityStatus.Available.apply)
-            }
-          } yield status
-        ),
-        Encoder.instance {
-          case CapabilityStatus.NotAvailable(reason) =>
-            Json.obj(
-              ("status", "NOT_AVAILABLE".asJson),
-              ("reason", reason.asJson),
-            )
-          case CapabilityStatus.Available(data) =>
-            Json
-              .obj(
-                ("status", "AVAILABLE".asJson)
+      implicit def codec[DATA <: TestCapabilityDetails: circe.Codec]: circe.Codec[CapabilityStatus[DATA]] =
+        circe.Codec.from(
+          Decoder.instance(c =>
+            for {
+              statusStr <- c.downField("status").as[String]
+              status <- statusStr match {
+                case "NOT_AVAILABLE" =>
+                  c.downField("reason").as[NotAvailableReason].map(CapabilityStatus.NotAvailable[DATA](_))
+                case "AVAILABLE" =>
+                  c.as[DATA].map(CapabilityStatus.Available.apply)
+              }
+            } yield status
+          ),
+          Encoder.instance {
+            case CapabilityStatus.NotAvailable(reason) =>
+              Json.obj(
+                ("status", "NOT_AVAILABLE".asJson),
+                ("reason", reason.asJson),
               )
-              .deepMerge(data.asJson)
-              .dropNullValues
-        },
-      )
+            case CapabilityStatus.Available(data) =>
+              Json
+                .obj(
+                  ("status", "AVAILABLE".asJson)
+                )
+                .deepMerge(data.asJson)
+                .dropNullValues
+          },
+        )
 
       implicit def schema[T <: TestCapabilityDetails: Schema]: Schema[CapabilityStatus[T]] = Schema.derived
     }
@@ -89,7 +96,7 @@ object Dtos {
           extends TestCapabilityDetails
 
       object TestWithParametersDetails {
-        implicit def codec: Codec[TestWithParametersDetails]              = deriveCodec
+        implicit def codec: circe.Codec[TestWithParametersDetails]        = deriveCodec
         implicit def uiSourceParametersSchema: Schema[UISourceParameters] = Schema.anyObject
         implicit def schema: Schema[TestWithParametersDetails]            = Schema.derived
       }
@@ -98,7 +105,7 @@ object Dtos {
 
       object EmptyDetails {
 
-        implicit def codec: Codec[EmptyDetails] = Codec.from(
+        implicit def codec: circe.Codec[EmptyDetails] = circe.Codec.from(
           Decoder.const(EmptyDetails()),
           Encoder.instance(_ => Json.obj())
         )
@@ -166,7 +173,7 @@ object Dtos {
         numberOfSamples: Int,
     ) extends ScenarioTestData
 
-    implicit def codec: circe.Codec[ScenarioTestData] = Codec.from(
+    implicit def codec: circe.Codec[ScenarioTestData] = circe.Codec.from(
       Decoder.instance(c =>
         for {
           typeStr <- c.downField("type").as[String]
@@ -252,5 +259,57 @@ object Dtos {
   implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
+
+  sealed trait TestingError
+
+  object TestingError {
+
+    final case object NoPermission extends TestingError with CustomAuthorizationError
+
+    sealed trait BadRequestTestingError extends TestingError
+
+    object BadRequestTestingError {
+      final case class TooManyCharactersGenerated(length: Int, limit: Int)    extends BadRequestTestingError
+      final case class TooManySamplesRequested(maxSamples: Int)               extends BadRequestTestingError
+      final case class ScenarioGraphValidationError(errors: ValidationErrors) extends BadRequestTestingError
+      final case class UnsupportedOperation(message: String)                  extends BadRequestTestingError
+      final case class ErrorResult(message: String)                           extends BadRequestTestingError
+
+      implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
+          case ScenarioGraphValidationError(errors) =>
+            errors.toHumanReadableMessage
+          case TooManyCharactersGenerated(length, limit) =>
+            TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
+          case TooManySamplesRequested(maxSamples) =>
+            TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
+          case UnsupportedOperation(message) =>
+            message
+          case ErrorResult(message) =>
+            message
+        }
+      }
+
+    }
+
+    sealed trait NotFoundTestingError extends TestingError
+
+    object NotFoundTestingError {
+      final case class NoScenario(scenarioName: ProcessName) extends NotFoundTestingError
+      final case object NoDataGenerated                      extends NotFoundTestingError
+      final case object NoSourcesWithTestDataGeneration      extends NotFoundTestingError
+
+      implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
+          case NoScenario(scenarioName) => s"No scenario ${scenarioName.value} found"
+          case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
+          case NoSourcesWithTestDataGeneration =>
+            TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
+        }
+      }
+
+    }
+
+  }
 
 }
