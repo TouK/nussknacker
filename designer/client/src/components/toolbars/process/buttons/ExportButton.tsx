@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
-import ProcessUtils2 from "../../../../common/ProcessUtils2";
+import { canExport } from "../../../../common/ProcessUtils2";
 import HttpService from "../../../../http/HttpService";
 import type { RootState } from "../../../../reducers";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../../../../reducers/selectors/graph";
@@ -35,7 +35,7 @@ const mapState = (state: RootState) => {
         versionId: getProcessVersionId(state),
         scenarioName: getProcessName(state),
         scenarioGraph: getScenarioGraph(state),
-        canExport: ProcessUtils2.canExport(state),
+        canExport: canExport(state),
     };
 };
 

@@ -7,8 +7,7 @@ import { getHistoryPast } from "../reducers/selectors/getHistory";
 import { getScenario, isProcessRenamed } from "../reducers/selectors/graph";
 import type { NodeResults, ScenarioGraph, ValidationErrors, ValidationResult } from "../types";
 
-// easy extractable selectors-like
-const nothingToSave = (state: RootState): boolean => {
+export const nothingToSave = (state: RootState): boolean => {
     const scenario: Scenario = getScenario(state);
     const savedProcessState: Scenario = getHistoryPast(state)?.[0]?.scenario || scenario;
 
@@ -50,16 +49,16 @@ const nothingToSave = (state: RootState): boolean => {
     return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
 };
 
-const canExport = (state: RootState): boolean => {
+export const canExport = (state: RootState): boolean => {
     const scenario = getScenario(state);
     return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
 };
 
-const isValidationResultPresent = (scenario: Scenario) => {
+export const isValidationResultPresent = (scenario: Scenario) => {
     return Boolean(scenario.validationResult);
 };
 
-const getValidationResult = (scenario: Scenario): ValidationResult =>
+export const getValidationResult = (scenario: Scenario): ValidationResult =>
     scenario?.validationResult || {
         validationErrors: [],
         validationWarnings: [],
@@ -71,11 +70,11 @@ const getValidationResult = (scenario: Scenario): ValidationResult =>
         },
     };
 
-const getValidationErrors = (scenario: Scenario): ValidationErrors => getValidationResult(scenario).errors;
+export const getValidationErrors = (scenario: Scenario): ValidationErrors => getValidationResult(scenario).errors;
 
-const getNodeResults = (scenario: Scenario): NodeResults => getValidationResult(scenario).nodeResults;
+export const getNodeResults = (scenario: Scenario): NodeResults => getValidationResult(scenario).nodeResults;
 
-const getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
+export const getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
     return getValidationResult(scenario)
         .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
         .map(
@@ -87,16 +86,16 @@ const getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => 
         );
 };
 
-const hasNoPropertiesErrors = (scenario: Scenario) => {
+export const hasNoPropertiesErrors = (scenario: Scenario) => {
     return isEmpty(getValidationErrors(scenario)?.processPropertiesErrors);
 };
 
-const hasNoWarnings = (scenario: Scenario) => {
+export const hasNoWarnings = (scenario: Scenario) => {
     const warnings = getValidationResult(scenario).warnings;
     return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
 };
 
-const hasNoErrors = (scenario: Scenario) => {
+export const hasNoErrors = (scenario: Scenario) => {
     const result = getValidationErrors(scenario);
     return (
         !result ||
@@ -106,21 +105,7 @@ const hasNoErrors = (scenario: Scenario) => {
     );
 };
 
-const hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
+export const hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
     //fixme maybe return hasErrors flag from backend?
     return isValidationResultPresent(scenario) && hasNoErrors(scenario) && hasNoWarnings(scenario);
-};
-
-export default {
-    nothingToSave,
-    canExport,
-    isValidationResultPresent,
-    getValidationResult,
-    hasNeitherErrorsNorWarnings,
-    hasNoErrors,
-    hasNoWarnings,
-    hasNoPropertiesErrors,
-    getLabelsErrors,
-    getNodeResults,
-    getValidationErrors,
 };

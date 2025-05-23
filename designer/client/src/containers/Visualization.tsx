@@ -9,7 +9,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import ProcessUtils2 from "../common/ProcessUtils2";
+import { nothingToSave as nothingToSave1 } from "../common/ProcessUtils2";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import type { Graph } from "../components/graph/Graph";
@@ -125,7 +125,7 @@ function Visualization() {
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
-    const nothingToSave = useSelector((state) => ProcessUtils2.nothingToSave(state as RootState));
+    const nothingToSave = useSelector((state) => nothingToSave1(state as RootState));
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;

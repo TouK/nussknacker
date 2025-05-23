@@ -15,7 +15,7 @@ import type {
     ValidationResult,
     VariableTypes,
 } from "../types";
-import ProcessUtils2 from "./ProcessUtils2";
+import { getNodeResults } from "./ProcessUtils2";
 
 class ProcessUtils {
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
@@ -53,7 +53,7 @@ class ProcessUtils {
     findAvailableVariables =
         (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-            const nodeResults = ProcessUtils2.getNodeResults(scenario);
+            const nodeResults = getNodeResults(scenario);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
             const variablesForNode =
                 variablesFromValidation || this.findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);

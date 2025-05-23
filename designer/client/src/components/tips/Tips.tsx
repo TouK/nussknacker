@@ -5,7 +5,13 @@ import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
-import ProcessUtils2 from "../../common/ProcessUtils2";
+import {
+    getValidationResult,
+    hasNeitherErrorsNorWarnings,
+    hasNoErrors,
+    hasNoWarnings,
+    isValidationResultPresent,
+} from "../../common/ProcessUtils2";
 import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import type { NodeType } from "../../types";
@@ -31,7 +37,7 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
 
     const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
     const testResults = useSelector(getTestResults);
-    const { errors, warnings } = ProcessUtils2.getValidationResult(scenario);
+    const { errors, warnings } = getValidationResult(scenario);
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.tips.title", "Tips")}>
@@ -42,12 +48,12 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
                     hideTracksWhenNotNeeded={true}
                 >
                     <ValidTips
-                        loading={!ProcessUtils2.isValidationResultPresent(scenario)}
+                        loading={!isValidationResultPresent(scenario)}
                         testing={!!testResults}
-                        hasNeitherErrorsNorWarnings={ProcessUtils2.hasNeitherErrorsNorWarnings(scenario)}
+                        hasNeitherErrorsNorWarnings={hasNeitherErrorsNorWarnings(scenario)}
                     />
-                    {!ProcessUtils2.hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
-                    {!ProcessUtils2.hasNoWarnings(scenario) && (
+                    {!hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
+                    {!hasNoWarnings(scenario) && (
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
                             showDetails={showDetails}
