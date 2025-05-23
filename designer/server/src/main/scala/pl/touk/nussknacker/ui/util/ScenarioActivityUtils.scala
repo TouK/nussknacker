@@ -15,6 +15,7 @@ object ScenarioActivityUtils {
         case _: ScenarioActivity.ScenarioArchived            => ScenarioActivityType.ScenarioArchived
         case _: ScenarioActivity.ScenarioUnarchived          => ScenarioActivityType.ScenarioUnarchived
         case _: ScenarioActivity.ScenarioDeployed            => ScenarioActivityType.ScenarioDeployed
+        case _: ScenarioActivity.ScenarioRedeployed          => ScenarioActivityType.ScenarioRedeployed
         case _: ScenarioActivity.ScenarioPaused              => ScenarioActivityType.ScenarioPaused
         case _: ScenarioActivity.ScenarioCanceled            => ScenarioActivityType.ScenarioCanceled
         case _: ScenarioActivity.ScenarioModified            => ScenarioActivityType.ScenarioModified
@@ -44,6 +45,7 @@ object ScenarioActivityUtils {
         case activity: ScenarioActivity.ScenarioArchived            => activity.date
         case activity: ScenarioActivity.ScenarioUnarchived          => activity.date
         case activity: ScenarioActivity.ScenarioDeployed            => activity.comment.lastModifiedAt
+        case activity: ScenarioActivity.ScenarioRedeployed          => activity.comment.lastModifiedAt
         case activity: ScenarioActivity.ScenarioPaused              => activity.comment.lastModifiedAt
         case activity: ScenarioActivity.ScenarioCanceled            => activity.comment.lastModifiedAt
         case activity: ScenarioActivity.ScenarioModified            => activity.comment.lastModifiedAt

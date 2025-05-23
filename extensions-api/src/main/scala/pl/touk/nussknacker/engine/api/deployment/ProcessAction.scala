@@ -81,6 +81,7 @@ object ScenarioActionName {
   implicit val keyDecoder: KeyDecoder[ScenarioActionName] = KeyDecoder.decodeKeyString.map(ScenarioActionName(_))
 
   val Deploy: ScenarioActionName    = ScenarioActionName("DEPLOY")
+  val Redeploy: ScenarioActionName  = ScenarioActionName("REDEPLOY")
   val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
   val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
   val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
@@ -92,9 +93,9 @@ object ScenarioActionName {
   //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
   val RunOffSchedule: ScenarioActionName = ScenarioActionName("run now")
 
-  val DefaultActions: List[ScenarioActionName] = Nil
+  val DefaultActions: Set[ScenarioActionName] = Set.empty
 
-  val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy)
+  val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Redeploy)
 
   def serialize(name: ScenarioActionName): String = name match {
     case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"

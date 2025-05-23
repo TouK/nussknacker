@@ -156,7 +156,7 @@ class ScenarioStatusProvider(
     dispatcher
       .deploymentManagerUnsafe(processDetails.processingType)
       .processStateDefinitionManager
-      .statusActions(
+      .allowedActions(
         ScenarioStatusWithScenarioContext(
           scenarioStatus = scenarioStatus,
           deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId),
@@ -214,6 +214,8 @@ class ScenarioStatusProvider(
       logStatusAndReturn(getArchivedScenarioStatus(processDetails))
     } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
       logStatusAndReturn(SimpleStateStatus.DuringDeploy)
+    } else if (inProgressActionNames.contains(ScenarioActionName.Redeploy)) {
+      logStatusAndReturn(SimpleStateStatus.DuringRedeploy)
     } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
       logStatusAndReturn(SimpleStateStatus.DuringCancel)
     } else {

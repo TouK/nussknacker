@@ -106,9 +106,10 @@ object Notification {
 
   private def displayableActionName(actionName: ScenarioActionName): String =
     actionName match {
-      case ScenarioActionName.Deploy => "Deployment"
-      case ScenarioActionName.Cancel => "Cancel"
-      case _                         => throw new AssertionError(s"Not supported deployment action: $actionName")
+      case ScenarioActionName.Deploy   => "Deployment"
+      case ScenarioActionName.Redeploy => "Redeploy"
+      case ScenarioActionName.Cancel   => "Cancel"
+      case _                           => throw new AssertionError(s"Not supported deployment action: $actionName")
     }
 
 }

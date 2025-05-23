@@ -285,6 +285,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         None
       case activity: ScenarioActivity.ScenarioDeployed =>
         toComment(id, activity, activity.comment, Some("Deployment: "))
+      case activity: ScenarioActivity.ScenarioRedeployed =>
+        toComment(id, activity, activity.comment, Some("Deployment: "))
       case activity: ScenarioActivity.ScenarioPaused =>
         toComment(id, activity, activity.comment, Some("Pause: "))
       case activity: ScenarioActivity.ScenarioCanceled =>
@@ -459,8 +461,9 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   private def commentModificationMetadata(entity: ScenarioActivityEntityData): CommentModificationMetadata = {
     val isScenarioDeployedActivity = entity.activityType match {
-      case ScenarioActivityType.ScenarioDeployed => true
-      case _                                     => false
+      case ScenarioActivityType.ScenarioDeployed   => true
+      case ScenarioActivityType.ScenarioRedeployed => true
+      case _                                       => false
     }
     CommentModificationMetadata(commentForScenarioDeployed = isScenarioDeployedActivity)
   }
@@ -535,6 +538,11 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       case _: ScenarioActivity.ScenarioUnarchived =>
         createEntity(scenarioActivity)()
       case activity: ScenarioActivity.ScenarioDeployed =>
+        createEntity(scenarioActivity)(
+          comment = comment(activity.comment),
+          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
+        )
+      case activity: ScenarioActivity.ScenarioRedeployed =>
         createEntity(scenarioActivity)(
           comment = comment(activity.comment),
           lastModifiedByUserName = lastModifiedByUserName(activity.comment),
@@ -752,6 +760,19 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           comment <- commentFromEntity(entity)
           result  <- resultFromEntity(entity)
         } yield ScenarioActivity.ScenarioDeployed(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersionId = entity.scenarioVersion,
+          comment = comment,
+          result = result,
+        )).map((entity.id, _))
+      case ScenarioActivityType.ScenarioRedeployed =>
+        (for {
+          comment <- commentFromEntity(entity)
+          result  <- resultFromEntity(entity)
+        } yield ScenarioActivity.ScenarioRedeployed(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),

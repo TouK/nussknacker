@@ -36,7 +36,10 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   FlinkDeserializationSchemaWrapper
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.OFFSET_RESET_STRATEGY_PARAM_NAME
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
+  OFFSET_RESET_STRATEGY_LABEL,
+  OFFSET_RESET_STRATEGY_PARAM_NAME
+}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
@@ -102,10 +105,26 @@ class FlinkKafkaSource[T](
             )
           ),
           validators = None,
-          label = Some("Offset reset strategy"),
+          label = Some(OFFSET_RESET_STRATEGY_LABEL),
           hintText = None
         ),
-      )
+      ),
+      ScenarioActionName.Redeploy -> Map(
+        OFFSET_RESET_STRATEGY_PARAM_NAME -> StaticParameterConfig(
+          defaultValue = Some(OffsetResetStrategy.None.toString),
+          editor = FixedValuesWithRadioParameterEditor(
+            List(
+              FixedExpressionValue(
+                OffsetResetStrategy.None.toString,
+                s"Resume reading where it previously stopped"
+              ),
+            )
+          ),
+          validators = None,
+          label = Some(OFFSET_RESET_STRATEGY_LABEL),
+          hintText = None
+        ),
+      ),
     )
   }
 
@@ -201,6 +220,7 @@ class FlinkKafkaSource[T](
 
 object FlinkKafkaSource {
   val OFFSET_RESET_STRATEGY_PARAM_NAME: ParameterName = ParameterName("offsetResetStrategy")
+  val OFFSET_RESET_STRATEGY_LABEL: String             = "Offset reset strategy"
 }
 
 // TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by

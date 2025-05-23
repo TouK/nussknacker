@@ -18,6 +18,7 @@ import UnArchiveButton from "../../toolbars/process/buttons/UnArchiveButton";
 import CancelDeployButton from "../../toolbars/scenarioActions/buttons/CancelDeployButton";
 import DeployButton from "../../toolbars/scenarioActions/buttons/DeployButton";
 import PropertiesButton from "../../toolbars/scenarioActions/buttons/PropertiesButton";
+import RedeployButton from "../../toolbars/scenarioActions/buttons/RedeployButton";
 import RunOffScheduleButton from "../../toolbars/scenarioActions/buttons/RunOffScheduleButton";
 import AdhocTestingButton from "../../toolbars/test/buttons/AdhocTestingButton";
 import CountsButton from "../../toolbars/test/buttons/CountsButton";
@@ -45,6 +46,7 @@ type ToolbarButtonsMap = {
 export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.processSave]: SaveButton,
     [BuiltinButtonTypes.processDeploy]: DeployButton,
+    [BuiltinButtonTypes.processRedeploy]: RedeployButton,
     [BuiltinButtonTypes.processCancel]: CancelDeployButton,
     [BuiltinButtonTypes.processRunOffSchedule]: RunOffScheduleButton,
     [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,

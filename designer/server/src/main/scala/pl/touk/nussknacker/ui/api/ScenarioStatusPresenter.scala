@@ -30,7 +30,7 @@ class ScenarioStatusPresenter(dispatcher: DeploymentManagerDispatcher) {
       )
     ScenarioStatusDto(
       status = ScenarioStatusNameWrapperDto(scenarioStatus.name),
-      visibleActions = presentation.visibleActions,
+      visibleActions = presentation.visibleActions.toList.sortBy(_.value),
       allowedActions = presentation.allowedActions.toList.sortBy(_.value),
       actionTooltips = presentation.actionTooltips,
       icon = presentation.icon,

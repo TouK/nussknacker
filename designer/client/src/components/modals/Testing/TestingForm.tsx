@@ -81,7 +81,7 @@ export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX
                         {options.map(({ disableReason, ...props }) => (
                             <CustomRadio
                                 key={props.value}
-                                title={props.disabled ? disableReason : props.label}
+                                title={props.disabled ? disableReason : props.title}
                                 active={formValue.testType === props.value}
                                 {...props}
                             />

@@ -27,15 +27,16 @@ class OverridingProcessStateDefinitionManager(
     statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty,
-    customVisibleActions: Option[List[ScenarioActionName]] = None,
+    customVisibleActions: Option[Set[ScenarioActionName]] = None,
     customActionTooltips: Option[ScenarioStatusWithScenarioContext => Map[ScenarioActionName, String]] = None,
 ) extends ProcessStateDefinitionManager {
 
-  override def visibleActions(input: ScenarioStatusWithScenarioContext): List[ScenarioActionName] =
-    customVisibleActions.getOrElse(delegate.visibleActions(input))
+  // statusActionsPF may introduce different workflow which is not avialable in customVisibleActions
+  override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
+    delegate.visibleActions(input) ++ customVisibleActions.getOrElse(Set.empty)
 
-  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
-    statusActionsPF.applyOrElse(input, delegate.statusActions)
+  override def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
+    statusActionsPF.applyOrElse(input, delegate.allowedActions)
 
   override def actionTooltips(input: ScenarioStatusWithScenarioContext): Map[ScenarioActionName, String] =
     customActionTooltips.map(_(input)).getOrElse(delegate.actionTooltips(input))

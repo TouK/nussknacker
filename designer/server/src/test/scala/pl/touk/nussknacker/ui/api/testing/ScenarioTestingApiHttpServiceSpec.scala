@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import io.circe.{Encoder, Json}
+import io.circe.Encoder
+import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -31,7 +32,11 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
@@ -144,6 +149,30 @@ trait ScenarioTestingApiHttpServiceSpec
              |    "liveDataPreview": {
              |      "status": "NOT_AVAILABLE",
              |      "reason": "NOT_SUPPORTED_BY_SCENARIO_TYPE"
+             |    }
+             |}""".stripMargin
+        )
+    }
+    "return valid capabilities for scenario with all capabilities, but user not allowed to deploy" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthWriter()
+        .jsonBody(exampleScenarioGraphStr)
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |    "testWithParameters": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
+             |    },
+             |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
              |    }
              |}""".stripMargin
         )
@@ -394,29 +423,74 @@ trait ScenarioTestingApiHttpServiceSpec
   }
 
   "The endpoint for running tests from file should" - {
-    "properly parse file and run tests" in {
-      createSavedScenario(exampleScenario)
 
-      val response = httpClient.send(
+    def runTestsFromFile(testDataJson: String) = {
+      httpClient.send(
         quickRequest
           .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
           .contentType(MediaType.MultipartFormData)
           .multipartBody(
             sttpPrepareMultiParts(
-              "testData"      -> expectedTestDataJson,
+              "testData"      -> testDataJson,
               "scenarioGraph" -> toJson(exampleScenario).noSpaces
             )()
           )
           .auth
           .basic("allpermuser", "allpermuser")
       )
+    }
+
+    "properly parse file and run tests" in {
+      createSavedScenario(exampleScenario)
+
+      val response = runTestsFromFile(expectedTestDataJson)
+
       response.code shouldEqual StatusCode.Ok
+    }
+
+    "return error for empty test data" in {
+      createSavedScenario(exampleScenario)
+
+      val response = runTestsFromFile("")
+
+      response.code shouldEqual StatusCode.BadRequest
+      response.body shouldEqual "Test data is empty"
     }
   }
 
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
       shouldValidateParametersProperly()
+    }
+
+    "return errors on missing source" in {
+      val missingSourceId = "missing source"
+      val scenarioWithMissingSource: CanonicalProcess =
+        ScenarioBuilder
+          .streaming("scenario with missing source")
+          .source(missingSourceId, "missing source", "a parameter" -> "{'test'}".spel)
+          .emptySink("end", "monitor")
+
+      given()
+        .applicationState {
+          createSavedScenario(scenarioWithMissingSource)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          ScenarioTestValidationRequest(
+            testData = ScenarioTestData.WithParameters(
+              TestSourceParameters(missingSourceId, Map(ParameterName("a parameter") -> "{'123'}".spel))
+            ),
+            scenarioGraph = toScenarioGraph(scenarioWithMissingSource)
+          ).asJson.toString()
+        )
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenarioWithMissingSource.name}/validate")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          "Requested test parameters from source [missing source] that is not valid. Errors: MissingSourceFactory(missing source,missing source)"
+        )
     }
   }
 
@@ -429,6 +503,27 @@ trait ScenarioTestingApiHttpServiceSpec
   "The endpoint for adhoc test parameters should" - {
     "return test parameters" in {
       shouldProperlyGetTestParameters()
+    }
+  }
+
+  "The endpoint for test with live data should" - {
+    "return error if trying to test with 0 samples" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          ScenarioTestValidationRequest(
+            testData = ScenarioTestData.WithGeneratedData(0),
+            scenarioGraph = toScenarioGraph(exampleScenario)
+          ).asJson.toString()
+        )
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
     }
   }
 

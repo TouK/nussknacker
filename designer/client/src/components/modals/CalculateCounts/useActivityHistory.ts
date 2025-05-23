@@ -13,6 +13,8 @@ function displayableNameOfPredefinedActivityType(predefinedActivityType: Activit
             return "Cancel";
         case ActivityTypesRelatedToExecutions.ScenarioDeployed:
             return "Deployment";
+        case ActivityTypesRelatedToExecutions.ScenarioRedeployed:
+            return "Redeploy";
         case ActivityTypesRelatedToExecutions.PerformedScheduledExecution:
             return "Scheduled deployment";
         case ActivityTypesRelatedToExecutions.PerformedSingleExecution:
@@ -21,6 +23,7 @@ function displayableNameOfPredefinedActivityType(predefinedActivityType: Activit
             return "Unknown activity type";
     }
 }
+
 /*
    In the context of batch processing, the information about a performed deployment does not provide meaningful insights for range calculations.
    This is because batch processes do not execute immediately after a deployment action. To address this, deployment-related activities
@@ -38,7 +41,13 @@ export function useActivityHistory(processName: string, processingMode: string):
         HttpService.fetchActivitiesRelatedToExecutions(processName)
             .then((activities) =>
                 processingMode.includes("batch")
-                    ? activities.filter((activity) => activity.type !== ActivityTypesRelatedToExecutions.ScenarioDeployed)
+                    ? activities.filter(
+                          (activity) =>
+                              ![
+                                  ActivityTypesRelatedToExecutions.ScenarioDeployed,
+                                  ActivityTypesRelatedToExecutions.ScenarioRedeployed,
+                              ].includes(activity.type),
+                      )
                     : activities,
             )
             .then((activities) =>

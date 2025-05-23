@@ -175,6 +175,8 @@ description: Stay informed with detailed changelogs covering new features, impro
   * the flag is optional, the default value of the flag is `false` (no changes in behavior)
 * [#8076](https://github.com/TouK/nussknacker/pull/8076) Switching periodic job to finished status cleans jars from FS
 * [#8042](https://github.com/TouK/nussknacker/pull/8042) Merge OpenAPI components into one with multiple services.
+* [7684](https://github.com/TouK/nussknacker/pull/7684) Add action redeploy. Till now action deploy was responsible for both deploy and redeploy operations. 
+  Now they are separated in scenario workflow and UI. Kafka source has different deployment parameters for deploy and redeploy actions.
 * [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition frequencies
     * live data preview is optional and available for now only for Flink minicluster 
     * there is a new endpoint `/liveData/{scenarioName}`, which returns live data samples and throughput information

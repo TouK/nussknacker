@@ -2325,7 +2325,7 @@ paths:
                 Example1:
                   summary: No test data generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4317,6 +4317,13 @@ paths:
                       - delete_comment
                       - edit_comment
                       - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
@@ -4425,6 +4432,13 @@ paths:
                       supportedActions: []
                     - type: SCENARIO_DEPLOYED
                       displayableName: Deployment
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4827,7 +4841,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4951,7 +4965,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -5065,7 +5079,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -5218,7 +5232,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -6808,6 +6822,7 @@ components:
       - $ref: '#/components/schemas/NoSources'
       - $ref: '#/components/schemas/NotSupportedByScenarioType'
       - $ref: '#/components/schemas/NotSupportedBySources'
+      - $ref: '#/components/schemas/UserDoesNotHavePermission'
     NotAvailable_T:
       title: NotAvailable_T
       type: object
@@ -7200,6 +7215,7 @@ components:
           - SCENARIO_ARCHIVED
           - SCENARIO_UNARCHIVED
           - SCENARIO_DEPLOYED
+          - SCENARIO_REDEPLOYED
           - SCENARIO_PAUSED
           - SCENARIO_CANCELED
           - SCENARIO_MODIFIED
@@ -7961,6 +7977,9 @@ components:
           anyOf:
           - $ref: '#/components/schemas/LayoutData'
           - type: 'null'
+    UserDoesNotHavePermission:
+      title: UserDoesNotHavePermission
+      type: object
     ValidationError:
       title: ValidationError
       type: object
