@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
-import { canExport } from "../../../../common/ProcessUtils2";
+import { canExport } from "../../../../common/ProcessUtilsAsSelectors";
 import HttpService from "../../../../http/HttpService";
 import type { RootState } from "../../../../reducers";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../../../../reducers/selectors/graph";

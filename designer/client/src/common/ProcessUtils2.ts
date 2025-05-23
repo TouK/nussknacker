@@ -49,11 +49,6 @@ export const nothingToSave = (state: RootState): boolean => {
     return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
 };
 
-export const canExport = (state: RootState): boolean => {
-    const scenario = getScenario(state);
-    return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
-};
-
 export const isValidationResultPresent = (scenario: Scenario) => {
     return Boolean(scenario.validationResult);
 };
@@ -103,9 +98,4 @@ export const hasNoErrors = (scenario: Scenario) => {
             (result.globalErrors || []).length == 0 &&
             (result.processPropertiesErrors || []).length == 0)
     );
-};
-
-export const hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
-    //fixme maybe return hasErrors flag from backend?
-    return isValidationResultPresent(scenario) && hasNoErrors(scenario) && hasNoWarnings(scenario);
 };
