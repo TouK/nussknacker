@@ -5,8 +5,13 @@ import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
-import { hasNoErrors, hasNoWarnings, isValidationResultPresent } from "../../common/ProcessUtils2";
-import { getValidationResult, hasNeitherErrorsNorWarnings as _hasNeitherErrorsNorWarnings } from "../../common/ProcessUtilsAsSelectors";
+import {
+    getValidationResult,
+    hasNeitherErrorsNorWarnings as _hasNeitherErrorsNorWarnings,
+    hasNoErrors as _hasNoErrors,
+    hasNoWarnings as _hasNoWarnings,
+    isValidationResultPresent as _isValidationResultPresent,
+} from "../../common/ProcessUtilsAsSelectors";
 import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import type { NodeType } from "../../types";
@@ -34,22 +39,28 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
     const testResults = useSelector(getTestResults);
     const hasNeitherErrorsNorWarnings = useSelector(_hasNeitherErrorsNorWarnings);
     const { errors, warnings } = useSelector(getValidationResult);
+    const isValidationResultPresent = useSelector(_isValidationResultPresent);
+    const hasNoErrors = useSelector(_hasNoErrors);
+    const hasNoWarnings = useSelector(_hasNoWarnings);
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.tips.title", "Tips")}>
             <TipPanelStyled id="tipsPanel" isHighlighted={isHighlighted}>
                 <Scrollbars
-                    style={{ borderRadius: 3, position: "relative" }}
+                    style={{
+                        borderRadius: 3,
+                        position: "relative",
+                    }}
                     renderThumbVertical={(props) => <div key={uuid4()} {...props} />}
                     hideTracksWhenNotNeeded={true}
                 >
                     <ValidTips
-                        loading={!isValidationResultPresent(scenario)}
+                        loading={!isValidationResultPresent}
                         testing={!!testResults}
                         hasNeitherErrorsNorWarnings={hasNeitherErrorsNorWarnings}
                     />
-                    {!hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
-                    {!hasNoWarnings(scenario) && (
+                    {!hasNoErrors && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
+                    {!hasNoWarnings && (
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
                             showDetails={showDetails}

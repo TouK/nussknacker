@@ -1,14 +1,8 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
 
-import {
-    getLabelsErrors,
-    hasNoErrors,
-    hasNoPropertiesErrors,
-    hasNoWarnings,
-    isValidationResultPresent as isValidationResultPresent1,
-    nothingToSave,
-} from "../../common/ProcessUtils2";
+import { hasNoErrors, nothingToSave } from "../../common/ProcessUtils2";
+import { hasNoPropertiesErrors, hasNoWarnings } from "../../common/ProcessUtilsAsSelectors";
 import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
@@ -37,11 +31,9 @@ export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLa
 export const isFragment = createSelector(getScenario, (p) => p?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
 export const isPristine = (state: RootState): boolean => nothingToSave(state) && !isProcessRenamed(state);
-export const isValidationResultPresent = createSelector(getScenario, (p) => isValidationResultPresent1(p));
 export const hasError = createSelector(getScenario, (p) => !hasNoErrors(p));
-export const hasWarnings = createSelector(getScenario, (p) => !hasNoWarnings(p));
-export const hasPropertiesErrors = createSelector(getScenario, (p) => !hasNoPropertiesErrors(p));
-export const getScenarioLabelsErrors = createSelector(getScenario, (p) => getLabelsErrors(p));
+export const hasWarnings = createSelector(hasNoWarnings, (p) => !p);
+export const hasPropertiesErrors = createSelector(hasNoPropertiesErrors, (p) => !p);
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));

@@ -1,6 +1,5 @@
 import { isEmpty, isEqual, omit } from "lodash";
 
-import type { ScenarioLabelValidationError } from "../components/Labels/types";
 import type { Scenario } from "../components/Process/types";
 import type { RootState } from "../reducers";
 import { getHistoryPast } from "../reducers/selectors/getHistory";
@@ -68,27 +67,6 @@ export const getValidationResult = (scenario: Scenario): ValidationResult =>
 export const getValidationErrors = (scenario: Scenario): ValidationErrors => getValidationResult(scenario).errors;
 
 export const getNodeResults = (scenario: Scenario): NodeResults => getValidationResult(scenario).nodeResults;
-
-export const getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
-    return getValidationResult(scenario)
-        .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
-        .map(
-            (e) =>
-                <ScenarioLabelValidationError>{
-                    label: e.error.fieldName,
-                    messages: [e.error.description],
-                },
-        );
-};
-
-export const hasNoPropertiesErrors = (scenario: Scenario) => {
-    return isEmpty(getValidationErrors(scenario)?.processPropertiesErrors);
-};
-
-export const hasNoWarnings = (scenario: Scenario) => {
-    const warnings = getValidationResult(scenario).warnings;
-    return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
-};
 
 export const hasNoErrors = (scenario: Scenario) => {
     const result = getValidationErrors(scenario);

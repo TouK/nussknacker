@@ -18,8 +18,9 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { editScenarioLabels } from "../../../actions/nk";
+import { getLabelsErrors } from "../../../common/ProcessUtilsAsSelectors";
 import HttpService from "../../../http/HttpService";
-import { getScenarioLabels, getScenarioLabelsErrors } from "../../../reducers/selectors/graph";
+import { getScenarioLabels } from "../../../reducers/selectors/graph";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
 import type { ScenarioLabelValidationError } from "../../Labels/types";
 import { useDelayedEnterAction } from "./useDelayedEnterAction";
@@ -124,7 +125,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
     const autocompleteRef = useRef<HTMLInputElement | null>(null);
     const scenarioLabels = useSelector(getScenarioLabels);
     const scenarioLabelOptions: LabelOption[] = useMemo(() => scenarioLabels.map(toLabelOption), [scenarioLabels]);
-    const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
+    const initialScenarioLabelOptionsErrors = useSelector(getLabelsErrors).filter((error) =>
         scenarioLabelOptions.some((option) => toLabelValue(option) === error.label),
     );
     const [labelOptionsErrors, setLabelOptionsErrors] = useState<ScenarioLabelValidationError[]>(initialScenarioLabelOptionsErrors);

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
+import { isValidationResultPresent } from "../../../../common/ProcessUtilsAsSelectors";
 import type { NodesDeploymentData } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
 import {
@@ -13,12 +14,10 @@ import {
     isRedeployPossible,
     isRedeployVisible,
     isSaveDisabled,
-    isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
