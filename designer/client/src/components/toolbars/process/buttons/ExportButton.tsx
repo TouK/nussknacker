@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
-import ProcessUtils from "../../../../common/ProcessUtils";
+import ProcessUtils2 from "../../../../common/ProcessUtils2";
 import HttpService from "../../../../http/HttpService";
 import type { RootState } from "../../../../reducers";
-import { getProcessVersionId, getScenarioGraph, getProcessName } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
@@ -35,7 +35,7 @@ const mapState = (state: RootState) => {
         versionId: getProcessVersionId(state),
         scenarioName: getProcessName(state),
         scenarioGraph: getScenarioGraph(state),
-        canExport: ProcessUtils.canExport(state),
+        canExport: ProcessUtils2.canExport(state),
     };
 };
 

@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils2 from "../../common/ProcessUtils2";
 import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import type { NodeType } from "../../types";
@@ -30,7 +31,7 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
 
     const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
     const testResults = useSelector(getTestResults);
-    const { errors, warnings } = ProcessUtils.getValidationResult(scenario);
+    const { errors, warnings } = ProcessUtils2.getValidationResult(scenario);
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.tips.title", "Tips")}>
@@ -41,12 +42,12 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
                     hideTracksWhenNotNeeded={true}
                 >
                     <ValidTips
-                        loading={!ProcessUtils.isValidationResultPresent(scenario)}
+                        loading={!ProcessUtils2.isValidationResultPresent(scenario)}
                         testing={!!testResults}
-                        hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(scenario)}
+                        hasNeitherErrorsNorWarnings={ProcessUtils2.hasNeitherErrorsNorWarnings(scenario)}
                     />
-                    {!ProcessUtils.hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
-                    {!ProcessUtils.hasNoWarnings(scenario) && (
+                    {!ProcessUtils2.hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
+                    {!ProcessUtils2.hasNoWarnings(scenario) && (
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
                             showDetails={showDetails}

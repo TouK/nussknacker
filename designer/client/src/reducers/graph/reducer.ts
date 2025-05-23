@@ -4,7 +4,7 @@ import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
 import type { Action, Reducer } from "../../actions/reduxTypes";
-import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils2 from "../../common/ProcessUtils2";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
@@ -51,7 +51,7 @@ export function updateValidationResult(state: GraphState, action: { validationRe
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
         nodeResults: {
-            ...ProcessUtils.getValidationResult(state.scenario).nodeResults,
+            ...ProcessUtils2.getValidationResult(state.scenario).nodeResults,
             ...action.validationResult.nodeResults,
         },
     };

@@ -1,6 +1,6 @@
 import { createSelector } from "reselect";
 
-import ProcessUtils from "../../../../common/ProcessUtils";
+import ProcessUtils2 from "../../../../common/ProcessUtils2";
 import type { RootState } from "../../../../reducers";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
@@ -10,13 +10,13 @@ export const getNodeErrors = createSelector(
     getScenario,
     (state: RootState, nodeId: NodeId) => nodeId,
     (process, nodeId) => {
-        return ProcessUtils.getValidationErrors(process)?.invalidNodes[nodeId] || [];
+        return ProcessUtils2.getValidationErrors(process)?.invalidNodes[nodeId] || [];
     },
 );
 
 export const getPropertiesErrors = createSelector(
     getScenario,
-    (process) => ProcessUtils.getValidationErrors(process)?.processPropertiesErrors || [],
+    (process) => ProcessUtils2.getValidationErrors(process)?.processPropertiesErrors || [],
 );
 
 export const getReadOnly = createSelector(

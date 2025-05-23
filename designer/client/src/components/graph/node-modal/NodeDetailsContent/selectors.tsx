@@ -2,10 +2,11 @@ import { isEqual } from "lodash";
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
 
 import ProcessUtils from "../../../../common/ProcessUtils";
+import ProcessUtils2 from "../../../../common/ProcessUtils2";
 import type { RootState } from "../../../../reducers";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
-import type { NodeId, NodeType, NodeValidationError, UiScenarioProperties, UIParameter } from "../../../../types";
+import type { NodeId, NodeType, NodeValidationError, UIParameter, UiScenarioProperties } from "../../../../types";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
@@ -14,7 +15,7 @@ export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
     (s) => (s.scenarioProperties || {}) as UiScenarioProperties,
 );
-const getNodeResults = createSelector(getScenario, (scenario) => ProcessUtils.getNodeResults(scenario));
+const getNodeResults = createSelector(getScenario, (scenario) => ProcessUtils2.getNodeResults(scenario));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );

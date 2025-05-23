@@ -8,7 +8,7 @@ import type { UseTranslationResponse } from "react-i18next";
 import type { Layout, NodePosition, Position, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
-import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils2 from "../../common/ProcessUtils2";
 import type { TrackEventParams } from "../../containers/event-tracking";
 import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
@@ -38,8 +38,7 @@ import { prepareSvg } from "./svg-export/prepareSvg";
 import type { GraphProps } from "./types";
 import { Events } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
-import { canInjectNode as graphUtilsCanInjectNode } from "./utils/graphUtils";
-import { handleGraphEvent } from "./utils/graphUtils";
+import { canInjectNode as graphUtilsCanInjectNode, handleGraphEvent } from "./utils/graphUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";
 
 function clamp(number: number, max: number) {
@@ -767,7 +766,7 @@ export class Graph extends React.Component<Props> {
             }
         });
 
-        const validationErrors = ProcessUtils.getValidationErrors(scenario);
+        const validationErrors = ProcessUtils2.getValidationErrors(scenario);
         const invalidNodeKeys = [...keys(validationErrors?.invalidNodes)];
         const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];

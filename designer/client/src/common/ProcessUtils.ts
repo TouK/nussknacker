@@ -1,12 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
+import { flatten, isEmpty, pickBy, transform } from "lodash";
 import type { Scenario } from "src/components/Process/types";
 
 import { StickyNoteDefinition, StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
-import type { ScenarioLabelValidationError } from "../components/Labels/types";
-import type { RootState } from "../reducers";
-import { getHistoryPast } from "../reducers/selectors/getHistory";
-import { getScenario, isProcessRenamed } from "../reducers/selectors/graph";
 import type {
     ComponentDefinition,
     NodeId,
@@ -16,68 +12,12 @@ import type {
     ScenarioGraph,
     TypingResult,
     UIParameter,
-    ValidationErrors,
     ValidationResult,
     VariableTypes,
 } from "../types";
+import ProcessUtils2 from "./ProcessUtils2";
 
 class ProcessUtils {
-    nothingToSave = (state: RootState): boolean => {
-        const scenario: Scenario = getScenario(state);
-        const savedProcessState: Scenario = getHistoryPast(state)?.[0]?.scenario || scenario;
-
-        /**
-         * It's a fix of https://touk-jira.atlassian.net/browse/NU-2194
-         * When node is added from a toolbar, branchParametersTemplate are initially added to the node, but when we perform a scenario save, node has no branchParametersTemplate
-         * Let's ignore branchParametersTemplate in a button save state checking
-         */
-        const omitBranchParametersTemplate = (details: ScenarioGraph) => {
-            if (!details.nodes?.length) {
-                return details;
-            }
-
-            return {
-                ...details,
-                nodes: details.nodes.map((node) => omit(node, ["branchParametersTemplate"])),
-            };
-        };
-        const processRenamed = isProcessRenamed(state);
-
-        if (processRenamed) {
-            return false;
-        }
-
-        if (isEmpty(scenario)) {
-            return true;
-        }
-
-        const labelsFor = (scenario: Scenario): string[] => {
-            return scenario.labels ? scenario.labels.slice().sort((a, b) => a.localeCompare(b)) : [];
-        };
-
-        const isGraphUpdated = isEqual(
-            omitBranchParametersTemplate(scenario.scenarioGraph),
-            omitBranchParametersTemplate(savedProcessState.scenarioGraph),
-        );
-        const areScenarioLabelsUpdated = isEqual(labelsFor(scenario), labelsFor(savedProcessState));
-
-        return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
-    };
-
-    canExport = (state: RootState): boolean => {
-        const scenario = getScenario(state);
-        return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
-    };
-
-    isValidationResultPresent = (scenario: Scenario) => {
-        return Boolean(scenario.validationResult);
-    };
-
-    //fixme maybe return hasErrors flag from backend?
-    hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
-        return this.isValidationResultPresent(scenario) && this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
-    };
-
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
         return flatten(
             Object.keys(invalidNodes || {}).map((key, _) =>
@@ -90,53 +30,6 @@ class ProcessUtils {
             ),
         );
     };
-
-    hasNoErrors = (scenario: Scenario) => {
-        const result = this.getValidationErrors(scenario);
-        return (
-            !result ||
-            (Object.keys(result.invalidNodes || {}).length == 0 &&
-                (result.globalErrors || []).length == 0 &&
-                (result.processPropertiesErrors || []).length == 0)
-        );
-    };
-
-    getValidationResult = (scenario: Scenario): ValidationResult =>
-        scenario?.validationResult || {
-            validationErrors: [],
-            validationWarnings: [],
-            nodeResults: {},
-            errors: {
-                globalErrors: [],
-                processPropertiesErrors: [],
-                invalidNodes: {},
-            },
-        };
-
-    hasNoWarnings = (scenario: Scenario) => {
-        const warnings = this.getValidationResult(scenario).warnings;
-        return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
-    };
-
-    hasNoPropertiesErrors = (scenario: Scenario) => {
-        return isEmpty(this.getValidationErrors(scenario)?.processPropertiesErrors);
-    };
-
-    getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
-        return this.getValidationResult(scenario)
-            .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
-            .map(
-                (e) =>
-                    <ScenarioLabelValidationError>{
-                        label: e.error.fieldName,
-                        messages: [e.error.description],
-                    },
-            );
-    };
-
-    getValidationErrors(scenario: Scenario): ValidationErrors {
-        return this.getValidationResult(scenario).errors;
-    }
 
     findContextForBranch = (node: NodeType, branchId: string) => {
         return `$edge-${branchId}-${node.id}`;
@@ -157,12 +50,10 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
-
     findAvailableVariables =
         (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-            const nodeResults = this.getNodeResults(scenario);
+            const nodeResults = ProcessUtils2.getNodeResults(scenario);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
             const variablesForNode =
                 variablesFromValidation || this.findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);

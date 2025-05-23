@@ -1,7 +1,7 @@
 import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
 
-import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils2 from "../../common/ProcessUtils2";
 import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
@@ -29,12 +29,12 @@ export const getProcessingType = createSelector(getScenario, (d) => d?.processin
 export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
 export const isFragment = createSelector(getScenario, (p) => p?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
-export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
-export const isValidationResultPresent = createSelector(getScenario, (p) => ProcessUtils.isValidationResultPresent(p));
-export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
-export const hasWarnings = createSelector(getScenario, (p) => !ProcessUtils.hasNoWarnings(p));
-export const hasPropertiesErrors = createSelector(getScenario, (p) => !ProcessUtils.hasNoPropertiesErrors(p));
-export const getScenarioLabelsErrors = createSelector(getScenario, (p) => ProcessUtils.getLabelsErrors(p));
+export const isPristine = (state: RootState): boolean => ProcessUtils2.nothingToSave(state) && !isProcessRenamed(state);
+export const isValidationResultPresent = createSelector(getScenario, (p) => ProcessUtils2.isValidationResultPresent(p));
+export const hasError = createSelector(getScenario, (p) => !ProcessUtils2.hasNoErrors(p));
+export const hasWarnings = createSelector(getScenario, (p) => !ProcessUtils2.hasNoWarnings(p));
+export const hasPropertiesErrors = createSelector(getScenario, (p) => !ProcessUtils2.hasNoPropertiesErrors(p));
+export const getScenarioLabelsErrors = createSelector(getScenario, (p) => ProcessUtils2.getLabelsErrors(p));
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
