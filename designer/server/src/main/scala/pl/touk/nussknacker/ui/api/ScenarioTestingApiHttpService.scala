@@ -89,31 +89,36 @@ class ScenarioTestingApiHttpService(
                 ScenarioTestCapabilities(status, status)
               case Right(capabilities) =>
                 ScenarioTestCapabilities(
-                  testWithParameters = if (canDeploy && capabilities.canTestWithForm) {
-                    scenarioTestService.testUISourceParametersDefinition(
-                      scenarioGraph,
-                      scenarioWithDetails.processVersionUnsafe,
-                    ) match {
-                      case Right(parameters) =>
-                        CapabilityStatus.Available(TestWithParametersDetails(parameters))
-                      case Left(ParametersDefinitionError.NotSupportedBySource(_)) =>
+                  testWithParameters = {
+                    (canDeploy, capabilities.canTestWithForm) match {
+                      case (false, _) =>
+                        CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
+                      case (true, false) =>
                         CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
-                      case Left(ParametersDefinitionError.SourceValidationError(_)) =>
-                        CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+                      case (true, true) =>
+                        scenarioTestService.testUISourceParametersDefinition(
+                          scenarioGraph,
+                          scenarioWithDetails.processVersionUnsafe,
+                        ) match {
+                          case Right(parameters) =>
+                            CapabilityStatus.Available(TestWithParametersDetails(parameters))
+                          case Left(ParametersDefinitionError.NotSupportedBySource(_)) =>
+                            CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                          case Left(ParametersDefinitionError.SourceValidationError(_)) =>
+                            CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
+                        }
                     }
-                  } else if (!canDeploy) {
-                    CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
-                  } else {
-                    CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                   },
-                  testWithGeneratedData =
-                    if (canDeploy && capabilities.canBeTested && capabilities.canGenerateTestData) {
-                      CapabilityStatus.available
-                    } else if (!canDeploy) {
-                      CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
-                    } else {
-                      CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
-                    },
+                  testWithGeneratedData = {
+                    (canDeploy, capabilities.canBeTested && capabilities.canGenerateTestData) match {
+                      case (false, _) =>
+                        CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
+                      case (true, false) =>
+                        CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                      case (true, true) =>
+                        CapabilityStatus.available
+                    }
+                  }
                 )
             }
           } yield result
