@@ -33,7 +33,7 @@ private[livedata] class SlidingWindowCounter[T](
       .toList
       .groupBy(identity)
       .view
-      .mapValues(_.size)
+      .map { case (key, value) => (key, value.size) }
       .toMap
       .map { case (transition, count) =>
         transition -> BigDecimal(count)./(samplingInterval).setScale(4, BigDecimal.RoundingMode.HALF_UP)
