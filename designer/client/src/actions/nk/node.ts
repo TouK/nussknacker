@@ -1,8 +1,8 @@
 import type { dia } from "jointjs";
 import type { Dictionary } from "lodash";
 import { flushSync } from "react-dom";
-import { getNodeResults } from "src/common/ProcessUtilsAsSelectors";
 
+import { getNodeResults } from "../../common/ProcessUtilsAsSelectors";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { updateValidationResult } from "../../reducers/graph";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";

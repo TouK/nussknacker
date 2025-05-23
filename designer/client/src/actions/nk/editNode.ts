@@ -1,5 +1,4 @@
-import { getNodeResults } from "src/common/ProcessUtilsAsSelectors";
-
+import { getNodeResults } from "../../common/ProcessUtilsAsSelectors";
 import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import type { Scenario } from "../../components/Process/types";

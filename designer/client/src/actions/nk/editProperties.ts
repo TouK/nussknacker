@@ -1,5 +1,4 @@
-import { getNodeResults } from "src/common/ProcessUtilsAsSelectors";
-
+import { getNodeResults } from "../../common/ProcessUtilsAsSelectors";
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
