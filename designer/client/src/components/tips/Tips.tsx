@@ -5,8 +5,8 @@ import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
-import { getValidationResult, hasNoErrors, hasNoWarnings, isValidationResultPresent } from "../../common/ProcessUtils2";
-import { hasNeitherErrorsNorWarnings as _hasNeitherErrorsNorWarnings } from "../../common/ProcessUtilsAsSelectors";
+import { hasNoErrors, hasNoWarnings, isValidationResultPresent } from "../../common/ProcessUtils2";
+import { getNodeResults, hasNeitherErrorsNorWarnings as _hasNeitherErrorsNorWarnings } from "../../common/ProcessUtilsAsSelectors";
 import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import type { NodeType } from "../../types";
@@ -33,7 +33,7 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
     const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
     const testResults = useSelector(getTestResults);
     const hasNeitherErrorsNorWarnings = useSelector(_hasNeitherErrorsNorWarnings);
-    const { errors, warnings } = getValidationResult(scenario);
+    const { errors, warnings } = useSelector(getNodeResults);
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.tips.title", "Tips")}>
