@@ -22,7 +22,6 @@ import {
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
-    hasLooseNode,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -207,18 +206,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 scenarioGraph: state.scenario.scenarioGraph,
             });
 
-            const connectionAddedToLooseNode = currentEdges.some((currentEdge) => hasLooseNode(currentEdge, newEdge));
-            const newEdges =
-                currentEdges.includes(newEdge) || connectionAddedToLooseNode
-                    ? currentEdges.map((edge) =>
-                          edge === newEdge || hasLooseNode(edge, newEdge)
-                              ? {
-                                    ...newEdge,
-                                    to: action.toNode.id,
-                                }
-                              : edge,
-                      )
-                    : concat(currentEdges, newEdge);
+            const newEdges = currentEdges.includes(newEdge)
+                ? currentEdges.map((edge) =>
+                      edge === newEdge
+                          ? {
+                                ...newEdge,
+                                to: action.toNode.id,
+                            }
+                          : edge,
+                  )
+                : concat(currentEdges, newEdge);
 
             return {
                 ...state,
