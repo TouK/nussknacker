@@ -153,7 +153,7 @@ class SchemalessKafkaJsonTypeTests
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live sample data available")
+        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
     }
   }
 
@@ -174,7 +174,7 @@ class SchemalessKafkaJsonTypeTests
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live sample data available")
+        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
     }
   }
 
