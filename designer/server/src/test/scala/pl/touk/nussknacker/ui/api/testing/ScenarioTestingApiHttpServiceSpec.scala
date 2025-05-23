@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import io.circe.Encoder
+import io.circe.{Encoder, Json}
 import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -10,7 +10,8 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -98,7 +99,7 @@ trait ScenarioTestingApiHttpServiceSpec
         new LiveDataPreviewSupported {
           override def getLiveData(
               processIdWithName: ProcessIdWithName
-          ): Future[Option[LiveDataPreview]] = Future.successful(None)
+          ): Future[Either[LiveDataError, LiveData]] = Future.successful(Left(NoLiveDataAvailableForScenario))
         }
       )
       given()
@@ -530,7 +531,7 @@ trait ScenarioTestingApiHttpServiceSpec
   "The endpoint for live data preview should" - {
     "return present, but empty live data preview" in {
       val mockedResults =
-        LiveDataPreview(TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty), Map.empty)
+        LiveData(TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty), Map.empty)
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -538,7 +539,7 @@ trait ScenarioTestingApiHttpServiceSpec
             new LiveDataPreviewSupported {
               override def getLiveData(
                   processIdWithName: ProcessIdWithName
-              ): Future[Option[LiveDataPreview]] = Future.successful(Some(mockedResults))
+              ): Future[Either[LiveDataError, LiveData]] = Future.successful(Right(mockedResults))
             }
           )
         }

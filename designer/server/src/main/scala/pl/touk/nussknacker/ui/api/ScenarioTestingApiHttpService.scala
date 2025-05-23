@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPreviewSupported, NoLiveDataPreviewSupport}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ParametersDefinitionError,
@@ -228,13 +229,13 @@ class ScenarioTestingApiHttpService(
                 case None                    => Left(NoScenario(scenarioName))
               }
             }
-            liveDataPreview <- EitherT[Future, TestingError, LiveDataPreview] {
+            liveDataPreview <- EitherT[Future, TestingError, LiveData] {
               deploymentManager.liveDataPreviewSupport match {
                 case supported: LiveDataPreviewSupported =>
                   supported.getLiveData(processIdWithName).map {
-                    case Some(results) =>
-                      Right(results)
-                    case None =>
+                    case Right(liveData) =>
+                      Right(liveData)
+                    case Left(NoLiveDataAvailableForScenario) =>
                       Left(UnsupportedOperation("There are no live data available for this scenario"))
                   }
                 case NoLiveDataPreviewSupport =>

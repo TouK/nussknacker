@@ -4,7 +4,7 @@ import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.newdeployment
@@ -101,16 +101,22 @@ trait LiveDataPreviewSupported extends LiveDataPreviewSupport {
 
   def getLiveData(
       processIdWithName: ProcessIdWithName,
-  ): Future[Option[LiveDataPreview]]
+  ): Future[Either[LiveDataError, LiveData]]
 
 }
 
 object LiveDataPreviewSupported {
 
-  final case class LiveDataPreview(
+  final case class LiveData(
       liveDataSamples: TestResults[Json],
       nodeTransitionThroughput: Map[NodeTransition, BigDecimal],
   )
+
+  sealed trait LiveDataError
+
+  object LiveDataError {
+    case object NoLiveDataAvailableForScenario extends LiveDataError
+  }
 
 }
 

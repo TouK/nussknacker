@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   LiveDataPreviewSupport,
   LiveDataPreviewSupported
 }
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
@@ -77,7 +77,7 @@ class FlinkMiniClusterScenarioJobRunner(
   }
 
   override def liveDataPreviewSupport: LiveDataPreviewSupport = new LiveDataPreviewSupported {
-    override def getLiveData(processIdWithName: ProcessIdWithName): Future[Option[LiveDataPreview]] =
+    override def getLiveData(processIdWithName: ProcessIdWithName): Future[Either[LiveDataError, LiveData]] =
       Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
   }
 

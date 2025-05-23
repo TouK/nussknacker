@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.livedata
 
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataPreview
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.time.{Clock, Instant}
@@ -14,8 +14,8 @@ private[livedata] class LiveDataCollectingListenerStorage(
   private val results            = new RingBuffer[String, TestResults[Json]](maxNumberOfSamples)
   private val transitionsCounter = new SlidingWindowCounter[NodeTransition](Instant.now, throughputTimeWindowInSeconds)
 
-  def getLiveDataPreview: LiveDataPreview = {
-    LiveDataPreview(
+  def getLiveData: LiveData = {
+    LiveData(
       liveDataSamples = TestResults.aggregate(results.values),
       nodeTransitionThroughput = transitionsCounter.getThroughput,
     )
