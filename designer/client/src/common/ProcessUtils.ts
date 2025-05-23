@@ -82,7 +82,10 @@ class ProcessUtils {
         return flatten(
             Object.keys(invalidNodes || {}).map((key, _) =>
                 invalidNodes[key].map((error) => {
-                    return { error: error, key: key };
+                    return {
+                        error: error,
+                        key: key,
+                    };
                 }),
             ),
         );
@@ -122,7 +125,13 @@ class ProcessUtils {
     getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
         return this.getValidationResult(scenario)
             .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
-            .map((e) => <ScenarioLabelValidationError>{ label: e.error.fieldName, messages: [e.error.description] });
+            .map(
+                (e) =>
+                    <ScenarioLabelValidationError>{
+                        label: e.error.fieldName,
+                        messages: [e.error.description],
+                    },
+            );
     };
 
     getValidationErrors(scenario: Scenario): ValidationErrors {
@@ -150,9 +159,6 @@ class ProcessUtils {
 
     getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
 
-    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-    private escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
-
     findAvailableVariables =
         (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
@@ -167,6 +173,21 @@ class ProcessUtils {
         };
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
+
+    extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
+        return node.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
+    };
+
+    determineComponentId = (node?: NodeType): string | null => {
+        const componentType = this.determineComponentType(node);
+        const componentName = this.determineComponentName(node);
+        return componentType && componentName ? `${componentType}-${componentName}` : null;
+    };
+
+    humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+    private escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     private findVariablesDeclaredBeforeNode = (
         nodeId: NodeId,
@@ -227,16 +248,6 @@ class ProcessUtils {
                 return [];
             }
         }
-    };
-
-    extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
-        return node.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
-    };
-
-    determineComponentId = (node?: NodeType): string | null => {
-        const componentType = this.determineComponentType(node);
-        const componentName = this.determineComponentName(node);
-        return componentType && componentName ? `${componentType}-${componentName}` : null;
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
@@ -311,8 +322,6 @@ class ProcessUtils {
             }
         }
     };
-
-    humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
     private findPreviousNodes = (nodeId: NodeId, scenarioGraph: ScenarioGraph): NodeId[] => {
         const nodeEdge = scenarioGraph.edges?.find((edge) => edge.to === nodeId);
