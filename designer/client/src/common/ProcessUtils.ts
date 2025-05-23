@@ -151,7 +151,7 @@ class ProcessUtils {
     getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-    escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+    private escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
         (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
@@ -159,7 +159,7 @@ class ProcessUtils {
             const nodeResults = this.getNodeResults(scenario);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
             const variablesForNode =
-                variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);
+                variablesFromValidation || this.findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
@@ -168,25 +168,25 @@ class ProcessUtils {
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
 
-    _findVariablesDeclaredBeforeNode = (
+    private findVariablesDeclaredBeforeNode = (
         nodeId: NodeId,
         scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
     ): VariableTypes => {
-        const previousNodes = this._findPreviousNodes(nodeId, scenarioGraph);
+        const previousNodes = this.findPreviousNodes(nodeId, scenarioGraph);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, scenarioGraph, components);
+            return this.findVariablesDefinedInProcess(nodeId, scenarioGraph, components);
         });
-        return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
+        return this.listOfObjectsToObject(variablesDefinedBeforeNodeList);
     };
 
-    _listOfObjectsToObject = <T>(list: Record<string, T>[]): Record<string, T> => {
+    private listOfObjectsToObject = <T>(list: Record<string, T>[]): Record<string, T> => {
         return list.reduce((memo, current) => {
             return { ...memo, ...current };
         }, {});
     };
 
-    _findVariablesDefinedInProcess = (
+    private findVariablesDefinedInProcess = (
         nodeId: NodeId,
         scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
@@ -314,15 +314,17 @@ class ProcessUtils {
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
-    _findPreviousNodes = (nodeId: NodeId, scenarioGraph: ScenarioGraph): NodeId[] => {
+    private findPreviousNodes = (nodeId: NodeId, scenarioGraph: ScenarioGraph): NodeId[] => {
         const nodeEdge = scenarioGraph.edges?.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];
         } else {
-            const previousNodes = this._findPreviousNodes(nodeEdge.from, scenarioGraph);
+            const previousNodes = this.findPreviousNodes(nodeEdge.from, scenarioGraph);
             return [nodeEdge.from].concat(previousNodes);
         }
     };
 }
 
-export default new ProcessUtils();
+const processUtils = new ProcessUtils();
+
+export default processUtils;
