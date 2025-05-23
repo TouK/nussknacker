@@ -26,6 +26,7 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -383,6 +384,36 @@ trait ScenarioTestingApiHttpServiceSpec
   "The endpoint for adhoc validate should" - {
     "return no errors on valid parameters" in {
       shouldValidateParametersProperly()
+    }
+
+    "return errors on missing source" in {
+      val missingSourceId = "missing source"
+      val scenarioWithMissingSource: CanonicalProcess =
+        ScenarioBuilder
+          .streaming("scenario with missing source")
+          .source(missingSourceId, "missing source", "a parameter" -> "{'test'}".spel)
+          .emptySink("end", "monitor")
+
+      given()
+        .applicationState {
+          createSavedScenario(scenarioWithMissingSource)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          ScenarioTestValidationRequest(
+            testData = ScenarioTestData.WithParameters(
+              TestSourceParameters(missingSourceId, Map(ParameterName("a parameter") -> "{'123'}".spel))
+            ),
+            scenarioGraph = toScenarioGraph(scenarioWithMissingSource)
+          ).asJson.toString()
+        )
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenarioWithMissingSource.name}/validate")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          "Requested test parameters from source [missing source] that is not valid. Errors: MissingSourceFactory(missing source,missing source)"
+        )
     }
   }
 
