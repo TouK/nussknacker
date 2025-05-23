@@ -22,8 +22,6 @@ object LiveDataCollectingListenerHolder {
       maxNumberOfSamples: Int,
       throughputTimeWindowInSeconds: Int,
   ): LiveDataCollectingListener = {
-    // We want to store and present only the live data from the current deployment,
-    // so when we start a new job, we discard all old data
     cleanResults(processName)
     new LiveDataCollectingListener(processName, maxNumberOfSamples, throughputTimeWindowInSeconds)
   }
@@ -45,6 +43,9 @@ object LiveDataCollectingListenerHolder {
     )
   }
 
+  // We want to store and present the live data from the most recent deployment:
+  //  - the data from the old run is stored until the listener storage cache expires (currently hardcoded 1 hour)
+  //  - or new deployment is done - then we discard all old data
   private def cleanResults(processName: ProcessName): Unit = {
     listenerStorages.invalidate(processName.value)
   }
