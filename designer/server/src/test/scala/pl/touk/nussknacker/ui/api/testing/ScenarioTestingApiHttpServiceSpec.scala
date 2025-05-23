@@ -174,6 +174,10 @@ trait ScenarioTestingApiHttpServiceSpec
              |    "testWithGeneratedData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
+             |    },
+             |    "liveDataPreview": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason": "NOT_SUPPORTED_BY_SCENARIO_TYPE"
              |    }
              |}""".stripMargin
         )

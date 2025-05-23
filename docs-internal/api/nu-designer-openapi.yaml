@@ -4687,7 +4687,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4696,13 +4696,12 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
-                  summary: Operation is not supported
-                  value: Operation is not supported
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -4850,13 +4849,12 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
-                  summary: Operation is not supported
-                  value: Operation is not supported
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -4974,13 +4972,12 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
-                  summary: Operation is not supported
-                  value: Operation is not supported
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -5088,13 +5085,12 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
-                  summary: Operation is not supported
-                  value: Operation is not supported
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -5241,13 +5237,12 @@ paths:
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
-                  summary: Operation is not supported
-                  value: Operation is not supported
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []

@@ -60,9 +60,7 @@ object RowConversions {
           .mapValuesNow(typeInformationDetection.forType)
           .unzip
       val variablesRow = new RowTypeInfo(typeInfos.toArray[TypeInformation[_]], fieldNames.toArray)
-      Types.ROW(
-        Types.STRING :: variablesRow :: validationContext.parent.map(contextRowTypeInfo).toList: _*
-      )
+      Types.ROW(Types.STRING :: variablesRow :: validationContext.parent.map(contextRowTypeInfo).toList: _*)
     }
 
   }
