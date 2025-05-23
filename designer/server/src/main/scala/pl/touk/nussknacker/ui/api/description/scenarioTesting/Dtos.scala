@@ -118,9 +118,10 @@ object Dtos {
     sealed trait NotAvailableReason extends EnumEntry with UpperSnakecase
 
     object NotAvailableReason extends Enum[NotAvailableReason] with CirceEnum[NotAvailableReason] {
-      case object NoSources             extends NotAvailableReason
-      case object NotSupportedBySources extends NotAvailableReason
-      case object InvalidScenario       extends NotAvailableReason
+      case object UserDoesNotHavePermission extends NotAvailableReason
+      case object NoSources                 extends NotAvailableReason
+      case object NotSupportedBySources     extends NotAvailableReason
+      case object InvalidScenario           extends NotAvailableReason
       override def values: immutable.IndexedSeq[NotAvailableReason] = findValues
       implicit def schema: Schema[NotAvailableReason]               = Schema.derived
     }

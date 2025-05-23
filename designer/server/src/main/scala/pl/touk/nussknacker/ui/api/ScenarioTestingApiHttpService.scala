@@ -66,6 +66,10 @@ class ScenarioTestingApiHttpService(
         { case (scenarioName, scenarioGraph) =>
           for {
             scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            processId <- EitherT.fromOption[Future](
+              scenarioWithDetails.processId,
+              noScenarioError(scenarioName),
+            )
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
@@ -73,6 +77,7 @@ class ScenarioTestingApiHttpService(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
             )
+            canDeploy <- EitherT.right(scenarioAuthorizer.check(processId, Permission.Deploy, loggedUser))
             result = capabilities match {
               case Left(TestingCapabilitiesError.NoSourcesError) =>
                 def status[T <: TestCapabilityDetails] =
@@ -84,7 +89,7 @@ class ScenarioTestingApiHttpService(
                 ScenarioTestCapabilities(status, status)
               case Right(capabilities) =>
                 ScenarioTestCapabilities(
-                  testWithParameters = if (capabilities.canTestWithForm) {
+                  testWithParameters = if (canDeploy && capabilities.canTestWithForm) {
                     scenarioTestService.testUISourceParametersDefinition(
                       scenarioGraph,
                       scenarioWithDetails.processVersionUnsafe,
@@ -96,12 +101,19 @@ class ScenarioTestingApiHttpService(
                       case Left(ParametersDefinitionError.SourceValidationError(_)) =>
                         CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
                     }
+                  } else if (!canDeploy) {
+                    CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
                   } else {
                     CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                   },
                   testWithGeneratedData =
-                    if (capabilities.canBeTested && capabilities.canGenerateTestData) CapabilityStatus.available
-                    else CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources),
+                    if (canDeploy && capabilities.canBeTested && capabilities.canGenerateTestData) {
+                      CapabilityStatus.available
+                    } else if (!canDeploy) {
+                      CapabilityStatus.NotAvailable(NotAvailableReason.UserDoesNotHavePermission)
+                    } else {
+                      CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
+                    },
                 )
             }
           } yield result
