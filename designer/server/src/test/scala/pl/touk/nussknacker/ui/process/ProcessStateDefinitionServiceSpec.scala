@@ -160,8 +160,9 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   }
 
   private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
-    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]                        = Map.empty
-    override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
+    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]                         = Map.empty
+    override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
+    override def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
   }
 
   private def createProcessingTypeDataMap(

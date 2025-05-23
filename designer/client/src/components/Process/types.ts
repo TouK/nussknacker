@@ -5,6 +5,7 @@ import type { Instant } from "../../types/common";
 
 export enum PredefinedActionName {
     Deploy = "DEPLOY",
+    Redeploy = "REDEPLOY",
     Cancel = "CANCEL",
     Archive = "ARCHIVE",
     UnArchive = "UNARCHIVE",

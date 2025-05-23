@@ -1343,6 +1343,16 @@ class ProcessesResourcesSpec
              |          "docs" : null
              |        },
              |        {
+             |          "type" : "process-redeploy",
+             |          "name" : null,
+             |          "title" : null,
+             |          "icon" : null,
+             |          "url" : null,
+             |          "disabled" : false,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        },
+             |        {
              |          "type" : "custom-link",
              |          "name" : "custom",
              |          "title" : "Custom link for $processName",

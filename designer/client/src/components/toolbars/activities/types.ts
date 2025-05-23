@@ -3,6 +3,7 @@ export type ActivityType =
     | "SCENARIO_ARCHIVED"
     | "SCENARIO_UNARCHIVED"
     | "SCENARIO_DEPLOYED"
+    | "SCENARIO_REDEPLOYED"
     | "SCENARIO_CANCELED"
     | "SCENARIO_MODIFIED"
     | "SCENARIO_PAUSED"
@@ -19,6 +20,7 @@ export type ActivityType =
 
 export enum ActivityTypesRelatedToExecutions {
     ScenarioDeployed = "SCENARIO_DEPLOYED",
+    ScenarioRedeployed = "SCENARIO_REDEPLOYED",
     ScenarioCanceled = "SCENARIO_CANCELED",
     PerformedSingleExecution = "PERFORMED_SINGLE_EXECUTION",
     PerformedScheduledExecution = "PERFORMED_SCHEDULED_EXECUTION",

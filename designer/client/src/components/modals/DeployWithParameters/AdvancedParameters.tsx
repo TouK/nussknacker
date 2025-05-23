@@ -15,6 +15,7 @@ import { GroupedActionParameter } from "./GroupedActionParameter";
 
 interface AdvancedParametersProps {
     processName: string;
+    actionName: string;
     setParametersValues: (values: NodesDeploymentData) => void;
     parametersValues: NodesDeploymentData;
 }
@@ -29,7 +30,12 @@ function initialNodesData(params: ActionNodeParameters[]): NodesDeploymentData {
     );
 }
 
-export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processName, setParametersValues, parametersValues }) => {
+export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({
+    processName,
+    actionName,
+    setParametersValues,
+    parametersValues,
+}) => {
     const { t } = useTranslation();
     const { showBoundary } = useErrorBoundary();
     const [expandedState, setExpandedState] = useLocalstorageState("actionParametersExpandedState", {});
@@ -37,7 +43,7 @@ export const AdvancedParameters: React.FC<AdvancedParametersProps> = ({ processN
     const parametersDefinition: ActionNodeParameters[] | undefined = suspend(async () => {
         return HttpService.getActionParameters(processName)
             .then((response) => {
-                const definition = response.data.actionNameToParameters["DEPLOY"] || ([] as ActionNodeParameters[]);
+                const definition = response.data.actionNameToParameters[actionName] || ([] as ActionNodeParameters[]);
                 const initialValues = initialNodesData(definition);
 
                 setParametersValues(initialValues);

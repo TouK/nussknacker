@@ -6,15 +6,13 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ScenarioActionName,
   StateStatus
 }
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
-  DefaultVisibleActions,
-  ScenarioStatusWithScenarioContext
-}
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.{
   MaxDeploymentsStatus,
   PeriodicDeploymentStatus,
   PeriodicScenarioStatus
 }
+import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 
 import java.net.URI
 
@@ -24,13 +22,31 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       statusTooltipsPF = PeriodicStateStatus.statusTooltipsPF,
       statusDescriptionsPF = PeriodicStateStatus.statusDescriptionsPF,
       customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
-      customVisibleActions = Some(DefaultVisibleActions ::: ScenarioActionName.RunOffSchedule :: Nil),
+      customVisibleActions = Some(PeriodicStateStatus.customVisibleActions),
       customActionTooltips = Some(PeriodicStateStatus.customActionTooltips),
       delegate = delegate
     ) {
 
-  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
-    super.statusActions(
+  override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
+    val periodicStatus = extractPeriodicStatus(input.scenarioStatus)
+      .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
+      .getOrElse(input)
+    periodicStatus.scenarioStatus match {
+      case _: ScheduledStatus | WaitingForScheduleStatus =>
+        Set(
+          ScenarioActionName.Cancel,
+          ScenarioActionName.Redeploy,
+          ScenarioActionName.Pause,
+          ScenarioActionName.Archive,
+          ScenarioActionName.UnArchive,
+          ScenarioActionName.Rename,
+        ) ++ PeriodicStateStatus.customVisibleActions
+      case _ => super.visibleActions(input)
+    }
+  }
+
+  override def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = {
+    super.allowedActions(
       extractPeriodicStatus(input.scenarioStatus)
         .map(periodic => input.copy(scenarioStatus = periodic.mergedStatus))
         .getOrElse(input) // We have to handle also statuses resolved by core (for example NotDeployed)

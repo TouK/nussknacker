@@ -1128,7 +1128,7 @@ class DeploymentServiceSpec
       .withWaitForDeployFinish(scenarioId.name, result = Some(ExternalDeploymentId("1"))) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(
+            RunRedeploymentCommand(
               CommonCommandData(scenarioId, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty
@@ -1304,7 +1304,7 @@ class DeploymentServiceSpec
   }
 
   private def getAllowedActions(status: StateStatus, deploymentManager: MockDeploymentManager = deploymentManager1) = {
-    deploymentManager.processStateDefinitionManager.statusActions(
+    deploymentManager.processStateDefinitionManager.allowedActions(
       ScenarioStatusWithScenarioContext(
         scenarioStatus = status,
         deployedVersionId = None,

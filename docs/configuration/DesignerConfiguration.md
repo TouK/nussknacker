@@ -606,6 +606,7 @@ processToolbarConfig {
         buttons: [
           { type: "process-save", title: "Save changes", disabled: { archived: true } }
           { type: "process-deploy", disabled: { fragment: true, archived: true, type: "oneof" } }
+          { type: "process-redeploy", disabled: { fragment: true, archived: true, type: "oneof" } }
           { type: "process-cancel", disabled: { fragment: true, archived: true, type: "oneof" } }
           { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg", url: "/metrics/$processName", disabled: { fragment: true } }
         ]
