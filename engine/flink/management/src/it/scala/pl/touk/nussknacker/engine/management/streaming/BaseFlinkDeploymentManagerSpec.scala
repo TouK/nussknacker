@@ -100,7 +100,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       eventually {
         if (useMiniClusterForDeployment) {
           // Wait until first live data samples are collected
-          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName)
+          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName).toOption
           liveDataOpt shouldBe defined
           val liveDataSamples = liveDataOpt.get.liveDataSamples
 
