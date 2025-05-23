@@ -71,55 +71,56 @@ const getValidationResult = (scenario: Scenario): ValidationResult =>
         },
     };
 
-export class ProcessUtils2 {
-    nothingToSave = nothingToSave;
-    canExport = canExport;
-    isValidationResultPresent = isValidationResultPresent;
-    getValidationResult = getValidationResult;
+const getValidationErrors = (scenario: Scenario): ValidationErrors => getValidationResult(scenario).errors;
 
-    //fixme maybe return hasErrors flag from backend?
-    hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
-        return this.isValidationResultPresent(scenario) && this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
-    };
+const getNodeResults = (scenario: Scenario): NodeResults => getValidationResult(scenario).nodeResults;
 
-    hasNoErrors = (scenario: Scenario) => {
-        const result = this.getValidationErrors(scenario);
-        return (
-            !result ||
-            (Object.keys(result.invalidNodes || {}).length == 0 &&
-                (result.globalErrors || []).length == 0 &&
-                (result.processPropertiesErrors || []).length == 0)
+const getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
+    return getValidationResult(scenario)
+        .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
+        .map(
+            (e) =>
+                <ScenarioLabelValidationError>{
+                    label: e.error.fieldName,
+                    messages: [e.error.description],
+                },
         );
-    };
+};
 
-    hasNoWarnings = (scenario: Scenario) => {
-        const warnings = this.getValidationResult(scenario).warnings;
-        return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
-    };
+const hasNoPropertiesErrors = (scenario: Scenario) => {
+    return isEmpty(getValidationErrors(scenario)?.processPropertiesErrors);
+};
 
-    hasNoPropertiesErrors = (scenario: Scenario) => {
-        return isEmpty(this.getValidationErrors(scenario)?.processPropertiesErrors);
-    };
+const hasNoWarnings = (scenario: Scenario) => {
+    const warnings = getValidationResult(scenario).warnings;
+    return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
+};
 
-    getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
-        return this.getValidationResult(scenario)
-            .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
-            .map(
-                (e) =>
-                    <ScenarioLabelValidationError>{
-                        label: e.error.fieldName,
-                        messages: [e.error.description],
-                    },
-            );
-    };
+const hasNoErrors = (scenario: Scenario) => {
+    const result = getValidationErrors(scenario);
+    return (
+        !result ||
+        (Object.keys(result.invalidNodes || {}).length == 0 &&
+            (result.globalErrors || []).length == 0 &&
+            (result.processPropertiesErrors || []).length == 0)
+    );
+};
 
-    getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
+const hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
+    //fixme maybe return hasErrors flag from backend?
+    return isValidationResultPresent(scenario) && hasNoErrors(scenario) && hasNoWarnings(scenario);
+};
 
-    getValidationErrors(scenario: Scenario): ValidationErrors {
-        return this.getValidationResult(scenario).errors;
-    }
-}
-
-const processUtils2 = new ProcessUtils2();
-
-export default processUtils2;
+export default {
+    nothingToSave,
+    canExport,
+    isValidationResultPresent,
+    getValidationResult,
+    hasNeitherErrorsNorWarnings,
+    hasNoErrors,
+    hasNoWarnings,
+    hasNoPropertiesErrors,
+    getLabelsErrors,
+    getNodeResults,
+    getValidationErrors,
+};
