@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
-import { nothingToSave as _nothingToSave } from "../../../../common/ProcessUtilsAsSelectors";
 import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService";
+import { nothingToSave as _nothingToSave } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
 

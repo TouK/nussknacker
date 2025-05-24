@@ -6,13 +6,14 @@ import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
 import {
+    getScenario,
+    getTestResults,
     getValidationResult,
     hasNeitherErrorsNorWarnings as _hasNeitherErrorsNorWarnings,
     hasNoErrors as _hasNoErrors,
     hasNoWarnings as _hasNoWarnings,
     isValidationResultPresent as _isValidationResultPresent,
-} from "../../common/ProcessUtilsAsSelectors";
-import { getScenario, getTestResults } from "../../reducers/selectors/graph";
+} from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import type { NodeType } from "../../types";
 import { useWindows } from "../../windowManager";

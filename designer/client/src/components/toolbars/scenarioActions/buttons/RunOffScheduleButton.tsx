@@ -4,10 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
-import { isValidationResultPresent } from "../../../../common/ProcessUtilsAsSelectors";
 import HttpService from "../../../../http/HttpService";
 import type { RootState } from "../../../../reducers";
-import { getProcessName, isRunOffSchedulePossible, isRunOffScheduleVisible } from "../../../../reducers/selectors/graph";
+import {
+    getProcessName,
+    isRunOffSchedulePossible,
+    isRunOffScheduleVisible,
+    isValidationResultPresent,
+} from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getProcessState } from "../../../../reducers/selectors/scenarioState";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";

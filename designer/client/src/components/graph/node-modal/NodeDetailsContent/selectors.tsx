@@ -2,9 +2,8 @@ import { isEqual } from "lodash";
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
 
 import ProcessUtils from "../../../../common/ProcessUtils";
-import { getNodeResults } from "../../../../common/ProcessUtilsAsSelectors";
 import type { RootState } from "../../../../reducers";
-import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { getNodeResults, getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
 import type { NodeId, NodeType, NodeValidationError, UIParameter, UiScenarioProperties } from "../../../../types";
 

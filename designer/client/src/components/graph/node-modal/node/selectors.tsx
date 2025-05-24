@@ -1,7 +1,7 @@
 import { createSelector } from "reselect";
 
-import { getValidationErrors } from "../../../../common/ProcessUtilsAsSelectors";
 import type { RootState } from "../../../../reducers";
+import { getValidationErrors } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import type { NodeId } from "../../../../types";
 

@@ -1,11 +1,10 @@
-import { getNodeResults } from "../../common/ProcessUtilsAsSelectors";
 import { getEdgesForNode } from "../../components/graph/node-modal/node/useNodeState";
 import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherUtils";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import { updateValidationResult } from "../../reducers/graph";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
-import { getGraph } from "../../reducers/selectors/graph";
+import { getGraph, getNodeResults } from "../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
 import type { ThunkAction } from "../reduxTypes";

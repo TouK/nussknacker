@@ -1,8 +1,8 @@
-import { getNodeResults } from "../../common/ProcessUtilsAsSelectors";
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import { updateValidationResult } from "../../reducers/graph";
+import { getNodeResults } from "../../reducers/selectors/graph";
 import type { ProcessDefinitionData, PropertiesType, ScenarioGraph, ValidationResult } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import { fetchProcessDefinition } from "./processDefinitionData";

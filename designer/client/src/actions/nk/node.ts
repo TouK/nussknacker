@@ -2,12 +2,11 @@ import type { dia } from "jointjs";
 import type { Dictionary } from "lodash";
 import { flushSync } from "react-dom";
 
-import { getNodeResults } from "../../common/ProcessUtilsAsSelectors";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { updateValidationResult } from "../../reducers/graph";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
-import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
+import { getNodeResults, getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type {
     Dimensions,

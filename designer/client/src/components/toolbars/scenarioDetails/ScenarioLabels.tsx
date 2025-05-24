@@ -18,9 +18,8 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { editScenarioLabels } from "../../../actions/nk";
-import { getLabelsErrors } from "../../../common/ProcessUtilsAsSelectors";
 import HttpService from "../../../http/HttpService";
-import { getScenarioLabels } from "../../../reducers/selectors/graph";
+import { getLabelsErrors, getScenarioLabels } from "../../../reducers/selectors/graph";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
 import type { ScenarioLabelValidationError } from "../../Labels/types";
 import { useDelayedEnterAction } from "./useDelayedEnterAction";
