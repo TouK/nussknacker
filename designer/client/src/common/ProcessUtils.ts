@@ -50,10 +50,9 @@ class ProcessUtils {
         );
     };
 
-    findAvailableVariables =
-        (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
-        (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-            const nodeResults = getNodeResults(scenario);
+    findAvailableVariables = (components: Record<string, ComponentDefinition>, scenario: Scenario) => {
+        const nodeResults = getNodeResults(scenario);
+        return (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
             const variablesForNode =
                 variablesFromValidation || this.findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);
@@ -62,6 +61,7 @@ class ProcessUtils {
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
             return { ...withoutVariablesToHide, ...additionalVariablesForParam };
         };
+    };
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
 
