@@ -8,7 +8,7 @@ import type { UseTranslationResponse } from "react-i18next";
 import type { Layout, NodePosition, Position, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
-import { getValidationErrors } from "../../common/ProcessUtils2";
+import ProcessUtils from "../../common/ProcessUtils";
 import type { TrackEventParams } from "../../containers/event-tracking";
 import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
@@ -766,7 +766,7 @@ export class Graph extends React.Component<Props> {
             }
         });
 
-        const validationErrors = getValidationErrors(scenario);
+        const validationErrors = ProcessUtils.getValidationErrors(scenario);
         const invalidNodeKeys = [...keys(validationErrors?.invalidNodes)];
         const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];

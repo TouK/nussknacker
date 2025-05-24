@@ -7,7 +7,7 @@ import type { RootState } from "../reducers";
 import { getHistoryPast } from "../reducers/selectors/getHistory";
 import { getScenario, isProcessRenamed } from "../reducers/selectors/graph";
 import type { ScenarioGraph } from "../types";
-import { getValidationErrors as _getValidationErrors, getValidationResult as _getValidationResult } from "./ProcessUtils2";
+import ProcessUtils from "./ProcessUtils";
 
 export const nothingToSave = createSelector(
     (state: RootState) => state,
@@ -59,7 +59,7 @@ export const isValidationResultPresent = createSelector(getScenario, (scenario: 
     return Boolean(scenario.validationResult);
 });
 
-export const getValidationResult = createSelector(getScenario, (scenario) => _getValidationResult(scenario));
+export const getValidationResult = createSelector(getScenario, (scenario) => ProcessUtils.getValidationResult(scenario));
 export const hasNoWarnings = createSelector(getScenario, getValidationResult, (scenario, _getValidationResult) => {
     const warnings = _getValidationResult.warnings;
     return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
@@ -75,7 +75,7 @@ export const getLabelsErrors = createSelector(getValidationResult, (_getValidati
                 },
         );
 });
-export const getValidationErrors = createSelector(getScenario, (scenario) => _getValidationErrors(scenario));
+export const getValidationErrors = createSelector(getScenario, (scenario) => ProcessUtils.getValidationErrors(scenario));
 export const hasNoErrors = createSelector(getScenario, getValidationErrors, (scenario, _getValidationErrors) => {
     const result = _getValidationErrors;
     return (

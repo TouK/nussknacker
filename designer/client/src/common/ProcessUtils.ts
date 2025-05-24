@@ -12,10 +12,10 @@ import type {
     ScenarioGraph,
     TypingResult,
     UIParameter,
+    ValidationErrors,
     ValidationResult,
     VariableTypes,
 } from "../types";
-import { getNodeResults } from "./ProcessUtils2";
 
 class ProcessUtils {
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
@@ -30,6 +30,22 @@ class ProcessUtils {
             ),
         );
     };
+
+    getValidationResult = (scenario: Scenario): ValidationResult =>
+        scenario?.validationResult || {
+            validationErrors: [],
+            validationWarnings: [],
+            nodeResults: {},
+            errors: {
+                globalErrors: [],
+                processPropertiesErrors: [],
+                invalidNodes: {},
+            },
+        };
+
+    getValidationErrors(scenario: Scenario): ValidationErrors {
+        return this.getValidationResult(scenario).errors;
+    }
 
     findContextForBranch = (node: NodeType, branchId: string) => {
         return `$edge-${branchId}-${node.id}`;
@@ -50,9 +66,12 @@ class ProcessUtils {
         );
     };
 
-    findAvailableVariables = (components: Record<string, ComponentDefinition>, scenario: Scenario) => {
-        const nodeResults = getNodeResults(scenario);
-        return (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
+    getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
+
+    findAvailableVariables =
+        (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
+        (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
+            const nodeResults = this.getNodeResults(scenario);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
             const variablesForNode =
                 variablesFromValidation || this.findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);
@@ -61,24 +80,12 @@ class ProcessUtils {
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
             return { ...withoutVariablesToHide, ...additionalVariablesForParam };
         };
-    };
-
-    getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
 
     extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
         return node.type == StickyNoteType ? StickyNoteDefinition : components?.[this.determineComponentId(node)];
     };
 
-    determineComponentId = (node?: NodeType): string | null => {
-        const componentType = this.determineComponentType(node);
-        const componentName = this.determineComponentName(node);
-        return componentType && componentName ? `${componentType}-${componentName}` : null;
-    };
-
-    humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
-
-    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-    private escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+    getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
 
     private findVariablesDeclaredBeforeNode = (
         nodeId: NodeId,
@@ -140,6 +147,14 @@ class ProcessUtils {
             }
         }
     };
+
+    determineComponentId = (node?: NodeType): string | null => {
+        const componentType = this.determineComponentType(node);
+        const componentName = this.determineComponentName(node);
+        return componentType && componentName ? `${componentType}-${componentName}` : null;
+    };
+
+    humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
     private determineComponentType = (node?: NodeType): string | null => {
@@ -214,6 +229,9 @@ class ProcessUtils {
         }
     };
 
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+    private escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+
     private findPreviousNodes = (nodeId: NodeId, scenarioGraph: ScenarioGraph): NodeId[] => {
         const nodeEdge = scenarioGraph.edges?.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
@@ -225,6 +243,4 @@ class ProcessUtils {
     };
 }
 
-const processUtils = new ProcessUtils();
-
-export default processUtils;
+export default new ProcessUtils();
