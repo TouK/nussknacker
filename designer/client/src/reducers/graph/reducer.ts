@@ -164,8 +164,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 scenario: {
                     ...state.scenario,
                     scenarioGraph: action.scenarioGraphAfterChange,
-                    validationResult: action.validationResult,
                 },
+                validationResult: action.validationResult,
             };
         }
         case "EDIT_PROPERTIES": {
@@ -174,8 +174,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 scenario: {
                     ...state.scenario,
                     scenarioGraph: action.scenarioGraphAfterChange,
-                    validationResult: action.validationResult,
                 },
+                validationResult: action.validationResult,
             };
         }
         case "EDIT_LABELS": {
@@ -321,8 +321,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    validationResult: action.validationResult,
                 },
+                validationResult: action.validationResult,
             };
         }
         //TODO: handle it differently?
@@ -390,9 +390,9 @@ const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
 const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "layout", "selectionState"];
-const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.validationResult", "scenario.history"];
+const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.history"];
 
-export const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["scenario.validationResult"]));
+export const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["validationResult"]));
 export const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
 
 const undoableReducer = undoable<GraphState, Action>(reducer, {

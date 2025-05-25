@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import type { ProcessingMode } from "../../http/HttpService";
-import type { ScenarioGraph, ValidationResult } from "../../types";
+import type { ScenarioGraph } from "../../types";
 import type { Instant } from "../../types/common";
 
 export enum PredefinedActionName {
@@ -39,7 +39,6 @@ export interface Scenario {
     state: ProcessStateType;
     history?: ProcessVersionType[];
     scenarioGraph: ScenarioGraph;
-    validationResult: ValidationResult;
     processingType: string;
     processingMode: ProcessingMode;
     engineSetupName: string;

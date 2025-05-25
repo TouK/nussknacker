@@ -82,9 +82,7 @@ export const nothingToSave = createSelector(
     },
 );
 export const canExport = createSelector(getScenario, (scenario) => (isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes)));
-export const isValidationResultPresent = createSelector(getScenario, (scenario: Scenario) => {
-    return Boolean(scenario.validationResult);
-});
+export const isValidationResultPresent = createSelector(getGraph, (validationResult) => Boolean(validationResult));
 export const getValidationResult = createSelector(getScenario, (scenario) => ProcessUtils.getValidationResult(scenario));
 export const hasNoWarnings = createSelector(getScenario, getValidationResult, (scenario, _getValidationResult) => {
     const warnings = _getValidationResult.warnings;

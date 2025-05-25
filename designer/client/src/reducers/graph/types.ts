@@ -3,6 +3,7 @@ import type { PerformedTestType } from "../../actions/nk/displayTestResults";
 import type { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService";
+import type { ValidationResult } from "../../types";
 
 export interface NodeCounts {
     errors?: number;
@@ -18,6 +19,7 @@ export type TestData = Record<Source, SourceTestData>;
 
 export type GraphState = {
     scenarioLoading: boolean;
+    validationResult?: ValidationResult;
     scenario?: Scenario;
     selectionState?: string[];
     layout: Layout;
