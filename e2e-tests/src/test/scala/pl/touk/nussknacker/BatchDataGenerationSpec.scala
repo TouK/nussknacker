@@ -189,7 +189,6 @@ class BatchDataGenerationSpec
            |  }
            |}""".stripMargin
       )
-    Thread.sleep(Long.MaxValue)
   }
 
   "Test from file endpoint should return results and counts for scenario with table source" in {
