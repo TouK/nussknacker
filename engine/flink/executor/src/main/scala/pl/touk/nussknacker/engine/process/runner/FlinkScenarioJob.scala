@@ -43,7 +43,7 @@ class FlinkScenarioJob(modelData: ModelData) {
       env: StreamExecutionEnvironment,
       processListeners: List[ProcessListener],
   ): JobExecutionResult = {
-    val liveDataCollectingListener =
+    val liveDataCollectingListenerr =
       modelData.modelConfig.liveDataPreviewMode match {
         case LiveDataPreviewMode.Disabled =>
           None
@@ -61,7 +61,7 @@ class FlinkScenarioJob(modelData: ModelData) {
     val compilerFactory = new FlinkProcessCompilerDataFactory(
       modelData,
       deploymentData,
-      processListeners ++ liveDataCollectingListener.toList
+      processListeners ++ liveDataCollectingListenerr.toList
     )
     val executionConfigPreparer = ExecutionConfigPreparer.defaultChain(modelData)
     val registrar =
