@@ -221,9 +221,6 @@ services:
       context: ./flink/
       args:
         FLINK_VERSION: "1.19.2-scala_2.12-java11"
-    ports:
-      - 15000:15000
-      - 15001:15001
     restart: unless-stopped
     command: taskmanager
     environment:
