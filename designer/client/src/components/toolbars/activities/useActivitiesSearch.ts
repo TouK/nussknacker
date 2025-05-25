@@ -2,7 +2,7 @@ import { get, uniq } from "lodash";
 import { useCallback, useState } from "react";
 import type { Align } from "react-window";
 
-import type { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
+import type { NestedKeyOf } from "../../../reducers/graph/lodashWrappers";
 import type { Activity, UIActivity } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
 import type { ActivityAdditionalFields } from "./types";

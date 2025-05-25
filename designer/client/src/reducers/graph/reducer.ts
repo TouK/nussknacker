@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, isEqual, omit as _omit, partition, pick as _pick, sortBy } from "lodash";
+import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
@@ -14,7 +14,8 @@ import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
 import { appendHistorySquashLogic } from "./historySquash";
-import type { NestedKeyOf } from "./nestedKeyOf";
+import type { NestedKeyOf } from "./lodashWrappers";
+import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import type { GraphState } from "./types";
 import {
@@ -117,10 +118,9 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
-            const scenario = correctFetchedDetails(state.scenario, action.processDefinitionData);
             return {
                 ...state,
-                scenario,
+                scenario: correctFetchedDetails(state.scenario, action.processDefinitionData),
             };
         }
         case "ARCHIVED": {
@@ -133,12 +133,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "PROCESS_VERSIONS_LOADED": {
-            const { history } = action;
             return {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    history: history,
+                    history: action.history,
                 },
             };
         }
@@ -389,9 +388,6 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
 export type GraphStateWithHistory = StateWithHistory<GraphState> & {
     snapshots: number[];
 };
-
-const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
-const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
 const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.validationResult", "scenario.history"];

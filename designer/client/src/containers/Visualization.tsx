@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DndProvider } from "react-dnd-multi-backend";
 import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
@@ -21,12 +21,14 @@ import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
 import {
+    getGraph,
+    getProcessVersionId,
+    getScenario,
     getScenarioGraph,
     getVersions,
     isLatestProcessVersion,
+    isPristine,
 } from "../reducers/selectors/graph";
-import type { RootState } from "../reducers";
-import { getGraph, getProcessVersionId, getScenario, isPristine } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { getProcessDefinitionData } from "../reducers/selectors/processDefinitionData";
 import { useWindows } from "../windowManager";
@@ -34,6 +36,7 @@ import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { GraphPage } from "./Page";
+import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
 
 function useUnmountCleanup() {
@@ -97,9 +100,35 @@ function useCountsIfNeeded() {
     }, [dispatch, from, refresh, scenario, scenarioGraph, to]);
 }
 
+function useVersionSwitchIfNeeded(processName: string, version: string) {
+    const isLatestVersion = useSelector(isLatestProcessVersion);
+    const currentVersionId = useSelector(getProcessVersionId);
+    const [latestVersion, ...otherVersions] = useSelector(getVersions);
+    const navigate = useNavigate();
+    // const dispatch = useDispatch();
+
+    useEffect(() => {
+        const urlVersionId = parseInt(version);
+        console.debug({
+            processName,
+            isLatestVersion,
+            urlVersionId,
+            currentVersionId,
+            latestVersion,
+            otherVersions,
+        });
+        if (version) {
+            navigate(`${VisualizationBasePath}/${processName}`);
+        }
+        // navigate(`${VisualizationBasePath}/${processName}/${currentVersionId}`);
+        // dispatch(displayScenarioVersion(processName, urlVersionId));
+    }, [currentVersionId, isLatestVersion, latestVersion, navigate, otherVersions, processName, version]);
+}
+
 function Visualization() {
-    const { processName } = useDecodedParams<{
+    const { processName, version } = useDecodedParams<{
         processName: string;
+        version: string;
     }>();
     const dispatch = useDispatch();
     const { showBoundary } = useErrorBoundary();
@@ -152,6 +181,7 @@ function Visualization() {
 
     useProcessState();
     useCountsIfNeeded();
+    // useVersionSwitchIfNeeded(processName, version);
 
     const { openNodes } = useModalDetailsIfNeeded();
     const openAndHighlightNodes = useCallback(

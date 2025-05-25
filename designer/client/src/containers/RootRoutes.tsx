@@ -26,6 +26,7 @@ export default createRoutesFromElements(
         <Route path="/404" element={<NotFound />} />
         <Route errorElement={<RouteErrorFallbackComponent />}>
             <Route path={`${VisualizationBasePath}/:processName`} element={<Visualization />} />
+            <Route path={`${VisualizationBasePath}/:processName/:version`} element={<Visualization />} />
 
             {/* overrides scenarios custom tab */}
             <Route path={ScenariosBasePath} element={<ScenariosTab />} />
