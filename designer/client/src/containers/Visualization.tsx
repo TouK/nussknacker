@@ -9,7 +9,6 @@ import { useSearchParams } from "react-router-dom";
 
 import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import ProcessUtils from "../common/ProcessUtils";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import type { Graph } from "../components/graph/Graph";
@@ -25,10 +24,9 @@ import {
     getScenarioGraph,
     getVersions,
     isLatestProcessVersion,
-    isPristine,
 } from "../reducers/selectors/graph";
 import type { RootState } from "../reducers";
-import { getGraph, getProcessVersionId, getScenario } from "../reducers/selectors/graph";
+import { getGraph, getProcessVersionId, getScenario, isPristine } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { getProcessDefinitionData } from "../reducers/selectors/processDefinitionData";
 import { useWindows } from "../windowManager";
@@ -134,7 +132,7 @@ function Visualization() {
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
-    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state as RootState));
+    const nothingToSave = useSelector(isPristine);
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
