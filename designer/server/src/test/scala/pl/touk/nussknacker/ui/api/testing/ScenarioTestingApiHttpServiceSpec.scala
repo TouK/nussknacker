@@ -9,9 +9,7 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewStoredInDesigner
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -95,13 +93,7 @@ trait ScenarioTestingApiHttpServiceSpec
 
   "The endpoint for capabilities should" - {
     "return valid capabilities for scenario with all capabilities" in {
-      MockableDeploymentManager.configureLiveDataPreviewSupport(
-        new LiveDataPreviewSupported {
-          override def getLiveData(
-              processIdWithName: ProcessIdWithName
-          ): Future[Either[LiveDataError, LiveData]] = Future.successful(Left(NoLiveDataAvailableForScenario))
-        }
-      )
+      MockableDeploymentManager.configureLiveDataPreviewSupport(LiveDataPreviewStoredInDesigner)
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -533,31 +525,18 @@ trait ScenarioTestingApiHttpServiceSpec
   }
 
   "The endpoint for live data preview should" - {
-    "return present, but empty live data preview" in {
-      val mockedResults =
-        LiveData(TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty), Map.empty)
+    "return not present live data preview" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
-          MockableDeploymentManager.configureLiveDataPreviewSupport(
-            new LiveDataPreviewSupported {
-              override def getLiveData(
-                  processIdWithName: ProcessIdWithName
-              ): Future[Either[LiveDataError, LiveData]] = Future.successful(Right(mockedResults))
-            }
-          )
+          MockableDeploymentManager.configureLiveDataPreviewSupport(LiveDataPreviewStoredInDesigner)
         }
         .when()
         .basicAuthAllPermUser()
         .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
         .Then()
-        .statusCode(StatusCodes.OK.intValue)
-        .body(
-          s"counts.$exampleScenarioSourceId.all",
-          equalTo(0),
-          "counts.end.all",
-          equalTo(0)
-        )
+        .statusCode(StatusCodes.BadRequest.intValue)
+        .equalsPlainBody("There is no live data available for this scenario")
     }
   }
 

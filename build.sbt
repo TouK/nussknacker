@@ -23,7 +23,7 @@ val scala212 = "2.12.10"
 val scala213 = "2.13.15"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
-  case None | Some("2.13") => scala213
+  case None | Some("2.13") => scala212
   case Some("2.12")        => scala212
   case Some(unsupported)   => throw new IllegalArgumentException(s"Nu doesn't support $unsupported Scala version")
 }
@@ -821,6 +821,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     }.toList,
   )
   .dependsOn(
+    liveDataCollector,
     scenarioCompilerFlinkDeps,
     flinkComponentsUtils,
     flinkExtensionsApi,
@@ -2033,9 +2034,8 @@ lazy val liveDataCollector = (project in file("designer/live-data-collector"))
     ),
   )
   .dependsOn(
-    deploymentManagerApi % Provided,
     // For testResultsVariableEncoder purpose
-    scenarioCompiler     % Provided,
+    scenarioCompiler % Provided,
   )
 
 lazy val prepareDesignerTests     = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")

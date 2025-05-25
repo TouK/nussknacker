@@ -2,15 +2,20 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPreviewSupported, NoLiveDataPreviewSupport}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentManager,
+  LiveDataPreviewStoredInDesigner,
+  LiveDataPreviewStoredInTheDb,
+  NoLiveDataPreviewSupport
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ParametersDefinitionError,
   ScenarioTestDataGenerationError,
   TestingCapabilitiesError
 }
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder.CollectedLiveData
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
@@ -42,8 +47,9 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.test.{LiveDataRepository, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.GenerateTestDataError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
@@ -56,6 +62,8 @@ class ScenarioTestingApiHttpService(
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     dmDispatcher: DeploymentManagerDispatcher,
+    liveDataRepository: LiveDataRepository,
+    dbioActionRunner: DBIOActionRunner,
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
@@ -95,7 +103,9 @@ class ScenarioTestingApiHttpService(
                   case None                    => NoLiveDataPreviewSupport
                 }
                 .map {
-                  case _: LiveDataPreviewSupported =>
+                  case LiveDataPreviewStoredInDesigner =>
+                    CapabilityStatus.available
+                  case LiveDataPreviewStoredInTheDb =>
                     CapabilityStatus.available
                   case NoLiveDataPreviewSupport =>
                     CapabilityStatus.NotAvailable[EmptyDetails](NotAvailableReason.NotSupportedByScenarioType)
@@ -229,14 +239,17 @@ class ScenarioTestingApiHttpService(
                 case None                    => Left(NoScenario(scenarioName))
               }
             }
-            liveDataPreview <- EitherT[Future, TestingError, LiveData] {
+            liveDataPreview <- EitherT[Future, TestingError, CollectedLiveData] {
               deploymentManager.liveDataPreviewSupport match {
-                case supported: LiveDataPreviewSupported =>
-                  supported.getLiveData(processIdWithName).map {
-                    case Right(liveData) =>
-                      Right(liveData)
-                    case Left(NoLiveDataAvailableForScenario) =>
-                      Left(UnsupportedOperation("There are no live data available for this scenario"))
+                case LiveDataPreviewStoredInDesigner =>
+                  Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name)).map {
+                    case Some(liveData) => Right(liveData)
+                    case None => Left(UnsupportedOperation("There is no live data available for this scenario"))
+                  }
+                case LiveDataPreviewStoredInTheDb =>
+                  dbioActionRunner.run(liveDataRepository.fetchLiveData(processIdWithName)).map {
+                    case Right(liveData) => Right(liveData)
+                    case Left(error)     => Left(UnsupportedOperation(s"There is no live data available: $error"))
                   }
                 case NoLiveDataPreviewSupport =>
                   Future.successful(

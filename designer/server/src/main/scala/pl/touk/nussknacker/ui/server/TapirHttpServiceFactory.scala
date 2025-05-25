@@ -118,6 +118,8 @@ object TapirHttpServiceFactory {
       processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
       scenarioService = processService,
       dmDispatcher = dmDispatcher,
+      liveDataRepository = liveDataRepository,
+      dbioActionRunner = dbioRunner,
     )
 
     val actionInfoHttpService = new ActionInfoHttpService(

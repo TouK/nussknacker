@@ -3,9 +3,11 @@ package pl.touk.nussknacker.engine.management.jobrunner
 import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.BaseModelDataProvider
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
+  LiveDataPreviewStoredInTheDb,
   LiveDataPreviewSupport,
   NoLiveDataPreviewSupport
 }
@@ -43,8 +45,17 @@ class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, cli
     )
   }
 
-  override def liveDataPreviewSupport: LiveDataPreviewSupport =
-    NoLiveDataPreviewSupport
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = {
+    val modelConfig = modelDataProvider.getCurrentModelData().modelConfig
+    modelConfig.liveDataPreviewMode match {
+      // Remote Flink job runner requires configuring db uploader, which synchronizes the live results on Flink with designer db
+      case LiveDataPreviewMode.Enabled(_, _, Some(_)) =>
+        LiveDataPreviewStoredInTheDb
+      case LiveDataPreviewMode.Enabled(_, _, None) | LiveDataPreviewMode.Disabled =>
+        NoLiveDataPreviewSupport
+    }
+
+  }
 
 }
 

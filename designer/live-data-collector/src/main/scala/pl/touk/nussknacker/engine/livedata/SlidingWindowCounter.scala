@@ -53,7 +53,7 @@ private[livedata] class SlidingWindowCounter[T](
     }
   }
 
-  private def cutoff(now: Long): Long = now - windowSizeSeconds + 1
+  private def cutoff(now: Long): Long = now - windowSizeSeconds
 
   private def now(): Long = Instant.now(clock).getEpochSecond
 
