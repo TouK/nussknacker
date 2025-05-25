@@ -26,7 +26,7 @@ private[livedata] class SlidingWindowCounter[T](
     // We want to calculate correct throughput just after the scenario is started
     val windowStart      = Math.max(counterCreatedAt.getEpochSecond, currentEpochSecond - windowSizeSeconds)
     val windowsEnd       = currentEpochSecond
-    val samplingInterval = windowsEnd - windowStart
+    val samplingInterval = windowsEnd - windowStart + 1
 
     buckets.asScala.values
       .flatMap(_.asScala)
@@ -53,7 +53,7 @@ private[livedata] class SlidingWindowCounter[T](
     }
   }
 
-  private def cutoff(now: Long): Long = now - windowSizeSeconds
+  private def cutoff(now: Long): Long = now - windowSizeSeconds + 1
 
   private def now(): Long = Instant.now(clock).getEpochSecond
 

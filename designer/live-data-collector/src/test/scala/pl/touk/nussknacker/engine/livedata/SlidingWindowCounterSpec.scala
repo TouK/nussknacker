@@ -42,7 +42,6 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
     // Empty result before event is received
     counter.getThroughput.toSet shouldBe Set.empty
 
-    mutableClock.advanceBySeconds(1)
     // Calculated as 1 event per second in the first second
     counter.add(0)
     counter.getThroughput.toSet shouldBe Set(0 -> BigDecimal(1))
