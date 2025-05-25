@@ -21,8 +21,14 @@ import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
+import {
+    getScenarioGraph,
+    getVersions,
+    isLatestProcessVersion,
+    isPristine,
+} from "../reducers/selectors/graph";
 import type { RootState } from "../reducers";
-import { getGraph, getProcessVersionId, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
+import { getGraph, getProcessVersionId, getScenario } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { getProcessDefinitionData } from "../reducers/selectors/processDefinitionData";
 import { useWindows } from "../windowManager";
@@ -77,13 +83,16 @@ function useCountsIfNeeded() {
     useEffect(() => {
         if (!scenario?.name || scenario.isFragment) return;
 
-        const countParams = extractCountParams({ from, to, refresh });
+        const countParams = extractCountParams({
+            from,
+            to,
+            refresh,
+        });
         if (!countParams) return;
 
         dispatch(
             fetchAndDisplayProcessCounts({
                 processName: scenario.name,
-                scenarioGraph,
                 ...countParams,
             }),
         );

@@ -7,7 +7,7 @@ import type { SourceWithParametersTest } from "../../http/HttpService";
 export interface NodeCounts {
     errors?: number;
     all?: number;
-    fragmentCounts?: ProcessCounts;
+    fragmentCounts: ProcessCounts;
 }
 
 export type ProcessCounts = Record<string, NodeCounts>;

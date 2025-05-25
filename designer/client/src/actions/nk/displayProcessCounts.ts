@@ -4,7 +4,7 @@ import moment from "moment";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
 import type { ProcessCounts } from "../../reducers/graph";
-import { getProcessCountsRefresh } from "../../reducers/selectors/graph";
+import { getProcessCountsRefresh, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 
@@ -29,23 +29,10 @@ export function displayProcessCounts(processCounts: ProcessCounts, refresh?: Ref
 
 export const clearProcessCounts = () => displayProcessCounts({});
 
-const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, scenarioGraph: ScenarioGraph) => {
-    const processCountsName = Object.keys(processCounts).sort((a, b) => a.localeCompare(b));
-    const uncountableNodes = scenarioGraph.nodes
-        .sort((a, b) => a.id.localeCompare(b.id))
-        .filter((node, index) => node.id !== processCountsName[index]);
-    const newProcessCounts = { ...processCounts };
-    if (uncountableNodes.length !== 0 && processCountsName.length !== 0) {
-        for (let i = 0; i < uncountableNodes.length; i++) {
-            newProcessCounts[uncountableNodes[i].id] = {
-                all: undefined,
-                errors: 0,
-                fragmentCounts: {},
-            };
-        }
-    }
-    return newProcessCounts;
-};
+const extendWithEmpty = (processCounts: ProcessCounts, scenarioGraph: ScenarioGraph): ProcessCounts => ({
+    ...Object.fromEntries(scenarioGraph.nodes.map(({ id }) => [id, { fragmentCounts: {} }])),
+    ...processCounts,
+});
 
 const MIN_REFRESH_TIME = 10000;
 
@@ -55,10 +42,9 @@ export function fetchAndDisplayProcessCounts(params: {
     processName: string;
     from: Moment;
     to: Moment;
-    scenarioGraph: ScenarioGraph;
     refreshIn?: number | false;
 }): ThunkAction<Promise<void>> {
-    const { processName, from, to, scenarioGraph, refreshIn = false } = params;
+    const { processName, from, to, refreshIn = false } = params;
     return async (dispatch, getState) => {
         clearTimeout(refreshTimeout);
         replaceSearchQuery((current) => ({
@@ -68,9 +54,10 @@ export function fetchAndDisplayProcessCounts(params: {
             refresh: refreshIn ? `${refreshIn}s` : undefined,
         }));
 
-        const counts = await HttpService.fetchProcessCounts(processName, from, to).then(({ data }) =>
-            checkPossibleCountsToCalculate(data, scenarioGraph),
-        );
+        const counts = await HttpService.fetchProcessCounts(processName, from, to).then(({ data }) => {
+            const scenarioGraph = getScenarioGraph(getState());
+            return extendWithEmpty(data, scenarioGraph);
+        });
 
         if (!counts) return;
 
