@@ -15,24 +15,23 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
     val counter                             = new SlidingWindowCounter[Int](startTime, 10)
 
     1 to 10 foreach { _ =>
-      mutableClock.advanceBySeconds(1)
       1 to 10 foreach { i =>
         counter.add(i)
       }
+      counter.getThroughput.toSet shouldBe Set(
+        1  -> BigDecimal(1),
+        2  -> BigDecimal(1),
+        3  -> BigDecimal(1),
+        4  -> BigDecimal(1),
+        5  -> BigDecimal(1),
+        6  -> BigDecimal(1),
+        7  -> BigDecimal(1),
+        8  -> BigDecimal(1),
+        9  -> BigDecimal(1),
+        10 -> BigDecimal(1),
+      )
+      mutableClock.advanceBySeconds(1)
     }
-
-    counter.getThroughput.toSet shouldBe Set(
-      1  -> BigDecimal(1),
-      2  -> BigDecimal(1),
-      3  -> BigDecimal(1),
-      4  -> BigDecimal(1),
-      5  -> BigDecimal(1),
-      6  -> BigDecimal(1),
-      7  -> BigDecimal(1),
-      8  -> BigDecimal(1),
-      9  -> BigDecimal(1),
-      10 -> BigDecimal(1),
-    )
   }
 
   test("throughput is correctly calculated for single event during consecutive seconds") {
