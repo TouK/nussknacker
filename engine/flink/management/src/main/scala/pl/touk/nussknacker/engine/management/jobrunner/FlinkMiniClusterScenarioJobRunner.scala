@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
   LiveDataPreviewSupport,
-  LiveDataPreviewSupported
+  LiveDataPreviewSupported,
+  NoLiveDataPreviewSupport
 }
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -76,9 +77,16 @@ class FlinkMiniClusterScenarioJobRunner(
     }
   }
 
-  override def liveDataPreviewSupport: LiveDataPreviewSupport = new LiveDataPreviewSupported {
-    override def getLiveData(processIdWithName: ProcessIdWithName): Future[Either[LiveDataError, LiveData]] =
-      Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = {
+    modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
+      case LiveDataPreviewMode.Enabled(_, _) =>
+        new LiveDataPreviewSupported {
+          override def getLiveData(processIdWithName: ProcessIdWithName): Future[Either[LiveDataError, LiveData]] =
+            Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
+        }
+      case LiveDataPreviewMode.Disabled =>
+        NoLiveDataPreviewSupport
+    }
   }
 
 }
