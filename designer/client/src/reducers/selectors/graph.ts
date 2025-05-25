@@ -25,6 +25,15 @@ export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labe
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getScenarioGraph, (g) => g.properties?.name);
+export const getUnsavedOrCurrentName = createSelector(getProcessName, getProcessUnsavedNewName, (currentName, unsavedNewName) => {
+    return unsavedNewName || currentName;
+});
+export const isProcessRenamed = createSelector(
+    getProcessName,
+    getUnsavedOrCurrentName,
+    (currentName, unsavedNewName) => unsavedNewName !== currentName,
+);
+
 export const getProcessVersionId = createSelector(getScenario, (d) => d?.processVersionId);
 export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
 export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
@@ -40,17 +49,6 @@ export const getScenarioLabelsErrors = createSelector(getScenario, (p) => Proces
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-
-export const getUnsavedOrCurrentName = createSelector(getProcessName, getProcessUnsavedNewName, (currentName, unsavedNewName) => {
-    return unsavedNewName || currentName;
-});
-
-export const isProcessRenamed = createSelector(
-    getProcessName,
-    getUnsavedOrCurrentName,
-    (currentName, unsavedNewName) => unsavedNewName !== currentName,
-);
-
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeDeploy(state));
 export const isDeployPossible = createSelector(
