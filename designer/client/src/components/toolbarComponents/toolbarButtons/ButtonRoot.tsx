@@ -82,6 +82,7 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                             : "overline"
                     }
                     className={"toolbarButton-Label"}
+                    data-testid={"toolbarButton-label"}
                     sx={{
                         color: "inherit",
                         display: [ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? "none" : null,

@@ -32,6 +32,7 @@ declare global {
             archiveProcess: typeof archiveProcess;
             unarchiveProcess: typeof unarchiveProcess;
             migrateProcess: typeof migrateProcess;
+            verifySaveIndicator: typeof verifySaveIndicator;
         }
     }
 }
@@ -365,6 +366,15 @@ function cancelScenario(comment = "issues/123") {
     cy.contains(/^ok$/i).should("be.enabled").click();
 }
 
+function verifySaveIndicator() {
+    cy.contains(/^save$/i)
+        .find('[data-testid="toolbarButton-label"]')
+        .then(($el) => {
+            const afterContent = window.getComputedStyle($el[0], ":after").getPropertyValue("content");
+            expect(afterContent.includes("*")).to.be.true;
+        });
+}
+
 Cypress.Commands.add("createTestProcess", createTestProcess);
 Cypress.Commands.add("deleteTestProcess", deleteTestProcess);
 Cypress.Commands.add("getTestProcesses", getTestProcesses);
@@ -391,4 +401,5 @@ Cypress.Commands.add("getTestProcessName", getTestProcessName);
 Cypress.Commands.add("archiveProcess", archiveProcess);
 Cypress.Commands.add("unarchiveProcess", unarchiveProcess);
 Cypress.Commands.add("migrateProcess", migrateProcess);
+Cypress.Commands.add("verifySaveIndicator", verifySaveIndicator);
 export default {};

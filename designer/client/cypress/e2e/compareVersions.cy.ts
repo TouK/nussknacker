@@ -50,7 +50,7 @@ describe("Compare versions", () => {
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
-        cy.contains(/^save\*$/i).click();
+        cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
         cy.get("[data-testid=window]").should("not.exist");
 
@@ -60,7 +60,8 @@ describe("Compare versions", () => {
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
-        cy.contains(/^save\*$/i).click();
+        cy.verifySaveIndicator();
+        cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
 
         // Open the compare dialog and select values to compare

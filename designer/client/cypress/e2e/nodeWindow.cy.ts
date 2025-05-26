@@ -111,7 +111,8 @@ describe("Node window", () => {
                     },
                     force: true,
                 });
-            cy.contains(/^save\*$/i).click();
+            cy.verifySaveIndicator();
+            cy.contains(/^save$/i).click();
             cy.contains(/^ok$/i).click();
 
             cy.visit("/components/usages/builtin-filter");
