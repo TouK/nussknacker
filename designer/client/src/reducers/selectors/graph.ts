@@ -56,7 +56,7 @@ export const isDeployVisible = createSelector([getProcessState], (state) => Proc
 export const isDeployPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment, getUserSettings],
     (saveDisabled, error, state, fragment, userSettings) => {
-        const isAllowedByScenarioSave = userSettings["toolbar.enableDeployWithoutSave"] || saveDisabled;
+        const isAllowedByScenarioSave = userSettings["toolbar.autoSaveDuringDeploy"] || saveDisabled;
         return !fragment && isAllowedByScenarioSave && !error && ProcessStateUtils.canDeploy(state);
     },
 );

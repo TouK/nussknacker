@@ -13,6 +13,8 @@ import HttpService from "../../../../http/HttpService";
 import type { NodesDeploymentData, ScenarioSource} from "../../../../http/HttpService";
 import type { NodesDeploymentData, ScenarioSource } from "../../../../http/HttpService";
 import HttpService, { ScenarioSourceType } from "../../../../http/HttpService";
+import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
+import HttpService, { ScenarioGraphSourceType } from "../../../../http/HttpService";
 import {
     getProcessName,
     getProcessVersionId,
@@ -83,10 +85,10 @@ export default function DeployButton(props: ToolbarButtonProps) {
         versionId: ProcessVersionId,
         comment: string,
         nodesDeploymentData?: NodesDeploymentData,
-        scenarioSource?: ScenarioSource,
+        scenarioGraphSource?: ScenarioGraphSource,
     ) =>
-        HttpService.deploy(name, comment, nodesDeploymentData, scenarioSource).finally(() => {
-            const isSavedWithDeploy = scenarioSource?.type === ScenarioSourceType.FROM_GRAPH;
+        HttpService.deploy(name, comment, nodesDeploymentData, scenarioGraphSource).finally(() => {
+            const isSavedWithDeploy = scenarioGraphSource?.type === ScenarioGraphSourceType.FROM_GRAPH;
             if (isSavedWithDeploy) {
                 dispatch(displayCurrentProcessVersion(processName));
             } else {

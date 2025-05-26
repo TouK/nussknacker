@@ -24,7 +24,10 @@ import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{
+  mapProcessingTypeDataProvider,
+  scenarioParametersServiceProvider
+}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -326,6 +329,7 @@ class NotificationServiceTest
       None,
       clock,
       processService,
+      scenarioParametersServiceProvider()
     )
     val deploymentService = new DeploymentService(
       managerDispatcher,

@@ -103,13 +103,13 @@ export type SourceWithParametersTest = {
 
 export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 
-export type ScenarioSource = {
-    type: ScenarioSourceType;
+export type ScenarioGraphSource = {
+    type: ScenarioGraphSourceType;
     scenarioGraph?: ScenarioGraph;
     scenarioLabels?: string[];
 };
 
-export enum ScenarioSourceType {
+export enum ScenarioGraphSourceType {
     LATEST_VERSION = "LatestVersion",
     FROM_GRAPH = "FromGraph",
 }
@@ -357,14 +357,14 @@ class HttpService {
         processName: string,
         comment?: string,
         nodesDeploymentData?: NodesDeploymentData,
-        scenarioSource?: ScenarioSource,
+        scenarioGraphSource?: ScenarioGraphSource,
     ): Promise<ScenarioActionResult> {
         const runDeploymentRequest = {
             nodesDeploymentData,
             comment,
-            scenarioSource: {
-                ...scenarioSource,
-                scenarioGraph: scenarioSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioSource.scenarioGraph) : null,
+            scenarioGraphSource: {
+                ...scenarioGraphSource,
+                scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
             },
         };
         return api

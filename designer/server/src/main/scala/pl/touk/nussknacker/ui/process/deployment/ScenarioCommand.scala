@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.RunOffScheduleResult
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, ScenarioSource}
+import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, ScenarioGraphSource}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ case class RunDeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
     nodesDeploymentData: NodesDeploymentData,
-    scenarioSource: ScenarioSource,
+    scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
     with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
 
@@ -34,7 +34,7 @@ case class RunRedeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
     nodesDeploymentData: NodesDeploymentData,
-    scenarioSource: ScenarioSource,
+    scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
     with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
 
@@ -42,7 +42,7 @@ trait CommonDeploymentCommand {
   val commonData: CommonCommandData
   val stateRestoringStrategy: StateRestoringStrategy
   val nodesDeploymentData: NodesDeploymentData
-  val scenarioSource: ScenarioSource
+  val scenarioSource: ScenarioGraphSource
 }
 
 case class RunOffScheduleCommand(

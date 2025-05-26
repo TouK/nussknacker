@@ -91,68 +91,59 @@ class DeploymentService(
   ): Future[Future[Option[ExternalDeploymentId]]] = {
     import command.commonData._
     val actionProcessor = command.scenarioSource match {
-      case LatestVersion =>
-        Future.successful(actionService.actionProcessorForLatestVersion[CanonicalProcess])
-      case FromGraph(scenarioGraph, labels) =>
-        actionService
-          .actionProcessorForNotSavedScenario[CanonicalProcess](
-            command.commonData.processIdWithName,
-            scenarioGraph,
-            labels
-          )
+      case LatestVersion     => actionService.actionProcessorForLatestVersion[CanonicalProcess]
+      case source: FromGraph => actionService.actionProcessorForScenarioGraph[CanonicalProcess](source)
     }
-    actionProcessor.flatMap { processor =>
-      processor
-        .processActionWithCustomFinalization[T, Future[Option[ExternalDeploymentId]]](
-          command = command,
-          actionName = command match {
-            case _: RunDeploymentCommand   => ScenarioActionName.Deploy
-            case _: RunRedeploymentCommand => ScenarioActionName.Redeploy
-          }
-        ) { case (ctx, actionFinalizer) =>
-          implicit class FinalizerExt[T](val future: Future[T]) {
-            def removeInvalidActionOnFailure(): Future[T] = {
-              future.transformWith {
-                case Success(result) => Future.successful(result)
-                case Failure(ex)     => actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
-              }
+    actionProcessor
+      .processActionWithCustomFinalization[T, Future[Option[ExternalDeploymentId]]](
+        command = command,
+        actionName = command match {
+          case _: RunDeploymentCommand   => ScenarioActionName.Deploy
+          case _: RunRedeploymentCommand => ScenarioActionName.Redeploy
+        }
+      ) { case (ctx, actionFinalizer) =>
+        implicit class FinalizerExt[T](val future: Future[T]) {
+          def removeInvalidActionOnFailure(): Future[T] = {
+            future.transformWith {
+              case Success(result) => Future.successful(result)
+              case Failure(ex)     => actionFinalizer.removeInvalidAction().transform(_ => Failure(ex))
             }
           }
+        }
 
-          for {
-            dmCommand <- prepareDMRunDeploymentCommand(
-              ctx.latestScenarioDetails,
-              ctx.actionId,
-              // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
-              //       references to existing fields and uses correct types. We should also protect from sql injection attacks
-              command
-            ).removeInvalidActionOnFailure()
-            _ <- validateScenario(ctx.latestScenarioDetails).removeInvalidActionOnFailure()
-            actionResult <- checkActiveScenariosLimits(ctx.latestScenarioDetails, dmCommand.updateStrategy) {
-              IO.fromFuture {
-                IO {
-                  for {
-                    _ <- validateUsingDeploymentManager(ctx.latestScenarioDetails, dmCommand)
-                      .removeInvalidActionOnFailure()
-                  } yield {
-                    // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
-                    actionFinalizer.handleResult {
-                      dispatcher
-                        .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-                        .processCommand(dmCommand)
-                    }
+        for {
+          dmCommand <- prepareDMRunDeploymentCommand(
+            ctx.latestScenarioDetails,
+            ctx.actionId,
+            // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
+            //       references to existing fields and uses correct types. We should also protect from sql injection attacks
+            command
+          ).removeInvalidActionOnFailure()
+          _ <- validateScenario(ctx.latestScenarioDetails).removeInvalidActionOnFailure()
+          actionResult <- checkActiveScenariosLimits(ctx.latestScenarioDetails, dmCommand.updateStrategy) {
+            IO.fromFuture {
+              IO {
+                for {
+                  _ <- validateUsingDeploymentManager(ctx.latestScenarioDetails, dmCommand)
+                    .removeInvalidActionOnFailure()
+                } yield {
+                  // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
+                  actionFinalizer.handleResult {
+                    dispatcher
+                      .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+                      .processCommand(dmCommand)
                   }
                 }
               }
             }
-              .flatMap {
-                case Right(result) => Future.successful(result)
-                case Left(error: MaxActiveScenariosCountExceededError) =>
-                  Future.failed(error).removeInvalidActionOnFailure()
-              }
-          } yield actionResult
-        }
-    }
+          }
+            .flatMap {
+              case Right(result) => Future.successful(result)
+              case Left(error: MaxActiveScenariosCountExceededError) =>
+                Future.failed(error).removeInvalidActionOnFailure()
+            }
+        } yield actionResult
+      }
   }
 
   private def validateScenario(

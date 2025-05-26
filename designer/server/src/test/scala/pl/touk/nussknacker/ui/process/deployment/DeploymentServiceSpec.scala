@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.deployment.{
   ExternalDeploymentId,
   FromGraph,
   LatestVersion,
-  ScenarioSource
+  ScenarioGraphSource
 }
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
@@ -1310,7 +1310,7 @@ class DeploymentServiceSpec
       val scenarioGraph = parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson).rightValue
 
       val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
-        deployExistingScenario(scenario, FromGraph(scenarioGraph, None))
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(1L)))
       }
       val lastFinishedAction = actionRepository.getFinishedProcessActions(scenario.id, None).dbioActionValues.head
 
@@ -1323,15 +1323,15 @@ class DeploymentServiceSpec
 
   private def deployExampleScenario(
       scenarioName: String = generateScenarioName(),
-      scenarioSource: ScenarioSource = LatestVersion,
+      scenarioGraphSource: ScenarioGraphSource = LatestVersion,
   ): Option[ExternalDeploymentId] = {
     val scenario = prepareScenario(scenarioName)
-    deployExistingScenario(scenario, scenarioSource)
+    deployExistingScenario(scenario, scenarioGraphSource)
   }
 
   private def deployExistingScenario(
       scenario: ProcessIdWithName,
-      scenarioSource: ScenarioSource = LatestVersion,
+      scenarioGraphSource: ScenarioGraphSource = LatestVersion,
   ): Option[ExternalDeploymentId] = {
     deploymentManager1
       .withWaitForDeployFinish(scenario.name, result = Some(ExternalDeploymentId("1"))) {
@@ -1341,7 +1341,7 @@ class DeploymentServiceSpec
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               NodesDeploymentData.empty,
-              scenarioSource = scenarioSource,
+              scenarioSource = scenarioGraphSource,
             )
           )
           .futureValue

@@ -5,8 +5,8 @@ import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { NodesDeploymentData, ScenarioSource } from "../../../http/HttpService";
-import { ScenarioSourceType } from "../../../http/HttpService";
+import type { NodesDeploymentData, ScenarioGraphSource } from "../../../http/HttpService";
+import { ScenarioGraphSourceType } from "../../../http/HttpService";
 import { getGraph, getProcessName, getProcessVersionId, getScenarioLabels, isSaveDisabled } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import type { WindowKind } from "../../../windowManager";
@@ -35,16 +35,16 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const featureSettings = useSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
 
-    const unsavedScenarioSource: ScenarioSource = {
-        type: ScenarioSourceType.FROM_GRAPH,
+    const unsavedScenarioGraphSource: ScenarioGraphSource = {
+        type: ScenarioGraphSourceType.FROM_GRAPH,
         scenarioGraph: useSelector(getGraph)?.scenario?.scenarioGraph,
         scenarioLabels: useSelector(getScenarioLabels),
     };
-    const savedScenarioSource: ScenarioSource = { type: ScenarioSourceType.LATEST_VERSION };
-    const scenarioSource: ScenarioSource = useSelector(isSaveDisabled) ? savedScenarioSource : unsavedScenarioSource;
+    const savedScenarioGraphSource: ScenarioGraphSource = { type: ScenarioGraphSourceType.LATEST_VERSION };
+    const scenarioGraphSource: ScenarioGraphSource = useSelector(isSaveDisabled) ? savedScenarioGraphSource : unsavedScenarioGraphSource;
 
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment, parametersValues, scenarioSource);
+        const response = await action(processName, processVersionId, comment, parametersValues, scenarioGraphSource);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.Success:
             case ScenarioActionResultType.UnhandledError:
@@ -57,7 +57,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
                 console.log("Unexpected result type:", response.scenarioActionResultType);
                 break;
         }
-    }, [action, comment, processName, props, processVersionId, parametersValues, scenarioSource]);
+    }, [action, comment, processName, props, processVersionId, parametersValues, scenarioGraphSource]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

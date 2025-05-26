@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.Streaming1
 import pl.touk.nussknacker.test.mock.{StubModelDataWithModelDefinition, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypeDataProviderFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
@@ -104,6 +105,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       deploymentCommentSettings,
       clock,
       processService,
+      scenarioParametersServiceProvider(List(Streaming1.stringify))
     )
 
     val deploymentsReconciler =

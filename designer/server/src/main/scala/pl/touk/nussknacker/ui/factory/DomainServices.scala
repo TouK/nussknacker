@@ -271,6 +271,7 @@ object DomainServices extends LazyLogging {
         alreadyLoadedConfig.deploymentCommentSettings,
         clock,
         processService,
+        processingTypeDataProvider.mapCombined(_.parametersService),
       )
       _ = {
         actionService.invalidateInProgressActions()

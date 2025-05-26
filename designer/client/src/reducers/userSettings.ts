@@ -23,7 +23,7 @@ type SettingsNames =
     | "scenario.allowQuickSave"
     | "scenario.allowQuickDeploy"
     | "scenario.showBreadcrumbs"
-    | "toolbar.enableDeployWithoutSave";
+    | "toolbar.autoSaveDuringDeploy";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
@@ -48,7 +48,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "scenario.allowQuickSave": getInitialUserFlag("scenario.allowQuickSave"),
     "scenario.allowQuickDeploy": getInitialUserFlag("scenario.allowQuickDeploy"),
     "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
-    "toolbar.enableDeployWithoutSave": getInitialUserFlag("toolbar.enableDeployWithoutSave", false),
+    "toolbar.autoSaveDuringDeploy": getInitialUserFlag("toolbar.autoSaveDuringDeploy", false),
 });
 
 /**

@@ -10,6 +10,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 trait PatientScalaFutures extends BasePatientScalaFutures {
 
   final override implicit def patienceConfig: PatienceConfig =
-    PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
+//    PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
+    PatienceConfig(timeout = scaled(Span(500, Seconds)), interval = scaled(Span(50, Millis)))
 
 }

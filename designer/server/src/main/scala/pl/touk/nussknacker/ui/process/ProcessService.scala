@@ -164,6 +164,14 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse]
 
+  def updateProcessDBIO(
+      processIdWithName: ProcessIdWithName,
+      details: ScenarioWithDetails,
+      action: UpdateScenarioCommand
+  )(
+      implicit user: LoggedUser
+  ): DB[UpdateProcessResponse]
+
   def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse]
@@ -455,35 +463,45 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
-      val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
-      val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
-      val validation =
-        FatalValidationError.saveNotAllowedAsError(
-          processResolver.validateBeforeUiResolving(
-            action.scenarioGraph,
-            details.processVersionUnsafe,
-            details.isFragment,
-          )
-        )
-      val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
-      val updateProcessAction = UpdateProcessAction(
-        processId = processIdWithName.id,
-        canonicalProcess = substituted,
-        comment = action.comment.flatMap(Comment.from),
-        labels = scenarioLabels,
-        increaseVersionWhenJsonNotChanged = false,
-      )
-      dbioRunner
-        .runInTransaction(processRepository.updateProcess(updateProcessAction))
-        .map { processUpdated =>
-          UpdateProcessResponse(
-            processUpdated.newVersion
-              .map(ProcessCreated(processIdWithName.id, _))
-              .map(toProcessResponse(processIdWithName.name, _)),
-            validation
-          )
-        }
+      dbioRunner.runInTransaction(updateProcessDBIO(processIdWithName, details, action))
     }
+
+  override def updateProcessDBIO(
+      processIdWithName: ProcessIdWithName,
+      details: ScenarioWithDetails,
+      action: UpdateScenarioCommand
+  )(
+      implicit user: LoggedUser
+  ): DB[UpdateProcessResponse] = {
+    val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
+    val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
+    val validation =
+      FatalValidationError.saveNotAllowedAsError(
+        processResolver.validateBeforeUiResolving(
+          action.scenarioGraph,
+          details.processVersionUnsafe,
+          details.isFragment,
+        )
+      )
+    val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
+    val updateProcessAction = UpdateProcessAction(
+      processId = processIdWithName.id,
+      canonicalProcess = substituted,
+      comment = action.comment.flatMap(Comment.from),
+      labels = scenarioLabels,
+      increaseVersionWhenJsonNotChanged = false,
+    )
+    processRepository
+      .updateProcess(updateProcessAction)
+      .map { processUpdated =>
+        UpdateProcessResponse(
+          processUpdated.newVersion
+            .map(ProcessCreated(processIdWithName.id, _))
+            .map(toProcessResponse(processIdWithName.name, _)),
+          validation
+        )
+      }
+  }
 
   override def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
       implicit user: LoggedUser

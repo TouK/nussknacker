@@ -6,18 +6,22 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.deployment.{FromGraph, LatestVersion, ScenarioGraphSource}
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
-import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider,
   ScenarioStatusWithAllowedActions
 }
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
+import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 
@@ -39,6 +43,7 @@ class ActionService(
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     clock: Clock,
     processService: ProcessService,
+    scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -73,21 +78,22 @@ class ActionService(
       : ActionProcessor[LatestScenarioDetailsShape] =
     actionProcessorForVersion[LatestScenarioDetailsShape](p => Some(p.processVersionId))
 
-  def actionProcessorForVersion[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
-      extractVersionOnWhichActionIsDoneFromLatestScenarioDetails: ScenarioWithDetailsEntity[
-        LatestScenarioDetailsShape
-      ] => Option[VersionId]
-  ): ActionProcessor[LatestScenarioDetailsShape] =
-    new ActionProcessor(extractVersionOnWhichActionIsDoneFromLatestScenarioDetails)
+  def actionProcessorForVersion[ScenarioDetailsShape: ScenarioShapeFetchStrategy](
+      extractVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[ScenarioDetailsShape] => Option[VersionId]
+  ): ActionProcessor[ScenarioDetailsShape] =
+    new ActionProcessor(extractVersionOnWhichActionIsDone)
 
-  def actionProcessorForNotSavedScenario[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
-      processIdWithName: ProcessIdWithName,
-      scenarioGraph: ScenarioGraph,
-      scenarioLabels: Option[List[String]],
-  )(implicit loggedUser: LoggedUser): Future[ActionProcessor[LatestScenarioDetailsShape]] =
-    processService
-      .updateProcess(processIdWithName, UpdateScenarioCommand(scenarioGraph, None, scenarioLabels))
-      .map(_ => actionProcessorForLatestVersion)
+  def actionProcessorForScenarioGraph[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
+      scenarioGraphSource: ScenarioGraphSource
+//      processIdWithName: ProcessIdWithName,
+//      scenarioGraph: ScenarioGraph,
+//      scenarioLabels: Option[List[String]],
+//  )(implicit loggedUser: LoggedUser): ActionProcessor[LatestScenarioDetailsShape] =
+  ): ActionProcessor[LatestScenarioDetailsShape] =
+    new ActionProcessor(p => Some(p.processVersionId), scenarioGraphSource)
+//    processService
+//      .updateProcess(processIdWithName, UpdateScenarioCommand(scenarioGraph, None, scenarioLabels))
+//      .map(_ => actionProcessorForLatestVersion)
 
   private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType) = {
     for {
@@ -117,14 +123,13 @@ class ActionService(
     }
   }
 
-  class ActionProcessor[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
-      extractVersionOnWhichActionIsDoneFromLatestScenarioDetails: ScenarioWithDetailsEntity[
-        LatestScenarioDetailsShape
-      ] => Option[VersionId]
+  class ActionProcessor[ScenarioDetailsShape: ScenarioShapeFetchStrategy](
+      extractVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[ScenarioDetailsShape] => Option[VersionId],
+      scenarioGraphSource: ScenarioGraphSource = LatestVersion,
   ) {
 
     def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](command: COMMAND, actionName: ScenarioActionName)(
-        runAction: CommandContext[LatestScenarioDetailsShape] => Future[RESULT],
+        runAction: CommandContext[ScenarioDetailsShape] => Future[RESULT],
     ): Future[RESULT] = {
       processActionWithCustomFinalization[COMMAND, RESULT](command, actionName) { case (ctx, actionFinalizer) =>
         actionFinalizer.handleResult {
@@ -136,14 +141,14 @@ class ActionService(
     def processActionWithCustomFinalization[COMMAND <: ScenarioCommand[RESULT], RESULT](
         command: COMMAND,
         actionName: ScenarioActionName
-    )(runAction: (CommandContext[LatestScenarioDetailsShape], ActionFinalizer) => Future[RESULT]): Future[RESULT] = {
+    )(runAction: (CommandContext[ScenarioDetailsShape], ActionFinalizer) => Future[RESULT]): Future[RESULT] = {
       import command.commonData._
       for {
         validatedComment <- validateDeploymentComment(comment)
         ctx <- prepareCommandContextWithAction(
           processIdWithName,
           actionName,
-          extractVersionOnWhichActionIsDoneFromLatestScenarioDetails,
+          extractVersionOnWhichActionIsDone,
         )
         actionResult <- runAction(ctx, new ActionFinalizer(actionName, validatedComment, ctx))
       } yield actionResult
@@ -160,18 +165,46 @@ class ActionService(
     private def prepareCommandContextWithAction(
         processId: ProcessIdWithName,
         actionName: ScenarioActionName,
-        extractVersionOnWhichActionIsDoneFromLatestScenarioDetails: ScenarioWithDetailsEntity[
-          LatestScenarioDetailsShape
-        ] => Option[VersionId]
-    )(implicit user: LoggedUser): Future[CommandContext[LatestScenarioDetailsShape]] = {
+        extractVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[ScenarioDetailsShape] => Option[VersionId]
+    )(implicit user: LoggedUser): Future[CommandContext[ScenarioDetailsShape]] = {
       implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
       // 1.1 lock for critical section
       transactionallyRunCriticalSection(
         for {
           // 1.2. fetch scenario data
-          processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[LatestScenarioDetailsShape](
-            processId.id
-          )
+          processDetailsOpt <- scenarioGraphSource match {
+            case LatestVersion =>
+              processRepository.fetchLatestProcessDetailsForProcessId[ScenarioDetailsShape](processId.id)
+            case FromGraph(scenarioGraph, scenarioLabels, baseScenarioVersionId) =>
+              processRepository
+                .fetchProcessDetailsForId[ScenarioGraph](processId.id, baseScenarioVersionId)
+                .flatMap {
+//                case s@Some(scenario) if scenario.scenarioGraph == scenarioGraph => DBIOAction.successful(s)
+                  case s @ Some(scenario) if scenario.scenarioGraph == scenarioGraph =>
+                    processRepository
+                      .fetchProcessDetailsForId[ScenarioDetailsShape](processId.id, baseScenarioVersionId)
+                  case Some(scenario) =>
+                    val parameters = scenarioParametersServiceProvider.combined
+                      .getParametersWithReadPermissionUnsafe(scenario.processingType)
+                    val scenarioDetails = ScenarioWithDetailsConversions
+                      .fromEntityIgnoringGraphAndValidationResult(scenario, parameters)
+                    val updateCommand = UpdateScenarioCommand(scenarioGraph, None, scenarioLabels)
+                    processService
+                      .updateProcessDBIO(processId, scenarioDetails, updateCommand)
+//                    .flatMap(_ => processRepository.fetchLatestProcessDetailsForProcessId[ScenarioDetailsShape](processId.id))
+//                    .map(_ => Some(scenario.mapScenario[ScenarioDetailsShape](_ => ().asInstanceOf[ScenarioDetailsShape])))
+                      .flatMap(response =>
+                        response.processResponse match {
+                          case Some(value) =>
+                            processRepository
+                              .fetchProcessDetailsForId[ScenarioDetailsShape](processId.id, value.versionId)
+                          case None => ???
+                        }
+                      )
+                  case None => DBIOAction.successful[Option[ScenarioWithDetailsEntity[ScenarioDetailsShape]]](None)
+                }
+            // todo: how to map to target shape?
+          }
           processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
           // 1.3. check if action is performed on proper scenario (not fragment, not archived)
           _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
@@ -179,7 +212,7 @@ class ActionService(
           stateWithAllowedActions <- scenarioStatusProvider.getAllowedActionsForScenarioStatusDBIO(processDetails)
           _ = checkIfCanPerformActionInState(actionName, processDetails, stateWithAllowedActions)
           // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
-          versionOnWhichActionIsDone = extractVersionOnWhichActionIsDoneFromLatestScenarioDetails(processDetails)
+          versionOnWhichActionIsDone = extractVersionOnWhichActionIsDone(processDetails)
           // 1.6. create new action, action is started with "in progress" state, the whole command execution can take some time
           actionId <- actionRepository.addInProgressAction(
             processDetails.processId,
@@ -190,13 +223,23 @@ class ActionService(
       )
     }
 
+//    private def mapToTargetShape(scenario: ScenarioWithDetailsEntity[ScenarioGraph])
+//                                (implicit fetchShape: ScenarioShapeFetchStrategy[ScenarioDetailsShape]): ScenarioWithDetailsEntity[ScenarioDetailsShape] = {
+//      fetchShape match {
+//        case ScenarioShapeFetchStrategy.FetchScenarioGraph => scenario.mapScenario[ScenarioDetailsShape](identity)
+//        case ScenarioShapeFetchStrategy.FetchCanonical => ???
+//        case ScenarioShapeFetchStrategy.NotFetch => scenario.mapScenario()
+//        case ScenarioShapeFetchStrategy.FetchComponentsUsages => ???
+//      }
+//    }
+
     private def transactionallyRunCriticalSection[T](dbioAction: DB[T]) = {
       dbioRunner.runInTransaction(actionRepository.withLockedTable(dbioAction))
     }
 
     private def checkIfCanPerformActionOnScenario(
         actionName: ScenarioActionName,
-        processDetails: ScenarioWithDetailsEntity[LatestScenarioDetailsShape]
+        processDetails: ScenarioWithDetailsEntity[ScenarioDetailsShape]
     ): Unit = {
       if (processDetails.isArchived) {
         throw ProcessIllegalAction.archived(actionName, processDetails.name)
@@ -207,7 +250,7 @@ class ActionService(
 
     private def checkIfCanPerformActionInState(
         actionName: ScenarioActionName,
-        processDetails: ScenarioWithDetailsEntity[LatestScenarioDetailsShape],
+        processDetails: ScenarioWithDetailsEntity[ScenarioDetailsShape],
         statusWithAllowedActions: ScenarioStatusWithAllowedActions
     ): Unit = {
       if (!statusWithAllowedActions.allowedActions.contains(actionName)) {
@@ -221,7 +264,7 @@ class ActionService(
     private class ActionFinalizer(
         actionName: ScenarioActionName,
         deploymentComment: Option[Comment],
-        ctx: CommandContext[LatestScenarioDetailsShape]
+        ctx: CommandContext[ScenarioDetailsShape]
     )(implicit user: LoggedUser) {
 
       def handleResult[T](runAction: => Future[T]): Future[T] = {

@@ -217,6 +217,7 @@ trait NuResourcesTest
     deploymentCommentSettings,
     Clock.systemUTC(),
     processService,
+    processingTypeDataProvider.mapCombined(_.parametersService),
   )
 
   protected val designerConfig: DesignerConfig = DesignerConfig.from(testConfig)
