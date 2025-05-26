@@ -69,6 +69,7 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
       logger.debug(
         s"Waiting for deploy: ${process.name}, version: $version, deployment id: $deploymentId, $jobStatuses, "
       )
+
       atLeast(1, jobStatuses) should matchPattern {
         case DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`)) =>
       }
