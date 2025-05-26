@@ -565,7 +565,7 @@ class PeriodicProcessServiceIntegrationTest
     service.deploy(deployment).futureValue
     f.delegateDeploymentManagerStub.setDeploymentStatus(
       processName,
-      SimpleStateStatus.Running(VersionId(1), Instant.now),
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),
       Some(deployment.id)
     )
 

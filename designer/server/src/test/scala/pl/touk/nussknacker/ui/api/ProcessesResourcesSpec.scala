@@ -283,7 +283,7 @@ class ProcessesResourcesSpec
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        processName.value -> DeploymentStatus.Running(VersionId(1), Instant.now),
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()),
       )
     )
 
@@ -346,7 +346,7 @@ class ProcessesResourcesSpec
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        processName.value -> DeploymentStatus.Running(VersionId(1), Instant.now()),
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()),
       )
     )
 
@@ -374,7 +374,7 @@ class ProcessesResourcesSpec
     createEmptyScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        processName.value -> DeploymentStatus.Running(VersionId(1), Instant.now)
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now())
       )
     )
 
@@ -609,7 +609,7 @@ class ProcessesResourcesSpec
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
         secondProcessor.value -> DeploymentStatus.Canceled,
-        thirdProcessor.value  -> DeploymentStatus.Running(VersionId(1), Instant.now),
+        thirdProcessor.value  -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now),
       )
     )
 
@@ -1263,7 +1263,7 @@ class ProcessesResourcesSpec
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        processName.value -> DeploymentStatus.Running(VersionId(1), Instant.now)
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now)
       )
     )
 
@@ -1395,7 +1395,7 @@ class ProcessesResourcesSpec
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        processName.value -> DeploymentStatus.Running(VersionId(1), Instant.now)
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now)
       )
     )
 

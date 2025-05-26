@@ -82,7 +82,7 @@ class PeriodicProcessesFetchingTest
         f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
       f.delegateDeploymentManagerStub.addStateStatus(
         processName(i),
-        SimpleStateStatus.Running(VersionId(1), Instant.now),
+        SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),
         Some(deploymentId)
       )
     }
@@ -111,7 +111,7 @@ class PeriodicProcessesFetchingTest
         f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
       f.delegateDeploymentManagerStub.addStateStatus(
         processName(i),
-        SimpleStateStatus.Running(VersionId(1), Instant.now),
+        SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),
         Some(deploymentId)
       )
     }

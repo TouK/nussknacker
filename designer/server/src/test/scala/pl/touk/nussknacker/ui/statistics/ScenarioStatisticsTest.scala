@@ -165,7 +165,7 @@ class ScenarioStatisticsTest
       "s_a"
     ) shouldBe 0
     ScenarioStatistics.determineStatisticsForScenario(
-      scenarioData(Some(SimpleStateStatus.Running(VersionId(1), Instant.now)))
+      scenarioData(Some(SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())))
     )(
       "s_a"
     ) shouldBe 1

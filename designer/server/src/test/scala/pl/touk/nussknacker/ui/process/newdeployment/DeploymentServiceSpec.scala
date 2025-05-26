@@ -381,7 +381,11 @@ class DeploymentServiceSpec
       scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): ProcessIdWithName = {
-    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Running(VersionId(1), Instant.now())))
+    prepareScenarioInStatus(
+      scenarioName,
+      processingType,
+      Some(DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()))
+    )
   }
 
   private def prepareDuringDeployScenario(

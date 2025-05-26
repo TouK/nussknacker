@@ -443,7 +443,10 @@ class DeploymentServiceSpec
   "should return state with warning when state is running and scenario is canceled" in {
     val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
-    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running(VersionId(1), Instant.now)) {
+    deploymentManager1.withScenarioStateStatus(
+      scenario.name,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
+    ) {
       val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
@@ -455,7 +458,10 @@ class DeploymentServiceSpec
   "should return not deployed when engine returns any state and scenario hasn't action" in {
     val scenario = prepareScenario(generateScenarioName())
 
-    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running(VersionId(1), Instant.now)) {
+    deploymentManager1.withScenarioStateStatus(
+      scenario.name,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now)
+    ) {
       val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.NotDeployed
     }
@@ -518,7 +524,7 @@ class DeploymentServiceSpec
 
     deploymentManager1.withScenarioStateVersion(
       scenario.name,
-      SimpleStateStatus.Running(version, Instant.now),
+      SimpleStateStatus.Running(version, startedAt = Instant.now()),
     ) {
       val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
 
@@ -599,7 +605,10 @@ class DeploymentServiceSpec
       .value
       .lastStateAction shouldBe None
 
-    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running(VersionId(1), Instant.now)) {
+    deploymentManager1.withScenarioStateStatus(
+      scenario.name,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
+    ) {
       scenarioStatusProvider
         .getScenarioStatus(scenario)
         .futureValue shouldBe SimpleStateStatus.NotDeployed
@@ -621,7 +630,10 @@ class DeploymentServiceSpec
   "should return not deployed state for archived never deployed scenario with running state (it should never happen)" in {
     val (scenario, _) = prepareArchivedScenario(generateScenarioName(), None)
 
-    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running(VersionId(1), Instant.now)) {
+    deploymentManager1.withScenarioStateStatus(
+      scenario.name,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
+    ) {
       val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.NotDeployed
     }
@@ -637,7 +649,10 @@ class DeploymentServiceSpec
   "should return canceled status for archived canceled scenario with running state (it should never happen)" in {
     val (scenario, _) = prepareArchivedScenario(generateScenarioName(), Some(Cancel))
 
-    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running(VersionId(1), Instant.now)) {
+    deploymentManager1.withScenarioStateStatus(
+      scenario.name,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
+    ) {
       val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.Canceled
     }
@@ -702,7 +717,10 @@ class DeploymentServiceSpec
   "should return not deployed status for archived never deployed scenario with running state (it should never happen)" in {
     val (scenario, _) = prepareArchivedScenario(generateScenarioName(), None)
 
-    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running(VersionId(1), Instant.now)) {
+    deploymentManager1.withScenarioStateStatus(
+      scenario.name,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
+    ) {
       val state = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       state shouldBe SimpleStateStatus.NotDeployed
     }
@@ -727,7 +745,10 @@ class DeploymentServiceSpec
   "should return problem status for unarchived scenario with running state (it should never happen)" in {
     val (scenario, _) = preparedUnarchivedScenario(generateScenarioName(), Some(Cancel))
 
-    deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.Running(VersionId(1), Instant.now)) {
+    deploymentManager1.withScenarioStateStatus(
+      scenario.name,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
+    ) {
       val state          = scenarioStatusProvider.getScenarioStatus(scenario).futureValue
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state shouldBe expectedStatus
@@ -814,7 +835,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.NotDeployed) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -829,7 +850,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Canceled) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -844,7 +865,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringCancel) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -859,7 +880,7 @@ class DeploymentServiceSpec
 
         deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Finished(VersionId(1))) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -872,7 +893,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager1.withScenarioStateStatus(scenario2.name, StateStatus("PROBLEM")) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -887,11 +908,11 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager1.withScenarioStateStatus(
             scenario2.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             redeployExampleScenario(scenario1)
           }
@@ -907,7 +928,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.NotDeployed) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -922,7 +943,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Canceled) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -937,7 +958,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringCancel) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -952,7 +973,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Finished(VersionId(1))) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -967,7 +988,7 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager2.withScenarioStateStatus(scenario2.name, StateStatus("PROBLEM")) {
             deployExampleScenario(generateScenarioName("scenario3"))
@@ -982,11 +1003,11 @@ class DeploymentServiceSpec
 
         val result = deploymentManager1.withScenarioStateStatus(
           scenario1.name,
-          SimpleStateStatus.Running(VersionId(1), Instant.now)
+          SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
         ) {
           deploymentManager2.withScenarioStateStatus(
             scenario2.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             redeployExampleScenario(scenario1)
           }
@@ -1007,11 +1028,11 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager1.withScenarioStateStatus(
               scenario2.name,
-              SimpleStateStatus.Running(VersionId(1), Instant.now)
+              SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
             ) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
@@ -1028,7 +1049,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringDeploy(VersionId(1))) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1046,7 +1067,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager1.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Restarting) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1064,7 +1085,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager1.withScenarioStateStatus(scenario2.name, ProblemStateStatus.shouldNotBeRunning(true)) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1082,7 +1103,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager1.withScenarioStateStatus(scenario2.name, exampleMultipleJobsRunningStatus) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1102,11 +1123,11 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager2.withScenarioStateStatus(
               scenario2.name,
-              SimpleStateStatus.Running(VersionId(1), Instant.now)
+              SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
             ) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
                 deployExampleScenario(generateScenarioName("scenario4"))
@@ -1123,7 +1144,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.DuringDeploy(VersionId(1))) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1141,7 +1162,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, SimpleStateStatus.Restarting) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1159,7 +1180,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, ProblemStateStatus.shouldNotBeRunning(true)) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {
@@ -1177,7 +1198,7 @@ class DeploymentServiceSpec
         assertThrowsWithParent[MaxActiveScenariosCountExceededError] {
           deploymentManager1.withScenarioStateStatus(
             scenario1.name,
-            SimpleStateStatus.Running(VersionId(1), Instant.now)
+            SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())
           ) {
             deploymentManager2.withScenarioStateStatus(scenario2.name, exampleMultipleJobsRunningStatus) {
               deploymentManager1.withScenarioStateStatus(scenario3.name, SimpleStateStatus.NotDeployed) {

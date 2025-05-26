@@ -477,7 +477,7 @@ class PeriodicDeploymentManagerTest
     f.repository.markDeployed(deploymentId)
     f.delegateDeploymentManagerStub.setDeploymentStatus(
       processName,
-      SimpleStateStatus.Running(VersionId(1), Instant.now),
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),
       Some(deploymentId)
     )
     val scenarioStatus = f.getScenarioStatus(version.processId)
