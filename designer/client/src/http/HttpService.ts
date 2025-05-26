@@ -831,6 +831,13 @@ class HttpService {
         return promise;
     }
 
+    fetchProcessLiveData(processName: string): Promise<AxiosResponse<unknown>> {
+        const promise = api.get(`/liveData/${encodeURIComponent(processName)}`);
+
+        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot live data"), error, true));
+        return promise;
+    }
+
     //to prevent closing edit node modal and corrupting graph display
     saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
         const data = {
