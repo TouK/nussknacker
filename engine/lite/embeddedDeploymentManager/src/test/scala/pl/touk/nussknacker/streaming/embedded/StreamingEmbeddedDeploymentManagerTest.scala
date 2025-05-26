@@ -61,7 +61,7 @@ class StreamingEmbeddedDeploymentManagerTest
 
     eventually {
       manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
-        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithingLast(startedAt, 1 second) =>
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 1 second) =>
       }
     }
 
@@ -158,7 +158,7 @@ class StreamingEmbeddedDeploymentManagerTest
 
     eventually {
       manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
-        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithingLast(startedAt, 1 second) =>
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 1 second) =>
       }
     }
 

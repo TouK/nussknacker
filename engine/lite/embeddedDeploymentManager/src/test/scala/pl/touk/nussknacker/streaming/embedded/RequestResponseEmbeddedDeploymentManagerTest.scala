@@ -131,7 +131,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
 
     eventually {
       manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
-        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithingLast(startedAt, 1 second) =>
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 1 second) =>
       }
     }
 
@@ -156,7 +156,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
   }
 
-  private def isWithingLast(instant: Instant, duration: FiniteDuration): Boolean = {
+  private def isWithinLast(instant: Instant, duration: FiniteDuration): Boolean = {
     FiniteDuration(Instant.now().minusMillis(instant.toEpochMilli).toEpochMilli, TimeUnit.MILLISECONDS) < duration
   }
 

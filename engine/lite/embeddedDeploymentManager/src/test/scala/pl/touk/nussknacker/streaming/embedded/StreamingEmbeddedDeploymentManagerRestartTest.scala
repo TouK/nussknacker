@@ -54,7 +54,7 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
 
     eventually {
       manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
-        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithingLast(startedAt, 30 seconds) =>
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 30 seconds) =>
       }
     }
   }

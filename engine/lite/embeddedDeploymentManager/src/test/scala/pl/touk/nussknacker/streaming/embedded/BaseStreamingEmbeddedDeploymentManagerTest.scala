@@ -132,7 +132,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
     }
   }
 
-  protected def isWithingLast(instant: Instant, duration: FiniteDuration): Boolean = {
+  protected def isWithinLast(instant: Instant, duration: FiniteDuration): Boolean = {
     FiniteDuration(Instant.now().minusMillis(instant.toEpochMilli).toEpochMilli, TimeUnit.MILLISECONDS) < duration
   }
 
