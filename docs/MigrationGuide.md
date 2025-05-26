@@ -29,6 +29,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   should be added to distinguish the components. In the new version of the component, OpenAPI `Service` should be
   selected. For this reason, the existing scenario may not compile. The automatic migration for this parameter is not
   easy and has to be done manually or through updates in the DB if you can read the swagger service name.
+* [7684](https://github.com/TouK/nussknacker/pull/7684) Toolbar config `processToolbarConfig` requires configuration 
+  for both `"process-deploy"` and `"process-redeploy"` buttons.
 
 ### REST API changes
 
@@ -45,6 +47,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Scenario testing API (on path prefix `/scenarioTesting`) is refactored, with modified endpoint paths and request/response format
     * 2 endpoints moved from `/processManagement` API to `/scenarioTesting` API - `/test` (test with form) and `/generateAndTest` (test with generated data) and merged into a single endpoints `/performTest`
 `   * introduced` new representation of test results, grouped per transition between nodes (toggleable in on API request level)
+* [7684](https://github.com/TouK/nussknacker/pull/7684) There is separate endpoint for redeploy action: `processManagement/redeploy`. 
+  Deploy cannot be performed on running scenario, redeploy cannot be performed on cancelled scenario, can be performed when scenario is running. 
 
 ### Code API changes
 
