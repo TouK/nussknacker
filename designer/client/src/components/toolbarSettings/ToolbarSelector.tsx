@@ -21,6 +21,10 @@ export const toolbarSelector = ({ horizontal, ...props }: ToolbarSelectorProps):
 
     if (!Component) return null;
 
-    const { buttons, ...passProps } = props;
-    return <Component {...passProps}>{buttons?.map(buttonSelector)}</Component>;
+    const { buttons, additionalParams, ...passProps } = props;
+    return (
+        <Component {...passProps} {...additionalParams}>
+            {buttons?.map(buttonSelector)}
+        </Component>
+    );
 };

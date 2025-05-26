@@ -7,7 +7,7 @@ import type { ToolbarConfig } from "../toolbarSettings/types";
 import { ToolbarButtons } from "./toolbarButtons";
 import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
 
-export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons">>;
+export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons" | "additionalParams">>;
 
 export function ButtonsToolbar(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
@@ -24,6 +24,6 @@ export function ButtonsToolbar(props: ToolbarPanelProps): ReactElement {
 }
 
 function RemoteToolbarContent(props: ToolbarPanelProps): ReactElement {
-    const { componentUrl, additionalParams, ...passProps } = props;
-    return <RemoteComponent url={componentUrl} {...additionalParams} {...passProps} />;
+    const { componentUrl, ...passProps } = props;
+    return <RemoteComponent url={componentUrl} {...passProps} />;
 }
