@@ -20,13 +20,13 @@ object LiveDataCodecs {
   import io.circe.syntax._
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  implicit val resultsWithCountsEncoder: Encoder[LiveDataDto] =
+  implicit val liveDataDtoEncoder: Encoder[LiveDataDto] =
     deriveConfiguredEncoder[LiveDataDto].mapJson(_.dropNullValues)
 
-  implicit val resultsWithCountsDecoder: Decoder[LiveDataDto] =
+  implicit val liveDataDtoDecoder: Decoder[LiveDataDto] =
     Decoder.failed(DecodingFailure("Not implemented", List.empty))
 
-  implicit val testResultsEncoder: Encoder[LiveDataSamplesDto] = new Encoder[LiveDataSamplesDto]() {
+  implicit val liveDataSamplesDtoEncoder: Encoder[LiveDataSamplesDto] = new Encoder[LiveDataSamplesDto]() {
 
     implicit val nodeResult: Encoder[ResultContext[Json]]                              = deriveConfiguredEncoder
     implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
@@ -56,7 +56,7 @@ object LiveDataCodecs {
 
   implicit val nodeTransitionThroughputDto: Encoder[NodeTransitionThroughputDto] = deriveConfiguredEncoder
 
-  implicit val testResultsDecoder: Decoder[LiveDataSamplesDto] =
+  implicit val liveDataSamplesDtoDecoder: Decoder[LiveDataSamplesDto] =
     Decoder.failed(DecodingFailure("Not implemented", List.empty))
 
 }

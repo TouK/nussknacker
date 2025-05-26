@@ -25,7 +25,7 @@ object TestResultsCodecs {
   implicit val resultsWithCountsDecoder: Decoder[ResultsWithCountsDto] =
     Decoder.failed(DecodingFailure("Not implemented", List.empty))
 
-  implicit val testResultsEncoder: Encoder[TestResultsDto] = new Encoder[TestResultsDto]() {
+  private implicit val testResultsEncoder: Encoder[TestResultsDto] = new Encoder[TestResultsDto]() {
 
     implicit val nodeResult: Encoder[ResultContext[Json]]                              = deriveConfiguredEncoder
     implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
@@ -58,8 +58,5 @@ object TestResultsCodecs {
     }
 
   }
-
-  implicit val testResultsDecoder: Decoder[TestResultsDto] =
-    Decoder.failed(DecodingFailure("Not implemented", List.empty))
 
 }
