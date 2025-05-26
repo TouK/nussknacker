@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/save.svg";
+import { useUserSettings } from "../../../../common/userSettings";
 import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
@@ -26,6 +27,10 @@ interface SavePreset {
 }
 
 function SaveButton(props: ToolbarButtonProps): JSX.Element {
+    const [settings] = useUserSettings();
+
+    const allowQuickSave = settings["scenario.allowQuickSave"];
+
     const { handleSaveScenarioAction } = useSaveScenario();
     const { t } = useTranslation();
     const { disabled, type } = props;
@@ -92,6 +97,17 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
         }
     }, [handleSaveScenarioAction, handleValidateScenarioVersion, setIsSaveProcessing]);
 
+    const handleOpenSaveDialog = useCallback(async () => {
+        await handleValidateScenarioVersion(async () => {
+            await open({
+                title,
+                isModal: true,
+                shouldCloseOnEsc: true,
+                kind: WindowKind.saveProcess,
+            });
+        });
+    }, [handleValidateScenarioVersion, open, title]);
+
     const handlePresetChange = useCallback(
         async (preset: SavePreset) => {
             switch (preset.value) {
@@ -100,34 +116,41 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
                     break;
                 }
                 case "SaveWithComment": {
-                    await handleValidateScenarioVersion(async () => {
-                        await open({
-                            title,
-                            isModal: true,
-                            shouldCloseOnEsc: true,
-                            kind: WindowKind.saveProcess,
-                        });
-                    });
+                    await handleOpenSaveDialog();
                     break;
                 }
             }
         },
-        [handleSaveScenarioActionWithValidation, handleValidateScenarioVersion, open, title],
+        [handleOpenSaveDialog, handleSaveScenarioActionWithValidation],
     );
 
     return (
-        <ToolbarButton
-            name={t("panels.actions.process-save.button", "save")}
-            showIndicator={unsavedChanges}
-            icon={<Icon />}
-            disabled={!available || isSaveProcessing}
-            isLoading={isSaveProcessing}
-            onClick={handleSaveScenarioActionWithValidation}
-            type={type}
-            presets={presets}
-            selected={presets[0]}
-            onPresetChange={handlePresetChange}
-        />
+        <>
+            {allowQuickSave ? (
+                <ToolbarButton
+                    name={t("panels.actions.process-save.button", "save")}
+                    showIndicator={unsavedChanges}
+                    icon={<Icon />}
+                    disabled={!available || isSaveProcessing}
+                    isLoading={isSaveProcessing}
+                    onClick={handleSaveScenarioActionWithValidation}
+                    type={type}
+                    presets={presets}
+                    selected={presets[0]}
+                    onPresetChange={handlePresetChange}
+                />
+            ) : (
+                <ToolbarButton
+                    name={t("panels.actions.process-save.button", "save")}
+                    showIndicator={unsavedChanges}
+                    icon={<Icon />}
+                    disabled={!available || isSaveProcessing}
+                    isLoading={isSaveProcessing}
+                    onClick={handleOpenSaveDialog}
+                    type={type}
+                />
+            )}
+        </>
     );
 }
 
