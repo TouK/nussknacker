@@ -4607,50 +4607,21 @@ paths:
         required: true
         schema:
           type: string
-      - name: skipResultsPerNode
-        in: query
-        required: false
-        schema:
-          type:
-          - boolean
-          - 'null'
-      - name: skipResultsPerTransition
-        in: query
-        required: false
-        schema:
-          type:
-          - boolean
-          - 'null'
       responses:
         '200':
           description: ''
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResultsWithCountsDto'
+                $ref: '#/components/schemas/LiveDataDto'
         '400':
-          description: ''
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example0:
-                  summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
-                Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
-                Example2:
-                  summary: Scenario validation error
-                  value: |-
-                    Scenario is invalid.
-                    Node errors:
-                      source: Failed to parse expression: Bad expression
+        '204':
+          description: There is currently no live data available for this scenario
         '401':
           description: ''
           content:
@@ -4681,27 +4652,21 @@ paths:
               schema:
                 type: string
               examples:
-                Example0:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-                Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
-                Example2:
-                  summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                Example:
+                  summary: Scenario not found
+                  value: Scenario not found
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
             text/plain:
               schema:
-                type: string
+                anyOf:
+                - type: string
+                - type: string
               examples:
                 Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
+                  summary: Live data preview is not supported by this scenario
+                  value: Live data preview is not supported by this scenario
       security:
       - {}
       - httpAuth: []
@@ -4778,8 +4743,6 @@ paths:
                           changesCanReloadParameters: false
                       status: AVAILABLE
                     testWithGeneratedData:
-                      status: AVAILABLE
-                    liveDataPreview:
                       status: AVAILABLE
         '400':
           description: ''
@@ -6054,6 +6017,42 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
+    LiveDataDto:
+      title: LiveDataDto
+      type: object
+      required:
+      - results
+      - counts
+      properties:
+        results:
+          $ref: '#/components/schemas/LiveDataSamplesDto'
+        counts:
+          $ref: '#/components/schemas/Map_NodeCount'
+        nodeTransitionThroughput:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/NodeTransitionThroughputDto'
+    LiveDataSamplesDto:
+      title: LiveDataSamplesDto
+      type: object
+      required:
+      - invocationResults
+      - externalInvocationResults
+      properties:
+        nodeTransitionResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeTransitionResult'
+        invocationResults:
+          $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
+        externalInvocationResults:
+          $ref: '#/components/schemas/Map_List_ExternalInvocationResult_Json'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExceptionResult_Json'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6622,6 +6621,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResultContext_Json'
+    NodeTransitionResult1:
+      title: NodeTransitionResult
+      type: object
+      required:
+      - sourceNodeId
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultContext_Json'
     NodeTransitionThroughputDto:
       title: NodeTransitionThroughputDto
       type: object
@@ -6815,7 +6830,6 @@ components:
       oneOf:
       - $ref: '#/components/schemas/InvalidScenario'
       - $ref: '#/components/schemas/NoSources'
-      - $ref: '#/components/schemas/NotSupportedByScenarioType'
       - $ref: '#/components/schemas/NotSupportedBySources'
       - $ref: '#/components/schemas/UserDoesNotHavePermission'
     NotAvailable_T:
@@ -6826,9 +6840,6 @@ components:
       properties:
         reason:
           $ref: '#/components/schemas/NotAvailableReason'
-    NotSupportedByScenarioType:
-      title: NotSupportedByScenarioType
-      type: object
     NotSupportedBySources:
       title: NotSupportedBySources
       type: object
@@ -7114,12 +7125,6 @@ components:
           $ref: '#/components/schemas/TestResultsDto'
         counts:
           $ref: '#/components/schemas/Map_NodeCount'
-        nodeTransitionThroughput:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/NodeTransitionThroughputDto'
     RunDeploymentRequest:
       title: RunDeploymentRequest
       type: object
@@ -7373,13 +7378,10 @@ components:
       required:
       - testWithParameters
       - testWithGeneratedData
-      - liveDataPreview
       properties:
         testWithParameters:
           $ref: '#/components/schemas/CapabilityStatus_T'
         testWithGeneratedData:
-          $ref: '#/components/schemas/CapabilityStatus_T'
-        liveDataPreview:
           $ref: '#/components/schemas/CapabilityStatus_T'
     ScenarioTestData:
       title: ScenarioTestData
@@ -7628,7 +7630,7 @@ components:
           - array
           - 'null'
           items:
-            $ref: '#/components/schemas/NodeTransitionResult'
+            $ref: '#/components/schemas/NodeTransitionResult1'
         invocationResults:
           $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
         externalInvocationResults:
