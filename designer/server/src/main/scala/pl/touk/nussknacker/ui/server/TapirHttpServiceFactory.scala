@@ -117,6 +117,13 @@ object TapirHttpServiceFactory {
       processingTypeToParametersValidator = processingTypeServicesProvider.mapValues(_.parametersValidator),
       processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
       scenarioService = processService,
+    )
+
+    val liveDataApiHttpService = new ScenarioLiveDataApiHttpService(
+      authManager = authManager,
+      scenarioAuthorizer = processAuthorizer,
+      processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
+      scenarioService = processService,
       dmDispatcher = dmDispatcher,
     )
 
@@ -232,6 +239,7 @@ object TapirHttpServiceFactory {
       migrationApiHttpService,
       nodesApiHttpService,
       testingApiHttpService,
+      liveDataApiHttpService,
       actionInfoHttpService,
       notificationApiHttpService,
       scenarioActivityApiHttpService,

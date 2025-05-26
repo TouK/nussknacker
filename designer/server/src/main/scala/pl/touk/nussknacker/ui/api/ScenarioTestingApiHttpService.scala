@@ -2,10 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPreviewSupported, NoLiveDataPreviewSupport}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ParametersDefinitionError,
   ScenarioTestDataGenerationError,
@@ -28,10 +25,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   ScenarioTestCapabilities,
   TestCapabilityDetails
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
-  EmptyDetails,
-  TestWithParametersDetails
-}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError._
@@ -39,8 +33,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.ScenarioTestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
@@ -55,7 +47,6 @@ class ScenarioTestingApiHttpService(
     scenarioAuthorizer: AuthorizeProcess,
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
-    dmDispatcher: DeploymentManagerDispatcher,
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
@@ -79,7 +70,6 @@ class ScenarioTestingApiHttpService(
               scenarioWithDetails.processId,
               noScenarioError(scenarioName),
             )
-            processIdWithName = ProcessIdWithName(processId, scenarioName)
             scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
               scenarioWithDetails.processingType
             )
@@ -87,30 +77,16 @@ class ScenarioTestingApiHttpService(
               scenarioGraph,
               scenarioWithDetails.processVersionUnsafe,
             )
-            liveDataPreviewCapability <- EitherT.right(
-              dmDispatcher
-                .deploymentManager(processIdWithName)
-                .map {
-                  case Some(deploymentManager) => deploymentManager.liveDataPreviewSupport
-                  case None                    => NoLiveDataPreviewSupport
-                }
-                .map {
-                  case _: LiveDataPreviewSupported =>
-                    CapabilityStatus.available
-                  case NoLiveDataPreviewSupport =>
-                    CapabilityStatus.NotAvailable[EmptyDetails](NotAvailableReason.NotSupportedByScenarioType)
-                }
-            )
             canDeploy <- EitherT.right(scenarioAuthorizer.check(processId, Permission.Deploy, loggedUser))
             result = capabilities match {
               case Left(TestingCapabilitiesError.NoSourcesError) =>
                 def status[T <: TestCapabilityDetails] =
                   CapabilityStatus.NotAvailable[T](NotAvailableReason.NoSources)
-                ScenarioTestCapabilities(status, status, liveDataPreviewCapability)
+                ScenarioTestCapabilities(status, status)
               case Left(TestingCapabilitiesError.SourceCompilationError) =>
                 def status[T <: TestCapabilityDetails] =
                   CapabilityStatus.NotAvailable[T](NotAvailableReason.InvalidScenario)
-                ScenarioTestCapabilities(status, status, liveDataPreviewCapability)
+                ScenarioTestCapabilities(status, status)
               case Right(capabilities) =>
                 ScenarioTestCapabilities(
                   testWithParameters = {
@@ -143,7 +119,6 @@ class ScenarioTestingApiHttpService(
                         CapabilityStatus.available
                     }
                   },
-                  liveDataPreview = liveDataPreviewCapability
                 )
             }
           } yield result
@@ -201,61 +176,6 @@ class ScenarioTestingApiHttpService(
             }
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
-            None,
-            skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
-            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
-          )
-        }
-      }
-  }
-
-  expose {
-    scenarioTestingApiEndpoints.scenarioLiveDataEndpoint
-      .serverSecurityLogic(authorizeKnownUser[TestingError])
-      .serverLogicEitherT { implicit loggedUser =>
-        { case (scenarioName, skipResultsPerNode, skipResultsPerTransition) =>
-          for {
-            scenarioWithDetails <- getScenarioWithDetailsByName(
-              scenarioName,
-              GetScenarioWithDetailsOptions.withScenarioGraph
-            )
-            processId <- EitherT
-              .fromOption[Future](scenarioWithDetails.processId, noScenarioError(scenarioName): TestingError)
-            processIdWithName = ProcessIdWithName(processId, scenarioName)
-            _ <- isAuthorized(processId, Permission.Deploy)
-            deploymentManager <- EitherT[Future, TestingError, DeploymentManager] {
-              dmDispatcher.deploymentManager(processIdWithName).map {
-                case Some(deploymentManager) => Right(deploymentManager)
-                case None                    => Left(NoScenario(scenarioName))
-              }
-            }
-            liveDataPreview <- EitherT[Future, TestingError, LiveData] {
-              deploymentManager.liveDataPreviewSupport match {
-                case supported: LiveDataPreviewSupported =>
-                  supported.getLiveData(processIdWithName).map {
-                    case Right(liveData) =>
-                      Right(liveData)
-                    case Left(NoLiveDataAvailableForScenario) =>
-                      Left(UnsupportedOperation("There are no live data available for this scenario"))
-                  }
-                case NoLiveDataPreviewSupport =>
-                  Future.successful(
-                    Left(UnsupportedOperation("This scenario does not support live data preview"))
-                  )
-              }
-            }
-            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
-              scenarioWithDetails.processingType
-            )
-            resultsWithCounts = scenarioTestService.resultsWithCounts(
-              liveDataPreview.liveDataSamples,
-              scenarioWithDetails.scenarioGraphUnsafe,
-              scenarioWithDetails.processVersionUnsafe,
-              scenarioWithDetails.isFragment
-            )
-          } yield ResultsWithCountsDto.from(
-            resultsWithCounts,
-            Some(liveDataPreview.nodeTransitionThroughput),
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
             skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
           )

@@ -97,7 +97,6 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                       )
                     ),
                     testWithGeneratedData = CapabilityStatus.available,
-                    liveDataPreview = CapabilityStatus.available,
                   )
                 )
               )

@@ -1,24 +1,17 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import io.circe.{Encoder, Json}
+import io.circe.Encoder
 import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -41,8 +34,6 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScena
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
-
-import scala.concurrent.Future
 
 trait ScenarioTestingApiHttpServiceSpec
     extends AnyFreeSpecLike
@@ -95,13 +86,6 @@ trait ScenarioTestingApiHttpServiceSpec
 
   "The endpoint for capabilities should" - {
     "return valid capabilities for scenario with all capabilities" in {
-      MockableDeploymentManager.configureLiveDataPreviewSupport(
-        new LiveDataPreviewSupported {
-          override def getLiveData(
-              processIdWithName: ProcessIdWithName
-          ): Future[Either[LiveDataError, LiveData]] = Future.successful(Left(NoLiveDataAvailableForScenario))
-        }
-      )
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -120,36 +104,6 @@ trait ScenarioTestingApiHttpServiceSpec
              |    },
              |    "testWithGeneratedData": {
              |      "status": "AVAILABLE"
-             |    },
-             |    "liveDataPreview": {
-             |      "status": "AVAILABLE"
-             |    }
-             |}""".stripMargin
-        )
-    }
-    "return valid capabilities for scenario without live data preview support" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""{
-             |    "testWithParameters": {
-             |      "status": "AVAILABLE",
-             |      "sourceParameters": $expectedTestParametersJson
-             |    },
-             |    "testWithGeneratedData": {
-             |      "status": "AVAILABLE"
-             |    },
-             |    "liveDataPreview": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason": "NOT_SUPPORTED_BY_SCENARIO_TYPE"
              |    }
              |}""".stripMargin
         )
@@ -174,10 +128,6 @@ trait ScenarioTestingApiHttpServiceSpec
              |    "testWithGeneratedData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
-             |    },
-             |    "liveDataPreview": {
-             |      "status": "NOT_AVAILABLE",
-             |      "reason": "NOT_SUPPORTED_BY_SCENARIO_TYPE"
              |    }
              |}""".stripMargin
         )
@@ -327,10 +277,6 @@ trait ScenarioTestingApiHttpServiceSpec
              |    "testWithGeneratedData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason":"NOT_SUPPORTED_BY_SOURCES"
-             |    },
-             |    "liveDataPreview": {
-             |        "status": "NOT_AVAILABLE",
-             |        "reason": "NOT_SUPPORTED_BY_SCENARIO_TYPE"
              |    }
              |}""".stripMargin
         )
@@ -400,10 +346,6 @@ trait ScenarioTestingApiHttpServiceSpec
              |    "testWithGeneratedData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason":"NOT_SUPPORTED_BY_SOURCES"
-             |    },
-             |    "liveDataPreview": {
-             |        "status": "NOT_AVAILABLE",
-             |        "reason": "NOT_SUPPORTED_BY_SCENARIO_TYPE"
              |    }
              |}""".stripMargin
         )
@@ -529,35 +471,6 @@ trait ScenarioTestingApiHttpServiceSpec
         .Then()
         .statusCode(404)
         .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
-    }
-  }
-
-  "The endpoint for live data preview should" - {
-    "return present, but empty live data preview" in {
-      val mockedResults =
-        LiveData(TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty), Map.empty)
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-          MockableDeploymentManager.configureLiveDataPreviewSupport(
-            new LiveDataPreviewSupported {
-              override def getLiveData(
-                  processIdWithName: ProcessIdWithName
-              ): Future[Either[LiveDataError, LiveData]] = Future.successful(Right(mockedResults))
-            }
-          )
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
-        .Then()
-        .statusCode(StatusCodes.OK.intValue)
-        .body(
-          s"counts.$exampleScenarioSourceId.all",
-          equalTo(0),
-          "counts.end.all",
-          equalTo(0)
-        )
     }
   }
 

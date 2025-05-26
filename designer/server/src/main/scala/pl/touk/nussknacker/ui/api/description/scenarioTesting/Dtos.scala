@@ -43,7 +43,6 @@ object Dtos {
     final case class ScenarioTestCapabilities(
         testWithParameters: CapabilityStatus[TestWithParametersDetails],
         testWithGeneratedData: CapabilityStatus[EmptyDetails],
-        liveDataPreview: CapabilityStatus[EmptyDetails],
     )
 
     object ScenarioTestCapabilities {
@@ -209,21 +208,18 @@ object Dtos {
   final case class ResultsWithCountsDto(
       results: TestResultsDto,
       counts: Map[String, NodeCount],
-      nodeTransitionThroughput: Option[List[NodeTransitionThroughputDto]],
   )
 
   object ResultsWithCountsDto {
 
     def from(
         resultsWithCounts: ResultsWithCounts,
-        nodeTransitionThroughput: Option[Map[NodeTransition, BigDecimal]],
         skipResultsPerNode: SkipResultsPerNode,
         skipResultsPerTransition: SkipResultsPerTransition
     ): ResultsWithCountsDto = {
       ResultsWithCountsDto(
         results = TestResultsDto.from(resultsWithCounts.results, skipResultsPerNode, skipResultsPerTransition),
         counts = resultsWithCounts.counts,
-        nodeTransitionThroughput = nodeTransitionThroughput.map(NodeTransitionThroughput.from),
       )
     }
 
@@ -268,22 +264,6 @@ object Dtos {
       results: List[ResultContext[Json]]
   )
 
-  final case class NodeTransitionThroughputDto(
-      sourceNodeId: String,
-      destinationNodeId: Option[String],
-      throughput: BigDecimal,
-  )
-
-  object NodeTransitionThroughput {
-
-    def from(nodeTransitionThroughput: Map[NodeTransition, BigDecimal]): List[NodeTransitionThroughputDto] = {
-      nodeTransitionThroughput.map { case (k, v) =>
-        NodeTransitionThroughputDto(k.sourceNodeId, k.destinationNodeId, v)
-      }.toList
-    }
-
-  }
-
   implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
   implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
   implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived
@@ -292,7 +272,6 @@ object Dtos {
   implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
   implicit def testResultsSchema: Schema[TestResultsDto]                                  = Schema.derived
   implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
-  implicit def nodeTransitionThroughputDtoSchema: Schema[NodeTransitionThroughputDto]     = Schema.derived
   implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject

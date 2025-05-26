@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.livedata
 
 import java.time.{Clock, Instant}
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+import java.util.concurrent.{ConcurrentLinkedQueue, ConcurrentSkipListMap}
 import java.util.concurrent.atomic.AtomicLong
 import scala.jdk.CollectionConverters._
 
@@ -10,7 +10,7 @@ private[livedata] class SlidingWindowCounter[T](
     windowSizeSeconds: Int
 )(implicit clock: Clock) {
 
-  private val buckets = new ConcurrentHashMap[Long, ConcurrentLinkedQueue[T]]()
+  private val buckets = new ConcurrentSkipListMap[Long, ConcurrentLinkedQueue[T]]()
 
   def add(event: T): Unit = {
     val currentEpochSecond = now()
@@ -36,7 +36,7 @@ private[livedata] class SlidingWindowCounter[T](
       .map { case (key, value) => (key, value.size) }
       .toMap
       .map { case (transition, count) =>
-        transition -> BigDecimal(count)./(samplingInterval).setScale(4, BigDecimal.RoundingMode.HALF_UP)
+        transition -> (BigDecimal(count) / samplingInterval).setScale(4, BigDecimal.RoundingMode.HALF_EVEN)
       }
   }
 
@@ -55,6 +55,6 @@ private[livedata] class SlidingWindowCounter[T](
 
   private def cutoff(now: Long): Long = now - windowSizeSeconds + 1
 
-  private def now(): Long = Instant.now(clock).getEpochSecond
+  private def now(): Long = clock.instant().getEpochSecond
 
 }
