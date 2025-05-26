@@ -189,23 +189,6 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .errorOut(testingErrorOutput)
       .withSecurity(auth)
 
-  def scenarioLiveDataEndpoint: SecuredEndpoint[
-    (ProcessName, Option[SkipResultsPerNode], Option[SkipResultsPerTransition]),
-    TestingError,
-    ResultsWithCountsDto,
-    Any
-  ] =
-    baseNuApiEndpoint
-      .summary("Preview of the data samples currently processed by the scenario")
-      .tag("Live data")
-      .get
-      .in("liveData" / path[ProcessName]("scenarioName"))
-      .in(skipResultsPerNodeQueryParam)
-      .in(skipResultsPerTransitionQueryParam)
-      .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
-      .errorOut(testingErrorOutput)
-      .withSecurity(auth)
-
   implicit def skipResultsPerNodeQueryParam: EndpointInput.Query[Option[SkipResultsPerNode]] =
     query[Option[Boolean]]("skipResultsPerNode")
       .map(cond => cond.map(SkipResultsPerNode(_)))(_.map(_.value))

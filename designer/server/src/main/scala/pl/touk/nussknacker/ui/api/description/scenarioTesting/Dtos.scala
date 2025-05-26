@@ -118,11 +118,10 @@ object Dtos {
     sealed trait NotAvailableReason extends EnumEntry with UpperSnakecase
 
     object NotAvailableReason extends Enum[NotAvailableReason] with CirceEnum[NotAvailableReason] {
-      case object UserDoesNotHavePermission  extends NotAvailableReason
-      case object NoSources                  extends NotAvailableReason
-      case object NotSupportedBySources      extends NotAvailableReason
-      case object InvalidScenario            extends NotAvailableReason
-      case object NotSupportedByScenarioType extends NotAvailableReason
+      case object UserDoesNotHavePermission extends NotAvailableReason
+      case object NoSources                 extends NotAvailableReason
+      case object NotSupportedBySources     extends NotAvailableReason
+      case object InvalidScenario           extends NotAvailableReason
       override def values: immutable.IndexedSeq[NotAvailableReason] = findValues
       implicit def schema: Schema[NotAvailableReason]               = Schema.derived
     }
@@ -205,10 +204,7 @@ object Dtos {
 
   }
 
-  final case class ResultsWithCountsDto(
-      results: TestResultsDto,
-      counts: Map[String, NodeCount],
-  )
+  final case class ResultsWithCountsDto(results: TestResultsDto, counts: Map[String, NodeCount])
 
   object ResultsWithCountsDto {
 
@@ -217,8 +213,22 @@ object Dtos {
         skipResultsPerNode: SkipResultsPerNode,
         skipResultsPerTransition: SkipResultsPerTransition
     ): ResultsWithCountsDto = {
+      lazy val nodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
+        case (nodeTransition, results) =>
+          NodeTransitionResult(
+            sourceNodeId = nodeTransition.sourceNodeId,
+            destinationNodeId = nodeTransition.destinationNodeId,
+            results = results,
+          )
+      }.toList
       ResultsWithCountsDto(
-        results = TestResultsDto.from(resultsWithCounts.results, skipResultsPerNode, skipResultsPerTransition),
+        results = TestResultsDto(
+          nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
+          nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
+          invocationResults = resultsWithCounts.results.invocationResults,
+          externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
+          exceptions = resultsWithCounts.results.exceptions,
+        ),
         counts = resultsWithCounts.counts,
       )
     }
@@ -232,31 +242,6 @@ object Dtos {
       externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
       exceptions: List[ExceptionResult[Json]]
   )
-
-  object TestResultsDto {
-
-    def from(
-        testResults: TestResults[Json],
-        skipResultsPerNode: SkipResultsPerNode,
-        skipResultsPerTransition: SkipResultsPerTransition
-    ): TestResultsDto = {
-      lazy val nodeTransitionResults = testResults.nodeTransitionResults.map { case (nodeTransition, results) =>
-        NodeTransitionResult(
-          sourceNodeId = nodeTransition.sourceNodeId,
-          destinationNodeId = nodeTransition.destinationNodeId,
-          results = results,
-        )
-      }.toList
-      TestResultsDto(
-        nodeResults = Option.when(!skipResultsPerNode.value)(testResults.nodeResults),
-        nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
-        invocationResults = testResults.invocationResults,
-        externalInvocationResults = testResults.externalInvocationResults,
-        exceptions = testResults.exceptions,
-      )
-    }
-
-  }
 
   final case class NodeTransitionResult(
       sourceNodeId: String,

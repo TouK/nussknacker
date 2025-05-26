@@ -12,8 +12,6 @@ trait DefaultModelConfigLoader extends ModelConfigLoader {
       configWithDefaults: Config,
       classLoader: ClassLoader
   ): InputConfigDuringExecution = {
-    println(s"QQQ $inputConfig")
-    println(s"QQQ $configWithDefaults")
     val loaded = ComponentsFromProvidersExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
     InputConfigDuringExecution(loaded)
   }

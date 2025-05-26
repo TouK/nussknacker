@@ -20,7 +20,7 @@ object TestResultsCodecs {
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCountsDto] =
-    deriveConfiguredEncoder[ResultsWithCountsDto].mapJson(_.dropNullValues)
+    deriveConfiguredEncoder
 
   implicit val resultsWithCountsDecoder: Decoder[ResultsWithCountsDto] =
     Decoder.failed(DecodingFailure("Not implemented", List.empty))

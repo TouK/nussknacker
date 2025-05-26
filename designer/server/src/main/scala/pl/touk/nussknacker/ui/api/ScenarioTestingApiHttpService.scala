@@ -118,7 +118,7 @@ class ScenarioTestingApiHttpService(
                       case (true, true) =>
                         CapabilityStatus.available
                     }
-                  },
+                  }
                 )
             }
           } yield result
