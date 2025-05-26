@@ -17,6 +17,7 @@ import {
     isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
+import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
@@ -44,9 +45,13 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
+    const isRedeploying = useSelector(getIsRedeploying);
+
     const { disabled, type } = props;
 
-    const [isDeployProcessing, setIsDeployProcessing] = useState(false);
+    const [isRedeployCallProcessing, setIsRedeployCallProcessing] = useState(false);
+
+    const isLoading = useMemo(() => isRedeploying || isRedeployCallProcessing, [isRedeployCallProcessing, isRedeploying]);
 
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
@@ -100,7 +105,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
 
     const handleDeploy = useCallback(async () => {
         try {
-            setIsDeployProcessing(true);
+            setIsRedeployCallProcessing(true);
             const response = await action(processName, processVersionId, "");
             switch (response.scenarioActionResultType) {
                 case ScenarioActionResultType.Success:
@@ -114,9 +119,9 @@ export default function DeployButton(props: ToolbarButtonProps) {
                     break;
             }
         } finally {
-            setIsDeployProcessing(false);
+            setIsRedeployCallProcessing(false);
         }
-    }, [action, dispatch, processName, processVersionId, setIsDeployProcessing]);
+    }, [action, dispatch, processName, processVersionId, setIsRedeployCallProcessing]);
 
     const presets = useMemo<DeployPreset[]>(
         () => [
@@ -153,8 +158,8 @@ export default function DeployButton(props: ToolbarButtonProps) {
         return (
             <ToolbarButton
                 name={t("panels.actions.deploy.button", "start")}
-                disabled={!available || isDeployProcessing}
-                isLoading={isDeployProcessing}
+                disabled={!available || isLoading}
+                isLoading={isLoading}
                 icon={<Icon />}
                 title={deployToolTip}
                 onClick={handleDeploy}

@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
+import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
 import {
@@ -17,6 +18,7 @@ import {
     isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
+import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
@@ -44,9 +46,13 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
+    const isRedeploying = useSelector(getIsRedeploying);
+
     const { disabled, type } = props;
 
-    const [isRedeployProcessing, setIsRedeployProcessing] = useState(false);
+    const [isRedeployCallProcessing, setIsRedeployCallProcessing] = useState(false);
+
+    const isLoading = useMemo(() => isRedeploying || isRedeployCallProcessing, [isRedeployCallProcessing, isRedeploying]);
 
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
@@ -100,7 +106,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
 
     const handleRedeploy = useCallback(async () => {
         try {
-            setIsRedeployProcessing(true);
+            setIsRedeployCallProcessing(true);
             const response = await action(processName, processVersionId, "");
             switch (response.scenarioActionResultType) {
                 case ScenarioActionResultType.Success:
@@ -114,9 +120,9 @@ export default function RedeployButton(props: ToolbarButtonProps) {
                     break;
             }
         } finally {
-            setIsRedeployProcessing(false);
+            setIsRedeployCallProcessing(false);
         }
-    }, [action, dispatch, processName, processVersionId, setIsRedeployProcessing]);
+    }, [action, dispatch, processName, processVersionId, setIsRedeployCallProcessing]);
 
     const presets = useMemo<RedeployPreset[]>(
         () => [
@@ -153,8 +159,8 @@ export default function RedeployButton(props: ToolbarButtonProps) {
         return (
             <ToolbarButton
                 name={t("panels.actions.redeploy.button", "update")}
-                disabled={!available || isRedeployProcessing}
-                isLoading={isRedeployProcessing}
+                disabled={!available || isLoading}
+                isLoading={isLoading}
                 icon={<Icon />}
                 title={deployToolTip}
                 onClick={handleRedeploy}
