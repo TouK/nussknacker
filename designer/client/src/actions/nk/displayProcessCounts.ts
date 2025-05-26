@@ -3,8 +3,8 @@ import moment from "moment";
 
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
-import type { ProcessCounts } from "../../reducers/graph";
-import { getProcessCountsRefresh, getScenarioGraph } from "../../reducers/selectors/graph";
+import type { ProcessCounts } from "../../http/resultsWithCountsDto";
+import { getProcessCountsRefresh, getScenarioGraph, isReadyForResults } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 

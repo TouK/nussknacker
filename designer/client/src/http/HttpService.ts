@@ -32,12 +32,11 @@ import { API_URL } from "../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
-import type { ProcessCounts } from "../reducers/graph";
 import type { AuthenticationSettings } from "../reducers/settings";
 import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import type { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
-import type { ResultsWithCountsDto } from "./resultsWithCountsDto";
+import type { ProcessCounts, ResultsWithCountsDto } from "./resultsWithCountsDto";
 
 type HealthCheckProcessDeploymentType = {
     status: string;

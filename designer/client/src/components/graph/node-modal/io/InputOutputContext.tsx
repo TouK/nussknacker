@@ -142,6 +142,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                         disabled: isContextDisabled(id, direction),
                         nodeIds: [contextNodeId],
                         error: error?.throwable,
+                        timestamp: null,
                     });
                 });
             });
