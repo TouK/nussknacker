@@ -37,6 +37,9 @@ interface RedeployPreset {
 }
 
 export default function RedeployButton(props: ToolbarButtonProps) {
+    const [settings] = useUserSettings();
+    const allowQuickRedeploy = settings["scenario.allowQuickDeploy"];
+
     const dispatch = useDispatch();
     const isVisible = useSelector(isRedeployVisible);
     const isPossible = useSelector(isRedeployPossible);
@@ -132,6 +135,17 @@ export default function RedeployButton(props: ToolbarButtonProps) {
         [available],
     );
 
+    const handleOpenRedeployDialog = useCallback(async () => {
+        await handleValidateScenarioVersion(async () => {
+            await open<ToggleProcessActionModalData>({
+                title: message,
+                kind: WindowKind.deployWithParameters,
+                width: ACTION_DIALOG_WIDTH,
+                meta: { action, displayWarnings: true, actionName: "REDEPLOY" },
+            });
+        });
+    }, [action, handleValidateScenarioVersion, message, open]);
+
     const handlePresetChange = useCallback(
         async (preset: RedeployPreset) => {
             switch (preset.value) {
@@ -140,36 +154,44 @@ export default function RedeployButton(props: ToolbarButtonProps) {
                     break;
                 }
                 case "configureAndStart": {
-                    await handleValidateScenarioVersion(async () => {
-                        await open<ToggleProcessActionModalData>({
-                            title: message,
-                            kind: WindowKind.deployWithParameters,
-                            width: ACTION_DIALOG_WIDTH,
-                            meta: { action, displayWarnings: true, actionName: "REDEPLOY" },
-                        });
-                    });
+                    await handleOpenRedeployDialog();
                     break;
                 }
             }
         },
-        [action, handleRedeploy, handleValidateScenarioVersion, message, open],
+        [handleOpenRedeployDialog, handleRedeploy],
     );
 
     if (isVisible) {
         return (
-            <ToolbarButton
-                name={t("panels.actions.redeploy.button", "update")}
-                disabled={!available || isLoading}
-                isLoading={isLoading}
-                icon={<Icon />}
-                title={deployToolTip}
-                onClick={handleRedeploy}
-                onMouseOver={deployMouseOver}
-                onMouseOut={deployMouseOut}
-                presets={presets}
-                type={type}
-                onPresetChange={handlePresetChange}
-            />
+            <>
+                {allowQuickRedeploy ? (
+                    <ToolbarButton
+                        name={t("panels.actions.update.button", "update")}
+                        disabled={!available || isLoading}
+                        isLoading={isLoading}
+                        icon={<Icon />}
+                        title={deployToolTip}
+                        onClick={handleRedeploy}
+                        onMouseOver={deployMouseOver}
+                        onMouseOut={deployMouseOut}
+                        presets={presets}
+                        type={type}
+                        onPresetChange={handlePresetChange}
+                    />
+                ) : (
+                    <ToolbarButton
+                        name={t("panels.actions.redeploy.button", "redeploy")}
+                        disabled={!available}
+                        icon={<Icon />}
+                        title={deployToolTip}
+                        onClick={handleOpenRedeployDialog}
+                        onMouseOver={deployMouseOver}
+                        onMouseOut={deployMouseOut}
+                        type={type}
+                    />
+                )}
+            </>
         );
     } else return <></>;
 }

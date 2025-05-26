@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
+import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
 import {
@@ -36,7 +37,12 @@ interface DeployPreset {
 }
 
 export default function DeployButton(props: ToolbarButtonProps) {
+    const [settings] = useUserSettings();
+
+    const allowQuickDeploy = settings["scenario.allowQuickDeploy"];
+
     const dispatch = useDispatch();
+
     const isVisible = useSelector(isDeployVisible);
     const isPossible = useSelector(isDeployPossible);
     const saveDisabled = useSelector(isSaveDisabled);
@@ -131,6 +137,17 @@ export default function DeployButton(props: ToolbarButtonProps) {
         [available],
     );
 
+    const handleOpenDeployDialog = useCallback(async () => {
+        await handleValidateScenarioVersion(async () => {
+            await open<ToggleProcessActionModalData>({
+                title: message,
+                kind: WindowKind.deployWithParameters,
+                width: ACTION_DIALOG_WIDTH,
+                meta: { action, displayWarnings: true, actionName: "DEPLOY" },
+            });
+        });
+    }, [action, handleValidateScenarioVersion, message, open]);
+
     const handlePresetChange = useCallback(
         async (preset: DeployPreset) => {
             switch (preset.value) {
@@ -139,36 +156,45 @@ export default function DeployButton(props: ToolbarButtonProps) {
                     break;
                 }
                 case "configureAndStart": {
-                    await handleValidateScenarioVersion(async () => {
-                        await open<ToggleProcessActionModalData>({
-                            title: message,
-                            kind: WindowKind.deployWithParameters,
-                            width: ACTION_DIALOG_WIDTH,
-                            meta: { action, displayWarnings: true, actionName: "DEPLOY" },
-                        });
-                    });
+                    await handleOpenDeployDialog();
                     break;
                 }
             }
         },
-        [action, handleDeploy, handleValidateScenarioVersion, message, open],
+        [handleDeploy, handleOpenDeployDialog],
     );
 
     if (isVisible) {
         return (
-            <ToolbarButton
-                name={t("panels.actions.deploy.button", "start")}
-                disabled={!available || isLoading}
-                isLoading={isLoading}
-                icon={<Icon />}
-                title={deployToolTip}
-                onClick={handleDeploy}
-                onMouseOver={deployMouseOver}
-                onMouseOut={deployMouseOut}
-                type={type}
-                presets={presets}
-                onPresetChange={handlePresetChange}
-            />
+            <>
+                {allowQuickDeploy ? (
+                    <ToolbarButton
+                        name={t("panels.actions.start.button", "start")}
+                        disabled={!available || isLoading}
+                        isLoading={isLoading}
+                        icon={<Icon />}
+                        title={deployToolTip}
+                        onClick={handleDeploy}
+                        onMouseOver={deployMouseOver}
+                        onMouseOut={deployMouseOut}
+                        type={type}
+                        presets={presets}
+                        onPresetChange={handlePresetChange}
+                    />
+                ) : (
+                    <ToolbarButton
+                        name={t("panels.actions.deploy.button", "deploy")}
+                        disabled={!available || isLoading}
+                        isLoading={isLoading}
+                        icon={<Icon />}
+                        title={deployToolTip}
+                        onClick={handleOpenDeployDialog}
+                        onMouseOver={deployMouseOver}
+                        onMouseOut={deployMouseOut}
+                        type={type}
+                    />
+                )}
+            </>
         );
     } else return <></>;
 }
