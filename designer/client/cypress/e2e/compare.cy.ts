@@ -21,7 +21,7 @@ describe("Compare", () => {
             .click();
         cy.contains("Version to compare").get("#otherVersion input").select(1);
         cy.contains("Difference to pick").get("#differentVersion input").select(1);
-        cy.contains(/^stop$/i).should("be.visible");
+        cy.contains(/^cancel$/i).should("be.visible");
         cy.get("[data-testid=window]").matchImage();
         cy.get("button[name=zoom]").click();
         cy.get("[data-testid=window]").matchImage();

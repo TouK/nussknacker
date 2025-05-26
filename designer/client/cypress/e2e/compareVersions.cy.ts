@@ -50,8 +50,8 @@ describe("Compare versions", () => {
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
-        cy.contains(/^save/i).click();
-        cy.contains(/^save/i).should("be.disabled");
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
         cy.get("[data-testid=window]").should("not.exist");
 
         // Change fragment param again and save changes
@@ -60,8 +60,8 @@ describe("Compare versions", () => {
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
-        cy.contains(/^save/i).click();
-        cy.contains(/^save/i).should("be.disabled");
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
 
         // Open the compare dialog and select values to compare
         cy.contains(/^compare$/i).click();

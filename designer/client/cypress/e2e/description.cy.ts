@@ -40,8 +40,8 @@ describe("Description", () => {
         cy.contains("description header").should("be.visible");
         cy.get("[data-testid=window]").should("be.visible").find("header").find("[name=close]").click();
 
-        cy.contains(/^save/i).click();
-        cy.contains(/^save/i).should("be.disabled");
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
 
         cy.reload();
 

@@ -52,6 +52,7 @@ describe("Scenario labels", () => {
             cy.get("[data-testid=scenario-label-1]").should("be.visible").contains("tag2");
 
             cy.contains(/^save/i).should("be.enabled").click();
+            cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
 
             cy.viewport(1500, 800);

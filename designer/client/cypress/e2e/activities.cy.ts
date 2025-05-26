@@ -69,8 +69,7 @@ describe("Activities", () => {
         cy.get("[data-testid=window]").find("input").eq(1).click().type("100");
         cy.contains(/^apply/i).click();
 
-        cy.get('[data-selector="SCENARIO_SAVE"]').siblings().eq(0).click();
-        cy.contains("li", /Save with comment/i).click();
+        cy.contains(/^save/i).click();
         cy.get("[data-testid=window]").find("textarea").click();
         cy.get("[data-testid=window]").find("textarea").type("test comment");
         cy.contains(/^ok/i).click();
@@ -89,7 +88,7 @@ describe("Activities", () => {
         cy.get("@nameInput").type("-rename");
         cy.contains(/^apply/i).click();
         cy.contains(/^save/i).click();
-        cy.contains(/^save/i).should("be.disabled");
+        cy.contains(/^ok/i).click();
         cy.get("[data-testid=window]").should("not.exist");
 
         findActivity("comment 6");

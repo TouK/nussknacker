@@ -123,6 +123,7 @@ function addLabelsToNewProcess(name?: string, labels?: string[]) {
         });
 
         cy.contains(/^save/i).should("be.enabled").click();
+        cy.contains(/^ok$/i).should("be.enabled").click();
         cy.wait("@save").its("response.statusCode").should("eq", 200);
         return cy.wrap(processName);
     });
@@ -342,8 +343,7 @@ function layoutScenario(waitTime = 600) {
 }
 
 function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
-    cy.get('[data-selector="ACTION_DEPLOY"]').siblings().eq(0).click();
-    cy.contains("li", /configure & start/i).click();
+    cy.contains(/^deploy$/i).click();
     cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
     cy.intercept("GET", "/api/processes/*/activity/activities").as("activities");
     if (withScreenshot) {
@@ -360,7 +360,7 @@ function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
 }
 
 function cancelScenario(comment = "issues/123") {
-    cy.contains("button", /^stop$/i).click();
+    cy.contains("button", /^cancel$/i).click();
     cy.get("[data-testid=window] textarea").click().type(comment);
     cy.contains(/^ok$/i).should("be.enabled").click();
 }
