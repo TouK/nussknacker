@@ -8,6 +8,7 @@ import type { UserSettings } from "../../reducers/userSettings";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ToolbarButtons } from "../toolbarComponents/toolbarButtons";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { DebugComponent } from "./DebugComponent";
 
 export function UserSettingsPanel({ buttonsVariant, children, ...props }: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
@@ -24,6 +25,7 @@ export function UserSettingsPanel({ buttonsVariant, children, ...props }: Toolba
         .sort((a, b) => b.label.localeCompare(a.label));
     return (
         <ToolbarWrapper {...props} title={t("panels.userSettings.title", "User settings")} color={"#254706"}>
+            <DebugComponent />
             <Creatable
                 isMulti
                 value={value}

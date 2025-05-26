@@ -59,6 +59,12 @@ export function fetchAndDisplayProcessCounts(params: {
             return extendWithEmpty(data, scenarioGraph);
         });
 
+        if (isReadyForResults(getState())) {
+            HttpService.fetchProcessLiveData(processName).then(({ data }) => {
+                console.log(data);
+            });
+        }
+
         if (!counts) return;
 
         const now = moment();

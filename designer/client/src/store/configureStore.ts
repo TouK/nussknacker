@@ -6,14 +6,17 @@ import { persistStore } from "redux-persist";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
 import thunk from "redux-thunk";
 
-import type { ThunkDispatch } from "../actions/reduxTypes";
+import type { Action, ThunkDispatch } from "../actions/reduxTypes";
 import { reducer } from "../reducers";
 import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
 export default function configureStore() {
+    const actionsBlacklist: Action["type"][] = ["PROCESS_STATE_LOADED", "UPDATE_BACKEND_NOTIFICATIONS", "SET_PENDING_CHANGES"];
     const store = createStore(
         reducer,
-        composeWithDevTools({ actionsBlacklist: ["RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION"] })(
+        composeWithDevTools({
+            actionsBlacklist: ["RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION", ...actionsBlacklist],
+        })(
             applyMiddleware(
                 thunk,
                 createStateSyncMiddleware({
