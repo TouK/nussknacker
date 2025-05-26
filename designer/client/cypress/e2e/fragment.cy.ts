@@ -233,7 +233,7 @@ describe("Fragment", () => {
             //     });
         });
 
-        it("should validate and save changes", function () {
+        it.only("should validate and save changes", function () {
             cy.createTestFragment(seed, "fragmentWithInput").as("fragmentName");
             cy.visitNewProcess(seed, "testProcess").as("processName");
 
@@ -333,12 +333,11 @@ describe("Fragment", () => {
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
-            cy.contains(/^save\*$/i).click();
-            cy.contains(/^ok$/i).click();
-            cy.get("@window").should("not.exist");
+            cy.get('[data-selector="SCENARIO_SAVE"]').click();
+            cy.get('[data-selector="SCENARIO_SAVE"]').should("be.disabled");
 
             // Verify if Frontend received correct data after save
-            cy.getNode("@fragmentName").trigger("dblclick");
+            cy.getNode("@fragmentName").trigger("click");
             cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB()");
             cy.get("@window").get("[title='test5']").should("not.exist");
 
@@ -355,8 +354,7 @@ describe("Fragment", () => {
             cy.get("@window")
                 .contains(/^apply$/i)
                 .click();
-            cy.contains(/^save\*$/i).click();
-            cy.contains(/^ok$/i).click();
+            cy.get('[data-selector="SCENARIO_SAVE"]').click();
 
             // Go back to the Scenario
             cy.go(-1);

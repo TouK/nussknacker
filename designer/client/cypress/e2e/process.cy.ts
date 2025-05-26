@@ -5,9 +5,9 @@ describe("Process", () => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
-    // after(() => {
-    //     cy.deleteAllTestProcesses({ filter: seed, force: true });
-    // });
+    after(() => {
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
+    });
 
     beforeEach(() => {
         cy.mockWindowDate();
@@ -30,12 +30,10 @@ describe("Process", () => {
                 .click();
 
             cy.contains(/^save/i).should("be.enabled").click();
-            cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
             cy.get('[role="alert"]')
                 .contains(/scenario name changed/i)
                 .should("be.visible");
-            cy.contains(/^ok$/i).should("not.exist");
             cy.location("href").should("contain", "-renamed");
         });
 
@@ -53,13 +51,11 @@ describe("Process", () => {
                 .click();
 
             cy.contains(/^save/i).should("be.enabled").click();
-            cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
             cy.get('[role="alert"]')
                 .contains(/scenario name changed/i)
                 .should("be.visible");
 
-            cy.contains(/^ok$/i).should("not.exist");
             cy.location("href").should("contain", "-renamed");
             cy.contains(/^properties/i)
                 .should("be.enabled")
@@ -108,9 +104,7 @@ describe("Process", () => {
             cy.wait("@import").its("response.statusCode").should("eq", 200);
 
             cy.contains(/^save/i).should("be.enabled").click();
-            cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
-            cy.contains(/^ok$/i).should("not.exist");
 
             cy.contains(/^counts/i).scrollIntoView();
             cy.get("#nk-graph-main").matchImage();
@@ -152,16 +146,16 @@ describe("Process", () => {
                 });
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
             //why save and test snapshot? mistake?
-            cy.contains(/^save\*$/i).click();
-            cy.get("[data-testid=window]").contains(/^ok$/i).click();
-            cy.get("[data-testid=window]").should("not.exist");
+            cy.contains(/^save/i).click();
+            cy.contains(/^save/i).should("be.disabled");
             cy.get("#nk-graph-main").should("be.visible");
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
         });
 
         it("should return 400 status code and show info about required comment", () => {
             cy.viewport("macbook-15");
-            cy.contains(/^deploy$/i).click();
+            cy.get('[data-selector="ACTION_DEPLOY"]').siblings().eq(0).click();
+            cy.contains("li", /configure & start/i).click();
             cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
             cy.contains(/^ok$/i).should("be.enabled").as("okButton");
             cy.get("@okButton").click();

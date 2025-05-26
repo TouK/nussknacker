@@ -15,7 +15,8 @@ describe("Deploy advanced section", () => {
     });
 
     it("should display and expand advanced deploy section", () => {
-        cy.contains(/^deploy$/i).click();
+        cy.get('[data-selector="ACTION_DEPLOY"]').siblings().eq(0).click();
+        cy.contains("li", /configure & start/i).click();
         cy.get("[data-testid=window]").matchImage();
 
         cy.contains("log").should("be.visible").click();

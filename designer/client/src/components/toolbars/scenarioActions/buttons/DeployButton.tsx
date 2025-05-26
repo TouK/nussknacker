@@ -139,7 +139,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                             title: message,
                             kind: WindowKind.deployWithParameters,
                             width: ACTION_DIALOG_WIDTH,
-                            meta: { action, displayWarnings: true },
+                            meta: { action, displayWarnings: true, actionName: "DEPLOY" },
                         });
                     });
                     break;

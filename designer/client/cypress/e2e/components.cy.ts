@@ -201,8 +201,8 @@ describe("Components list", () => {
                 },
                 force: true,
             });
-        cy.contains(/^save\*$/i).click();
-        cy.contains(/^ok$/i).click();
+        cy.contains(/^save/i).click();
+        cy.contains(/^save/i).should("be.disabled");
 
         cy.viewport(1400, 600);
         cy.visit("/components/usages/builtin-filter");
