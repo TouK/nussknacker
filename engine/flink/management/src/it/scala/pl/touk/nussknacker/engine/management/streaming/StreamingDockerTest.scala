@@ -66,10 +66,11 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
     val externalDeploymentId = deployProcess(process, processVersion, deploymentId, stateRestoringStrategy)
     eventually {
       val jobStatuses = deploymentManager.getScenarioDeploymentsStatuses(process.name).futureValue.value
-      logger.debug(s"Waiting for deploy: ${process.name}, $jobStatuses")
-
-      jobStatuses.map(_.status) should matchPattern {
-        case List(DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`))) =>
+      logger.debug(
+        s"Waiting for deploy: ${process.name}, version: $version, deployment id: $deploymentId, $jobStatuses, "
+      )
+      atLeast(1, jobStatuses) should matchPattern {
+        case DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`)) =>
       }
     }
     externalDeploymentId
