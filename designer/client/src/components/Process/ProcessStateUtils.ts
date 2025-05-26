@@ -9,21 +9,25 @@ const archivedIcon = "/assets/process/archived.svg";
 
 @WrapAllMethods(memoizeByArgsWithTTL)
 class ProcessStateUtils {
-    public canSeeDeploy = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.Deploy);
+    canSeeDeploy = (state: ProcessStateType): boolean => this.visibleActions(state).includes(PredefinedActionName.Deploy);
 
-    public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Deploy);
+    canDeploy = (state: ProcessStateType): boolean => this.allowedActions(state).includes(PredefinedActionName.Deploy);
 
-    public canSeeRedeploy = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.Redeploy);
+    canSeeRedeploy = (state: ProcessStateType): boolean => this.visibleActions(state).includes(PredefinedActionName.Redeploy);
 
-    public canRedeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Redeploy);
+    canRedeploy = (state: ProcessStateType): boolean => this.allowedActions(state).includes(PredefinedActionName.Redeploy);
 
-    public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Cancel);
+    canCancel = (state: ProcessStateType): boolean => this.allowedActions(state).includes(PredefinedActionName.Cancel);
 
-    public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Archive);
+    canArchive = (state: ProcessStateType): boolean => this.allowedActions(state).includes(PredefinedActionName.Archive);
 
-    public canSeeRunOffSchedule = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.RunOffSchedule);
+    canSeeRunOffSchedule = (state: ProcessStateType): boolean => this.visibleActions(state).includes(PredefinedActionName.RunOffSchedule);
 
-    public canRunOffSchedule = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.RunOffSchedule);
+    canRunOffSchedule = (state: ProcessStateType): boolean => this.allowedActions(state).includes(PredefinedActionName.RunOffSchedule);
+
+    private visibleActions = (state: ProcessStateType) => state?.visibleActions || [];
+
+    private allowedActions = (state: ProcessStateType) => state?.allowedActions || [];
 
     getStateDescription({ isArchived }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
