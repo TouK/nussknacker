@@ -5,7 +5,6 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../actions/nk";
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
@@ -41,7 +40,6 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
                 const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
                 const processName = isRenamed ? unsavedNewName : currentProcessName;
 
-                await dispatch(UndoActionCreators.clearHistory());
                 await dispatch(displayCurrentProcessVersion(processName));
                 await dispatch(await getScenarioActivities(processName));
 

@@ -15,6 +15,7 @@ export enum TestType {
 
 export type TestingOption = CustomRadioProps & {
     disableReason: string;
+    menuLabel?: string;
 };
 
 export const useTestOptions = (): {
