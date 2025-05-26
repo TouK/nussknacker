@@ -15,6 +15,7 @@ export function ButtonsToolbar(props: ToolbarPanelProps): ReactElement {
 
     const label = title ?? id;
     const buttons = <ToolbarButtons variant={buttonsVariant}>{children}</ToolbarButtons>;
+
     return (
         <ToolbarWrapper id={id} title={label && t(`panels.${id}.title`, label)} {...passProps}>
             {componentUrl ? <RemoteToolbarContent {...props}>{buttons}</RemoteToolbarContent> : buttons}

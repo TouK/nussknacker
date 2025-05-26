@@ -21,14 +21,16 @@ export type ToolbarWrapperProps = PropsWithChildren<{
     onCollapse?: () => void;
     color?: string;
     disableCollapse?: boolean;
-    noDrag?: boolean;
+    additionalParams?: {
+        noDrag?: boolean;
+    };
 }>;
 
 export const TOOLBAR_WRAPPER_CLASSNAME = "toolbar-wrapper";
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
-    const { title, children, id, onClose, onExpand, onCollapse, color, disableCollapse, noDrag } = props;
+    const { title, children, id, onClose, onExpand, onCollapse, color, disableCollapse, additionalParams } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useDispatch();
@@ -65,11 +67,11 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
             color={color || theme.palette.background.paper}
             width={SIDEBAR_WIDTH}
             data-testid={id}
-            {...(isCollapsible || noDrag ? {} : handlerProps)}
+            {...(isCollapsible || additionalParams?.noDrag ? {} : handlerProps)}
         >
             {(isCollapsible || onClose) && (
                 <PanelHeader
-                    {...(isCollapsible && !noDrag ? handlerProps : {})}
+                    {...(isCollapsible && !additionalParams?.noDrag ? handlerProps : {})}
                     color={color || theme.palette.background.paper}
                     onClick={toggleCollapsed}
                     onKeyDown={(e) => {
