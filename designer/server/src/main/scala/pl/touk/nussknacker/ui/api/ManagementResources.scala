@@ -175,6 +175,25 @@ class ManagementResources(
           }
         }
       } ~
+        path("redeploy" / ProcessNameSegment) { processName =>
+          (post & processId(processName) & deployRequestEntity) { (processIdWithName, request) =>
+            canDeploy(processIdWithName) {
+              complete {
+                measureTime("deployment", metricRegistry) {
+                  deploymentService
+                    .processCommand(
+                      RunRedeploymentCommand(
+                        commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
+                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
+                        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+                      )
+                    )
+                    .map(_ => ())
+                }
+              }
+            }
+          }
+        } ~
         path("cancel" / ProcessNameSegment) { processName =>
           (post & processId(processName) & cancelRequestEntity) { (processIdWithName, request) =>
             canDeploy(processIdWithName) {

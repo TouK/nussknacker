@@ -16,11 +16,11 @@ import { ToolbarsSide } from "../../../../reducers/toolbars";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
-import { useTestingState } from "../../../modals/Testing/TestingContext";
 import type { TestingData, TestingViewParams } from "../../../modals/Testing/TestingDialog";
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import { useTestingButtonContext } from "./TestButtonContext";
 
 export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
@@ -42,20 +42,21 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     const { t } = useTranslation();
     const { open } = useWindows();
 
-    const testingState = useTestingState();
+    const testingState = useTestingButtonContext();
 
     const presets: Preset[] = useMemo(() => {
         const retest = {
-            label: t("testingForm.retest.menu.label", "Retest scenario"),
+            label: t("testingForm.retest.menu.label", "Rerun last test"),
             value: RERUN_PREVIOUS,
             isDisabled: !testingState.action,
         };
-        const options = testingState.options.map(({ value, menuLabel, disabled }) => ({
-            value,
-            label: menuLabel,
-            isDisabled: disabled,
-        }));
-        return [...options, retest];
+        const firstEnabledOption = testingState.options.find((option) => !option.disabled);
+        const test = {
+            label: t("testingForm.test.menu.label", "Run a new test"),
+            value: firstEnabledOption?.value,
+            isDisabled: !firstEnabledOption,
+        };
+        return [test, retest];
     }, [t, testingState.action, testingState.options]);
 
     const performedTestType = useSelector(getPerformedTestType);
@@ -124,7 +125,7 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         <ToolbarButton
             name={
                 preset?.value === RERUN_PREVIOUS
-                    ? t("panels.actions.scenarioTest.button.nameAlt", "Retest")
+                    ? t("panels.actions.scenarioTest.button.nameAlt", "Rerun test")
                     : name || t("panels.actions.scenarioTest.button.name", "Test")
             }
             title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
@@ -132,7 +133,9 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
             sx={(theme) => {
                 const normal = theme.palette.primary.main;
                 const highlight = theme.palette.primary.light;
-                const isHorizontal = variant === ButtonsVariant.xs && [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom].includes(side);
+                const isHorizontal =
+                    variant === ButtonsVariant.xs &&
+                    [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom, ToolbarsSide.AboveNodeWindow].includes(side);
                 return {
                     color: alpha(theme.palette.getContrastText(normal), 0.75),
 

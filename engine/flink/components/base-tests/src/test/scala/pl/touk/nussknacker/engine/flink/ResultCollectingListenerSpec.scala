@@ -52,7 +52,7 @@ class ResultCollectingListenerSpec
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end", 8)
+        transitionVariables(testResults, "union", Some("end")).size shouldBe 8
         transitionVariables(testResults, "start-foo", Some("union")) shouldBe Set(
           Map("input" -> 10),
           Map("input" -> 20),
@@ -81,16 +81,6 @@ class ResultCollectingListenerSpec
           Map("input" -> 300, "customVariableInBarBranch" -> 150, "dataIsFrom" -> "bar source"),
           Map("input" -> 400, "customVariableInBarBranch" -> 200, "dataIsFrom" -> "bar source"),
         )
-        transitionVariables(testResults, "end", None) shouldBe Set(
-          Map("input" -> 10, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 20, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 30, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 40, "dataIsFrom"                 -> "foo source"),
-          Map("input" -> 100, "customVariableInBarBranch" -> 50, "dataIsFrom"  -> "bar source"),
-          Map("input" -> 200, "customVariableInBarBranch" -> 100, "dataIsFrom" -> "bar source"),
-          Map("input" -> 300, "customVariableInBarBranch" -> 150, "dataIsFrom" -> "bar source"),
-          Map("input" -> 400, "customVariableInBarBranch" -> 200, "dataIsFrom" -> "bar source"),
-        )
       }
     )
   }
@@ -105,7 +95,7 @@ class ResultCollectingListenerSpec
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end", 8)
+        transitionVariables(testResults, "for-each-1", Some("end")).size shouldBe 8
         transitionVariables(testResults, "start-foo", Some("for-each-1")) shouldBe Set(
           Map("input" -> 10),
           Map("input" -> 20),
@@ -113,16 +103,6 @@ class ResultCollectingListenerSpec
           Map("input" -> 40),
         )
         transitionVariables(testResults, "for-each-1", Some("end")) shouldBe Set(
-          Map("input" -> 10, "outForEach1" -> "A"),
-          Map("input" -> 10, "outForEach1" -> "B"),
-          Map("input" -> 20, "outForEach1" -> "A"),
-          Map("input" -> 20, "outForEach1" -> "B"),
-          Map("input" -> 30, "outForEach1" -> "A"),
-          Map("input" -> 30, "outForEach1" -> "B"),
-          Map("input" -> 40, "outForEach1" -> "A"),
-          Map("input" -> 40, "outForEach1" -> "B"),
-        )
-        transitionVariables(testResults, "end", None) shouldBe Set(
           Map("input" -> 10, "outForEach1" -> "A"),
           Map("input" -> 10, "outForEach1" -> "B"),
           Map("input" -> 20, "outForEach1" -> "A"),
@@ -153,8 +133,8 @@ class ResultCollectingListenerSpec
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end1", 4)
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end2", 4)
+        transitionVariables(testResults, "bv1", Some("end1")).size shouldBe 4
+        transitionVariables(testResults, "bv2", Some("end2")).size shouldBe 4
         transitionVariables(testResults, "start-foo", Some("split")) shouldBe Set(
           Map("input" -> 10),
           Map("input" -> 20),
@@ -180,18 +160,6 @@ class ResultCollectingListenerSpec
           Map("input" -> 40, "timesTwo" -> 80),
         )
         transitionVariables(testResults, "bv2", Some("end2")) shouldBe Set(
-          Map("input" -> 10, "timesFour" -> 40),
-          Map("input" -> 20, "timesFour" -> 80),
-          Map("input" -> 30, "timesFour" -> 120),
-          Map("input" -> 40, "timesFour" -> 160),
-        )
-        transitionVariables(testResults, "end1", None) shouldBe Set(
-          Map("input" -> 10, "timesTwo" -> 20),
-          Map("input" -> 20, "timesTwo" -> 40),
-          Map("input" -> 30, "timesTwo" -> 60),
-          Map("input" -> 40, "timesTwo" -> 80),
-        )
-        transitionVariables(testResults, "end2", None) shouldBe Set(
           Map("input" -> 10, "timesFour" -> 40),
           Map("input" -> 20, "timesFour" -> 80),
           Map("input" -> 30, "timesFour" -> 120),
@@ -223,7 +191,7 @@ class ResultCollectingListenerSpec
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end", 3)
+        transitionVariables(testResults, "sub-fragmentEnd", Some("end")).size shouldBe 3
         assertNumberOfSamplesThatFinishedInNode(testResults, "sub-filter", 1)
         transitionVariables(testResults, "source", Some("sub")) shouldBe Set(
           Map("input" -> 10),
@@ -253,11 +221,6 @@ class ResultCollectingListenerSpec
           Map("fragment1_input" -> 40),
         )
         transitionVariables(testResults, "sub-fragmentEnd", Some("end")) shouldBe Set(
-          Map("input" -> 20, "fragmentResult" -> Map("output" -> 20)),
-          Map("input" -> 30, "fragmentResult" -> Map("output" -> 30)),
-          Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),
-        )
-        transitionVariables(testResults, "end", None) shouldBe Set(
           Map("input" -> 20, "fragmentResult" -> Map("output" -> 20)),
           Map("input" -> 30, "fragmentResult" -> Map("output" -> 30)),
           Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),

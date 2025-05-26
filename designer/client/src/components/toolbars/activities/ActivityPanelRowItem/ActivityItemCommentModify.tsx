@@ -27,7 +27,12 @@ export const ActivityItemCommentModify = ({
     const { open } = useWindows();
 
     const handleOpenModifyComment = useCallback(() => {
-        const permittedModifyCommentTypes: ActivityType[] = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED", "SCENARIO_PAUSED"];
+        const permittedModifyCommentTypes: ActivityType[] = [
+            "SCENARIO_DEPLOYED",
+            "SCENARIO_REDEPLOYED",
+            "SCENARIO_CANCELED",
+            "SCENARIO_PAUSED",
+        ];
 
         open<ModifyActivityCommentMeta>({
             title,

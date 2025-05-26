@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.config.DesignerConfig.{ConfigurationMalformedException, HttpConfig}
-import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
+import pl.touk.nussknacker.ui.config.Implicits.ConfigExt
 import pl.touk.nussknacker.ui.config.scenariotoolbar.{
   CategoriesScenarioToolbarsConfig,
   CategoriesScenarioToolbarsConfigParser
@@ -112,23 +112,24 @@ object DesignerConfig {
     val environment                  = resolvedConfig.getString("environment")
     val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
 
-    val environmentAlert  = parseOptionalConfig[EnvironmentAlert](resolvedConfig, "environmentAlert")
+    val environmentAlert  = resolvedConfig.getAsWithLogging[EnvironmentAlert]("environmentAlert")
     val isDevelopmentMode = resolvedConfig.hasPath("developmentMode") && resolvedConfig.getBoolean("developmentMode")
     val enableConfigEndpoint =
       resolvedConfig.hasPath("enableConfigEndpoint") && resolvedConfig.getBoolean("enableConfigEndpoint")
-    val metrics = parseOptionalConfig[MetricsSettings](resolvedConfig, "metricsSettings")
-      .orElse(parseOptionalConfig[MetricsSettings](resolvedConfig, "grafanaSettings"))
-    val counts = parseOptionalConfig[Config](resolvedConfig, "countsSettings")
+    val metrics = resolvedConfig
+      .getAsWithLogging[MetricsSettings]("metricsSettings")
+      .orElse(resolvedConfig.getAsWithLogging[MetricsSettings]("grafanaSettings"))
+    val counts = resolvedConfig.getAsWithLogging[Config]("countsSettings")
 
-    val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](resolvedConfig, "secondaryEnvironment")
-    val commentSettings   = parseOptionalConfig[CommentSettings](resolvedConfig, "commentSettings")
+    val remoteEnvironment         = resolvedConfig.getAsWithLogging[HttpRemoteEnvironmentConfig]("secondaryEnvironment")
+    val commentSettings           = resolvedConfig.getAsWithLogging[CommentSettings]("commentSettings")
     val deploymentCommentSettings = parseDeploymentCommentSettings(resolvedConfig)
     val scenarioLabelSettings     = ScenarioLabelConfig.create(resolvedConfig)
-    val scenarioStateTimeout      = parseOptionalConfig[FiniteDuration](resolvedConfig, "scenarioStateTimeout")
-    val surveySettings            = parseOptionalConfig[SurveySettings](resolvedConfig, "surveySettings")
+    val scenarioStateTimeout      = resolvedConfig.getAsWithLogging[FiniteDuration]("scenarioStateTimeout")
+    val surveySettings            = resolvedConfig.getAsWithLogging[SurveySettings]("surveySettings")
 
     implicit val tabDecoder: ValueReader[TopTab] = FicusReaders.forDecoder
-    val tabs                                     = parseOptionalConfig[List[TopTab]](resolvedConfig, "tabs")
+    val tabs                                     = resolvedConfig.getAsWithLogging[List[TopTab]]("tabs")
     val intervalTimeSettings                     = resolvedConfig.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings                         = resolvedConfig.as[TestDataSettings]("testDataSettings")
     val stickyNotesSettings =

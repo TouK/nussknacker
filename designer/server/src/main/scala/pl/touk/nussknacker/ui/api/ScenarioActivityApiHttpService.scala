@@ -327,6 +327,14 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
+      case ScenarioActivity.ScenarioRedeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
+        Dtos.ScenarioActivity.forScenarioRedeployed(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersionId = scenarioVersionId.map(_.value),
+          comment = toDto(comment),
+        )
       case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
         Dtos.ScenarioActivity.forScenarioPaused(
           id = scenarioActivityId.value,

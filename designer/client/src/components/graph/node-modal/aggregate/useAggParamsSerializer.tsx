@@ -1,4 +1,3 @@
-import { padStart } from "lodash";
 import { useCallback } from "react";
 
 import { parseToList, parseToObject } from "./pareserHelpers";
@@ -13,14 +12,13 @@ export function useAggParamsSerializer(): [
             return [/^[^a-zA-Z]|\W/.test(trimmedKey) ? `"${trimmedKey}"` : trimmedKey, value];
         });
 
-        const keyLength = entries.reduce((value, [key]) => Math.max(value, key.length), 0);
-        const content = entries.map(([key, value]) => `  ${padStart(key, keyLength, " ")}: ${value}`).join(",\n");
+        const content = entries.map(([key, value]) => `${key}: ${value}`).join(",");
 
         switch (paramName) {
             case "aggregator":
-                return `#AGG.map({\n${content}\n})`;
+                return `#AGG.map({${content}})`;
             case "aggregateBy":
-                return `{\n${content}\n}`;
+                return `{${content}}`;
         }
     }, []);
 
@@ -32,11 +30,11 @@ export function useGroupByParamsSerializer(): [(text: string) => string[], (arr:
         const entries = arr.map((value) => {
             return value?.trim();
         });
-        const content = entries.join(", ");
+        const content = entries.join(",");
 
         if (!content) return "";
 
-        return `{ ${content} }`;
+        return `{${content}}`;
     }, []);
 
     const deserialize = useCallback((input: string) => {

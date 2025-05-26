@@ -131,7 +131,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                     padding: 1,
                 }}
             >
-                <Typography variant="subtitle1">{direction === "input" ? "Input context" : "Output context"}</Typography>
+                <Typography variant="subtitle1">{direction === "input" ? "Input variables" : "Output variables"}</Typography>
                 <CountsForNodes
                     nodes={transitionNodesIds.map(({ id, results }) => ({
                         id,

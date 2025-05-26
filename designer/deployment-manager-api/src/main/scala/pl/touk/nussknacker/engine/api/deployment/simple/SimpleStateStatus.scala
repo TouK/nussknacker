@@ -128,15 +128,16 @@ object SimpleStateStatus {
 
   }
 
-  val NotDeployed: StateStatus  = StateStatus("NOT_DEPLOYED")
-  val DuringDeploy: StateStatus = StateStatus("DURING_DEPLOY")
-  val Running: StateStatus      = StateStatus("RUNNING")
-  val Finished: StateStatus     = StateStatus("FINISHED")
-  val Restarting: StateStatus   = StateStatus("RESTARTING")
-  val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
-  val Canceled: StateStatus     = StateStatus("CANCELED")
+  val NotDeployed: StateStatus    = StateStatus("NOT_DEPLOYED")
+  val DuringDeploy: StateStatus   = StateStatus("DURING_DEPLOY")
+  val DuringRedeploy: StateStatus = StateStatus("DURING_REDEPLOY")
+  val Running: StateStatus        = StateStatus("RUNNING")
+  val Finished: StateStatus       = StateStatus("FINISHED")
+  val Restarting: StateStatus     = StateStatus("RESTARTING")
+  val DuringCancel: StateStatus   = StateStatus("DURING_CANCEL")
+  val Canceled: StateStatus       = StateStatus("CANCELED")
 
-  val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringDeploy, Running)
+  val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringRedeploy, DuringDeploy, Running)
 
   def isFinalOrTransitioningToFinalStatus(status: StateStatus): Boolean =
     List(SimpleStateStatus.Finished, SimpleStateStatus.DuringCancel, SimpleStateStatus.Canceled).contains(
@@ -145,13 +146,36 @@ object SimpleStateStatus {
       status
     )
 
-  val statusActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
+  val visibleActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
+    case SimpleStateStatus.Running | SimpleStateStatus.DuringRedeploy =>
+      Set(
+        ScenarioActionName.Cancel,
+        ScenarioActionName.Redeploy,
+        ScenarioActionName.Pause,
+        ScenarioActionName.Archive,
+        ScenarioActionName.UnArchive,
+        ScenarioActionName.Rename,
+      )
+    case _ =>
+      Set(
+        ScenarioActionName.Cancel,
+        ScenarioActionName.Deploy,
+        ScenarioActionName.Pause,
+        ScenarioActionName.Archive,
+        ScenarioActionName.UnArchive,
+        ScenarioActionName.Rename,
+      )
+  }
+
+  val allowedActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
     case SimpleStateStatus.NotDeployed =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringDeploy =>
-      Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+      Set(ScenarioActionName.Cancel)
+    case SimpleStateStatus.DuringRedeploy =>
+      Set(ScenarioActionName.Cancel)
     case SimpleStateStatus.Running =>
-      Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
+      Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Redeploy)
     case SimpleStateStatus.Canceled =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.Restarting =>
@@ -159,7 +183,7 @@ object SimpleStateStatus {
     case SimpleStateStatus.Finished =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringCancel =>
-      Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+      Set(ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
     case s: ShouldNotBeRunning                           => s.allowedActions
@@ -184,6 +208,12 @@ object SimpleStateStatus {
       icon = URI.create("/assets/states/deploy-running-animated.svg"),
       tooltip = "The scenario has been already started and currently is being deployed.",
       description = "The scenario is being deployed."
+    ),
+    SimpleStateStatus.DuringRedeploy.name -> StateDefinitionDetails(
+      displayableName = "During redeploy",
+      icon = URI.create("/assets/states/deploy-running-animated.svg"),
+      tooltip = "The scenario has been already started and currently is being redeployed.",
+      description = "The scenario is being redeployed."
     ),
     SimpleStateStatus.Running.name -> StateDefinitionDetails(
       displayableName = "Running",

@@ -48,8 +48,9 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
                     await confirm({
                         text: t(
                             "panels.actions.confirm-unsafe-save.message",
-                            `Your local scenario version #${processVersionId} is outdated.
-                        There is newer version #${res.data.latestVersion} created by ${res.data.modifiedBy} available. Are you sure you want to override it?`,
+                            `Your local scenario version #{{processVersionId}} is outdated.
+                        There is newer version #{{latestVersion}} created by {{modifyBy}} available. Are you sure you want to override it?`,
+                            { processVersionId, latestVersion: res.data.latestVersion, modifyBy: res.data.modifiedBy },
                         ),
                         confirmText: t("panels.actions.confirm-unsafe-save.confirmButton", "Confirm"),
                         denyText: t("panels.actions.confirm-unsafe-save.cancelButton", "Cancel"),

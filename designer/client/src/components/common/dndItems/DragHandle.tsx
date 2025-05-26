@@ -15,11 +15,12 @@ const StyledHandleBars = styled(Handlebars)`
 
 const grabbing = css({ "*": { cursor: "grabbing !important" } });
 
-export const DragHandlerContext = createContext<DraggableProvidedDragHandleProps>(null);
+export const DragHandlerContext = createContext<DraggableProvidedDragHandleProps | false>(null);
 
 export function useDragHandler() {
     const handleProps = useContext(DragHandlerContext);
     if (!handleProps) {
+        if (handleProps === false) return {};
         // eslint-disable-next-line i18next/no-literal-string
         throw new Error("used outside DragHandlerContext.Provider");
     }

@@ -12,6 +12,7 @@ import {
     getProcessVersionId,
     hasError,
     isDeployPossible,
+    isDeployVisible,
     isSaveDisabled,
     isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
@@ -35,7 +36,8 @@ interface DeployPreset {
 
 export default function DeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
-    const deployPossible = useSelector(isDeployPossible);
+    const isVisible = useSelector(isDeployVisible);
+    const isPossible = useSelector(isDeployPossible);
     const saveDisabled = useSelector(isSaveDisabled);
     const hasErrors = useSelector(hasError);
     const validationResultPresent = useSelector(isValidationResultPresent);
@@ -44,7 +46,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
 
-    const available = validationResultPresent && !disabled && deployPossible && capabilities.deploy;
+    const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
     const deployToolTip = !capabilities.deploy
         ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
@@ -72,9 +74,10 @@ export default function DeployButton(props: ToolbarButtonProps) {
                     await confirm({
                         text: t(
                             "panels.actions.confirm-unsafe-deployment.message",
-                            `There is newer version #${res.data.latestVersion} created by ${res.data.modifiedBy} available. Scenario will be deployed using the newest version.
-                         You're currently checked out on version #${res.data.localVersion}. 
+                            `There is newer version #{{latestVersion}} created by {{modifyBy}} available. Scenario will be deployed using the newest version.
+                         You're currently checked out on version #{{localVersion}}. 
                          Are you sure you want to perform this action?`,
+                            { latestVersion: res.data.latestVersion, modifyBy: res.data.modifiedBy, localVersion: res.data.localVersion },
                         ),
                         confirmText: t("panels.actions.confirm-unsafe-deployment.confirmButton", "Confirm"),
                         denyText: t("panels.actions.confirm-unsafe-deployment.cancelButton", "Cancel"),
@@ -139,18 +142,20 @@ export default function DeployButton(props: ToolbarButtonProps) {
         [action, handleDeploy, handleValidateScenarioVersion, message, open],
     );
 
-    return (
-        <ToolbarButton
-            name={t("panels.actions.deploy.button", "start")}
-            disabled={!available}
-            icon={<Icon />}
-            title={deployToolTip}
-            onClick={handleDeploy}
-            onMouseOver={deployMouseOver}
-            onMouseOut={deployMouseOut}
-            type={type}
-            presets={presets}
-            onPresetChange={handlePresetChange}
-        />
-    );
+    if (isVisible) {
+        return (
+            <ToolbarButton
+                name={t("panels.actions.deploy.button", "start")}
+                disabled={!available}
+                icon={<Icon />}
+                title={deployToolTip}
+                onClick={handleDeploy}
+                onMouseOver={deployMouseOver}
+                onMouseOut={deployMouseOut}
+                type={type}
+                presets={presets}
+                onPresetChange={handlePresetChange}
+            />
+        );
+    } else return <></>;
 }

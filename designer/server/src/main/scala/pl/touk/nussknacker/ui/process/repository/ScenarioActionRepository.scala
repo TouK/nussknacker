@@ -267,6 +267,8 @@ class DbScenarioActionRepository private (override protected val dbRef: DbRef)(
     val activityType = actionName match {
       case ScenarioActionName.Deploy =>
         ScenarioActivityType.ScenarioDeployed
+      case ScenarioActionName.Redeploy =>
+        ScenarioActivityType.ScenarioRedeployed
       case ScenarioActionName.Cancel =>
         ScenarioActivityType.ScenarioCanceled
       case ScenarioActionName.Archive =>
@@ -513,6 +515,8 @@ class DbScenarioActionReadOnlyRepository(
         Some(ScenarioActionName.UnArchive)
       case ScenarioActivityType.ScenarioDeployed =>
         Some(ScenarioActionName.Deploy)
+      case ScenarioActivityType.ScenarioRedeployed =>
+        Some(ScenarioActionName.Redeploy)
       case ScenarioActivityType.ScenarioPaused =>
         Some(ScenarioActionName.Pause)
       case ScenarioActivityType.ScenarioCanceled =>
@@ -550,6 +554,8 @@ class DbScenarioActionReadOnlyRepository(
     actionName match {
       case ScenarioActionName.Deploy =>
         ScenarioActivityType.ScenarioDeployed
+      case ScenarioActionName.Redeploy =>
+        ScenarioActivityType.ScenarioRedeployed
       case ScenarioActionName.Cancel =>
         ScenarioActivityType.ScenarioCanceled
       case ScenarioActionName.Archive =>

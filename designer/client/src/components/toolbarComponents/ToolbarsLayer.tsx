@@ -9,12 +9,14 @@ import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";
+import { WindowKind } from "../../windowManager";
 import { SidePanel } from "../sidePanels/SidePanel";
 import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
 import { SidePanelToggleButton } from "../SidePanelToggleButton";
 import { useSurvey } from "../toolbars/useSurvey";
 import { DragAndDropContainer } from "./DragAndDropContainer";
 import { Grid9 } from "./Grid9";
+import { setInert } from "./inertHelpers";
 import { Overlay } from "./Overlay";
 import type { Toolbar } from "./toolbar";
 import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer";
@@ -56,6 +58,16 @@ const AbsolutePanel = styled(Box)(({ theme }) => ({
     overflow: "hidden",
 }));
 
+function useShowFloatingToolbar() {
+    const [settings] = useUserSettings();
+    const { windows } = useWindowManager();
+    const autoApply = settings["node.autoApply"];
+    return useMemo(() => {
+        if (!autoApply) return false;
+        return windows.filter((w) => [WindowKind.editNode, WindowKind.viewNode].includes(w.kind)).length;
+    }, [autoApply, windows]);
+}
+
 const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
     const dispatch = useDispatch();
     const { toolbars, configId, children, externalLayerWrapper: ExternalLayerWrapper = React.Fragment } = props;
@@ -67,8 +79,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
     const availableToolbars = useToolbarsVisibility(toolbars);
 
     const onMove = useCallback((from, to) => dispatch(moveToolbar(from, to, configId)), [configId, dispatch]);
-    const { windows } = useWindowManager();
-    const windowOpened = windows.length;
+    const showFloatingToolbar = useShowFloatingToolbar();
 
     return (
         <DragAndDropContainer onMove={onMove}>
@@ -76,13 +87,19 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                 <AbsoluteOverlayGrid9
                     m={0.5}
                     sx={(theme) => ({
-                        transition: theme.transitions.create("top"),
-                        top: windowOpened ? 5 : 45,
+                        transition: theme.transitions.create("top", { delay: showFloatingToolbar ? 750 : 0 }),
+                        top: showFloatingToolbar ? 5 : -150,
                         justifyItems: "center",
                         overflow: "auto",
                     })}
+                    ref={setInert(!showFloatingToolbar)}
                 >
-                    <StyledToolbarsContainer sx={{ gridArea: "top" }} availableToolbars={availableToolbars} side={ToolbarsSide.CenterTop} />
+                    <StyledToolbarsContainer
+                        sx={{ gridArea: "top" }}
+                        availableToolbars={availableToolbars}
+                        side={ToolbarsSide.AboveNodeWindow}
+                        disableDnd
+                    />
                 </AbsoluteOverlayGrid9>
             </ExternalLayerWrapper>
 
@@ -92,6 +109,16 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                         <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.LeftTop} />
                         <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.LeftBottom} />
                     </Box>
+
+                    <StyledToolbarsContainer
+                        sx={(theme) => ({
+                            gridArea: "top",
+                            opacity: showFloatingToolbar ? 0 : 1,
+                            transition: theme.transitions.create("opacity", { delay: showFloatingToolbar ? 0 : 250 }),
+                        })}
+                        availableToolbars={availableToolbars}
+                        side={ToolbarsSide.CenterTop}
+                    />
 
                     <OverlayGrid9 gridArea="body" m={0.5}>
                         <Overlay gridArea="top/left / top/right" position="relative">

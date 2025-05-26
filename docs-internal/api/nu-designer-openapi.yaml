@@ -2325,7 +2325,7 @@ paths:
                 Example1:
                   summary: No test data generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4317,6 +4317,13 @@ paths:
                       - delete_comment
                       - edit_comment
                       - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
@@ -4425,6 +4432,13 @@ paths:
                       supportedActions: []
                     - type: SCENARIO_DEPLOYED
                       displayableName: Deployment
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4649,12 +4663,28 @@ paths:
                     testWithGeneratedData:
                       status: AVAILABLE
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
         '401':
           description: ''
           content:
@@ -4685,9 +4715,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4749,13 +4786,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResultsWithCountsDto'
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body, Invalid value for: query parameter skipResultsPerNode,
-            Invalid value for: query parameter skipResultsPerTransition'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
         '401':
           description: ''
           content:
@@ -4786,9 +4838,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4898,7 +4957,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4992,12 +5051,28 @@ paths:
                       errorType: SaveAllowed
                     validationPerformed: true
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
         '401':
           description: ''
           content:
@@ -5028,9 +5103,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -6600,6 +6682,7 @@ components:
       - $ref: '#/components/schemas/InvalidScenario'
       - $ref: '#/components/schemas/NoSources'
       - $ref: '#/components/schemas/NotSupportedBySources'
+      - $ref: '#/components/schemas/UserDoesNotHavePermission'
     NotAvailable_T:
       title: NotAvailable_T
       type: object
@@ -6979,6 +7062,7 @@ components:
           - SCENARIO_ARCHIVED
           - SCENARIO_UNARCHIVED
           - SCENARIO_DEPLOYED
+          - SCENARIO_REDEPLOYED
           - SCENARIO_PAUSED
           - SCENARIO_CANCELED
           - SCENARIO_MODIFIED
@@ -7737,6 +7821,9 @@ components:
           anyOf:
           - $ref: '#/components/schemas/LayoutData'
           - type: 'null'
+    UserDoesNotHavePermission:
+      title: UserDoesNotHavePermission
+      type: object
     ValidationError:
       title: ValidationError
       type: object

@@ -20,6 +20,7 @@ final case class OpenAPIServicesConfig(
     // For backward compatibility it is called security. We should probably rename it and bundle together with secret
     private val security: Map[SecuritySchemeName, Secret] = Map.empty,
     private val secret: Option[Secret] = None,
+    componentPrefix: Option[String] = None,
     httpClientConfig: HttpClientConfig = DefaultHttpClientConfig(),
     openApiServicesDiscoveryCacheTtl: FiniteDuration = 30 seconds
 ) {

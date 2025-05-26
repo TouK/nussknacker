@@ -348,4 +348,36 @@ class ScenarioWithoutSinksSpec
     )
   }
 
+  test("ending without sink is allowed - there is for-each node - without sink") {
+    val scenario = ScenarioBuilder
+      .streaming("sample-for-each")
+      .source("start-foo", "start1")
+      .customNode("for-each-1", "outForEach1", "for-each", "Elements" -> "{'A', 'B'}".spel)
+      .endWithoutSink
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        assertNumberOfSamplesThatFinishedInNode(testResults, "for-each-1", 8)
+        transitionVariables(testResults, "start-foo", Some("for-each-1")) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+        transitionVariables(testResults, "for-each-1", None) shouldBe Set(
+          Map("input" -> 10, "outForEach1" -> "A"),
+          Map("input" -> 10, "outForEach1" -> "B"),
+          Map("input" -> 20, "outForEach1" -> "A"),
+          Map("input" -> 20, "outForEach1" -> "B"),
+          Map("input" -> 30, "outForEach1" -> "A"),
+          Map("input" -> 30, "outForEach1" -> "B"),
+          Map("input" -> 40, "outForEach1" -> "A"),
+          Map("input" -> 40, "outForEach1" -> "B"),
+        )
+      },
+      allowEndingScenarioWithoutSink = true,
+    )
+  }
+
 }
