@@ -69,7 +69,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     const process = useSelector(getScenarioGraph);
     const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => {
         const edges1 = value || process.edges.filter(({ from }) => from === nodeId);
-        return edges1.map(withFakeId);
+        return edges1.map((edge) => withFakeId({ ...edge }));
     });
 
     const edgeTypes = useMemo(
