@@ -10,7 +10,6 @@ import type { GenericValidationRequest, TestAdhocValidationRequest } from "../ac
 import api from "../api";
 import type { UserData } from "../common/models/User";
 import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
-import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
@@ -38,6 +37,7 @@ import type { AuthenticationSettings } from "../reducers/settings";
 import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import type { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import type { ResultsWithCountsDto } from "./resultsWithCountsDto";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -148,11 +148,6 @@ export type NotificationActions = {
     error(message: string, error: string, showErrorText: boolean): void;
     warn(message: string): void;
 };
-
-export interface TestProcessResponse {
-    results: TestResults;
-    counts: ProcessCounts;
-}
 
 export interface PropertiesValidationRequest {
     name: string;
@@ -831,8 +826,12 @@ class HttpService {
         return promise;
     }
 
-    fetchProcessLiveData(processName: string): Promise<AxiosResponse<unknown>> {
-        const promise = api.get(`/liveData/${encodeURIComponent(processName)}`);
+    fetchProcessLiveData(processName: string): Promise<AxiosResponse<ResultsWithCountsDto>> {
+        const promise = api.get<ResultsWithCountsDto>(`/liveData/${encodeURIComponent(processName)}`, {
+            params: {
+                skipResultsPerNode: true,
+            },
+        });
 
         promise.catch((error) => this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot live data"), error, true));
         return promise;
@@ -896,7 +895,7 @@ class HttpService {
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post<TestProcessResponse>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
             params: {
                 skipResultsPerTransition: this.#skipResultsPerTransition,
             },
@@ -927,7 +926,7 @@ class HttpService {
               },
     ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const promise = api.post<TestProcessResponse>(
+        const promise = api.post<ResultsWithCountsDto>(
             `/scenarioTesting/${encodeURIComponent(processName)}/performTest`,
             {
                 testData,

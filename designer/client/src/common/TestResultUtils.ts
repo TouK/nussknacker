@@ -1,33 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
 import { head, uniq, values } from "lodash";
 
+import type {
+    ExceptionResultJson,
+    ExpressionInvocationResultJson,
+    ExternalInvocationResultJson,
+    ResultContextJson,
+    TestResultsDto,
+} from "../http/resultsWithCountsDto";
 import type { NodeId, UIParameter } from "../types";
-
-export interface Variable {
-    original?: string;
-    pretty: unknown;
-}
-
-export interface Context {
-    id: string;
-    variables: Record<string, Variable>;
-}
-
-export interface InvocationResult {
-    contextId: Context["id"];
-    name: string;
-    value: unknown;
-}
-
-export interface Error {
-    nodeId: NodeId;
-    context: Context;
-    throwable;
-}
-
-interface ExternalInvocationResult {
-    contextId: Context["id"];
-}
 
 export interface TestCapabilities {
     testWithParameters: TestWithParametersCapability;
@@ -53,25 +34,11 @@ export interface TestFormParameters {
     parameters: UIParameter[];
 }
 
-export type TransitionResults = {
-    sourceNodeId: NodeId;
-    destinationNodeId: NodeId;
-    results: Context[];
-};
-
-export interface TestResults {
-    externalInvocationResults: Record<NodeId, ExternalInvocationResult[]>;
-    invocationResults: Record<NodeId, InvocationResult[]>;
-    nodeResults: Record<NodeId, Context[]>;
-    nodeTransitionResults: Array<TransitionResults>;
-    exceptions: Error[];
-}
-
 export interface NodeTestResults {
-    externalInvocationResults: ExternalInvocationResult[];
-    invocationResults: InvocationResult[];
-    nodeResults: Context[];
-    errors: Error[];
+    externalInvocationResults: ExternalInvocationResultJson[];
+    invocationResults: ExpressionInvocationResultJson[];
+    nodeResults: ResultContextJson[];
+    errors: ExceptionResultJson[];
 }
 
 export interface StateForSelectTestResults {
@@ -80,16 +47,16 @@ export interface StateForSelectTestResults {
 }
 
 export interface NodeResultsForContext {
-    context: Context;
-    externalInvocationResultsForEveryContext: ExternalInvocationResult[];
+    context: ResultContextJson;
+    externalInvocationResultsForEveryContext: ExternalInvocationResultJson[];
     expressionResults: Record<string, any>;
-    externalInvocationResultsForCurrentContext: ExternalInvocationResult[];
+    externalInvocationResultsForCurrentContext: ExternalInvocationResultJson[];
     error: string;
 }
 
 //TODO move it to backend
 class TestResultUtils {
-    resultsForNode = (testResults: TestResults, nodeId: NodeId): NodeTestResults | null => {
+    resultsForNode = (testResults: TestResultsDto, nodeId: NodeId): NodeTestResults | null => {
         const nodeResults = this._nodeResults(testResults, nodeId);
         if (nodeResults) {
             return {
@@ -121,23 +88,23 @@ class TestResultUtils {
         return testResults && this.availableContexts(testResults).length > 0;
     };
 
-    private _nodeResults(results: TestResults, nodeId: NodeId): Context[] {
+    private _nodeResults(results: TestResultsDto, nodeId: NodeId): ResultContextJson[] {
         return results?.nodeResults?.[nodeId] || [];
     }
 
-    private _invocationResults(results: TestResults, nodeId: NodeId): InvocationResult[] {
+    private _invocationResults(results: TestResultsDto, nodeId: NodeId): ExpressionInvocationResultJson[] {
         return results?.invocationResults?.[nodeId] || [];
     }
 
-    private _externalInvocationResults(results: TestResults, nodeId: NodeId): ExternalInvocationResult[] {
+    private _externalInvocationResults(results: TestResultsDto, nodeId: NodeId): ExternalInvocationResultJson[] {
         return results?.externalInvocationResults?.[nodeId] || [];
     }
 
-    private _errors(results: TestResults, nodeId: NodeId): Error[] {
+    private _errors(results: TestResultsDto, nodeId: NodeId): ExceptionResultJson[] {
         return results?.exceptions?.filter((ex) => ex.nodeId === nodeId);
     }
 
-    private _contextDisplay = (context: Context): string => {
+    private _contextDisplay = (context: ResultContextJson): string => {
         //TODO: what should be here? after aggregate input is not always present :|
         //we assume it's better to display nothing than some crap...
         const { original = "" } = context.variables["input"] || head(values(context.variables)) || {};

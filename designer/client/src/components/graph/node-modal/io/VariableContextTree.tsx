@@ -3,7 +3,7 @@ import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Context } from "../../../../common/TestResultUtils";
+import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTitle } from "./ContextTitle";
 import { ContextTree } from "./ContextTree";
@@ -15,7 +15,7 @@ type ValuesContextTreeProps = {
     onIsEmptyChange?: (value: boolean) => void;
 };
 
-export type VariableContextType = Context & {
+export type VariableContextType = ResultContextJson & {
     nodeIds: string[];
     error?: string;
     disabled?: boolean;

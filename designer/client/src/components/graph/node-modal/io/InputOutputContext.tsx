@@ -2,8 +2,8 @@ import type { PropsWithChildren } from "react";
 import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
 import { useSelector } from "react-redux";
 
-import type { TransitionResults } from "../../../../common/TestResultUtils";
 import TestResultUtils from "../../../../common/TestResultUtils";
+import type { NodeTransitionResult } from "../../../../http/resultsWithCountsDto";
 import { getScenarioGraph, getTestResults } from "../../../../reducers/selectors/graph";
 import NodeUtils from "../../NodeUtils";
 import type { VariableContextType } from "./VariableContextTree";
@@ -26,7 +26,7 @@ type Action =
           context: VariableContextType;
       };
 
-type Created = TransitionResults & { id: string };
+type Created = NodeTransitionResult & { id: string };
 type ContextType = {
     state: InputOutputState;
     dispatch: React.Dispatch<Action>;
