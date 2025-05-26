@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -31,6 +31,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const { disabled, type } = props;
     const capabilities = useSelector(getCapabilities);
     const saveDisabled = useSelector(isSaveDisabled);
+    const [isSaveProcessing, setIsSaveProcessing] = useState(false);
 
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
@@ -81,10 +82,15 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
     );
 
     const handleSaveScenarioActionWithValidation = useCallback(async () => {
-        await handleValidateScenarioVersion(async () => {
-            await handleSaveScenarioAction();
-        });
-    }, [handleSaveScenarioAction, handleValidateScenarioVersion]);
+        try {
+            setIsSaveProcessing(true);
+            await handleValidateScenarioVersion(async () => {
+                await handleSaveScenarioAction();
+            });
+        } finally {
+            setIsSaveProcessing(false);
+        }
+    }, [handleSaveScenarioAction, handleValidateScenarioVersion, setIsSaveProcessing]);
 
     const handlePresetChange = useCallback(
         async (preset: SavePreset) => {
@@ -114,7 +120,8 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
             name={t("panels.actions.process-save.button", "save")}
             showIndicator={unsavedChanges}
             icon={<Icon />}
-            disabled={!available}
+            disabled={!available || isSaveProcessing}
+            isLoading={isSaveProcessing}
             onClick={handleSaveScenarioActionWithValidation}
             type={type}
             presets={presets}

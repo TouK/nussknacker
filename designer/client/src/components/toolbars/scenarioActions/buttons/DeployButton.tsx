@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -45,6 +45,8 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
+
+    const [isDeployProcessing, setIsDeployProcessing] = useState(false);
 
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
@@ -97,19 +99,24 @@ export default function DeployButton(props: ToolbarButtonProps) {
     );
 
     const handleDeploy = useCallback(async () => {
-        const response = await action(processName, processVersionId, "");
-        switch (response.scenarioActionResultType) {
-            case ScenarioActionResultType.Success:
-            case ScenarioActionResultType.UnhandledError:
-                break;
-            case ScenarioActionResultType.ValidationError:
-                dispatch(notificationActions.error(response.msg));
-                break;
-            default:
-                console.log("Unexpected result type:", response.scenarioActionResultType);
-                break;
+        try {
+            setIsDeployProcessing(true);
+            const response = await action(processName, processVersionId, "");
+            switch (response.scenarioActionResultType) {
+                case ScenarioActionResultType.Success:
+                case ScenarioActionResultType.UnhandledError:
+                    break;
+                case ScenarioActionResultType.ValidationError:
+                    dispatch(notificationActions.error(response.msg));
+                    break;
+                default:
+                    console.log("Unexpected result type:", response.scenarioActionResultType);
+                    break;
+            }
+        } finally {
+            setIsDeployProcessing(false);
         }
-    }, [action, dispatch, processName, processVersionId]);
+    }, [action, dispatch, processName, processVersionId, setIsDeployProcessing]);
 
     const presets = useMemo<DeployPreset[]>(
         () => [
@@ -146,7 +153,8 @@ export default function DeployButton(props: ToolbarButtonProps) {
         return (
             <ToolbarButton
                 name={t("panels.actions.deploy.button", "start")}
-                disabled={!available}
+                disabled={!available || isDeployProcessing}
+                isLoading={isDeployProcessing}
                 icon={<Icon />}
                 title={deployToolTip}
                 onClick={handleDeploy}
