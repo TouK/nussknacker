@@ -37,25 +37,27 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
             scenarioMetadata.name,
             deployment.statusName,
             deployment.statusProblemDescription,
-            deployment.versionId,
+            deployment.scenarioVersionId,
             deployment.startedAt,
             deployment.statusModifiedAt
           )
         }
         .result
         .map(
-          _.map { case (id, scenarioName, statusName, statusDescription, versionId, startedAt, statusModifiedAt) =>
-            Deployment(
-              id,
-              scenarioName,
-              DeploymentStatus.from(
-                name = statusName,
-                description = statusDescription,
-                startedAt = startedAt.map(_.toInstant),
-                modifiedAt = statusModifiedAt.toInstant,
-                version = versionId
+          _.map {
+            case (id, scenarioName, statusName, statusDescription, scenarioVersionId, startedAt, statusModifiedAt) =>
+              Deployment(
+                id,
+                scenarioName,
+                DeploymentEntityFactory.deploymentStatusFromEntityData(
+                  deploymentId = id,
+                  name = statusName,
+                  description = statusDescription,
+                  startedAt = startedAt.map(_.toInstant),
+                  modifiedAt = statusModifiedAt.toInstant,
+                  version = scenarioVersionId
+                )
               )
-            )
           }.toSet
         )
     )

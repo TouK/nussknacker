@@ -235,14 +235,14 @@ class FlinkDeploymentManager(
             deploymentIdsToCheck.toSeq
               .map { deploymentId =>
                 (for {
-                  jobDetails <- OptionT(client.getJobDetails(deploymentId.toJobID))
-                  jobConfig  <- OptionT.liftF(client.getJobConfig(deploymentId.toJobID))
+                  jobDetails      <- OptionT(client.getJobDetails(deploymentId.toJobID))
+                  scenarioVersion <- OptionT(client.getJobConfig(deploymentId.toJobID).map(_.versionId))
                 } yield deploymentId -> FlinkStatusDetailsDeterminer
                   .toDeploymentStatus(
-                    JobStatus.valueOf(jobDetails.state),
-                    jobDetails.`status-counts`,
-                    Instant.ofEpochMilli(jobDetails.`start-time`),
-                    jobConfig.versionId.getOrElse(VersionId(0))
+                    jobStatus = JobStatus.valueOf(jobDetails.state),
+                    jobStatusCounts = jobDetails.`status-counts`,
+                    startedAt = Instant.ofEpochMilli(jobDetails.`start-time`),
+                    version = scenarioVersion
                   )).value
               }
           )

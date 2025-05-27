@@ -36,10 +36,10 @@ class FlinkStatusDetailsDeterminer(
               status = SimpleStateStatus
                 .fromDeploymentStatus(
                   toDeploymentStatus(
-                    JobStatus.valueOf(job.state),
-                    job.tasks,
-                    Instant.ofEpochMilli(job.`start-time`),
-                    jobConfig.version
+                    jobStatus = JobStatus.valueOf(job.state),
+                    jobStatusCounts = job.tasks,
+                    startedAt = Instant.ofEpochMilli(job.`start-time`),
+                    version = jobConfig.version
                   ),
                 ),
               deploymentId = jobConfig.deploymentId

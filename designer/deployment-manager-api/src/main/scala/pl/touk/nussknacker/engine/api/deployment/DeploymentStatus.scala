@@ -100,34 +100,6 @@ object DeploymentStatus {
 
   }
 
-  def from(
-      name: DeploymentStatusName,
-      description: Option[String],
-      startedAt: Option[Instant],
-      modifiedAt: Instant,
-      version: Option[VersionId]
-  ): DeploymentStatus = {
-    name match {
-      case DeploymentStatusName.duringDeployStatusName =>
-        DuringDeploy(version.getOrElse(VersionId(0)))
-      case DeploymentStatusName.runningStatusName =>
-        Running(version.getOrElse(VersionId(0)), startedAt.getOrElse(modifiedAt))
-      case DeploymentStatusName.finishedStatusName =>
-        Finished(version.getOrElse(VersionId(0)))
-      case DeploymentStatusName.restartingStatusName =>
-        Restarting
-      case DeploymentStatusName.duringCancelStatusName =>
-        DuringCancel
-      case DeploymentStatusName.canceledStatusName =>
-        Canceled
-      case DeploymentStatusName.problemStatusName =>
-        val desc = description.getOrElse(throw new IllegalStateException("No description for ProblemDeploymentStatus"))
-        ProblemDeploymentStatus(desc)
-      case other =>
-        throw new IllegalStateException(s"Unknown DeploymentStatusName: $other")
-    }
-  }
-
 }
 
 final case class DeploymentStatusName(value: String) {
