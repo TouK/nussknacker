@@ -113,7 +113,7 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const setProperty = useCallback<SetProperty>(
         <P extends Paths<NodeType>, V extends PathValue<NodeType, P>>(path: P, value: V, fallbackValue?: V): void => {
             const nextValue = value === null && fallbackValue !== undefined ? fallbackValue : value;
-            setEditedNode((currentNode) => {
+            setEditedNode((_) => {
                 function extractBasePathWithIndex(path: string) {
                     const match = path.match(/^(.*?\[\d+])/);
                     return match ? match[1] : path;
@@ -121,22 +121,22 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
 
                 const basePath = extractBasePathWithIndex(path);
 
-                const editedParam: Parameter | undefined = get(currentNode, basePath);
+                const editedParam: Parameter | undefined = get(node, basePath);
                 const editedParamDefinition = parameterDefinitions.find(
                     (parameterDefinition) => parameterDefinition.name === editedParam?.name,
                 );
 
-                const nextNode = setImmutable<NodeType, Paths<NodeType>>(currentNode, path, nextValue);
-                const detectChanges = !isEqual(nextNode, currentNode);
+                const nextNode = setImmutable<NodeType, Paths<NodeType>>(node, path, nextValue);
+                const detectChanges = !isEqual(nextNode, node);
 
                 if (editedParamDefinition?.changesCanReloadParameters && detectChanges) {
-                    dispatch(nodeValidationDynamicParametersLoading(currentNode.id, [editedParamDefinition.name]));
+                    dispatch(nodeValidationDynamicParametersLoading(node.id, [editedParamDefinition.name]));
                 }
 
                 return nextNode;
             });
         },
-        [dispatch, parameterDefinitions, setEditedNode],
+        [dispatch, parameterDefinitions, setEditedNode, node],
     );
 
     useEffect(() => {
