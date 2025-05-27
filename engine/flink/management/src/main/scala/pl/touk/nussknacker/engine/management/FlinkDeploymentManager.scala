@@ -376,6 +376,9 @@ class FlinkDeploymentManager(
       .map(new FlinkScenarioCompilationDependencies(_))
   }
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport =
+    jobRunner.liveDataPreviewSupport
+
 }
 
 object FlinkDeploymentManager {

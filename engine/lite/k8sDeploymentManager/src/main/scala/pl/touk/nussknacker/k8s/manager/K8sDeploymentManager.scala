@@ -388,6 +388,8 @@ class K8sDeploymentManager(
     NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
 }
 
 object K8sDeploymentManager {

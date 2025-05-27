@@ -4,7 +4,7 @@ import io.restassured.http.ContentType
 import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
 import org.hamcrest.core.IsEqual
-import pl.touk.nussknacker.test.NuRestAssureMatchers.equalsJson
+import pl.touk.nussknacker.test.NuRestAssureMatchers.{equalsJson, matchJsonWithRegexValues}
 
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters._
@@ -99,6 +99,17 @@ trait NuRestAssureExtensions {
       validatableResponse
         .body(
           equalsJson(json)
+        )
+    }
+
+  }
+
+  implicit class MatchJsonWithRegexValues[T <: ValidatableResponse](validatableResponse: T) {
+
+    def matchJsonWithRegexValuesBody(json: String): ValidatableResponse = {
+      validatableResponse
+        .body(
+          matchJsonWithRegexValues(json)
         )
     }
 

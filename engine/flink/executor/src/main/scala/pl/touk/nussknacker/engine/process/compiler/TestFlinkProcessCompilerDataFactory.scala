@@ -42,6 +42,7 @@ object TestFlinkProcessCompilerDataFactory {
       RuntimeMode.Test,
       modelData.additionalConfigsFromProvider,
       NodesDeploymentData.empty,
+      List.empty,
     ) {
 
       override protected def adjustListeners(
