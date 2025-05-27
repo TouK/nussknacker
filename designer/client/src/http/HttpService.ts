@@ -107,6 +107,7 @@ export type ScenarioGraphSource = {
     type: ScenarioGraphSourceType;
     scenarioGraph?: ScenarioGraph;
     scenarioLabels?: string[];
+    baseScenarioVersionId?: number;
 };
 
 export enum ScenarioGraphSourceType {
@@ -397,8 +398,20 @@ class HttpService {
             });
     }
 
-    redeploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
-        const runDeploymentRequest = { nodesDeploymentData, comment };
+    redeploy(
+        processName: string,
+        comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
+        scenarioGraphSource?: ScenarioGraphSource,
+    ): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = {
+            nodesDeploymentData,
+            comment,
+            scenarioGraphSource: {
+                ...scenarioGraphSource,
+                scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
+            },
+        };
         return api
             .post(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {

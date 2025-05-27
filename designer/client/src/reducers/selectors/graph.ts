@@ -5,12 +5,12 @@ import ProcessUtils from "../../common/ProcessUtils";
 import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
+import { ScenarioGraphSourceType } from "../../http/HttpService";
 import type { ScenarioGraph } from "../../types";
 import type { ProcessCounts, TestData } from "../graph";
 import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
-
-export const getUserSettings = (state: RootState) => state.userSettings;
+import { getUserSettings } from "./userSettings";
 
 export const getGraph = (state: RootState) => state.graphReducer.present;
 
@@ -62,8 +62,11 @@ export const isDeployPossible = createSelector(
 );
 export const isRedeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRedeploy(state));
 export const isRedeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canRedeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment, getUserSettings],
+    (saveDisabled, error, state, fragment, userSettings) => {
+        const isAllowedByScenarioSave = userSettings["toolbar.autoSaveDuringDeploy"] || saveDisabled;
+        return !fragment && isAllowedByScenarioSave && !error && ProcessStateUtils.canRedeploy(state);
+    },
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isRunOffScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOffSchedule(state));
@@ -108,3 +111,16 @@ export const getAdditionalFields = createSelector(getProperties, (p) => p?.addit
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
+
+export const getScenarioGraphSource = createSelector(
+    [isSaveDisabled, getGraph, getScenarioLabels, getProcessVersionId],
+    (isSaveDisabled, graph, labels, versionId) =>
+        isSaveDisabled
+            ? { type: ScenarioGraphSourceType.LATEST_VERSION }
+            : {
+                  type: ScenarioGraphSourceType.FROM_GRAPH,
+                  scenarioGraph: graph?.scenario?.scenarioGraph,
+                  scenarioLabels: labels,
+                  baseScenarioVersionId: versionId,
+              },
+);

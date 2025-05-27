@@ -146,7 +146,7 @@ class ManagementResources(
                         commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
                         nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath),
-                        scenarioSource = request.scenarioSource.getOrElse(LatestVersion),
+                        scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                       )
                     )
                     .map(_ => ())
@@ -169,7 +169,7 @@ class ManagementResources(
                       commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
                       nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-                      scenarioSource = request.scenarioSource.getOrElse(LatestVersion),
+                      scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                     )
                   )
                   .map(_ => ())
@@ -189,7 +189,7 @@ class ManagementResources(
                         commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
                         nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-                        scenarioSource = LatestVersion
+                        scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                       )
                     )
                     .map(_ => ())

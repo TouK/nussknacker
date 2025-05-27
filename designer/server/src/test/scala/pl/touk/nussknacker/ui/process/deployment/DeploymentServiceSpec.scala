@@ -1239,85 +1239,85 @@ class DeploymentServiceSpec
     }
 
     "should deploy scenario from given scenario graph" in {
-      val scenarioName = generateScenarioName()
-      val scenario     = prepareScenario(scenarioName)
-      val scenarioGraphJson =
-        """
-          |{
-          |  "properties" : {
-          |    "additionalFields" : {
-          |      "description" : null,
-          |      "properties" : {
-          |        "parallelism" : "",
-          |        "spillStateToDisk" : "true",
-          |        "useAsyncInterpretation" : "",
-          |        "checkpointIntervalInSeconds" : ""
-          |      },
-          |      "metaDataType" : "StreamMetaData",
-          |      "showDescription" : false
-          |    }
-          |  },
-          |  "nodes" : [
-          |    {
-          |      "id" : "source",
-          |      "ref" : {
-          |        "typ" : "barSource",
-          |        "parameters" : [
-          |        ]
-          |      },
-          |      "additionalFields" : null,
-          |      "type" : "Source"
-          |    },
-          |    {
-          |      "id" : "newVariableAdded",
-          |      "varName" : "newVar",
-          |      "value" : {
-          |        "language" : "spelTemplate",
-          |        "expression" : "updated process with new variable"
-          |      },
-          |      "additionalFields" : null,
-          |      "type" : "Variable"
-          |    },
-          |    {
-          |      "id" : "sink",
-          |      "ref" : {
-          |        "typ" : "barSink",
-          |        "parameters" : [
-          |        ]
-          |      },
-          |      "endResult" : null,
-          |      "isDisabled" : null,
-          |      "additionalFields" : null,
-          |      "type" : "Sink"
-          |    }
-          |  ],
-          |  "edges" : [
-          |    {
-          |      "from" : "source",
-          |      "to" : "newVariableAdded",
-          |      "edgeType" : null
-          |    },
-          |    {
-          |      "from" : "newVariableAdded",
-          |      "to" : "sink",
-          |      "edgeType" : null
-          |    }
-          |  ],
-          |  "stickyNotes" : [
-          |  ]
-          |}
-          |""".stripMargin
-      val scenarioGraph = parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson).rightValue
+      val scenarioName  = generateScenarioName()
+      val scenario      = prepareScenario(scenarioName)
+      val scenarioGraph = graphForExampleScenarioWithAdditionalVariableAdded()
 
       val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
         deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(1L)))
       }
-      val lastFinishedAction = actionRepository.getFinishedProcessActions(scenario.id, None).dbioActionValues.head
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
 
       result should not be None
-      lastFinishedAction.actionName shouldBe ScenarioActionName("DEPLOY")
-      lastFinishedAction.processVersionId shouldBe VersionId(2)
-      lastFinishedAction.state shouldBe ProcessActionState.Finished
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "DEPLOYED" -> 2L,
+      )
+    }
+
+    "should deploy given scenario version with scenario update" in {
+      val scenarioName      = generateScenarioName()
+      val scenario          = prepareScenario(scenarioName)
+      val maybeNewVersionId = updateScenario(scenario)
+      val scenarioGraph     = graphForExampleScenarioWithAdditionalVariableAdded()
+
+      maybeNewVersionId.value shouldBe VersionId(2)
+
+      val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(2)))
+      }
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
+
+      result should not be None
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "MODIFIED" -> 3L,
+        "DEPLOYED" -> 3L,
+      )
+    }
+
+    "should deploy scenario from given scenario graph without updating scenario if scenario graph is the same" in {
+      val scenarioName = generateScenarioName()
+      val scenario     = prepareScenario(scenarioName)
+      updateScenario(scenario, "newVariable2").value shouldBe VersionId(2)
+      updateScenario(scenario, "newVariable3").value shouldBe VersionId(3)
+      val scenarioGraph = graphForExampleScenarioWithAdditionalVariableAdded("newVariable2")
+
+      val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(2L)))
+      }
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
+
+      result should not be None
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "MODIFIED" -> 3L,
+        "DEPLOYED" -> 2L,
+      )
+    }
+
+    "should deploy scenario from given scenario graph without updating scenario if scenario graph is the same as latest version" in {
+      val scenarioName = generateScenarioName()
+      val scenario     = prepareScenario(scenarioName)
+      updateScenario(scenario, "newVariable2").value shouldBe VersionId(2)
+      updateScenario(scenario, "newVariable3").value shouldBe VersionId(3)
+      val scenarioGraph = graphForExampleScenarioWithAdditionalVariableAdded("newVariable3")
+
+      val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(2L)))
+      }
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
+
+      result should not be None
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "MODIFIED" -> 3L,
+        "DEPLOYED" -> 2L,
+      )
     }
   }
 
@@ -1503,6 +1503,28 @@ class DeploymentServiceSpec
       .dbioActionValues
   }
 
+  private def updateScenario(
+      scenario: ProcessIdWithName,
+      newVariableId: String = "newVariableAddedWithUpdateScenario"
+  ): Option[VersionId] = {
+    val canonicalProcess = ScenarioBuilder
+      .streaming(scenario.name.value)
+      .source("source", ProcessTestData.existingSourceFactory)
+      .buildSimpleVariable(newVariableId, "newVar", "updated process with new variable".spelTemplate)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+    val action = UpdateProcessAction(
+      processId = scenario.id,
+      canonicalProcess = canonicalProcess,
+      comment = Comment.from("Update Comment"),
+      labels = Nil,
+      increaseVersionWhenJsonNotChanged = true
+    )
+    writeProcessRepository
+      .updateProcess(action)
+      .map(_.newVersion)
+      .dbioActionValues
+  }
+
   private def prepareFragment(
       scenarioName: String,
       processingType: TestProcessingType = Streaming1
@@ -1544,5 +1566,87 @@ class DeploymentServiceSpec
     first = DeploymentId(UUID.randomUUID().toString)  -> SimpleStateStatus.Running(VersionId(0), Instant.now()),
     second = DeploymentId(UUID.randomUUID().toString) -> SimpleStateStatus.Running(VersionId(0), Instant.now())
   )
+
+  private def graphForExampleScenarioWithAdditionalVariableAdded(
+      variableId: String = "newVariableAddedFromGraph"
+  ): ScenarioGraph = {
+    val scenarioGraphJson =
+      s"""
+        |{
+        |  "properties" : {
+        |    "additionalFields" : {
+        |      "description" : null,
+        |      "properties" : {
+        |        "parallelism" : "",
+        |        "spillStateToDisk" : "true",
+        |        "useAsyncInterpretation" : "",
+        |        "checkpointIntervalInSeconds" : ""
+        |      },
+        |      "metaDataType" : "StreamMetaData",
+        |      "showDescription" : false
+        |    }
+        |  },
+        |  "nodes" : [
+        |    {
+        |      "id" : "source",
+        |      "ref" : {
+        |        "typ" : "barSource",
+        |        "parameters" : [
+        |        ]
+        |      },
+        |      "additionalFields" : null,
+        |      "type" : "Source"
+        |    },
+        |    {
+        |      "id" : "$variableId",
+        |      "varName" : "newVar",
+        |      "value" : {
+        |        "language" : "spelTemplate",
+        |        "expression" : "updated process with new variable"
+        |      },
+        |      "additionalFields" : null,
+        |      "type" : "Variable"
+        |    },
+        |    {
+        |      "id" : "sink",
+        |      "ref" : {
+        |        "typ" : "barSink",
+        |        "parameters" : [
+        |        ]
+        |      },
+        |      "endResult" : null,
+        |      "isDisabled" : null,
+        |      "additionalFields" : null,
+        |      "type" : "Sink"
+        |    }
+        |  ],
+        |  "edges" : [
+        |    {
+        |      "from" : "source",
+        |      "to" : "$variableId",
+        |      "edgeType" : null
+        |    },
+        |    {
+        |      "from" : "$variableId",
+        |      "to" : "sink",
+        |      "edgeType" : null
+        |    }
+        |  ],
+        |  "stickyNotes" : [
+        |  ]
+        |}
+        |""".stripMargin
+    parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson).rightValue
+  }
+
+  private def mapActivitiesToTypeWithVersion(activities: Seq[ScenarioActivity]): Seq[(String, Long)] =
+    activities.map {
+      case activity: DeploymentRelatedActivity => "DEPLOYED" -> activity.scenarioVersionId.value.value
+      case ScenarioActivity.ScenarioCreated(_, _, _, _, scenarioVersionId) => "CREATED" -> scenarioVersionId.value.value
+      case ScenarioActivity.ScenarioModified(_, _, _, _, _, scenarioVersionId, _) =>
+        "MODIFIED" ->
+          scenarioVersionId.value.value
+      case other => "OTHER" -> other.scenarioVersionId.value.value
+    }
 
 }

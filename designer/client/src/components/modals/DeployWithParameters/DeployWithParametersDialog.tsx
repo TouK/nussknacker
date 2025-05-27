@@ -6,15 +6,13 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../http/HttpService";
-import { ScenarioGraphSourceType } from "../../../http/HttpService";
-import { getGraph, getProcessName, getProcessVersionId, getScenarioLabels, isSaveDisabled } from "../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import type { WindowKind } from "../../../windowManager";
 import { PromptContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import CommentInput from "../../comment/CommentInput";
-import { ErrorBoundary } from "../../common/error-boundary";
-import { TextErrorBoundaryFallbackComponent } from "../../common/error-boundary";
+import { ErrorBoundary, TextErrorBoundaryFallbackComponent } from "../../common/error-boundary";
 import LoaderSpinner from "../../spinner/Spinner";
 import { ScenarioActionResultType } from "../../toolbars/scenarioActions/buttons/types";
 import type { ToggleProcessActionModalData } from "../DeployProcessDialog";
@@ -34,14 +32,7 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const [validationError, setValidationError] = useState("");
     const featureSettings = useSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
-
-    const unsavedScenarioGraphSource: ScenarioGraphSource = {
-        type: ScenarioGraphSourceType.FROM_GRAPH,
-        scenarioGraph: useSelector(getGraph)?.scenario?.scenarioGraph,
-        scenarioLabels: useSelector(getScenarioLabels),
-    };
-    const savedScenarioGraphSource: ScenarioGraphSource = { type: ScenarioGraphSourceType.LATEST_VERSION };
-    const scenarioGraphSource: ScenarioGraphSource = useSelector(isSaveDisabled) ? savedScenarioGraphSource : unsavedScenarioGraphSource;
+    const scenarioGraphSource: ScenarioGraphSource = useSelector(getScenarioGraphSource);
 
     const confirmAction = useCallback(async () => {
         const response = await action(processName, processVersionId, comment, parametersValues, scenarioGraphSource);

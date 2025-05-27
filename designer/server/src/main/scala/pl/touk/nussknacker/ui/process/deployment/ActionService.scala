@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{FromGraph, LatestVersion, ScenarioGraphSource}
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusWithAllowedActions
 }
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -85,15 +87,8 @@ class ActionService(
 
   def actionProcessorForScenarioGraph[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
       scenarioGraphSource: ScenarioGraphSource
-//      processIdWithName: ProcessIdWithName,
-//      scenarioGraph: ScenarioGraph,
-//      scenarioLabels: Option[List[String]],
-//  )(implicit loggedUser: LoggedUser): ActionProcessor[LatestScenarioDetailsShape] =
   ): ActionProcessor[LatestScenarioDetailsShape] =
     new ActionProcessor(p => Some(p.processVersionId), scenarioGraphSource)
-//    processService
-//      .updateProcess(processIdWithName, UpdateScenarioCommand(scenarioGraph, None, scenarioLabels))
-//      .map(_ => actionProcessorForLatestVersion)
 
   private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType) = {
     for {
@@ -172,40 +167,8 @@ class ActionService(
       transactionallyRunCriticalSection(
         for {
           // 1.2. fetch scenario data
-          processDetailsOpt <- scenarioGraphSource match {
-            case LatestVersion =>
-              processRepository.fetchLatestProcessDetailsForProcessId[ScenarioDetailsShape](processId.id)
-            case FromGraph(scenarioGraph, scenarioLabels, baseScenarioVersionId) =>
-              processRepository
-                .fetchProcessDetailsForId[ScenarioGraph](processId.id, baseScenarioVersionId)
-                .flatMap {
-//                case s@Some(scenario) if scenario.scenarioGraph == scenarioGraph => DBIOAction.successful(s)
-                  case s @ Some(scenario) if scenario.scenarioGraph == scenarioGraph =>
-                    processRepository
-                      .fetchProcessDetailsForId[ScenarioDetailsShape](processId.id, baseScenarioVersionId)
-                  case Some(scenario) =>
-                    val parameters = scenarioParametersServiceProvider.combined
-                      .getParametersWithReadPermissionUnsafe(scenario.processingType)
-                    val scenarioDetails = ScenarioWithDetailsConversions
-                      .fromEntityIgnoringGraphAndValidationResult(scenario, parameters)
-                    val updateCommand = UpdateScenarioCommand(scenarioGraph, None, scenarioLabels)
-                    processService
-                      .updateProcessDBIO(processId, scenarioDetails, updateCommand)
-//                    .flatMap(_ => processRepository.fetchLatestProcessDetailsForProcessId[ScenarioDetailsShape](processId.id))
-//                    .map(_ => Some(scenario.mapScenario[ScenarioDetailsShape](_ => ().asInstanceOf[ScenarioDetailsShape])))
-                      .flatMap(response =>
-                        response.processResponse match {
-                          case Some(value) =>
-                            processRepository
-                              .fetchProcessDetailsForId[ScenarioDetailsShape](processId.id, value.versionId)
-                          case None => ???
-                        }
-                      )
-                  case None => DBIOAction.successful[Option[ScenarioWithDetailsEntity[ScenarioDetailsShape]]](None)
-                }
-            // todo: how to map to target shape?
-          }
-          processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
+          processDetailsOpt <- fetchAndUpdateScenarioIfNeeded(processId)
+          processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
           // 1.3. check if action is performed on proper scenario (not fragment, not archived)
           _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
           // 1.4. check if action is allowed for current state
@@ -223,18 +186,54 @@ class ActionService(
       )
     }
 
-//    private def mapToTargetShape(scenario: ScenarioWithDetailsEntity[ScenarioGraph])
-//                                (implicit fetchShape: ScenarioShapeFetchStrategy[ScenarioDetailsShape]): ScenarioWithDetailsEntity[ScenarioDetailsShape] = {
-//      fetchShape match {
-//        case ScenarioShapeFetchStrategy.FetchScenarioGraph => scenario.mapScenario[ScenarioDetailsShape](identity)
-//        case ScenarioShapeFetchStrategy.FetchCanonical => ???
-//        case ScenarioShapeFetchStrategy.NotFetch => scenario.mapScenario()
-//        case ScenarioShapeFetchStrategy.FetchComponentsUsages => ???
-//      }
-//    }
-
     private def transactionallyRunCriticalSection[T](dbioAction: DB[T]) = {
       dbioRunner.runInTransaction(actionRepository.withLockedTable(dbioAction))
+    }
+
+    private def fetchAndUpdateScenarioIfNeeded(processId: ProcessIdWithName)(implicit user: LoggedUser) = {
+      scenarioGraphSource match {
+        case LatestVersion =>
+          processRepository.fetchLatestProcessDetailsForProcessId[ScenarioDetailsShape](processId.id)
+        case FromGraph(scenarioGraph, scenarioLabels, baseScenarioVersionId) =>
+          processRepository
+            .fetchProcessDetailsForId[CanonicalProcess](processId.id, baseScenarioVersionId)
+            .flatMap {
+              case Some(scenario) if CanonicalProcessConverter.toScenarioGraph(scenario.json) == scenarioGraph =>
+                val scenarioWithTargetShape =
+                  scenario.mapScenario(ScenarioShapeFetchStrategy.convertToTargetShape[ScenarioDetailsShape])
+                DBIOAction.successful(Some(scenarioWithTargetShape))
+              case Some(scenario) =>
+                updateScenario(processId, scenarioGraph, scenarioLabels, scenario)
+              case None =>
+                DBIOAction.successful[Option[ScenarioWithDetailsEntity[ScenarioDetailsShape]]](None)
+            }
+      }
+    }
+
+    private def updateScenario(
+        processId: ProcessIdWithName,
+        scenarioGraph: ScenarioGraph,
+        scenarioLabels: Option[List[ProcessingType]],
+        scenario: ScenarioWithDetailsEntity[CanonicalProcess]
+    )(implicit user: LoggedUser) = {
+      val parameters = scenarioParametersServiceProvider.combined
+        .getParametersWithReadPermissionUnsafe(scenario.processingType)
+      val scenarioDetails = ScenarioWithDetailsConversions
+        .fromEntityIgnoringGraphAndValidationResult(scenario, parameters)
+      val updateCommand = UpdateScenarioCommand(scenarioGraph, None, scenarioLabels)
+      processService
+        .updateProcessDBIO(processId, scenarioDetails, updateCommand)
+        .flatMap(response =>
+          response.processResponse match {
+            case Some(value) =>
+              processRepository.fetchProcessDetailsForId[ScenarioDetailsShape](processId.id, value.versionId)
+            case None =>
+              // Scenario is not updated (latest version is the same as provided graphs) so we take latest version
+              val scenarioWithTargetShape =
+                scenario.mapScenario(ScenarioShapeFetchStrategy.convertToTargetShape[ScenarioDetailsShape])
+              DBIOAction.successful(Some(scenarioWithTargetShape))
+          }
+        )
     }
 
     private def checkIfCanPerformActionOnScenario(

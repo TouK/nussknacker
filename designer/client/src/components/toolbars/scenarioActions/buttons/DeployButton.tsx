@@ -1,20 +1,13 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
-import { disableToolTipsHighlight, displayCurrentProcessVersion, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
-import type { NodesDeploymentData } from "../../../../http/HttpService";
-import HttpService from "../../../../http/HttpService";
-import type { NodesDeploymentData, ScenarioSource} from "../../../../http/HttpService";
-import type { NodesDeploymentData, ScenarioSource } from "../../../../http/HttpService";
-import HttpService, { ScenarioSourceType } from "../../../../http/HttpService";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
-import HttpService, { ScenarioGraphSourceType } from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
     getProcessVersionId,
@@ -80,21 +73,19 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { open, confirm } = useWindows();
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = (
-        name: ProcessName,
-        versionId: ProcessVersionId,
-        comment: string,
-        nodesDeploymentData?: NodesDeploymentData,
-        scenarioGraphSource?: ScenarioGraphSource,
-    ) =>
-        HttpService.deploy(name, comment, nodesDeploymentData, scenarioGraphSource).finally(() => {
-            const isSavedWithDeploy = scenarioGraphSource?.type === ScenarioGraphSourceType.FROM_GRAPH;
-            if (isSavedWithDeploy) {
-                dispatch(displayCurrentProcessVersion(processName));
-            } else {
-                dispatch(loadProcessState(name, versionId));
-            }
-        });
+    const action = useCallback(
+        (
+            name: ProcessName,
+            versionId: ProcessVersionId,
+            comment: string,
+            nodesDeploymentData?: NodesDeploymentData,
+            scenarioGraphSource?: ScenarioGraphSource,
+        ) =>
+            HttpService.deploy(name, comment, nodesDeploymentData, scenarioGraphSource).finally(() =>
+                dispatch(loadProcessState(name, versionId)),
+            ),
+        [dispatch],
+    );
 
     const handleValidateScenarioVersion = useCallback(
         async (callback: () => Promise<void>) => {
@@ -103,10 +94,15 @@ export default function DeployButton(props: ToolbarButtonProps) {
                     await confirm({
                         text: t(
                             "panels.actions.confirm-unsafe-deployment.message",
-                            `There is newer version #{{latestVersion}} created by {{modifyBy}} available. Scenario will be deployed using the newest version.
-                         You're currently checked out on version #{{localVersion}}. 
-                         Are you sure you want to perform this action?`,
-                            { latestVersion: res.data.latestVersion, modifyBy: res.data.modifiedBy, localVersion: res.data.localVersion },
+                            `There is newer version #{{latestVersion}} created by {{modifyBy}} available. Scenario will be deployed using version #{{versionToDeploy}}.
+                             You're currently checked out on version #{{localVersion}}. 
+                             Are you sure you want to perform this action?`,
+                            {
+                                latestVersion: res.data.latestVersion,
+                                modifyBy: res.data.modifiedBy,
+                                versionToDeploy: settings["toolbar.autoSaveDuringDeploy"] ? res.data.localVersion : res.data.latestVersion,
+                                localVersion: res.data.localVersion,
+                            },
                         ),
                         confirmText: t("panels.actions.confirm-unsafe-deployment.confirmButton", "Confirm"),
                         denyText: t("panels.actions.confirm-unsafe-deployment.cancelButton", "Cancel"),
@@ -122,7 +118,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                 }
             });
         },
-        [confirm, processName, processVersionId, t],
+        [confirm, processName, processVersionId, t, settings],
     );
 
     const handleDeploy = useCallback(async () => {

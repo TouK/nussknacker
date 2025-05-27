@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.RunOffScheduleResult
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
 import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, ScenarioGraphSource}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -17,6 +17,12 @@ sealed trait ScenarioCommand[Result] {
 case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Option[Comment], user: LoggedUser) {
   implicit def implicitUser: LoggedUser = user
 }
+
+// todo
+final case class RunDeploymentResponse[Result](
+    result: Result,
+    deployedScenarioVersion: Option[VersionId]
+)
 
 // Inner Future in result allows to wait for deployment finish, while outer handles validation
 // We split deploy process that way because we want to be able to split FE logic into two phases:

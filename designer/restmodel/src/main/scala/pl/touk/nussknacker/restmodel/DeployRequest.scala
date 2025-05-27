@@ -8,5 +8,5 @@ import pl.touk.nussknacker.engine.deployment.ScenarioGraphSource
     comment: Option[String],
     nodesDeploymentData: Option[NodesDeploymentData],
     // TODO: The Option is taken for this compatibility reason, but should be changed to a required field:
-    scenarioSource: Option[ScenarioGraphSource],
+    scenarioGraphSource: Option[ScenarioGraphSource],
 )

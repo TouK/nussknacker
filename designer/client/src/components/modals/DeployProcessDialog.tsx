@@ -6,8 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../http/HttpService";
-import { ScenarioGraphSourceType } from "../../http/HttpService";
-import { getGraph, getProcessName, getProcessVersionId, getScenarioLabels, isSaveDisabled } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import type { WindowKind } from "../../windowManager";
 import { PromptContent } from "../../windowManager";
@@ -41,13 +40,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const [validationError, setValidationError] = useState("");
     const featureSettings = useSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
-    const unsavedScenarioGraphSource: ScenarioGraphSource = {
-        type: ScenarioGraphSourceType.FROM_GRAPH,
-        scenarioGraph: useSelector(getGraph)?.scenario?.scenarioGraph,
-        scenarioLabels: useSelector(getScenarioLabels),
-    };
-    const savedScenarioGraphSource: ScenarioGraphSource = { type: ScenarioGraphSourceType.LATEST_VERSION };
-    const scenarioGraphSource: ScenarioGraphSource = useSelector(isSaveDisabled) ? savedScenarioGraphSource : unsavedScenarioGraphSource;
+    const scenarioGraphSource: ScenarioGraphSource = useSelector(getScenarioGraphSource);
 
     const confirmAction = useCallback(async () => {
         const response = await action(processName, processVersionId, comment, null, scenarioGraphSource);
