@@ -422,27 +422,8 @@ class NodeCompiler(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, CompiledExpression] = {
     expressionCompiler
-      .compile(expression, Some(MockExpressionParameterName), ctx, expectedType) match {
-      case Valid(typedExpression) =>
-        // todo: this verification probably should be moved to JsonTemplateParser
-        if (typedExpression.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType)) {
-          Valid(typedExpression.expression)
-        } else {
-          val message = ExpressionTypeError(expectedType, typedExpression.typingInfo.typingResult).message
-          Invalid(
-            NonEmptyList.one(
-              ExpressionParserCompilationError(
-                message,
-                nodeId.id,
-                Some(MockExpressionParameterName),
-                expression.expression,
-                None
-              )
-            )
-          )
-        }
-      case invalid @ Invalid(_) => invalid
-    }
+      .compile(expression, Some(MockExpressionParameterName), ctx, expectedType)
+      .map(_.expression)
   }
 
   private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
