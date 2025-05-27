@@ -45,11 +45,7 @@ private[livedata] class SlidingWindowCounter[T](
   private def cleanOldBuckets(now: Long): Unit = synchronized {
     // Clean old buckets at most once per second, not on each call
     if (lastCleaned.getAndSet(now) != now) {
-      buckets
-        .keySet()
-        .asScala
-        .filter(_ < cutoff(now))
-        .foreach(buckets.remove)
+      buckets.headMap(cutoff(now)).clear()
     }
   }
 
