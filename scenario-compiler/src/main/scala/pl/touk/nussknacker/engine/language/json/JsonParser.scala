@@ -88,7 +88,7 @@ object JsonParser extends ExpressionParser {
 case class JsonExpressionTypingInfo(json: Json) extends ExpressionTypingInfo {
 
   override val typingResult: TypingResult = {
-    Typed.fromInstance(FromJsonSimpleDecoder.jsonToAny(json))
+    Typed.fromInstance(FromJsonSimpleDecoder.jsonToAnyWithOrderKeeping(json))
   }
 
 }

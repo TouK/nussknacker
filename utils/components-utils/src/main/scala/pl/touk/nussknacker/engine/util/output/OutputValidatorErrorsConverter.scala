@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 class OutputValidatorErrorsConverter(schemaParamName: ParameterName) {
 
@@ -17,11 +18,10 @@ class OutputValidatorErrorsConverter(schemaParamName: ParameterName) {
     val redundantFieldsError = errors.collect { case e: OutputValidatorRedundantFieldsError => e }.flatMap(_.fields)
     val typeFieldsError = errors
       .collect { case e: OutputValidatorTypeError => e }
-      .groupBy(err => (err.field, err.actual))
+      .orderedGroupBy(err => (err.field, err.actual))
       .map { case ((field, actual), errors) =>
         OutputValidatorGroupTypeError(field, actual, errors.map(_.expected).distinct)
       }
-      .toList
 
     val messageTypeFieldErrors = typeFieldsError.map(err =>
       s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual: '${err.displayActual}' expected: '${err.displayExpected}'"

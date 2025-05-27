@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.util.output._
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -112,7 +113,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       schema: Schema,
       path: Option[String]
   ): Validated[NonEmptyList[OutputValidatorError], Unit] = {
-    val schemaFields = schema.getFields.asScala.map(field => field.name() -> field).toMap
+    val schemaFields = ListMap(schema.getFields.asScala.toList.map(field => field.name() -> field).sortBy(_._1): _*)
 
     val requiredFieldNames = if (validationMode == ValidationMode.strict) {
       schemaFields.values.map(_.name())

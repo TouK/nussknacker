@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
+    enableSingleParameterWithTemplateInsteadOfDynamicForm: Boolean,
     namingStrategy: NamingStrategy,
     liveDataPreviewMode: LiveDataPreviewMode,
     // TODO: we should parse this underlying config as ModelConfig class fields instead of passing raw config
@@ -24,6 +25,8 @@ object ModelConfig {
   def parse(rawModelConfig: Config): ModelConfig = {
     ModelConfig(
       allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
+      enableSingleParameterWithTemplateInsteadOfDynamicForm =
+        rawModelConfig.getOrElse[Boolean]("enableSingleParameterWithTemplateInsteadOfDynamicForm", false),
       namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
       liveDataPreviewMode = parseLiveDataPreviewMode(rawModelConfig),
       underlyingConfig = rawModelConfig,
