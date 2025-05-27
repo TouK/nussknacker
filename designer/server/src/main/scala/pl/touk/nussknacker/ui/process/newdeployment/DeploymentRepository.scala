@@ -129,8 +129,10 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
         .filter(d =>
           d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= status.problemDescription || d.startedAt =!= maybeStartedAt)
         )
-        .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt, d.startedAt))
-        .update((status.name, status.problemDescription, Timestamp.from(clock.instant()), maybeStartedAt))
+        .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt, d.startedAt, d.scenarioVersionId))
+        .update(
+          (status.name, status.problemDescription, Timestamp.from(clock.instant()), maybeStartedAt, status.version)
+        )
         .map(_ > 0)
     )
   }
