@@ -58,7 +58,6 @@ object AvroSchemaBasedParameter {
         Invalid(
           NonEmptyList.one(
             CustomNodeError(
-              nodeId.id,
               s"""Record field name is restricted. Restricted names are ${restrictedParamNames
                   .map(_.value)
                   .mkString(", ")}""",
@@ -67,7 +66,7 @@ object AvroSchemaBasedParameter {
           )
         )
       } else {
-        val listOfValidatedParams = recordFields.map { recordField =>
+        val listOfValidatedParams = recordFields.sortBy(_.name()).map { recordField =>
           val fieldName = recordField.name()
           // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
           val concatName = ParameterName(paramName.map(pn => s"${pn.value}.$fieldName").getOrElse(fieldName))

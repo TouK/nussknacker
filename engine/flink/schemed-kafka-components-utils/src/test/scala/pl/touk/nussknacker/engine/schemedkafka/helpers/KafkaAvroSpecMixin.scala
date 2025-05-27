@@ -108,11 +108,15 @@ trait KafkaAvroSpecMixin
     }
   }
 
-  protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
+  protected def universalSinkFactory(
+      enableSingleParameterWithTemplateInsteadOfDynamicForm: Boolean
+  ): UniversalKafkaSinkFactory = {
     new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelConfig,
+      testModelConfig.copy(enableSingleParameterWithTemplateInsteadOfDynamicForm =
+        enableSingleParameterWithTemplateInsteadOfDynamicForm
+      ),
       FlinkKafkaUniversalSinkImplFactory
     )
   }

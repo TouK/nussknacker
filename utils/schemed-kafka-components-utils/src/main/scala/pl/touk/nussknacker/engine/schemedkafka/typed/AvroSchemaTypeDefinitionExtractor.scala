@@ -33,6 +33,7 @@ class AvroSchemaTypeDefinitionExtractor(recordUnderlyingType: TypedClass) {
       case Schema.Type.RECORD => {
         val fields = schema.getFields.asScala
           .map(field => field.name() -> typeDefinition(field.schema()))
+          .sortBy(_._1)
 
         Typed.record(fields, recordUnderlyingType)
       }

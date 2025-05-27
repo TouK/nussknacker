@@ -88,7 +88,7 @@ object JsonSchemaBasedParameter {
         schema: ObjectSchema,
         paramName: Option[ParameterName],
         isRequired: Option[Boolean]
-    ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+    ): ValidatedNel[ProcessCompilationError, SchemaBasedRecordParameter] = {
       import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
       val listOfValidatedParams
