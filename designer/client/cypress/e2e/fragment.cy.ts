@@ -177,6 +177,8 @@ describe("Fragment", () => {
             cy.get("@window")
                 .contains(/^apply$/i)
                 .click();
+
+            cy.get("@window").should("not.exist");
             cy.verifySaveIndicator();
             cy.contains(/^save$/i).click();
             cy.contains(/^ok$/i).click();
