@@ -218,7 +218,7 @@ object KafkaSourceFactory {
   case class KafkaTestParametersInfo(parametersDefinition: List[Parameter], createTestRecord: Any => TestRecord)
 
   object KafkaTestParametersInfo {
-    def empty: KafkaTestParametersInfo = KafkaTestParametersInfo(Nil, _ => TestRecord(Json.Null))
+    def empty: KafkaTestParametersInfo = KafkaTestParametersInfo(Nil, _ => TestRecord(Json.Null, None))
   }
 
   trait KafkaSourceImplFactory[K, V] {

@@ -17,7 +17,7 @@ class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenProp
   object EmptyRecordFormatter extends RecordFormatter {
 
     override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
-      TestRecord(Json.Null)
+      TestRecord(Json.Null, Some(record.timestamp()))
 
     override def parseRecord(
         topic: TopicName.ForSource,

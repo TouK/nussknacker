@@ -920,7 +920,7 @@ object SampleNodes {
         override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
         override def generateTestData(size: Int): TestData = TestData(
-          elementsValue.map(e => TestRecord(Json.fromString(e)))
+          elementsValue.map(e => TestRecord(Json.fromString(e), None))
         )
 
         override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>

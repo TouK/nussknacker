@@ -298,7 +298,8 @@ class UniversalKafkaSourceFactory(
         None,
         runtimeSchema.schemaIdOpt,
         serializedConsumerRecord
-      ).asJson
+      ).asJson,
+      serializedConsumerRecord.timestamp
     )
   }
 

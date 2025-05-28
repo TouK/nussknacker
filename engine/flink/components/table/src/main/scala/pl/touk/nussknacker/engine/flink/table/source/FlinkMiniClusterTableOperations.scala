@@ -60,7 +60,7 @@ class FlinkMiniClusterTableOperations(env: StreamTableEnvironment) extends LazyL
     }
     cleanup(outputFilePath)
     val rows = generatedRows.get
-    TestData(rows.map(TestRecord(_)))
+    TestData(rows.map(TestRecord(_, None)))
   }
 
   private def writeRecordsToFile(path: Path, records: List[TestRecord]): Unit = {

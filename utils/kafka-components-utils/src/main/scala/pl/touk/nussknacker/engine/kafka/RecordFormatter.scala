@@ -54,7 +54,7 @@ trait RecordFormatter extends Serializable {
 object BasicRecordFormatter extends RecordFormatter {
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
-    TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
+    TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)), Some(record.timestamp()))
 
   override def parseRecord(
       topic: TopicName.ForSource,

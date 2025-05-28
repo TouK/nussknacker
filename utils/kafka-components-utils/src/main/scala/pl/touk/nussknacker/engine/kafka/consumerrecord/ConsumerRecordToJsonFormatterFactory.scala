@@ -44,7 +44,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder: Decoder, V: Encoder: Decoder](
     val deserializedRecord = kafkaSourceDeserializationSchema.deserialize(record)
     val serializableRecord = SerializableConsumerRecord(deserializedRecord)
     val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
-    TestRecord(consumerRecordEncoder(serializableRecord))
+    TestRecord(consumerRecordEncoder(serializableRecord), serializableRecord.timestamp)
   }
 
   /**

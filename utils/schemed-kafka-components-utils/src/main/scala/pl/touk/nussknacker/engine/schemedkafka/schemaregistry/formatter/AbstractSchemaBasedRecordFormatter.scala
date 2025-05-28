@@ -55,7 +55,7 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
       valueSchemaIdOpt,
       SerializableConsumerRecord(deserializedRecord)
     )
-    TestRecord(consumerRecordEncoder(keySchemaIdOpt, valueSchemaIdOpt)(serializableRecord))
+    TestRecord(consumerRecordEncoder(keySchemaIdOpt, valueSchemaIdOpt)(serializableRecord), serializableRecord.consumerRecord.timestamp)
   }
 
   protected def deserialize(

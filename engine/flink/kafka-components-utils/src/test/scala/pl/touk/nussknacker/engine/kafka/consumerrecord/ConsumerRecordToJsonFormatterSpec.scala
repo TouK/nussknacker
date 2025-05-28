@@ -89,7 +89,8 @@ class ConsumerRecordToJsonFormatterSpec
       Json.obj(
         "key"   -> Json.obj("partOne" -> Json.fromString("abc"), "partTwo" -> Json.fromLong(2)),
         "value" -> Json.obj("id" -> Json.fromString("def"), "field" -> Json.fromString("ghi"))
-      )
+      ),
+      None
     )
     val resultObj = sampleKeyValueFormatter.parseRecord(TopicName.ForSource("topic"), testRecord)
     val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]](
@@ -103,7 +104,7 @@ class ConsumerRecordToJsonFormatterSpec
   }
 
   test("decode and format basic string-and-value-only test data using default values") {
-    val testRecord = TestRecord(Json.fromString("lorem ipsum"))
+    val testRecord = TestRecord(Json.fromString("lorem ipsum"), None)
     val resultObj  = BasicRecordFormatter.parseRecord(TopicName.ForSource("topic"), testRecord)
     val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]](
       "topic",

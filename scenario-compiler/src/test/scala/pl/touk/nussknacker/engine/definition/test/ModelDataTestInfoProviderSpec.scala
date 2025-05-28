@@ -66,7 +66,7 @@ class ModelDataTestInfoProviderSpec
 
         override def generateTestData(size: Int): TestData = TestData((for {
           number <- 1 to size
-          record = TestRecord(Json.fromString(s"record $number"))
+          record = TestRecord(Json.fromString(s"record $number"), None)
         } yield record).toList)
       }
     }

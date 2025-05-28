@@ -18,8 +18,8 @@ class LiteCsvSource(override val nodeId: NodeId)
 
   override def generateTestData(size: Int): TestData = TestData(
     List(
-      TestRecord(Json.fromString("record1|field2")),
-      TestRecord(Json.fromString("record2|field3")),
+      TestRecord(Json.fromString("record1|field2"), None),
+      TestRecord(Json.fromString("record2|field3"), None),
     )
   )
 
