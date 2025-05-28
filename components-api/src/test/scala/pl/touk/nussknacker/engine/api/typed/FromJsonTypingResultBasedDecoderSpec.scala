@@ -110,4 +110,12 @@ class FromJsonTypingResultBasedDecoderSpec
     )
   }
 
+  test("decodeValue should handle null json despite of typing") {
+    val json = Json.Null
+
+    val typedRecord = Typed.typedClass(classOf[String])
+
+    FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(null)
+  }
+
 }
