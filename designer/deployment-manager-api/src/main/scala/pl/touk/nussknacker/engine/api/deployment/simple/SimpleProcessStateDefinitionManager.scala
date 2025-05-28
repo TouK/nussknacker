@@ -39,7 +39,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   private[nussknacker] def statusDescription(status: StateStatus): String = status match {
     case s: ProblemStateStatus => s.description
-    case _: Running            => s"running version v{{ versionId }} since {{ startedAt }}"
     case _                     => SimpleStateStatus.definitions(status.name).description
   }
 
