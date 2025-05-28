@@ -203,6 +203,8 @@ class EmbeddedDeploymentManager(
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
+
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 
   override def close(): Unit = {

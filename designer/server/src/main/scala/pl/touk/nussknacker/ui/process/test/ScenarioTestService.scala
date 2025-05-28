@@ -4,6 +4,7 @@ import cats.data.EitherT
 import cats.syntax.either._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -167,6 +168,16 @@ class ScenarioTestService(
       )
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
     } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
+  }
+
+  def resultsWithCounts(
+      testResults: TestResults[Json],
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(implicit user: LoggedUser): ResultsWithCounts = {
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
   }
 
   def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {

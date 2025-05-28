@@ -64,6 +64,8 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
+
   override def close(): Unit = {}
 
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =

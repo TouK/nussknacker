@@ -149,6 +149,9 @@ object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
   ): Future[Option[JobID]] =
     Future.failed(new IllegalAccessException("This implementation shouldn't be used"))
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport =
+    throw new IllegalAccessException("This implementation shouldn't be used")
+
 }
 
 object MockDeploymentManager {

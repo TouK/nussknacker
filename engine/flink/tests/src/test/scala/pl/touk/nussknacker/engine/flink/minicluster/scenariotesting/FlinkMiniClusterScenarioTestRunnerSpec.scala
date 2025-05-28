@@ -41,6 +41,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -145,7 +146,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      val nodeResults = results.nodeResults
+      val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
       nodeResults("filter1") shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
@@ -208,7 +209,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
           .futureValue
 
-        val nodeResults = results.nodeResults
+        val nodeResults = nodeResultsWithoutTimestamp(results)
 
         nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input))
         nodeResults("out") shouldBe List(nodeResult(0, "input" -> input))
@@ -241,7 +242,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      results.nodeResults("splitId1") shouldBe List(
+      nodeResultsWithoutTimestamp(results)("splitId1") shouldBe List(
         nodeResult(
           0,
           "input" ->
@@ -276,7 +277,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      val nodeResults = results.nodeResults
+      val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
       nodeResults("cid") shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
@@ -331,7 +332,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           )
           .futureValue
 
-      val nodeResults = results.nodeResults
+      val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) should have length 5
     }
@@ -359,7 +360,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
         .futureValue
 
-      val nodeResults = results.nodeResults
+      val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) should have length 4
       nodeResults("out") should have length 2
@@ -418,7 +419,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         )
       ).futureValue
 
-      val nodeResults = results.nodeResults
+      val nodeResults = nodeResultsWithoutTimestamp(results)
 
       nodeResults(sourceNodeId) should have length 4
       nodeResults("out") should have length 2
@@ -474,7 +475,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results =
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
-      results.nodeResults(sourceNodeId) should have size 3
+      nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 3
       results.externalInvocationResults("out") shouldBe
         List(
           ExternalInvocationResult(
@@ -505,7 +506,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       val results =
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
-      results.nodeResults(sourceNodeId) should have size 1
+      nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 1
       results.externalInvocationResults("out") shouldBe
         List(
           ExternalInvocationResult(
@@ -745,7 +746,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         .runTests(process, scenarioTestData)
         .futureValue
 
-      val nodeResults = results.nodeResults
+      val nodeResults = nodeResultsWithoutTimestamp(results)
       nodeResults("source1") shouldBe List(
         nodeResult(0, "source1", "input" -> recordA),
         nodeResult(1, "source1", "input" -> recordD)
@@ -923,19 +924,19 @@ class FlinkMiniClusterScenarioTestRunnerSpec
     )
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): ResultContext[_] =
+  private def nodeResult(count: Int, vars: (String, Any)*): (String, Map[String, Json]) =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): ResultContext[Json] =
-    ResultContext(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*).mapValuesNow(variable))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): (String, Map[String, Json]) =
+    (s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*).mapValuesNow(variable))
 
   private def nodeResult(
       count: Int,
       sourceId: String,
       branchId: String,
       vars: (String, Any)*
-  ): ResultContext[Json] =
-    ResultContext(
+  ): (String, Map[String, Json]) =
+    (
       s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId",
       Map(vars: _*).mapValuesNow(variable)
     )
@@ -952,6 +953,9 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
     Json.obj("pretty" -> toJson(value))
   }
+
+  private def nodeResultsWithoutTimestamp[T](results: TestProcess.TestResults[T]) =
+    results.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }
 
 }
 

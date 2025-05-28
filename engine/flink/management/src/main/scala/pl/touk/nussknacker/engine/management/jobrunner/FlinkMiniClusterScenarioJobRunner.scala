@@ -4,8 +4,17 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelDataProvider
-import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.api.deployment.{
+  DMRunDeploymentCommand,
+  LiveDataPreviewSupport,
+  LiveDataPreviewSupported,
+  NoLiveDataPreviewSupport
+}
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
@@ -40,17 +49,43 @@ class FlinkMiniClusterScenarioJobRunner(
           conf.set(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID, jobId.toHexString)
         }
         env.configure(conf)
+        val liveDataCollectingListener =
+          modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
+            case LiveDataPreviewMode.Disabled =>
+              None
+            case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds) =>
+              Some(
+                LiveDataCollectingListenerHolder.createListenerFor(
+                  command.processVersion.processName,
+                  maxNumberOfSamples,
+                  throughputTimeWindowInSeconds
+                )
+              )
+          }
         val jobID = jobInvoker
           .invokeStaticMethod(
             modelDataProvider.getCurrentModelData(),
             command.canonicalProcess,
             command.processVersion,
             command.deploymentData,
-            env
+            env,
+            liveDataCollectingListener.toList,
           )
           .getJobID
         Some(jobID)
       }
+    }
+  }
+
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = {
+    modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
+      case LiveDataPreviewMode.Enabled(_, _) =>
+        new LiveDataPreviewSupported {
+          override def getLiveData(processIdWithName: ProcessIdWithName): Future[Either[LiveDataError, LiveData]] =
+            Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
+        }
+      case LiveDataPreviewMode.Disabled =>
+        NoLiveDataPreviewSupport
     }
   }
 

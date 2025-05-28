@@ -153,6 +153,10 @@ object MockableDeploymentManagerProvider {
 
     override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+    override def liveDataPreviewSupport: LiveDataPreviewSupport = {
+      configurator.liveDataPreviewSupport.get()
+    }
+
     override def managerSpecificScenarioActivities(
         processIdWithName: ProcessIdWithName,
         after: Option[Instant],
@@ -178,6 +182,8 @@ object MockableDeploymentManagerProvider {
       new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
     private[MockableDeploymentManagerProvider] val managerSpecificScenarioActivities =
       new AtomicReference[List[ScenarioActivity]](List.empty)
+    private[MockableDeploymentManagerProvider] val liveDataPreviewSupport =
+      new AtomicReference[LiveDataPreviewSupport](NoLiveDataPreviewSupport)
 
     def configureScenarioStatuses(scenarioStates: Map[ScenarioName, DeploymentStatus]): Unit = {
       scenarioStatuses.set(scenarioStates)
@@ -195,11 +201,16 @@ object MockableDeploymentManagerProvider {
       managerSpecificScenarioActivities.set(scenarioActivities)
     }
 
+    def configureLiveDataPreviewSupport(support: LiveDataPreviewSupport): Unit = {
+      liveDataPreviewSupport.set(support)
+    }
+
     def clean(): Unit = {
       scenarioStatuses.set(Map.empty)
       deploymentResults.set(Map.empty)
       testResults.set(Map.empty)
       managerSpecificScenarioActivities.set(List.empty)
+      liveDataPreviewSupport.set(NoLiveDataPreviewSupport)
     }
 
   }

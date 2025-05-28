@@ -152,7 +152,8 @@ describe("Process", () => {
                 });
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
             //why save and test snapshot? mistake?
-            cy.contains(/^save\*$/i).click();
+            cy.verifySaveIndicator();
+            cy.contains(/^save$/i).click();
             cy.get("[data-testid=window]").contains(/^ok$/i).click();
             cy.get("[data-testid=window]").should("not.exist");
             cy.get("#nk-graph-main").should("be.visible");

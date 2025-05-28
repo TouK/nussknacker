@@ -64,6 +64,8 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
+
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
     new DeploymentsStatusesQueryForAllScenariosSupported {
 

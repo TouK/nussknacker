@@ -15,10 +15,13 @@ type SettingsNames =
     | "node.autoApply"
     | "node.showGenerateEndpointButton"
     | "node.showSendRequestButton"
+    | "node.showMockFieldOnEnrichers"
     | "cloud.showIntegrationsCreators"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
-    | "debug.userSettingsVisible";
+    | "debug.userSettingsVisible"
+    | "scenario.allowQuickSave"
+    | "scenario.allowQuickDeploy";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
@@ -34,11 +37,14 @@ const getDefaultUserSettings = (): UserSettings => ({
     "node.showGenerateEndpointButton": getInitialUserFlag("node.showGenerateEndpointButton"),
     "node.showSendRequestButton": getInitialUserFlag("node.showSendRequestButton"),
     "node.autoApply": getInitialUserFlag("node.autoApply"),
+    "node.showMockFieldOnEnrichers": getInitialUserFlag("node.showMockFieldOnEnrichers"),
     "cloud.showIntegrationsCreators": getInitialUserFlag("cloud.showIntegrationsCreators"),
     "debug.nodesAsJson": getInitialUserFlag("debug.nodesAsJson"),
     "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
     "debug.userSettingsVisible": getInitialUserFlag("debug.userSettingsVisible", isDev),
     "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines", true),
+    "scenario.allowQuickSave": getInitialUserFlag("scenario.allowQuickSave"),
+    "scenario.allowQuickDeploy": getInitialUserFlag("scenario.allowQuickDeploy"),
 });
 
 /**

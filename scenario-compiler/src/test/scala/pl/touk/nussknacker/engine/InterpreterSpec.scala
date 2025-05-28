@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.RuntimeMode.{Live, Test}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
@@ -44,6 +45,7 @@ import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefini
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -107,6 +109,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       transaction: Transaction,
       additionalComponents: List[ComponentDefinition] = servicesDef,
       listeners: Seq[ProcessListener] = listenersDef(),
+      runtimeMode: RuntimeMode = RuntimeMode.Live
   ): Any = {
     import Interpreter._
 
@@ -115,7 +118,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     val processCompilerData =
-      prepareCompilerData(jobData, additionalComponents, listeners)
+      prepareCompilerData(jobData, additionalComponents, listeners, runtimeMode)
     val interpreter = processCompilerData.interpreter
     implicit val engineScenarioCompilationDependencies: EngineScenarioCompilationDependencies =
       EngineScenarioCompilationDependencies.empty
@@ -179,7 +182,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
   def prepareCompilerData(
       jobData: JobData,
       additionalComponents: List[ComponentDefinition],
-      listeners: Seq[ProcessListener]
+      listeners: Seq[ProcessListener],
+      runtimeMode: RuntimeMode
   ): ProcessCompilerData = {
     val components =
       ComponentDefinition("transaction-source", TransactionSource) ::
@@ -209,7 +213,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       listeners,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
-      RuntimeMode.Live,
+      runtimeMode,
       CustomProcessValidatorLoader.emptyCustomProcessValidator,
       NodesDeploymentData.empty,
     )
@@ -1017,6 +1021,80 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val result = interpretProcess(process, Transaction())
     result shouldBe Collections.singletonMap("bool", false)
+  }
+
+  test("should invoke enricher in case of live mode even if mocked output is configured") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = "'2222'".spel,
+        params = "param1" -> "1111".spel
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(), runtimeMode = Live) should equal("1111")
+  }
+
+  test(
+    "should use configured mocked output as output instead of invoking enricher in case of test mode - spel expression case"
+  ) {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = "'2222'".spel,
+        params = "param1" -> "1111".spel
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(), runtimeMode = Test) should equal("2222")
+  }
+
+  test(
+    "should use configured mocked output as output instead of invoking enricher in case of test mode - json template expression case"
+  ) {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = Expression(Language.JsonTemplate, "\"2222\""),
+        params = "param1" -> "1111".spel
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(), runtimeMode = Test) should equal("2222")
+  }
+
+  test(
+    "should use configured mocked output as output instead of invoking enricher in case of test mode - json template null expression case"
+  ) {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricherWithMockExpression(
+        "ex",
+        "out",
+        "withExplicitMethod",
+        mockExpression = Expression(Language.JsonTemplate, "null"),
+        params = "param1" -> "1111".spel
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(), runtimeMode = Test) shouldBe null.asInstanceOf[String]
   }
 
   test("inject fixed additional variable") {

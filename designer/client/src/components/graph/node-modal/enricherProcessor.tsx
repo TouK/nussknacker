@@ -2,9 +2,11 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type ProcessUtils from "../../../common/ProcessUtils";
+import { useUserSettings } from "../../../common/userSettings";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { DisableField } from "./DisableField";
+import MockExpressionField from "./editors/expression/MockExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
@@ -34,6 +36,10 @@ export function EnricherProcessor({
     showValidation?: boolean;
 }): JSX.Element {
     const { t } = useTranslation();
+    const [settings] = useUserSettings();
+    const showMockFieldOnEnrichers = settings["node.showMockFieldOnEnrichers"];
+
+    const showMockField = showMockFieldOnEnrichers && node.type === "Enricher" && node.service.id !== "decision-table";
 
     return (
         <>
@@ -89,6 +95,17 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     errors={errors}
                 />
+                {showMockField ? (
+                    <MockExpressionField
+                        isEditMode={isEditMode}
+                        editedNode={node}
+                        showValidation={showValidation}
+                        showSwitch={showSwitch}
+                        findAvailableVariables={findAvailableVariables}
+                        setNodeDataAt={setProperty}
+                        errors={errors}
+                    />
+                ) : null}
             </ParametersListAdvanced>
         </>
     );
