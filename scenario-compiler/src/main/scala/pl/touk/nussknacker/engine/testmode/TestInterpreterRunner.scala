@@ -11,7 +11,7 @@ object TestInterpreterRunner {
    * occur a situation where designer with its classLoader tries to encode value with e.g. is loaded by Flink's encoder
    * and in this case there is loaders conflict
    */
-  private[testmode] def testResultsVariableEncoder: Any => io.circe.Json = {
+  private[engine] def testResultsVariableEncoder: Any => io.circe.Json = {
     lazy val encoder = ToJsonEncoder(failOnUnknown = false, Thread.currentThread().getContextClassLoader)
     def encode(a: Any): Json = a match {
       case scenarioGraph: DisplayJson =>

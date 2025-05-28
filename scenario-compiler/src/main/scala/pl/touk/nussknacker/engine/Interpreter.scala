@@ -5,6 +5,7 @@ import cats.effect.IO
 import cats.syntax.all._
 import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.Interpreter._
+import pl.touk.nussknacker.engine.RuntimeMode.Test
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -143,7 +144,10 @@ private class InterpreterInternal[F[_]: Monad](
               interpretationResult(node, FragmentEndReference(id, fields), newCtx)
             }
           )
-      case Enricher(_, ref, outName, next) =>
+      case Enricher(_, _, outName, next, Some(mockedOutput)) if runtimeMode == Test =>
+        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](mockedOutput, outName, node.id, ctx)
+        interpretOptionalNext(node, next, ctx.withVariable(outName, valueWithModifiedContext.value))
+      case Enricher(_, ref, outName, next, _) =>
         invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) =>
             interpretOptionalNext(node, next, newCtx.withVariable(outName, out))

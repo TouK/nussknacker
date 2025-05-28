@@ -43,6 +43,7 @@ class FlinkScenarioMain(preprocessArgs: Array[String] => Array[String]) extends 
         processVersion,
         deploymentData,
         StreamExecutionEnvironment.getExecutionEnvironment,
+        List.empty,
       )
     } catch {
       // marker exception for graph optimalization

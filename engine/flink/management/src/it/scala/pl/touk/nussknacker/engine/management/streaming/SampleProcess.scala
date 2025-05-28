@@ -19,6 +19,21 @@ object SampleProcess {
       .emptySink("endSend", "sendSms", "Value" -> "'message'".spel)
   }
 
+  def prepareProcessWithEventGeneratorSource(name: ProcessName, parallelism: Option[Int] = None): CanonicalProcess = {
+    val baseProcessBuilder = ScenarioBuilder.streaming(name.value)
+    parallelism
+      .map(baseProcessBuilder.parallelism)
+      .getOrElse(baseProcessBuilder)
+      .source(
+        "start",
+        "event-generator",
+        "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+        "count"    -> "1".spel,
+        "value"    -> s"'abrakadabra'".spel
+      )
+      .emptySink("endSend", "sendSms", "Value" -> "'message'".spel)
+  }
+
   def kafkaProcess(name: ProcessName, topic: String): CanonicalProcess = {
     ScenarioBuilder
       .streaming(name.value)

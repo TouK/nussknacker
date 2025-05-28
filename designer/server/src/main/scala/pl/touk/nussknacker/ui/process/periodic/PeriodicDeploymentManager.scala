@@ -261,6 +261,8 @@ class PeriodicDeploymentManager private[periodic] (
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = delegate.liveDataPreviewSupport
+
   override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
     delegate.scenarioCompilationDependenciesResource
 

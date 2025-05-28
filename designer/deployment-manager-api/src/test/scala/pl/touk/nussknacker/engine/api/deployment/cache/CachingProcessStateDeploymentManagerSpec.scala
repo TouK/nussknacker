@@ -32,6 +32,7 @@ class CachingProcessStateDeploymentManagerSpec
       NoDeploymentSynchronisationSupport,
       NoDeploymentsStatusesQueryForAllScenariosSupport,
       NoSchedulingSupport,
+      NoLiveDataPreviewSupport,
     )
 
     val results = List(
@@ -52,6 +53,7 @@ class CachingProcessStateDeploymentManagerSpec
       NoDeploymentSynchronisationSupport,
       NoDeploymentsStatusesQueryForAllScenariosSupport,
       NoSchedulingSupport,
+      NoLiveDataPreviewSupport,
     )
 
     val firstInvocation = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.CanBeCached)
@@ -71,6 +73,7 @@ class CachingProcessStateDeploymentManagerSpec
       NoDeploymentSynchronisationSupport,
       NoDeploymentsStatusesQueryForAllScenariosSupport,
       NoSchedulingSupport,
+      NoLiveDataPreviewSupport,
     )
 
     val resultForFresh = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh)

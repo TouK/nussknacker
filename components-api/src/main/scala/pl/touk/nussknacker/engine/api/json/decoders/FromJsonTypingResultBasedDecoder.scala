@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.json.decoders
 
 import cats.implicits.toTraverseOps
-import io.circe.{ACursor, Decoder, DecodingFailure, Json}
+import io.circe.{ACursor, Decoder, DecodingFailure, HCursor, Json}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.math.BigInteger
@@ -27,18 +27,19 @@ object FromJsonTypingResultBasedDecoder {
   private val periodClass        = Typed.typedClass[Period]
 
   def decodeValue(typ: TypingResult, obj: ACursor): Decoder.Result[Any] = typ match {
-    case TypedObjectWithValue(_, value) => Right(value)
-    case TypedNull                      => Right(null)
-    case `intClass`                     => obj.as[Int]
-    case `shortClass`                   => obj.as[Short]
-    case `longClass`                    => obj.as[Long]
-    case `floatClass`                   => obj.as[Float]
-    case `doubleClass`                  => obj.as[Double]
-    case `booleanClass`                 => obj.as[Boolean]
-    case `stringClass`                  => obj.as[String]
-    case `byteClass`                    => obj.as[Byte]
-    case `bigIntegerClass`              => obj.as[BigInteger]
-    case `bigDecimalClass`              => obj.as[java.math.BigDecimal]
+    case _ if obj.isInstanceOf[HCursor] && obj.asInstanceOf[HCursor].value == Json.Null => Right(null)
+    case TypedNull                                                                      => Right(null)
+    case TypedObjectWithValue(_, value)                                                 => Right(value)
+    case `intClass`                                                                     => obj.as[Int]
+    case `shortClass`                                                                   => obj.as[Short]
+    case `longClass`                                                                    => obj.as[Long]
+    case `floatClass`                                                                   => obj.as[Float]
+    case `doubleClass`                                                                  => obj.as[Double]
+    case `booleanClass`                                                                 => obj.as[Boolean]
+    case `stringClass`                                                                  => obj.as[String]
+    case `byteClass`                                                                    => obj.as[Byte]
+    case `bigIntegerClass`                                                              => obj.as[BigInteger]
+    case `bigDecimalClass`                                                              => obj.as[java.math.BigDecimal]
 
     case `localDateTimeClass` => obj.as[String].map(LocalDateTime.parse(_, DateTimeFormatter.ISO_LOCAL_DATE_TIME))
     case `localDateClass`     => obj.as[String].map(LocalDate.parse(_, DateTimeFormatter.ISO_LOCAL_DATE))

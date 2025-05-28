@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.util.test._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
+import java.time.Instant
 import scala.reflect.ClassTag
 
 object LiteTestScenarioRunner {
@@ -87,7 +88,7 @@ class LiteTestScenarioRunner(
     runWithDataReturningDetails(scenario, data, NodesDeploymentData.empty)
       .map { case (errors, endResults) =>
         RunListResult(
-          errors.map(ExceptionResult.fromNuExceptionInfo(_, identity)),
+          errors.map(ExceptionResult.fromNuExceptionInfo(_, Instant.now(), identity)),
           endResults.map(_.result.asInstanceOf[OUTPUT])
         )
       }

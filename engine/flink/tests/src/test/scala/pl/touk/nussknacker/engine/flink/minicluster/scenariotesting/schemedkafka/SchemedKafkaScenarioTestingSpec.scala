@@ -36,6 +36,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, VeryPatientScalaFutures}
@@ -199,14 +200,14 @@ class SchemedKafkaScenarioTestingSpec
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
 
-    results.nodeResults("fragment1").loneElement shouldBe ResultContext(
+    nodeResults(results, "fragment1").loneElement shouldBe (
       "fragment1-fragment1-0-0",
       Map(
         "in" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
       )
     )
 
-    results.nodeResults("fragmentEnd").loneElement shouldBe ResultContext(
+    nodeResults(results, "fragmentEnd").loneElement shouldBe (
       "fragment1-fragment1-0-0",
       Map(
         "in"  -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id"))),
@@ -228,6 +229,9 @@ class SchemedKafkaScenarioTestingSpec
     val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
     schemaRegistryMockClient.register(subject, parsedSchema)
   }
+
+  private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
+    results.nodeResults(key).map(r => (r.id, r.variables))
 
 }
 

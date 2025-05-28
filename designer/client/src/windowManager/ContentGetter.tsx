@@ -40,7 +40,7 @@ const GenericConfirmDialog = loadable(() => import("../components/modals/Generic
 const GenericInfoDialog = loadable(() => import("../components/modals/GenericInfoDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const SaveProcessDialog = loadable(() => import("../components/modals/SaveProcessDialog"), {
+const SaveProcessDialog = loadable(() => import("../components/modals/saveScenario/SaveScenarioDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const GenerateTestDataDialog = loadable(() => import("../components/modals/GenerateTestDataDialog"), {
