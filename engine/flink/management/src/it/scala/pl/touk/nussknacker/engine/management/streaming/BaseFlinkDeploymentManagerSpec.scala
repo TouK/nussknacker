@@ -85,13 +85,9 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       deploymentId = deploymentId
     )
     try {
-      deploymentStatus(processName) shouldBe List(
-        DeploymentStatusDetails(
-          status = SimpleStateStatus.Running,
-          deploymentId = Some(deploymentId),
-          version = Some(version)
-        )
-      )
+      deploymentStatus(processName) should matchPattern {
+        case List(DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`))) =>
+      }
 
       eventually {
         if (useMiniClusterForDeployment) {
