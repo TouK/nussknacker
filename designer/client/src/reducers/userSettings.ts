@@ -19,7 +19,9 @@ type SettingsNames =
     | "cloud.showIntegrationsCreators"
     | "debug.nodesAsJson"
     | "debug.forceDisableModals"
-    | "debug.userSettingsVisible";
+    | "debug.userSettingsVisible"
+    | "scenario.allowQuickSave"
+    | "scenario.allowQuickDeploy";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
@@ -41,6 +43,8 @@ const getDefaultUserSettings = (): UserSettings => ({
     "debug.forceDisableModals": getInitialUserFlag("debug.forceDisableModals"),
     "debug.userSettingsVisible": getInitialUserFlag("debug.userSettingsVisible", isDev),
     "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines", true),
+    "scenario.allowQuickSave": getInitialUserFlag("scenario.allowQuickSave"),
+    "scenario.allowQuickDeploy": getInitialUserFlag("scenario.allowQuickDeploy"),
 });
 
 /**

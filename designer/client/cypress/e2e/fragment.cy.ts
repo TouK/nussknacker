@@ -177,7 +177,10 @@ describe("Fragment", () => {
             cy.get("@window")
                 .contains(/^apply$/i)
                 .click();
-            cy.contains(/^save\*$/i).click();
+
+            cy.get("@window").should("not.exist");
+            cy.verifySaveIndicator();
+            cy.contains(/^save$/i).click();
             cy.contains(/^ok$/i).click();
 
             exportToFixture("fragmentWithInput");
@@ -333,7 +336,10 @@ describe("Fragment", () => {
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
-            cy.contains(/^save\*$/i).click();
+
+            cy.get("@window").should("not.exist");
+            cy.verifySaveIndicator();
+            cy.contains(/^save$/i).click();
             cy.contains(/^ok$/i).click();
             cy.get("@window").should("not.exist");
 
@@ -355,7 +361,10 @@ describe("Fragment", () => {
             cy.get("@window")
                 .contains(/^apply$/i)
                 .click();
-            cy.contains(/^save\*$/i).click();
+
+            cy.get("@window").should("not.exist");
+            cy.verifySaveIndicator();
+            cy.contains(/^save$/i).click();
             cy.contains(/^ok$/i).click();
 
             // Go back to the Scenario
@@ -470,7 +479,8 @@ describe("Fragment", () => {
         });
         cy.layoutScenario();
 
-        cy.contains(/^save\*$/i).click();
+        cy.verifySaveIndicator();
+        cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
 
         cy.visitProcess("@fragmentName");
@@ -494,7 +504,8 @@ describe("Fragment", () => {
         cy.get("@output").click({ force: true }).type("{backspace}");
         cy.layoutScenario();
 
-        cy.contains(/^save\*$/i).click();
+        cy.verifySaveIndicator();
+        cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
         cy.contains(/^save$/i).should("be.disabled");
 
