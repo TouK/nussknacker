@@ -941,7 +941,13 @@ class HttpService {
                     }),
                 ),
             )
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true));
+            .catch((error) =>
+                this.#addError(
+                    i18next.t("notification.error.failedToMigrate", "Failed to migrate: {{ cause }}", { cause: error.response.data }),
+                    error,
+                    true,
+                ),
+            );
     }
 
     fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
