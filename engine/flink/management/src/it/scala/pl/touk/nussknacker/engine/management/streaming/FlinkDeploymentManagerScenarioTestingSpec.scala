@@ -57,6 +57,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
     super.afterAll()
   }
 
+  // TODO_PAWEL tutaj mamy jakis sobie tam test
   it should "run scenario in test mode" in {
     val processName    = ProcessName(UUID.randomUUID().toString)
     val processVersion = ProcessVersion.empty.copy(processName = processName)

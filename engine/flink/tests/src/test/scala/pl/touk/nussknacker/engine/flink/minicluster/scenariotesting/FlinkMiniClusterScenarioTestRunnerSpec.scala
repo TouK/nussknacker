@@ -49,6 +49,8 @@ import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
+
+// TODO_PAWEL te testy chyba sa dobre
 class FlinkMiniClusterScenarioTestRunnerSpec
     extends AnyWordSpec
     with Matchers
