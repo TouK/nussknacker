@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.{
@@ -33,10 +32,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaBasedSerdeProvider,
   SchemaRegistryClientFactory
 }
-import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.{
-  convertGenericRecordParam,
-  TransformationState
-}
+import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
@@ -56,22 +52,6 @@ object UniversalKafkaSinkFactory {
       validators = List(MandatoryParameterValidator)
     )
   )
-
-  private def convertGenericRecordParam(parameters: List[Parameter]): List[Parameter] = {
-    def convertTyping(fieldTyping: TypingResult): TypingResult = fieldTyping match {
-      case typed @ TypedObjectTypingResult(fields, TypedClass(`genericRecordClass`, Nil), _) =>
-        typed
-          .copy(
-            fields = fields.map { case (id, typing) => id -> convertTyping(typing) },
-            runtimeObjType = Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown))
-          )
-      case typing => typing
-    }
-
-    parameters.map { parameter =>
-      parameter.copy(typ = convertTyping(parameter.typ))
-    }
-  }
 
   case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], schemaBasedParameter: SchemaBasedParameter)
 }
@@ -263,7 +243,7 @@ class UniversalKafkaSinkFactory(
               if (valueParam.toParameters.isEmpty) {
                 FinalResults(context, Nil, Some(state))
               } else {
-                NextParameters(convertGenericRecordParam(valueParam.toParameters), state = Some(state))
+                NextParameters(valueParam.toParameters, state = Some(state))
               }
             }
         }

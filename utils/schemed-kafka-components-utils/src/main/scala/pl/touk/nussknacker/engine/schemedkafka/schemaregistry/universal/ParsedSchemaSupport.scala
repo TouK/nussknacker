@@ -35,7 +35,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
-import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.schemedkafka.typed.{
+  AvroSchemaTypeDefinitionExtractor,
+  AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
+}
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
@@ -114,7 +117,14 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
       rawParameter: Parameter,
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParameter(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+    extractParameter(
+      schema,
+      rawMode,
+      validationMode,
+      rawParameter,
+      restrictedParamNames,
+      AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
+    )
 
   override def extractParameterForTests(schema: ParsedSchema)(
       implicit nodeId: NodeId
@@ -132,7 +142,8 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
       rawMode: Boolean,
       validationMode: ValidationMode,
       rawParameter: Parameter,
-      restrictedParamNames: Set[ParameterName]
+      restrictedParamNames: Set[ParameterName],
+      avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor = AvroSchemaTypeDefinitionExtractor
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     if (rawMode) {
       Validated.Valid(
@@ -142,7 +153,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
         )
       )
     } else {
-      AvroSchemaBasedParameter(schema.cast().rawSchema(), restrictedParamNames)
+      AvroSchemaBasedParameter(schema.cast().rawSchema(), restrictedParamNames, avroSchemaTypeDefinitionExtractor)
     }
   }
 

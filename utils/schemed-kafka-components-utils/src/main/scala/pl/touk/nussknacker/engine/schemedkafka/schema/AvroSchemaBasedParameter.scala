@@ -28,16 +28,27 @@ object AvroSchemaBasedParameter {
   /*
     We extract editor form from Avro schema
    */
-  def apply(schema: Schema, restrictedParamNames: Set[ParameterName])(
+  def apply(
+      schema: Schema,
+      restrictedParamNames: Set[ParameterName],
+      avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor
+  )(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    toSchemaBasedParameter(schema, paramName = None, defaultValue = None, restrictedParamNames = restrictedParamNames)
+    toSchemaBasedParameter(
+      schema,
+      paramName = None,
+      defaultValue = None,
+      restrictedParamNames = restrictedParamNames,
+      avroSchemaTypeDefinitionExtractor
+    )
 
   private def toSchemaBasedParameter(
       schema: Schema,
       paramName: Option[ParameterName],
       defaultValue: Option[Expression],
-      restrictedParamNames: Set[ParameterName]
+      restrictedParamNames: Set[ParameterName],
+      avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
@@ -65,7 +76,8 @@ object AvroSchemaBasedParameter {
               schema = recordField.schema(),
               paramName = Some(concatName),
               defaultValue,
-              restrictedParamNames
+              restrictedParamNames,
+              avroSchemaTypeDefinitionExtractor
             )
           }
           sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
@@ -73,7 +85,7 @@ object AvroSchemaBasedParameter {
         listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SchemaBasedRecordParameter)
       }
     } else {
-      Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue))
+      Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue, avroSchemaTypeDefinitionExtractor))
     }
   }
 
@@ -96,9 +108,10 @@ object AvroSinkSingleValueParameter {
   def apply(
       paramName: Option[ParameterName],
       schema: Schema,
-      defaultValue: Option[Expression]
+      defaultValue: Option[Expression],
+      avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor
   ): SingleSchemaBasedParameter = {
-    val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val typing = avroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val name   = paramName.getOrElse(sinkValueParamName)
     val parameter = (
       if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
