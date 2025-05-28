@@ -236,7 +236,7 @@ describe("Fragment", () => {
             //     });
         });
 
-        it.only("should validate and save changes", function () {
+        it("should validate and save changes", function () {
             cy.createTestFragment(seed, "fragmentWithInput").as("fragmentName");
             cy.visitNewProcess(seed, "testProcess").as("processName");
 
