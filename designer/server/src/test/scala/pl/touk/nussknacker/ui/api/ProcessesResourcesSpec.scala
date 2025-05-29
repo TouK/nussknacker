@@ -64,6 +64,7 @@ import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 
+import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
@@ -95,10 +96,11 @@ class ProcessesResourcesSpec
   //       the RouteInterceptor and its usages
   private lazy val applicationRoute = RouteInterceptor.get()
 
-  private val processName: ProcessName = ProcessTestData.sampleProcessName
-  private val archivedProcessName      = ProcessName("archived")
-  private val fragmentName             = ProcessName("fragment")
-  private val archivedFragmentName     = ProcessName("archived-fragment")
+  private val processName: ProcessName  = ProcessTestData.sampleProcessName
+  private val processVersion: VersionId = VersionId(0)
+  private val archivedProcessName       = ProcessName("archived")
+  private val fragmentName              = ProcessName("fragment")
+  private val archivedFragmentName      = ProcessName("archived-fragment")
 
   private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
 
@@ -110,7 +112,7 @@ class ProcessesResourcesSpec
 
   test("should return list of process with state") {
     createDeployedExampleScenario(processName, category = Category1)
-    verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
+    verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running(processVersion, Instant.now())))
   }
 
   test("should return list of fragment with no state") {
@@ -172,22 +174,25 @@ class ProcessesResourcesSpec
   }
 
   test("return single process") {
+    val status = DeploymentStatus.Running(VersionId(1), Instant.now)
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(processName.value -> status)
     )
+
+    val stateStatus = SimpleStateStatus.fromDeploymentStatus(status)
 
     forScenarioReturned(processName) { process =>
       process.name shouldBe processName.value
       process.state.map(_.name) shouldBe Some(SimpleStateStatus.Running.name)
       process.state.map(_.tooltip) shouldBe Some(
-        SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
+        SimpleProcessStateDefinitionManager.statusTooltip(stateStatus)
       )
       process.state.map(_.description) shouldBe Some(
-        SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
+        SimpleProcessStateDefinitionManager.statusDescription(stateStatus)
       )
       process.state.map(_.icon) shouldBe Some(
-        SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+        SimpleProcessStateDefinitionManager.statusIcon(stateStatus)
       )
     }
   }
@@ -277,7 +282,9 @@ class ProcessesResourcesSpec
   test("not allow to archive still running process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()),
+      )
     )
 
     archiveProcess(processName) { status =>
@@ -338,7 +345,9 @@ class ProcessesResourcesSpec
   test("should not allow to rename deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()),
+      )
     )
 
     val newName = ProcessName("ProcessChangedName")
@@ -364,7 +373,9 @@ class ProcessesResourcesSpec
   ignore("should not allow to rename process with running state") {
     createEmptyScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now())
+      )
     )
 
     val newName = ProcessName("ProcessChangedName")
@@ -597,8 +608,8 @@ class ProcessesResourcesSpec
 
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        secondProcessor.value -> BasicStatusDetails(SimpleStateStatus.Canceled, Some(VersionId(1))),
-        thirdProcessor.value  -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1)))
+        secondProcessor.value -> DeploymentStatus.Canceled,
+        thirdProcessor.value  -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now),
       )
     )
 
@@ -1251,7 +1262,9 @@ class ProcessesResourcesSpec
   test("should return status for single deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now)
+      )
     )
 
     forScenarioStatus(processName) { (code, state) =>
@@ -1381,7 +1394,9 @@ class ProcessesResourcesSpec
 
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now)
+      )
     )
 
     forScenariosReturned(ScenarioQuery.empty) { processes =>

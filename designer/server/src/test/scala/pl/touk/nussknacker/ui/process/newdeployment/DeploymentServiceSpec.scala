@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentStatusName,
   ProblemDeploymentStatus
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
@@ -85,7 +85,7 @@ class DeploymentServiceSpec
       .rightValue
 
     val status = deploymentService.getDeploymentStatus(deploymentId)(user).futureValue.rightValue
-    status.value shouldEqual DeploymentStatus.DuringDeploy
+    status.value shouldEqual DeploymentStatus.DuringDeploy(VersionId(1))
   }
 
   "deployment which ended up with failure during request should has problem status" in {
@@ -381,14 +381,18 @@ class DeploymentServiceSpec
       scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): ProcessIdWithName = {
-    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Running))
+    prepareScenarioInStatus(
+      scenarioName,
+      processingType,
+      Some(DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()))
+    )
   }
 
   private def prepareDuringDeployScenario(
       scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): ProcessIdWithName = {
-    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.DuringDeploy))
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.DuringDeploy(VersionId(1))))
   }
 
   private def prepareRestartingScenario(
@@ -416,7 +420,7 @@ class DeploymentServiceSpec
       scenarioName: String,
       processingType: TestProcessingType = Streaming1
   ): ProcessIdWithName = {
-    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Finished))
+    prepareScenarioInStatus(scenarioName, processingType, Some(DeploymentStatus.Finished(VersionId(0))))
   }
 
   private def prepareScenarioWithProblem(

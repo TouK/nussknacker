@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
+import { useUserSettings } from "../../../../common/userSettings";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
@@ -15,6 +16,10 @@ import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
 export default function CancelDeployButton(props: ToolbarButtonProps) {
+    const [settings] = useUserSettings();
+
+    const allowQuickDeploy = settings["scenario.allowQuickDeploy"];
+
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const { disabled, type } = props;
@@ -26,11 +31,11 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
     const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>
         HttpService.cancel(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
-    const message = t("panels.actions.deploy-canel.dialog", "Cancel scenario {{name}}", { name: processName });
+    const message = t("panels.actions.deploy-canel.dialog", "Stop scenario {{name}}", { name: processName });
 
     return (
         <ToolbarButton
-            name={t("panels.actions.deploy-canel.button", "cancel")}
+            name={allowQuickDeploy ? t("panels.actions.deploy-stop.button", "stop") : t("panels.actions.deploy-cancel.button", "cancel")}
             disabled={!available}
             icon={<Icon />}
             onClick={() =>

@@ -15,7 +15,8 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{
   allowedActionsPF,
   visibleActionsPF,
-  ProblemStateStatus
+  ProblemStateStatus,
+  Running
 }
 
 /**

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 
@@ -30,11 +31,14 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
       .source("startProcess", "source")
       .emptySink("endSend", "sink")
 
+    val versionId      = VersionId(4)
+    val processVersion = ProcessVersion.empty.copy(processName = process.name, versionId = versionId)
+
     assert(
       deploymentManager
         .processCommand(
           DMRunDeploymentCommand(
-            ProcessVersion.empty.copy(processName = process.name),
+            processVersion,
             DeploymentData.empty,
             process,
             DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
@@ -47,7 +51,8 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
 
     eventually {
       val jobStatus = deploymentManager.getScenarioDeploymentsStatuses(process.name).futureValue.value
-      jobStatus.map(_.status) shouldBe List(SimpleStateStatus.Running)
+      jobStatus.map(_.status) should matchPattern { case List(SimpleStateStatus.Running(`versionId`, _)) =>
+      }
     }
 
     assert(

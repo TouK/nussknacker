@@ -37,8 +37,10 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
     // here we use default set of states and apply custom extensions and overrides
     val manager = new OverridingProcessStateDefinitionManager(
       statusDescriptionsPF = {
-        case DefaultState => "Calculated description for default, e.g. schedule date"
-        case CustomState  => "Calculated description for custom, e.g. schedule date"
+        case DefaultState =>
+          "Calculated description for default, e.g. schedule date"
+        case CustomState =>
+          "Calculated description for custom, e.g. schedule date"
       },
       customStateDefinitions = Map(
         CustomState.name -> StateDefinitionDetails("Custom", icon, "dummy", "Custom description"),

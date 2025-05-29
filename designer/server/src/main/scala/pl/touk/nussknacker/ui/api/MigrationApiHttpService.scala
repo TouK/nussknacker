@@ -28,7 +28,12 @@ class MigrationApiHttpService(
       .serverLogicEitherT { implicit loggedUser => req: MigrateScenarioRequestDto =>
         EitherT
           .fromEither[Future](MigrateScenarioData.toDomain(req))
-          .flatMapF(migrationService.migrate(_))
+          .flatMapF(migrationService.migrate(_).map {
+            case left @ Left(migrationError) =>
+              logger.warn(s"Migration error: $migrationError")
+              left
+            case right => right
+          })
       }
   }
 

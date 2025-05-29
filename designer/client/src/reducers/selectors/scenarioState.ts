@@ -8,3 +8,11 @@ export const getProcessState = (state: RootState): ProcessStateType | null => st
 export const getIsRunning = createSelector(getProcessState, (state) => {
     return ["RUNNING", "SCHEDULED"].includes(state?.status?.name);
 });
+
+export const getIsDeploying = createSelector(getProcessState, (state) => {
+    return ["DURING_DEPLOY"].includes(state?.status?.name);
+});
+
+export const getIsRedeploying = createSelector(getProcessState, (state) => {
+    return ["DURING_REDEPLOY"].includes(state?.status?.name);
+});

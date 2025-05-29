@@ -15,13 +15,14 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaDat
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 
+import java.time.{Clock, Instant}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.DurationInt
@@ -32,10 +33,14 @@ object RequestResponseDeploymentStrategy {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  def apply(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
+  def apply(
+      config: Config,
+      clock: Clock
+  )(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
     new RequestResponseDeploymentStrategy(
       config.as[HttpBindingConfig]("http"),
-      config.as[RequestResponseConfig]("request-response")
+      config.as[RequestResponseConfig]("request-response"),
+      clock
     )
   }
 
@@ -53,7 +58,7 @@ object RequestResponseDeploymentStrategy {
 
 }
 
-class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: RequestResponseConfig)(
+class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: RequestResponseConfig, clock: Clock)(
     implicit as: ActorSystem,
     ec: ExecutionContext
 ) extends DeploymentStrategy
@@ -120,14 +125,18 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
       )
     } yield {
       slugToScenarioRoute += (slug -> route)
-      new RequestResponseDeployment(slug, interpreter)
+      new RequestResponseDeployment(slug, interpreter, jobData.processVersion.versionId, startedAt = clock.instant())
     }
   }
 
-  class RequestResponseDeployment(path: String, interpreter: RequestResponseRunnableScenarioInterpreter)
-      extends Deployment {
+  class RequestResponseDeployment(
+      path: String,
+      interpreter: RequestResponseRunnableScenarioInterpreter,
+      version: VersionId,
+      startedAt: Instant
+  ) extends Deployment {
 
-    override def status(): DeploymentStatus = DeploymentStatus.Running
+    override def status(): DeploymentStatus = DeploymentStatus.Running(version, startedAt)
 
     override def close(): Unit = {
       slugToScenarioRoute.remove(path)

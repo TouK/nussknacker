@@ -3,7 +3,13 @@ package pl.touk.nussknacker.ui.process.deployment.scenariostatus
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{
+  DuringDeploy,
+  DuringRedeploy,
+  Finished,
+  ProblemStateStatus,
+  Running
+}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 object InconsistentStateDetector extends InconsistentStateDetector
@@ -14,17 +20,17 @@ class InconsistentStateDetector extends LazyLogging {
       deploymentStatuses: List[DeploymentStatusDetails],
       lastStateAction: ScenarioStatusActionDetails
   ): StateStatus = {
-    val status = (doExtractAtMostOneStatus(deploymentStatuses), lastStateAction) match {
+    val status: StateStatus = (doExtractAtMostOneStatus(deploymentStatuses), lastStateAction) match {
       case (Left(deploymentStatus), _) => deploymentStatus.status
       case (Right(None), lastAction)
-          if List(ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(
+          if Set(ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(
             lastAction.actionName
           ) && lastAction.state == ProcessActionState.ExecutionFinished =>
         // Some engines like Flink have jobs retention. Because of that we restore finished status
-        SimpleStateStatus.Finished
+        SimpleStateStatus.Finished(lastAction.processVersionId)
       case (Right(Some(deploymentStatus)), _) if shouldAlwaysReturnStatus(deploymentStatus) => deploymentStatus.status
       case (Right(deploymentStatusOpt), lastAction)
-          if List(ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(lastAction.actionName) =>
+          if Set(ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(lastAction.actionName) =>
         handleLastActionDeployOrRedeploy(deploymentStatusOpt, lastAction)
       case (Right(Some(deploymentStatus)), _) if isFollowingDeployStatus(deploymentStatus) =>
         handleFollowingDeployEngineSideStatus(deploymentStatus, lastStateAction)
@@ -91,21 +97,22 @@ class InconsistentStateDetector extends LazyLogging {
   ): StateStatus =
     deploymentStatusOpt match {
       case Some(deploymentStatuses) =>
-        deploymentStatuses.version match {
+        deploymentStatuses.status match {
           case _ if !isFollowingDeployStatus(deploymentStatuses) && !isFinishedStatus(deploymentStatuses) =>
             logger.debug(
               s"handleLastActionDeployOrRedeploy: is not following deploy status nor finished, but it should be. $deploymentStatuses"
             )
             ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user)
-          case Some(ver) if ver != action.processVersionId =>
+          case DuringDeploy(ver) if ver != action.processVersionId =>
             ProblemStateStatus.mismatchDeployedVersion(ver, action.processVersionId, action.user)
-          case Some(_)
-              if (deploymentStatuses.status == SimpleStateStatus.DuringDeploy && action.actionName == ScenarioActionName.Redeploy) =>
-            SimpleStateStatus.DuringRedeploy
-          case Some(_) =>
-            deploymentStatuses.status
-          case None => // TODO: we should remove Option from ProcessVersion?
-            ProblemStateStatus.missingDeployedVersion(action.processVersionId, action.user)
+          case DuringRedeploy(ver) if ver != action.processVersionId =>
+            ProblemStateStatus.mismatchDeployedVersion(ver, action.processVersionId, action.user)
+          case Running(ver, _) if ver != action.processVersionId =>
+            ProblemStateStatus.mismatchDeployedVersion(ver, action.processVersionId, action.user)
+          case SimpleStateStatus.DuringDeploy(processVersion) if action.actionName == ScenarioActionName.Redeploy =>
+            SimpleStateStatus.DuringRedeploy(processVersion)
+          case other =>
+            other
         }
       case None =>
         logger.debug(
@@ -121,14 +128,14 @@ class InconsistentStateDetector extends LazyLogging {
   }
 
   private def isFollowingDeployStatus(deploymentStatus: DeploymentStatusDetails): Boolean = {
-    SimpleStateStatus.DefaultFollowingDeployStatuses.contains(deploymentStatus.status)
+    SimpleStateStatus.isDefaultFollowingDeployStatus(deploymentStatus.status)
   }
 
   private def isFinalOrTransitioningToFinalStatus(deploymentStatus: DeploymentStatusDetails): Boolean =
     SimpleStateStatus.isFinalOrTransitioningToFinalStatus(deploymentStatus.status)
 
   private def isFinishedStatus(deploymentStatus: DeploymentStatusDetails): Boolean = {
-    deploymentStatus.status == SimpleStateStatus.Finished
+    SimpleStateStatus.isFinished(deploymentStatus.status)
   }
 
 }

@@ -9,7 +9,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntime
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioStatusDto, ScenarioStatusNameWrapperDto}
+import pl.touk.nussknacker.restmodel.scenariodetails.{
+  ScenarioStatusDetailsDto,
+  ScenarioStatusDto,
+  ScenarioStatusNameWrapperDto
+}
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.config.DesignerConfig
@@ -181,7 +185,15 @@ class AppApiHttpService(
       withProblem = statusMap.collect {
         case (
               name,
-              processStatus @ ScenarioStatusDto(ScenarioStatusNameWrapperDto(ProblemStateStatus.name), _, _, _, _, _, _)
+              processStatus @ ScenarioStatusDto(
+                ScenarioStatusDetailsDto.NoAttributesStatus(ProblemStateStatus.name),
+                _,
+                _,
+                _,
+                _,
+                _,
+                _
+              )
             ) =>
           (name, processStatus)
       }
