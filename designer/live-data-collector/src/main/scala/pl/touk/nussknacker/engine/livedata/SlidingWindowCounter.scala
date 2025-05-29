@@ -37,8 +37,8 @@ private[livedata] class SlidingWindowCounter[T](
       .toMap
       .map { case (transition, count) =>
         transition -> {
-          if (samplingInterval == 0) 0
-          else (BigDecimal(count) / samplingInterval).setScale(4, BigDecimal.RoundingMode.HALF_EVEN)
+          val throughput = if (samplingInterval == 0) BigDecimal(0) else BigDecimal(count) / samplingInterval
+          throughput.setScale(4, BigDecimal.RoundingMode.HALF_EVEN)
         }
       }
   }
