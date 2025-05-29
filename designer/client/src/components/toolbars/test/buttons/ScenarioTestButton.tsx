@@ -20,6 +20,7 @@ import type { TestingData, TestingViewParams } from "../../../modals/Testing/Tes
 import { ButtonsVariant, ToolbarButton, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarSideContext } from "../../../toolbarComponents/ToolbarsContainer";
 import type { CustomButtonTypes, PropsOfButton } from "../../../toolbarSettings/buttons";
+import { LiveDataButton } from "./LiveDataButton";
 import { useTestingButtonContext } from "./TestButtonContext";
 
 export type ScenarioTestButtonProps = {
@@ -38,7 +39,8 @@ type Preset = {
     isDisabled?: boolean;
 };
 
-function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type }: PropsOfButton<CustomButtonTypes.scenarioTest>) {
+function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
+    const { disabled, name, title, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
 
@@ -126,55 +128,58 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
         : title;
 
     return (
-        <ToolbarButton
-            name={
-                preset?.value === RERUN_PREVIOUS
-                    ? t("panels.actions.scenarioTest.button.nameAlt", "Rerun test")
-                    : name || t("panels.actions.scenarioTest.button.name", "Test")
-            }
-            title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
-            icon={<TestingIcon />}
-            sx={(theme) => {
-                const normal = theme.palette.primary.main;
-                const highlight = theme.palette.primary.light;
-                const isHorizontal =
-                    variant === ButtonsVariant.xs &&
-                    [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom, ToolbarsSide.AboveNodeWindow].includes(side);
-                return {
-                    color: alpha(theme.palette.getContrastText(normal), 0.75),
+        <>
+            <ToolbarButton
+                name={
+                    preset?.value === RERUN_PREVIOUS
+                        ? t("panels.actions.scenarioTest.button.nameAlt", "Rerun test")
+                        : name || t("panels.actions.scenarioTest.button.name", "Test")
+                }
+                title={tooltip || t("panels.actions.scenarioTest.button.title", "run test")}
+                icon={<TestingIcon />}
+                sx={(theme) => {
+                    const normal = theme.palette.primary.main;
+                    const highlight = theme.palette.primary.light;
+                    const isHorizontal =
+                        variant === ButtonsVariant.xs &&
+                        [ToolbarsSide.CenterTop, ToolbarsSide.CenterBottom, ToolbarsSide.AboveNodeWindow].includes(side);
+                    return {
+                        color: alpha(theme.palette.getContrastText(normal), 0.75),
 
-                    ".toolbarButton-Root": {
-                        backgroundColor: normal,
-                    },
-                    "&:hover": {
-                        color: theme.palette.getContrastText(highlight),
-                        ".toolbarButton-Root, .toolbarButton-MenuExpand": {
+                        ".toolbarButton-Root": {
+                            backgroundColor: normal,
+                        },
+                        "&:hover": {
+                            color: theme.palette.getContrastText(highlight),
+                            ".toolbarButton-Root, .toolbarButton-MenuExpand": {
+                                backgroundColor: highlight,
+                            },
+                        },
+                        "button:focus-within": {
+                            color: theme.palette.getContrastText(highlight),
+                            outlineColor: theme.palette.background.paper,
                             backgroundColor: highlight,
                         },
-                    },
-                    "button:focus-within": {
-                        color: theme.palette.getContrastText(highlight),
-                        outlineColor: theme.palette.background.paper,
-                        backgroundColor: highlight,
-                    },
-                    ".toolbarButton-Label": isHorizontal
-                        ? {
-                              fontSize: "1em",
-                              minWidth: "5em",
-                              display: "inline",
-                              textTransform: "initial",
-                          }
-                        : null,
-                };
-            }}
-            isLoading={isLoading}
-            disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges || isLoading}
-            onClick={() => openDialog(preset)}
-            type={type}
-            presets={presets}
-            selected={preset}
-            onPresetChange={(value) => openDialog(value)}
-        />
+                        ".toolbarButton-Label": isHorizontal
+                            ? {
+                                  fontSize: "1em",
+                                  minWidth: "5em",
+                                  display: "inline",
+                                  textTransform: "initial",
+                              }
+                            : null,
+                    };
+                }}
+                isLoading={isLoading}
+                disabled={!atLeastOneTypeOfTestIsAvailable || hasPendingChanges || isLoading}
+                onClick={() => openDialog(preset)}
+                type={type}
+                presets={presets}
+                selected={preset}
+                onPresetChange={(value) => openDialog(value)}
+            />
+            <LiveDataButton {...props} />
+        </>
     );
 }
 

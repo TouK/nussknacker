@@ -127,8 +127,8 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
             const transitionResults = direction === "input" ? inputs : outputs;
             const contexts: VariableContextType[] = [];
             transitionResults.forEach(({ id: contextNodeId, destinationNodeId, results }) => {
-                results?.forEach(({ id, variables }) => {
-                    const foundContext = contexts.find((context) => context.id === id);
+                results?.forEach(({ id, variables, timestamp }) => {
+                    const foundContext = contexts.find((context) => context.id === id && context.timestamp === timestamp);
                     if (foundContext) {
                         foundContext.nodeIds.push(contextNodeId);
                         return;
@@ -142,7 +142,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                         disabled: isContextDisabled(id, direction),
                         nodeIds: [contextNodeId],
                         error: error?.throwable,
-                        timestamp: null,
+                        timestamp,
                     });
                 });
             });

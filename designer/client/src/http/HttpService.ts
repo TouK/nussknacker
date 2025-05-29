@@ -340,7 +340,11 @@ class HttpService {
     }
 
     fetchProcessState(processName: ProcessName, processVersionId: number) {
-        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status?currentlyPresentedVersionId=${processVersionId}`);
+        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status`, {
+            params: {
+                currentlyPresentedVersionId: processVersionId,
+            },
+        });
         promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error));
         return promise;
     }

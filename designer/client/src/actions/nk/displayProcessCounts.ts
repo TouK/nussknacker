@@ -4,7 +4,7 @@ import moment from "moment";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
-import { getProcessCountsRefresh, getScenarioGraph, isReadyForResults } from "../../reducers/selectors/graph";
+import { getProcessCountsRefresh, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 
@@ -59,12 +59,6 @@ export function fetchAndDisplayProcessCounts(params: {
             return extendWithEmpty(data, scenarioGraph);
         });
 
-        if (isReadyForResults(getState())) {
-            HttpService.fetchProcessLiveData(processName).then(({ data }) => {
-                console.log(data);
-            });
-        }
-
         if (!counts) return;
 
         const now = moment();
@@ -81,7 +75,12 @@ export function fetchAndDisplayProcessCounts(params: {
                 }
             }, nextIn);
 
-            dispatch(displayProcessCounts(counts, { last, nextIn }));
+            dispatch(
+                displayProcessCounts(counts, {
+                    last,
+                    nextIn,
+                }),
+            );
         } else {
             dispatch(displayProcessCounts(counts));
         }

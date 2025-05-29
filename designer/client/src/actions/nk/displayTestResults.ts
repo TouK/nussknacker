@@ -87,7 +87,7 @@ function wrapWithTestAction(
     };
 }
 
-function displayTestResultsDetails(testResults: TestResultsDto, testData?: SourceWithParametersTest): Action {
+export function displayTestResultsDetails(testResults: TestResultsDto, testData?: SourceWithParametersTest): Action {
     return {
         type: "DISPLAY_TEST_RESULTS_DETAILS",
         testResults,

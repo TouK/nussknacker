@@ -32,7 +32,8 @@ function useVariableContext(direction: "input" | "output") {
 
     const value = useMemo(() => (direction === "input" ? inputDataSetId : outputDataSetId), [direction, inputDataSetId, outputDataSetId]);
     const [availableContexts, hiddenAvailableContexts] = useMemo(() => {
-        const contexts = getAvailableContexts(direction);
+        const contexts = getAvailableContexts(direction).sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getDate());
+
         const pageSize = 30;
         if (contexts.length > pageSize) {
             const sliced = contexts

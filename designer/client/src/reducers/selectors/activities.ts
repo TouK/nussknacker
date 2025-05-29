@@ -15,7 +15,10 @@ export const getVisibleActivities = createSelector(getActivities, (activities) =
 );
 
 export function isDeploymentActivity(activity: UIActivity): activity is ItemActivity {
-    return activity.uiType === "item" && activity.type === ActivityTypesRelatedToExecutions.ScenarioDeployed;
+    if (activity.uiType !== "item") return false;
+    if (activity.type === ActivityTypesRelatedToExecutions.ScenarioDeployed) return true;
+    if (activity.type === ActivityTypesRelatedToExecutions.ScenarioRedeployed) return true;
+    return false;
 }
 
 export const getLastDeploymentActivity = createSelector(getActivities, (activities): ItemActivity | undefined => {

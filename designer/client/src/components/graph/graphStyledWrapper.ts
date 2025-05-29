@@ -196,6 +196,9 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
                 ".body .joint-port-body .background": {
                     transition: "all 0.25s ease-in-out",
                 },
+                ".background": {
+                    transition: "all 1s ease-out",
+                },
             },
             ".sticky-note-markdown": {
                 width: "100%",

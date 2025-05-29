@@ -3,7 +3,7 @@ import type { PerformedTestType } from "../../actions/nk/displayTestResults";
 import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService";
-import type { ProcessCounts, TestResultsDto } from "../../http/resultsWithCountsDto";
+import type { ProcessCounts, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
 
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
@@ -12,6 +12,7 @@ export type TestData = Record<Source, SourceTestData>;
 export type GraphState = {
     scenarioLoading: boolean;
     scenario?: Scenario;
+    lastDeployedScenario?: Scenario;
     selectionState?: string[];
     layout: Layout;
     testCapabilities?: TestCapabilities;
@@ -23,4 +24,6 @@ export type GraphState = {
     testData?: TestData;
     processCountsRefresh?: RefreshData;
     processCounts: ProcessCounts;
+    liveData: ResultsWithCountsDto;
+    liveDataRefresh?: RefreshData;
 };

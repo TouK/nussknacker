@@ -2,14 +2,16 @@ import React from "react";
 import Inspector, { chromeDark } from "react-inspector";
 import { useSelector } from "react-redux";
 
-import { getProcessVersionId, isDeployed, isPristine, isReadyForResults } from "../../reducers/selectors/graph";
+import { getLiveData, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
+import { getProcessVersionId, isDeployed, isPristine } from "../../reducers/selectors/graph";
 import { DebugBox } from "../DebugBox";
 
 export const DebugComponent = () => {
     const version = useSelector(getProcessVersionId);
     const clean = useSelector(isPristine);
     const deployed = useSelector(isDeployed);
-    const readyForResults = useSelector(isReadyForResults);
+    const readyForResults = useSelector(isReadyForLiveData);
+    const liveData = useSelector(getLiveData);
     return (
         <DebugBox>
             <Inspector
@@ -23,6 +25,7 @@ export const DebugComponent = () => {
                     clean,
                     deployed,
                     readyForResults,
+                    liveData,
                 }}
             />
         </DebugBox>

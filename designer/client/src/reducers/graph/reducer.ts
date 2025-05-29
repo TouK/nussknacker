@@ -45,6 +45,7 @@ const emptyGraphState: GraphState = {
     selectionState: [],
     processCounts: {},
     testResults: null,
+    liveData: null,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -118,9 +119,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
+            const scenario = correctFetchedDetails(state.scenario, action.processDefinitionData);
             return {
                 ...state,
-                scenario: correctFetchedDetails(state.scenario, action.processDefinitionData),
+                scenario,
             };
         }
         case "ARCHIVED": {
@@ -342,6 +344,23 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 processCountsRefresh: action.refresh,
             };
         }
+        case "DISPLAY_LIVE_DATA": {
+            return {
+                ...state,
+                liveData: action.results || null,
+                liveDataRefresh: action.refresh,
+                testResults: action.results?.results || null,
+                processCounts: action.results?.counts || {},
+                processCountsRefresh: null,
+            };
+        }
+        case "NODE_DETAILS_OPENED":
+        case "LIVE_DATA_STOP": {
+            return {
+                ...state,
+                liveDataRefresh: null,
+            };
+        }
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
                 ...state,
@@ -369,6 +388,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testResults: null,
                 processCounts: null,
                 processCountsRefresh: null,
+                liveData: null,
+                liveDataRefresh: null,
             };
         }
         default:
