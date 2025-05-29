@@ -14,7 +14,13 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.deployment.LatestVersion
-import pl.touk.nussknacker.restmodel.{CancelRequest, DeployRequest, RunOffScheduleRequest, RunOffScheduleResponse}
+import pl.touk.nussknacker.restmodel.{
+  CancelRequest,
+  DeployRequest,
+  DeployResponse,
+  RunOffScheduleRequest,
+  RunOffScheduleResponse
+}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ResultsWithCountsDto
@@ -149,7 +155,7 @@ class ManagementResources(
                         scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                       )
                     )
-                    .map(_ => ())
+                    .map(result => toHttpResponse(DeployResponse(result.deployedScenarioVersionId))(StatusCodes.OK))
                 }
               }
           }
@@ -172,7 +178,7 @@ class ManagementResources(
                       scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                     )
                   )
-                  .map(_ => ())
+                  .map(result => toHttpResponse(DeployResponse(result.deployedScenarioVersionId))(StatusCodes.OK))
               }
             }
           }
@@ -192,7 +198,7 @@ class ManagementResources(
                         scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                       )
                     )
-                    .map(_ => ())
+                    .map(result => toHttpResponse(DeployResponse(result.deployedScenarioVersionId))(StatusCodes.OK))
                 }
               }
             }

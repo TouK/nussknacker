@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
+import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
@@ -72,16 +72,17 @@ export default function RedeployButton(props: ToolbarButtonProps) {
 
     const message = t("panels.actions.redeploy.dialog", "Redeploy scenario {{name}}", { name: processName });
     const action = useCallback(
-        (
+        async (
             name: ProcessName,
             versionId: ProcessVersionId,
             comment: string,
             nodesDeploymentData?: NodesDeploymentData,
             scenarioGraphSource?: ScenarioGraphSource,
-        ) =>
-            HttpService.redeploy(name, comment, nodesDeploymentData, scenarioGraphSource).finally(() =>
-                dispatch(loadProcessState(name, versionId)),
-            ),
+        ) => {
+            const result = await HttpService.redeploy(name, comment, nodesDeploymentData, scenarioGraphSource);
+            dispatch(fetchProcessToDisplay(name, result.deployedScenarioVersionId ?? versionId));
+            return result;
+        },
         [dispatch],
     );
 
@@ -91,14 +92,15 @@ export default function RedeployButton(props: ToolbarButtonProps) {
                 if (!res.data.isLatest) {
                     await confirm({
                         text: t(
-                            "panels.actions.confirm-unsafe-deployment.message",
-                            `There is newer version #{{latestVersion}} created by {{modifyBy}} available. Scenario will be deployed using version #{{versionToDeploy}}.
-                            You're currently checked out on version #{{localVersion}}. 
-                            Are you sure you want to perform this action?`,
+                            `You're currently checked out on version #{{localVersion}} and there is newer version
+                             #{{latestVersion}} created by {{modifyBy}} available. Scenario will be deployed using 
+                             version #{{versionToDeploy}}. Are you sure you want to perform this action?`,
                             {
                                 latestVersion: res.data.latestVersion,
                                 modifyBy: res.data.modifiedBy,
-                                versionToDeploy: settings["toolbar.autoSaveDuringDeploy"] ? res.data.localVersion : res.data.latestVersion,
+                                versionToDeploy: settings["toolbar.autoSaveDuringDeployRedeploy"]
+                                    ? res.data.localVersion
+                                    : res.data.latestVersion,
                                 localVersion: res.data.localVersion,
                             },
                         ),

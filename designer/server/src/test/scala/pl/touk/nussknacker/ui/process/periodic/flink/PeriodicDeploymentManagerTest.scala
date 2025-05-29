@@ -145,6 +145,7 @@ class PeriodicDeploymentManagerTest
         )
       )
       .futureValue
+      .externalDeploymentId
       .futureValue
 
     def reschedule(id: ProcessId): Unit = services.deploymentService
@@ -157,6 +158,7 @@ class PeriodicDeploymentManagerTest
         )
       )
       .futureValue
+      .externalDeploymentId
       .futureValue
 
     def getSingleActiveDeploymentId(id: ProcessId): PeriodicProcessDeploymentId = inside(getScenarioStatus(id)) {

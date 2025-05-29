@@ -115,6 +115,10 @@ export enum ScenarioGraphSourceType {
     FROM_GRAPH = "FromGraph",
 }
 
+type DeployResponse = {
+    deployedScenarioVersionId: number;
+};
+
 export type NodeUsageData = {
     fragmentNodeId?: string;
     nodeId: string;
@@ -354,7 +358,7 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(
+    async deploy(
         processName: string,
         comment?: string,
         nodesDeploymentData?: NodesDeploymentData,
@@ -368,10 +372,14 @@ class HttpService {
                 scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
             },
         };
-        return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
-            .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+        return await api
+            .post<DeployResponse>(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
+            .then((resp) => {
+                return {
+                    deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: "",
+                };
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -398,7 +406,7 @@ class HttpService {
             });
     }
 
-    redeploy(
+    async redeploy(
         processName: string,
         comment?: string,
         nodesDeploymentData?: NodesDeploymentData,
@@ -412,10 +420,14 @@ class HttpService {
                 scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
             },
         };
-        return api
-            .post(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
-            .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+        return await api
+            .post<DeployResponse>(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
+            .then((resp) => {
+                return {
+                    deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: "",
+                };
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {

@@ -135,7 +135,8 @@ class NotificationServiceTest
             scenarioSource = LatestVersion,
           )
         )
-        .flatten
+        .futureValue
+        .externalDeploymentId
         .futureValue
     }
 
@@ -178,7 +179,7 @@ class NotificationServiceTest
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
-    ): Option[ExternalDeploymentId] = {
+    ): RunDeploymentResult = {
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
@@ -192,7 +193,6 @@ class NotificationServiceTest
             scenarioSource = LatestVersion,
           )
         )
-        .flatten
         .futureValue
     }
 
@@ -248,7 +248,7 @@ class NotificationServiceTest
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
-    ): Option[ExternalDeploymentId] = {
+    ): RunDeploymentResult = {
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenAnswer { invocation =>
@@ -265,7 +265,6 @@ class NotificationServiceTest
             scenarioSource = LatestVersion,
           )
         )
-        .flatten
         .futureValue
     }
 

@@ -84,18 +84,16 @@ class DeploymentService(
       }
   }
 
-  private def runDeploymentOrRedeploy[T <: CommonDeploymentCommand with ScenarioCommand[
-    Future[Option[ExternalDeploymentId]]
-  ]](
+  private def runDeploymentOrRedeploy[T <: CommonDeploymentCommand with ScenarioCommand[RunDeploymentResult]](
       command: T
-  ): Future[Future[Option[ExternalDeploymentId]]] = {
+  ): Future[RunDeploymentResult] = {
     import command.commonData._
     val actionProcessor = command.scenarioSource match {
       case LatestVersion     => actionService.actionProcessorForLatestVersion[CanonicalProcess]
       case source: FromGraph => actionService.actionProcessorForScenarioGraph[CanonicalProcess](source)
     }
     actionProcessor
-      .processActionWithCustomFinalization[T, Future[Option[ExternalDeploymentId]]](
+      .processActionWithCustomFinalization[T, RunDeploymentResult](
         command = command,
         actionName = command match {
           case _: RunDeploymentCommand   => ScenarioActionName.Deploy
@@ -138,7 +136,13 @@ class DeploymentService(
             }
           }
             .flatMap {
-              case Right(result) => Future.successful(result)
+              case Right(result) =>
+                Future.successful(
+                  RunDeploymentResult(
+                    result,
+                    ctx.latestScenarioDetails.processVersionId
+                  )
+                )
               case Left(error: MaxActiveScenariosCountExceededError) =>
                 Future.failed(error).removeInvalidActionOnFailure()
             }

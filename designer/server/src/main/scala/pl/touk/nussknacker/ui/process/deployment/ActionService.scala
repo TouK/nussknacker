@@ -226,9 +226,16 @@ class ActionService(
         .flatMap(response =>
           response.processResponse match {
             case Some(value) =>
+              logger.debug(
+                s"Scenario: ${value.processName.value} updated with automatic update." +
+                  s" New version is: ${value.versionId.value}"
+              )
               processRepository.fetchProcessDetailsForId[ScenarioDetailsShape](processId.id, value.versionId)
             case None =>
-              // Scenario is not updated (latest version is the same as provided graphs) so we take latest version
+              logger.info(
+                "Scenario is not updated (latest version graph is the same as provided graph) - " +
+                  "deploying latest version"
+              )
               val scenarioWithTargetShape =
                 scenario.mapScenario(ScenarioShapeFetchStrategy.convertToTargetShape[ScenarioDetailsShape])
               DBIOAction.successful(Some(scenarioWithTargetShape))

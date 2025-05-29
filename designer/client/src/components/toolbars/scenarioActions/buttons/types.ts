@@ -5,6 +5,7 @@ export enum ScenarioActionResultType {
 }
 
 export type ScenarioActionResult = {
+    deployedScenarioVersionId?: number;
     scenarioActionResultType: ScenarioActionResultType;
     msg: string;
 };

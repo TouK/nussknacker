@@ -199,7 +199,6 @@ class DeploymentServiceSpec
               scenarioSource = LatestVersion,
             )
           )
-          .futureValue
       }
       .futureValue
   }
@@ -934,7 +933,7 @@ class DeploymentServiceSpec
           }
         }
 
-        result should not be None
+        result.externalDeploymentId should not be None
       }
     }
     "two processing types are considered" when {
@@ -1029,7 +1028,7 @@ class DeploymentServiceSpec
           }
         }
 
-        result should not be None
+        result.externalDeploymentId should not be None
       }
     }
   }
@@ -1346,10 +1345,11 @@ class DeploymentServiceSpec
           )
           .futureValue
       }
+      .externalDeploymentId
       .futureValue
   }
 
-  private def redeployExampleScenario(scenarioId: ProcessIdWithName): Option[ExternalDeploymentId] = {
+  private def redeployExampleScenario(scenarioId: ProcessIdWithName): RunDeploymentResult = {
     deploymentManager1
       .withWaitForDeployFinish(scenarioId.name, result = Some(ExternalDeploymentId("1"))) {
         deploymentService
@@ -1361,7 +1361,6 @@ class DeploymentServiceSpec
               scenarioSource = LatestVersion,
             )
           )
-          .futureValue
       }
       .futureValue
   }

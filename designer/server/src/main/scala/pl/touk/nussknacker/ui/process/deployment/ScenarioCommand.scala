@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -18,10 +19,9 @@ case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Opti
   implicit def implicitUser: LoggedUser = user
 }
 
-// todo
-final case class RunDeploymentResponse[Result](
-    result: Result,
-    deployedScenarioVersion: Option[VersionId]
+final case class RunDeploymentResult(
+    externalDeploymentId: Future[Option[ExternalDeploymentId]],
+    deployedScenarioVersionId: VersionId
 )
 
 // Inner Future in result allows to wait for deployment finish, while outer handles validation
@@ -34,7 +34,7 @@ case class RunDeploymentCommand(
     nodesDeploymentData: NodesDeploymentData,
     scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
-    with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
+    with ScenarioCommand[RunDeploymentResult]
 
 case class RunRedeploymentCommand(
     commonData: CommonCommandData,
@@ -42,7 +42,7 @@ case class RunRedeploymentCommand(
     nodesDeploymentData: NodesDeploymentData,
     scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
-    with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
+    with ScenarioCommand[RunDeploymentResult]
 
 trait CommonDeploymentCommand {
   val commonData: CommonCommandData
