@@ -8,7 +8,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
@@ -129,7 +129,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
             .Then()
             .statusCode(202)
             .verifyApplicationState {
-              waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatus.Finished.name)
+              waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatusName.finishedStatusName)
             }
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")

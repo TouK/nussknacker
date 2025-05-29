@@ -94,7 +94,11 @@ class DeploymentService(
             // Because of that we can't run more than one deployment for scenario in a time.
             // TODO: We should key metrics by deployment id and remove this limitation
             // Saving of deployment is the final step before deployment request because we want to store only requested deployments
-            _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
+            _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(
+              command,
+              scenarioMetadata,
+              scenarioGraphVersion.id
+            )
             _ <- runDeploymentUsingDeploymentManagerAsync(
               scenarioMetadata,
               scenarioGraphVersion,
@@ -135,19 +139,24 @@ class DeploymentService(
 
   private def saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(
       command: RunDeploymentCommand,
-      scenarioMetadata: ScenarioMetadata
+      scenarioMetadata: ScenarioMetadata,
+      scenarioVersion: VersionId
   ): EitherT[Future, RunDeploymentError, Unit] = {
     EitherT(dbioRunner.runInSerializableTransactionWithRetry((for {
       nonFinishedDeployments <- getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata)
       _                      <- checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments, scenarioMetadata.name)
       _ = logger.debug(s"Saving deployment: ${command.id}")
-      _ <- saveDeployment(command, scenarioMetadata)
+      _ <- saveDeployment(command, scenarioMetadata, scenarioVersion)
     } yield ()).value))
   }
 
   private def getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata: ScenarioMetadata) = {
     val nonPerformingDeploymentStatuses =
-      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, DeploymentStatusName.problemStatusName)
+      Set(
+        DeploymentStatus.Canceled.name,
+        DeploymentStatusName.finishedStatusName,
+        DeploymentStatusName.problemStatusName
+      )
     EitherT.right(
       deploymentRepository.getScenarioDeploymentsInNotMatchingStatus(
         scenarioMetadata.id,
@@ -172,7 +181,8 @@ class DeploymentService(
 
   private def saveDeployment(
       command: RunDeploymentCommand,
-      scenarioMetadata: ScenarioMetadata
+      scenarioMetadata: ScenarioMetadata,
+      scenarioVersion: VersionId
   ): EitherT[DB, RunDeploymentError, Unit] = {
     val now = Timestamp.from(clock.instant())
     EitherT(
@@ -182,7 +192,7 @@ class DeploymentService(
           scenarioMetadata.id,
           now,
           command.user.id,
-          WithModifiedAt(DeploymentStatus.DuringDeploy, now)
+          WithModifiedAt(DeploymentStatus.DuringDeploy(scenarioVersion), now)
         )
       )
     ).leftMap(e => ConflictingDeploymentIdError(e.id))

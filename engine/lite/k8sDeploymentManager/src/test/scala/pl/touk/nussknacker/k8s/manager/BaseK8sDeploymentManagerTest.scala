@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.http.backend.HttpClientError
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 import skuber.{k8sInit, ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service}
 import skuber.LabelSelector.dsl._
@@ -29,7 +30,7 @@ import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
 
 class BaseK8sDeploymentManagerTest
@@ -161,8 +162,10 @@ class BaseK8sDeploymentManagerTest
       eventually {
         val state = manager.getScenarioDeploymentsStatuses(version.processName).map(_.value).futureValue
         logger.debug(s"Current process state: $state")
-        state.flatMap(_.version) shouldBe List(version.versionId)
-        state.map(_.status) shouldBe List(SimpleStateStatus.Running)
+        state.length shouldBe 1
+        state.map(_.status).headOption should matchPattern {
+          case Some(s: SimpleStateStatus.Running) if s.version == version.versionId =>
+        }
       }
     }
 

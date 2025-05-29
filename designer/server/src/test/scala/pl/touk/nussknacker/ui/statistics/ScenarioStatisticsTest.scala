@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.time.Instant
+
 class ScenarioStatisticsTest
     extends AnyFunSuite
     with Matchers
@@ -158,12 +160,12 @@ class ScenarioStatisticsTest
       "s_a"
     ) shouldBe 0
     ScenarioStatistics.determineStatisticsForScenario(
-      scenarioData(Some(SimpleStateStatus.DuringDeploy))
+      scenarioData(Some(SimpleStateStatus.DuringDeploy(VersionId(1))))
     )(
       "s_a"
     ) shouldBe 0
     ScenarioStatistics.determineStatisticsForScenario(
-      scenarioData(Some(SimpleStateStatus.Running))
+      scenarioData(Some(SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now())))
     )(
       "s_a"
     ) shouldBe 1

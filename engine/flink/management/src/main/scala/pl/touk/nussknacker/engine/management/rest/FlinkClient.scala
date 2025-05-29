@@ -4,7 +4,14 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobDetails, JobOverview}
+import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.deployment.DeploymentId
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{
+  ClusterOverview,
+  ExecutionConfig,
+  JobDetails,
+  JobOverview
+}
 import sttp.client3.SttpBackend
 
 import java.io.File
@@ -61,6 +68,18 @@ object FlinkClient extends LazyLogging {
         logger.debug(s"Skipping caching for FlinkRestManager's client: $httpClient")
         httpClient
       }
+  }
+
+  implicit class ExecutionConfigOps(val executionConfig: ExecutionConfig) extends AnyVal {
+
+    def versionId: Option[VersionId] = {
+      executionConfig.`user-config`.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
+    }
+
+    def deploymentId: Option[DeploymentId] = {
+      executionConfig.`user-config`.get("deploymentId").flatMap(_.asString).map(DeploymentId(_))
+    }
+
   }
 
 }
