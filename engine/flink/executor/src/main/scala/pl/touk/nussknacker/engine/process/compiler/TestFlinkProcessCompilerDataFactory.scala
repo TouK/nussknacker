@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.github.ghik.silencer.silent
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.connector.source.Boundedness
 import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
@@ -11,16 +12,10 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreator
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, ComponentImplementationInvoker}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.api.process.{
-  CustomizableContextInitializerSource,
-  FlinkSource,
-  FlinkSourceTestSupport
-}
+import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -139,11 +134,23 @@ class StubbedSourcePreparer(
       nodeId: NodeId
   ): FlinkSource = {
     val samples: List[Object] = collectSamples(originalSource, nodeId)
+    val assignerForTestOpt = originalSource.timestampAssignerForTest
+    // setting timestamp as currentTimeMillis is better default because without setting timestamps we would have
+    // timestamp as Long.MIN_VALUE and it would crash
+    val improvedAssignerForTest = assignerForTestOpt.orElse(
+      Some(
+        new StandardTimestampWatermarkHandler[Object](
+          WatermarkStrategy
+            .forMonotonousTimestamps[Object]()
+            .withTimestampAssigner(StandardTimestampWatermarkHandler.toAssigner[Object](e => System.currentTimeMillis()))
+        )
+      )
+    )
     originalSource match {
       case sourceWithContextInitializer: CustomizableContextInitializerSource[Object @unchecked] =>
         new CollectionSource[Object](
           list = samples,
-          timestampAssigner = originalSource.timestampAssignerForTest,
+          timestampAssigner = improvedAssignerForTest,
           returnType = typingResult,
           boundedness = Boundedness.BOUNDED
         ) {
@@ -152,7 +159,7 @@ class StubbedSourcePreparer(
       case _ =>
         new CollectionSource[Object](
           list = samples,
-          timestampAssigner = originalSource.timestampAssignerForTest,
+          timestampAssigner = improvedAssignerForTest,
           returnType = typingResult,
           boundedness = Boundedness.BOUNDED
         )
