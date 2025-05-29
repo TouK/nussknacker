@@ -162,8 +162,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       invocationResults("out") shouldBe
         List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", variable(11)))
 
-      results.externalInvocationResults("proc2") shouldBe List(
-        ExternalInvocationResult(
+      results.externalInvocationResults("proc2").map(r => (r.contextId, r.name, r.value)) shouldBe List(
+        (
           s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
           "logService",
           variable("0-collectedDuringServiceInvocation")

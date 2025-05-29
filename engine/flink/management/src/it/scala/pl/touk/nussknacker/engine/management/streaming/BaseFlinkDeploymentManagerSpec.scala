@@ -7,10 +7,11 @@ import org.apache.flink.api.common.JobID
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -19,7 +20,6 @@ import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefin
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -102,55 +102,53 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
           // Wait until first live data samples are collected
           val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName).toOption
           liveDataOpt shouldBe defined
-          val liveDataSamples = liveDataOpt.get.liveDataSamples
+          val liveDataSamples = liveDataOpt.get
 
           // Wait until first 15 live data samples are collected
-          liveDataSamples.nodeResults.get("start").map(_.size) shouldBe Some(15)
+          liveDataSamples.nodeTransitions
+            .get(NodeTransition("start", Some("endSend")))
+            .map(_.samples.size) shouldBe Some(15)
 
           val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
 
           externalDeploymentIdOpt shouldBe defined
-          val expected = new TestResults[Json](
-            nodeResults = Map(
-              "start" ->
-                (0 to 14).map { idx =>
-                  ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
-                    mockedTimestamp,
-                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-                  )
-                }.toList,
-              "endSend" ->
-                (0 to 14).map { idx =>
-                  ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
-                    mockedTimestamp,
-                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-                  )
-                }.toList,
-            ),
-            nodeTransitionResults = Map(
+          val expected = LiveData(
+            nodeTransitions = Map(
               NodeTransition("start", Some("endSend")) ->
-                (0 to 14).map { idx =>
-                  ResultContext(
-                    s"runningFlinkEventGenerator-start-0-$idx",
-                    mockedTimestamp,
-                    Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
-                  )
-                }.toList,
+                LiveDataForNodeTransition(
+                  samples = (0 to 14).map { idx =>
+                    LiveDataSample(
+                      s"runningFlinkEventGenerator-start-0-$idx",
+                      mockedTimestamp,
+                      Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
+                    )
+                  }.toList,
+                  totalCount = 15,
+                  currentThroughput = 1
+                )
             ),
             invocationResults = Map(
-              "endSend" ->
+              NodeId("start") ->
+                (0 to 14).map { _ =>
+                  InvocationResult(
+                    s"runningFlinkEventGenerator",
+                    mockedTimestamp,
+                    "value",
+                    Json.obj("pretty" -> "abrakadabra".asJson)
+                  )
+                }.toList,
+              NodeId("endSend") ->
                 (0 to 14).map { idx =>
-                  ExpressionInvocationResult(
+                  InvocationResult(
                     s"runningFlinkEventGenerator-start-0-$idx",
+                    mockedTimestamp,
                     "Value",
                     Json.obj("pretty" -> "message".asJson)
                   )
                 }.toList,
             ),
-            externalInvocationResults = Map(),
-            exceptions = List(),
+            externalInvocationResults = Map.empty,
+            exceptions = Map.empty,
           )
           liveDataWithMockedTimestamp shouldBe expected
         }
@@ -450,42 +448,80 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
   private def deploymentStatus(name: ProcessName): List[DeploymentStatusDetails] =
     deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value
 
-  // Test results (and live data results represented by the same data structures) contain timestamps
-  // In order to assert them in tests, we substitute them with fixed Instant.
-  private def withFixedTimestamp(testResults: TestResults[Json]): (TestResults[Json], Instant) = {
+  private def withFixedTimestamp(testResults: LiveData): (LiveData, Instant) = {
     val fixedInstant = Instant.now
     (
-      TestResults[Json](
-        nodeResults = withFixedTimestamp(testResults.nodeResults, fixedInstant),
-        nodeTransitionResults = withFixedTimestamp(testResults.nodeTransitionResults, fixedInstant),
-        invocationResults = testResults.invocationResults,
-        externalInvocationResults = testResults.externalInvocationResults,
-        exceptions = testResults.exceptions.map(withFixedTimestamp(_, fixedInstant)),
+      LiveData(
+        nodeTransitions = withFixedTimestamp(testResults.nodeTransitions, fixedInstant),
+        invocationResults = withFixedTimestamp[NodeId, InvocationResult](
+          testResults.invocationResults,
+          fixedInstant,
+          withFixedTimestamp
+        ),
+        externalInvocationResults = withFixedTimestamp[NodeId, InvocationResult](
+          testResults.externalInvocationResults,
+          fixedInstant,
+          withFixedTimestamp
+        ),
+        exceptions = withFixedTimestamp[NodeId, ExceptionResult](
+          testResults.exceptions,
+          fixedInstant,
+          withFixedTimestamp
+        ),
       ),
       fixedInstant
     )
   }
 
+  private def withFixedTimestamp[K, V](
+      results: Map[K, List[V]],
+      fixedTimestamp: Instant,
+      withFixedTimestamp: (V, Instant) => V
+  ): Map[K, List[V]] = {
+    results.map { case (k, v) => (k, v.map(withFixedTimestamp(_, fixedTimestamp))) }
+  }
+
   private def withFixedTimestamp(
-      exceptionResult: ExceptionResult[Json],
+      exceptionResult: ExceptionResult,
       fixedTimestamp: Instant
-  ): ExceptionResult[Json] = {
+  ): ExceptionResult = {
     ExceptionResult(
-      withFixedTimestamp(exceptionResult.context, fixedTimestamp),
-      exceptionResult.nodeId,
-      exceptionResult.throwable
+      exceptionResult.contextId,
+      fixedTimestamp,
+      exceptionResult.variables,
+      exceptionResult.throwable,
+    )
+  }
+
+  private def withFixedTimestamp(result: InvocationResult, fixedTimestamp: Instant): InvocationResult = {
+    InvocationResult(
+      result.contextId,
+      fixedTimestamp,
+      result.name,
+      result.value
     )
   }
 
   private def withFixedTimestamp[K](
-      results: Map[K, List[ResultContext[Json]]],
+      results: Map[K, LiveDataForNodeTransition],
       fixedTimestamp: Instant
-  ): Map[K, List[ResultContext[Json]]] = {
-    results.map { case (k, v) => (k, v.map(withFixedTimestamp(_, fixedTimestamp))) }
+  ): Map[K, LiveDataForNodeTransition] = {
+    results.map { case (k, v) => (k, withFixedTimestamp(v, fixedTimestamp)) }
   }
 
-  private def withFixedTimestamp(resultContext: ResultContext[Json], fixedTimestamp: Instant): ResultContext[Json] = {
-    ResultContext(resultContext.id, fixedTimestamp, resultContext.variables)
+  private def withFixedTimestamp(
+      data: LiveDataForNodeTransition,
+      fixedTimestamp: Instant
+  ): LiveDataForNodeTransition = {
+    LiveDataForNodeTransition(
+      data.samples.map(withFixedTimestamp(_, fixedTimestamp)),
+      data.totalCount,
+      data.currentThroughput,
+    )
+  }
+
+  private def withFixedTimestamp(sample: LiveDataSample, fixedTimestamp: Instant): LiveDataSample = {
+    LiveDataSample(sample.contextId, fixedTimestamp, sample.variables)
   }
 
 }

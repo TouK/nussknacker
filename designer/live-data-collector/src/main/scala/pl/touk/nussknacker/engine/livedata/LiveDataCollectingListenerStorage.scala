@@ -1,38 +1,82 @@
 package pl.touk.nussknacker.engine.livedata
 
-import io.circe.Json
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
-import pl.touk.nussknacker.engine.testmode.TestProcess._
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 
 import java.time.{Clock, Instant}
+import java.util.concurrent.ConcurrentHashMap
+import scala.jdk.CollectionConverters._
 
 private[livedata] class LiveDataCollectingListenerStorage(
     maxNumberOfSamples: Int,
     throughputTimeWindowInSeconds: Int,
 )(implicit clock: Clock) {
 
-  private val results            = new RingBuffer[String, TestResults[Json]](maxNumberOfSamples)
-  private val transitionsCounter = new SlidingWindowCounter[NodeTransition](Instant.now, throughputTimeWindowInSeconds)
+  private val samples = new ConcurrentHashMap[NodeTransition, RingBufferWithTotalCount[LiveDataSample]]
+
+  private val invocationResults = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[InvocationResult]]
+
+  private val externalInvocations = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[InvocationResult]]
+
+  private val exceptions = new ConcurrentHashMap[NodeId, RingBufferWithTotalCount[ExceptionResult]]
+
+  private val transitionsSlidingWindowCounter: SlidingWindowCounter[NodeTransition] =
+    new SlidingWindowCounter[NodeTransition](Instant.now, throughputTimeWindowInSeconds)
 
   def getLiveData: LiveData = {
     LiveData(
-      liveDataSamples = TestResults.aggregate(results.values),
-      nodeTransitionThroughput = transitionsCounter.getThroughput,
+      nodeTransitions = samples.asScala.toMap.map { case (transition, values) =>
+        transition -> LiveDataForNodeTransition(
+          samples = values.values,
+          totalCount = values.totalCount,
+          currentThroughput = transitionsSlidingWindowCounter.getThroughput.getOrElse(transition, 0)
+        )
+      },
+      invocationResults = invocationResults.asScala.toMap.map { case (nodeId, values) =>
+        nodeId -> values.values
+      },
+      externalInvocationResults = externalInvocations.asScala.toMap.map { case (nodeId, values) =>
+        nodeId -> values.values
+      },
+      exceptions = exceptions.asScala.toMap.map { case (nodeId, values) =>
+        nodeId -> values.values
+      },
     )
   }
 
-  def updateResults(contextId: String, action: TestResults[Json] => TestResults[Json]): Unit = {
-    results.update(
-      contextId,
-      {
-        case Some(resultsSoFar) => action(resultsSoFar)
-        case None               => action(TestResults.empty[Json])
+  def addLiveDataSample(nodeTransition: NodeTransition, liveDataSample: LiveDataSample): Unit = {
+    transitionsSlidingWindowCounter.add(nodeTransition)
+    put(samples, nodeTransition, liveDataSample)
+  }
+
+  def addExpressionEvaluation(nodeId: NodeId, value: InvocationResult): Unit = {
+    put(invocationResults, nodeId, value)
+  }
+
+  def addExternalInvocation(nodeId: NodeId, value: InvocationResult): Unit = {
+    put(externalInvocations, nodeId, value)
+  }
+
+  def addException(nodeId: NodeId, value: ExceptionResult): Unit = {
+    put(exceptions, nodeId, value)
+  }
+
+  private def put[K, V](
+      storage: ConcurrentHashMap[K, RingBufferWithTotalCount[V]],
+      key: K,
+      value: V,
+  ): Unit = {
+    storage.compute(
+      key,
+      (_: K, valuesOpt: RingBufferWithTotalCount[V]) => {
+        val values = Option(valuesOpt) match {
+          case Some(values) => values
+          case None         => new RingBufferWithTotalCount[V](maxNumberOfSamples)
+        }
+        values.put(value)
+        values
       }
     )
-  }
-
-  def registerTransitionBetweenNodes(from: String, to: Option[String]): Unit = {
-    transitionsCounter.add(NodeTransition(from, to))
   }
 
 }

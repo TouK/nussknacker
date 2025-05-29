@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.ui.api.livedata
 
 import io.circe.Json
+import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewSupported, NoLiveDataPreviewSupport}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -25,6 +26,7 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 
+import java.time.Instant
 import scala.concurrent.Future
 
 class ScenarioLiveDataApiHttpServiceSpec
@@ -55,8 +57,7 @@ class ScenarioLiveDataApiHttpServiceSpec
 
   "The endpoint for live data should" - {
     "return present, but empty live data" in {
-      val mockedResults =
-        LiveData(TestResults[Json](Map.empty, Map.empty, Map.empty, Map.empty, List.empty), Map.empty)
+      val mockedResults = LiveData(Map.empty, Map.empty, Map.empty, Map.empty)
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -75,25 +76,137 @@ class ScenarioLiveDataApiHttpServiceSpec
         .statusCode(StatusCodes.OK.intValue)
         .equalsJsonBody(
           s"""{
-             |  "results": {
-             |      "nodeTransitionResults": [],
-             |      "invocationResults": {},
-             |      "externalInvocationResults": {},
-             |      "exceptions": []
-             |  },
-             |  "counts": {
-             |      "Event Generator": {
-             |          "all": 0,
-             |          "errors": 0,
-             |          "fragmentCounts": {}
-             |      },
-             |      "end": {
-             |          "all": 0,
-             |          "errors": 0,
-             |          "fragmentCounts": {}
-             |      }
-             |  },
-             |  "nodeTransitionThroughput": []
+             |    "samples": [],
+             |    "invocationResults": {},
+             |    "externalInvocationResults": {},
+             |    "exceptions": {}
+             |}""".stripMargin
+        )
+    }
+    "return present data" in {
+      val mockedResults = LiveData(
+        nodeTransitions = Map(
+          NodeTransition("start", Some("variable")) -> LiveDataForNodeTransition(
+            samples = List(
+              LiveDataSample(
+                contextId = "",
+                timestamp = Instant.ofEpochSecond(1748382500),
+                variables = Map(
+                  "v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson)
+                ),
+              )
+            ),
+            totalCount = 101,
+            currentThroughput = 0.9811,
+          )
+        ),
+        invocationResults = Map(
+          NodeId("start") -> List(
+            InvocationResult(
+              "mocked-context-id",
+              Instant.ofEpochSecond(1748382500),
+              "var",
+              Json.obj("pretty" -> 1.asJson)
+            )
+          )
+        ),
+        externalInvocationResults = Map(
+          NodeId("start") -> List(
+            InvocationResult(
+              "mocked-context-id",
+              Instant.ofEpochSecond(1748382500),
+              "var",
+              Json.obj("pretty" -> 1.asJson)
+            ),
+          )
+        ),
+        exceptions = Map(
+          NodeId("start") -> List(
+            ExceptionResult(
+              "mocked-context-id",
+              Instant.ofEpochSecond(1748382500),
+              Map("var1" -> Json.obj("pretty" -> "abc".asJson)),
+              new Exception("Something bad happened")
+            ),
+          )
+        ),
+      )
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          MockableDeploymentManager.configureLiveDataPreviewSupport(
+            new LiveDataPreviewSupported {
+              override def getLiveData(
+                  processIdWithName: ProcessIdWithName
+              ): Future[Either[LiveDataError, LiveData]] = Future.successful(Right(mockedResults))
+            }
+          )
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
+        .Then()
+        .statusCode(StatusCodes.OK.intValue)
+        .equalsJsonBody(
+          s"""{
+             |    "samples": [
+             |        {
+             |            "sourceNodeId": "start",
+             |            "destinationNodeId": "variable",
+             |            "samples": [
+             |                {
+             |                    "contextId": "",
+             |                    "timestamp": "2025-05-27T21:48:20Z",
+             |                    "variables": {
+             |                        "v1": {
+             |                            "a": "aaa",
+             |                            "b": 1
+             |                        }
+             |                    }
+             |                }
+             |            ],
+             |            "totalCount": 101,
+             |            "currentThroughput": 0.9811
+             |        }
+             |    ],
+             |    "invocationResults": {
+             |        "start": [
+             |            {
+             |                "contextId": "mocked-context-id",
+             |                "timestamp": "2025-05-27T21:48:20Z",
+             |                "name": "var",
+             |                "value": {
+             |                    "pretty": 1
+             |                }
+             |            }
+             |        ]
+             |    },
+             |    "externalInvocationResults": {
+             |        "start": [
+             |            {
+             |                "contextId": "mocked-context-id",
+             |                "timestamp": "2025-05-27T21:48:20Z",
+             |                "name": "var",
+             |                "value": {
+             |                    "pretty": 1
+             |                }
+             |            }
+             |        ]
+             |    },
+             |    "exceptions": {
+             |        "start": [
+             |            {
+             |                "contextId": "mocked-context-id",
+             |                "timestamp": "2025-05-27T21:48:20Z",
+             |                "variables": {
+             |                    "var1": {
+             |                        "pretty": "abc"
+             |                    }
+             |                },
+             |                "errorMessage": "Something bad happened"
+             |            }
+             |        ]
+             |    }
              |}""".stripMargin
         )
     }

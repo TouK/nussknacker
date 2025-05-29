@@ -16,8 +16,6 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,7 +23,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class ScenarioLiveDataApiHttpService(
     authManager: AuthManager,
     scenarioAuthorizer: AuthorizeProcess,
-    processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     dmDispatcher: DeploymentManagerDispatcher,
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
@@ -56,7 +53,7 @@ class ScenarioLiveDataApiHttpService(
               case None                    => Left(NoScenario)
             }
           }
-          liveDataPreview <- EitherT[Future, LiveDataError, LiveData] {
+          liveData <- EitherT[Future, LiveDataError, LiveData] {
             deploymentManager.liveDataPreviewSupport match {
               case supported: LiveDataPreviewSupported =>
                 supported.getLiveData(processIdWithName).map {
@@ -67,19 +64,7 @@ class ScenarioLiveDataApiHttpService(
                 Future.successful(Left(LiveDataNotSupported))
             }
           }
-          scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
-            scenarioWithDetails.processingType
-          )
-          resultsWithCounts = scenarioTestService.resultsWithCounts(
-            liveDataPreview.liveDataSamples,
-            scenarioWithDetails.scenarioGraphUnsafe,
-            scenarioWithDetails.processVersionUnsafe,
-            scenarioWithDetails.isFragment
-          )
-        } yield LiveDataDto.from(
-          resultsWithCounts,
-          Some(liveDataPreview.nodeTransitionThroughput),
-        )
+        } yield LiveDataDto.from(liveData)
       }
   }
 
