@@ -175,7 +175,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     results.nodeResults("union1") should have size 2
 
     val unionContextIds = results.nodeResults("union1").map(_.id)
-    unionContextIds should contain only (s"$sourceContextId-$branch1NodeId", s"$sourceContextId-$branch2NodeId")
+    unionContextIds should contain only (s"$sourceContextId-v1-$branch1NodeId", s"$sourceContextId-v2-$branch2NodeId")
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     nodeResults(results, "union1") shouldBe nodeResults(results, "collect1")
 
