@@ -49,16 +49,14 @@ function ExpressionField(props: Props): JSX.Element {
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
     const exprTextPath = `${exprPath}.expression`;
-    const exprLanguagePath = `${exprPath}.language`;
     const expressionObj = get(editedNode, exprPath);
     const editors = parameterDefinition?.editors || [];
 
     const onValueChange: OnValueChange = useCallback(
         (value: ExpressionObj) => {
-            setNodeDataAt(exprTextPath, value.expression);
-            setNodeDataAt(exprLanguagePath, value.language);
+            setNodeDataAt(exprPath, value);
         },
-        [exprLanguagePath, exprTextPath, setNodeDataAt],
+        [exprPath, setNodeDataAt],
     );
 
     if (

@@ -29,7 +29,10 @@ function wrapSetState<T>(action: SetStateAction<T>, transform: (value: T) => T =
     function isPlainValue<T>(action: SetStateAction<T>): action is T {
         return typeof action !== "function";
     }
-    return (prev) => transform(isPlainValue(action) ? action : action(prev));
+
+    return (prev) => {
+        return isPlainValue(action) ? transform(action) : action(transform(prev));
+    };
 }
 
 export function useNodeAdjust(
