@@ -76,7 +76,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         .statusCode(StatusCodes.OK.intValue)
         .equalsJsonBody(
           s"""{
-             |    "samples": [],
+             |    "nodeTransitions": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
              |    "exceptions": {}
@@ -149,7 +149,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         .statusCode(StatusCodes.OK.intValue)
         .equalsJsonBody(
           s"""{
-             |    "samples": [
+             |    "nodeTransitions": [
              |        {
              |            "sourceNodeId": "start",
              |            "destinationNodeId": "variable",
