@@ -688,10 +688,10 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .futureValue
 
       results.invocationResults("proc2").map(_.contextId) should contain only (
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1-end1",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-end1",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0-end2",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-end2"
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1-left-end1",
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-left-end1",
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0-right-end2",
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-right-end2"
       )
 
       results
