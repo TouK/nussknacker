@@ -1,6 +1,6 @@
-import { Box, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import i18next from "i18next";
-import React from "react";
+import React, { useCallback } from "react";
 import { useSelector } from "react-redux";
 import { SwitchTransition } from "react-transition-group";
 
@@ -18,7 +18,7 @@ export function ScenarioState() {
     const scenario = useSelector((state: RootState) => getScenario(state));
     const processState = useSelector((state: RootState) => getProcessState(state));
 
-    const runningDescription = (statusRunning: StatusRunning) => {
+    const runningDescription = useCallback((statusRunning: StatusRunning) => {
         return (
             <Stack>
                 <Typography component={"div"} variant={"body2"}>
@@ -33,15 +33,15 @@ export function ScenarioState() {
                 </Typography>
             </Stack>
         );
-    };
+    }, []);
 
-    const defaultDescription = (scenario: Scenario, processState: ProcessStateType) => {
+    const defaultDescription = useCallback((scenario: Scenario, processState: ProcessStateType) => {
         return (
             <Typography component={"div"} variant={"body2"}>
                 {ProcessStateUtils.getStateDescription(scenario, processState)}
             </Typography>
         );
-    };
+    }, []);
 
     return (
         <>
@@ -50,9 +50,7 @@ export function ScenarioState() {
                     <ProcessStateIcon scenario={scenario} processState={processState} />
                 </CssFade>
             </SwitchTransition>
-            {processState?.status && isStatusRunning(processState?.status)
-                ? runningDescription(processState.status)
-                : defaultDescription(scenario, processState)}
+            {isStatusRunning(processState?.status) ? runningDescription(processState.status) : defaultDescription(scenario, processState)}
         </>
     );
 }
