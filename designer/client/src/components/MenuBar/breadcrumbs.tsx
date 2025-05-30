@@ -15,16 +15,15 @@ export const Breadcrumbs = () => {
     const scenarioName = useSelector(getProcessName);
     const scenarioNames = useSelector(getScenariosNames);
 
-    const [anchorEl, setAnchorEl] = useState(null);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);
     const dispatch = useDispatch();
 
-    const handleClick = (event) => {
+    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     };
 
     const handleClose = useCallback(() => {
-        // dispatch({ type: "PROCESS_LOADING" });
         setAnchorEl(null);
     }, []);
 
@@ -57,12 +56,14 @@ export const Breadcrumbs = () => {
                             {scenarioName}
                         </LoadingButton>
                         <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-                            {scenarioNames.map((name, index) => (
+                            {scenarioNames.map((name) => (
                                 <MenuItem
                                     disabled={scenarioName === name}
-                                    key={index}
+                                    key={name}
                                     onClick={handleClose}
                                     component={"a"}
+                                    //TODO: For now, when we use SPA navigation via "to:" there is bad UX because of lack of loaders on scenario change.
+                                    // For now it's better to just fully reload a page
                                     href={`/visualization/${name}`}
                                 >
                                     {name}
