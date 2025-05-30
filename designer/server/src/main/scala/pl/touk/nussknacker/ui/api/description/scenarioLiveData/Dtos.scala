@@ -22,7 +22,7 @@ object Dtos {
       nodeTransitions: List[LiveDataForNodeTransitionDto],
       invocationResults: Map[String, List[InvocationResultDto]],
       externalInvocationResults: Map[String, List[InvocationResultDto]],
-      exceptions: Map[String, List[ExceptionResultDto]],
+      exceptionsByNodeId: Map[String, List[ExceptionResultDto]],
   )
 
   object LiveDataDto {
@@ -45,7 +45,7 @@ object Dtos {
         externalInvocationResults = liveData.externalInvocationResults.map { case (nodeId, results) =>
           nodeId.id -> results.map(InvocationResultDto.from)
         },
-        exceptions = liveData.exceptions.map { case (nodeId, results) =>
+        exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
           nodeId.id -> results.map(ExceptionResultDto.from)
         },
       )

@@ -221,6 +221,9 @@ object Dtos {
             results = results,
           )
       }.toList
+      lazy val exceptionsByNodeId = resultsWithCounts.results.exceptions.groupBy(_.nodeId).collect {
+        case (Some(nodeId), exceptions) => (nodeId, exceptions)
+      }
       ResultsWithCountsDto(
         results = TestResultsDto(
           nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
@@ -228,6 +231,7 @@ object Dtos {
           invocationResults = resultsWithCounts.results.invocationResults,
           externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
           exceptions = resultsWithCounts.results.exceptions,
+          exceptionsByNodeId = exceptionsByNodeId,
         ),
         counts = resultsWithCounts.counts,
       )
@@ -240,7 +244,8 @@ object Dtos {
       nodeTransitionResults: Option[List[NodeTransitionResult]],
       invocationResults: Map[String, List[ExpressionInvocationResult[Json]]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
-      exceptions: List[ExceptionResult[Json]]
+      exceptions: List[ExceptionResult[Json]],
+      exceptionsByNodeId: Map[String, List[ExceptionResult[Json]]],
   )
 
   final case class NodeTransitionResult(

@@ -82,7 +82,8 @@ class ManagementApiHttpServiceBusinessSpec
              |    "nodeTransitionResults": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
-             |    "exceptions": []
+             |    "exceptions": [],
+             |    "exceptionsByNodeId": {}
              |  },
              |  "counts": {
              |    "sourceId": {

@@ -173,7 +173,8 @@ class BatchDataGenerationSpec
            |    ],
            |    "invocationResults": {},
            |    "externalInvocationResults": {},
-           |    "exceptions": []
+           |    "exceptions": [],
+           |    "exceptionsByNodeId": {}
            |  },
            |  "counts": {
            |      "sourceId": {
@@ -275,7 +276,8 @@ class BatchDataGenerationSpec
            |    ],
            |    "invocationResults": {},
            |    "externalInvocationResults": {},
-           |    "exceptions": []
+           |    "exceptions": [],
+           |    "exceptionsByNodeId": {}
            |  },
            |  "counts": {
            |      "sourceId": {

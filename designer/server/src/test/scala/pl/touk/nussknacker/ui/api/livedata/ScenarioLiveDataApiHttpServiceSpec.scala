@@ -82,7 +82,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "nodeTransitions": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
-             |    "exceptions": {}
+             |    "exceptionsByNodeId": {}
              |}""".stripMargin
         )
     }
@@ -198,7 +198,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            }
              |        ]
              |    },
-             |    "exceptions": {
+             |    "exceptionsByNodeId": {
              |        "start": [
              |            {
              |                "contextId": "mocked-context-id",
