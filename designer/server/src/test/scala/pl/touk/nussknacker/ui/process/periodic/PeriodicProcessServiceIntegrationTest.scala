@@ -299,7 +299,7 @@ class PeriodicProcessServiceIntegrationTest
 
     f.delegateDeploymentManagerStub.setDeploymentStatus(
       processName,
-      SimpleStateStatus.Finished,
+      SimpleStateStatus.Finished(VersionId(1)),
       Some(afterDeployDeployment.id)
     )
     service.handleFinished.futureValue
@@ -392,7 +392,7 @@ class PeriodicProcessServiceIntegrationTest
       val deployment = schedulesState.firstScheduleData.latestDeployments.head
       f.delegateDeploymentManagerStub.setDeploymentStatus(
         processName,
-        SimpleStateStatus.Finished,
+        SimpleStateStatus.Finished(VersionId(1)),
         Some(deployment.id)
       )
     })
@@ -563,12 +563,20 @@ class PeriodicProcessServiceIntegrationTest
 
     val deployment = toDeploy.find(_.scheduleName.value.contains(firstSchedule)).value
     service.deploy(deployment).futureValue
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Running, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),
+      Some(deployment.id)
+    )
 
     val toDeployAfterDeploy = service.findToBeDeployed.futureValue
     toDeployAfterDeploy should have length 0
 
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deployment.id)
+    )
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
@@ -800,7 +808,11 @@ class PeriodicProcessServiceIntegrationTest
     toDeploy should have length 1
     val deployment = toDeploy.head
     service.deploy(deployment).futureValue
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deployment.id)
+    )
 
     tryWithFailedListener { () =>
       service.deactivate(processName)

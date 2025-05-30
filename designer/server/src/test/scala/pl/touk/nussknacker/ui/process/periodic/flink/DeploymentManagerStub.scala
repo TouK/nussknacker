@@ -33,7 +33,6 @@ class DeploymentManagerStub extends BaseDeploymentManager {
         DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           status = status,
-          version = None,
         )
       )
     )
@@ -50,7 +49,6 @@ class DeploymentManagerStub extends BaseDeploymentManager {
         DeploymentStatusDetails(
           deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
           status = status,
-          version = None,
         )
       )
     )
@@ -65,6 +63,8 @@ class DeploymentManagerStub extends BaseDeploymentManager {
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
 
   override def deploymentsStatusesQueryForAllScenariosSupport: DeploymentsStatusesQueryForAllScenariosSupport =
     new DeploymentsStatusesQueryForAllScenariosSupported {

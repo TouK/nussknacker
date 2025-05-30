@@ -6,10 +6,18 @@ import pl.touk.nussknacker.engine.api.deployment.{
   StateDefinitionDetails,
   StateStatus
 }
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
+  DefaultVisibleActions,
+  ScenarioStatusWithScenarioContext
+}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.DefaultActions
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{statusActionsPF, ProblemStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{
+  allowedActionsPF,
+  visibleActionsPF,
+  ProblemStateStatus,
+  Running
+}
 
 /**
  * Base [[ProcessStateDefinitionManager]] with basic state definitions and state transitions.
@@ -19,8 +27,11 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{statu
  */
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
 
-  override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
-    statusActionsPF.lift(input.scenarioStatus).getOrElse(DefaultActions.toSet)
+  override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
+    visibleActionsPF.lift(input.scenarioStatus).getOrElse(DefaultVisibleActions)
+
+  override def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] =
+    allowedActionsPF.lift(input.scenarioStatus).getOrElse(DefaultActions)
 
   override def statusDescription(input: ScenarioStatusWithScenarioContext): String = statusDescription(
     input.scenarioStatus

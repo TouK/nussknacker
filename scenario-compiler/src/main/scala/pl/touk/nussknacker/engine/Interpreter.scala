@@ -5,6 +5,7 @@ import cats.effect.IO
 import cats.syntax.all._
 import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.Interpreter._
+import pl.touk.nussknacker.engine.RuntimeMode.Test
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -143,7 +144,10 @@ private class InterpreterInternal[F[_]: Monad](
               interpretationResult(node, FragmentEndReference(id, fields), newCtx)
             }
           )
-      case Enricher(_, ref, outName, next) =>
+      case Enricher(_, _, outName, next, Some(mockedOutput)) if runtimeMode == Test =>
+        val valueWithModifiedContext = expressionEvaluator.evaluate[Any](mockedOutput, outName, node.id, ctx)
+        interpretOptionalNext(node, next, ctx.withVariable(outName, valueWithModifiedContext.value))
+      case Enricher(_, ref, outName, next, _) =>
         invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) =>
             interpretOptionalNext(node, next, newCtx.withVariable(outName, out))
@@ -183,10 +187,10 @@ private class InterpreterInternal[F[_]: Monad](
             interpretOptionalNext(node, defaultNext, accCtx)
         }
       case Sink(id, _, true) =>
-        interpretationResult(node, EndReference(id), ctx)
+        sinkInterpretationResult(EndReference(id), ctx)
       case Sink(id, ref, false) =>
         listeners.foreach(_.endEncountered(id, ref, ctx, jobData.metaData))
-        interpretationResult(node, EndReference(id), ctx)
+        sinkInterpretationResult(EndReference(id), ctx)
       case BranchEnd(e) =>
         Monad[F].pure(List(Left(InterpretationResult(e.joinReference, ctx))))
       case CustomNode(_, _, next) =>
@@ -201,6 +205,13 @@ private class InterpreterInternal[F[_]: Monad](
         import cats.implicits._
         nexts.map(interpretNext(node, _, ctx)).sequence.map(_.flatten)
     }
+  }
+
+  private def sinkInterpretationResult[FF[_]: Applicative](
+      reference: PartReference,
+      ctx: Context
+  ): FF[List[Result[InterpretationResult]]] = {
+    Applicative[FF].pure(List(Left(InterpretationResult(reference, ctx))))
   }
 
   private def interpretationResult[FF[_]: Applicative](

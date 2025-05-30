@@ -31,6 +31,8 @@ import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 
+import java.time.Instant
+
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
     extends AnyFunSuite
@@ -75,7 +77,7 @@ class ManagementResourcesSpec
   test("process during deploy cannot be deployed again") {
     createDeployedExampleScenario(processName)
 
-    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.DuringDeploy) {
+    deploymentManager.withScenarioStateStatus(processName, SimpleStateStatus.DuringDeploy(VersionId(1))) {
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -351,7 +353,11 @@ class ManagementResourcesSpec
 
   test("snapshots process") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deploymentManager.withScenarioRunning(ProcessTestData.sampleScenario.name) {
+    deploymentManager.withScenarioRunning(
+      ProcessTestData.sampleScenario.name,
+      VersionId(1),
+      startedAt = Instant.now
+    ) {
       snapshot(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe FlinkClientStub.savepointPath
@@ -361,7 +367,11 @@ class ManagementResourcesSpec
 
   test("stops process") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deploymentManager.withScenarioRunning(ProcessTestData.sampleScenario.name) {
+    deploymentManager.withScenarioRunning(
+      ProcessTestData.sampleScenario.name,
+      VersionId(1),
+      startedAt = Instant.now
+    ) {
       stop(ProcessTestData.sampleScenario.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe FlinkClientStub.stopSavepointPath

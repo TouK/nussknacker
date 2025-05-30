@@ -5,7 +5,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.process.VersionId
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
 
@@ -29,15 +28,19 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
       )
     )
 
-    override def statusActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
+    override def visibleActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
+
+    override def allowedActions(input: ScenarioStatusWithScenarioContext): Set[ScenarioActionName] = Set.empty
   }
 
   test("should combine delegate state definitions with custom overrides") {
     // here we use default set of states and apply custom extensions and overrides
     val manager = new OverridingProcessStateDefinitionManager(
       statusDescriptionsPF = {
-        case DefaultState => "Calculated description for default, e.g. schedule date"
-        case CustomState  => "Calculated description for custom, e.g. schedule date"
+        case DefaultState =>
+          "Calculated description for default, e.g. schedule date"
+        case CustomState =>
+          "Calculated description for custom, e.g. schedule date"
       },
       customStateDefinitions = Map(
         CustomState.name -> StateDefinitionDetails("Custom", icon, "dummy", "Custom description"),

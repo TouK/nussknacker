@@ -8,73 +8,92 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
   GeneralProblemStateStatus,
   MultipleJobsRunning
 }
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
+import java.time.Instant
 import java.util.UUID
 
 // TODO: more unit tests, tests on higher level than (resolveScenarioStatus) not extractAtMostOneStatus
 class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
+  private val instant = Instant.now()
+
   test("return failed status if two deployments running") {
     val firstDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Running, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(
+        SimpleStateStatus.Running(VersionId(1), instant),
+        Some(DeploymentId(UUID.randomUUID().toString)),
+      )
     val secondDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Running, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(
+        SimpleStateStatus.Running(VersionId(2), instant.plusSeconds(100)),
+        Some(DeploymentId(UUID.randomUUID().toString)),
+      )
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       DeploymentStatusDetails(
         status = MultipleJobsRunning(
-          firstDeploymentStatus.deploymentIdUnsafe  -> SimpleStateStatus.Running,
-          secondDeploymentStatus.deploymentIdUnsafe -> SimpleStateStatus.Running
+          firstDeploymentStatus.deploymentIdUnsafe  -> SimpleStateStatus.Running(VersionId(1), instant),
+          secondDeploymentStatus.deploymentIdUnsafe -> SimpleStateStatus.Running(VersionId(1), instant)
         ),
         deploymentId = firstDeploymentStatus.deploymentId,
-        version = None
       )
     )
   }
 
   test("return failed status if two in non-terminal state") {
     val firstDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Running, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(
+        SimpleStateStatus.Running(VersionId(1), instant),
+        Some(DeploymentId(UUID.randomUUID().toString)),
+      )
     val secondDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Restarting, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(SimpleStateStatus.Restarting, Some(DeploymentId(UUID.randomUUID().toString)))
 
     InconsistentStateDetector.extractAtMostOneStatus(List(firstDeploymentStatus, secondDeploymentStatus)) shouldBe Some(
       DeploymentStatusDetails(
         status = MultipleJobsRunning(
-          firstDeploymentStatus.deploymentIdUnsafe  -> SimpleStateStatus.Running,
-          secondDeploymentStatus.deploymentIdUnsafe -> SimpleStateStatus.Running
+          firstDeploymentStatus.deploymentIdUnsafe  -> SimpleStateStatus.Running(VersionId(1), instant),
+          secondDeploymentStatus.deploymentIdUnsafe -> SimpleStateStatus.Running(VersionId(1), instant)
         ),
         deploymentId = firstDeploymentStatus.deploymentId,
-        version = None
       )
     )
   }
 
   test("return running status if cancelled job has last-modification date later then running job") {
     val runningDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Running, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(
+        SimpleStateStatus.Running(VersionId(1), instant),
+        Some(DeploymentId(UUID.randomUUID().toString)),
+      )
     val canceledDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Canceled, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(SimpleStateStatus.Canceled, Some(DeploymentId(UUID.randomUUID().toString)))
     val duringCancelDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.DuringCancel, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(SimpleStateStatus.DuringCancel, Some(DeploymentId(UUID.randomUUID().toString)))
 
     InconsistentStateDetector.extractAtMostOneStatus(
       List(runningDeploymentStatus, canceledDeploymentStatus, duringCancelDeploymentStatus)
     ) shouldBe Some(
       DeploymentStatusDetails(
-        SimpleStateStatus.Running,
+        SimpleStateStatus.Running(VersionId(1), instant),
         runningDeploymentStatus.deploymentId,
-        None,
       )
     )
   }
 
   test("return last terminal state if not running") {
     val firstFinishedDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Finished, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(
+        SimpleStateStatus.Finished(VersionId(1)),
+        Some(DeploymentId(UUID.randomUUID().toString)),
+      )
     val secondFinishedDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Finished, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(
+        SimpleStateStatus.Finished(VersionId(1)),
+        Some(DeploymentId(UUID.randomUUID().toString)),
+      )
 
     InconsistentStateDetector.extractAtMostOneStatus(
       List(firstFinishedDeploymentStatus, secondFinishedDeploymentStatus)
@@ -83,9 +102,12 @@ class InconsistentStateDetectorTest extends AnyFunSuiteLike with Matchers {
 
   test("return non-terminal state if not running") {
     val finishedDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Finished, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(
+        SimpleStateStatus.Finished(VersionId(1)),
+        Some(DeploymentId(UUID.randomUUID().toString)),
+      )
     val nonTerminalDeploymentStatus =
-      DeploymentStatusDetails(SimpleStateStatus.Restarting, Some(DeploymentId(UUID.randomUUID().toString)), None)
+      DeploymentStatusDetails(SimpleStateStatus.Restarting, Some(DeploymentId(UUID.randomUUID().toString)))
 
     InconsistentStateDetector.extractAtMostOneStatus(
       List(finishedDeploymentStatus, nonTerminalDeploymentStatus)

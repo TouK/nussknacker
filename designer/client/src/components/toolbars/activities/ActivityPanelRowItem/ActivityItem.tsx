@@ -47,6 +47,7 @@ export const ActivityItem = forwardRef(
             "PERFORMED_SCHEDULED_EXECUTION",
             "SCENARIO_CANCELED",
             "SCENARIO_DEPLOYED",
+            "SCENARIO_REDEPLOYED",
             "SCENARIO_PAUSED",
         ];
 

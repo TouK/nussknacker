@@ -20,9 +20,9 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
     val openApiDefinitionDiscovery =
       new CachingOpenApiDefinitionDiscovery(SwaggerOpenApiDefinitionDiscovery, openAPIsConfig)
     ComponentDefinition(
-      "openAPI",
-      OpenAPIEnricherFactory(openAPIsConfig, openApiDefinitionDiscovery),
-      label = Some("OpenAPI")
+      name = "openAPI",
+      component = OpenAPIEnricherFactory(openAPIsConfig, openApiDefinitionDiscovery),
+      label = Some(s"${openAPIsConfig.componentPrefix.getOrElse("")}OpenAPI")
     ) :: Nil
   }
 

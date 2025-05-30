@@ -17,11 +17,14 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManagerProvider
 
+import java.time.Clock
 import scala.concurrent.duration.FiniteDuration
 
 class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
   override val name: String = "lite-embedded"
+
+  private val clock: Clock = Clock.systemUTC()
 
   override def createDeploymentManager(
       modelDataProvider: BaseModelDataProvider,
@@ -32,7 +35,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     import dependencies._
     val strategy = forMode(engineConfig)(
       new StreamingDeploymentStrategy,
-      RequestResponseDeploymentStrategy(engineConfig)
+      RequestResponseDeploymentStrategy(engineConfig, clock)
     )
 
     val metricRegistry = LiteMetricRegistryFactory

@@ -24,6 +24,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import sttp.client3.testing.SttpBackendStub
 
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -148,6 +149,9 @@ object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
   ): Future[Option[JobID]] =
     Future.failed(new IllegalAccessException("This implementation shouldn't be used"))
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport =
+    throw new IllegalAccessException("This implementation shouldn't be used")
+
 }
 
 object MockDeploymentManager {
@@ -200,9 +204,8 @@ object MockDeploymentManager {
   private[mock] def sampleDeploymentStatusDetails(
       status: StateStatus,
       deploymentId: DeploymentId,
-      version: Option[VersionId] = Some(VersionId.initialVersionId)
   ): DeploymentStatusDetails =
-    DeploymentStatusDetails(status, Some(deploymentId), version)
+    DeploymentStatusDetails(status, Some(deploymentId))
 
   // Pass correct deploymentId
   private[mock] def sampleDeploymentId: DeploymentId = DeploymentId(UUID.randomUUID().toString)
@@ -274,14 +277,18 @@ object MockDeploymentManagerSyntaxSugar extends LazyLogging {
       }
     }
 
-    def withScenarioRunning[T](scenarioName: ProcessName)(action: => T): T = {
-      withScenarioStateStatus(scenarioName, SimpleStateStatus.Running)(action)
+    def withScenarioRunning[T](scenarioName: ProcessName, versionId: VersionId, startedAt: Instant)(action: => T): T = {
+      withScenarioStateStatus(scenarioName, SimpleStateStatus.Running(versionId, startedAt))(action)
     }
 
-    def withScenarioFinished[T](scenarioName: ProcessName, deploymentId: DeploymentId = sampleDeploymentId)(
+    def withScenarioFinished[T](
+        scenarioName: ProcessName,
+        versionId: VersionId = VersionId(1),
+        deploymentId: DeploymentId = sampleDeploymentId
+    )(
         action: => T
     ): T = {
-      withScenarioStateStatus(scenarioName, SimpleStateStatus.Finished, deploymentId)(action)
+      withScenarioStateStatus(scenarioName, SimpleStateStatus.Finished(versionId), deploymentId)(action)
     }
 
     def withScenarioStateStatus[T](
@@ -292,10 +299,10 @@ object MockDeploymentManagerSyntaxSugar extends LazyLogging {
       withScenarioStates(scenarioName, List(sampleDeploymentStatusDetails(status, deploymentId)))(action)
     }
 
-    def withScenarioStateVersion[T](scenarioName: ProcessName, status: StateStatus, version: Option[VersionId])(
+    def withScenarioStateVersion[T](scenarioName: ProcessName, status: StateStatus)(
         action: => T
     ): T = {
-      withScenarioStates(scenarioName, List(sampleDeploymentStatusDetails(status, sampleDeploymentId, version)))(action)
+      withScenarioStates(scenarioName, List(sampleDeploymentStatusDetails(status, sampleDeploymentId)))(action)
     }
 
     def withEmptyScenarioState[T](scenarioName: ProcessName)(action: => T): T = {

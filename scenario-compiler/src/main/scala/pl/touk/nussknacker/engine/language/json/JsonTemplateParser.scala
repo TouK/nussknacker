@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.Validated.{invalidNel, validNel}
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{invalidNel, validNel, Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.parser
 import org.springframework.expression.{Expression => SpringExpression}
@@ -19,18 +19,10 @@ import pl.touk.nussknacker.engine.definition.component.parameter.defaults.TypeVa
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.{
-  stringTypingResult,
-  CompiledJsonTemplateExpression,
-  JsonTemplateExpressionTypingInfo,
-  SpelExpressionConverter,
-  UnparsedSpelExpression,
-  WithContextValidationSpelExpressionConverter,
-  WithoutContextValidationSpelExpressionConverter
-}
+import pl.touk.nussknacker.engine.language.json.JsonTemplateParser._
 import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.SpelExpressionConverter._
 import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelExpressionParser, SpelExpressionRepr}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ExpressionCompilationError, ExpressionTypeError}
 
 class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: SpelExpressionParser)
     extends ExpressionParser {
@@ -53,6 +45,13 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
         )
           .andThen { jsonString =>
             JsonParser.parse(jsonString, ctx, expectedType)
+          }
+          .andThen { parsed =>
+            if (parsed.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType)) {
+              Valid(parsed)
+            } else {
+              Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, parsed.typingInfo.typingResult)))
+            }
           }
           .map { jsonTypeExpression =>
             parsedSpelTemplateExpression -> jsonTypeExpression

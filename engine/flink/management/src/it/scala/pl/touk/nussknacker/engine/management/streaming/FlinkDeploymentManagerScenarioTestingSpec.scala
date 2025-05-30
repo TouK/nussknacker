@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
 
 import java.util.UUID
@@ -65,10 +64,10 @@ class FlinkDeploymentManagerScenarioTestingSpec
     val process = SampleProcess.prepareProcess(processName)
 
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
-      r.nodeResults shouldBe Map(
-        "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "endSend"      -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))))
+      r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) } shouldBe Map(
+        "startProcess" -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "nightFilter"  -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "endSend"      -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
       )
     }
   }

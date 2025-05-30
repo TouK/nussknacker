@@ -127,6 +127,7 @@ object ScenarioActivityType extends Enum[ScenarioActivityType] {
   case object ScenarioArchived            extends ScenarioActivityType
   case object ScenarioUnarchived          extends ScenarioActivityType
   case object ScenarioDeployed            extends ScenarioActivityType
+  case object ScenarioRedeployed          extends ScenarioActivityType
   case object ScenarioPaused              extends ScenarioActivityType
   case object ScenarioCanceled            extends ScenarioActivityType
   case object ScenarioModified            extends ScenarioActivityType

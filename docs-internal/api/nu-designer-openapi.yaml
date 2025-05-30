@@ -2325,7 +2325,7 @@ paths:
                 Example1:
                   summary: No test data generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4317,6 +4317,13 @@ paths:
                       - delete_comment
                       - edit_comment
                       - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
@@ -4425,6 +4432,13 @@ paths:
                       supportedActions: []
                     - type: SCENARIO_DEPLOYED
                       displayableName: Deployment
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_REDEPLOYED
+                      displayableName: Redeploy
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4574,6 +4588,88 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/liveData/{scenarioName}:
+    get:
+      tags:
+      - Live data
+      summary: Preview of the data samples currently processed by the scenario
+      operationId: getApiLivedataScenarioname
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveDataDto'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '204':
+          description: There is currently no live data available for this scenario
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Scenario not found
+                  value: Scenario not found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: Live data preview is not supported by this scenario
+                  value: Live data preview is not supported by this scenario
+      security:
+      - {}
+      - httpAuth: []
   /api/scenarioTesting/{scenarioName}/capabilities:
     post:
       tags:
@@ -4649,12 +4745,28 @@ paths:
                     testWithGeneratedData:
                       status: AVAILABLE
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
         '401':
           description: ''
           content:
@@ -4685,9 +4797,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4749,13 +4868,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResultsWithCountsDto'
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body, Invalid value for: query parameter skipResultsPerNode,
-            Invalid value for: query parameter skipResultsPerTransition'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
         '401':
           description: ''
           content:
@@ -4786,9 +4920,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4898,7 +5039,7 @@ paths:
                 Example1:
                   summary: No data was generated
                   value: 'Could not provide a sample of test data. Possible cause:
-                    no live sample data available'
+                    no live data available'
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4992,12 +5133,28 @@ paths:
                       errorType: SaveAllowed
                     validationPerformed: true
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example0:
+                  summary: Too many characters were generated
+                  value: Too many characters were found in the generated test data
+                    (5000). Please try to decrease the number of requested samples
+                    or configure 'testDataSettings.testDataMaxLength' to increase
+                    the limit (2000)
+                Example1:
+                  summary: Too many samples requested
+                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
+                    to increase the limit (1000)
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      source: Failed to parse expression: Bad expression
         '401':
           description: ''
           content:
@@ -5028,9 +5185,16 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+                Example1:
+                  summary: No data was generated
+                  value: 'Could not provide a sample of test data. Possible cause:
+                    no live data available'
+                Example2:
+                  summary: No sources with test data generation available
+                  value: No sources with test data generation available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -5853,6 +6017,42 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
+    LiveDataDto:
+      title: LiveDataDto
+      type: object
+      required:
+      - results
+      - counts
+      properties:
+        results:
+          $ref: '#/components/schemas/LiveDataSamplesDto'
+        counts:
+          $ref: '#/components/schemas/Map_NodeCount'
+        nodeTransitionThroughput:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/NodeTransitionThroughputDto'
+    LiveDataSamplesDto:
+      title: LiveDataSamplesDto
+      type: object
+      required:
+      - invocationResults
+      - externalInvocationResults
+      properties:
+        nodeTransitionResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeTransitionResult'
+        invocationResults:
+          $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
+        externalInvocationResults:
+          $ref: '#/components/schemas/Map_List_ExternalInvocationResult_Json'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExceptionResult_Json'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6421,6 +6621,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResultContext_Json'
+    NodeTransitionResult1:
+      title: NodeTransitionResult
+      type: object
+      required:
+      - sourceNodeId
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultContext_Json'
+    NodeTransitionThroughputDto:
+      title: NodeTransitionThroughputDto
+      type: object
+      required:
+      - sourceNodeId
+      - throughput
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        throughput:
+          type: number
     NodeTypes:
       title: NodeTypes
       type: string
@@ -6600,6 +6831,7 @@ components:
       - $ref: '#/components/schemas/InvalidScenario'
       - $ref: '#/components/schemas/NoSources'
       - $ref: '#/components/schemas/NotSupportedBySources'
+      - $ref: '#/components/schemas/UserDoesNotHavePermission'
     NotAvailable_T:
       title: NotAvailable_T
       type: object
@@ -6872,10 +7104,14 @@ components:
       type: object
       required:
       - id
+      - timestamp
       - variables
       properties:
         id:
           type: string
+        timestamp:
+          type: string
+          format: date-time
         variables:
           $ref: '#/components/schemas/Map_Json'
     ResultsWithCountsDto:
@@ -6979,6 +7215,7 @@ components:
           - SCENARIO_ARCHIVED
           - SCENARIO_UNARCHIVED
           - SCENARIO_DEPLOYED
+          - SCENARIO_REDEPLOYED
           - SCENARIO_PAUSED
           - SCENARIO_CANCELED
           - SCENARIO_MODIFIED
@@ -7393,7 +7630,7 @@ components:
           - array
           - 'null'
           items:
-            $ref: '#/components/schemas/NodeTransitionResult'
+            $ref: '#/components/schemas/NodeTransitionResult1'
         invocationResults:
           $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
         externalInvocationResults:
@@ -7737,6 +7974,9 @@ components:
           anyOf:
           - $ref: '#/components/schemas/LayoutData'
           - type: 'null'
+    UserDoesNotHavePermission:
+      title: UserDoesNotHavePermission
+      type: object
     ValidationError:
       title: ValidationError
       type: object

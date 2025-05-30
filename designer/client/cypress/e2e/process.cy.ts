@@ -152,7 +152,8 @@ describe("Process", () => {
                 });
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
             //why save and test snapshot? mistake?
-            cy.contains(/^save\*$/i).click();
+            cy.verifySaveIndicator();
+            cy.contains(/^save$/i).click();
             cy.get("[data-testid=window]").contains(/^ok$/i).click();
             cy.get("[data-testid=window]").should("not.exist");
             cy.get("#nk-graph-main").should("be.visible");
@@ -335,7 +336,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("button", "test").should("be.enabled").click();
+        cy.contains("button", "Test").should("be.enabled").click();
         cy.get("[data-testid=window]").should("be.visible").find("#ace-editor").type("10");
         cy.get("[data-testid=window]")
             .contains(/^test$/i)

@@ -4,7 +4,11 @@ import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
+import pl.touk.nussknacker.engine.api.deployment.{
+  DMRunDeploymentCommand,
+  LiveDataPreviewSupport,
+  NoLiveDataPreviewSupport
+}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
@@ -38,6 +42,9 @@ class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, cli
       command.deploymentData.deploymentId.toNewDeploymentIdOpt.map(_.toJobID)
     )
   }
+
+  override def liveDataPreviewSupport: LiveDataPreviewSupport =
+    NoLiveDataPreviewSupport
 
 }
 

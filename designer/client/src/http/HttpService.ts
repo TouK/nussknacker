@@ -374,6 +374,38 @@ class HttpService {
             });
     }
 
+    redeploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = { nodesDeploymentData, comment };
+        return api
+            .post(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
+            .then(() => {
+                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+            })
+            .catch((error: AxiosError) => {
+                if (error?.response?.status != 400) {
+                    return this.#addError(
+                        i18next.t("notification.error.failedToRedeploy", "Failed to redeploy {{processName}} due to: {{axiosError}}", {
+                            processName,
+                            axiosError: handleAxiosError(error),
+                        }),
+                        error,
+                        true,
+                    ).then(() => {
+                        return {
+                            scenarioActionResultType: ScenarioActionResultType.UnhandledError,
+                            msg: "Unknown error",
+                        };
+                    });
+                } else {
+                    const msg = error.response.data;
+                    return {
+                        scenarioActionResultType: ScenarioActionResultType.ValidationError,
+                        msg: msg.toString(),
+                    };
+                }
+            });
+    }
+
     runOffSchedule(processName: string, comment?: string): Promise<ScenarioActionResult> {
         const data = {
             comment: comment,
@@ -879,7 +911,13 @@ class HttpService {
                     }),
                 ),
             )
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true));
+            .catch((error) =>
+                this.#addError(
+                    i18next.t("notification.error.failedToMigrate", "Failed to migrate: {{ cause }}", { cause: error.response.data }),
+                    error,
+                    true,
+                ),
+            );
     }
 
     fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
@@ -991,7 +1029,10 @@ class HttpService {
             return response.data;
         } catch (error) {
             return await Promise.reject(
-                this.#addError(i18next.t("notification.error.failedToSendNodeAction", `Failed to send ${actionName} action`), error),
+                this.#addError(
+                    i18next.t("notification.error.failedToSendNodeAction", "Failed to send {{actionName}} action", { actionName }),
+                    error,
+                ),
             );
         }
     }

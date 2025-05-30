@@ -21,7 +21,11 @@ class DeploymentsStatusesSynchronizer(
 
   def synchronizeAll(): Future[Unit] = {
     val finalStatusesNames =
-      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, DeploymentStatusName.problemStatusName)
+      Set(
+        DeploymentStatus.Canceled.name,
+        DeploymentStatusName.finishedStatusName,
+        DeploymentStatusName.problemStatusName
+      )
     synchronizationSupport
       .all(NussknackerInternalUser.instance)
       .toList

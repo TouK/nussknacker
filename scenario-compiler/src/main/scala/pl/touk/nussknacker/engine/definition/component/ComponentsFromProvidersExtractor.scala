@@ -5,7 +5,6 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.componentConfigPath
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig

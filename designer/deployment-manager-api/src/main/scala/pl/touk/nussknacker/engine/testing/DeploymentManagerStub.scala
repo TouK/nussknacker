@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
+import java.time.Instant
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
@@ -28,7 +29,10 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
     case _: DMValidateScenarioCommand => Future.successful(())
     case run: DMRunDeploymentCommand =>
       Future {
-        scenarioStatusMap.put(run.processVersion.processName, SimpleStateStatus.Running)
+        scenarioStatusMap.put(
+          run.processVersion.processName,
+          SimpleStateStatus.Running(run.processVersion.versionId, startedAt = Instant.now())
+        )
         None
       }
     case cancel: DMCancelScenarioCommand =>
@@ -46,7 +50,7 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[DeploymentStatusDetails]]] = {
     Future.successful(
       WithDataFreshnessStatus.fresh(
-        scenarioStatusMap.get(scenarioName).map(DeploymentStatusDetails(_, None, None)).toList
+        scenarioStatusMap.get(scenarioName).map(DeploymentStatusDetails(_, None)).toList
       )
     )
   }
@@ -59,6 +63,8 @@ class DeploymentManagerStub(implicit ec: ExecutionContext) extends BaseDeploymen
     NoDeploymentsStatusesQueryForAllScenariosSupport
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
+
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
 
   override def close(): Unit = {}
 

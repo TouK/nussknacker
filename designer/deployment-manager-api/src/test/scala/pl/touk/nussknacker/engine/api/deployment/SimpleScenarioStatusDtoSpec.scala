@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
+import java.time.Instant
+
 class SimpleScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Inside {
 
   def statusPresentation(status: StateStatus): ScenarioStatusPresentationDetails =
@@ -21,18 +23,20 @@ class SimpleScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Ins
       )
     )
 
+  private val versionId = VersionId(1)
+
   test("scenario state should be during deploy") {
-    val state = statusPresentation(SimpleStateStatus.DuringDeploy)
-    state.allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    val state = statusPresentation(SimpleStateStatus.DuringDeploy(versionId))
+    state.allowedActions shouldBe Set(ScenarioActionName.Cancel)
   }
 
   test("scenario state should be running") {
-    val state = statusPresentation(SimpleStateStatus.Running)
-    state.allowedActions shouldBe Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
+    val state = statusPresentation(SimpleStateStatus.Running(versionId, Instant.now()))
+    state.allowedActions shouldBe Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Redeploy)
   }
 
   test("scenario state should be finished") {
-    val state = statusPresentation(SimpleStateStatus.Finished)
+    val state = statusPresentation(SimpleStateStatus.Finished(versionId))
     state.allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
 

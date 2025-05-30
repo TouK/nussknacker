@@ -180,8 +180,10 @@ class K8sDeploymentManagerReqRespTest
           .futureValue
         eventually {
           val state = f.manager.getScenarioDeploymentsStatuses(secondVersionInfo.processName).map(_.value).futureValue
-          state.flatMap(_.version).map(_.value) shouldBe List(secondVersion)
-          state.map(_.status) shouldBe List(SimpleStateStatus.Running)
+          state.length shouldBe 1
+          state.map(_.status) should matchPattern {
+            case List(SimpleStateStatus.Running(version, _)) if version.value == secondVersion =>
+          }
         }
         val versionsAfterRedeploy = checkVersions()
         versionsAfterRedeploy shouldEqual Set(secondVersion)

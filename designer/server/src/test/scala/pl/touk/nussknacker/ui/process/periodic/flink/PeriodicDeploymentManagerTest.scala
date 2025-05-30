@@ -23,7 +23,12 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessRepository
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
-import pl.touk.nussknacker.ui.process.deployment.{CommonCommandData, RunDeploymentCommand, TestDeploymentServiceFactory}
+import pl.touk.nussknacker.ui.process.deployment.{
+  CommonCommandData,
+  RunDeploymentCommand,
+  RunRedeploymentCommand,
+  TestDeploymentServiceFactory
+}
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
@@ -34,7 +39,7 @@ import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 class PeriodicDeploymentManagerTest
@@ -141,6 +146,17 @@ class PeriodicDeploymentManagerTest
       .futureValue
       .futureValue
 
+    def reschedule(id: ProcessId): Unit = services.deploymentService
+      .processCommand(
+        RunRedeploymentCommand(
+          CommonCommandData(ProcessIdWithName(id, processName), None, user),
+          RestoreStateFromReplacedJobSavepoint,
+          NodesDeploymentData.empty
+        )
+      )
+      .futureValue
+      .futureValue
+
     def getSingleActiveDeploymentId(id: ProcessId): PeriodicProcessDeploymentId = inside(getScenarioStatus(id)) {
       case periodic: PeriodicScenarioStatus =>
         periodic.activeDeploymentsStatuses.loneElement.deploymentId
@@ -150,7 +166,7 @@ class PeriodicDeploymentManagerTest
         scenarioStatus: StateStatus
     ): Set[ScenarioActionName] = {
       periodicDeploymentManager.processStateDefinitionManager
-        .statusActions(
+        .allowedActions(
           ScenarioStatusWithScenarioContext(
             scenarioStatus = scenarioStatus,
             deployedVersionId = None,
@@ -208,7 +224,7 @@ class PeriodicDeploymentManagerTest
     scenarioStatus.mergedStatus shouldBe a[ScheduledStatus]
     f.getAllowedActions(scenarioStatus) shouldBe Set(
       ScenarioActionName.Cancel,
-      ScenarioActionName.Deploy,
+      ScenarioActionName.Redeploy,
     )
     f.getScenarioStatus(version.processId).mergedStatus shouldBe a[ScheduledStatus]
   }
@@ -218,13 +234,17 @@ class PeriodicDeploymentManagerTest
     val version = f.saveScenario()
     f.schedule(version.processId)
     val deploymentId = f.getSingleActiveDeploymentId(version.processId)
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deploymentId)
+    )
 
     val scenarioStatus = f.getScenarioStatus(version.processId)
     scenarioStatus.mergedStatus shouldBe a[ScheduledStatus]
     f.getAllowedActions(scenarioStatus) shouldBe Set(
       ScenarioActionName.Cancel,
-      ScenarioActionName.Deploy
+      ScenarioActionName.Redeploy
     )
   }
 
@@ -237,7 +257,11 @@ class PeriodicDeploymentManagerTest
       PeriodicProcessDeploymentStatus.Finished,
       LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
     )
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deploymentId)
+    )
     f.periodicProcessService.deactivate(processName).futureValue
 
     val scenarioStatus =
@@ -248,7 +272,7 @@ class PeriodicDeploymentManagerTest
         .loneElement
         .status
 
-    scenarioStatus.mergedStatus shouldBe SimpleStateStatus.Finished
+    scenarioStatus.mergedStatus shouldBe SimpleStateStatus.Finished(VersionId(1))
     val allowedActions = f.getAllowedActions(scenarioStatus)
     allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
@@ -259,10 +283,18 @@ class PeriodicDeploymentManagerTest
     f.schedule(version.processId)
     val deploymentId = f.getSingleActiveDeploymentId(version.processId)
     f.repository.markDeployed(deploymentId)
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Running, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Running(VersionId(1), Instant.now()),
+      Some(deploymentId)
+    )
 
     val scenarioStatus = f.getScenarioStatus(version.processId)
-    scenarioStatus.mergedStatus shouldBe SimpleStateStatus.Running
+    scenarioStatus.mergedStatus should matchPattern {
+      case SimpleStateStatus.Running(VersionId(1), startedAt)
+          if Instant.now().minusMillis(startedAt.toEpochMilli).getEpochSecond < 1 =>
+        ()
+    }
     f.getAllowedActions(scenarioStatus) shouldBe Set(
       ScenarioActionName.Cancel
     )
@@ -274,7 +306,11 @@ class PeriodicDeploymentManagerTest
     f.schedule(version.processId)
     val deploymentId = f.getSingleActiveDeploymentId(version.processId)
     f.repository.markDeployed(deploymentId)
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deploymentId)
+    )
 
     val scenarioStatus = f.getScenarioStatus(version.processId)
     scenarioStatus.mergedStatus shouldBe WaitingForScheduleStatus
@@ -351,7 +387,7 @@ class PeriodicDeploymentManagerTest
     val version = f.saveScenario()
     f.schedule(version.processId)
 
-    f.schedule(version.processId)
+    f.reschedule(version.processId)
 
     f.repository.processEntities should have size 2
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -406,7 +442,7 @@ class PeriodicDeploymentManagerTest
     scenarioStatusAfterRedeploy.mergedStatus shouldBe a[ScheduledStatus]
     f.getAllowedActions(scenarioStatusAfterRedeploy) shouldBe Set(
       ScenarioActionName.Cancel,
-      ScenarioActionName.Deploy
+      ScenarioActionName.Redeploy
     )
   }
 
@@ -439,7 +475,11 @@ class PeriodicDeploymentManagerTest
     f.schedule(version.processId)
     val deploymentId = f.getSingleActiveDeploymentId(version.processId)
     f.repository.markDeployed(deploymentId)
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Running, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),
+      Some(deploymentId)
+    )
     val scenarioStatus = f.getScenarioStatus(version.processId)
     f.getAllowedActions(scenarioStatus) shouldBe Set(
       ScenarioActionName.Cancel
@@ -469,7 +509,11 @@ class PeriodicDeploymentManagerTest
     f.schedule(version.processId)
     val deploymentId = f.getSingleActiveDeploymentId(version.processId)
     f.repository.markDeployed(deploymentId)
-    f.delegateDeploymentManagerStub.setDeploymentStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setDeploymentStatus(
+      processName,
+      SimpleStateStatus.Finished(VersionId(1)),
+      Some(deploymentId)
+    )
     val scenarioStatus = f.getScenarioStatus(version.processId)
     f.getAllowedActions(scenarioStatus) shouldBe Set(
       ScenarioActionName.Cancel

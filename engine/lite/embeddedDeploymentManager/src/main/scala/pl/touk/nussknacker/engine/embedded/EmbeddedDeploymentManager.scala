@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -79,10 +80,9 @@ class EmbeddedDeploymentManager(
       parsedResolvedScenario: CanonicalProcess,
       throwInterpreterRunExceptionsImmediately: Boolean
   ): Option[ExternalDeploymentId] = {
-    deployments.get(processVersion.processName).collect {
-      case ScenarioDeploymentData(_, processVersion, Success(oldVersion)) =>
-        oldVersion.close()
-        logger.debug(s"Closed already deployed scenario: $processVersion")
+    deployments.get(processVersion.processName).collect { case ScenarioDeploymentData(_, Success(oldVersion)) =>
+      oldVersion.close()
+      logger.debug(s"Closed already deployed scenario: $processVersion")
     }
     val deploymentEntry: (ProcessName, ScenarioDeploymentData) =
       deployScenario(processVersion, deploymentData, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately)
@@ -108,7 +108,6 @@ class EmbeddedDeploymentManager(
     }
     processVersion.processName -> ScenarioDeploymentData(
       deploymentData.deploymentId,
-      processVersion.versionId,
       interpreterTry
     )
   }
@@ -204,6 +203,8 @@ class EmbeddedDeploymentManager(
 
   override def schedulingSupport: SchedulingSupport = NoSchedulingSupport
 
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = NoLiveDataPreviewSupport
+
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 
   override def close(): Unit = {
@@ -216,8 +217,7 @@ class EmbeddedDeploymentManager(
 
   private case class ScenarioDeploymentData(
       deploymentId: DeploymentId,
-      scenarioVersionId: VersionId,
-      scenarioDeployment: Try[Deployment]
+      scenarioDeployment: Try[Deployment],
   ) {
 
     def statusDetails: DeploymentStatusDetails = DeploymentStatusDetails(
@@ -227,7 +227,6 @@ class EmbeddedDeploymentManager(
           deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
         ),
       deploymentId = Some(deploymentId),
-      version = Some(scenarioVersionId)
     )
 
   }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 /**
@@ -11,8 +11,14 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 object FlinkStateStatus {
 
   val statusActionsPF: PartialFunction[ScenarioStatusWithScenarioContext, Set[ScenarioActionName]] = {
-    case input if input.scenarioStatus == SimpleStateStatus.DuringDeploy => Set(ScenarioActionName.Cancel)
-    case input if input.scenarioStatus == SimpleStateStatus.Restarting   => Set(ScenarioActionName.Cancel)
+    case input if isCancelable(input.scenarioStatus) => Set(ScenarioActionName.Cancel)
+  }
+
+  private def isCancelable(scenarioStatus: StateStatus) = scenarioStatus match {
+    case _: SimpleStateStatus.DuringDeploy   => true
+    case _: SimpleStateStatus.DuringRedeploy => true
+    case SimpleStateStatus.Restarting        => true
+    case _                                   => false
   }
 
 }
