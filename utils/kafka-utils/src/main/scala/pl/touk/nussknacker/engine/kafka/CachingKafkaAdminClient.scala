@@ -77,7 +77,7 @@ class CachingKafkaAdminClient(
 object CachingKafkaAdminClient {
 
   def apply(kafkaConfig: KafkaConfig, usingKafkaAdminClient: UsingKafkaAdminClient): CachingKafkaAdminClient = {
-    val caches = KafkaAdminCachesFactory.create(kafkaConfig)
+    val caches = KafkaAdminCachesFactory.createOrRetrieve(kafkaConfig)
     new CachingKafkaAdminClient(caches, kafkaConfig.kafkaAdminConfig.clientTimeout, usingKafkaAdminClient)
   }
 

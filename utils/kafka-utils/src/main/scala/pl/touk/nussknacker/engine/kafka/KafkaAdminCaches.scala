@@ -9,7 +9,7 @@ object KafkaAdminCachesFactory extends KafkaAdminCachesFactory
 class KafkaAdminCachesFactory {
   @transient private lazy val caches: mutable.Map[KafkaConfig, KafkaAdminCaches] = mutable.Map()
 
-  def create(kafkaConfig: KafkaConfig): KafkaAdminCaches = synchronized {
+  def createOrRetrieve(kafkaConfig: KafkaConfig): KafkaAdminCaches = synchronized {
     caches.getOrElseUpdate(kafkaConfig, new KafkaAdminCaches(kafkaConfig.kafkaAdminConfig.cacheConfig))
   }
 
