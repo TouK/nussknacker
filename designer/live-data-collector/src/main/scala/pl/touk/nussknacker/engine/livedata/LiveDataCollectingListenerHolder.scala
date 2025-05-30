@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.livedata
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.time.Clock
@@ -29,11 +28,8 @@ object LiveDataCollectingListenerHolder {
     new LiveDataCollectingListener(processName, maxNumberOfSamples, throughputTimeWindowInSeconds)
   }
 
-  def getLiveDataPreview(processName: ProcessName): Either[LiveDataError, LiveData] = {
-    Option(listenerStorages.getIfPresent(processName.value)).map(_.getLiveData) match {
-      case Some(liveData) => Right(liveData)
-      case None           => Left(LiveDataError.NoLiveDataAvailableForScenario)
-    }
+  def getLiveDataPreview(processName: ProcessName): Option[CollectedLiveData] = {
+    Option(listenerStorages.getIfPresent(processName.value)).map(_.getLiveData)
   }
 
   private[livedata] def storage(

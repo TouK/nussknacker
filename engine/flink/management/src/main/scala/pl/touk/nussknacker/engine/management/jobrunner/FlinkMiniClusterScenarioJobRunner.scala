@@ -3,15 +3,17 @@ package pl.touk.nussknacker.engine.management.jobrunner
 import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import pl.touk.nussknacker.engine.BaseModelDataProvider
+import pl.touk.nussknacker.engine.{livedata, BaseModelDataProvider}
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
   LiveDataPreviewSupport,
   LiveDataPreviewSupported,
   NoLiveDataPreviewSupport
 }
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
@@ -19,6 +21,7 @@ import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentId
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 
 class FlinkMiniClusterScenarioJobRunner(
     miniClusterWithServices: FlinkMiniClusterWithServices,
@@ -82,11 +85,68 @@ class FlinkMiniClusterScenarioJobRunner(
       case LiveDataPreviewMode.Enabled(_, _, _) =>
         new LiveDataPreviewSupported {
           override def getLiveData(processIdWithName: ProcessIdWithName): Future[Either[LiveDataError, LiveData]] =
-            Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
+            Future {
+              LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name) match {
+                case Some(collected) => Right(toApi(collected))
+                case None            => Left(NoLiveDataAvailableForScenario)
+              }
+            }
         }
       case LiveDataPreviewMode.Disabled =>
         NoLiveDataPreviewSupport
     }
+  }
+
+  private def toApi(collectedLiveData: livedata.CollectedLiveData): LiveData = {
+    LiveData(
+      timestamp = collectedLiveData.timestamp,
+      nodeTransitions = collectedLiveData.nodeTransitions
+        .map { case (nodeTransition, data) => toApi(nodeTransition) -> toApi(data) },
+      invocationResults = collectedLiveData.invocationResults
+        .map { case (nodeId, results) => NodeId(nodeId.id) -> results.map(toApi) },
+      externalInvocationResults = collectedLiveData.externalInvocationResults
+        .map { case (nodeId, results) => NodeId(nodeId.id) -> results.map(toApi) },
+      exceptions = collectedLiveData.exceptions
+        .map { case (nodeId, results) => NodeId(nodeId.id) -> results.map(toApi) },
+    )
+  }
+
+  private def toApi(nodeTransition: livedata.NodeTransition): NodeTransition = {
+    NodeTransition(nodeTransition.sourceNodeId, nodeTransition.destinationNodeId)
+  }
+
+  private def toApi(nodeTransition: livedata.LiveDataForNodeTransition): LiveDataForNodeTransition = {
+    LiveDataForNodeTransition(
+      samples = nodeTransition.samples.map(toApi),
+      totalCount = nodeTransition.totalCount,
+      currentThroughput = nodeTransition.currentThroughput,
+    )
+  }
+
+  private def toApi(nodeTransition: livedata.LiveDataSample): LiveDataSample = {
+    LiveDataSample(
+      contextId = nodeTransition.contextId,
+      timestamp = nodeTransition.timestamp,
+      variables = nodeTransition.variables,
+    )
+  }
+
+  private def toApi(nodeTransition: livedata.InvocationResult): InvocationResult = {
+    InvocationResult(
+      contextId = nodeTransition.contextId,
+      timestamp = nodeTransition.timestamp,
+      name = nodeTransition.name,
+      value = nodeTransition.value,
+    )
+  }
+
+  private def toApi(nodeTransition: livedata.ExceptionResult): ExceptionResult = {
+    ExceptionResult(
+      contextId = nodeTransition.contextId,
+      timestamp = nodeTransition.timestamp,
+      variables = nodeTransition.variables,
+      throwable = nodeTransition.throwable,
+    )
   }
 
 }

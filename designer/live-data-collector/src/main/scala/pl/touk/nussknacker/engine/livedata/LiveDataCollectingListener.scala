@@ -2,12 +2,6 @@ package pl.touk.nussknacker.engine.livedata
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{
-  ExceptionResult,
-  InvocationResult,
-  LiveDataSample,
-  NodeTransition
-}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testmode.TestInterpreterRunner

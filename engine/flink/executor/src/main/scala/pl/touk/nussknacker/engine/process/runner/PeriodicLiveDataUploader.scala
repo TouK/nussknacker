@@ -73,8 +73,8 @@ object PeriodicLiveDataUploader {
       connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
       insertStatement = connection.prepareStatement(
         s"""
-          |INSERT INTO $dbSchema.flink_live_data (scenario_id, live_data, updated_at)
-          |VALUES (?, ?, ?)
+          |INSERT INTO $dbSchema.flink_live_data (scenario_id, collector_id, live_data, updated_at)
+          |VALUES (?, ?, ?, ?)
           |ON CONFLICT (scenario_id) DO UPDATE
           |SET live_data = EXCLUDED.live_data, updated_at = EXCLUDED.updated_at
           |""".stripMargin
@@ -98,14 +98,14 @@ object PeriodicLiveDataUploader {
       val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name)
       Try {
         insertStatement.setLong(1, processIdWithName.id.value)
+        insertStatement.setString(2, LiveDataCollectingListenerHolder.id.toString)
         liveDataOpt match {
-          case Right(liveData) =>
-            val liveDataStr = LiveDataCollectingListenerHolder.id.toString + ":" + liveData.toString
-            insertStatement.setString(2, liveDataStr)
-          case Left(_) =>
-            insertStatement.setNull(2, java.sql.Types.VARCHAR)
+          case Some(liveData) =>
+            insertStatement.setString(3, liveData.toString)
+          case None =>
+            insertStatement.setNull(3, java.sql.Types.VARCHAR)
         }
-        insertStatement.setLong(3, Instant.now.toEpochMilli)
+        insertStatement.setLong(4, Instant.now.toEpochMilli)
         insertStatement.executeUpdate()
       } match {
         case Success(_) =>
