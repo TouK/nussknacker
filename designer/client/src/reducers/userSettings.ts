@@ -21,7 +21,8 @@ type SettingsNames =
     | "debug.forceDisableModals"
     | "debug.userSettingsVisible"
     | "scenario.allowQuickSave"
-    | "scenario.allowQuickDeploy";
+    | "scenario.allowQuickDeploy"
+    | "scenario.showBreadcrumbs";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
@@ -45,6 +46,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines", true),
     "scenario.allowQuickSave": getInitialUserFlag("scenario.allowQuickSave"),
     "scenario.allowQuickDeploy": getInitialUserFlag("scenario.allowQuickDeploy"),
+    "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
 });
 
 /**

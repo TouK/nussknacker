@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
 import Nussknacker from "../../assets/img/nussknacker-logo.svg";
+import { useUserSettings } from "../../common/userSettings";
 import { EnvironmentTag } from "../../containers/EnvironmentTag";
 import { RootPath } from "../../containers/paths";
 import ProcessBackButton from "../Process/ProcessBackButton";
+import { Breadcrumbs } from "./breadcrumbs";
 import { HideIfEmbedded } from "./HideIfEmbedded";
 import { InstanceLogo } from "./instanceLogo";
 import { Menu } from "./menu";
@@ -41,7 +43,12 @@ const Logo = styled(Nussknacker)({
 });
 
 export function MenuBar(): JSX.Element {
+    const [settings] = useUserSettings();
+
+    const showBreadcrumbs = settings["scenario.showBreadcrumbs"];
+
     const { t } = useTranslation();
+
     return (
         <HideIfEmbedded>
             <Header>
@@ -51,7 +58,7 @@ export function MenuBar(): JSX.Element {
                         <Logo />
                     </Link>
                     <InstanceLogo />
-                    <EnvironmentTag />
+                    {showBreadcrumbs ? <Breadcrumbs /> : <EnvironmentTag />}
                 </Grid>
                 <Menu />
             </Header>
