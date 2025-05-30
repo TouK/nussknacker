@@ -9,6 +9,7 @@ import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.DbUploader
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.time.Instant
@@ -94,9 +95,16 @@ object PeriodicLiveDataUploader {
         ctx: KeyedProcessFunction[String, String, String]#OnTimerContext,
         out: Collector[String]
     ): Unit = {
+      val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name)
       Try {
         insertStatement.setLong(1, processIdWithName.id.value)
-        insertStatement.setNull(2, java.sql.Types.VARCHAR)
+        liveDataOpt match {
+          case Right(liveData) =>
+            val liveDataStr = LiveDataCollectingListenerHolder.id.toString + ":" + liveData.toString
+            insertStatement.setString(2, liveDataStr)
+          case Left(_) =>
+            insertStatement.setNull(2, java.sql.Types.VARCHAR)
+        }
         insertStatement.setLong(3, Instant.now.toEpochMilli)
         insertStatement.executeUpdate()
       } match {

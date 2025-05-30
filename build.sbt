@@ -817,6 +817,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     }.toList,
   )
   .dependsOn(
+    liveDataCollector,
     scenarioCompilerFlinkDeps,
     flinkComponentsUtils,
     flinkExtensionsApi,

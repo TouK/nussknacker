@@ -5,9 +5,12 @@ import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveD
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.time.Clock
+import java.util.UUID
 import scala.compat.java8.FunctionConverters._
 
 object LiveDataCollectingListenerHolder {
+
+  val id: UUID = UUID.randomUUID()
 
   private implicit val clock: Clock = Clock.systemUTC()
 
