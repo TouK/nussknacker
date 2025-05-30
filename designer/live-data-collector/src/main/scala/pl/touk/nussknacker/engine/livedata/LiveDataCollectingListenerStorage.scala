@@ -25,6 +25,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
 
   def getLiveData: LiveData = {
     LiveData(
+      timestamp = Instant.now,
       nodeTransitions = samples.asScala.toMap.map { case (transition, values) =>
         transition -> LiveDataForNodeTransition(
           samples = values.values,

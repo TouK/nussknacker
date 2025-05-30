@@ -105,6 +105,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
 
           externalDeploymentIdOpt shouldBe defined
           val expected = LiveData(
+            timestamp = mockedTimestamp,
             nodeTransitions = Map(
               NodeTransition("start", Some("endSend")) ->
                 LiveDataForNodeTransition(
@@ -440,6 +441,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
     val fixedInstant = Instant.now
     (
       LiveData(
+        timestamp = fixedInstant,
         nodeTransitions = withFixedTimestamp(testResults.nodeTransitions, fixedInstant),
         invocationResults = withFixedTimestamp[NodeId, InvocationResult](
           testResults.invocationResults,

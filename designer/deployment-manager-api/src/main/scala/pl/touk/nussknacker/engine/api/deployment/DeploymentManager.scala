@@ -108,6 +108,7 @@ trait LiveDataPreviewSupported extends LiveDataPreviewSupport {
 object LiveDataPreviewSupported {
 
   final case class LiveData(
+      timestamp: Instant,
       nodeTransitions: Map[NodeTransition, LiveDataForNodeTransition],
       invocationResults: Map[NodeId, List[InvocationResult]],
       externalInvocationResults: Map[NodeId, List[InvocationResult]],

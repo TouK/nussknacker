@@ -18,6 +18,7 @@ object Dtos {
   import sttp.tapir.json.circe._
 
   final case class LiveDataDto(
+      timestamp: Instant,
       nodeTransitions: List[LiveDataForNodeTransitionDto],
       invocationResults: Map[String, List[InvocationResultDto]],
       externalInvocationResults: Map[String, List[InvocationResultDto]],
@@ -28,6 +29,7 @@ object Dtos {
 
     def from(liveData: LiveData): LiveDataDto = {
       LiveDataDto(
+        timestamp = liveData.timestamp,
         nodeTransitions = liveData.nodeTransitions.map { case (nodeTransition, liveData) =>
           LiveDataForNodeTransitionDto(
             sourceNodeId = nodeTransition.sourceNodeId,

@@ -55,9 +55,11 @@ class ScenarioLiveDataApiHttpServiceSpec
       )
       .emptySink("end", "dead-end")
 
+  private val mockedInstant = Instant.ofEpochSecond(1748382500)
+
   "The endpoint for live data should" - {
     "return present, but empty live data" in {
-      val mockedResults = LiveData(Map.empty, Map.empty, Map.empty, Map.empty)
+      val mockedResults = LiveData(mockedInstant, Map.empty, Map.empty, Map.empty, Map.empty)
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -76,6 +78,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         .statusCode(StatusCodes.OK.intValue)
         .equalsJsonBody(
           s"""{
+             |    "timestamp": "2025-05-27T21:48:20Z",
              |    "nodeTransitions": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
@@ -85,12 +88,13 @@ class ScenarioLiveDataApiHttpServiceSpec
     }
     "return present data" in {
       val mockedResults = LiveData(
+        timestamp = mockedInstant,
         nodeTransitions = Map(
           NodeTransition("start", Some("variable")) -> LiveDataForNodeTransition(
             samples = List(
               LiveDataSample(
                 contextId = "",
-                timestamp = Instant.ofEpochSecond(1748382500),
+                timestamp = mockedInstant,
                 variables = Map(
                   "v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson)
                 ),
@@ -104,7 +108,7 @@ class ScenarioLiveDataApiHttpServiceSpec
           NodeId("start") -> List(
             InvocationResult(
               "mocked-context-id",
-              Instant.ofEpochSecond(1748382500),
+              mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
             )
@@ -114,7 +118,7 @@ class ScenarioLiveDataApiHttpServiceSpec
           NodeId("start") -> List(
             InvocationResult(
               "mocked-context-id",
-              Instant.ofEpochSecond(1748382500),
+              mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
             ),
@@ -124,7 +128,7 @@ class ScenarioLiveDataApiHttpServiceSpec
           NodeId("start") -> List(
             ExceptionResult(
               "mocked-context-id",
-              Instant.ofEpochSecond(1748382500),
+              mockedInstant,
               Map("var1" -> Json.obj("pretty" -> "abc".asJson)),
               new Exception("Something bad happened")
             ),
@@ -149,6 +153,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         .statusCode(StatusCodes.OK.intValue)
         .equalsJsonBody(
           s"""{
+             |    "timestamp": "2025-05-27T21:48:20Z",
              |    "nodeTransitions": [
              |        {
              |            "sourceNodeId": "start",
