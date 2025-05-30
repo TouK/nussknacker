@@ -213,9 +213,9 @@ class ScenarioStatusProvider(
     } else if (processDetails.isArchived) {
       logStatusAndReturn(getArchivedScenarioStatus(processDetails))
     } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
-      logStatusAndReturn(SimpleStateStatus.DuringDeploy)
+      logStatusAndReturn(SimpleStateStatus.DuringDeploy(processDetails.processVersionId))
     } else if (inProgressActionNames.contains(ScenarioActionName.Redeploy)) {
-      logStatusAndReturn(SimpleStateStatus.DuringRedeploy)
+      logStatusAndReturn(SimpleStateStatus.DuringRedeploy(processDetails.processVersionId))
     } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
       logStatusAndReturn(SimpleStateStatus.DuringCancel)
     } else {
@@ -236,7 +236,7 @@ class ScenarioStatusProvider(
                   // periodic mechanism already returns a scenario status, so we don't need to resolve it
                   // TODO: PeriodicDeploymentManager shouldn't be a DeploymentManager, we should treat it as a separate
                   //       mechanism for both action commands and scenario status resolving
-                  case DeploymentStatusDetails(periodic: PeriodicScenarioStatus, _, _) :: Nil => periodic
+                  case DeploymentStatusDetails(periodic: PeriodicScenarioStatus, _) :: Nil => periodic
                   case _ =>
                     InconsistentStateDetector.resolveScenarioStatus(statusWithFreshness.value, lastStateActionValue)
                 }
@@ -255,7 +255,7 @@ class ScenarioStatusProvider(
         SimpleStateStatus.Canceled
       case Some((Deploy, ProcessActionState.ExecutionFinished, deploymentActionId)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Finished} ")
-        SimpleStateStatus.Finished
+        SimpleStateStatus.Finished(processDetails.processVersionId)
       case Some(_) =>
         logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
         ProblemStateStatus.ArchivedShouldBeCanceled

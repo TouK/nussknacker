@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.periodic.model
 
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.LocalDateTime
@@ -44,6 +44,7 @@ case class ScheduleId(processId: PeriodicProcessId, scheduleName: ScheduleName)
 case class ScheduleDeploymentData(
     id: PeriodicProcessDeploymentId,
     periodicProcessId: PeriodicProcessId,
+    processVersionId: VersionId,
     createdAt: LocalDateTime,
     runAt: LocalDateTime,
     deployedAt: Option[LocalDateTime],

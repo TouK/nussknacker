@@ -4,7 +4,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatusDetails, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.GeneralProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.util.ResourceLoader
@@ -12,6 +11,8 @@ import play.api.libs.json.{Format, Json}
 import skuber.{ListResource, Pod}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
+
+import java.time.Instant
 
 //It's no so easy to move deployment in unstable state reliably, so
 //for now we have unit tests based on real responses - generated manually, using kubectl -v=9 describe deployment [...]
@@ -27,13 +28,8 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
   test("detects running scenario") {
     val state =
       K8sDeploymentStatusMapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("running.json") :: Nil, Nil)
-    state shouldBe Some(
-      DeploymentStatusDetails(
-        status = SimpleStateStatus.Running,
-        deploymentId = None,
-        version = Some(version),
-      )
-    )
+    state should matchPattern { case Some(DeploymentStatusDetails(SimpleStateStatus.Running(VersionId(4), _), None)) =>
+    }
   }
 
   test("detects scenario in deployment") {
@@ -43,9 +39,8 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     )
     state shouldBe Some(
       DeploymentStatusDetails(
-        status = SimpleStateStatus.DuringDeploy,
+        status = SimpleStateStatus.DuringDeploy(version),
         deploymentId = None,
-        version = Some(version),
       )
     )
   }
@@ -64,7 +59,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
           )
         ),
         deploymentId = None,
-        version = Some(version),
       )
     )
   }
@@ -79,7 +73,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
       DeploymentStatusDetails(
         status = SimpleStateStatus.Restarting,
         deploymentId = None,
-        version = Some(version),
       )
     )
   }
@@ -97,7 +90,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
           tooltip = Some("Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName")
         ),
         deploymentId = None,
-        version = None,
       )
     )
   }

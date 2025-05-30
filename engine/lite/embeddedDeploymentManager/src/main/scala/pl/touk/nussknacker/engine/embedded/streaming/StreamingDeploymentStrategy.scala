@@ -6,12 +6,14 @@ import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.lite.TaskStatus
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
@@ -60,7 +62,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
       runTry.transform(
         _ => {
           ecWithRuntime.close()
-          Success(new StreamingDeployment(interpreter))
+          Success(new StreamingDeployment(interpreter, jobData.processVersion.versionId, Instant.now()))
         },
         ex => {
           ecWithRuntime.close()
@@ -70,11 +72,12 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
     }
   }
 
-  class StreamingDeployment(interpreter: KafkaTransactionalScenarioInterpreter) extends Deployment {
+  class StreamingDeployment(interpreter: KafkaTransactionalScenarioInterpreter, version: VersionId, startedAt: Instant)
+      extends Deployment {
 
     override def status(): DeploymentStatus = interpreter.status() match {
-      case TaskStatus.Running      => DeploymentStatus.Running
-      case TaskStatus.DuringDeploy => DeploymentStatus.DuringDeploy
+      case TaskStatus.Running      => DeploymentStatus.Running(version, startedAt)
+      case TaskStatus.DuringDeploy => DeploymentStatus.DuringDeploy(version)
       case TaskStatus.Restarting   => DeploymentStatus.Restarting
       case other                   => throw new IllegalStateException(s"Not supporter task status: $other")
     }

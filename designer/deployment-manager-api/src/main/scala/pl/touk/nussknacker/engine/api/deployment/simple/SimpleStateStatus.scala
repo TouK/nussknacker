@@ -11,12 +11,18 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 import java.net.URI
+import java.time.Instant
 
 object SimpleStateStatus {
 
   def fromDeploymentStatus(deploymentStatus: DeploymentStatus): StateStatus = {
     deploymentStatus match {
-      case status: NoAttributesDeploymentStatus => NoAttributesStateStatus(status.name.value)
+      case DeploymentStatus.DuringDeploy(version)         => DuringDeploy(version)
+      case DeploymentStatus.Running(versionId, startedAt) => Running(versionId, startedAt)
+      case DeploymentStatus.Finished(version)             => Finished(version)
+      case DeploymentStatus.Restarting                    => Restarting
+      case DeploymentStatus.DuringCancel                  => DuringCancel
+      case DeploymentStatus.Canceled                      => Canceled
       // We assume that all deployment status have default allowedActions. Non-default allowedActions have only
       // statuses that are not deployment statuses but scenario statuses.
       case status: ProblemDeploymentStatus => GeneralProblemStateStatus(status.problemDescription)
@@ -122,32 +128,68 @@ object SimpleStateStatus {
             case _: GeneralProblemStateStatus                   => false
           }
         case `Restarting` => true
-        case status       => DefaultFollowingDeployStatuses.contains(status)
+        case status       => isDefaultFollowingDeployStatus(status)
       }
     }
 
   }
 
-  val NotDeployed: StateStatus    = StateStatus("NOT_DEPLOYED")
-  val DuringDeploy: StateStatus   = StateStatus("DURING_DEPLOY")
-  val DuringRedeploy: StateStatus = StateStatus("DURING_REDEPLOY")
-  val Running: StateStatus        = StateStatus("RUNNING")
-  val Finished: StateStatus       = StateStatus("FINISHED")
-  val Restarting: StateStatus     = StateStatus("RESTARTING")
-  val DuringCancel: StateStatus   = StateStatus("DURING_CANCEL")
-  val Canceled: StateStatus       = StateStatus("CANCELED")
+  final case class Running(version: VersionId, startedAt: Instant) extends StateStatus {
+    override val name: StatusName = Running.name
+  }
 
-  val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringRedeploy, DuringDeploy, Running)
+  object Running {
+    val name: StatusName           = "RUNNING"
+    val defaultDescription: String = "The scenario is running."
+  }
+
+  final case class DuringDeploy(version: VersionId) extends StateStatus {
+    override val name: StatusName = DuringDeploy.name
+  }
+
+  object DuringDeploy {
+    val name: StatusName = "DURING_DEPLOY"
+  }
+
+  final case class Finished(version: VersionId) extends StateStatus {
+    override val name: StatusName = Finished.name
+  }
+
+  object Finished {
+    val name: StatusName = "FINISHED"
+  }
+
+  final case class DuringRedeploy(versionId: VersionId) extends StateStatus {
+    override val name: StatusName = DuringRedeploy.name
+  }
+
+  object DuringRedeploy {
+    val name: StatusName = "DURING_REDEPLOY"
+  }
+
+  val NotDeployed: StateStatus  = StateStatus("NOT_DEPLOYED")
+  val Restarting: StateStatus   = StateStatus("RESTARTING")
+  val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
+  val Canceled: StateStatus     = StateStatus("CANCELED")
+
+  def isFinished(stateStatus: StateStatus): Boolean = stateStatus match {
+    case _: Finished => true
+    case _           => false
+  }
+
+  def isDefaultFollowingDeployStatus(status: StateStatus): Boolean = status match {
+    case _: DuringDeploy   => true
+    case _: DuringRedeploy => true
+    case _: Running        => true
+    case _                 => false
+  }
 
   def isFinalOrTransitioningToFinalStatus(status: StateStatus): Boolean =
-    List(SimpleStateStatus.Finished, SimpleStateStatus.DuringCancel, SimpleStateStatus.Canceled).contains(
-      status
-    ) || ProblemStateStatus.isProblemStatus(
-      status
-    )
+    Set(SimpleStateStatus.DuringCancel, SimpleStateStatus.Canceled).contains(status) ||
+      ProblemStateStatus.isProblemStatus(status) || SimpleStateStatus.isFinished(status)
 
   val visibleActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
-    case SimpleStateStatus.Running | SimpleStateStatus.DuringRedeploy =>
+    case SimpleStateStatus.Running(_, _) | SimpleStateStatus.DuringRedeploy(_) =>
       Set(
         ScenarioActionName.Cancel,
         ScenarioActionName.Redeploy,
@@ -170,17 +212,17 @@ object SimpleStateStatus {
   val allowedActionsPF: PartialFunction[StateStatus, Set[ScenarioActionName]] = {
     case SimpleStateStatus.NotDeployed =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case SimpleStateStatus.DuringDeploy =>
+    case _: SimpleStateStatus.DuringDeploy =>
       Set(ScenarioActionName.Cancel)
-    case SimpleStateStatus.DuringRedeploy =>
+    case _: SimpleStateStatus.DuringRedeploy =>
       Set(ScenarioActionName.Cancel)
-    case SimpleStateStatus.Running =>
+    case _: SimpleStateStatus.Running =>
       Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Redeploy)
     case SimpleStateStatus.Canceled =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.Restarting =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-    case SimpleStateStatus.Finished =>
+    case _: SimpleStateStatus.Finished =>
       Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringCancel =>
       Set(ScenarioActionName.Cancel)
@@ -219,7 +261,7 @@ object SimpleStateStatus {
       displayableName = "Running",
       icon = URI.create("/assets/states/deploy-success.svg"),
       tooltip = "The scenario has been successfully deployed and currently is running.",
-      description = "The scenario is running."
+      description = SimpleStateStatus.Running.defaultDescription
     ),
     SimpleStateStatus.Canceled.name -> StateDefinitionDetails(
       displayableName = "Canceled",
