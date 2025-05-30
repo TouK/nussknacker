@@ -69,12 +69,10 @@ object PeriodicLiveDataUploader {
 
     override def open(openContext: OpenContext): Unit = {
       Class.forName("org.postgresql.Driver")
-      logger.error(s"QQQQQ [$dbUrl][$dbUser][$dbPassword][$dbSchema]")
       connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
-      connection.setSchema(dbSchema)
       insertStatement = connection.prepareStatement(
-        """
-          |INSERT INTO flink_live_data (scenario_id, live_data, updated_at)
+        s"""
+          |INSERT INTO $dbSchema.flink_live_data (scenario_id, live_data, updated_at)
           |VALUES (?, ?, ?)
           |ON CONFLICT (scenario_id) DO UPDATE
           |SET live_data = EXCLUDED.live_data, updated_at = EXCLUDED.updated_at

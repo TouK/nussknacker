@@ -25,10 +25,7 @@ object DbRef {
       })
       db <- Resource
         .make(
-          acquire = IO {
-            logger.error(s"QQQQQ ${config.getConfig("db")}")
-            JdbcBackend.Database.forConfig("db", config)
-          }
+          acquire = IO(JdbcBackend.Database.forConfig("db", config))
         )(
           release = db => IO(db.close())
         )
