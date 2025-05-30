@@ -12,7 +12,7 @@ object KafkaComponentsUtils extends KafkaUtils {
       topics: NonEmptyList[PreparedKafkaTopic[T]],
       kafkaConfig: KafkaConfig
   ): Unit = {
-    new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
+    CachedTopicsExistenceValidator(kafkaConfig)
       .validateTopics(topics.map(_.prepared))
       .valueOr(err => throw err)
   }

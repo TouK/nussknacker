@@ -44,7 +44,7 @@ trait SchemaRegistryClient extends Serializable {
     if (!kafkaConfig.showTopicsWithoutSchema) {
       true
     } else {
-      val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy().getTopics(this, kafkaConfig)
+      val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy(this).getTopics
       topicsWithSchema.exists(_.map(_.name).contains(topic))
     }
   }

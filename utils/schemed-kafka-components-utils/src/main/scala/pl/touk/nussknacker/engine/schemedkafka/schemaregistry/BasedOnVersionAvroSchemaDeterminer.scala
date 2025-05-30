@@ -8,6 +8,7 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
+// Used by external project
 class BasedOnVersionAvroSchemaDeterminer(
     schemaRegistryClient: SchemaRegistryClient,
     topic: UnspecializedTopicName,
