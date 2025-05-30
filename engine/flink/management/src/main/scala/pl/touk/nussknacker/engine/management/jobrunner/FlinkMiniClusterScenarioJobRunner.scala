@@ -53,7 +53,7 @@ class FlinkMiniClusterScenarioJobRunner(
           modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
             case LiveDataPreviewMode.Disabled =>
               None
-            case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds) =>
+            case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, _) =>
               Some(
                 LiveDataCollectingListenerHolder.createListenerFor(
                   command.processVersion.processName,
@@ -79,7 +79,7 @@ class FlinkMiniClusterScenarioJobRunner(
 
   override def liveDataPreviewSupport: LiveDataPreviewSupport = {
     modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
-      case LiveDataPreviewMode.Enabled(_, _) =>
+      case LiveDataPreviewMode.Enabled(_, _, _) =>
         new LiveDataPreviewSupported {
           override def getLiveData(processIdWithName: ProcessIdWithName): Future[Either[LiveDataError, LiveData]] =
             Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
