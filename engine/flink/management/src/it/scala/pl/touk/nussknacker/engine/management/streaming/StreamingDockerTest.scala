@@ -62,12 +62,17 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
       deploymentId: DeploymentId = DeploymentId(UUID.randomUUID().toString),
       stateRestoringStrategy: StateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
   ): Option[ExternalDeploymentId] = {
+    val version              = processVersion.versionId
     val externalDeploymentId = deployProcess(process, processVersion, deploymentId, stateRestoringStrategy)
     eventually {
       val jobStatuses = deploymentManager.getScenarioDeploymentsStatuses(process.name).futureValue.value
-      logger.debug(s"Waiting for deploy: ${process.name}, $jobStatuses")
+      logger.debug(
+        s"Waiting for deploy: ${process.name}, version: $version, deployment id: $deploymentId, $jobStatuses, "
+      )
 
-      jobStatuses.map(_.status) should contain(SimpleStateStatus.Running)
+      atLeast(1, jobStatuses) should matchPattern {
+        case DeploymentStatusDetails(SimpleStateStatus.Running(`version`, _), Some(`deploymentId`)) =>
+      }
     }
     externalDeploymentId
   }
@@ -98,7 +103,12 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
         .futureValue
         .value
       val runningOrDuringCancelJobs = statuses
-        .filter(state => Set(SimpleStateStatus.Running, SimpleStateStatus.DuringCancel).contains(state.status))
+        .filter { s =>
+          s.status match {
+            case _: SimpleStateStatus.Running | SimpleStateStatus.DuringCancel => true
+            case _                                                             => false
+          }
+        }
 
       logger.debug(s"waiting for jobs: $processName, $statuses")
       if (runningOrDuringCancelJobs.nonEmpty) {

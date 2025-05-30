@@ -529,7 +529,7 @@ class SlickPeriodicProcessesRepository(
         .map { case (process, deployment) =>
           val scheduleId         = ScheduleId(process.id, ScheduleName(deployment.scheduleName))
           val scheduleData       = (scheduleId, process)
-          val scheduleDeployment = scheduleDeploymentData(deployment)
+          val scheduleDeployment = scheduleDeploymentData(deployment, process)
           (scheduleData, scheduleDeployment)
         }
         .toList
@@ -542,10 +542,14 @@ class SlickPeriodicProcessesRepository(
     )
   }
 
-  private def scheduleDeploymentData(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
+  private def scheduleDeploymentData(
+      deployment: PeriodicProcessDeploymentEntity,
+      process: PeriodicProcessEntity
+  ): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
       deployment.periodicProcessId,
+      process.processVersionId,
       deployment.createdAt,
       deployment.runAt,
       deployment.deployedAt,

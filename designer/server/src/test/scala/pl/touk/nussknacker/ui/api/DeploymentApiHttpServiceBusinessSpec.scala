@@ -8,8 +8,8 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCas
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -85,7 +86,7 @@ class DeploymentApiHttpServiceBusinessSpec
             .Then()
             .statusCode(202)
             .verifyApplicationState {
-              waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatus.Finished.name)
+              waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatusName.finishedStatusName)
             }
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
@@ -147,7 +148,7 @@ class DeploymentApiHttpServiceBusinessSpec
             .applicationState {
               createSavedScenario(scenario)
               runDeployment(firstDeploymentId)
-              waitForDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatus.Finished.name)
+              waitForDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatusName.finishedStatusName)
             }
             .when()
             .basicAuthAdmin()
@@ -158,11 +159,11 @@ class DeploymentApiHttpServiceBusinessSpec
             .verifyApplicationState {
               checkDeploymentStatusNameMatches(
                 secondDeploymentId,
-                DeploymentStatus.DuringDeploy.name,
-                DeploymentStatus.Running.name,
-                DeploymentStatus.Finished.name
+                DeploymentStatus.DuringDeploy(VersionId(0)).name,
+                DeploymentStatus.Running(VersionId(0), Instant.now()).name,
+                DeploymentStatusName.finishedStatusName
               )
-              checkDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatus.Finished.name)
+              checkDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatusName.finishedStatusName)
             }
         }
       }

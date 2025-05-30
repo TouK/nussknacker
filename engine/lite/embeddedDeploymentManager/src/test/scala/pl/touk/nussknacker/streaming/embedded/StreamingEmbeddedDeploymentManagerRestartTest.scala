@@ -2,9 +2,11 @@ package pl.touk.nussknacker.streaming.embedded
 
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+import scala.concurrent.duration._
 
 class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -51,9 +53,9 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     kafkaServer.startupKafkaServer()
 
     eventually {
-      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
-        SimpleStateStatus.Running
-      )
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 30 seconds) =>
+      }
     }
   }
 

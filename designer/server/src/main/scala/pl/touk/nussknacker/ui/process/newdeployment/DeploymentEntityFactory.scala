@@ -1,14 +1,28 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus.{
+  Canceled,
+  DuringCancel,
+  DuringDeploy,
+  Finished,
+  Restarting,
+  Running
+}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.{BaseEntityFactory, ProcessEntityData, ProcessEntityFactory}
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{DeploymentEntityData, WithModifiedAt}
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{
+  deploymentStatusFromEntityData,
+  DeploymentEntityData,
+  WithModifiedAt
+}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
+import java.time.Instant
 
 trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFactory =>
 
@@ -33,6 +47,10 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
 
     def statusModifiedAt: Rep[Timestamp] = column[Timestamp]("status_modified_at", NotNull)
 
+    def scenarioVersionId: Rep[Option[VersionId]] = column[Option[VersionId]]("scenario_version_id")
+
+    def startedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("started_at")
+
     override def * : ProvenShape[DeploymentEntityData] =
       (
         id,
@@ -41,7 +59,9 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
         createdBy,
         statusName,
         statusProblemDescription,
-        statusModifiedAt
+        statusModifiedAt,
+        scenarioVersionId,
+        startedAt
       ) <> (createEntity _ tupled, extractFieldsFromEntity)
 
     private def scenarios_fk: ForeignKeyQuery[ProcessEntityFactory#ProcessEntity, ProcessEntityData] =
@@ -60,9 +80,18 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       createdBy: String,
       statusName: DeploymentStatusName,
       statusProblemDescription: Option[String],
-      statusModifiedAt: Timestamp
+      statusModifiedAt: Timestamp,
+      versionId: Option[VersionId],
+      startedAt: Option[Timestamp]
   ) = {
-    val status = DeploymentStatus.from(statusName, statusProblemDescription)
+    val status = deploymentStatusFromEntityData(
+      deploymentId = id,
+      name = statusName,
+      description = statusProblemDescription,
+      startedAt = startedAt.map(_.toInstant),
+      modifiedAt = statusModifiedAt.toInstant,
+      version = versionId
+    )
     DeploymentEntityData(id, scenarioId, createdAt, createdBy, WithModifiedAt(status, statusModifiedAt))
   }
 
@@ -74,13 +103,58 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       entity.createdBy,
       entity.statusWithModifiedAt.value.name,
       entity.statusWithModifiedAt.value.problemDescription,
-      entity.statusWithModifiedAt.modifiedAt
+      entity.statusWithModifiedAt.modifiedAt,
+      entity.statusWithModifiedAt.value.version,
+      entity.statusWithModifiedAt.value.startedAt.map(Timestamp.from),
     )
   }
 
 }
 
-object DeploymentEntityFactory {
+object DeploymentEntityFactory extends LazyLogging {
+
+  def deploymentStatusFromEntityData(
+      deploymentId: DeploymentId,
+      name: DeploymentStatusName,
+      description: Option[String],
+      startedAt: Option[Instant],
+      modifiedAt: Instant,
+      version: Option[VersionId]
+  ): DeploymentStatus = {
+    name match {
+      case name @ DeploymentStatusName.duringDeployStatusName =>
+        DuringDeploy(scenarioVersionWithFallback(version, name, deploymentId))
+      case name @ DeploymentStatusName.runningStatusName =>
+        Running(scenarioVersionWithFallback(version, name, deploymentId), startedAt.getOrElse(modifiedAt))
+      case name @ DeploymentStatusName.finishedStatusName =>
+        Finished(scenarioVersionWithFallback(version, name, deploymentId))
+      case DeploymentStatusName.restartingStatusName =>
+        Restarting
+      case DeploymentStatusName.duringCancelStatusName =>
+        DuringCancel
+      case DeploymentStatusName.canceledStatusName =>
+        Canceled
+      case DeploymentStatusName.problemStatusName =>
+        val desc = description.getOrElse(throw new IllegalStateException("No description for ProblemDeploymentStatus"))
+        ProblemDeploymentStatus(desc)
+      case other =>
+        throw new IllegalStateException(s"Unknown DeploymentStatusName: $other")
+    }
+  }
+
+  private def scenarioVersionWithFallback(
+      scenarioVersion: Option[VersionId],
+      statusName: DeploymentStatusName,
+      deploymentId: DeploymentId
+  ) = {
+    // deployments table may contain old entries without a scenario version
+    scenarioVersion.getOrElse {
+      logger.warn(
+        s"Scenario version is missing for deployment '$deploymentId' in state '${statusName.value}'. Using scenario version -1 instead"
+      )
+      VersionId(-1)
+    }
+  }
 
   final case class DeploymentEntityData(
       id: DeploymentId,

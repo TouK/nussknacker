@@ -63,6 +63,7 @@ object flinkRestModel {
 
   @JsonCodec(decodeOnly = true) case class JobDetails(
       state: String,
+      `start-time`: Long,
       `status-counts`: JobStatusCounts
   )
 

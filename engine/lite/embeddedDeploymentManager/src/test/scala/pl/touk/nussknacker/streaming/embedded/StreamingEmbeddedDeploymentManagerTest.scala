@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.streaming.embedded
 
-import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import io.circe.Json
 import io.circe.Json.{fromInt, fromString, obj}
@@ -9,17 +8,18 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
+import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+
+import scala.concurrent.duration._
 
 class StreamingEmbeddedDeploymentManagerTest
     extends BaseStreamingEmbeddedDeploymentManagerTest
@@ -60,9 +60,9 @@ class StreamingEmbeddedDeploymentManagerTest
     }
 
     eventually {
-      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
-        SimpleStateStatus.Running
-      )
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 10 second) =>
+      }
     }
 
     val input = obj("productId" -> fromInt(10))
@@ -157,9 +157,9 @@ class StreamingEmbeddedDeploymentManagerTest
     fixture.deployScenario(scenarioForOutput("next"))
 
     eventually {
-      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
-        SimpleStateStatus.Running
-      )
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 10 second) =>
+      }
     }
 
     kafkaClient.sendMessage(inputTopic.name, message("2")).futureValue
