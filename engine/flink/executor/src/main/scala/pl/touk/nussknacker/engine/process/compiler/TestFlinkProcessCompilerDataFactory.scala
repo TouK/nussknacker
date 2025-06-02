@@ -135,8 +135,9 @@ class StubbedSourcePreparer(
   ): FlinkSource = {
     val samples: List[Object] = collectSamples(originalSource, nodeId)
     val assignerForTestOpt = originalSource.timestampAssignerForTest
-    // setting timestamp as currentTimeMillis is better default because without setting timestamps we would have
-    // timestamp as Long.MIN_VALUE and it would crash
+    // setting timestamp as currentTimeMillis is good default
+    // without this default we would run into issues with timestamp being Long.MIN_VALUE and
+    // crashing time windows
     val improvedAssignerForTest = assignerForTestOpt.orElse(
       Some(
         new StandardTimestampWatermarkHandler[Object](
