@@ -7,9 +7,12 @@ import type { ForwardedRef, ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
 import type { IAceEditorProps } from "react-ace/lib/ace";
 import type ReactAce from "react-ace/lib/ace";
-import type { ICommand } from "react-ace/lib/types";
+import type { ICommand, IMarker } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
+import type { Annotation} from "react-ace/types";
+import { Marker } from "react-ace/types";
 
+import type { NodeValidationError } from "../../../../../types";
 import AceEditor from "./ace";
 import type { EditorMode } from "./types";
 import { ExpressionLang } from "./types";
@@ -139,6 +142,32 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
     return language;
 }
 
+export function useAceEditorMessages(errorObject: { validationErrors: NodeValidationError[] }) {
+    const annotations: Annotation[] = useMemo(() => {
+        return errorObject.validationErrors.map((error) => ({
+            row: error.details.start.row,
+            column: error.details.start.column,
+            type: "error",
+            text: error.message,
+        }));
+    }, [errorObject]);
+
+    const markers: IMarker[] = useMemo(() => {
+        return errorObject.validationErrors.map((error) => ({
+            startRow: error.details.start.row,
+            startCol: error.details.start.column,
+            endRow: error.details.end.row,
+            endCol: error.details.end.column,
+            className: "ace-error-marker",
+            type: "text",
+            inFront: false,
+        }));
+    }, [errorObject]);
+
+    const hasMessages = annotations.length > 0 && markers.length > 0;
+    return { annotations, markers, hasMessages };
+}
+
 export default forwardRef(function AceWrapper(
     {
         inputProps,
@@ -152,6 +181,25 @@ export default forwardRef(function AceWrapper(
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
     const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
+
+    const errorObject = {
+        validationErrors: [
+            {
+                typ: "ExpressionParserCompilationError",
+                message: "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
+                description: "There is problem with expression in field Some($$expression) - it could not be parsed.",
+                fieldName: "$$expression",
+                errorType: "SaveAllowed",
+                details: {
+                    start: { column: 0, row: 0 },
+                    end: { column: 15, row: 0 },
+                    type: "TextErrorDetails",
+                },
+            },
+        ],
+    };
+
+    const { annotations, markers, hasMessages } = useAceEditorMessages(errorObject);
 
     const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
         () => [
@@ -185,8 +233,31 @@ export default forwardRef(function AceWrapper(
 
     return (
         <>
+            <style>{`
+        .ace_tooltip {
+          background: #222 !important;
+          color: #fff !important;
+          border-radius: 6px !important;
+          font-size: 14px !important;
+          padding: 10px 16px !important;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+          z-index: 9999 !important;
+          transform: translate(-200%, -100%); /* Align tooltip vertically */
+        }
+        .ace-error-marker {
+          position: absolute;
+          border-bottom: 2px solid #ff4444;
+          border-radius: 0;
+        }
+        .ace_error {
+          background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAGklEQVQIHWPY9+8fAzYwGoQXPQL///8fAAQBAHlW/oc+AAAAAElFTkSuQmCC');
+          background-repeat: repeat-x;
+          background-position: bottom;
+        }
+      `}</style>
             <AceEditor
                 {...props}
+                value={`function hello() {\n  return 42;\n}\nalert('hi');`}
                 ref={ref}
                 mode={editorLangToMode(language, editorMode)}
                 width={"100%"}
@@ -198,7 +269,7 @@ export default forwardRef(function AceWrapper(
                 readOnly={readOnly}
                 className={readOnly ? " read-only" : ""}
                 wrapEnabled={!!wrapEnabled}
-                showGutter={!!showLineNumbers}
+                showGutter={!!showLineNumbers || hasMessages}
                 editorProps={DEFAULT_EDITOR_PROPS}
                 setOptions={{
                     ...DEFAULT_OPTIONS,
@@ -210,6 +281,8 @@ export default forwardRef(function AceWrapper(
                 enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
                 commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
                 placeholder={inputProps.placeholder}
+                annotations={annotations}
+                markers={markers}
             />
             {InputAdornmentEnd && (
                 <Box

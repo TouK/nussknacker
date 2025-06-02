@@ -45,7 +45,13 @@ type TabularDataDefinitionParserErrorDetails = {
     type: "TabularDataDefinitionParserErrorDetails";
 };
 
-type Details = TabularDataDefinitionParserErrorDetails;
+type ErrorRange = {
+    start: { column: number; row: number };
+    end: { column: number; row: number };
+    type: "TextErrorDetails";
+};
+
+type Details = TabularDataDefinitionParserErrorDetails | ErrorRange;
 
 export interface NodeValidationError {
     fieldName: string;
