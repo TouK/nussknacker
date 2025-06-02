@@ -12,7 +12,6 @@ export type TestData = Record<Source, SourceTestData>;
 export type GraphState = {
     scenarioLoading: boolean;
     scenario?: Scenario;
-    lastDeployedScenario?: Scenario;
     selectionState?: string[];
     layout: Layout;
     testCapabilities?: TestCapabilities;

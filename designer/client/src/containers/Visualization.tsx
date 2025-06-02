@@ -9,7 +9,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { fetchAndDisplayLiveData, stopLiveData } from "../actions/nk/liveData";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import type { Graph } from "../components/graph/Graph";
@@ -21,7 +20,6 @@ import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
-import { isReadyForLiveData } from "../reducers/selectors/getLiveData";
 import {
     getGraph,
     getProcessVersionId,
@@ -37,7 +35,7 @@ import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
-import { LiveDataNodePulse, LiveDataThroughputs } from "./LiveDataThroughputs";
+import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
 import { GraphPage } from "./Page";
 import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
@@ -103,17 +101,17 @@ function useCountsIfNeeded() {
     }, [dispatch, from, refresh, scenario, scenarioGraph, to]);
 }
 
-function useLiveDataIfNeeded() {
-    const dispatch = useDispatch();
-    const readyForResults = useSelector(isReadyForLiveData);
-    useEffect(() => {
-        if (readyForResults) {
-            dispatch(fetchAndDisplayLiveData());
-        } else {
-            dispatch(stopLiveData());
-        }
-    }, [dispatch, readyForResults]);
-}
+// function useLiveDataIfNeeded() {
+//     const dispatch = useDispatch();
+//     const readyForResults = useSelector(isReadyForLiveData);
+//     useEffect(() => {
+//         if (readyForResults) {
+//             dispatch(fetchAndDisplayLiveData());
+//         } else {
+//             dispatch(stopLiveData());
+//         }
+//     }, [dispatch, readyForResults]);
+// }
 
 function useVersionSwitchIfNeeded(processName: string, version: string) {
     const isLatestVersion = useSelector(isLatestProcessVersion);
@@ -196,7 +194,7 @@ function Visualization() {
 
     useProcessState();
     useCountsIfNeeded();
-    useLiveDataIfNeeded();
+    // useLiveDataIfNeeded();
     // useVersionSwitchIfNeeded(processName, version);
 
     const { openNodes } = useModalDetailsIfNeeded();
@@ -228,7 +226,6 @@ function Visualization() {
 
                 <GraphProvider graph={getGraphInstance}>
                     <LiveDataThroughputs />
-                    <LiveDataNodePulse />
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>

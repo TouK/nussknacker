@@ -6,12 +6,12 @@ import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
 import type { Scenario } from "../../components/Process/types";
+import { isStatusRunning } from "../../components/Process/types";
 import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import { ScenarioGraphSourceType } from "../../http/HttpService";
 import type { ScenarioGraph } from "../../types";
 import type { TestData } from "../graph";
 import type { RootState } from "../index";
-import { getLastDeploymentActivity } from "./activities";
 import { getHistoryPast } from "./getHistory";
 import { areLabelsUpdated, isGraphUpdated } from "./helpers";
 import { getProcessState } from "./scenarioState";
@@ -124,8 +124,8 @@ export const getAdditionalFields = createSelector(getProperties, (p) => p?.addit
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
-export const isDeployed = createSelector(getProcessVersionId, getLastDeploymentActivity, (version, activity?) => {
-    return version === activity?.scenarioVersionId;
+export const isDeployed = createSelector(getProcessVersionId, getProcessState, (version, state) => {
+    return isStatusRunning(state?.status) && state.status.versionId === `${version}`;
 });
 
 export const getScenarioGraphSource = createSelector(

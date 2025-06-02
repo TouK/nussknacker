@@ -2,7 +2,7 @@ import moment from "moment/moment";
 
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto } from "../../http/resultsWithCountsDto";
-import { getLiveDataRefresh, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
+import { isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
 import type { Action, ThunkAction } from "../reduxTypes";
 import type { RefreshData } from "./displayProcessCounts";
@@ -23,26 +23,23 @@ function displayLiveData(results: ResultsWithCountsDto, refresh?: RefreshData): 
     };
 }
 
-export const stopLiveData = (): ThunkAction => (dispatch, getState) => {
-    const refresh = getLiveDataRefresh(getState());
-    setTimeout(() => {
-        dispatch({ type: "LIVE_DATA_STOP" });
-    }, (refresh?.nextIn || 0) * 0.5);
-};
-
 const MIN_REFRESH_TIME = 500;
 let refreshTimeout: NodeJS.Timeout;
+
+export const stopLiveData = (): ThunkAction => (dispatch, getState) => {
+    dispatch({ type: "LIVE_DATA_STOP" });
+    clearTimeout(refreshTimeout);
+};
 
 export function fetchAndDisplayLiveData(refreshIn: number | false = 1): ThunkAction {
     return async (dispatch, getState) => {
         clearTimeout(refreshTimeout);
-
-        let results: ResultsWithCountsDto;
-        if (isReadyForLiveData(getState())) {
-            const scenario = getScenario(getState());
-            results = await HttpService.fetchProcessLiveData(scenario.name).then(({ data }) => data);
+        if (!isReadyForLiveData(getState())) {
+            return dispatch(stopLiveData());
         }
-        if (!results) return;
+
+        const scenario = getScenario(getState());
+        const { data: results } = await HttpService.fetchProcessLiveData(scenario.name);
 
         const now = moment();
         if (refreshIn) {
@@ -50,18 +47,10 @@ export function fetchAndDisplayLiveData(refreshIn: number | false = 1): ThunkAct
             const nextIn = Math.max(MIN_REFRESH_TIME, refreshIn * 1000);
 
             refreshTimeout = setTimeout(() => {
-                const liveDataRefresh = getLiveDataRefresh(getState());
-                if (liveDataRefresh) {
-                    dispatch(fetchAndDisplayLiveData(refreshIn));
-                }
+                dispatch(fetchAndDisplayLiveData(refreshIn));
             }, nextIn);
 
-            dispatch(
-                displayLiveData(results, {
-                    last,
-                    nextIn,
-                }),
-            );
+            dispatch(displayLiveData(results, { last, nextIn }));
         } else {
             dispatch(displayLiveData(results));
         }

@@ -194,10 +194,7 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
             },
             ".joint-type-esp-model": {
                 ".body .joint-port-body .background": {
-                    transition: "all 0.25s ease-in-out",
-                },
-                ".background": {
-                    transition: "all 1s ease-out",
+                    transition: "all 0.25s ease-in",
                 },
             },
             ".sticky-note-markdown": {
