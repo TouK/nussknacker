@@ -38,7 +38,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     val process  = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, topicParamValue = _ => s"")
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
-    }.getMessage should include("EmptyMandatoryParameter(This field is mandatory and can not be empty")
+    }.getMessage should include("EmptyMandatoryParameter(Field: Topic is mandatory and can not be empty")
   }
 
   test("should raise exception when we provide wrong input variable") {
