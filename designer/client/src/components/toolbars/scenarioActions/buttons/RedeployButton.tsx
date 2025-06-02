@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay } from "../../../../actions/nk";
+import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
@@ -80,7 +80,11 @@ export default function RedeployButton(props: ToolbarButtonProps) {
             scenarioGraphSource?: ScenarioGraphSource,
         ) => {
             const result = await HttpService.redeploy(name, comment, nodesDeploymentData, scenarioGraphSource);
-            dispatch(fetchProcessToDisplay(name, result.deployedScenarioVersionId ?? versionId));
+            if (result.scenarioActionResultType === ScenarioActionResultType.DeploySuccess) {
+                dispatch(fetchProcessToDisplay(name, result.deployedScenarioVersionId));
+            } else {
+                dispatch(loadProcessState(name, versionId));
+            }
             return result;
         },
         [dispatch],
@@ -126,14 +130,12 @@ export default function RedeployButton(props: ToolbarButtonProps) {
             setIsRedeployCallProcessing(true);
             const response = await action(processName, processVersionId, "");
             switch (response.scenarioActionResultType) {
+                case ScenarioActionResultType.DeploySuccess:
                 case ScenarioActionResultType.Success:
                 case ScenarioActionResultType.UnhandledError:
                     break;
                 case ScenarioActionResultType.ValidationError:
                     dispatch(notificationActions.error(response.msg));
-                    break;
-                default:
-                    console.log("Unexpected result type:", response.scenarioActionResultType);
                     break;
             }
         } finally {

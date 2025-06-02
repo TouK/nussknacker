@@ -37,15 +37,13 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const confirmAction = useCallback(async () => {
         const response = await action(processName, processVersionId, comment, parametersValues, scenarioGraphSource);
         switch (response.scenarioActionResultType) {
+            case ScenarioActionResultType.DeploySuccess:
             case ScenarioActionResultType.Success:
             case ScenarioActionResultType.UnhandledError:
                 props.close();
                 break;
             case ScenarioActionResultType.ValidationError:
                 setValidationError(response.msg);
-                break;
-            default:
-                console.log("Unexpected result type:", response.scenarioActionResultType);
                 break;
         }
     }, [action, comment, processName, props, processVersionId, parametersValues, scenarioGraphSource]);

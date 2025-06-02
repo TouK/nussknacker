@@ -17,7 +17,18 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object LoggingService extends EagerService {
 
-  private val rootLogger = "scenarios"
+  private val rootLogger                                        = "scenarios"
+  private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"
+
+  private val deployParameters = Map(
+    ParameterName(debuggingWithLoggingComponentsAllowedPropertyName) -> StaticParameterConfig(
+      defaultValue = "false".some,
+      editor = BoolParameterEditor,
+      validators = None,
+      label = "Debugging".some,
+      hintText = "Enable debugging with logging components".some
+    )
+  )
 
   @MethodToInvoke(returnType = classOf[Void])
   def prepare(
@@ -28,7 +39,6 @@ object LoggingService extends EagerService {
       @ParamName("message") @Editor(`type` = EditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker with WithActionParametersSupport {
-      private val debuggingWithLoggingComponentsAllowedPropertyName = "debuggingWithLoggingComponentsAllowed"
       private lazy val logger = LoggerFactory.getLogger(
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
@@ -57,15 +67,8 @@ object LoggingService extends EagerService {
           .exists(_.toBoolean)
 
       override def actionParametersDefinition: Map[ScenarioActionName, Map[ParameterName, StaticParameterConfig]] = Map(
-        ScenarioActionName.Deploy -> Map(
-          ParameterName(debuggingWithLoggingComponentsAllowedPropertyName) -> StaticParameterConfig(
-            defaultValue = "false".some,
-            editor = BoolParameterEditor,
-            validators = None,
-            label = "Debugging".some,
-            hintText = "Enable debugging with logging components".some
-          )
-        )
+        ScenarioActionName.Deploy   -> deployParameters,
+        ScenarioActionName.Redeploy -> deployParameters,
       )
 
     }

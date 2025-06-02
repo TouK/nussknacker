@@ -19,7 +19,13 @@ import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "
 import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
-import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
+import type {
+    ScenarioActionResultDeploySuccess,
+    ScenarioActionResult,
+    ScenarioActionUnhandledError,
+    ScenarioActionValidationError,
+    ScenarioActionResultSuccess,
+} from "../components/toolbars/scenarioActions/buttons/types";
 import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 import type { ToolbarsConfig } from "../components/toolbarSettings/types";
 import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
@@ -375,11 +381,11 @@ class HttpService {
         return await api
             .post<DeployResponse>(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then((resp) => {
-                return {
+                const result: ScenarioActionResultDeploySuccess = {
                     deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
-                    scenarioActionResultType: ScenarioActionResultType.Success,
-                    msg: "",
+                    scenarioActionResultType: ScenarioActionResultType.DeploySuccess,
                 };
+                return result;
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -423,11 +429,11 @@ class HttpService {
         return await api
             .post<DeployResponse>(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then((resp) => {
-                return {
+                const result: ScenarioActionResultDeploySuccess = {
                     deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
-                    scenarioActionResultType: ScenarioActionResultType.Success,
-                    msg: "",
+                    scenarioActionResultType: ScenarioActionResultType.DeploySuccess,
                 };
+                return result;
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -463,14 +469,15 @@ class HttpService {
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
-                return {
+                const result: ScenarioActionResultSuccess = {
                     scenarioActionResultType: ScenarioActionResultType.Success,
                     msg: msg.toString(),
                 };
+                return result;
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
-                const result = {
+                const result: ScenarioActionUnhandledError = {
                     scenarioActionResultType: ScenarioActionResultType.UnhandledError,
                     msg: msg.toString(),
                 };
@@ -486,7 +493,11 @@ class HttpService {
         return api
             .post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment)
             .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+                const result: ScenarioActionResultSuccess = {
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: "",
+                };
+                return result;
             })
             .catch((error) => {
                 if (error?.response?.status != 400) {

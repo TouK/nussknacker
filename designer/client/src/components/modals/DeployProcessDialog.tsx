@@ -46,14 +46,12 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         const response = await action(processName, processVersionId, comment, null, scenarioGraphSource);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.Success:
+            case ScenarioActionResultType.DeploySuccess:
             case ScenarioActionResultType.UnhandledError:
                 props.close();
                 break;
             case ScenarioActionResultType.ValidationError:
                 setValidationError(response.msg);
-                break;
-            default:
-                console.log("Unexpected result type:", response.scenarioActionResultType);
                 break;
         }
     }, [action, comment, processName, props, processVersionId, scenarioGraphSource]);
