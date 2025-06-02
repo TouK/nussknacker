@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import org.apache.avro.generic.GenericRecord
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
@@ -40,6 +41,8 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
  * TODO: Move it to some other module when json schema handling will be available
  */
 object UniversalKafkaSinkFactory {
+
+  private val genericRecordClass = classOf[GenericRecord]
 
   private val paramsDeterminedAfterSchema = List(
     Parameter.optional[CharSequence](sinkKeyParamName).copy(isLazyParameter = true),
