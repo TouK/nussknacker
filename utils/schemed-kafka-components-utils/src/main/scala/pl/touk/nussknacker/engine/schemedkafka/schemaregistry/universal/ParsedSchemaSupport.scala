@@ -123,6 +123,8 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
       validationMode,
       rawParameter,
       restrictedParamNames,
+      // We need custom AvroSchemaTypeDefinitionExtractor here as otherwise SpelExpressionValidator rises an errors
+      // when rawmode is off and sink schema contains nested records
       AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
     )
 
