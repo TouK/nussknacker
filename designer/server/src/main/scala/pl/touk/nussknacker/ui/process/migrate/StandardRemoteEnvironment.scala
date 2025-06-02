@@ -102,6 +102,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): EitherT[Future, NuDesignerError, Unit] = {
     transformedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
+        logger.warn(s"Migration error: $apiAdapterServiceError")
         EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
       case Right(transformedMigrateScenarioRequest) =>
         migrateScenario(transformedMigrateScenarioRequest)

@@ -311,7 +311,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         case ValidationPerformed(
               (
                 EmptyMandatoryParameter(
-                  "This field is mandatory and can not be empty",
+                  "Field: $expression is mandatory and can not be empty",
                   _,
                   NodeExpressionId.DefaultExpressionIdParamName,
                   "var1"
@@ -447,12 +447,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       ) {
         case ValidationPerformed(
               EmptyMandatoryParameter(
-                "This field is mandatory and can not be empty",
+                "Field: $fields-0-$value is mandatory and can not be empty",
                 _,
                 ParameterName("$fields-0-$value"),
                 "recordVariable"
               ) :: EmptyMandatoryParameter(
-                "This field is mandatory and can not be empty",
+                "Field: $fields-1-$value is mandatory and can not be empty",
                 _,
                 ParameterName("$fields-1-$value"),
                 "recordVariable"
