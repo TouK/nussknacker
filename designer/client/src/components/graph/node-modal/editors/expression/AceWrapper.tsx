@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import type { SerializedStyles } from "@emotion/react";
-import { Box } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
 import type { ForwardedRef, ReactNode } from "react";
@@ -9,9 +9,9 @@ import type { IAceEditorProps } from "react-ace/lib/ace";
 import type ReactAce from "react-ace/lib/ace";
 import type { ICommand, IMarker } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
-import type { Annotation} from "react-ace/types";
-import { Marker } from "react-ace/types";
+import type { Annotation } from "react-ace/types";
 
+import { getBorderColor } from "../../../../../containers/theme/helpers";
 import type { NodeValidationError } from "../../../../../types";
 import AceEditor from "./ace";
 import type { EditorMode } from "./types";
@@ -168,6 +168,21 @@ export function useAceEditorMessages(errorObject: { validationErrors: NodeValida
     return { annotations, markers, hasMessages };
 }
 
+const StyledAceEditorWrapper = styled("div")(({ theme }) => ({
+    "& .ace_tooltip": {
+        ...theme.typography.body2,
+        padding: theme.spacing(1),
+        background: `${theme.palette.background.paper} !important`,
+        borderColor: getBorderColor(theme),
+        borderRadius: "6px !important",
+        transform: "translate(-60%, -100%)",
+    },
+    "& .ace-error-marker": {
+        position: "absolute",
+        borderBottom: "2px solid #ff4444",
+        borderRadius: 0,
+    },
+}));
 export default forwardRef(function AceWrapper(
     {
         inputProps,
@@ -232,32 +247,9 @@ export default forwardRef(function AceWrapper(
     );
 
     return (
-        <>
-            <style>{`
-        .ace_tooltip {
-          background: #222 !important;
-          color: #fff !important;
-          border-radius: 6px !important;
-          font-size: 14px !important;
-          padding: 10px 16px !important;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
-          z-index: 9999 !important;
-          transform: translate(-200%, -100%); /* Align tooltip vertically */
-        }
-        .ace-error-marker {
-          position: absolute;
-          border-bottom: 2px solid #ff4444;
-          border-radius: 0;
-        }
-        .ace_error {
-          background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAGklEQVQIHWPY9+8fAzYwGoQXPQL///8fAAQBAHlW/oc+AAAAAElFTkSuQmCC');
-          background-repeat: repeat-x;
-          background-position: bottom;
-        }
-      `}</style>
+        <StyledAceEditorWrapper>
             <AceEditor
                 {...props}
-                value={`function hello() {\n  return 42;\n}\nalert('hi');`}
                 ref={ref}
                 mode={editorLangToMode(language, editorMode)}
                 width={"100%"}
@@ -296,6 +288,6 @@ export default forwardRef(function AceWrapper(
                     {InputAdornmentEnd}
                 </Box>
             )}
-        </>
+        </StyledAceEditorWrapper>
     );
 });
