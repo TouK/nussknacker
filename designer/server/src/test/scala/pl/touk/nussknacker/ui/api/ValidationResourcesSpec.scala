@@ -99,7 +99,7 @@ class ValidationResourcesSpec
     createAndValidateScenario(ProcessTestData.invalidProcessWithEmptyMandatoryParameter) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include("This field is mandatory and can not be empty")
+      entity should include("Field: expression is mandatory and can not be empty")
     }
   }
 
@@ -212,10 +212,10 @@ class ValidationResourcesSpec
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
       validation.errors.invalidNodes("filter").head.message should include(
-        "This field is required and can not be null"
+        "Field: $expression is required and can not be null"
       )
       validation.errors.invalidNodes("variable").head.message should include(
-        "This field is mandatory and can not be empty"
+        "Field: $expression is mandatory and can not be empty"
       )
     }
   }
