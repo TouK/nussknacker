@@ -208,6 +208,10 @@ class SchemalessKafkaJsonTypeTests
       "scenarioTypes.streaming.modelConfig.components.kafka.config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
       ConfigValueFactory.fromAnyRef(true)
     )
+    .withValue(
+      "scenarioTypes.streaming.modelConfig.components.kafka.config.kafkaAdminConfig.cacheConfig.topicsExpirationTime",
+      ConfigValueFactory.fromAnyRef(0)
+    )
 
   lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
     kafkaProperties = Some(Map("bootstrap.servers" -> kafkaContainer.bootstrapServers)),

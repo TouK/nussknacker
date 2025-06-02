@@ -33,7 +33,7 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
       Some(config),
       None,
       avroKryoGenericRecordSchemaIdSerialization = Some(false),
-      showTopicsWithoutSchema = false
+      showTopicsWithoutSchema = false,
     )
     val schema = AvroUtils.parseSchema("""{
         |    "type": "record",

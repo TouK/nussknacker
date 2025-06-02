@@ -20,12 +20,12 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
 
   test("should validate existing source topic") {
     val topic     = createUniqueSourceTopic()
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(topic) shouldBe Valid(topic)
   }
 
   test("should validate not existing source topic") {
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(notExistingSourceTopic) shouldBe Invalid(
       TopicExistenceValidationException(NonEmptyList.one(notExistingSourceTopic))
     )
@@ -33,19 +33,19 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
 
   test("should validate existing sink topic") {
     val topic     = createUniqueSinkTopic()
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(topic) shouldBe Valid(topic)
   }
 
   test("should validate not existing sink topic") {
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(notExistingSinkTopic) shouldBe Invalid(
       TopicExistenceValidationException(NonEmptyList.one(notExistingSinkTopic))
     )
   }
 
   test("should not validate not existing topic when validation disabled") {
-    val validator = new CachedTopicsExistenceValidator(
+    val validator = CachedTopicsExistenceValidator(
       defaultKafkaConfig.copy(
         topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
       )
@@ -55,7 +55,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
 
   test("should fetch topics every time when not valid using cache") {
     val notExistingYetTopicName = createUniqueSourceTopicName()
-    val validator               = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator               = CachedTopicsExistenceValidator(defaultKafkaConfig)
 
     validator.validateTopic(notExistingYetTopicName) shouldBe Invalid(
       TopicExistenceValidationException(NonEmptyList.one(notExistingYetTopicName))
@@ -75,12 +75,12 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
 
   test("should validate existing source topic") {
     val topic     = createUniqueSourceTopic()
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(topic) shouldBe Valid(topic)
   }
 
   test("should not validate not existing source topic") {
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(notExistingSourceTopic) shouldBe Invalid(
       TopicExistenceValidationException(NonEmptyList.one(notExistingSourceTopic))
     )
@@ -88,17 +88,17 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
 
   test("should validate existing sink topic") {
     val topic     = createUniqueSinkTopic()
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(topic) shouldBe Valid(topic)
   }
 
   test("should validate not existing sink topic") {
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(notExistingSinkTopic) shouldBe Valid(notExistingSinkTopic)
   }
 
   test("should not validate not existing topic when validation disabled") {
-    val validator = new CachedTopicsExistenceValidator(
+    val validator = CachedTopicsExistenceValidator(
       defaultKafkaConfig.copy(
         topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
       )
@@ -107,7 +107,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
   }
 
   test("should use cache when validating") {
-    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    val validator = CachedTopicsExistenceValidator(defaultKafkaConfig)
     validator.validateTopic(notExistingSinkTopic) shouldBe Valid(notExistingSinkTopic)
     container.stop()
     validator.validateTopic(notExistingSinkTopic) shouldBe Valid(notExistingSinkTopic)
@@ -134,7 +134,6 @@ abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Bo
     // longer timeout, as container might need some time to make initial assignments etc.
     topicsExistenceValidationConfig = TopicsExistenceValidationConfig(
       enabled = true,
-      validatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig.copy(adminClientTimeout = 30 seconds)
     )
   )
 
