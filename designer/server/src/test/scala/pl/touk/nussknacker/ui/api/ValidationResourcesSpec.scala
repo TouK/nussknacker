@@ -212,7 +212,7 @@ class ValidationResourcesSpec
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
       validation.errors.invalidNodes("filter").head.message should include(
-        "Field: $expression is required and can not be null"
+        "This field is required and can not be null"
       )
       validation.errors.invalidNodes("variable").head.message should include(
         "Field: $expression is mandatory and can not be empty"
