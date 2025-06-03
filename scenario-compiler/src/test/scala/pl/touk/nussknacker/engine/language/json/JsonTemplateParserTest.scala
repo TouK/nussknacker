@@ -9,11 +9,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.JsonParsingError
+import pl.touk.nussknacker.engine.language.json.JsonParser.JsonParseError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
@@ -198,20 +199,42 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     val parsingErrors               = parse[String](invalidJson).invalidValue
     val parsingErrorsWithoutContext = parseWithoutContextValidation[String](invalidJson).invalidValue
 
-    parsingErrors shouldBe NonEmptyList.of(JsonParsingError("expected json value got '}' (line 3, column 1)"))
+    parsingErrors shouldBe NonEmptyList.of(
+      JsonParseError(
+        "expected json value got '}' (line 3, column 1)",
+        Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
+      )
+    )
     parsingErrorsWithoutContext shouldBe
-      NonEmptyList.of(JsonParsingError("expected json value got '}' (line 3, column 1)"))
+      NonEmptyList.of(
+        JsonParseError(
+          "expected json value got '}' (line 3, column 1)",
+          Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
+        )
+      )
   }
 
   test("should return error when complex variable type is not in quotes") {
     forAll(
       Table(
-        ("Invalid json", "Error message"),
-        ("""{ "products": #{#products} }""", "expected json value got 'unquot...' (line 1, column 15)"),
-        ("""{"random text"}""", "expected : got '}' (line 1, column 15)"),
-        ("""{#{#products}}""", "expected \" got 'unquot...' (line 1, column 2)"),
+        ("Invalid json", "Error message", "Error details"),
+        (
+          """{ "products": #{#products} }""",
+          "expected json value got 'unquot...' (line 1, column 15)",
+          CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
+        ),
+        (
+          """{"random text"}""",
+          "expected : got '}' (line 1, column 15)",
+          CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
+        ),
+        (
+          """{#{#products}}""",
+          "expected \" got 'unquot...' (line 1, column 2)",
+          CoordinatesBasedTextRange(TextCoordinates(1, 0), TextCoordinates(2, 0))
+        ),
       )
-    ) { (invalidJson: String, errorMessage) =>
+    ) { (invalidJson: String, errorMessage, errorDetails) =>
       val parsingErrors = parse[String](
         invalidJson,
         ValidationContext(
@@ -222,7 +245,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       ).invalidValue
 
       // This error message could be better but it requires to analyze how string ends before template variable
-      parsingErrors shouldBe NonEmptyList.of(JsonParsingError(errorMessage))
+      parsingErrors shouldBe NonEmptyList.of(JsonParseError(errorMessage, Some(errorDetails)))
     }
   }
 

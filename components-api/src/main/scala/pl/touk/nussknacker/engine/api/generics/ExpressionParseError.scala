@@ -24,6 +24,11 @@ object ExpressionParseError {
       columnDefinitions: List[ColumnDefinition]
   ) extends ErrorDetails
 
+  @JsonCodec final case class CoordinatesBasedTextRange(start: TextCoordinates, end: TextCoordinates)
+      extends ErrorDetails
+
+  @JsonCodec final case class TextCoordinates(column: Int, row: Int)
+
   @JsonCodec final case class CellError(columnName: String, rowIndex: Int, errorMessage: String)
 
   final case class ColumnDefinition(name: String, aType: Class[_])

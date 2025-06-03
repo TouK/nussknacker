@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.api.generics.{
   GenericType,
   TypingFunction
 }
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
@@ -33,25 +34,29 @@ import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDef
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
+  SpelExpressionTypingParseError,
+  SpelExpressionUnderlyingParserError
+}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
   ArgumentTypeError,
   ExpressionTypeError,
   GenericFunctionError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError.{
   IllegalInvocationError,
   IllegalProjectionSelectionError,
   InvalidMethodReference,
   TypeReferenceError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError.{
   NoPropertyError,
   UnknownClassError,
   UnknownMethodError,
   UnresolvedReferenceError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.OperatorError._
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.ArrayConstructorError
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -477,7 +482,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("evaluate call on non-existing static method of validated class String") {
     inside(parse[Any]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})")) {
-      case Invalid(NonEmptyList(error: UnknownMethodError, Nil)) =>
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: UnknownMethodError, _), Nil)) =>
         error.message shouldBe "Unknown method 'copyValueOf' in String"
     }
   }
@@ -487,20 +492,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("evaluate static method call on unvalidated class") {
-    inside(parse[Any]("T(java.lang.System).exit()")) { case Invalid(NonEmptyList(error: TypeReferenceError, _)) =>
-      error.message shouldBe "class java.lang.System is not allowed to be passed as TypeReference"
+    inside(parse[Any]("T(java.lang.System).exit()")) {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: TypeReferenceError, _), _)) =>
+        error.message shouldBe "class java.lang.System is not allowed to be passed as TypeReference"
     }
   }
 
   test("evaluate static method call on non-existing class") {
     inside(parse[Any]("T(java.lang.NonExistingClass).method()")) {
-      case Invalid(NonEmptyList(error: UnknownClassError, _)) =>
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: UnknownClassError, _), _)) =>
         error.message shouldBe "Class java.lang.NonExistingClass does not exist"
     }
   }
 
   test("not throw an exception when is used lower case type") {
-    parse[Any]("T(foo).bar", ctx) should matchPattern { case Invalid(NonEmptyList(UnknownClassError("foo"), _)) =>
+    parse[Any]("T(foo).bar", ctx) should matchPattern {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(UnknownClassError("foo"), _), _)) =>
     }
   }
 
@@ -520,20 +527,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("subtraction of non numeric types") {
-    inside(parse[Any]("'a' - 'a'")) { case Invalid(NonEmptyList(error: OperatorNonNumericError, Nil)) =>
-      error.message shouldBe s"Operator '-' used with non numeric type: ${Typed.fromInstance("a").display}"
+    inside(parse[Any]("'a' - 'a'")) {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: OperatorNonNumericError, _), Nil)) =>
+        error.message shouldBe s"Operator '-' used with non numeric type: ${Typed.fromInstance("a").display}"
     }
   }
 
   test("substraction of mismatched types") {
-    inside(parse[Any]("'' - 1")) { case Invalid(NonEmptyList(error: OperatorMismatchTypeError, Nil)) =>
-      error.message shouldBe s"Operator '-' used with mismatch types: ${Typed.fromInstance("").display} and ${Typed.fromInstance(1).display}"
+    inside(parse[Any]("'' - 1")) {
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: OperatorMismatchTypeError, _), Nil)) =>
+        error.message shouldBe s"Operator '-' used with mismatch types: ${Typed.fromInstance("").display} and ${Typed.fromInstance(1).display}"
     }
   }
 
   test("use not existing method reference") {
     inside(parse[Any]("notExistingMethod(1)", ctxWithGlobal)) {
-      case Invalid(NonEmptyList(error: InvalidMethodReference, _)) =>
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: InvalidMethodReference, _), _)) =>
         error.message shouldBe "Invalid method reference: notExistingMethod(1)."
     }
   }
@@ -593,7 +602,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("validate MethodReference") {
     parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal).isValid shouldBe true
     inside(parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)) {
-      case Invalid(NonEmptyList(error: UnknownMethodError, Nil)) =>
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: UnknownMethodError, _), Nil)) =>
         error.message shouldBe "Unknown method 'addT' in SampleGlobalObject"
     }
   }
@@ -606,7 +615,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe Symbol("valid")
 
     inside(parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)) {
-      case Invalid(NonEmptyList(error: ArgumentTypeError, Nil)) =>
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: ArgumentTypeError, _), Nil)) =>
         error.message shouldBe s"Mismatch parameter types. Found: add(${Typed.fromInstance("1").display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)"
     }
   }
@@ -756,8 +765,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("accumulate errors") {
     parse[Any]("#obj.children.^[id == 123].foo").invalidValue.toList should matchPattern {
-      case OperatorNotComparableError("==", _, _) :: NoPropertyError(childrenType, "foo") :: Nil
-          if childrenType == Typed[Test] =>
+      case SpelExpressionTypingParseError(OperatorNotComparableError("==", _, _), _) :: SpelExpressionTypingParseError(
+            NoPropertyError(childrenType, "foo"),
+            _
+          ) :: Nil if childrenType == Typed[Test] =>
     }
   }
 
@@ -1116,7 +1127,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("detect bad type of literal or variable") {
 
     def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _], message: String) =
-      inside(valid) { case Invalid(NonEmptyList(error: ExpressionTypeError, _)) =>
+      inside(valid) { case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: ExpressionTypeError, _), _)) =>
         error.message shouldBe message
       }
 
@@ -1527,8 +1538,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should not validate division by zero") {
-    parse[Any]("1 / 0").invalidValue shouldBe NonEmptyList.one(DivisionByZeroError("(1 / 0)"))
-    parse[Any]("1 % 0").invalidValue shouldBe NonEmptyList.one(ModuloZeroError("(1 % 0)"))
+    parse[Any]("1 / 0").invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(DivisionByZeroError("1 / 0"), _) :: Nil =>
+    }
+    parse[Any]("1 % 0").invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(ModuloZeroError("1 % 0"), _) :: Nil =>
+    }
   }
 
   test("should check map values") {
@@ -1537,7 +1552,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       List(Typed[String], Typed.record(Map("additional" -> Typed[String])))
     )
     inside(parser.parse("""{"aField": {"additional": 1}}""", ValidationContext.empty, expected)) {
-      case Invalid(NonEmptyList(e: ExpressionTypeError, Nil)) =>
+      case Invalid(NonEmptyList(SpelExpressionTypingParseError(e: ExpressionTypeError, _), Nil)) =>
         e.expected shouldBe expected
     }
     parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, expected) shouldBe Symbol("valid")
@@ -1566,22 +1581,25 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should not allow array constructor") {
     List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
-      illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
+      illegalExpr =>
+        parse[Any](illegalExpr, ctx).invalidValue.toList should matchPattern {
+          case SpelExpressionTypingParseError(ArrayConstructorError, _) :: Nil =>
+        }
     )
   }
 
   test("indexing on maps and lists should validate expression inside indexer") {
     List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
-      parse[Any](expr, ctxWithGlobal).invalidValue shouldBe NonEmptyList.one(
-        UnresolvedReferenceError("invalidRef")
-      )
+      parse[Any](expr, ctxWithGlobal).invalidValue.toList should matchPattern {
+        case SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _) :: Nil =>
+      }
     )
   }
 
   test("indexing on unknown should validate expression inside indexer") {
-    parse[Any]("#unknownString.value[#invalidRef]", ctx).invalidValue shouldBe NonEmptyList.one(
-      UnresolvedReferenceError("invalidRef")
-    )
+    parse[Any]("#unknownString.value[#invalidRef]", ctx).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _) :: Nil =>
+    }
   }
 
   test("indexing on class should validate expression inside indexer") {
@@ -1589,9 +1607,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "T(java.time.LocalDate)[#invalidRef]",
       ctx,
       dynamicPropertyAccessAllowed = true
-    ).invalidValue shouldBe NonEmptyList.one(
-      UnresolvedReferenceError("invalidRef")
-    )
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(UnresolvedReferenceError("invalidRef"), _) :: Nil =>
+    }
   }
 
   test("should return correct type in array projection") {
@@ -1599,7 +1617,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should return error on String projection") {
-    parse[Any]("'ab'.![#this]", ctx).invalidValue.toList.headOption.value shouldBe a[IllegalProjectionSelectionError]
+    parse[Any]("'ab'.![#this]", ctx).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(_: IllegalProjectionSelectionError, _) :: Nil =>
+    }
   }
 
   test("should convert array to list when passing arg which type should be list") {
@@ -1648,10 +1668,51 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should check if method exists as a fallback of not found property") {
     parse[Any]("{1, 2}.contains", ctx).invalidValue.toList should matchPattern {
-      case ArgumentTypeError("contains", _, _) :: Nil =>
+      case SpelExpressionTypingParseError(ArgumentTypeError("contains", _, _), _) :: Nil =>
     }
     parse[Any]("{1, 2}.contain", ctx).invalidValue.toList should matchPattern {
-      case NoPropertyError(_, "contain") :: Nil =>
+      case SpelExpressionTypingParseError(NoPropertyError(_, "contain"), _) :: Nil =>
+    }
+  }
+
+  test("should return information about text range causing an error in spel expression") {
+    parse[Any](
+      """{1, 2}
+        |  .contain
+        |   """.stripMargin,
+      ctx
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(
+            NoPropertyError(_, "contain"),
+            CoordinatesBasedTextRange(TextCoordinates(3, 1), TextCoordinates(10, 1))
+          ) :: Nil =>
+    }
+  }
+
+  test("should return information about text range causing an error in spel template expression") {
+    parse[Any](
+      """foo: 123
+        |bar: #{ {1, 2}
+        |  .contain }""".stripMargin,
+      ctx,
+      flavour = SpelExpressionParser.Template,
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(
+            NoPropertyError(_, "contain"),
+            CoordinatesBasedTextRange(TextCoordinates(3, 2), TextCoordinates(10, 2))
+          ) :: Nil =>
+    }
+  }
+
+  test("should return information about text range causing an error detected by underlying spring parser ") {
+    parse[Any](
+      """123foo""".stripMargin,
+      ctx
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "EL1041E: After parsing a valid expression, there is still more data in the expression: 'oo'",
+            Some(CoordinatesBasedTextRange(TextCoordinates(4, 0), TextCoordinates(5, 0)))
+          ) :: Nil =>
     }
   }
 
@@ -1675,10 +1736,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should return an error if the cast return type cannot be determined at parse time") {
     parse[Any]("#unknownString.value.to('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
-      case GenericFunctionError("Cannot cast or convert to: 'java.util.XYZ'") :: Nil =>
+      case SpelExpressionTypingParseError(
+            GenericFunctionError("Cannot cast or convert to: 'java.util.XYZ'"),
+            _
+          ) :: Nil =>
     }
     parse[Any]("#unknownString.value.to(#obj.id)", ctx).invalidValue.toList should matchPattern {
-      case ArgumentTypeError("to", _, _) :: Nil =>
+      case SpelExpressionTypingParseError(ArgumentTypeError("to", _, _), _) :: Nil =>
     }
   }
 
@@ -1695,9 +1759,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "#hashMap.value.to('java.util.HashMap').remove('testKey')",
       ctx.withVariable("hashMap", ContainerOfUnknown(new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava)))
     ).invalidValue.toList should matchPattern {
-      case GenericFunctionError("Cannot cast or convert to: 'java.util.HashMap'") :: IllegalInvocationError(
-            Unknown
-          ) :: Nil =>
+      case SpelExpressionTypingParseError(GenericFunctionError("Cannot cast or convert to: 'java.util.HashMap'"), _) ::
+          SpelExpressionTypingParseError(IllegalInvocationError(Unknown), _) :: Nil =>
     }
   }
 
@@ -1741,7 +1804,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       expr = "#arrayOfUnknown.![#this.indexOf('n')]",
       context = ctx,
       methodExecutionForUnknownAllowed = false
-    ).invalidValue.toList should matchPattern { case IllegalInvocationError(Unknown) :: Nil =>
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(IllegalInvocationError(Unknown), _) :: Nil =>
     }
   }
 
@@ -1852,7 +1916,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should return error msg if record in map project does not contain required fields") {
     parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
-      case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>
+      case SpelExpressionTypingParseError(
+            GenericFunctionError("List element must contain 'key' and 'value' fields"),
+            _
+          ) :: Nil =>
     }
   }
 

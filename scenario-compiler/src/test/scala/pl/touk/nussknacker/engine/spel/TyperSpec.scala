@@ -5,21 +5,21 @@ import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
-import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
-import pl.touk.nussknacker.engine.expression.PositionRange
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
+import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError.{
   NoPropertyError,
   NoPropertyTypeError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.MapWithExpressionKeysError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SpelExpressionTypingError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.MapWithExpressionKeysError
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord._
+import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -27,10 +27,9 @@ import scala.jdk.CollectionConverters._
 
 class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
-  private implicit val defaultTyper: Typer = buildTyper()
-  private val dynamicAccessTyper: Typer    = buildTyper(dynamicPropertyAccessAllowed = true)
-  private val parser: standard.SpelExpressionParser =
-    new org.springframework.expression.spel.standard.SpelExpressionParser()
+  private implicit val defaultTyper: Typer   = buildTyper()
+  private val dynamicAccessTyper: Typer      = buildTyper(dynamicPropertyAccessAllowed = true)
+  private val parser: NuSpelExpressionParser = new NuSpelExpressionParser()
 
   test("not allow maps with keys other than strings") {
     typeExpression("{1L: 'foo'}") shouldBe Invalid(
@@ -42,9 +41,9 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(
       CollectedTypingResult(
         Map(
-          PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
-          PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),
-          PositionRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
+          IndexBasedTextRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
+          IndexBasedTextRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),
+          IndexBasedTextRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
         ),
         TypingResultWithContext(Typed.fromInstance(4))
       )
@@ -210,10 +209,10 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       variables: (String, Any)*
   )(
       implicit typer: Typer
-  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  ): ValidatedNel[SpelExpressionTypingError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
-    typer.typeExpression(parsed, validationCtx)
+    typer.typeExpression(parsed, validationCtx).leftMap(_.map(_.error))
   }
 
   private def typeExpressionForcedType(
@@ -221,10 +220,10 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       variablesTypes: (String, TypingResult)*
   )(
       implicit typer: Typer
-  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  ): ValidatedNel[SpelExpressionTypingError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variablesTypes.toMap)
-    typer.typeExpression(parsed, validationCtx)
+    typer.typeExpression(parsed, validationCtx).leftMap(_.map(_.error))
   }
 
   private def typeTemplate(
@@ -232,10 +231,10 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       variables: (String, Any)*
   )(
       implicit typer: Typer
-  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  ): ValidatedNel[SpelExpressionTypingError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr, new TemplateParserContext())
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
-    typer.typeExpression(parsed, validationCtx)
+    typer.typeExpression(parsed, validationCtx).leftMap(_.map(_.error))
   }
 
 }

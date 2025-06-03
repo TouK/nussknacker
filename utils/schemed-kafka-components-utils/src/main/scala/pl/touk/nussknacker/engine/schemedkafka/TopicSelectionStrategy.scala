@@ -41,7 +41,9 @@ class AllNonHiddenTopicsSelectionStrategy(
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        cachingKafkaAdminClient.getOrFetchTopics
+        // Since this validator is used to provide possible values for the topic parameter, it must always fetch fresh topics from Kafka
+        // to ensure newly created topics can be selected.
+        cachingKafkaAdminClient.fetchFreshTopicsAndCache
           .filterNot(topic => topic.name.startsWith("_"))
           .toList
       } catch {

@@ -37,7 +37,7 @@ class SpelSubstitutionsCollector(typeForNode: SpelNode => Option[TypingResult], 
       // currently we use getStartPosition and getEndPosition but if we would like to substitute not leaf nodes
       // we should compute range based on children's start/end and based on fact that some tokens are eaten
       // (e.g. ending brace in Indexer) without notice in ast
-      .map(ExpressionSubstitution(headNode.positionRange, _))
+      .map(ExpressionSubstitution(headNode.textRange, _))
     val (_, forChildren) =
       headNode.children.foldLeft((List.empty[OptionallyTypedNode], List.empty[ExpressionSubstitution])) {
         case ((foldedTypedChildren, foldedSubstitutions), childNode) =>

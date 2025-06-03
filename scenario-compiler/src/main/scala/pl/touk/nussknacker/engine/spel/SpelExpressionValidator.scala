@@ -2,20 +2,22 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
-import org.springframework.expression.Expression
 import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
+  ExpressionTypeError,
+  SpelExpressionTypingErrorWithTextRange
+}
+import pl.touk.nussknacker.engine.spel.parser.ExpressionWithTextRange
 
 class SpelExpressionValidator(typer: Typer) {
 
   def validate(
-      expr: Expression,
+      expr: ExpressionWithTextRange,
       ctx: ValidationContext,
       expectedType: TypingResult
-  ): Validated[NonEmptyList[ExpressionParseError], CollectedTypingResult] = {
+  ): Validated[NonEmptyList[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult] = {
     val typedExpression = typer.typeExpression(expr, ctx)
     typedExpression.andThen { collected =>
       collected.finalResult.typingResult match {
@@ -26,7 +28,11 @@ class SpelExpressionValidator(typer: Typer) {
         case a if a.canBeLooselyAssignedTo(expectedType) =>
           Valid(collected)
         case a =>
-          Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, a)))
+          Invalid(
+            NonEmptyList.of(
+              SpelExpressionTypingErrorWithTextRange(ExpressionTypeError(expectedType, a), expr.getTextRange)
+            )
+          )
       }
     }
   }

@@ -970,7 +970,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,expression,customNode)"
+    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(Field: expression is mandatory and can not be empty,Please fill field for this parameter,expression,customNode)"
   }
 
   test("not accept blank expression for not blank parameter") {

@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import cats.data.Validated.Valid
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectWithValue, Unknown}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.JsonParsingError
+import pl.touk.nussknacker.engine.language.json.JsonParser.JsonParseError
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 import scala.jdk.CollectionConverters._
@@ -175,7 +176,12 @@ class JsonParserTest extends AnyFunSuite with Matchers {
                          |  ]
                          |}""".stripMargin
     val parsingErrors = parse(invalidJson).invalidValue
-    parsingErrors shouldBe NonEmptyList.of(JsonParsingError("expected ] or , got '{\"id\":...' (line 4, column 5)"))
+    parsingErrors shouldBe NonEmptyList.of(
+      JsonParseError(
+        "expected ] or , got '{\"id\":...' (line 4, column 5)",
+        Some(CoordinatesBasedTextRange(TextCoordinates(4, 3), TextCoordinates(5, 3)))
+      )
+    )
   }
 
   private def parse(jsonString: String) = {

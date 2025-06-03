@@ -91,7 +91,12 @@ class HttpRemoteEnvironment(
         Query.Empty,
         HttpEntity(dto.asJson.noSpaces),
         impersonationHeader(loggedUser)
-      )
+      ).map {
+        case left @ Left(nuDesignerError) =>
+          logger.warn(s"Migration error: $nuDesignerError")
+          left
+        case right => right
+      }
     }
   }
 

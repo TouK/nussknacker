@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -325,7 +326,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Long | String]' expected: 'Map[String, String]'")),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
-      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some(ParameterName("Value")), "#input['foo_int']", None))),
+      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(
+        ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some(ParameterName("Value")), "#input['foo_int']", Some(CoordinatesBasedTextRange(TextCoordinates(6, 0), TextCoordinates(7, 0)))))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on

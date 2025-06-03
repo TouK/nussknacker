@@ -20,13 +20,14 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
-import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
+import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassesExtensions, ClassExtensions}
 
 import scala.collection.compat.immutable.LazyList
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.OptionConverters.RichOptional
 import scala.util.{Failure, Try}
 
 class SpelExpressionSuggester(
@@ -444,7 +445,7 @@ class SpelExpressionSuggester(
 }
 
 private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
-  private val parser = new NuTemplateAwareExpressionParser(new SpelParserConfiguration)
+  private val parser = new NuSpelExpressionParser(new SpelParserConfiguration)
 
   def parse(
       input: String,
@@ -460,12 +461,12 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
     }
     rawExpression
       .map { parsedExpressions =>
-        parsedExpressions.find(e => e.start <= position && position <= e.end).flatMap { e =>
-          e.expression match {
+        parsedExpressions.findSubexpressionByPosition(position).toScala.flatMap { e =>
+          e.getExpression match {
             case s: SpringSpelExpression =>
               val collectedTypingResult =
                 typer.doTypeExpression(s, validationContext)._2
-              Some((new NuSpelNode(s.getAST, collectedTypingResult), position - e.start))
+              Some((new NuSpelNode(s.getAST, collectedTypingResult), position - e.getTextRange.start))
             case _ => None
           }
         }
