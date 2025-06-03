@@ -53,7 +53,7 @@ class DeploymentService(
     // a running job. In that case there is no deploy action and action cancel is removed.
     // TODO: This inconsistent action-state handling needs a fix.
     actionService
-      .actionProcessorForVersion[Unit](_.lastDeployedAction.map(_.processVersionId))
+      .actionProcessorForVersion[Unit](_.lastDeployedAction.map(_.processVersionId), LatestVersion)
       .processAction[CancelScenarioCommand, Unit](command = command, actionName = ScenarioActionName.Cancel) { ctx =>
         import command.commonData._
         dispatcher

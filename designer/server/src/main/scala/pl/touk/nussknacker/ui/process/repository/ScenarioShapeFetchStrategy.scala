@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -17,11 +18,13 @@ object ScenarioShapeFetchStrategy {
 
   implicit case object FetchComponentsUsages extends ScenarioShapeFetchStrategy[ScenarioComponentsUsages]
 
-  def convertToTargetShape[TARGET: ScenarioShapeFetchStrategy](source: Any): TARGET = {
+  def convertToTargetShape[TARGET: ScenarioShapeFetchStrategy](source: Any, processName: ProcessName): TARGET = {
     (source, implicitly[ScenarioShapeFetchStrategy[TARGET]]) match {
-      case (c: CanonicalProcess, FetchScenarioGraph)            => CanonicalProcessConverter.toScenarioGraph(c)
-      case (c: CanonicalProcess, FetchCanonical)                => c
-      case (s: ScenarioGraph, FetchScenarioGraph)               => s
+      case (c: CanonicalProcess, FetchScenarioGraph) => CanonicalProcessConverter.toScenarioGraph(c)
+      case (c: CanonicalProcess, FetchCanonical)     => c
+      case (s: ScenarioGraph, FetchScenarioGraph)    => s
+      case (s: ScenarioGraph, FetchCanonical) =>
+        CanonicalProcessConverter.fromScenarioGraph(s, processName)
       case (_, NotFetch)                                        => ()
       case (c: ScenarioComponentsUsages, FetchComponentsUsages) => c
       case (_, strategy) =>

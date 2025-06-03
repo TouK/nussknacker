@@ -164,6 +164,7 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse]
 
+  // TODO: move dto mapping to appropriate resource
   def updateProcessDBIO(
       processIdWithName: ProcessIdWithName,
       details: ScenarioWithDetails,

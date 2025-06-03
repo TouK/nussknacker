@@ -78,12 +78,13 @@ class ActionService(
 
   def actionProcessorForLatestVersion[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy]
       : ActionProcessor[LatestScenarioDetailsShape] =
-    actionProcessorForVersion[LatestScenarioDetailsShape](p => Some(p.processVersionId))
+    actionProcessorForVersion[LatestScenarioDetailsShape](p => Some(p.processVersionId), LatestVersion)
 
   def actionProcessorForVersion[ScenarioDetailsShape: ScenarioShapeFetchStrategy](
-      extractVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[ScenarioDetailsShape] => Option[VersionId]
+      extractVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[ScenarioDetailsShape] => Option[VersionId],
+      scenarioGraphSource: ScenarioGraphSource,
   ): ActionProcessor[ScenarioDetailsShape] =
-    new ActionProcessor(extractVersionOnWhichActionIsDone)
+    new ActionProcessor(extractVersionOnWhichActionIsDone, scenarioGraphSource)
 
   def actionProcessorForScenarioGraph[LatestScenarioDetailsShape: ScenarioShapeFetchStrategy](
       scenarioGraphSource: ScenarioGraphSource
@@ -120,7 +121,7 @@ class ActionService(
 
   class ActionProcessor[ScenarioDetailsShape: ScenarioShapeFetchStrategy](
       extractVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[ScenarioDetailsShape] => Option[VersionId],
-      scenarioGraphSource: ScenarioGraphSource = LatestVersion,
+      scenarioGraphSource: ScenarioGraphSource,
   ) {
 
     def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](command: COMMAND, actionName: ScenarioActionName)(
@@ -198,10 +199,11 @@ class ActionService(
           processRepository
             .fetchProcessDetailsForId[CanonicalProcess](processId.id, baseScenarioVersionId)
             .flatMap {
-              case Some(scenario) if CanonicalProcessConverter.toScenarioGraph(scenario.json) == scenarioGraph =>
-                val scenarioWithTargetShape =
-                  scenario.mapScenario(ScenarioShapeFetchStrategy.convertToTargetShape[ScenarioDetailsShape])
-                DBIOAction.successful(Some(scenarioWithTargetShape))
+              case Some(scenario)
+                  if checkIfGraphIsEqual(scenarioGraph, scenario) &&
+                    checkIfLabelsAreEqual(scenarioLabels, scenario) =>
+                logger.debug("Scenario is not updated because nothing changed")
+                DBIOAction.successful(Some(convertScenarioToTargetShape(scenario)))
               case Some(scenario) =>
                 updateScenario(processId, scenarioGraph, scenarioLabels, scenario)
               case None =>
@@ -220,25 +222,30 @@ class ActionService(
         .getParametersWithReadPermissionUnsafe(scenario.processingType)
       val scenarioDetails = ScenarioWithDetailsConversions
         .fromEntityIgnoringGraphAndValidationResult(scenario, parameters)
-      val updateCommand = UpdateScenarioCommand(scenarioGraph, None, scenarioLabels)
+      val updateCommand = UpdateScenarioCommand(scenarioGraph, comment = None, scenarioLabels = scenarioLabels)
       processService
         .updateProcessDBIO(processId, scenarioDetails, updateCommand)
         .flatMap(response =>
           response.processResponse match {
-            case Some(value) =>
+            case Some(updateResult) =>
               logger.debug(
-                s"Scenario: ${value.processName.value} updated with automatic update." +
-                  s" New version is: ${value.versionId.value}"
+                s"Scenario: ${updateResult.processName.value} with version: ${scenario.processVersionId.value} " +
+                  s"updated with automatic update. New version is: ${updateResult.versionId.value}"
               )
-              processRepository.fetchProcessDetailsForId[ScenarioDetailsShape](processId.id, value.versionId)
+              val mappedScenario = scenario
+                .mapScenario(CanonicalProcessConverter.toScenarioGraph)
+                .copy(
+                  json = scenarioGraph,
+                  scenarioLabels = scenarioLabels.getOrElse(Nil),
+                  processVersionId = updateResult.versionId
+                )
+              DBIOAction.successful(Some(convertScenarioToTargetShape(mappedScenario)))
             case None =>
               logger.info(
-                "Scenario is not updated (latest version graph is the same as provided graph) - " +
-                  "deploying latest version"
+                s"Scenario for version: ${scenario.processVersionId.value} is not updated (latest version graph " +
+                  s"is the same as provided graph) - deploying latest version"
               )
-              val scenarioWithTargetShape =
-                scenario.mapScenario(ScenarioShapeFetchStrategy.convertToTargetShape[ScenarioDetailsShape])
-              DBIOAction.successful(Some(scenarioWithTargetShape))
+              DBIOAction.successful(Some(convertScenarioToTargetShape(scenario)))
           }
         )
     }
@@ -354,6 +361,22 @@ class ActionService(
         case None          => DBIOAction.failed(failWith)
       }
     }
+
+    private def checkIfGraphIsEqual(
+        scenarioGraph: ScenarioGraph,
+        scenario: ScenarioWithDetailsEntity[CanonicalProcess]
+    ): Boolean =
+      CanonicalProcessConverter.toScenarioGraph(scenario.json) == scenarioGraph
+
+    private def checkIfLabelsAreEqual(
+        scenarioLabels: Option[List[String]],
+        scenario: ScenarioWithDetailsEntity[CanonicalProcess],
+    ): Boolean = scenario.scenarioLabels == scenarioLabels.getOrElse(Nil)
+
+    private def convertScenarioToTargetShape(
+        scenario: ScenarioWithDetailsEntity[_]
+    ): ScenarioWithDetailsEntity[ScenarioDetailsShape] = scenario
+      .mapScenario(s => ScenarioShapeFetchStrategy.convertToTargetShape[ScenarioDetailsShape](s, scenario.name))
 
   }
 
