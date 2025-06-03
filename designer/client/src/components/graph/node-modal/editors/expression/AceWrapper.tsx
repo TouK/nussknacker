@@ -12,7 +12,7 @@ import type { IAceOptions, IEditorProps } from "react-ace/src/types";
 import type { Annotation } from "react-ace/types";
 
 import { getBorderColor } from "../../../../../containers/theme/helpers";
-import type { NodeValidationError } from "../../../../../types";
+import type { FieldError } from "../Validators";
 import AceEditor from "./ace";
 import type { EditorMode } from "./types";
 import { ExpressionLang } from "./types";
@@ -36,6 +36,7 @@ export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChan
     showLineNumbers?: boolean;
     commands?: AceKeyCommand[];
     enableLiveAutocompletion?: boolean;
+    fieldErrors: FieldError[];
 }
 
 export const DEFAULT_OPTIONS: IAceOptions = {
@@ -142,18 +143,18 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
     return language;
 }
 
-export function useAceEditorMessages(errorObject: { validationErrors: NodeValidationError[] }) {
+export function useAceEditorMessages(fieldErrors: FieldError[]) {
     const annotations: Annotation[] = useMemo(() => {
-        return errorObject.validationErrors.map((error) => ({
+        return fieldErrors.map((error) => ({
             row: error.details.start.row,
             column: error.details.start.column,
             type: "error",
             text: error.message,
         }));
-    }, [errorObject]);
+    }, [fieldErrors]);
 
     const markers: IMarker[] = useMemo(() => {
-        return errorObject.validationErrors.map((error) => ({
+        return fieldErrors.map((error) => ({
             startRow: error.details.start.row,
             startCol: error.details.start.column,
             endRow: error.details.end.row,
@@ -162,7 +163,7 @@ export function useAceEditorMessages(errorObject: { validationErrors: NodeValida
             type: "text",
             inFront: false,
         }));
-    }, [errorObject]);
+    }, [fieldErrors]);
 
     const hasMessages = annotations.length > 0 && markers.length > 0;
     return { annotations, markers, hasMessages };
@@ -175,7 +176,7 @@ const StyledAceEditorWrapper = styled("div")(({ theme }) => ({
         background: `${theme.palette.background.paper} !important`,
         borderColor: getBorderColor(theme),
         borderRadius: "6px !important",
-        transform: "translate(-60%, -100%)",
+        transform: "translate(-200%, -100%)",
     },
     "& .ace-error-marker": {
         position: "absolute",
@@ -191,30 +192,14 @@ export default forwardRef(function AceWrapper(
         wrapEnabled = true,
         commands = [],
         enableLiveAutocompletion = true,
+        fieldErrors,
         ...props
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
     const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
 
-    const errorObject = {
-        validationErrors: [
-            {
-                typ: "ExpressionParserCompilationError",
-                message: "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
-                description: "There is problem with expression in field Some($$expression) - it could not be parsed.",
-                fieldName: "$$expression",
-                errorType: "SaveAllowed",
-                details: {
-                    start: { column: 0, row: 0 },
-                    end: { column: 15, row: 0 },
-                    type: "TextErrorDetails",
-                },
-            },
-        ],
-    };
-
-    const { annotations, markers, hasMessages } = useAceEditorMessages(errorObject);
+    const { annotations, markers, hasMessages } = useAceEditorMessages(fieldErrors);
 
     const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
         () => [

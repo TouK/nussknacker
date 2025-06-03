@@ -1,5 +1,5 @@
 import { cx } from "@emotion/css";
-import { Box, Fade, IconButton, LinearProgress, styled } from "@mui/material";
+import { Box, Fade, LinearProgress, styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { useCallback, useState } from "react";
@@ -70,6 +70,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                         }}
                         customAceEditorCompleter={completer}
                         enableLiveAutocompletion={enableLiveAutocompletion}
+                        fieldErrors={fieldErrors}
                     />
                 </Box>
                 <Fade
