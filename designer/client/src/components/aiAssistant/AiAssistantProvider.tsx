@@ -20,16 +20,21 @@ const ThreadIdManager = {
     },
 };
 
-type ChatStreamEvent = { type: "delta"; responsePart: string } | { type: "stop" };
+type ChatStreamEvent =
+    | { type: "delta"; responsePart: string }
+    | { type: "stop"; threadId: string }
+    | { type: "aborted" }
+    | { type: "error" }
+    | { type: "unknown"; originalType?: string; data: string };
 
 const parseEvent: (eventSourceMessage: EventSourceMessage) => ChatStreamEvent = (eventSourceMessage) => {
     if (eventSourceMessage.event === "delta") {
         return { type: "delta", responsePart: JSON.parse(eventSourceMessage.data).text };
     } else if (eventSourceMessage.event === "stop") {
-        ThreadIdManager.THREAD_ID = JSON.parse(eventSourceMessage.data).threadId;
-        return { type: "stop" };
+        return { type: "stop", threadId: JSON.parse(eventSourceMessage.data).threadId };
+    } else {
+        return { type: "unknown", originalType: eventSourceMessage.event, data: eventSourceMessage.data };
     }
-    return;
 };
 
 async function* initializeChatStream(
@@ -44,13 +49,38 @@ async function* initializeChatStream(
 
     const reader = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream()).getReader();
 
+    const abortHandler = () => {
+        try {
+            reader.cancel("Operation aborted");
+        } catch (error) {
+            console.warn("Error canceling reader:", error);
+        }
+    };
+
+    if (abortSignal) {
+        abortSignal.addEventListener("abort", abortHandler);
+    }
+
     try {
         while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            yield parseEvent(value);
+            try {
+                const { done, value } = await reader.read();
+                if (done) break;
+                yield parseEvent(value);
+            } catch (error) {
+                if (abortSignal?.aborted) {
+                    yield { type: "aborted" };
+                    break;
+                }
+
+                console.error("Error reading from chat stream: ", error);
+                yield { type: "error" };
+            }
         }
     } finally {
+        if (abortSignal) {
+            abortSignal.removeEventListener("abort", abortHandler);
+        }
         reader.releaseLock();
     }
 }
@@ -73,10 +103,26 @@ const ModelAdapter: ChatModelAdapter = {
                     status: { type: "running" },
                 };
             } else if (event.type === "stop") {
+                ThreadIdManager.THREAD_ID = event.threadId;
                 yield {
                     content: [{ type: "text", text }],
                     status: { type: "complete", reason: "stop" },
                 };
+                return;
+            } else if (event.type === "aborted") {
+                yield {
+                    content: [{ type: "text", text }],
+                    status: { type: "incomplete", reason: "cancelled" },
+                };
+            } else if (event.type === "error") {
+                console.log("Error in chat stream, yielding error message");
+                yield {
+                    content: [{ type: "text", text }],
+                    status: { type: "incomplete", reason: "error", error: "Unexpected error, please try again." },
+                };
+                return;
+            } else if (event.type === "unknown") {
+                console.warn("Received unknown event type: ", event.originalType, " with data: ", event.data);
                 return;
             }
         }
