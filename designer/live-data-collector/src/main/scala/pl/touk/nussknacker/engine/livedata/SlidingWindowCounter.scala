@@ -24,9 +24,11 @@ private[livedata] class SlidingWindowCounter[T](
     cleanOldBuckets(currentEpochSecond)
 
     // We want to calculate correct throughput just after the scenario is started
-    val windowStart      = Math.max(counterCreatedAt.getEpochSecond, currentEpochSecond - windowSizeSeconds)
-    val windowsEnd       = currentEpochSecond - 1
-    val samplingInterval = windowsEnd - windowStart + 1
+    val windowStart = Math.max(counterCreatedAt.getEpochSecond, currentEpochSecond - windowSizeSeconds)
+    // We don't want to use the results from the second, that is currently in progress, because they may be incomplete
+    // That is why the `windowsEnd` is the previous second, not the current one
+    val windowEnd        = currentEpochSecond - 1
+    val samplingInterval = windowEnd - windowStart + 1
 
     buckets.asScala.values
       .flatMap(_.asScala)
@@ -37,7 +39,7 @@ private[livedata] class SlidingWindowCounter[T](
       .toMap
       .map { case (transition, count) =>
         transition -> {
-          val throughput = if (samplingInterval == 0) BigDecimal(0) else BigDecimal(count) / samplingInterval
+          val throughput = if (samplingInterval <= 0) BigDecimal(0) else BigDecimal(count) / samplingInterval
           throughput.setScale(4, BigDecimal.RoundingMode.HALF_EVEN)
         }
       }

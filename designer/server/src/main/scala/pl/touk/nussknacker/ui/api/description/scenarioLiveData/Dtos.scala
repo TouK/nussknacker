@@ -114,7 +114,7 @@ object Dtos {
   implicit def invocationResultDtoSchema: Schema[InvocationResultDto]                   = Schema.derived
   implicit def liveDataSampleDtoSchema: Schema[LiveDataSampleDto]                       = Schema.derived
   implicit def liveDataForNodeTransitionDtoSchema: Schema[LiveDataForNodeTransitionDto] = Schema.derived
-  implicit def resultsWithCountsSchema: Schema[LiveDataDto]                             = Schema.derived
+  implicit def liveDataDtoSchema: Schema[LiveDataDto]                                   = Schema.derived
 
   sealed trait LiveDataError
 
