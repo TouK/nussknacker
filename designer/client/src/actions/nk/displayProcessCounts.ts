@@ -75,12 +75,7 @@ export function fetchAndDisplayProcessCounts(params: {
                 }
             }, nextIn);
 
-            dispatch(
-                displayProcessCounts(counts, {
-                    last,
-                    nextIn,
-                }),
-            );
+            dispatch(displayProcessCounts(counts, { last, nextIn }));
         } else {
             dispatch(displayProcessCounts(counts));
         }
