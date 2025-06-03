@@ -72,6 +72,22 @@ class FlinkDeploymentManagerScenarioTestingSpec
     }
   }
 
+  // this checks that we are setting timestamps in test even if source timestampAssigner method returns None
+  it should "set timestamps even if no timestamp assigner is provided by source" in {
+    val processName    = ProcessName(UUID.randomUUID().toString)
+    val processVersion = ProcessVersion.empty.copy(processName = processName)
+
+    val process = SampleProcess.prepareProcessWithNoTimestampAssignerForTest(processName)
+
+    whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
+      r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) } shouldBe Map(
+        "startProcess" -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "nightFilter"  -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "endSend"      -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+      )
+    }
+  }
+
   it should "return correct error messages" in {
     val processName    = ProcessName(UUID.randomUUID().toString)
     val processVersion = ProcessVersion.empty.copy(processName = processName)
