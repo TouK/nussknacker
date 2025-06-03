@@ -17,7 +17,12 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterCategory,
   ParameterEditor
 }
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  CellError,
+  ColumnDefinition,
+  ErrorDetails,
+  TextCoordinates
+}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -697,10 +702,11 @@ object NodesApiEndpoints {
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
     implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
 
-    implicit lazy val parameterSchema: Schema[EvaluatedParameter] = Schema.derived
-    implicit lazy val edgeTypeSchema: Schema[EdgeType]            = Schema.derived
-    implicit lazy val edgeSchema: Schema[Edge]                    = Schema.derived
-    implicit lazy val cellErrorSchema: Schema[CellError]          = Schema.derived
+    implicit lazy val parameterSchema: Schema[EvaluatedParameter]    = Schema.derived
+    implicit lazy val edgeTypeSchema: Schema[EdgeType]               = Schema.derived
+    implicit lazy val edgeSchema: Schema[Edge]                       = Schema.derived
+    implicit lazy val cellErrorSchema: Schema[CellError]             = Schema.derived
+    implicit lazy val textCoordinatesSchema: Schema[TextCoordinates] = Schema.derived
     import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
     implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]                         = Schema.derived
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                                 = Schema.derived

@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, MethodTypeInfo, Parameter, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{ArgumentTypeError, SpelExpressionTypingError}
 
 class MethodDefinitionSpec extends AnyFunSuite with Matchers {
 
@@ -44,7 +44,7 @@ class MethodDefinitionSpec extends AnyFunSuite with Matchers {
   private def checkApplyInvalid(
       definition: MethodDefinition,
       args: List[TypingResult],
-      expected: ExpressionParseError
+      expected: SpelExpressionTypingError
   ): Unit =
     checkApply(definition, args, expected.message.invalidNel)
 

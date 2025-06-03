@@ -5537,6 +5537,17 @@ components:
           format: date-time
         createdBy:
           type: string
+    CoordinatesBasedTextRange:
+      title: CoordinatesBasedTextRange
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          $ref: '#/components/schemas/TextCoordinates'
+        end:
+          $ref: '#/components/schemas/TextCoordinates'
     CronParameterEditor:
       title: CronParameterEditor
       type: object
@@ -5680,6 +5691,7 @@ components:
     ErrorDetails:
       title: ErrorDetails
       oneOf:
+      - $ref: '#/components/schemas/CoordinatesBasedTextRange'
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
     ExceptionResult_Json:
       title: ExceptionResult_Json
@@ -7658,6 +7670,19 @@ components:
           type: array
           items:
             type: object
+    TextCoordinates:
+      title: TextCoordinates
+      type: object
+      required:
+      - column
+      - row
+      properties:
+        column:
+          type: integer
+          format: int32
+        row:
+          type: integer
+          format: int32
     TextareaParameterEditor:
       title: TextareaParameterEditor
       type: object

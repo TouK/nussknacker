@@ -506,7 +506,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       val ex = the[IllegalArgumentException] thrownBy {
         runScenario(model, resolvedScenario)
       }
-      ex should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input,None)"
+      ex should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input,Some(CoordinatesBasedTextRange(TextCoordinates(0,0),TextCoordinates(6,0))))"
     }
 
   }

@@ -4,17 +4,17 @@ import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalidNel, Valid}
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypingResult}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 import scala.util.Try
@@ -99,6 +99,16 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
     }
 
     override def original: String = key
+  }
+
+  case class KeyWithLabelExpressionParsingError(keyWithLabel: String, message: String) extends ExpressionParseError {
+
+    def toProcessCompilationError(
+        nodeId: String,
+        paramName: ParameterName
+    ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
+      ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, nodeId)
+
   }
 
 }

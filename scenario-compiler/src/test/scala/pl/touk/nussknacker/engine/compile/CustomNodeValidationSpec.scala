@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithI
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.PositionRange
+import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -196,7 +196,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
                 "custom1",
                 Some(ParameterName("stringVal")),
                 "#nonExisitngVar",
-                None
+                _
               ),
               _
             )
@@ -213,7 +213,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     validate(invalidProcess).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(`expectedMsg`, "custom1", Some(ParameterName("stringVal")), "42", None),
+              ExpressionParserCompilationError(`expectedMsg`, "custom1", Some(ParameterName("stringVal")), "42", _),
               _
             )
           ) =>
@@ -312,7 +312,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             "stringService",
             Some(ParameterName("stringParam")),
             _,
-            None
+            _
           ) =>
     }
   }
@@ -412,25 +412,25 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       "$edge-branch2-join1" -> Map.empty,
       "join1" -> Map(
         "key-branch1" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 6) -> Typed.fromInstance("key1")),
+          Map(IndexBasedTextRange(0, 6) -> Typed.fromInstance("key1")),
           Typed.fromInstance("key1")
         ),
         "key-branch2" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 6) -> Typed.fromInstance("key2")),
+          Map(IndexBasedTextRange(0, 6) -> Typed.fromInstance("key2")),
           Typed.fromInstance("key2")
         ),
         "value-branch1" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 5) -> Typed.fromInstance("ala")),
+          Map(IndexBasedTextRange(0, 5) -> Typed.fromInstance("ala")),
           Typed.fromInstance("ala")
         ),
         "value-branch2" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 3) -> Typed.fromInstance(123)),
+          Map(IndexBasedTextRange(0, 3) -> Typed.fromInstance(123)),
           Typed.fromInstance(123)
         )
       ),
       "stringService" -> Map(
         "stringParam" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 5) -> Typed.fromInstance("123")),
+          Map(IndexBasedTextRange(0, 5) -> Typed.fromInstance("123")),
           Typed.fromInstance("123")
         )
       )
@@ -471,7 +471,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
                 "join1",
                 Some(ParameterName("key for branch branch2")),
                 "123",
-                None
+                _
               ),
               Nil
             )

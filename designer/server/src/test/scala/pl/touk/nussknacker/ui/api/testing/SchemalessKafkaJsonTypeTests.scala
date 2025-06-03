@@ -312,7 +312,7 @@ object SchemalessKafkaJsonTypeTests {
          |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
          |    "fieldName": "Input",
          |    "errorType": "SaveAllowed",
-         |    "details": null
+         |    "details": {"start":{"column":44,"row":2},"end":{"column":45,"row":2},"type":"CoordinatesBasedTextRange"}
          |  }
          |]""".stripMargin
 
