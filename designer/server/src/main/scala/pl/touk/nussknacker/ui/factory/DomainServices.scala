@@ -183,20 +183,6 @@ object DomainServices extends LazyLogging {
         actionRepository,
         dbioRunner,
       )
-      actionService = new ActionService(
-        processRepository,
-        actionRepository,
-        dbioRunner,
-        processChangeListener,
-        oldApproachScenarioStatusProvider,
-        alreadyLoadedConfig.deploymentCommentSettings,
-        clock
-      )
-      _ = {
-        actionService.invalidateInProgressActions()
-        actionServiceSupplier.set(actionService)
-      }
-      // end of ActionService initialization
 
       deploymentRepository = new DeploymentRepository(dbRef, clock)
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -275,6 +261,23 @@ object DomainServices extends LazyLogging {
         actionRepository,
         writeProcessRepository,
       )
+
+      actionService = new ActionService(
+        processRepository,
+        actionRepository,
+        dbioRunner,
+        processChangeListener,
+        oldApproachScenarioStatusProvider,
+        alreadyLoadedConfig.deploymentCommentSettings,
+        clock,
+        processService,
+        processingTypeDataProvider.mapCombined(_.parametersService),
+      )
+      _ = {
+        actionService.invalidateInProgressActions()
+        actionServiceSupplier.set(actionService)
+      }
+      // end of ActionService initialization
 
       componentService = {
         new DefaultComponentService(

@@ -28,7 +28,10 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     const firstDeployedIndex = useMemo(
         () =>
             activities.findIndex(
-                (activeItem) => activeItem.uiType === "item" && activeItem.type === ActivityTypesRelatedToExecutions.ScenarioDeployed,
+                (activeItem) =>
+                    activeItem.uiType === "item" &&
+                    (activeItem.type === ActivityTypesRelatedToExecutions.ScenarioDeployed ||
+                        activeItem.type === ActivityTypesRelatedToExecutions.ScenarioRedeployed),
             ),
         [activities],
     );

@@ -19,7 +19,13 @@ import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "
 import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
-import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
+import type {
+    ScenarioActionResultDeploySuccess,
+    ScenarioActionResult,
+    ScenarioActionUnhandledError,
+    ScenarioActionValidationError,
+    ScenarioActionResultSuccess,
+} from "../components/toolbars/scenarioActions/buttons/types";
 import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 import type { ToolbarsConfig } from "../components/toolbarSettings/types";
 import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
@@ -102,6 +108,22 @@ export type SourceWithParametersTest = {
 };
 
 export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
+
+export type ScenarioGraphSource = {
+    type: ScenarioGraphSourceType;
+    scenarioGraph?: ScenarioGraph;
+    scenarioLabels?: string[];
+    baseScenarioVersionId?: number;
+};
+
+export enum ScenarioGraphSourceType {
+    LATEST_VERSION = "LatestVersion",
+    FROM_GRAPH = "FromGraph",
+}
+
+type DeployResponse = {
+    deployedScenarioVersionId: number;
+};
 
 export type NodeUsageData = {
     fragmentNodeId?: string;
@@ -342,12 +364,28 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
-        const runDeploymentRequest = { nodesDeploymentData, comment };
-        return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
-            .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+    async deploy(
+        processName: string,
+        comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
+        scenarioGraphSource?: ScenarioGraphSource,
+    ): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = {
+            nodesDeploymentData,
+            comment,
+            scenarioGraphSource: {
+                ...scenarioGraphSource,
+                scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
+            },
+        };
+        return await api
+            .post<DeployResponse>(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
+            .then((resp) => {
+                const result: ScenarioActionResultDeploySuccess = {
+                    deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
+                    scenarioActionResultType: ScenarioActionResultType.DeploySuccess,
+                };
+                return result;
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -374,12 +412,28 @@ class HttpService {
             });
     }
 
-    redeploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
-        const runDeploymentRequest = { nodesDeploymentData, comment };
-        return api
-            .post(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
-            .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+    async redeploy(
+        processName: string,
+        comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
+        scenarioGraphSource?: ScenarioGraphSource,
+    ): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = {
+            nodesDeploymentData,
+            comment,
+            scenarioGraphSource: {
+                ...scenarioGraphSource,
+                scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
+            },
+        };
+        return await api
+            .post<DeployResponse>(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
+            .then((resp) => {
+                const result: ScenarioActionResultDeploySuccess = {
+                    deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
+                    scenarioActionResultType: ScenarioActionResultType.DeploySuccess,
+                };
+                return result;
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -415,14 +469,15 @@ class HttpService {
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
-                return {
+                const result: ScenarioActionResultSuccess = {
                     scenarioActionResultType: ScenarioActionResultType.Success,
                     msg: msg.toString(),
                 };
+                return result;
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
-                const result = {
+                const result: ScenarioActionUnhandledError = {
                     scenarioActionResultType: ScenarioActionResultType.UnhandledError,
                     msg: msg.toString(),
                 };
@@ -438,7 +493,11 @@ class HttpService {
         return api
             .post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment)
             .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+                const result: ScenarioActionResultSuccess = {
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: "",
+                };
+                return result;
             })
             .catch((error) => {
                 if (error?.response?.status != 400) {

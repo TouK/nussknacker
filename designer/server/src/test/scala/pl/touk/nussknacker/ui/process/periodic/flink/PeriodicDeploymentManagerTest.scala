@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, LatestVersion, User}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -140,10 +140,12 @@ class PeriodicDeploymentManagerTest
         RunDeploymentCommand(
           CommonCommandData(ProcessIdWithName(id, processName), None, user),
           RestoreStateFromReplacedJobSavepoint,
-          NodesDeploymentData.empty
+          NodesDeploymentData.empty,
+          scenarioSource = LatestVersion,
         )
       )
       .futureValue
+      .externalDeploymentId
       .futureValue
 
     def reschedule(id: ProcessId): Unit = services.deploymentService
@@ -151,10 +153,12 @@ class PeriodicDeploymentManagerTest
         RunRedeploymentCommand(
           CommonCommandData(ProcessIdWithName(id, processName), None, user),
           RestoreStateFromReplacedJobSavepoint,
-          NodesDeploymentData.empty
+          NodesDeploymentData.empty,
+          LatestVersion
         )
       )
       .futureValue
+      .externalDeploymentId
       .futureValue
 
     def getSingleActiveDeploymentId(id: ProcessId): PeriodicProcessDeploymentId = inside(getScenarioStatus(id)) {
