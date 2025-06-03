@@ -7,7 +7,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
 import AceEditor from "./ace";
-import { DEFAULT_OPTIONS } from "./AceWrapper";
+import { DEFAULT_OPTIONS, StyledAceEditorWrapper, useAceEditorMessages } from "./AceWrapper";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionObj } from "./types";
@@ -33,6 +33,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     isMarked,
 }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
+    const { annotations, markers, hasRangeText } = useAceEditorMessages(fieldErrors);
 
     const onChange = (newValue: string) => {
         setValue(newValue);
@@ -44,7 +45,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
-            <Box
+            <StyledAceEditorWrapper
                 className={cx([
                     rowAceEditor,
                     showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
@@ -75,9 +76,11 @@ export const JsonEditor: SimpleEditor<Props> = ({
                         // We don't want to check syntax correctness with ace
                         useWorker: false,
                     }}
+                    annotations={annotations}
+                    markers={markers}
                 />
-            </Box>
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            </StyledAceEditorWrapper>
+            {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>
     );
 };

@@ -30,7 +30,8 @@ export type AceWrapperInputProps = {
     useAceWorker?: boolean;
 };
 
-export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
+export interface AceWrapperProps
+    extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled" | "annotations" | "markers"> {
     inputProps: AceWrapperInputProps;
     customAceEditorCompleter?;
     showLineNumbers?: boolean;
@@ -145,42 +146,54 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
 
 export function useAceEditorMessages(fieldErrors: FieldError[]) {
     const annotations: Annotation[] = useMemo(() => {
-        return fieldErrors.map((error) => ({
-            row: error.details.start.row,
-            column: error.details.start.column,
-            type: "error",
-            text: error.message,
-        }));
+        return fieldErrors
+            .map(
+                (error) =>
+                    error?.details?.type === "CoordinatesBasedTextRange" && {
+                        row: error.details.start.row,
+                        column: error.details.start.column,
+                        type: "error",
+                        text: error.message,
+                    },
+            )
+            .filter(Boolean);
     }, [fieldErrors]);
 
     const markers: IMarker[] = useMemo(() => {
-        return fieldErrors.map((error) => ({
-            startRow: error.details.start.row,
-            startCol: error.details.start.column,
-            endRow: error.details.end.row,
-            endCol: error.details.end.column,
-            className: "ace-error-marker",
-            type: "text",
-            inFront: false,
-        }));
+        return fieldErrors
+            .map(
+                (error): IMarker =>
+                    error?.details?.type === "CoordinatesBasedTextRange" &&
+                    error.details && {
+                        startRow: error.details.start.row,
+                        startCol: error.details.start.column,
+                        endRow: error.details.end.row,
+                        endCol: error.details.end.column,
+                        className: "ace-error-marker",
+                        type: "text",
+                        inFront: false,
+                    },
+            )
+            .filter(Boolean);
     }, [fieldErrors]);
 
-    const hasMessages = annotations.length > 0 && markers.length > 0;
-    return { annotations, markers, hasMessages };
+    const hasRangeText = annotations.length > 0 && markers.length > 0;
+    return { annotations, markers, hasRangeText };
 }
 
-const StyledAceEditorWrapper = styled("div")(({ theme }) => ({
+export const StyledAceEditorWrapper = styled(Box)(({ theme }) => ({
     "& .ace_tooltip": {
         ...theme.typography.body2,
         padding: theme.spacing(1),
-        background: `${theme.palette.background.paper} !important`,
+        background: `${theme.palette.background.paper}`,
         borderColor: getBorderColor(theme),
-        borderRadius: "6px !important",
-        transform: "translate(-200%, -100%)",
+        borderRadius: "6px",
+        transform: "translate(-110%, -50%)",
+        minWidth: "400px",
     },
     "& .ace-error-marker": {
         position: "absolute",
-        borderBottom: "2px solid #ff4444",
+        borderBottom: `2px solid ${theme.palette.error.main}`,
         borderRadius: 0,
     },
 }));
@@ -192,14 +205,13 @@ export default forwardRef(function AceWrapper(
         wrapEnabled = true,
         commands = [],
         enableLiveAutocompletion = true,
-        fieldErrors,
+        annotations = [],
+        markers = [],
         ...props
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
     const { language, readOnly, rows = 1, editorMode, InputAdornmentEnd, useAceWorker } = inputProps;
-
-    const { annotations, markers, hasMessages } = useAceEditorMessages(fieldErrors);
 
     const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
         () => [
@@ -246,7 +258,7 @@ export default forwardRef(function AceWrapper(
                 readOnly={readOnly}
                 className={readOnly ? " read-only" : ""}
                 wrapEnabled={!!wrapEnabled}
-                showGutter={!!showLineNumbers || hasMessages}
+                showGutter={!!showLineNumbers}
                 editorProps={DEFAULT_EDITOR_PROPS}
                 setOptions={{
                     ...DEFAULT_OPTIONS,

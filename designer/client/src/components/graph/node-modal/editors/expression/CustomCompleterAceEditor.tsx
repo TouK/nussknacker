@@ -1,18 +1,26 @@
 import { cx } from "@emotion/css";
 import { Box, Fade, LinearProgress, styled } from "@mui/material";
 import { isEmpty } from "lodash";
-import type { ReactNode } from "react";
+import type { ReactNode} from "react";
+import { useMemo } from "react";
 import React, { useCallback, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
+import { useSelector } from "react-redux";
 
+import { useUserSettings } from "../../../../../common/userSettings";
+import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
+import type { UserSettings } from "../../../../../reducers/userSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
 import AceEditor from "./AceWithSettings";
 import type { AceWrapperInputProps } from "./AceWrapper";
+import { useAceEditorMessages } from "./AceWrapper";
 import type { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import type { ExpressionLang } from "./types";
+
+
 
 type InputProps = AceWrapperInputProps & {
     language: ExpressionLang | string;
@@ -37,11 +45,15 @@ export type CustomCompleterAceEditorProps = {
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): JSX.Element {
     const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
+    const userSettings = useSelector(getUserSettings);
+
+    const showLines = Boolean(userSettings[`editor.${props.inputProps.language}.showLines`]);
 
     const [editorFocused, setEditorFocused] = useState(false);
 
     const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
+    const { annotations, markers } = useAceEditorMessages(fieldErrors);
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -71,6 +83,8 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                         customAceEditorCompleter={completer}
                         enableLiveAutocompletion={enableLiveAutocompletion}
                         fieldErrors={fieldErrors}
+                        annotations={annotations}
+                        markers={markers}
                     />
                 </Box>
                 <Fade
@@ -83,7 +97,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     <LoadingFeedback color="warning" inflate={0.25} />
                 </Fade>
             </Box>
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
+            {showValidation && !showLines && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
         </Box>
     );
 }
