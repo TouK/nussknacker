@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
+import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordValue, SinkSingleValue, SinkValue}
 
@@ -38,7 +39,10 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
 
     val parameterValues = Params.fromRawValuesMap(Map(ParameterName("a") -> value, ParameterName("b.c") -> value))
 
-    val sinkParam = AvroSchemaBasedParameter(recordSchema, Set.empty).valueOr(e => fail(e.toString))
+    val sinkParam =
+      AvroSchemaBasedParameter(recordSchema, Set.empty, AvroSchemaTypeDefinitionExtractorWithUnderlyingMap).valueOr(e =>
+        fail(e.toString)
+      )
 
     val fields: Map[String, SinkValue] = SinkValue
       .applyUnsafe(sinkParam, parameterValues)
@@ -55,7 +59,10 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
     val longSchema      = SchemaBuilder.builder().longType()
     val value           = LazyParameter.pure(java.lang.Long.valueOf(1L), Typed[java.lang.Long])
     val parameterValues = Params.fromRawValuesMap(Map(sinkValueParamName -> value))
-    val sinkParam       = AvroSchemaBasedParameter(longSchema, Set.empty).valueOr(e => fail(e.toString))
+    val sinkParam =
+      AvroSchemaBasedParameter(longSchema, Set.empty, AvroSchemaTypeDefinitionExtractorWithUnderlyingMap).valueOr(e =>
+        fail(e.toString)
+      )
 
     SinkValue
       .applyUnsafe(sinkParam, parameterValues)

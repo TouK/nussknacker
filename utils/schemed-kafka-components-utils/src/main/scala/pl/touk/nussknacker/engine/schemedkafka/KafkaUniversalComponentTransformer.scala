@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
+import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
-import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
@@ -37,8 +37,7 @@ object KafkaUniversalComponentTransformer {
 }
 
 abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValidationType]
-    extends SingleInputDynamicComponent[T]
-    with WithCachedTopicsExistenceValidator {
+    extends SingleInputDynamicComponent[T] {
   self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
@@ -50,10 +49,14 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  protected def topicSelectionStrategy: TopicSelectionStrategy = {
+  @transient protected lazy val cachedTopicsExistenceValidator = CachedTopicsExistenceValidator(kafkaConfig)
+
+  @transient protected lazy val topicSelectionStrategy: TopicSelectionStrategy = {
     if (kafkaConfig.showTopicsWithoutSchema) {
-      new AllNonHiddenTopicsSelectionStrategy
-    } else new TopicsWithExistingSubjectSelectionStrategy
+      AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, kafkaConfig)
+    } else {
+      new TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient)
+    }
   }
 
   @transient protected lazy val kafkaConfig: KafkaConfig = prepareKafkaConfig
@@ -70,9 +73,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getTopicParam(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val topics = topicSelectionStrategy.getTopics(schemaRegistryClient, kafkaConfig)
-
-    (topics match {
+    (topicSelectionStrategy.getTopics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
       case Invalid(e) =>
         Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](
@@ -162,28 +163,6 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)
 
-  protected def prepareValueSchemaDeterminer(
-      preparedTopic: PreparedKafkaTopic[TN],
-      version: SchemaVersionOption
-  ): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      version,
-      isKey = false
-    )
-  }
-
-  // TODO: add schema versioning for key schemas
-  protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      LatestSchemaVersion,
-      isKey = true
-    )
-  }
-
   protected def prepareUniversalValueSchemaDeterminer(
       preparedTopic: PreparedKafkaTopic[TN],
       version: SchemaVersionOption
@@ -219,7 +198,11 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       val preparedTopic             = prepareTopic(topic)
       val versionOrContentTypeParam = getVersionOrContentTypeParam(preparedTopic)
       val topicValidationErrors =
-        validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
+        cachedTopicsExistenceValidator
+          .validateTopic(preparedTopic.prepared)
+          .swap
+          .toList
+          .map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
       NextParameters(
         versionOrContentTypeParam.value.createParameter() :: nextParams,
         errors = versionOrContentTypeParam.written ++ topicValidationErrors
