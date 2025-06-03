@@ -7,10 +7,12 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
 import AceEditor from "./ace";
-import { DEFAULT_OPTIONS, StyledAceEditorWrapper, useAceEditorMessages } from "./AceWrapper";
+import { DEFAULT_OPTIONS } from "./AceWrapper";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import { StyledAceEditor } from "./StyledAceEditor";
 import type { ExpressionObj } from "./types";
+import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
     expressionObj: ExpressionObj;
@@ -33,7 +35,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     isMarked,
 }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
-    const { annotations, markers, hasRangeText } = useAceEditorMessages(fieldErrors);
+    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors);
 
     const onChange = (newValue: string) => {
         setValue(newValue);
@@ -45,7 +47,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
-            <StyledAceEditorWrapper
+            <StyledAceEditor
                 className={cx([
                     rowAceEditor,
                     showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
@@ -79,7 +81,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
                     annotations={annotations}
                     markers={markers}
                 />
-            </StyledAceEditorWrapper>
+            </StyledAceEditor>
             {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>
     );

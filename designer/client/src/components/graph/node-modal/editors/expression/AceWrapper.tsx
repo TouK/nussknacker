@@ -1,19 +1,18 @@
 /* eslint-disable i18next/no-literal-string */
 import type { SerializedStyles } from "@emotion/react";
-import { Box, styled } from "@mui/material";
+import { Box } from "@mui/material";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
 import type { ForwardedRef, ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
 import type { IAceEditorProps } from "react-ace/lib/ace";
 import type ReactAce from "react-ace/lib/ace";
-import type { ICommand, IMarker } from "react-ace/lib/types";
+import type { ICommand } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
-import type { Annotation } from "react-ace/types";
 
-import { getBorderColor } from "../../../../../containers/theme/helpers";
 import type { FieldError } from "../Validators";
 import AceEditor from "./ace";
+import { StyledAceEditor } from "./StyledAceEditor";
 import type { EditorMode } from "./types";
 import { ExpressionLang } from "./types";
 
@@ -144,59 +143,6 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
     return language;
 }
 
-export function useAceEditorMessages(fieldErrors: FieldError[]) {
-    const annotations: Annotation[] = useMemo(() => {
-        return fieldErrors
-            .map(
-                (error) =>
-                    error?.details?.type === "CoordinatesBasedTextRange" && {
-                        row: error.details.start.row,
-                        column: error.details.start.column,
-                        type: "error",
-                        text: error.message,
-                    },
-            )
-            .filter(Boolean);
-    }, [fieldErrors]);
-
-    const markers: IMarker[] = useMemo(() => {
-        return fieldErrors
-            .map(
-                (error): IMarker =>
-                    error?.details?.type === "CoordinatesBasedTextRange" &&
-                    error.details && {
-                        startRow: error.details.start.row,
-                        startCol: error.details.start.column,
-                        endRow: error.details.end.row,
-                        endCol: error.details.end.column,
-                        className: "ace-error-marker",
-                        type: "text",
-                        inFront: false,
-                    },
-            )
-            .filter(Boolean);
-    }, [fieldErrors]);
-
-    const hasRangeText = annotations.length > 0 && markers.length > 0;
-    return { annotations, markers, hasRangeText };
-}
-
-export const StyledAceEditorWrapper = styled(Box)(({ theme }) => ({
-    "& .ace_tooltip": {
-        ...theme.typography.body2,
-        padding: theme.spacing(1),
-        background: `${theme.palette.background.paper}`,
-        borderColor: getBorderColor(theme),
-        borderRadius: "6px",
-        transform: "translate(-110%, -50%)",
-        minWidth: "400px",
-    },
-    "& .ace-error-marker": {
-        position: "absolute",
-        borderBottom: `2px solid ${theme.palette.error.main}`,
-        borderRadius: 0,
-    },
-}));
 export default forwardRef(function AceWrapper(
     {
         inputProps,
@@ -244,7 +190,7 @@ export default forwardRef(function AceWrapper(
     );
 
     return (
-        <StyledAceEditorWrapper>
+        <StyledAceEditor>
             <AceEditor
                 {...props}
                 ref={ref}
@@ -285,6 +231,6 @@ export default forwardRef(function AceWrapper(
                     {InputAdornmentEnd}
                 </Box>
             )}
-        </StyledAceEditorWrapper>
+        </StyledAceEditor>
     );
 });
