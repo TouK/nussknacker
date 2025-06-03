@@ -1,105 +1,120 @@
 package pl.touk.nussknacker.ui.api.description.scenarioLiveData
 
 import io.circe._
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.testmode.TestProcess._
+import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{
+  ExceptionResult,
+  InvocationResult,
+  LiveData,
+  LiveDataSample
+}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
-import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.{Codec, CodecFormat, Schema}
 
-import scala.collection.compat._
+import java.time.Instant
 
 object Dtos {
 
   import sttp.tapir.json.circe._
-  lazy val typingResultEncoder: Encoder[TypingResult] = TypingResult.encoder
 
   final case class LiveDataDto(
-      results: LiveDataSamplesDto,
-      counts: Map[String, NodeCount],
-      nodeTransitionThroughput: Option[List[NodeTransitionThroughputDto]],
+      timestamp: Instant,
+      nodeTransitions: List[LiveDataForNodeTransitionDto],
+      invocationResults: Map[String, List[InvocationResultDto]],
+      externalInvocationResults: Map[String, List[InvocationResultDto]],
+      exceptionsByNodeId: Map[String, List[ExceptionResultDto]],
   )
 
   object LiveDataDto {
 
-    def from(
-        resultsWithCounts: ResultsWithCounts,
-        nodeTransitionThroughput: Option[Map[NodeTransition, BigDecimal]],
-    ): LiveDataDto = {
+    def from(liveData: LiveData): LiveDataDto = {
       LiveDataDto(
-        results = LiveDataSamplesDto.from(resultsWithCounts.results),
-        counts = resultsWithCounts.counts,
-        nodeTransitionThroughput = nodeTransitionThroughput.map(NodeTransitionThroughput.from),
+        timestamp = liveData.timestamp,
+        nodeTransitions = liveData.nodeTransitions.map { case (nodeTransition, liveData) =>
+          LiveDataForNodeTransitionDto(
+            sourceNodeId = nodeTransition.sourceNodeId,
+            destinationNodeId = nodeTransition.destinationNodeId,
+            samples = liveData.samples.map(LiveDataSampleDto.from),
+            totalCount = liveData.totalCount,
+            currentThroughput = liveData.currentThroughput,
+          )
+        }.toList,
+        invocationResults = liveData.invocationResults.map { case (nodeId, results) =>
+          nodeId.id -> results.map(InvocationResultDto.from)
+        },
+        externalInvocationResults = liveData.externalInvocationResults.map { case (nodeId, results) =>
+          nodeId.id -> results.map(InvocationResultDto.from)
+        },
+        exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
+          nodeId.id -> results.map(ExceptionResultDto.from)
+        },
       )
     }
 
   }
 
-  final case class LiveDataSamplesDto(
-      nodeTransitionResults: List[NodeTransitionResult],
-      invocationResults: Map[String, List[ExpressionInvocationResult[Json]]],
-      externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
-      exceptions: List[ExceptionResult[Json]]
+  final case class ExceptionResultDto(
+      contextId: String,
+      timestamp: Instant,
+      variables: Map[String, Json],
+      errorMessage: Option[String],
   )
 
-  object LiveDataSamplesDto {
+  object ExceptionResultDto {
 
-    def from(testResults: TestResults[Json]): LiveDataSamplesDto = {
-      lazy val nodeTransitionResults = testResults.nodeTransitionResults.map { case (nodeTransition, results) =>
-        NodeTransitionResult(
-          sourceNodeId = nodeTransition.sourceNodeId,
-          destinationNodeId = nodeTransition.destinationNodeId,
-          results = results,
-        )
-      }.toList
-      LiveDataSamplesDto(
-        nodeTransitionResults = nodeTransitionResults,
-        invocationResults = testResults.invocationResults,
-        externalInvocationResults = testResults.externalInvocationResults,
-        exceptions = testResults.exceptions,
+    def from(exceptionResult: ExceptionResult): ExceptionResultDto =
+      ExceptionResultDto(
+        exceptionResult.contextId,
+        exceptionResult.timestamp,
+        exceptionResult.variables,
+        Option(exceptionResult.throwable.getMessage),
       )
-    }
 
   }
 
-  final case class NodeTransitionResult(
-      sourceNodeId: String,
-      destinationNodeId: Option[String],
-      results: List[ResultContext[Json]]
+  final case class InvocationResultDto(
+      contextId: String,
+      timestamp: Instant,
+      name: String,
+      value: Json,
   )
 
-  final case class NodeTransitionThroughputDto(
-      sourceNodeId: String,
-      destinationNodeId: Option[String],
-      throughput: BigDecimal,
-  )
+  object InvocationResultDto {
 
-  object NodeTransitionThroughput {
-
-    def from(nodeTransitionThroughput: Map[NodeTransition, BigDecimal]): List[NodeTransitionThroughputDto] = {
-      nodeTransitionThroughput.map { case (k, v) =>
-        NodeTransitionThroughputDto(k.sourceNodeId, k.destinationNodeId, v)
-      }.toList
-    }
+    def from(invocationResult: InvocationResult): InvocationResultDto =
+      InvocationResultDto(
+        invocationResult.contextId,
+        invocationResult.timestamp,
+        invocationResult.name,
+        invocationResult.value,
+      )
 
   }
 
-  implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
-  implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
-  implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived
-  implicit def throwableSchema: Schema[Throwable]                                         = Schema.string
-  implicit def exceptionResultSchema: Schema[ExceptionResult[Json]]                       = Schema.derived
-  implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
-  implicit def testResultsSchema: Schema[LiveDataSamplesDto]                              = Schema.derived
-  implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
-  implicit def nodeTransitionThroughputDtoSchema: Schema[NodeTransitionThroughputDto]     = Schema.derived
-  implicit def resultsWithCountsSchema: Schema[LiveDataDto]                               = Schema.derived
-  implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
-  implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
+  final case class LiveDataForNodeTransitionDto(
+      sourceNodeId: String,
+      destinationNodeId: Option[String],
+      samples: List[LiveDataSampleDto],
+      totalCount: Long,
+      currentThroughput: BigDecimal,
+  )
+
+  case class LiveDataSampleDto(
+      contextId: String,
+      timestamp: Instant,
+      variables: Map[String, Json],
+  )
+
+  object LiveDataSampleDto {
+    def from(liveDataSample: LiveDataSample): LiveDataSampleDto =
+      LiveDataSampleDto(liveDataSample.contextId, liveDataSample.timestamp, liveDataSample.variables)
+  }
+
+  implicit def exceptionResultDtoSchema: Schema[ExceptionResultDto]                     = Schema.derived
+  implicit def invocationResultDtoSchema: Schema[InvocationResultDto]                   = Schema.derived
+  implicit def liveDataSampleDtoSchema: Schema[LiveDataSampleDto]                       = Schema.derived
+  implicit def liveDataForNodeTransitionDtoSchema: Schema[LiveDataForNodeTransitionDto] = Schema.derived
+  implicit def liveDataDtoSchema: Schema[LiveDataDto]                                   = Schema.derived
 
   sealed trait LiveDataError
 

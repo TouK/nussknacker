@@ -1,62 +1,21 @@
 package pl.touk.nussknacker.ui.api.description.scenarioLiveData
 
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import pl.touk.nussknacker.engine.testmode.TestProcess.{
-  ExceptionResult,
-  ExpressionInvocationResult,
-  ExternalInvocationResult,
-  ResultContext
-}
+import io.circe.Codec
+import io.circe.derivation.deriveCodec
 import pl.touk.nussknacker.ui.api.description.scenarioLiveData.Dtos.{
+  ExceptionResultDto,
+  InvocationResultDto,
   LiveDataDto,
-  LiveDataSamplesDto,
-  NodeTransitionResult,
-  NodeTransitionThroughputDto
+  LiveDataForNodeTransitionDto,
+  LiveDataSampleDto
 }
 
 object LiveDataCodecs {
 
-  import io.circe.syntax._
-  import pl.touk.nussknacker.engine.api.CirceUtil._
-
-  implicit val liveDataDtoEncoder: Encoder[LiveDataDto] =
-    deriveConfiguredEncoder[LiveDataDto].mapJson(_.dropNullValues)
-
-  implicit val liveDataDtoDecoder: Decoder[LiveDataDto] =
-    Decoder.failed(DecodingFailure("Not implemented", List.empty))
-
-  implicit val liveDataSamplesDtoEncoder: Encoder[LiveDataSamplesDto] = new Encoder[LiveDataSamplesDto]() {
-
-    implicit val nodeResult: Encoder[ResultContext[Json]]                              = deriveConfiguredEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
-    implicit val nodeTransitionResult: Encoder[NodeTransitionResult]                   = deriveConfiguredEncoder
-    implicit val exceptionResultEncoder: Encoder[ExceptionResult[Json]]                = deriveConfiguredEncoder
-    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-
-    override def apply(a: LiveDataSamplesDto): Json = a match {
-      case LiveDataSamplesDto(
-            nodeTransitionResults,
-            invocationResults,
-            externalInvocationResults,
-            exceptions
-          ) =>
-        Json.obj(
-          "nodeTransitionResults" -> nodeTransitionResults.asJson,
-          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId)
-          }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id).asJson
-        )
-    }
-
-  }
-
-  implicit val nodeTransitionThroughputDto: Encoder[NodeTransitionThroughputDto] = deriveConfiguredEncoder
-
-  implicit val liveDataSamplesDtoDecoder: Decoder[LiveDataSamplesDto] =
-    Decoder.failed(DecodingFailure("Not implemented", List.empty))
+  implicit def exceptionResultDtoCodec: Codec[ExceptionResultDto]                     = deriveCodec
+  implicit def invocationResultDtoCodec: Codec[InvocationResultDto]                   = deriveCodec
+  implicit def liveDataSampleDtoCodec: Codec[LiveDataSampleDto]                       = deriveCodec
+  implicit def liveDataForNodeTransitionDtoCodec: Codec[LiveDataForNodeTransitionDto] = deriveCodec
+  implicit def resultsWithCountsCodec: Codec[LiveDataDto]                             = deriveCodec
 
 }

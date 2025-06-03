@@ -42,7 +42,8 @@ object TestResultsCodecs {
             nodeTransitionResults,
             invocationResults,
             externalInvocationResults,
-            exceptions
+            exceptions,
+            exceptionsByNodeId,
           ) =>
         Json.obj(
           "nodeResults" -> nodeResults
@@ -53,7 +54,10 @@ object TestResultsCodecs {
           "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId)
           }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id).asJson
+          "exceptions" -> exceptions.sortBy(_.context.id).asJson,
+          "exceptionsByNodeId" -> exceptionsByNodeId.map { case (nodeId, exs) =>
+            nodeId -> exs.sortBy(_.context.id)
+          }.asJson,
         )
     }
 

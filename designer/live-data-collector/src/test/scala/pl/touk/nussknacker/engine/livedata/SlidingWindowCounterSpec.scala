@@ -18,6 +18,7 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
       1 to 10 foreach { i =>
         counter.add(i)
       }
+      mutableClock.advanceBySeconds(1)
       counter.getThroughput.toSet shouldBe Set(
         1  -> BigDecimal(1),
         2  -> BigDecimal(1),
@@ -30,7 +31,6 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
         9  -> BigDecimal(1),
         10 -> BigDecimal(1),
       )
-      mutableClock.advanceBySeconds(1)
     }
   }
 
@@ -43,6 +43,7 @@ class SlidingWindowCounterSpec extends AnyFunSuiteLike with Matchers {
 
     // Calculated as 1 event per second in the first second
     counter.add(0)
+    mutableClock.advanceBySeconds(1)
     counter.getThroughput.toSet shouldBe Set(0 -> BigDecimal(1))
 
     mutableClock.advanceBySeconds(1)
