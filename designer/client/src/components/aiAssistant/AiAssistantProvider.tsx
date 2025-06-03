@@ -1,5 +1,5 @@
 import type { ChatModelRunOptions, TextContentPart } from "@assistant-ui/react";
-import { AssistantRuntimeProvider, useLocalRuntime, type ChatModelAdapter } from "@assistant-ui/react";
+import { AssistantRuntimeProvider, type ChatModelAdapter, useLocalRuntime } from "@assistant-ui/react";
 import { createParser } from "eventsource-parser";
 import type { ReactNode } from "react";
 import React from "react";
@@ -19,12 +19,25 @@ const ThreadIdManager = {
     },
 };
 
+enum StreamStatus {
+    STREAMING = "streaming",
+    ABORTED = "aborted",
+    FINISHED = "finished",
+    ERROR = "error",
+}
+
+type StreamState =
+    | { status: StreamStatus.STREAMING }
+    | { status: StreamStatus.ABORTED }
+    | { status: StreamStatus.FINISHED }
+    | { status: StreamStatus.ERROR; error?: string };
+
 async function initializeChatStream(
     messages: ChatModelRunOptions["messages"],
     abortSignal?: AbortSignal,
 ): Promise<{
     responseParts: string[];
-    state: { isAborted: boolean; isFinished: boolean };
+    stateRef: { value: StreamState };
 }> {
     const response = await httpService.sendChatMessage(
         messages[messages.length - 1].content[0] as TextContentPart,
@@ -32,15 +45,17 @@ async function initializeChatStream(
         ThreadIdManager.THREAD_ID,
     );
     const responseParts: string[] = [];
-    const state = { isAborted: false, isFinished: false };
+    const stateRef: { value: StreamState } = { value: { status: StreamStatus.STREAMING } };
 
     const parser = createParser({
         onEvent({ event, data }) {
             if (event === "delta") {
+                console.log("Received delta event:", data);
                 responseParts.push(JSON.parse(data).text);
             }
             if (event === "stop") {
-                state.isFinished = true;
+                console.log("Received stop event:", data);
+                stateRef.value = { status: StreamStatus.FINISHED };
                 ThreadIdManager.THREAD_ID = JSON.parse(data).threadId;
             }
         },
@@ -55,22 +70,24 @@ async function initializeChatStream(
             parser.feed(value);
         }
     };
-    readStream();
+    readStream().catch((error) => {
+        stateRef.value = { status: StreamStatus.ERROR, error: "An error occurred, please try again" };
+    });
 
     if (abortSignal) {
         abortSignal.addEventListener("abort", () => {
             console.log("Message aborted");
-            state.isAborted = true;
+            stateRef.value = { status: StreamStatus.ABORTED };
             reader.cancel();
         });
     }
 
-    return { responseParts, state };
+    return { responseParts, stateRef };
 }
 
 const ModelAdapter: ChatModelAdapter = {
     async *run(chatModelOptions) {
-        const { responseParts, state } = await initializeChatStream(chatModelOptions.messages, chatModelOptions.abortSignal);
+        const { responseParts, stateRef } = await initializeChatStream(chatModelOptions.messages, chatModelOptions.abortSignal);
 
         yield {
             content: [],
@@ -79,28 +96,40 @@ const ModelAdapter: ChatModelAdapter = {
 
         let text = "";
         while (true) {
-            if (state.isAborted) {
-                yield {
-                    content: [{ type: "text", text }],
-                    status: { type: "incomplete", reason: "cancelled" },
-                };
-                return;
-            }
-            if (responseParts.length > 0) {
-                const part = responseParts.shift();
-                text += part;
-                yield {
-                    content: [{ type: "text", text }],
-                    status: { type: "running" },
-                };
-            } else if (state.isFinished && responseParts.length === 0) {
-                yield {
-                    content: [{ type: "text", text }],
-                    status: { type: "complete", reason: "stop" },
-                };
-                return;
-            } else {
-                await new Promise((resolve) => setTimeout(resolve, 100));
+            const state = stateRef.value;
+            switch (state.status) {
+                case StreamStatus.ABORTED:
+                    yield {
+                        content: [{ type: "text", text }],
+                        status: { type: "incomplete", reason: "cancelled" },
+                    };
+                    return;
+                case StreamStatus.STREAMING:
+                    if (responseParts.length > 0) {
+                        console.log("Streaming response parts:", responseParts.length);
+                        const part = responseParts.shift();
+                        text += part;
+                        yield {
+                            content: [{ type: "text", text }],
+                            status: { type: "running" },
+                        };
+                    } else {
+                        // Await for new tokens to arrive.
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    break;
+                case StreamStatus.FINISHED:
+                    yield {
+                        content: [{ type: "text", text }],
+                        status: { type: "complete", reason: "stop" },
+                    };
+                    return;
+                case StreamStatus.ERROR:
+                    yield {
+                        content: [{ type: "text", text }],
+                        status: { type: "incomplete", reason: "error", error: state.error },
+                    };
+                    return;
             }
         }
     },
