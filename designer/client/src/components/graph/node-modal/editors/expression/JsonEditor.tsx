@@ -35,7 +35,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     isMarked,
 }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
-    const { annotations, markers, hasRangeText } = useAceEditorRangeMessages(fieldErrors);
+    const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
 
     const onChange = (newValue: string) => {
         setValue(newValue);
@@ -57,6 +57,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
                 sx={{ position: "relative" }}
             >
                 <AceEditor
+                    onLoad={setAnnotationsOnLoad}
                     readOnly={readOnly}
                     mode={"json"}
                     width={"100%"}

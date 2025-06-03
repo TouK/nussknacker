@@ -30,7 +30,7 @@ export type AceWrapperInputProps = {
 };
 
 export interface AceWrapperProps
-    extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled" | "annotations" | "markers"> {
+    extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled" | "annotations" | "markers" | "onLoad"> {
     inputProps: AceWrapperInputProps;
     customAceEditorCompleter?;
     showLineNumbers?: boolean;

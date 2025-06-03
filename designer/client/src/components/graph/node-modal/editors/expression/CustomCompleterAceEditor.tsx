@@ -48,7 +48,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
 
     const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
-    const { annotations, markers } = useAceEditorRangeMessages(fieldErrors);
+    const { annotations, markers, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -64,6 +64,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     sx={{ position: "relative" }}
                 >
                     <AceEditor
+                        onLoad={setAnnotationsOnLoad}
                         ref={ref}
                         value={value}
                         onChange={onChange}

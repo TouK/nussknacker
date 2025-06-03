@@ -1,11 +1,21 @@
-import { useMemo } from "react";
+import type { Ace } from "ace-builds";
+import { useCallback, useMemo } from "react";
 import type { IMarker } from "react-ace/lib/types";
 import type { Annotation } from "react-ace/types";
+import { useSelector } from "react-redux";
 
+import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
 import type { FieldError } from "../Validators";
 
 export function useAceEditorRangeMessages(fieldErrors: FieldError[]) {
+    const userSettings = useSelector(getUserSettings);
+    const showRangeMessages = userSettings["editor.showRangeMessages"];
+
     const annotations: Annotation[] = useMemo(() => {
+        if (!showRangeMessages) {
+            return [];
+        }
+
         return fieldErrors
             .map(
                 (error) =>
@@ -17,9 +27,13 @@ export function useAceEditorRangeMessages(fieldErrors: FieldError[]) {
                     },
             )
             .filter(Boolean);
-    }, [fieldErrors]);
+    }, [fieldErrors, showRangeMessages]);
 
     const markers: IMarker[] = useMemo(() => {
+        if (!showRangeMessages) {
+            return [];
+        }
+
         return fieldErrors
             .map(
                 (error): IMarker =>
@@ -35,8 +49,18 @@ export function useAceEditorRangeMessages(fieldErrors: FieldError[]) {
                     },
             )
             .filter(Boolean);
-    }, [fieldErrors]);
+    }, [fieldErrors, showRangeMessages]);
+
+    const setAnnotationsOnLoad = useCallback(
+        () => (editor: Ace.Editor) => {
+            if (annotations.length > 0) {
+                editor.session.setAnnotations(annotations);
+            }
+        },
+        [annotations],
+    );
 
     const hasRangeText = annotations.length > 0 && markers.length > 0;
-    return { annotations, markers, hasRangeText };
+
+    return { annotations, markers, hasRangeText, setAnnotationsOnLoad };
 }
