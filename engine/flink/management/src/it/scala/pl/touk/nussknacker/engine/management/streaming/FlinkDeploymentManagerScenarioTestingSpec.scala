@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.CustomTimestampExtractingTransformation
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
 
 import java.util.UUID
@@ -72,7 +73,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
     }
   }
 
-  // this checks that we are setting timestamps in test even if source timestampAssigner method returns None
+  // this checks that we are setting timestamps in test if source timestampAssigner method returns None
   it should "set timestamps even if no timestamp assigner is provided by source" in {
     val processName    = ProcessName(UUID.randomUUID().toString)
     val processVersion = ProcessVersion.empty.copy(processName = processName)
@@ -80,11 +81,13 @@ class FlinkDeploymentManagerScenarioTestingSpec
     val process = SampleProcess.prepareProcessWithNoTimestampAssignerForTest(processName)
 
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
-      r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) } shouldBe Map(
-        "startProcess" -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "nightFilter"  -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "endSend"      -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-      )
+      val variablesInNodes = r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }
+      val timestampAsJson =
+        variablesInNodes("endSend")(0)._2(CustomTimestampExtractingTransformation.timestampVariableName)
+      val timestampReadAsObject = timestampAsJson.asObject
+      val firstValue            = timestampReadAsObject.get.values.toList(0)
+      val timestamp             = firstValue.asNumber.get.toLong.get
+      timestamp shouldBe System.currentTimeMillis() +- 1000 * 60
     }
   }
 

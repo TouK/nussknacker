@@ -648,7 +648,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
   .dependsOn(
     deploymentManagerApi % Provided,
     // this line is to make intellij run tests in FlinkDeploymentManagerScenarioTestingSpec
-    flinkDevModel % IntegrationTest,
+    flinkDevModel        % IntegrationTest,
     liveDataCollector    % Provided,
     scenarioCompilerFlinkDeps,
     flinkMiniCluster,
@@ -687,6 +687,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     }
   )
   .dependsOn(
+    flinkTestUtils,
     extensionsApi,
     commonComponents,
     flinkSchemedKafkaComponentsUtils,

@@ -23,7 +23,7 @@ object SampleProcess {
     ScenarioBuilder
       .streaming(name.value)
       .source("startProcess", "kafka-transaction-no-test-timestamp-assigner")
-      .filter("nightFilter", "true".spel, endWithMessage("endNight", "Odrzucenie noc"))
+      .customNodeNoOutput("timestampReadingNode", "timestampReader")
       .emptySink("endSend", "sendSms", "Value" -> "'message'".spel)
   }
 

@@ -38,6 +38,7 @@ import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.CustomTimestampExtractingTransformation
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.functions.{
   base64,
@@ -228,6 +229,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> categories(NoneReturnTypeTransformer),
+    "timestampReader"           -> categories(CustomTimestampExtractingTransformation),
     "stateful"                  -> categories(StatefulTransformer),
     "customFilter"              -> categories(CustomFilter),
     "constantStateTransformer" -> categories(
