@@ -39,6 +39,7 @@ private[livedata] class SlidingWindowCounter[T](
       .toMap
       .map { case (transition, count) =>
         transition -> {
+          // We need to check whether samplingInterval > 0, because it equals -1 in the second when the scenario is deployed and 0 the second after that
           val throughput = if (samplingInterval <= 0) BigDecimal(0) else BigDecimal(count) / samplingInterval
           throughput.setScale(4, BigDecimal.RoundingMode.HALF_EVEN)
         }
@@ -49,6 +50,7 @@ private[livedata] class SlidingWindowCounter[T](
 
   private def cleanOldBuckets(now: Long): Unit = synchronized {
     // Clean old buckets at most once per second, not on each call
+    // We clean buckets older than [currentEpochSecond - windowSizeSeconds] (non-inclusive)
     if (lastCleaned.getAndSet(now) != now) {
       buckets.headMap(now - windowSizeSeconds).clear()
     }
