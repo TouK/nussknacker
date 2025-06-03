@@ -14,7 +14,6 @@ import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
@@ -24,20 +23,25 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
+  ArgumentTypeError,
+  PartTypeError,
+  SpelExpressionTypingError,
+  SpelExpressionTypingErrorWithTextRange
+}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError._
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError._
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.OperatorError._
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SelectionProjectionError.{
   IllegalProjectionError,
   IllegalSelectionError,
   IllegalSelectionTypeError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorError.{
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.TernaryOperatorError.{
   InvalidTernaryOperator,
   TernaryOperatorNotBooleanError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.{
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.{
   ArrayConstructorError,
   BeanReferenceError,
   MapWithExpressionKeysError,
@@ -47,10 +51,14 @@ import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
+import pl.touk.nussknacker.engine.spel.parser.{
+  CompositeExpressionsWithTextRanges,
+  ExpressionWithTextRange,
+  SingleExpressionWithTextRange
+}
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-import java.util
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 import scala.reflect.runtime._
@@ -76,21 +84,37 @@ private[spel] class Typer(
 
   private lazy val typeReferenceTyper = new TypeReferenceTyper(evaluationContext, classDefinitionSet)
 
-  type TypingR[T]       = Writer[List[ExpressionParseError], T]
-  type NodeTypingResult = TypingR[CollectedTypingResult]
+  private type TypingR[T]       = Writer[List[SpelExpressionTypingErrorWithTextRange], T]
+  private type NodeTypingResult = TypingR[CollectedTypingResult]
 
   def typeExpression(
-      expr: Expression,
+      expr: ExpressionWithTextRange,
       ctx: ValidationContext
-  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    val (errors, result) = doTypeExpression(expr, ctx)
+  ): ValidatedNel[SpelExpressionTypingErrorWithTextRange, CollectedTypingResult] = {
+    val (errors, result) = typeExpressionWithTextRange(expr, ctx)
     NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(result))
+  }
+
+  private def typeExpressionWithTextRange(
+      expressionWithTextRange: ExpressionWithTextRange,
+      ctx: ValidationContext
+  ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
+    expressionWithTextRange match {
+      case composite: CompositeExpressionsWithTextRanges =>
+        val errors = composite.getChildExpressionsWithTextRanges.toList.flatMap { expressionWithTextRange =>
+          doTypeExpression(expressionWithTextRange.getExpression, ctx)._1
+            .map(_.shiftTextRangeRight(expressionWithTextRange.getTextRange.start))
+        }
+        (errors, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
+      case single: SingleExpressionWithTextRange =>
+        doTypeExpression(single.getExpression, ctx)
+    }
   }
 
   def doTypeExpression(
       expr: Expression,
-      ctx: ValidationContext
-  ): (List[ExpressionParseError], CollectedTypingResult) = {
+      ctx: ValidationContext,
+  ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
     expr match {
       case e: standard.SpelExpression =>
         typeExpression(e, ctx)
@@ -111,7 +135,7 @@ private[spel] class Typer(
   private def typeExpression(
       spelExpression: standard.SpelExpression,
       ctx: ValidationContext
-  ): (List[ExpressionParseError], CollectedTypingResult) = {
+  ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
     val ast                       = spelExpression.getAST
     val (errors, collectedResult) = typeNode(ctx, ast, TypingContext(List.empty, Map.empty)).run
     logger.whenTraceEnabled {
@@ -129,24 +153,35 @@ private[spel] class Typer(
       current: TypingContext
   ): NodeTypingResult = {
 
-    def toNodeResult(typ: TypingResult) = current.toResult(TypedNode(node, TypingResultWithContext(typ)))
+    implicit class TypingResultOps(typ: TypingResult) {
 
-    def validNodeResult(typ: TypingResult) = valid(toNodeResult(typ))
+      def toNodeResult: CollectedTypingResult = current.toResult(TypedNode(node, TypingResultWithContext(typ)))
 
-    def invalidNodeResult(err: ExpressionParseError) = invalid(err).map(toNodeResult)
+      def validNodeResult: TypingR[CollectedTypingResult] = valid(typ.toNodeResult)
+
+      def validTypingResult: TypingR[TypingResult] = Writer(List.empty[SpelExpressionTypingErrorWithTextRange], typ)
+
+    }
+
+    implicit class SpelExpressionTypingErrorOps(err: SpelExpressionTypingError) {
+
+      def withTextRange: SpelExpressionTypingErrorWithTextRange =
+        SpelExpressionTypingErrorWithTextRange(err, node.textRange)
+
+      def invalidNodeResult: TypingR[CollectedTypingResult] = err.invalidTypingResult().map(_.toNodeResult)
+
+      def invalidTypingResult(fallbackType: TypingResult = Unknown): TypingR[TypingResult] =
+        Writer(List(err.withTextRange), fallbackType)
+
+    }
 
     val withTypedChildren = typeChildren(validationContext, node, current) _
 
-    def fixedWithNewCurrent(newCurrent: TypingContext) =
-      typeChildrenAndReturnFixed(validationContext, node, newCurrent) _
-
-    val fixed = fixedWithNewCurrent(current)
-
     def withChildrenOfType[Parts: universe.TypeTag](result: TypingResult) = {
-      val w = valid(result)
+      val w = result.validTypingResult
       withTypedChildren {
         case list if list.forall(_.canBeLooselyAssignedTo(Typed.fromDetailedType[Parts])) => w
-        case _                                                                            => w.tell(List(PartTypeError))
+        case _ => w.tell(List(PartTypeError.withTextRange))
       }
     }
 
@@ -160,9 +195,9 @@ private[spel] class Typer(
             rightValue <- right.valueOpt
             res = op(leftValue, rightValue)
           } yield Typed.fromInstance(res)
-          valid(typeFromOp.getOrElse(resultType))
+          typeFromOp.getOrElse(resultType).validTypingResult
         case _ =>
-          invalid(PartTypeError, fallbackType = resultType)
+          PartTypeError.invalidTypingResult(fallbackType = resultType)
       }
     }
 
@@ -179,13 +214,17 @@ private[spel] class Typer(
       val typingResult = typedPossibleTypes.sequence
         .map(_.map(_.finalResult.typingResult))
         .map(typingResults => Typed(typingResults))
-      typingResult.map(toNodeResult)
+      typingResult.map(_.toNodeResult)
     }
 
-    def typeFieldNameReferenceOnRecord(indexString: String, record: TypedObjectTypingResult): TypingR[TypingResult] = {
+    def typeFieldNameReferenceOnRecord(
+        indexString: String,
+        record: TypedObjectTypingResult
+    ): TypingR[TypingResult] = {
       val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
-      fieldIndexedByLiteralStringOpt.map(f => valid(f._2)).getOrElse {
-        if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(NoPropertyError(record, indexString))
+      fieldIndexedByLiteralStringOpt.map(f => f._2.validTypingResult).getOrElse {
+        if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
+        else NoPropertyError(record, indexString).invalidTypingResult()
       }
     }
 
@@ -198,19 +237,22 @@ private[spel] class Typer(
             case _                                      => typeFieldNameReferenceOnRecord(indexString, record)
           }
         case indexKey :: Nil if indexKey.canBeLooselyAssignedTo(Typed[String]) =>
-          if (dynamicPropertyAccessAllowed) valid(Unknown)
+          if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
           else
             record.runtimeObjType.params match {
-              case _ :: value :: Nil if record.runtimeObjType.klass == classOf[java.util.Map[_, _]] => valid(value)
-              case _                                                                                => valid(Unknown)
+              case _ :: value :: Nil if record.runtimeObjType.klass == classOf[java.util.Map[_, _]] =>
+                value.validTypingResult
+              case _ => Unknown.validTypingResult
             }
         case e :: Nil =>
           indexer.children match {
             case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
-            case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(NoPropertyTypeError(record, e))
+            case _ =>
+              if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
+              else NoPropertyTypeError(record, e).invalidTypingResult()
           }
         case _ =>
-          invalid(IllegalIndexingOperation)
+          IllegalIndexingOperation.invalidTypingResult()
       }
     }
 
@@ -220,7 +262,7 @@ private[spel] class Typer(
         case TypedClass(clazz, param :: Nil)
             if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
-          withTypedChildren(_ => valid(param))
+          withTypedChildren(_ => param.validTypingResult)
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
           withTypedChildren {
             // Spel implementation of map indexer (in class org.springframework.expression.spel.ast.Indexer, line 154) tries to convert
@@ -230,32 +272,221 @@ private[spel] class Typer(
             // It would be hard to change implementation of .asMap extension so we partially turn off this feature of indexer conversion
             // by allowing in typing only situations when map key type and indexer type are the same (though we have to allow
             // indexing with unknown type)
-            case indexKey :: Nil if indexKey.canBeAssignedTo(keyParam)(NoConversion) => valid(valueParam)
-            case _ => invalid(IllegalIndexingOperation)
+            case indexKey :: Nil if indexKey.canBeAssignedTo(keyParam)(NoConversion) => valueParam.validTypingResult
+            case _ => IllegalIndexingOperation.invalidTypingResult()
           }
-        case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
+        case d: TypedDict =>
+          dictTyper
+            .typeDictValue(d, e)
+            .map(_.toNodeResult)
+            .mapWritten(_.map(_.withTextRange))
         case union: TypedUnion               => typeUnion(e, union)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
         case r: TypedObjectTypingResult      => typeIndexerOnRecord(e, r)
         // TODO: add indexing on strings
         // TODO: how to handle other cases?
         case TypedNull =>
-          invalidNodeResult(IllegalIndexingOperation)
+          IllegalIndexingOperation.invalidNodeResult
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
         case u: Unknown =>
-          withTypedChildren(_ => valid(u))
+          withTypedChildren(_ => u.validTypingResult)
         case _: TypedClass =>
-          val w = withTypedChildren(_ => valid(Unknown))
-          if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
+          val w = withTypedChildren(_ => Unknown.validTypingResult)
+          if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError.withTextRange))
       }
     }
+
+    def operationOnTypeValue[A, R](typ: TypingResult)(op: A => R): Option[TypingResult] =
+      typ.valueOpt.map(v => Typed.fromInstance(op(v.asInstanceOf[A])))
+
+    def operationOnTypesValue[A, B, R](left: TypingResult, right: TypingResult, fallbackType: TypingResult)(
+        op: (A, B) => Validated[SpelExpressionTypingError, R]
+    ): TypingR[TypingResult] =
+      (for {
+        leftValue  <- left.valueOpt
+        rightValue <- right.valueOpt
+        res        <- Try(op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])).toOption
+      } yield {
+        res
+          .map(Typed.fromInstance)
+          .map(_.validTypingResult)
+          .valueOr(_.invalidTypingResult(fallbackType))
+      }).getOrElse(fallbackType.validTypingResult)
+
+    def checkEqualityLikeOperation(node: Operator, isEquality: Boolean): TypingR[CollectedTypingResult] = {
+      typeChildren(validationContext, node, current) {
+        case TypedObjectWithValue(leftVariable, leftValue) ::
+            TypedObjectWithValue(rightVariable, rightValue) :: Nil =>
+          checkEqualityComparableTypes(leftVariable, rightVariable, node)
+            .map(x => TypedObjectWithValue(x.asInstanceOf[TypedClass], leftValue == rightValue ^ !isEquality))
+        case left :: right :: Nil =>
+          checkEqualityComparableTypes(left, right, node)
+        case _ =>
+          BadOperatorConstructionError(node.getOperatorName).invalidTypingResult(fallbackType = Typed[Boolean])
+      }
+    }
+
+    def checkEqualityComparableTypes(
+        left: TypingResult,
+        right: TypingResult,
+        node: Operator
+    ): TypingR[TypingResult] = {
+      val w = Typed[Boolean].validTypingResult
+      CommonSupertypeFinder.Intersection
+        .commonSupertypeOpt(left, right)
+        .map(_ => w)
+        .getOrElse(w.tell(List(OperatorNotComparableError(node.getOperatorName, left, right).withTextRange)))
+    }
+
+    def checkTwoOperandsArithmeticOperation(node: Operator)(
+        op: Option[(Number, Number) => Validated[SpelExpressionTypingError, Any]]
+    )(implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingR[CollectedTypingResult] = {
+      typeChildren(validationContext, node, current) {
+        case left :: right :: Nil
+            if left.canBeLooselyAssignedTo(Typed[Number]) && right.canBeLooselyAssignedTo(Typed[Number]) =>
+          val fallback = numberPromotionStrategy.promote(left, right)
+          op
+            .map(operationOnTypesValue[Number, Number, Any](left, right, fallback)(_))
+            .getOrElse(fallback.validTypingResult)
+        case left :: right :: Nil =>
+          val fallback = CommonSupertypeFinder.Default.commonSupertype(left, right).withoutValue
+          OperatorMismatchTypeError(node.getOperatorName, left, right).invalidTypingResult(fallbackType = fallback)
+        case _ =>
+          BadOperatorConstructionError(node.getOperatorName).invalidTypingResult() // shouldn't happen
+      }
+    }
+
+    def checkSingleOperandArithmeticOperation(node: Operator)(op: Number => Any): TypingR[CollectedTypingResult] = {
+      typeChildren(validationContext, node, current) {
+        case left :: Nil if left.canBeLooselyAssignedTo(Typed[Number]) =>
+          val result = operationOnTypeValue[Number, Any](left)(op).getOrElse(left.withoutValue)
+          result.validTypingResult
+        case left :: Nil =>
+          OperatorNonNumericError(node.getOperatorName, left).invalidTypingResult(fallbackType = left)
+        case _ =>
+          BadOperatorConstructionError(node.getOperatorName).invalidTypingResult() // shouldn't happen
+      }
+    }
+
+    def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
+      case u: Unknown =>
+        val w = Writer.value[List[SpelExpressionTypingErrorWithTextRange], TypingResult](u)
+        if (anyMethodExecutionForUnknownAllowed) {
+          w
+        } else {
+          // we allow some methods to be used on unknown
+          unknownPropertyTypeBasedOnMethod(e, u)
+            .map(_.validTypingResult)
+            .getOrElse(w.tell(List(IllegalPropertyAccessError(u).withTextRange)))
+        }
+      case TypedNull =>
+        IllegalPropertyAccessError(TypedNull).invalidTypingResult(fallbackType = TypedNull)
+      case s: SingleTypingResult =>
+        extractSingleProperty(e)(s)
+      case union: TypedUnion =>
+        val l = union.possibleTypes
+          .map(single => extractSingleProperty(e)(single))
+          .filter(_.written.isEmpty)
+          .map(_.value)
+        NonEmptyList
+          .fromList(l)
+          .map(nel => Typed(nel).validTypingResult)
+          .getOrElse(NoPropertyError(t, e.getName).invalidTypingResult())
+    }
+
+    def extractMethodReference(reference: MethodReference): TypingR[CollectedTypingResult] = {
+      (current.stack match {
+        case head :: tail =>
+          valid((head, tail))
+        case Nil =>
+          InvalidMethodReference(reference.toStringAST)
+            .invalidTypingResult()
+            .map(TypingResultWithContext(_))
+            .map((_, current.stack))
+      }).flatMap { case (head, tail) =>
+        typeChildren(validationContext, node, current.copy(stack = tail)) { typedParams =>
+          methodReferenceTyper.typeMethodReference(
+            typer.MethodReference(head.typingResult, head.staticContext, reference.getName, typedParams)
+          ) match {
+            case Right(x)                         => x.validTypingResult
+            case Left(x) if strictMethodsChecking => x.invalidTypingResult()
+            case Left(_)                          => Unknown.validTypingResult
+          }
+        }
+      }
+    }
+
+    @tailrec
+    def extractSingleProperty(e: PropertyOrFieldReference)(t: SingleTypingResult): TypingR[TypingResult] = {
+      t match {
+        case typedObjectWithData: TypedObjectWithData =>
+          extractSingleProperty(e)(typedObjectWithData.runtimeObjType)
+        case typedClass: TypedClass =>
+          propertyTypeBasedOnMethod(typedClass, typedClass, e)
+            .orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
+            .map(_.validTypingResult)
+            .getOrElse(NoPropertyError(t, e.getName).invalidTypingResult())
+        case recordType @ TypedObjectTypingResult(fields, objType, _) =>
+          val typeBasedOnFields = fields.get(e.getName)
+          typeBasedOnFields
+            .orElse(propertyTypeBasedOnMethod(objType, recordType, e))
+            .map(_.validTypingResult)
+            .getOrElse(NoPropertyError(t, e.getName).invalidTypingResult())
+        case dict: TypedDict =>
+          dictTyper
+            .typeDictValue(dict, e)
+            .mapWritten(_.map(_.withTextRange))
+      }
+    }
+
+    // It returns iterative type and type after conversion if it was necessary
+    def extractIterativeType(collectionType: TypingResult): TypingR[(TypingResult, TypingResult)] = {
+      val collectionResult = Option(collectionType).collect {
+        case tc: SingleTypingResult
+            if tc.runtimeObjType.canBeStrictlyAssignedTo(Typed[java.util.Collection[_]]) ||
+              tc.runtimeObjType.klass.isArray =>
+          // For Collection and array we don't do the conversion - so we return input collectionType instead
+          valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown), collectionType)
+      }
+      lazy val mapResult: Option[TypingR[(TypingResult, TypingResult)]] = AssignabilityDeterminer
+        .typeAfterPotentialConversion(collectionType, Typed[java.util.Map[_, _]])(ConversionStrategy.Loose)
+        .toOption
+        .collect { case singleTypeAfterPotentialConversion: SingleTypingResult =>
+          (singleTypeAfterPotentialConversion.runtimeObjType, singleTypeAfterPotentialConversion)
+        }
+        .collect { case (TypedClass(_, keyParam :: valueParam :: Nil), typeAfterPotentialConversion) =>
+          valid(
+            (
+              Typed.record(
+                Map(
+                  "key"   -> keyParam,
+                  "value" -> valueParam
+                )
+              ),
+              typeAfterPotentialConversion
+            )
+          )
+        }
+      collectionResult orElse mapResult getOrElse (collectionType match {
+        case tc: SingleTypingResult =>
+          IllegalProjectionSelectionError(tc).invalidTypingResult().map((_, collectionType))
+        // FIXME: what if more results are present?
+        case _ => valid((Unknown, collectionType))
+      })
+    }
+
+    def projectionResult(iterableType: TypingResult, elementType: TypingResult): TypingR[TypingResult] =
+      iterableType.withoutValue match {
+        case tc: TypedClass if tc.klass.isArray => Typed.genericTypeClass(tc.klass, List(elementType)).validTypingResult
+        case _ => Typed.genericTypeClass[java.util.List[_]](List(elementType)).validTypingResult
+      }
 
     catchUnexpectedErrors(node match {
 
       case e: Assign =>
-        invalidNodeResult(ModificationError)
+        ModificationError.invalidNodeResult
       case e: BeanReference =>
-        invalidNodeResult(BeanReferenceError)
+        BeanReferenceError.invalidNodeResult
       case e: CompoundExpression =>
         e.children match {
           case first :: rest =>
@@ -271,7 +502,7 @@ private[spel] class Typer(
               )
             }
           // should not happen as CompoundExpression doesn't allow this...
-          case Nil => validNodeResult(Unknown)
+          case Nil => Unknown.validNodeResult
         }
 
       case e: ConstructorReference =>
@@ -283,38 +514,38 @@ private[spel] class Typer(
           typingResult match {
             case Some(tc @ TypedClass(_, _)) =>
               if (isArrayConstructor(e)) {
-                invalid(ArrayConstructorError)
+                ArrayConstructorError.invalidTypingResult()
               } else {
-                valid(tc)
+                tc.validTypingResult
               }
             case Some(_) =>
               throw new IllegalStateException(
                 "Illegal construction of ConstructorReference. Expected nonempty typing result of TypedClass or empty typing result"
               )
-            case None => invalid(ConstructionOfUnknown(classToUse))
+            case None => ConstructionOfUnknown(classToUse).invalidTypingResult()
           }
         }
       case e: Elvis =>
         withTypedChildren {
-          case first :: second :: Nil => valid(Typed(first, second))
+          case first :: second :: Nil => Typed(first, second).validTypingResult
           case other =>
             throw new IllegalStateException(
               s"Illegal construction of elvis. Found ${other.size} children, but 2 children expected"
             )
         }
       // TODO: what should be here?
-      case e: FunctionReference => validNodeResult(Unknown)
+      case e: FunctionReference => Unknown.validNodeResult
 
       // TODO: what should be here?
-      case e: Identifier => validNodeResult(Unknown)
+      case e: Identifier => Unknown.validNodeResult
       // TODO: what should be here?
       case e: Indexer =>
         current.stackHead
-          .map(valid)
-          .getOrElse(invalid(IllegalIndexingOperation))
+          .map(_.validTypingResult)
+          .getOrElse(IllegalIndexingOperation.invalidTypingResult())
           .flatMap(typeIndexer(e, _))
 
-      case e: Literal => validNodeResult(Typed.fromInstance(e.getLiteralValue.getValue))
+      case e: Literal => Typed.fromInstance(e.getLiteralValue.getValue).validNodeResult
 
       case e: InlineList =>
         withTypedChildren { children =>
@@ -324,7 +555,7 @@ private[spel] class Typer(
           val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
           val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
 
-          valid(typedListWithElementValues(elementType, childrenCombinedValue))
+          typedListWithElementValues(elementType, childrenCombinedValue).validTypingResult
         }
 
       case e: InlineMap =>
@@ -339,16 +570,15 @@ private[spel] class Typer(
 
         typeChildrenNodes(validationContext, node, values, current) { typedValues =>
           if (literalKeys.size != keys.size) {
-            invalid(MapWithExpressionKeysError)
+            MapWithExpressionKeysError.invalidTypingResult()
           } else {
-            valid(Typed.record(literalKeys.zip(typedValues)))
+            Typed.record(literalKeys.zip(typedValues)).validTypingResult
           }
         }
-      case e: MethodReference =>
-        extractMethodReference(e, validationContext, node, current)
+      case e: MethodReference => extractMethodReference(e)
 
-      case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current, isEquality = true)
-      case e: OpNE => checkEqualityLikeOperation(validationContext, e, current, isEquality = false)
+      case e: OpEQ => checkEqualityLikeOperation(e, isEquality = true)
+      case e: OpNE => checkEqualityLikeOperation(e, isEquality = false)
 
       case e: OpAnd => withTwoChildrenOfType[Boolean, Boolean](_ && _)
       case e: OpOr  => withTwoChildrenOfType[Boolean, Boolean](_ || _)
@@ -357,14 +587,14 @@ private[spel] class Typer(
       case e: OpLE  => withTwoChildrenOfType(MathUtils.lesserOrEqual)
       case e: OpLT  => withTwoChildrenOfType(MathUtils.lesser)
 
-      case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)(MathUtils.minus(_, 1))
-      case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)(MathUtils.plus(_, 1))
+      case e: OpDec => checkSingleOperandArithmeticOperation(e)(MathUtils.minus(_, 1))
+      case e: OpInc => checkSingleOperandArithmeticOperation(e)(MathUtils.plus(_, 1))
 
       case e: OpDivide =>
         val op = (x: Number, y: Number) =>
           if (y.doubleValue() == 0) Invalid(DivisionByZeroError(e.toStringAST))
           else Valid(MathUtils.divide(x, y))
-        checkTwoOperandsArithmeticOperation(validationContext, e, current)(Some(op))(
+        checkTwoOperandsArithmeticOperation(e)(Some(op))(
           NumberTypesPromotionStrategy.ForMathOperation
         )
 
@@ -377,39 +607,39 @@ private[spel] class Typer(
               Valid(MathUtils.minus(n1, n2))
             )
           case left :: right :: Nil if left == right =>
-            invalid(OperatorNonNumericError(e.getOperatorName, left))
+            OperatorNonNumericError(e.getOperatorName, left).invalidTypingResult()
           case left :: right :: Nil =>
-            invalid(OperatorMismatchTypeError(e.getOperatorName, left, right))
+            OperatorMismatchTypeError(e.getOperatorName, left, right).invalidTypingResult()
           case left :: Nil if left.canBeLooselyAssignedTo(Typed[Number]) =>
             val resultType = left.withoutValue
-            val result     = operationOnTypesValue[Number, Number](left)(MathUtils.negate).getOrElse(resultType)
-            valid(result)
+            val result     = operationOnTypeValue[Number, Number](left)(MathUtils.negate).getOrElse(resultType)
+            result.validTypingResult
           case left :: Nil =>
-            invalid(OperatorNonNumericError(e.getOperatorName, left))
+            OperatorNonNumericError(e.getOperatorName, left).invalidTypingResult()
           case Nil =>
-            invalid(EmptyOperatorError(e.getOperatorName))
+            EmptyOperatorError(e.getOperatorName).invalidTypingResult()
           case _ => throw new IllegalStateException("should not happen")
         }
       case e: OpModulus =>
         val op = (x: Number, y: Number) =>
           if (y.doubleValue() == 0) Invalid(ModuloZeroError(e.toStringAST))
           else Valid(MathUtils.remainder(x, y))
-        checkTwoOperandsArithmeticOperation(validationContext, e, current)(Some(op))(
+        checkTwoOperandsArithmeticOperation(e)(Some(op))(
           NumberTypesPromotionStrategy.ForMathOperation
         )
       case e: OpMultiply =>
-        checkTwoOperandsArithmeticOperation(validationContext, e, current)(
+        checkTwoOperandsArithmeticOperation(e)(
           Some((n1, n2) => Valid(MathUtils.multiply(n1, n2)))
         )(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OperatorPower =>
-        checkTwoOperandsArithmeticOperation(validationContext, e, current)(None)(
+        checkTwoOperandsArithmeticOperation(e)(None)(
           NumberTypesPromotionStrategy.ForPowerOperation
         )
 
       case e: OpPlus =>
         withTypedChildren {
           case left :: right :: Nil if left == Unknown || right == Unknown =>
-            valid(Unknown)
+            Unknown.validTypingResult
           case left :: right :: Nil
               if left.canBeLooselyAssignedTo(Typed[String]) || right.canBeLooselyAssignedTo(Typed[String]) =>
             operationOnTypesValue[Any, Any, String](left, right, Typed[String])((l, r) =>
@@ -422,30 +652,32 @@ private[spel] class Typer(
               Valid(MathUtils.plus(n1, n2))
             )
           case left :: right :: Nil =>
-            invalid(OperatorMismatchTypeError(e.getOperatorName, left, right))
+            OperatorMismatchTypeError(e.getOperatorName, left, right).invalidTypingResult()
           case left :: Nil if left.canBeLooselyAssignedTo(Typed[Number]) =>
-            valid(left)
+            left.validTypingResult
           case left :: Nil =>
-            invalid(OperatorNonNumericError(e.getOperatorName, left))
+            OperatorNonNumericError(e.getOperatorName, left).invalidTypingResult()
           case Nil =>
-            invalid(EmptyOperatorError(e.getOperatorName))
+            EmptyOperatorError(e.getOperatorName).invalidTypingResult()
           case _ => throw new IllegalStateException("should not happen")
         }
-      case e: OperatorBetween    => fixed(Typed[Boolean])
-      case e: OperatorInstanceof => fixed(Typed[Boolean])
+      case e: OperatorBetween    => Typed[Boolean].validNodeResult
+      case e: OperatorInstanceof => Typed[Boolean].validNodeResult
       case e: OperatorMatches    => withChildrenOfType[String](Typed[Boolean])
       case e: OperatorNot        => withChildrenOfType[Boolean](Typed[Boolean])
 
       case e: Projection =>
         for {
-          iterateType                        <- current.stackHead.map(valid).getOrElse(invalid(IllegalProjectionError))
+          iterateType <- current.stackHead
+            .map(_.validTypingResult)
+            .getOrElse(IllegalProjectionError.invalidTypingResult())
           elementTypeWithTypeAfterConversion <- extractIterativeType(iterateType)
           (elementType, _) = elementTypeWithTypeAfterConversion
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
             case result :: Nil =>
               projectionResult(iterateType, result)
             case other =>
-              invalid(IllegalSelectionTypeError(other))
+              IllegalSelectionTypeError(other).invalidTypingResult()
           }
         } yield result
 
@@ -453,22 +685,24 @@ private[spel] class Typer(
         current.stackHead
           .map(extractProperty(e, _))
           .map(mapErrorAndCheckMethodsIfPropertyNotExists)
-          .getOrElse(invalid(NonReferenceError(e.toStringAST)))
-          .map(toNodeResult)
+          .getOrElse(NonReferenceError(e.toStringAST).invalidTypingResult())
+          .map(_.toNodeResult)
       // TODO: what should be here?
-      case e: QualifiedIdentifier => fixed(Unknown)
+      case e: QualifiedIdentifier => Unknown.validNodeResult
 
       case e: Selection =>
         for {
-          iterateType                        <- current.stackHead.map(valid).getOrElse(invalid(IllegalSelectionError))
+          iterateType <- current.stackHead
+            .map(_.validTypingResult)
+            .getOrElse(IllegalSelectionError.invalidTypingResult())
           elementTypeWithTypeAfterConversion <- extractIterativeType(iterateType)
           (elementType, typeAfterConversion) = elementTypeWithTypeAfterConversion
           selectionType                      = resolveSelectionTypingResult(e, typeAfterConversion, elementType)
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
             case result :: Nil if result.canBeLooselyAssignedTo(Typed[Boolean]) =>
-              valid(selectionType)
+              selectionType.validTypingResult
             case other =>
-              invalid(IllegalSelectionTypeError(other), selectionType)
+              IllegalSelectionTypeError(other).invalidTypingResult(fallbackType = selectionType)
           }
         } yield result
       case e: Ternary =>
@@ -477,11 +711,11 @@ private[spel] class Typer(
             for {
               _ <- Option(condition)
                 .filter(_.canBeLooselyAssignedTo(Typed[Boolean]))
-                .map(valid)
-                .getOrElse(invalid(TernaryOperatorNotBooleanError(condition)))
+                .map(_.validTypingResult)
+                .getOrElse(TernaryOperatorNotBooleanError(condition).invalidTypingResult())
             } yield CommonSupertypeFinder.Default.commonSupertype(onTrue, onFalse)
           case _ =>
-            invalid(InvalidTernaryOperator) // shouldn't happen
+            InvalidTernaryOperator.invalidTypingResult() // shouldn't happen
         }
 
       case e: TypeReference =>
@@ -489,8 +723,9 @@ private[spel] class Typer(
           typeReferenceTyper
             .typeTypeReference(e)
             .map(typedClass => current.toResult(TypedNode(e, TypingResultWithContext.withStaticContext(typedClass))))
+            .mapWritten(_.map(_.withTextRange))
         } else {
-          validNodeResult(Unknown)
+          Unknown.validNodeResult
         }
 
       case e: VariableReference =>
@@ -499,28 +734,14 @@ private[spel] class Typer(
         validationContext
           .get(name)
           .orElse(current.stackHead.filter(_ => name == "this"))
-          .map(valid)
-          .getOrElse(if (absentVariableReferenceAllowed) valid(Unknown) else invalid(UnresolvedReferenceError(name)))
-          .map(toNodeResult)
+          .map(_.validTypingResult)
+          .getOrElse(
+            if (absentVariableReferenceAllowed) Unknown.validTypingResult
+            else UnresolvedReferenceError(name).invalidTypingResult()
+          )
+          .map(_.toNodeResult)
     })
   }
-
-  private def operationOnTypesValue[A, R](typ: TypingResult)(op: A => R): Option[TypingResult] =
-    typ.valueOpt.map(v => Typed.fromInstance(op(v.asInstanceOf[A])))
-
-  private def operationOnTypesValue[A, B, R](left: TypingResult, right: TypingResult, fallbackType: TypingResult)(
-      op: (A, B) => Validated[ExpressionParseError, R]
-  ): TypingR[TypingResult] =
-    (for {
-      leftValue  <- left.valueOpt
-      rightValue <- right.valueOpt
-      res        <- Try(op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])).toOption
-    } yield {
-      res
-        .map(Typed.fromInstance)
-        .map(valid)
-        .valueOr(invalid(_, fallbackType))
-    }).getOrElse(valid(fallbackType))
 
   // currently there is no better way than to check ast string starting with $ or ^
   private def resolveSelectionTypingResult(
@@ -547,146 +768,8 @@ private[spel] class Typer(
     dimensionsField.get(constructorReference).asInstanceOf[Boolean]
   }
 
-  private def checkEqualityLikeOperation(
-      validationContext: ValidationContext,
-      node: Operator,
-      current: TypingContext,
-      isEquality: Boolean
-  ): TypingR[CollectedTypingResult] = {
-    typeChildren(validationContext, node, current) {
-      case TypedObjectWithValue(leftVariable, leftValue) ::
-          TypedObjectWithValue(rightVariable, rightValue) :: Nil =>
-        checkEqualityComparableTypes(leftVariable, rightVariable, node)
-          .map(x => TypedObjectWithValue(x.asInstanceOf[TypedClass], leftValue == rightValue ^ !isEquality))
-      case left :: right :: Nil =>
-        checkEqualityComparableTypes(left, right, node)
-      case _ =>
-        invalid(BadOperatorConstructionError(node.getOperatorName), fallbackType = Typed[Boolean])
-    }
-  }
-
-  private def checkEqualityComparableTypes(
-      left: TypingResult,
-      right: TypingResult,
-      node: Operator
-  ): TypingR[TypingResult] = {
-    val w = valid(Typed[Boolean])
-    CommonSupertypeFinder.Intersection
-      .commonSupertypeOpt(left, right)
-      .map(_ => w)
-      .getOrElse(w.tell(List(OperatorNotComparableError(node.getOperatorName, left, right))))
-  }
-
-  private def checkTwoOperandsArithmeticOperation(
-      validationContext: ValidationContext,
-      node: Operator,
-      current: TypingContext
-  )(
-      op: Option[(Number, Number) => Validated[ExpressionParseError, Any]]
-  )(implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingR[CollectedTypingResult] = {
-    typeChildren(validationContext, node, current) {
-      case left :: right :: Nil
-          if left.canBeLooselyAssignedTo(Typed[Number]) && right.canBeLooselyAssignedTo(Typed[Number]) =>
-        val fallback = numberPromotionStrategy.promote(left, right)
-        op
-          .map(operationOnTypesValue[Number, Number, Any](left, right, fallback)(_))
-          .getOrElse(valid(fallback))
-      case left :: right :: Nil =>
-        val fallback = CommonSupertypeFinder.Default.commonSupertype(left, right).withoutValue
-        invalid(OperatorMismatchTypeError(node.getOperatorName, left, right), fallbackType = fallback)
-      case _ =>
-        invalid(BadOperatorConstructionError(node.getOperatorName)) // shouldn't happen
-    }
-  }
-
-  private def checkSingleOperandArithmeticOperation(
-      validationContext: ValidationContext,
-      node: Operator,
-      current: TypingContext
-  )(op: Number => Any): TypingR[CollectedTypingResult] = {
-    typeChildren(validationContext, node, current) {
-      case left :: Nil if left.canBeLooselyAssignedTo(Typed[Number]) =>
-        val result = operationOnTypesValue[Number, Any](left)(op).getOrElse(left.withoutValue)
-        valid(result)
-      case left :: Nil =>
-        invalid(OperatorNonNumericError(node.getOperatorName, left), fallbackType = left)
-      case _ =>
-        invalid(BadOperatorConstructionError(node.getOperatorName)) // shouldn't happen
-    }
-  }
-
-  private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
-    case u: Unknown =>
-      val w = Writer.value[List[ExpressionParseError], TypingResult](u)
-      if (anyMethodExecutionForUnknownAllowed) {
-        w
-      } else {
-        // we allow some methods to be used on unknown
-        unknownPropertyTypeBasedOnMethod(e, u)
-          .map(valid)
-          .getOrElse(w.tell(List(IllegalPropertyAccessError(u))))
-      }
-    case TypedNull =>
-      invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)
-    case s: SingleTypingResult =>
-      extractSingleProperty(e)(s)
-    case union: TypedUnion =>
-      val l = union.possibleTypes
-        .map(single => extractSingleProperty(e)(single))
-        .filter(_.written.isEmpty)
-        .map(_.value)
-      NonEmptyList
-        .fromList(l)
-        .map(nel => valid(Typed(nel)))
-        .getOrElse(invalid(NoPropertyError(t, e.getName)))
-  }
-
-  private def extractMethodReference(
-      reference: MethodReference,
-      validationContext: ValidationContext,
-      node: SpelNode,
-      context: TypingContext
-  ): TypingR[CollectedTypingResult] = {
-    (context.stack match {
-      case head :: tail =>
-        valid((head, tail))
-      case Nil =>
-        invalid(InvalidMethodReference(reference.toStringAST))
-          .map(TypingResultWithContext(_))
-          .map((_, context.stack))
-    }).flatMap { case (head, tail) =>
-      typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-        methodReferenceTyper.typeMethodReference(
-          typer.MethodReference(head.typingResult, head.staticContext, reference.getName, typedParams)
-        ) match {
-          case Right(x)                         => valid(x)
-          case Left(x) if strictMethodsChecking => invalid(x)
-          case Left(_)                          => valid(Unknown)
-        }
-      }
-    }
-  }
-
-  @tailrec
-  private def extractSingleProperty(e: PropertyOrFieldReference)(t: SingleTypingResult): TypingR[TypingResult] = {
-    t match {
-      case typedObjectWithData: TypedObjectWithData =>
-        extractSingleProperty(e)(typedObjectWithData.runtimeObjType)
-      case typedClass: TypedClass =>
-        propertyTypeBasedOnMethod(typedClass, typedClass, e)
-          .orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
-          .map(valid)
-          .getOrElse(invalid(NoPropertyError(t, e.getName)))
-      case recordType @ TypedObjectTypingResult(fields, objType, _) =>
-        val typeBasedOnFields = fields.get(e.getName)
-        typeBasedOnFields
-          .orElse(propertyTypeBasedOnMethod(objType, recordType, e))
-          .map(valid)
-          .getOrElse(invalid(NoPropertyError(t, e.getName)))
-      case dict: TypedDict =>
-        dictTyper.typeDictValue(dict, e)
-    }
-  }
+  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference, u: Unknown): Option[TypingResult] =
+    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(u, e.getName))
 
   private def propertyTypeBasedOnMethod(
       clazz: TypedClass,
@@ -694,57 +777,6 @@ private[spel] class Typer(
       e: PropertyOrFieldReference
   ) = {
     classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
-  }
-
-  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference, u: Unknown): Option[TypingResult] =
-    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(u, e.getName))
-
-  // It returns iterative type and type after conversion if it was necessary
-  private def extractIterativeType(collectionType: TypingResult): TypingR[(TypingResult, TypingResult)] = {
-    val collectionResult = Option(collectionType).collect {
-      case tc: SingleTypingResult
-          if tc.runtimeObjType.canBeStrictlyAssignedTo(Typed[java.util.Collection[_]]) ||
-            tc.runtimeObjType.klass.isArray =>
-        // For Collection and array we don't do the conversion - so we return input collectionType instead
-        valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown), collectionType)
-    }
-    lazy val mapResult: Option[TypingR[(TypingResult, TypingResult)]] = AssignabilityDeterminer
-      .typeAfterPotentialConversion(collectionType, Typed[java.util.Map[_, _]])(ConversionStrategy.Loose)
-      .toOption
-      .collect { case singleTypeAfterPotentialConversion: SingleTypingResult =>
-        (singleTypeAfterPotentialConversion.runtimeObjType, singleTypeAfterPotentialConversion)
-      }
-      .collect { case (TypedClass(_, keyParam :: valueParam :: Nil), typeAfterPotentialConversion) =>
-        valid(
-          (
-            Typed.record(
-              Map(
-                "key"   -> keyParam,
-                "value" -> valueParam
-              )
-            ),
-            typeAfterPotentialConversion
-          )
-        )
-      }
-    collectionResult orElse mapResult getOrElse (collectionType match {
-      case tc: SingleTypingResult =>
-        invalid(IllegalProjectionSelectionError(tc)).map((_, collectionType))
-      // FIXME: what if more results are present?
-      case _ => valid((Unknown, collectionType))
-    })
-  }
-
-  private def projectionResult(iterableType: TypingResult, elementType: TypingResult): TypingR[TypingResult] =
-    iterableType.withoutValue match {
-      case tc: TypedClass if tc.klass.isArray => valid(Typed.genericTypeClass(tc.klass, List(elementType)))
-      case _                                  => valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
-    }
-
-  private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(
-      result: TypingResult
-  ): TypingR[CollectedTypingResult] = {
-    typeChildren(validationContext, node, current)(_ => valid(result))
   }
 
   private def typeChildren(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(
@@ -772,9 +804,11 @@ private[spel] class Typer(
   }
 
   private def mapErrorAndCheckMethodsIfPropertyNotExists(typing: TypingR[TypingResult]): TypingR[TypingResult] =
-    typing.mapWritten(_.map {
+    typing.mapWritten(_.map(_.mapError {
       case e: NoPropertyError =>
-        methodReferenceTyper.typeMethodReference(typer.MethodReference(e.typ, false, e.property, Nil)) match {
+        methodReferenceTyper.typeMethodReference(
+          typer.MethodReference(e.typ, isStatic = false, e.property, Nil)
+        ) match {
           // Right is not mapped because of: pl.touk.nussknacker.engine.spel.Typer.propertyTypeBasedOnMethod and
           // pl.touk.nussknacker.engine.spel.internal.propertyAccessors.NoParamMethodPropertyAccessor
           // Methods without parameters can be treated as properties.
@@ -782,12 +816,9 @@ private[spel] class Typer(
           case _                           => e
         }
       case e => e
-    })
+    }))
 
-  private def valid[T](value: T): TypingR[T] = Writer(List.empty[ExpressionParseError], value)
-
-  private def invalid[T](err: ExpressionParseError, fallbackType: TypingResult = Unknown): TypingR[TypingResult] =
-    Writer(List(err), fallbackType)
+  private def valid[T](value: T): TypingR[T] = Writer(List.empty[SpelExpressionTypingErrorWithTextRange], value)
 
   def withDictTyper(dictTyper: SpelDictTyper) =
     new Typer(

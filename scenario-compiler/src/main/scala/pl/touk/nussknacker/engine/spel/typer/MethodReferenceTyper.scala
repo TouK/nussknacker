@@ -2,16 +2,19 @@ package pl.touk.nussknacker.engine.spel.typer
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
+  ArgumentTypeError,
+  OverloadedFunctionError,
+  SpelExpressionTypingError
+}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError.IllegalInvocationError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError.UnknownMethodError
 
 class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecutionForUnknownAllowed: Boolean) {
 
-  def typeMethodReference(reference: MethodReference): Either[ExpressionParseError, TypingResult] = {
+  def typeMethodReference(reference: MethodReference): Either[SpelExpressionTypingError, TypingResult] = {
     implicit val implicitReference: MethodReference = reference
     reference.invocationTarget match {
       case tc: SingleTypingResult =>
@@ -34,7 +37,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
 
   private def typeFromClazzDefinitions(
       clazzDefinitions: List[ClassDefinition]
-  )(implicit reference: MethodReference): Either[ExpressionParseError, TypingResult] = {
+  )(implicit reference: MethodReference): Either[SpelExpressionTypingError, TypingResult] = {
     val validatedType = for {
       nonEmptyClassDefinitions     <- validateClassDefinitionsNonEmpty(clazzDefinitions)
       nonEmptyMethods              <- validateMethodsNonEmpty(nonEmptyClassDefinitions)
@@ -53,13 +56,13 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
 
   private def validateClassDefinitionsNonEmpty(
       clazzDefinitions: List[ClassDefinition]
-  ): Either[Option[ExpressionParseError], NonEmptyList[ClassDefinition]] = {
+  ): Either[Option[SpelExpressionTypingError], NonEmptyList[ClassDefinition]] = {
     NonEmptyList.fromList(clazzDefinitions).map(nel => Right(nel)).getOrElse(Left(None))
   }
 
   private def validateMethodsNonEmpty(
       clazzDefinitions: NonEmptyList[ClassDefinition]
-  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], NonEmptyList[MethodDefinition]] = {
+  )(implicit reference: MethodReference): Either[Option[SpelExpressionTypingError], NonEmptyList[MethodDefinition]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).toList.mkString(", ")
 
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeLooselyAssignedTo(Typed[Class[_]]))
@@ -77,7 +80,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
 
   private def validateMethodParameterTypes(
       methods: NonEmptyList[MethodDefinition]
-  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], NonEmptyList[TypingResult]] = {
+  )(implicit reference: MethodReference): Either[Option[SpelExpressionTypingError], NonEmptyList[TypingResult]] = {
     // We combine MethodDefinition with errors so we can use it to decide which
     // error to display.
     val methodDefsWithValidationResults =
@@ -89,8 +92,8 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
       .map(x => x.map(NonEmptyList.one))
       .reduce(
         (
-            x: ValidatedNel[(MethodDefinition, ExpressionParseError), NonEmptyList[TypingResult]],
-            y: ValidatedNel[(MethodDefinition, ExpressionParseError), NonEmptyList[TypingResult]]
+            x: ValidatedNel[(MethodDefinition, SpelExpressionTypingError), NonEmptyList[TypingResult]],
+            y: ValidatedNel[(MethodDefinition, SpelExpressionTypingError), NonEmptyList[TypingResult]]
         ) =>
           (x, y) match {
             case (Valid(xs), Valid(ys))     => Valid(xs ::: ys)
@@ -115,7 +118,9 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
   // then we return GenericFunctionError. All regular functions return
   // only ArgumentTypeError, so we will lose information about errors
   // only when there is more than one generic function.
-  private def combineErrors(errors: NonEmptyList[(MethodDefinition, ExpressionParseError)]): ExpressionParseError =
+  private def combineErrors(
+      errors: NonEmptyList[(MethodDefinition, SpelExpressionTypingError)]
+  ): SpelExpressionTypingError =
     errors match {
       case xs if xs.forall(_._2.isInstanceOf[ArgumentTypeError]) =>
         xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(combineArgumentTypeErrors)

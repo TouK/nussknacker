@@ -1869,7 +1869,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 Some("expression"),
                 NodeValidationErrorType.SaveAllowed,
-                None
+                _
               )
             )
           ) =>

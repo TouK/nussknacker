@@ -11,7 +11,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Expression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   CellError,
   ColumnDefinition,
-  TabularDataDefinitionParserErrorDetails
+  CoordinatesBasedTextRange,
+  TabularDataDefinitionParserErrorDetails,
+  TextCoordinates
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -98,17 +100,16 @@ trait DecisionTableSpec
           )
         )
         inside(result) { case Validated.Invalid(errors) =>
-          errors should be(
-            NonEmptyList.one(
-              ExpressionParserCompilationError(
-                message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
-                nodeId = "decision-table",
-                paramName = Some(ParameterName("Match condition")),
-                originalExpr = "#ROW['years'] > #input.minAge",
-                details = None
-              )
-            )
-          )
+          errors.toList should matchPattern {
+            case ExpressionParserCompilationError(
+                  "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
+                  "decision-table",
+                  Some(ParameterName("Match condition")),
+                  "#ROW['years'] > #input.minAge",
+                  _
+                ) :: Nil =>
+          }
+
         }
       }
       "type of the accessed column is wrong" in {
@@ -129,7 +130,7 @@ trait DecisionTableSpec
                 nodeId = "decision-table",
                 paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['name'] > #input.minAge",
-                details = None
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(13, 0), TextCoordinates(14, 0)))
               )
             )
           )
@@ -191,7 +192,7 @@ trait DecisionTableSpec
                 nodeId = "decision-table",
                 paramName = Some(ParameterName("Match condition")),
                 originalExpr = """#ROW.age > #input.minAge && #ROW.name == "John"""",
-                details = None
+                details = Some(CoordinatesBasedTextRange(TextCoordinates(38, 0), TextCoordinates(40, 0)))
               )
             )
           )

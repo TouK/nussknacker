@@ -2,13 +2,15 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.NonEmptyList
 import org.springframework.expression.spel.SpelNode
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Signature}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.CoordinatesBasedTextRange
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
+import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SpelExpressionTypingParseError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SpelExpressionTypingError
 
-object SpelExpressionParseError {
-  trait SelectionProjectionError extends ExpressionParseError
+object SpelExpressionTypingError {
+  trait SelectionProjectionError extends SpelExpressionTypingError
 
   object SelectionProjectionError {
 
@@ -26,7 +28,29 @@ object SpelExpressionParseError {
 
   }
 
-  trait UnsupportedOperationError extends ExpressionParseError
+  case class SpelExpressionTypingErrorWithTextRange(
+      error: SpelExpressionTypingError,
+      textRange: IndexBasedTextRange
+  ) {
+
+    def mapError(
+        f: SpelExpressionTypingError => SpelExpressionTypingError
+    ): SpelExpressionTypingErrorWithTextRange = copy(error = f(error))
+
+    def shiftTextRangeRight(delta: Int): SpelExpressionTypingErrorWithTextRange =
+      copy(textRange = textRange.shiftRight(delta))
+
+    def toParseError(expression: String): SpelExpressionParseError = {
+      SpelExpressionTypingParseError(error, textRange.toCoordinatesBasedTextRange(expression))
+    }
+
+  }
+
+  trait SpelExpressionTypingError {
+    def message: String
+  }
+
+  trait UnsupportedOperationError extends SpelExpressionTypingError
 
   object UnsupportedOperationError {
 
@@ -52,7 +76,7 @@ object SpelExpressionParseError {
 
   }
 
-  trait DictError extends ExpressionParseError {
+  trait DictError extends SpelExpressionTypingError {
 
     protected def formatStringList(elems: List[String]): String = {
       val maxStringListLength = 3
@@ -98,7 +122,7 @@ object SpelExpressionParseError {
 
   }
 
-  trait MissingObjectError extends ExpressionParseError
+  trait MissingObjectError extends SpelExpressionTypingError
 
   object MissingObjectError {
 
@@ -133,7 +157,7 @@ object SpelExpressionParseError {
 
   }
 
-  trait IllegalOperationError extends ExpressionParseError
+  trait IllegalOperationError extends SpelExpressionTypingError
 
   object IllegalOperationError {
 
@@ -182,7 +206,7 @@ object SpelExpressionParseError {
 
   }
 
-  trait OperatorError extends ExpressionParseError
+  trait OperatorError extends SpelExpressionTypingError
 
   object OperatorError {
 
@@ -233,12 +257,12 @@ object SpelExpressionParseError {
       expression.substring(1, expression.length - 1)
   }
 
-  object OverloadedFunctionError extends ExpressionParseError {
+  object OverloadedFunctionError extends SpelExpressionTypingError {
     override def message: String = "Could not match any overloaded method"
   }
 
   case class ArgumentTypeError(name: String, found: Signature, possibleSignatures: NonEmptyList[Signature])
-      extends ExpressionParseError {
+      extends SpelExpressionTypingError {
 
     override def message: String =
       s"Mismatch parameter types. Found: ${found
@@ -246,30 +270,35 @@ object SpelExpressionParseError {
 
   }
 
-  case class GenericFunctionError(messageInner: String) extends ExpressionParseError {
+  case class GenericFunctionError(messageInner: String) extends SpelExpressionTypingError {
     override def message: String = messageInner
   }
 
-  case object PartTypeError extends ExpressionParseError {
+  case object PartTypeError extends SpelExpressionTypingError {
     override def message: String = "Wrong part types"
   }
 
-  case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends ExpressionParseError {
+  case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends SpelExpressionTypingError {
     override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
   }
 
-  case class ExpressionCompilationError(message: String) extends ExpressionParseError
+}
 
-  case class KeyWithLabelExpressionParsingError(keyWithLabel: String, message: String) extends ExpressionParseError {
+sealed trait SpelExpressionParseError extends ExpressionParseError
 
-    def toProcessCompilationError(
-        nodeId: String,
-        paramName: ParameterName
-    ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
-      ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, nodeId)
+object SpelExpressionParseError {
 
+  case class SpelExpressionUnderlyingParserError(
+      message: String,
+      override val details: Option[CoordinatesBasedTextRange]
+  ) extends SpelExpressionParseError
+
+  case class SpelExpressionTypingParseError(
+      underlyingError: SpelExpressionTypingError,
+      textRange: CoordinatesBasedTextRange
+  ) extends SpelExpressionParseError {
+    override def message: String                            = underlyingError.message
+    override def details: Option[CoordinatesBasedTextRange] = Some(textRange)
   }
-
-  case class JsonParsingError(message: String) extends ExpressionParseError
 
 }

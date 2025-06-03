@@ -6,10 +6,10 @@ object ExpressionSubstitutor {
     if (substitutions.isEmpty) {
       expression
     } else {
-      val sortedDesc = substitutions.sortBy(_.position.start).reverse
+      val sortedDesc = substitutions.sortBy(_.textRange.start).reverse
       sortedDesc
         .foldLeft(new StringBuilder(expression)) { (prev, sub) =>
-          prev.replace(sub.position.start, sub.position.end, sub.replacement)
+          prev.replace(sub.textRange.start, sub.textRange.end, sub.replacement)
         }
         .toString()
     }

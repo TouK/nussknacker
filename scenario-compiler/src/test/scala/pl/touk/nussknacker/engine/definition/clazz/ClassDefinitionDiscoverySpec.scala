@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.{createDiscovery, DefaultExtractor}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.util

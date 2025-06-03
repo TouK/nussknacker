@@ -139,7 +139,7 @@ class LiteRequestResponseFunctionalTest
     result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(message, `sinkName`, Some(ParameterName("field")), _, None),
+              ExpressionParserCompilationError(message, `sinkName`, Some(ParameterName("field")), _, _),
               Nil
             )
           ) if message.startsWith("Bad expression type") =>

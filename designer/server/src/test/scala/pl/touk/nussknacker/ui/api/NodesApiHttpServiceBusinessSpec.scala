@@ -242,7 +242,17 @@ class NodesApiHttpServiceBusinessSpec
              |      "description": "There is problem with expression in field Some($$expression) - it could not be parsed.",
              |      "fieldName": "$$expression",
              |      "errorType": "SaveAllowed",
-             |      "details": null
+             |      "details": {
+             |        "start": {
+             |          "column": 0,
+             |          "row": 0
+             |        },
+             |        "end": {
+             |          "column": 15,
+             |          "row": 0
+             |        },
+             |        "type": "CoordinatesBasedTextRange"
+             |      }
              |    }
              |  ],
              |  "validationPerformed": true
@@ -383,7 +393,17 @@ class NodesApiHttpServiceBusinessSpec
              |      "description": "There is problem with expression in field Some(Value) - it could not be parsed.",
              |      "fieldName": "Value",
              |      "errorType": "SaveAllowed",
-             |      "details": null
+             |      "details": {
+             |        "start": {
+             |          "column": 0,
+             |          "row": 0
+             |        },
+             |        "end": {
+             |          "column": 22,
+             |          "row": 0
+             |        },
+             |        "type": "CoordinatesBasedTextRange"
+             |      }
              |    }
              |  ],
              |  "validationPerformed": true
@@ -799,7 +819,17 @@ class NodesApiHttpServiceBusinessSpec
              |    "description": "There is problem with expression in field Some(condition) - it could not be parsed.",
              |    "fieldName": "condition",
              |    "errorType": "SaveAllowed",
-             |    "details": null
+             |    "details": {
+             |      "start": {
+             |        "column": 0,
+             |        "row": 0
+             |      },
+             |      "end": {
+             |        "column": 13,
+             |        "row": 0
+             |      },
+             |      "type": "CoordinatesBasedTextRange"
+             |    }
              |  } ],
              |  "validationPerformed": true
              |}""".stripMargin)
