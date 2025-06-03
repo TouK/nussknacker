@@ -36,6 +36,7 @@ import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
+import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
 import { GraphPage } from "./Page";
 import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
@@ -100,18 +101,6 @@ function useCountsIfNeeded() {
         );
     }, [dispatch, from, refresh, scenario, scenarioGraph, to]);
 }
-
-// function useLiveDataIfNeeded() {
-//     const dispatch = useDispatch();
-//     const readyForResults = useSelector(isReadyForLiveData);
-//     useEffect(() => {
-//         if (readyForResults) {
-//             dispatch(fetchAndDisplayLiveData());
-//         } else {
-//             dispatch(stopLiveData());
-//         }
-//     }, [dispatch, readyForResults]);
-// }
 
 function useVersionSwitchIfNeeded(processName: string, version: string) {
     const isLatestVersion = useSelector(isLatestProcessVersion);
@@ -194,7 +183,7 @@ function Visualization() {
 
     useProcessState();
     useCountsIfNeeded();
-    // useLiveDataIfNeeded();
+    useLiveDataIfNeeded();
     // useVersionSwitchIfNeeded(processName, version);
 
     const { openNodes } = useModalDetailsIfNeeded();

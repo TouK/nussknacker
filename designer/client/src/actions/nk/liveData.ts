@@ -24,9 +24,9 @@ function displayLiveData(results: ResultsWithCountsDto, refresh?: RefreshData): 
 }
 
 const MIN_REFRESH_TIME = 500;
-let refreshTimeout: NodeJS.Timeout;
+let refreshTimeout;
 
-export const stopLiveData = (): ThunkAction => (dispatch, getState) => {
+export const stopLiveData = (): ThunkAction => (dispatch) => {
     dispatch({ type: "LIVE_DATA_STOP" });
     clearTimeout(refreshTimeout);
 };
