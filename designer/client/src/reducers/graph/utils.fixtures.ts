@@ -669,7 +669,7 @@ export const state: GraphState = {
         testWithParameters: {
             status: TestCapabilityStatus.NOT_AVAILABLE,
         },
-        testWithGeneratedData: {
+        testWithLiveData: {
             status: TestCapabilityStatus.NOT_AVAILABLE,
         },
     },

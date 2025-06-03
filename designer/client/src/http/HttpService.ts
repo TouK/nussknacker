@@ -856,7 +856,7 @@ class HttpService {
                   sourceParameters: SourceWithParametersTest;
               }
             | {
-                  type: "WITH_GENERATED_DATA";
+                  type: "WITH_LIVE_DATA";
                   numberOfSamples: number;
               },
     ) {

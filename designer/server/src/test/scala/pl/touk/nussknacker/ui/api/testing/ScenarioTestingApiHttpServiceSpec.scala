@@ -104,6 +104,9 @@ trait ScenarioTestingApiHttpServiceSpec
              |    },
              |    "testWithGeneratedData": {
              |      "status": "AVAILABLE"
+             |    },
+             |    "testWithLiveData": {
+             |      "status": "AVAILABLE"
              |    }
              |}""".stripMargin
         )
@@ -126,6 +129,10 @@ trait ScenarioTestingApiHttpServiceSpec
              |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
              |    },
              |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
+             |    },
+             |    "testWithLiveData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
              |    }
@@ -277,6 +284,10 @@ trait ScenarioTestingApiHttpServiceSpec
              |    "testWithGeneratedData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason":"NOT_SUPPORTED_BY_SOURCES"
+             |    },
+             |    "testWithLiveData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
              |    }
              |}""".stripMargin
         )
@@ -344,6 +355,10 @@ trait ScenarioTestingApiHttpServiceSpec
              |      "sourceParameters": $expectedTestParameters
              |    },
              |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
+             |    },
+             |    "testWithLiveData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason":"NOT_SUPPORTED_BY_SOURCES"
              |    }
@@ -463,14 +478,16 @@ trait ScenarioTestingApiHttpServiceSpec
         .basicAuthAllPermUser()
         .jsonBody(
           ScenarioTestValidationRequest(
-            testData = ScenarioTestData.WithGeneratedData(0),
+            testData = ScenarioTestData.WithLiveData(0),
             scenarioGraph = toScenarioGraph(exampleScenario)
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
+        .equalsPlainBody(
+          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
+        )
     }
   }
 

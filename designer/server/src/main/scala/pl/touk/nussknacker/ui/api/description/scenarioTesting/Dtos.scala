@@ -42,7 +42,9 @@ object Dtos {
 
     final case class ScenarioTestCapabilities(
         testWithParameters: CapabilityStatus[TestWithParametersDetails],
+        // TODO: legacy: to be removed
         testWithGeneratedData: CapabilityStatus[EmptyDetails],
+        testWithLiveData: CapabilityStatus[EmptyDetails],
     )
 
     object ScenarioTestCapabilities {
@@ -50,11 +52,11 @@ object Dtos {
       implicit def schema: Schema[ScenarioTestCapabilities]     = Schema.derived
     }
 
-    sealed trait CapabilityStatus[T <: TestCapabilityDetails]
+    sealed trait CapabilityStatus[+T <: TestCapabilityDetails]
 
     object CapabilityStatus {
-      final case class NotAvailable[T <: TestCapabilityDetails](reason: NotAvailableReason) extends CapabilityStatus[T]
-      final case class Available[T <: TestCapabilityDetails](data: T)                       extends CapabilityStatus[T]
+      final case class NotAvailable(reason: NotAvailableReason)       extends CapabilityStatus[Nothing]
+      final case class Available[T <: TestCapabilityDetails](data: T) extends CapabilityStatus[T]
       def available: Available[EmptyDetails] = Available(EmptyDetails())
 
       implicit def codec[DATA <: TestCapabilityDetails: circe.Codec]: circe.Codec[CapabilityStatus[DATA]] =
@@ -64,7 +66,7 @@ object Dtos {
               statusStr <- c.downField("status").as[String]
               status <- statusStr match {
                 case "NOT_AVAILABLE" =>
-                  c.downField("reason").as[NotAvailableReason].map(CapabilityStatus.NotAvailable[DATA](_))
+                  c.downField("reason").as[NotAvailableReason].map(CapabilityStatus.NotAvailable)
                 case "AVAILABLE" =>
                   c.as[DATA].map(CapabilityStatus.Available.apply)
               }
@@ -152,10 +154,10 @@ object Dtos {
 
   }
 
-  object GeneratedTestData {
+  object LiveDataFetching {
 
     @derive(schema, encoder, decoder)
-    final case class GeneratedTestDataRequest(
+    final case class FetchSourcesLiveDataRequest(
         scenarioGraph: ScenarioGraph,
         numberOfSamples: Int,
     )
@@ -166,11 +168,14 @@ object Dtos {
 
   object ScenarioTestData {
 
+    // TODO: legacy: to be removed
+    private val legacyLiveDataType = "WITH_GENERATED_DATA"
+
     final case class WithParameters(
         sourceParameters: TestSourceParameters,
     ) extends ScenarioTestData
 
-    final case class WithGeneratedData(
+    final case class WithLiveData(
         numberOfSamples: Int,
     ) extends ScenarioTestData
 
@@ -181,8 +186,8 @@ object Dtos {
           testData <- typeStr match {
             case "WITH_PARAMETERS" =>
               c.downField("sourceParameters").as[TestSourceParameters].map(WithParameters.apply)
-            case "WITH_GENERATED_DATA" =>
-              c.downField("numberOfSamples").as[Int].map(WithGeneratedData.apply)
+            case `legacyLiveDataType` | "WITH_LIVE_DATA" =>
+              c.downField("numberOfSamples").as[Int].map(WithLiveData.apply)
           }
         } yield testData
       ),
@@ -192,9 +197,9 @@ object Dtos {
             ("type", "WITH_PARAMETERS".asJson),
             ("sourceParameters", sourceParameters.asJson),
           )
-        case WithGeneratedData(numberOfSamples) =>
+        case WithLiveData(numberOfSamples) =>
           Json.obj(
-            ("type", "WITH_GENERATED_DATA".asJson),
+            ("type", "WITH_LIVE_DATA".asJson),
             ("numberOfSamples", numberOfSamples.asJson),
           )
       }
@@ -286,9 +291,9 @@ object Dtos {
           case ScenarioGraphValidationError(errors) =>
             errors.toHumanReadableMessage
           case TooManyCharactersGenerated(length, limit) =>
-            TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
+            TestingApiErrorMessages.fetchedLiveData.tooManyCharacters(length, limit)
           case TooManySamplesRequested(maxSamples) =>
-            TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
+            TestingApiErrorMessages.fetchedLiveData.requestedTooManySamplesToFetch(maxSamples)
           case UnsupportedOperation(message) =>
             message
           case ErrorResult(message) =>
@@ -302,15 +307,15 @@ object Dtos {
 
     object NotFoundTestingError {
       final case class NoScenario(scenarioName: ProcessName) extends NotFoundTestingError
-      final case object NoDataGenerated                      extends NotFoundTestingError
-      final case object NoSourcesWithTestDataGeneration      extends NotFoundTestingError
+      final case object NoLiveDataAvailable                  extends NotFoundTestingError
+      final case object NoSourcesWithLiveDataFetchingSupport extends NotFoundTestingError
 
       implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
           case NoScenario(scenarioName) => s"No scenario ${scenarioName.value} found"
-          case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
-          case NoSourcesWithTestDataGeneration =>
-            TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
+          case NoLiveDataAvailable      => TestingApiErrorMessages.fetchedLiveData.noLiveDataAvailable
+          case NoSourcesWithLiveDataFetchingSupport =>
+            TestingApiErrorMessages.fetchedLiveData.noSourcesWithTestDataGeneration
         }
       }
 

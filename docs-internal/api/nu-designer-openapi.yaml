@@ -2323,9 +2323,9 @@ paths:
                   summary: No scenario found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No test data generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4744,6 +4744,8 @@ paths:
                       status: AVAILABLE
                     testWithGeneratedData:
                       status: AVAILABLE
+                    testWithLiveData:
+                      status: AVAILABLE
         '400':
           description: ''
           content:
@@ -4801,9 +4803,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4924,9 +4926,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4967,7 +4969,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GeneratedTestDataRequest'
+              $ref: '#/components/schemas/FetchSourcesLiveDataRequest'
         required: true
       responses:
         '200':
@@ -5037,9 +5039,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -5189,9 +5191,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -5371,7 +5373,7 @@ components:
       title: CapabilityStatus_T
       oneOf:
       - $ref: '#/components/schemas/Available_T'
-      - $ref: '#/components/schemas/NotAvailable_T'
+      - $ref: '#/components/schemas/NotAvailable1'
     CaretPosition2d:
       title: CaretPosition2d
       type: object
@@ -5808,6 +5810,18 @@ components:
         name:
           type: string
         value: {}
+    FetchSourcesLiveDataRequest:
+      title: FetchSourcesLiveDataRequest
+      type: object
+      required:
+      - scenarioGraph
+      - numberOfSamples
+      properties:
+        scenarioGraph:
+          type: object
+        numberOfSamples:
+          type: integer
+          format: int32
     Field:
       title: Field
       type: object
@@ -5946,18 +5960,6 @@ components:
           type: string
         nodeId:
           type: string
-    GeneratedTestDataRequest:
-      title: GeneratedTestDataRequest
-      type: object
-      required:
-      - scenarioGraph
-      - numberOfSamples
-      properties:
-        scenarioGraph:
-          type: object
-        numberOfSamples:
-          type: integer
-          format: int32
     GetDeploymentStatusResponse:
       title: GetDeploymentStatusResponse
       type: object
@@ -6887,6 +6889,14 @@ components:
         status:
           type: string
           const: NOT_AVAILABLE
+    NotAvailable1:
+      title: NotAvailable
+      type: object
+      required:
+      - reason
+      properties:
+        reason:
+          $ref: '#/components/schemas/NotAvailableReason'
     NotAvailableReason:
       title: NotAvailableReason
       oneOf:
@@ -6894,14 +6904,6 @@ components:
       - $ref: '#/components/schemas/NoSources'
       - $ref: '#/components/schemas/NotSupportedBySources'
       - $ref: '#/components/schemas/UserDoesNotHavePermission'
-    NotAvailable_T:
-      title: NotAvailable_T
-      type: object
-      required:
-      - reason
-      properties:
-        reason:
-          $ref: '#/components/schemas/NotAvailableReason'
     NotSupportedBySources:
       title: NotSupportedBySources
       type: object
@@ -7440,15 +7442,18 @@ components:
       required:
       - testWithParameters
       - testWithGeneratedData
+      - testWithLiveData
       properties:
         testWithParameters:
           $ref: '#/components/schemas/CapabilityStatus_T'
         testWithGeneratedData:
           $ref: '#/components/schemas/CapabilityStatus_T'
+        testWithLiveData:
+          $ref: '#/components/schemas/CapabilityStatus_T'
     ScenarioTestData:
       title: ScenarioTestData
       oneOf:
-      - $ref: '#/components/schemas/WithGeneratedData'
+      - $ref: '#/components/schemas/WithLiveData'
       - $ref: '#/components/schemas/WithParameters'
     ScenarioTestValidationRequest:
       title: ScenarioTestValidationRequest
@@ -8137,8 +8142,8 @@ components:
           $ref: '#/components/schemas/NodeTypes14'
         varName:
           type: string
-    WithGeneratedData:
-      title: WithGeneratedData
+    WithLiveData:
+      title: WithLiveData
       type: object
       required:
       - numberOfSamples

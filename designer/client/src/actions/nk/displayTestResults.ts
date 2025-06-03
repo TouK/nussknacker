@@ -34,7 +34,7 @@ export function testProcessWithParameters(sourceParameters: SourceWithParameters
 export function testScenarioWithGeneratedData(testSampleSize: string): ThunkAction {
     return wrapWithTestAction((processName, scenarioGraph) =>
         HttpService.testScenario(processName, scenarioGraph, {
-            type: "WITH_GENERATED_DATA",
+            type: "WITH_LIVE_DATA",
             numberOfSamples: parseInt(testSampleSize),
         }).then(({ data }) => ({
             testResults: data,

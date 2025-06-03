@@ -72,7 +72,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
-  NoDataGenerated,
+  NoLiveDataAvailable,
   NoProcessingType,
   NoScenario
 }
@@ -446,8 +446,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     value = NoScenario(ProcessName("'example scenario'"))
                   ),
                   Example.of(
-                    summary = Some("No test data generated"),
-                    value = NoDataGenerated
+                    summary = Some("No live test data available"),
+                    value = NoLiveDataAvailable
                   )
                 )
               )
@@ -1579,10 +1579,10 @@ object NodesApiEndpoints {
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
             case TooManySamplesRequested(maxSamples) =>
-              TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
+              TestingApiErrorMessages.fetchedLiveData.requestedTooManySamplesToFetch(maxSamples)
             case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
-              TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
+              TestingApiErrorMessages.fetchedLiveData.tooManyCharacters(length, limit)
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -1595,13 +1595,13 @@ object NodesApiEndpoints {
 
       object NotFoundNodesError {
         case class NoScenario(scenarioName: ProcessName)            extends NotFoundNodesError
-        case object NoDataGenerated                                 extends NotFoundNodesError
+        case object NoLiveDataAvailable                             extends NotFoundNodesError
         case class NoProcessingType(processingType: ProcessingType) extends NotFoundNodesError
 
         implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
-            case NoScenario(scenarioName) => s"No scenario ${scenarioName} found"
-            case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
+            case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
+            case NoLiveDataAvailable              => TestingApiErrorMessages.fetchedLiveData.noLiveDataAvailable
             case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
           }
 

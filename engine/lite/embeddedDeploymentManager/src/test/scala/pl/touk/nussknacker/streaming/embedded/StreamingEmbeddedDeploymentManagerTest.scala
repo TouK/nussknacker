@@ -221,7 +221,7 @@ class StreamingEmbeddedDeploymentManagerTest
     kafkaClient.sendMessage(inputTopic.name, message("2")).futureValue
 
     val processVersion      = ProcessVersion.empty.copy(processName = scenario.metaData.name)
-    val preliminaryTestData = testInfoProvider.generateTestData(processVersion, scenario, 2).rightValue
+    val preliminaryTestData = testInfoProvider.fetchSourcesLiveData(processVersion, scenario, 2).rightValue
 
     val testData = testInfoProvider.prepareTestData(preliminaryTestData, scenario).rightValue
     val results = wrapInFailingLoader {

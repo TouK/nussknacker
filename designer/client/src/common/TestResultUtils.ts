@@ -31,7 +31,7 @@ interface ExternalInvocationResult {
 
 export interface TestCapabilities {
     testWithParameters: TestWithParametersCapability;
-    testWithGeneratedData: GenericCapability;
+    testWithLiveData: GenericCapability;
 }
 
 export interface TestWithParametersCapability {
