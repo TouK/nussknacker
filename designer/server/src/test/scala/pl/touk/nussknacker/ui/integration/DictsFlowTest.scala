@@ -224,7 +224,7 @@ class DictsFlowTest
         |  "customNode" : [
         |    {
         |      "typ" : "EmptyMandatoryParameter",
-        |      "message" : "This field is mandatory and can not be empty",
+        |      "message" : "Field: RGBDict is mandatory and can not be empty",
         |      "description" : "Please fill field for this parameter",
         |      "fieldName" : "RGBDict",
         |      "errorType" : "SaveAllowed",
