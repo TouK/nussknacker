@@ -1,11 +1,5 @@
 import type { NodeId } from "../types";
 
-export type NodeTransitionThroughputDto = {
-    sourceNodeId: NodeId;
-    destinationNodeId?: NodeId | null;
-    throughput: number;
-};
-
 export interface Variable {
     original?: string;
     pretty: unknown;
@@ -37,6 +31,8 @@ export type NodeTransitionResult = {
     sourceNodeId: NodeId;
     destinationNodeId: NodeId | null;
     results: ResultContextJson[];
+    totalCount: number | null;
+    currentThroughput: number | null;
 };
 
 export interface TestResultsDto {
@@ -58,5 +54,4 @@ export type ProcessCounts = Record<string, NodeCounts>;
 export interface ResultsWithCountsDto {
     results: TestResultsDto;
     counts: ProcessCounts;
-    nodeTransitionThroughput?: NodeTransitionThroughputDto[] | null;
 }

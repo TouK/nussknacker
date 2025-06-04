@@ -34,7 +34,7 @@ const getInitialUserFlag = (flagName: SettingsNames, defaultValue = false): bool
 const getDefaultUserSettings = (): UserSettings => ({
     "node.showAggregateSwitcher": getInitialUserFlag("node.showAggregateSwitcher"),
     "node.shortCounts": getInitialUserFlag("node.shortCounts"),
-    "node.showInputsAndOutputs": getInitialUserFlag("node.showInputsAndOutputs"),
+    "node.showInputsAndOutputs": getInitialUserFlag("node.showInputsAndOutputs", true),
     "node.showFragmentCreator": getInitialUserFlag("node.showFragmentCreator"),
     "node.showGenerateEndpointButton": getInitialUserFlag("node.showGenerateEndpointButton"),
     "node.showSendRequestButton": getInitialUserFlag("node.showSendRequestButton"),
