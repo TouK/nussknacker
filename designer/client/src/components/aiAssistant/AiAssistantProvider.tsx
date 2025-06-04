@@ -47,13 +47,19 @@ async function* initializeChatStream(
         ThreadIdManager.THREAD_ID,
     );
 
+    if (!response.ok) {
+        console.error("Failed to fetch chat stream: ", response.statusText);
+        yield { type: "error" };
+        return;
+    }
+
     const reader = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream()).getReader();
 
     const abortHandler = () => {
         try {
             reader.cancel("Operation aborted");
         } catch (error) {
-            console.warn("Error canceling reader:", error);
+            console.warn("Error canceling reader: ", error);
         }
     };
 
@@ -72,7 +78,7 @@ async function* initializeChatStream(
                     yield { type: "aborted" };
                     break;
                 }
-                console.error("Error reading from chat stream: ", error);
+                console.error("Error while reading from chat stream: ", error);
                 yield { type: "error" };
             }
         }
@@ -116,7 +122,7 @@ const ModelAdapter: ChatModelAdapter = {
             } else if (event.type === "error") {
                 yield {
                     content: [{ type: "text", text }],
-                    status: { type: "incomplete", reason: "error", error: "Unexpected error, please try again." },
+                    status: { type: "incomplete", reason: "error", error: "An unexpected error occurred. Please try again." },
                 };
                 return;
             } else if (event.type === "unknown") {
