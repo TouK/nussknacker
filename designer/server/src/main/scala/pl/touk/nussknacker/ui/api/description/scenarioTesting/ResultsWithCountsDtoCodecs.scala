@@ -44,7 +44,7 @@ object ResultsWithCountsDtoCodecs {
           "nodeResults" -> nodeResults
             .map(_.map { case (node, list) => node -> list.sortBy(_.id) }.asJson)
             .getOrElse(Json.Null),
-          "nodeTransitionResults" -> nodeTransitionResults.asJson.dropNullValues,
+          "nodeTransitionResults" -> nodeTransitionResults.asJson.deepDropNullValues,
           "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
           "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId)
