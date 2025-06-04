@@ -72,7 +72,6 @@ async function* initializeChatStream(
                     yield { type: "aborted" };
                     break;
                 }
-
                 console.error("Error reading from chat stream: ", error);
                 yield { type: "error" };
             }
