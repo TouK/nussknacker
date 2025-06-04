@@ -14,6 +14,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.enumSchema
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity.AdditionalField
+import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.MediaType
 import sttp.tapir._
@@ -526,9 +527,10 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List.empty,
-      overrideDisplayableName = updatedVersionId(previousScenarioVersionId, scenarioVersionId).map(updatedVersion =>
-        s"Version $updatedVersion saved"
-      )
+      overrideDisplayableName = updatedVersionId(previousScenarioVersionId, scenarioVersionId).map {
+        case updatedVersion if isInternallyUpdatedByNussknacker(user) => s"(A) Version $updatedVersion saved"
+        case updatedVersion                                           => s"Version $updatedVersion saved"
+      }
     )
 
     private def updatedVersionId(oldVersionIdOpt: Option[Long], newVersionIdOpt: Option[Long]) = {
@@ -538,6 +540,9 @@ object Dtos {
         updatedVersionId <- if (newVersionId > oldVersionIdOrZero) Some(newVersionId) else None
       } yield updatedVersionId
     }
+
+    private def isInternallyUpdatedByNussknacker(user: String) =
+      user == NussknackerInternalUser.instance.username
 
     def forScenarioNameChanged(
         id: UUID,

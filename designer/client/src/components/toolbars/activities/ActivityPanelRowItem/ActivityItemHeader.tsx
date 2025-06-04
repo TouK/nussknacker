@@ -1,4 +1,5 @@
 import CircleIcon from "@mui/icons-material/Circle";
+import InfoIcon from "@mui/icons-material/Info";
 import { Button, styled, Tooltip, Typography } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
@@ -254,6 +255,7 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
     const isVersionSelected =
         ["AUTOMATIC_UPDATE", "INCOMING_MIGRATION", "SCENARIO_MODIFIED"].includes(activity.type) &&
         activity.scenarioVersionId === processVersionId;
+    const isInternallyUpdatedByNussknacker = activity.user === "Nussknacker" && activity.type === "SCENARIO_MODIFIED";
 
     const getHeaderTitle = useMemo(() => {
         const text = activity.overrideDisplayableName || activity.activities.displayableName;
@@ -262,6 +264,9 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
             ? t("activityItem.currentlyDeployedVersionText", "Currently deployed version")
             : isVersionSelected
             ? t("activityItem.currentlySelectedVersionText", "Currently selected version")
+            : undefined;
+        const tooltipText = isInternallyUpdatedByNussknacker
+            ? t("activityItem.automaticallyUpdatedActivity", "The scenario was automatically updated by Nussknacker")
             : undefined;
 
         const headerTitle = (
@@ -280,6 +285,11 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
                 >
                     {text}
                 </Typography>
+                {tooltipText && (
+                    <Tooltip title={tooltipText}>
+                        <InfoIcon sx={{ fontSize: "10px", mx: openVersionEnable && 1 }} color={"primary"} />
+                    </Tooltip>
+                )}
                 {activeItemIndicatorText && (
                     <Tooltip title={activeItemIndicatorText}>
                         <CircleIcon sx={{ fontSize: "10px", mx: openVersionEnable && 1 }} color={"primary"} />
@@ -308,6 +318,7 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
         openVersionEnable,
         searchQuery,
         t,
+        isInternallyUpdatedByNussknacker,
     ]);
 
     return (
