@@ -201,14 +201,14 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
 
     parsingErrors shouldBe NonEmptyList.of(
       JsonParseError(
-        "expected json value got '}' (line 3, column 1)",
+        "expected json value got '}'",
         Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
       )
     )
     parsingErrorsWithoutContext shouldBe
       NonEmptyList.of(
         JsonParseError(
-          "expected json value got '}' (line 3, column 1)",
+          "expected json value got '}'",
           Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
         )
       )
@@ -220,17 +220,17 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         ("Invalid json", "Error message", "Error details"),
         (
           """{ "products": #{#products} }""",
-          "expected json value got 'unquot...' (line 1, column 15)",
+          "expected json value got 'unquot...'",
           CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
         ),
         (
           """{"random text"}""",
-          "expected : got '}' (line 1, column 15)",
+          "expected : got '}'",
           CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
         ),
         (
           """{#{#products}}""",
-          "expected \" got 'unquot...' (line 1, column 2)",
+          "expected \" got 'unquot...'",
           CoordinatesBasedTextRange(TextCoordinates(1, 0), TextCoordinates(2, 0))
         ),
       )

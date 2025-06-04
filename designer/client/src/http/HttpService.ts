@@ -10,7 +10,6 @@ import type { GenericValidationRequest, TestAdhocValidationRequest } from "../ac
 import api from "../api";
 import type { UserData } from "../common/models/User";
 import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
-import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
@@ -33,11 +32,11 @@ import { API_URL } from "../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
-import type { ProcessCounts } from "../reducers/graph";
 import type { AuthenticationSettings } from "../reducers/settings";
 import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import type { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import type { ProcessCounts, ResultsWithCountsDto } from "./resultsWithCountsDto";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -148,11 +147,6 @@ export type NotificationActions = {
     error(message: string, error: string, showErrorText: boolean): void;
     warn(message: string): void;
 };
-
-export interface TestProcessResponse {
-    results: TestResults;
-    counts: ProcessCounts;
-}
 
 export interface PropertiesValidationRequest {
     name: string;
@@ -346,7 +340,11 @@ class HttpService {
     }
 
     fetchProcessState(processName: ProcessName, processVersionId: number) {
-        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status?currentlyPresentedVersionId=${processVersionId}`);
+        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status`, {
+            params: {
+                currentlyPresentedVersionId: processVersionId,
+            },
+        });
         promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error));
         return promise;
     }
@@ -831,6 +829,17 @@ class HttpService {
         return promise;
     }
 
+    fetchProcessLiveData(processName: string): Promise<AxiosResponse<ResultsWithCountsDto>> {
+        const promise = api.get<ResultsWithCountsDto>(`/liveData/${encodeURIComponent(processName)}`, {
+            params: {
+                skipResultsPerNode: true,
+            },
+        });
+
+        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot live data"), error, true));
+        return promise;
+    }
+
     //to prevent closing edit node modal and corrupting graph display
     saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
         const data = {
@@ -889,7 +898,7 @@ class HttpService {
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post<TestProcessResponse>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
             params: {
                 skipResultsPerTransition: this.#skipResultsPerTransition,
             },
@@ -915,12 +924,12 @@ class HttpService {
                   sourceParameters: SourceWithParametersTest;
               }
             | {
-                  type: "WITH_GENERATED_DATA";
+                  type: "WITH_LIVE_DATA";
                   numberOfSamples: number;
               },
     ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const promise = api.post<TestProcessResponse>(
+        const promise = api.post<ResultsWithCountsDto>(
             `/scenarioTesting/${encodeURIComponent(processName)}/performTest`,
             {
                 testData,

@@ -159,7 +159,9 @@ class SchemalessKafkaJsonTypeTests
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
+        .equalsPlainBody(
+          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
+        )
     }
   }
 
@@ -173,14 +175,16 @@ class SchemalessKafkaJsonTypeTests
         .basicAuthAllPermUser()
         .jsonBody(
           ScenarioTestValidationRequest(
-            testData = ScenarioTestData.WithGeneratedData(10),
+            testData = ScenarioTestData.WithLiveData(10),
             scenarioGraph = toScenarioGraph(exampleScenario)
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
+        .equalsPlainBody(
+          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
+        )
     }
   }
 
@@ -308,7 +312,7 @@ object SchemalessKafkaJsonTypeTests {
          |[
          |  {
          |    "typ": "ExpressionParserCompilationError",
-         |    "message": "Failed to parse expression: expected } or , got 'a0.00}...' (line 3, column 45)",
+         |    "message": "Failed to parse expression: expected } or , got 'a0.00}...'",
          |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
          |    "fieldName": "Input",
          |    "errorType": "SaveAllowed",

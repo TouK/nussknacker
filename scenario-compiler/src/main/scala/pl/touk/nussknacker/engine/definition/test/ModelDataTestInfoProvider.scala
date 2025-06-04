@@ -54,7 +54,7 @@ class ModelDataTestInfoProvider(
               list.reduce((tc1, tc2) =>
                 TestingCapabilities(
                   canBeTested = tc1.canBeTested || tc2.canBeTested,
-                  canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
+                  canFetchLiveData = tc1.canFetchLiveData || tc2.canFetchLiveData,
                   canTestWithForm =
                     tc1.canTestWithForm && tc2.canTestWithForm // TODO change to "or" after adding support for multiple sources
                 )
@@ -79,7 +79,7 @@ class ModelDataTestInfoProvider(
       canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
     } yield TestingCapabilities(
       canBeTested = canTest,
-      canGenerateTestData = canGenerateData,
+      canFetchLiveData = canGenerateData,
       canTestWithForm = canTestWithForm
     )).toEither.left.map(_ => TestingCapabilitiesError.SourceCompilationError)
   }
@@ -137,25 +137,25 @@ class ModelDataTestInfoProvider(
     }
   }
 
-  override def generateTestData(
+  override def fetchSourcesLiveData(
       processVersion: ProcessVersion,
       scenario: CanonicalProcess,
-      size: Int
-  ): Either[ScenarioTestDataGenerationError, PreliminaryScenarioTestData] = {
+      maxNumberOfSamples: Int
+  ): Either[SourcesLiveDataFetchingError, PreliminaryScenarioTestData] = {
     val jobData = JobData(scenario.metaData, processVersion)
     withScenarioCompilationDependencies(jobData) { scenarioCompilationDependencies =>
       for {
         generators <- prepareTestDataGenerators(scenario, scenarioCompilationDependencies)
-        result <- createPreliminaryTestData(generators, size)
-          .toRight(ScenarioTestDataGenerationError.NoDataGenerated)
+        result <- createPreliminaryTestData(generators, maxNumberOfSamples)
+          .toRight(SourcesLiveDataFetchingError.NoLiveDataAvailable)
       } yield result
     }
   }
 
-  def generateTestDataForSource(
+  def fetchSourceLiveData(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
-      size: Int
+      maxNumberOfSamples: Int
   ): Either[SourceTestDataGenerationError, PreliminaryScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     withScenarioCompilationDependencies(jobData) { scenarioCompilationDependencies =>
@@ -166,11 +166,13 @@ class ModelDataTestInfoProvider(
           .toEither
           .left
           .map(errors => SourceTestDataGenerationError.SourceCompilationError(nodeId, errors))
+        // We assume that TestDataGenerator.generateTestData implementation will always fetch live data
+        // TODO: In the future we want to extract another interface which would explicitly fetch live data in the standardized format which would not require to define TestRecordParser
         testDataGenerator <- compiledSource
           .cast[TestDataGenerator]
           .toRight(SourceTestDataGenerationError.UnsupportedSourceError(nodeId))
-        result <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), size)
-          .toRight(SourceTestDataGenerationError.NoDataGenerated)
+        result <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), maxNumberOfSamples)
+          .toRight(SourceTestDataGenerationError.NoLiveDataAvailable)
       } yield result
     }
   }
@@ -190,8 +192,8 @@ class ModelDataTestInfoProvider(
       generators: NonEmptyList[(NodeId, TestDataGenerator)],
       size: Int
   ): Option[PreliminaryScenarioTestData] = {
-    val generatedData          = generateTestData(generators, size)
-    val sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+    val fetchedLiveData        = fetchLiveData(generators, size)
+    val sortedRecords          = fetchedLiveData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
     val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
     NonEmptyList
       .fromList(preliminaryTestRecords)
@@ -202,7 +204,7 @@ class ModelDataTestInfoProvider(
       scenario: CanonicalProcess,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Either[
-    ScenarioTestDataGenerationError,
+    SourcesLiveDataFetchingError,
     NonEmptyList[(NodeId, TestDataGenerator)]
   ] = {
     commonModelDataInfoProvider
@@ -217,12 +219,12 @@ class ModelDataTestInfoProvider(
           .map(_.cast[TestDataGenerator].map(testDataGenerator => (nodeId, testDataGenerator)))
       }
       .sequence
-      .leftMap[ScenarioTestDataGenerationError](ScenarioTestDataGenerationError.ScenarioGraphValidationError)
+      .leftMap[SourcesLiveDataFetchingError](SourcesLiveDataFetchingError.ScenarioGraphValidationError)
       .toEither
-      .flatMap(_.flatten.toNel.toRight(ScenarioTestDataGenerationError.NoSourcesWithTestDataGeneration))
+      .flatMap(_.flatten.toNel.toRight(SourcesLiveDataFetchingError.NoSourcesWithLiveDataFetchingSupport))
   }
 
-  private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
+  private def fetchLiveData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
     // method TestDataGenerator.generateTestData has to be called within ModelClassLoader context
     modelData.withModelClassloaderAsContextClassLoader {
       val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>

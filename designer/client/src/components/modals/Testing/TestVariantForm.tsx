@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { getTestParameters } from "../../../reducers/selectors/graph";
 import type { WindowKind } from "../../../windowManager";
 import type { TestingData } from "./TestingDialog";
-import { TestWithGeneratedDataForm } from "./TestWithGeneratedData";
+import { TestWithLiveDataForm } from "./TestWithLiveData";
 import { TestWithParametersMultipleSourcesForm } from "./TestWithParametersMultipleSourcesForm";
 import { TestWithParametersSingleSourceForm } from "./TestWithParametersSingleSourceForm";
 import { TestType } from "./useTestOptions";
@@ -32,8 +32,8 @@ export function TestVariantForm({ testType, testingData, closeDialog }: TestVari
                     ></TestWithParametersSingleSourceForm>
                 );
             }
-        case TestType.withGeneratedData:
-            return <TestWithGeneratedDataForm closeDialog={closeDialog}></TestWithGeneratedDataForm>;
+        case TestType.withLiveData:
+            return <TestWithLiveDataForm closeDialog={closeDialog}></TestWithLiveDataForm>;
         default:
             throw `There is no form available for test type ${testType}`;
     }

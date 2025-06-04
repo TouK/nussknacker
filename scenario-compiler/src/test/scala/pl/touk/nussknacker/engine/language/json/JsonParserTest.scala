@@ -178,7 +178,7 @@ class JsonParserTest extends AnyFunSuite with Matchers {
     val parsingErrors = parse(invalidJson).invalidValue
     parsingErrors shouldBe NonEmptyList.of(
       JsonParseError(
-        "expected ] or , got '{\"id\":...' (line 4, column 5)",
+        "expected ] or , got '{\"id\":...'",
         Some(CoordinatesBasedTextRange(TextCoordinates(4, 3), TextCoordinates(5, 3)))
       )
     )

@@ -22,6 +22,8 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 object JsonParser extends ExpressionParser {
 
+  private val messageWithCoordinatesRegex = " \\(line \\d+, column \\d+\\)".r
+
   override def languageId: Language = Expression.Language.Json
 
   override def parse(
@@ -50,9 +52,10 @@ object JsonParser extends ExpressionParser {
     } else {
       parser.parse(jsonString) match {
         case Left(ParsingFailure(message, underlying: ParseException)) =>
+          val messageWithoutCoordinates = messageWithCoordinatesRegex.replaceFirstIn(message, "")
           invalidNel(
             JsonParseError(
-              message,
+              messageWithoutCoordinates,
               Some(
                 CoordinatesBasedTextRange(
                   TextCoordinates(underlying.col - 1, underlying.line - 1),

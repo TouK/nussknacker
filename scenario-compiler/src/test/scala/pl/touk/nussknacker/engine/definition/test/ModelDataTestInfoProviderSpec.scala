@@ -106,7 +106,7 @@ class ModelDataTestInfoProviderSpec
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
     )
   }
 
@@ -115,7 +115,7 @@ class ModelDataTestInfoProviderSpec
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = false)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = false)
     )
   }
 
@@ -124,7 +124,7 @@ class ModelDataTestInfoProviderSpec
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = false)
+      TestingCapabilities(canBeTested = false, canFetchLiveData = false, canTestWithForm = false)
     )
   }
 
@@ -133,7 +133,7 @@ class ModelDataTestInfoProviderSpec
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = true)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = true)
     )
   }
 
@@ -141,7 +141,7 @@ class ModelDataTestInfoProviderSpec
     val scenario     = createSimpleFragment()
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = true)
+      TestingCapabilities(canBeTested = false, canFetchLiveData = false, canTestWithForm = true)
     )
   }
 
@@ -160,7 +160,7 @@ class ModelDataTestInfoProviderSpec
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
     )
   }
 
@@ -179,13 +179,13 @@ class ModelDataTestInfoProviderSpec
     val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = false)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = false)
     )
   }
 
   test("should generate data for a scenario with single source") {
     val scenario         = createScenarioWithSingleSource()
-    val scenarioTestData = testInfoProvider.generateTestData(processVersionFor(scenario), scenario, 3).rightValue
+    val scenarioTestData = testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 3).rightValue
 
     scenarioTestData.testRecords.toList shouldBe List(
       PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 1"), timestamp = Some(1)),
@@ -197,7 +197,7 @@ class ModelDataTestInfoProviderSpec
   test("should generate data for a scenario with single source not providing record timestamps") {
     val scenario = createScenarioWithSingleSource("sourceEmptyTimestamp")
     val scenarioTestData =
-      testInfoProvider.generateTestData(processVersionFor(scenario), scenario, 3).rightValue
+      testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 3).rightValue
 
     scenarioTestData.testRecords.toList shouldBe List(
       PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 1"), timestamp = None),
@@ -209,7 +209,7 @@ class ModelDataTestInfoProviderSpec
   test("should generate empty data for a source not supporting generating") {
     val scenario = createScenarioWithSingleSource("genericSourceNoGenerate")
     val scenarioTestData =
-      testInfoProvider.generateTestData(processVersionFor(scenario), scenario, 3)
+      testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 3)
 
     scenarioTestData shouldBe Symbol("left")
   }
@@ -217,14 +217,14 @@ class ModelDataTestInfoProviderSpec
   test("should generate empty data for empty scenario") {
     val emptyScenario = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
 
-    val scenarioTestData = testInfoProvider.generateTestData(processVersionFor(emptyScenario), emptyScenario, 3)
+    val scenarioTestData = testInfoProvider.fetchSourcesLiveData(processVersionFor(emptyScenario), emptyScenario, 3)
 
     scenarioTestData shouldBe Symbol("left")
   }
 
   test("should generate data for a scenario with multiple source") {
     val scenario         = createScenarioWithMultipleSources()
-    val scenarioTestData = testInfoProvider.generateTestData(processVersionFor(scenario), scenario, 8).rightValue
+    val scenarioTestData = testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 8).rightValue
 
     scenarioTestData.testRecords.toList shouldBe List(
       PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 1"), timestamp = Some(1)),
@@ -253,7 +253,7 @@ class ModelDataTestInfoProviderSpec
     )
 
     forEvery(testingData) { (scenario, size, expectedSize, expectedSizeBySourceId) =>
-      val testData = testInfoProvider.generateTestData(processVersionFor(scenario), scenario, size)
+      val testData = testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, size)
 
       testData.map(_.testRecords.size).toOption shouldBe expectedSize
       if (expectedSizeBySourceId.nonEmpty) {

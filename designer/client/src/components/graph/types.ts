@@ -10,7 +10,7 @@ import type {
     resetSelection,
     toggleSelection,
 } from "../../actions/nk";
-import type { ProcessCounts } from "../../reducers/graph";
+import type { ProcessCounts } from "../../http/resultsWithCountsDto";
 import type { Capabilities } from "../../reducers/selectors/other";
 import type { NodeType } from "../../types";
 import type { Scenario } from "../Process/types";

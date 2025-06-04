@@ -24,11 +24,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
-  GenerateTestDataError,
-  PerformTestError,
-  SourceTestError
-}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{FetchLiveDataError, PerformTestError, SourceTestError}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -75,28 +71,28 @@ class ScenarioTestService(
       }.toList)
   }
 
-  def generateData(
+  def fetchSourcesLiveData(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-      testSampleSize: Int
+      maxNumberOfSamples: Int
   )(
       implicit user: LoggedUser
-  ): Either[GenerateTestDataError, RawScenarioTestData] = {
+  ): Either[FetchLiveDataError, RawScenarioTestData] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
 
     for {
-      _ <- validateSampleSize(testSampleSize)(GenerateTestDataError.TooManySamplesRequestedError)
+      _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
       generatedData <- testInfoProvider
-        .generateTestData(processVersion, canonical, testSampleSize)
-        .leftMap(GenerateTestDataError.ScenarioTestDataGenerationError)
+        .fetchSourcesLiveData(processVersion, canonical, maxNumberOfSamples)
+        .leftMap(FetchLiveDataError.SourcesLiveDataFetchingError)
       rawTestData <- preliminaryScenarioTestDataSerDe
         .serialize(generatedData)
-        .leftMap(GenerateTestDataError.ScenarioTestDataSerializationError)
+        .leftMap(FetchLiveDataError.ScenarioTestDataSerializationError)
     } yield rawTestData
   }
 
-  def getDataFromSource(
+  def fetchSourceLiveData(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       size: Int
@@ -104,14 +100,14 @@ class ScenarioTestService(
     for {
       _ <- validateSampleSize(size)(SourceTestError.TooManySamplesRequestedError)
       result <- testInfoProvider
-        .generateTestDataForSource(metaData, sourceNodeData, size)
+        .fetchSourceLiveData(metaData, sourceNodeData, size)
         .leftMap {
           case SourceTestDataGenerationError.SourceCompilationError(nodeId, errors) =>
             SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString))
           case SourceTestDataGenerationError.UnsupportedSourceError(nodeId) =>
             SourceTestError.UnsupportedSourcePreviewError(nodeId.id)
-          case SourceTestDataGenerationError.NoDataGenerated =>
-            SourceTestError.NoDataGeneratedError
+          case SourceTestDataGenerationError.NoLiveDataAvailable =>
+            SourceTestError.NoLiveDataFetchedError
         }
       rawTestData <- preliminaryScenarioTestDataSerDe
         .serialize(result)
@@ -225,14 +221,14 @@ class ScenarioTestService(
 }
 
 object ScenarioTestService {
-  sealed trait GenerateTestDataError
+  sealed trait FetchLiveDataError
 
-  object GenerateTestDataError {
-    final case class ScenarioTestDataGenerationError(cause: TestInfoProvider.ScenarioTestDataGenerationError)
-        extends GenerateTestDataError
+  object FetchLiveDataError {
+    final case class SourcesLiveDataFetchingError(cause: TestInfoProvider.SourcesLiveDataFetchingError)
+        extends FetchLiveDataError
     final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
-        extends GenerateTestDataError
-    final case class TooManySamplesRequestedError(maxSamples: Int) extends GenerateTestDataError
+        extends FetchLiveDataError
+    final case class TooManySamplesRequestedError(maxSamples: Int) extends FetchLiveDataError
   }
 
   sealed trait SourceTestError
@@ -240,7 +236,7 @@ object ScenarioTestService {
   object SourceTestError {
     final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
     final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
-    final case object NoDataGeneratedError                                        extends SourceTestError
+    final case object NoLiveDataFetchedError                                      extends SourceTestError
     final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
         extends SourceTestError
     final case class TooManySamplesRequestedError(maxSamples: Int) extends SourceTestError

@@ -19,52 +19,52 @@ import { nodeInput, nodeValue } from "../../graph/node-modal/NodeDetailsContent/
 import ValidationLabels from "../../modals/ValidationLabels";
 import { useTestingContext } from "./TestingContext";
 
-interface TestWithGeneratedDataFormProps {
+interface TestWithLiveDataFormProps {
     closeDialog: () => void;
 }
 
-export function TestWithGeneratedDataForm({ closeDialog }: TestWithGeneratedDataFormProps): JSX.Element {
+export function TestWithLiveDataForm({ closeDialog }: TestWithLiveDataFormProps): JSX.Element {
     const { t } = useTranslation();
     const dispatch = useDispatch();
 
     const { handleSetAction, handleIsValid } = useTestingContext();
 
-    const generatedDataMaxSamples = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
+    const liveDataMaxSamples = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
-    const [{ generatedDataTestSampleSize }, setState] = useState({
-        generatedDataTestSampleSize: "10",
+    const [{ liveDataTestSampleSize }, setState] = useState({
+        liveDataTestSampleSize: "10",
     });
-    const generatedDataTestingConfirm = useCallback(async () => {
-        dispatch(testScenarioWithGeneratedData(generatedDataTestSampleSize));
+    const liveDataTestingConfirm = useCallback(async () => {
+        dispatch(testScenarioWithGeneratedData(liveDataTestSampleSize));
         closeDialog();
-    }, [dispatch, generatedDataTestSampleSize, closeDialog]);
-    const generatedDataNumberOfSamplesValidators = [
+    }, [dispatch, liveDataTestSampleSize, closeDialog]);
+    const liveDataNumberOfSamplesValidators = [
         literalIntegerValueValidator,
         minimalNumberValidator(0),
-        maximalNumberValidator(generatedDataMaxSamples),
+        maximalNumberValidator(liveDataMaxSamples),
         mandatoryValueValidator,
     ];
 
-    const generatedDataTestingErrors = extendErrors([], generatedDataTestSampleSize, "testData", generatedDataNumberOfSamplesValidators);
-    const generatedDataTestingIsValid = isEmpty(generatedDataTestingErrors);
+    const liveDataTestingErrors = extendErrors([], liveDataTestSampleSize, "testData", liveDataNumberOfSamplesValidators);
+    const liveDataTestingIsValid = isEmpty(liveDataTestingErrors);
 
     useEffect(() => {
-        handleIsValid(generatedDataTestingIsValid);
-        handleSetAction(generatedDataTestingConfirm);
-    }, [generatedDataTestingConfirm, generatedDataTestingIsValid, handleIsValid, handleSetAction]);
+        handleIsValid(liveDataTestingIsValid);
+        handleSetAction(liveDataTestingConfirm);
+    }, [liveDataTestingConfirm, liveDataTestingIsValid, handleIsValid, handleSetAction]);
 
     return (
         <Box mt={1.5}>
-            <FormLabel required>{t("testingForm.withGeneratedData.numberOfSamples.label", "Specify number of samples")}</FormLabel>
+            <FormLabel required>{t("testingForm.withLiveData.numberOfSamples.label", "Specify number of samples")}</FormLabel>
             <div className={nodeValue} style={{ marginTop: "4px" }}>
                 <NodeInput
-                    value={generatedDataTestSampleSize}
-                    onChange={(event) => setState({ generatedDataTestSampleSize: event.target.value })}
+                    value={liveDataTestSampleSize}
+                    onChange={(event) => setState({ liveDataTestSampleSize: event.target.value })}
                     className={nodeInput}
                     autoFocus
                 />
             </div>
-            <ValidationLabels fieldErrors={getValidationErrorsForField(generatedDataTestingErrors, "testData")} />
+            <ValidationLabels fieldErrors={getValidationErrorsForField(liveDataTestingErrors, "testData")} />
         </Box>
     );
 }

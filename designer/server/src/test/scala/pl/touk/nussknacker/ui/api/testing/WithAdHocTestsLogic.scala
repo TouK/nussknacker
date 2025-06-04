@@ -85,6 +85,9 @@ trait WithAdHocTestsLogic {
        |    },
        |    "testWithGeneratedData": {
        |      "status": "AVAILABLE"
+       |    },
+       |    "testWithLiveData": {
+       |      "status": "AVAILABLE"
        |    }
        |}""".stripMargin
 
