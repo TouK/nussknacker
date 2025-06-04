@@ -26,7 +26,7 @@ export const AssistantMessage = () => {
         return null;
     }
 
-    if (status.type === "complete") {
+    if (status.type === "running" || status.type === "complete") {
         return (
             <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
                 <Box position={"relative"} pb={0.5}>
