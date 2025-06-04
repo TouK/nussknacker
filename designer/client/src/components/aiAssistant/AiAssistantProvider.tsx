@@ -114,7 +114,6 @@ const ModelAdapter: ChatModelAdapter = {
                     status: { type: "incomplete", reason: "cancelled" },
                 };
             } else if (event.type === "error") {
-                console.log("Error in chat stream, yielding error message");
                 yield {
                     content: [{ type: "text", text }],
                     status: { type: "incomplete", reason: "error", error: "Unexpected error, please try again." },
