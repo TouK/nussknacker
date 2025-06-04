@@ -86,6 +86,7 @@ async function* initializeChatStream(
         if (abortSignal) {
             abortSignal.removeEventListener("abort", abortHandler);
         }
+
         reader.releaseLock();
     }
 }
