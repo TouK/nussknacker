@@ -14,7 +14,7 @@ export const ScenarioStatusContent = memo(function ScenarioDetailsContent2({ chi
 
     return (
         <PanelScenarioDetails sx={{ position: "relative" }}>
-            <ScenarioDetailsItemWrapper sx={{ zoom: "1.2" }}>
+            <ScenarioDetailsItemWrapper sx={{ zoom: "1.2", marginRight: 3, overflow: "hidden" }}>
                 <ScenarioNameItem />
             </ScenarioDetailsItemWrapper>
             {isFragment ? null : (
