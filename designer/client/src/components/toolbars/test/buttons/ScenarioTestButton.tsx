@@ -76,10 +76,10 @@ function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type
     // Availability of live data testing
     const testCapabilities = useSelector(getTestCapabilities);
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
-    const testFromGeneratedDataIsAvailable =
+    const testFromLiveDataIsAvailable =
         !disabled && processIsLatestVersion && testCapabilities?.testWithLiveData.status === TestCapabilityStatus.AVAILABLE;
 
-    const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromGeneratedDataIsAvailable;
+    const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromLiveDataIsAvailable;
 
     const hasPendingChanges = useSelector(getHasPendingChanges);
 

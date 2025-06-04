@@ -29,7 +29,7 @@ export function TestWithLiveDataForm({ closeDialog }: TestWithLiveDataFormProps)
 
     const { handleSetAction, handleIsValid } = useTestingContext();
 
-    const generatedDataMaxSamples = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
+    const liveDataMaxSamples = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ liveDataTestSampleSize }, setState] = useState({
         liveDataTestSampleSize: "10",
@@ -41,7 +41,7 @@ export function TestWithLiveDataForm({ closeDialog }: TestWithLiveDataFormProps)
     const liveDataNumberOfSamplesValidators = [
         literalIntegerValueValidator,
         minimalNumberValidator(0),
-        maximalNumberValidator(generatedDataMaxSamples),
+        maximalNumberValidator(liveDataMaxSamples),
         mandatoryValueValidator,
     ];
 
