@@ -32,12 +32,12 @@ object TestingApiErrorMessages {
     }
   }
 
-  object generatedTestData {
-    def requestedTooManySamplesToGenerate(maxSamples: Int) =
+  object fetchedLiveData {
+    def requestedTooManySamplesToFetch(maxSamples: Int) =
       s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
 
-    val couldNotProvideTestDataSample =
-      "Could not provide a sample of test data. Possible cause: no live data available"
+    val noLiveDataAvailable =
+      "No live test data available. Please ensure that the storage used by source contains at least one data sample"
 
     val noSourcesWithTestDataGeneration = "No sources with test data generation available"
 

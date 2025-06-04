@@ -39,7 +39,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.ForbiddenNodesError.NoPermission
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
-  NoDataGenerated,
+  NoLiveDataAvailable,
   NoProcessingType,
   NoScenario
 }
@@ -175,7 +175,7 @@ class NodesApiHttpService(
             parametersDefinition <- EitherT[Future, NodesError, String](
               // The service is expected to limit the number of returned records if the response is too large.
               // If it does not, we may need to implement client-side pagination or request size limits.
-              scenarioTestService.getDataFromSource(
+              scenarioTestService.fetchSourceLiveData(
                 recordsRequestDto.processProperties.toMetaData(scenarioName),
                 sourceNodeData,
                 numberOfRecords
@@ -184,8 +184,8 @@ class NodesApiHttpService(
                   Future(Left(SourceCompilation(nodeId, errors)))
                 case Left(UnsupportedSourcePreviewError(nodeId)) =>
                   Future(Left(UnsupportedSourcePreview(nodeId)))
-                case Left(NoDataGeneratedError) =>
-                  Future(Left(NoDataGenerated))
+                case Left(NoLiveDataFetchedError) =>
+                  Future(Left(NoLiveDataAvailable))
                 case Left(ScenarioTestDataSerializationError(cause)) =>
                   Future(Left(cause match {
                     case SerializationError.TooManyCharactersGenerated(length, limit) =>

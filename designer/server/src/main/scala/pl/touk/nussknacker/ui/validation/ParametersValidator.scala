@@ -43,7 +43,7 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
       parametersDefinition.getOrElse(
         sourceParameters.sourceId,
         throw new IllegalStateException( // This should never happen, it would mean that API is not consistent
-          s"There is no source ${sourceParameters.sourceId} associated with generated test parameters"
+          s"There is no source ${sourceParameters.sourceId} associated with live test parameters"
         )
       )
 

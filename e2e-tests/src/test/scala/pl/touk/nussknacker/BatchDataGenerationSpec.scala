@@ -90,7 +90,7 @@ class BatchDataGenerationSpec
     }
   }
 
-  "Test on generated data endpoint should return results and counts for scenario with table source" in {
+  "Test on live data endpoint should return results and counts for scenario with table source" in {
     given()
       .when()
       .request()
@@ -98,7 +98,7 @@ class BatchDataGenerationSpec
       .jsonBody(
         s"""{
            | "testData": {
-           |   "type": "WITH_GENERATED_DATA",
+           |   "type": "WITH_LIVE_DATA",
            |   "numberOfSamples": 1
            | },
            | "scenarioGraph": ${toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2}

@@ -16,8 +16,7 @@ function GenerateButton(props: Props) {
     const { t } = useTranslation();
     const testCapabilities = useSelector(getTestCapabilities);
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
-    const available =
-        !disabled && processIsLatestVersion && testCapabilities?.testWithGeneratedData.status === TestCapabilityStatus.AVAILABLE;
+    const available = !disabled && processIsLatestVersion && testCapabilities?.testWithLiveData.status === TestCapabilityStatus.AVAILABLE;
     const { open } = useWindows();
 
     return (

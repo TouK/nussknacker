@@ -7,10 +7,8 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.restmodel.definition.{UIParameter, UISourceParameters}
-import pl.touk.nussknacker.ui.process.test.RawScenarioTestData
+import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
 import sttp.tapir.Codec.PlainCodec
@@ -123,9 +121,8 @@ object TapirCodecs {
 
   object ScenarioTestingCodecs {
 
-    implicit val testingCapabilitiesSchema: Schema[TestingCapabilities] = Schema.derived
-    implicit val uiSourceParametersSchema: Schema[UISourceParameters]   = Schema.anyObject
-    implicit val typingResultDecoder: Decoder[TypingResult]             = Decoder.decodeJson.map(_ => typing.Unknown)
+    implicit val uiSourceParametersSchema: Schema[UISourceParameters] = Schema.anyObject
+    implicit val typingResultDecoder: Decoder[TypingResult]           = Decoder.decodeJson.map(_ => typing.Unknown)
 
   }
 
