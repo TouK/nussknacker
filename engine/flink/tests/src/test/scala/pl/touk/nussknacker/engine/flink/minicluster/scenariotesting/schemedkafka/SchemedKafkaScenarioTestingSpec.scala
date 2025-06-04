@@ -41,6 +41,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, VeryPatientScalaFutures}
 
+import java.time.Instant
 import java.util.Collections
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
@@ -215,8 +216,13 @@ class SchemedKafkaScenarioTestingSpec
       )
     )
 
-    results.invocationResults("fragmentEnd").loneElement shouldBe ExpressionInvocationResult(
+    val mockedTimestamp = Instant.now()
+    results
+      .invocationResults("fragmentEnd")
+      .loneElement
+      .copy(timestamp = mockedTimestamp) shouldBe ExpressionInvocationResult(
       "fragment1-fragment1-0-0",
+      mockedTimestamp,
       "out",
       Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
     )

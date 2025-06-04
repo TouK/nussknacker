@@ -15,6 +15,7 @@ import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.scenarioLiveData.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioLiveData.Dtos.LiveDataError._
 import pl.touk.nussknacker.ui.api.description.scenarioLiveData.ScenarioLiveDataApiEndpoints
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDto
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
@@ -70,7 +71,7 @@ class ScenarioLiveDataApiHttpService(
                 Future.successful(Left(LiveDataNotSupported))
             }
           }
-        } yield LiveDataDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
+        } yield ResultsWithCountsDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
       }
   }
 

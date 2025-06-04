@@ -80,9 +80,11 @@ class ScenarioLiveDataApiHttpServiceSpec
           s"""{
              |  "timestamp": "2025-05-27T21:48:20Z",
              |  "results": {
-             |    "nodeTransitions": [],
+             |    "nodeResults": null,
+             |    "nodeTransitionResults": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
+             |    "exceptions": [],
              |    "exceptionsByNodeId": {}
              |  },
              |  "counts": {
@@ -169,13 +171,14 @@ class ScenarioLiveDataApiHttpServiceSpec
           s"""{
              |  "timestamp": "2025-05-27T21:48:20Z",
              |  "results": {
-             |    "nodeTransitions": [
+             |    "nodeResults": null,
+             |    "nodeTransitionResults": [
              |      {
              |        "sourceNodeId": "start",
              |        "destinationNodeId": "variable",
-             |        "samples": [
+             |        "results": [
              |          {
-             |            "contextId": "",
+             |            "id": "",
              |            "timestamp": "2025-05-27T21:48:20Z",
              |            "variables": {
              |              "v1": {
@@ -213,17 +216,35 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        }
              |      ]
              |    },
-             |    "exceptionsByNodeId": {
-             |      "start": [
-             |        {
-             |          "contextId": "mocked-context-id",
+             |    "exceptions": [
+             |      {
+             |        "context": {
+             |          "id": "mocked-context-id",
              |          "timestamp": "2025-05-27T21:48:20Z",
              |          "variables": {
              |            "var1": {
              |              "pretty": "abc"
              |            }
+             |          }
+             |        },
+             |        "nodeId": "start",
+             |        "throwable": "Something bad happened"
+             |      }
+             |    ],
+             |    "exceptionsByNodeId": {
+             |      "start": [
+             |        {
+             |          "context": {
+             |            "id": "mocked-context-id",
+             |            "timestamp": "2025-05-27T21:48:20Z",
+             |            "variables": {
+             |              "var1": {
+             |                "pretty": "abc"
+             |              }
+             |            }
              |          },
-             |          "errorMessage": "Something bad happened"
+             |          "nodeId": "start",
+             |          "throwable": "Something bad happened"
              |        }
              |      ]
              |    }

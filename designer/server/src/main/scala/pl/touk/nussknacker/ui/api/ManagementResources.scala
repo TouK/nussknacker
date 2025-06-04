@@ -23,8 +23,8 @@ import pl.touk.nussknacker.restmodel.{
 }
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ResultsWithCountsDto
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDto
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
@@ -54,7 +54,7 @@ class ManagementResources(
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  import pl.touk.nussknacker.ui.api.description.scenarioTesting.TestResultsCodecs._
+  import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDtoCodecs._
 
   import ManagementResources._
 
