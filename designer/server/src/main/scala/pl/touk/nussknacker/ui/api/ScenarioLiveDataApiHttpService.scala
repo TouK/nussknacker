@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPre
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
@@ -76,24 +77,23 @@ class ScenarioLiveDataApiHttpService(
   private def computeCounts(scenarioWithDetails: ScenarioWithDetails, liveData: LiveData)(
       implicit loggedUser: LoggedUser
   ): Map[String, NodeCount] = {
-    val uniqueNodeIds: Set[String] = liveData.nodeTransitions.keys.flatMap { t =>
-      t.destinationNodeId match {
-        case Some(dest) => List(t.sourceNodeId, dest)
-        case None       => List(t.sourceNodeId)
-      }
-    }.toSet
-
     val incomingCounts =
       liveData.nodeTransitions.toList
         .flatMap { case (transition, data) => transition.destinationNodeId.map(_ -> data.totalCount) }
-        .groupBy(_._1)
-        .map { case (nodeId, counts) => nodeId -> counts.map(_._2).sum }
+        .toGroupedMap
+        .mapValuesNow(_.sum)
 
     val outgoingCounts =
       liveData.nodeTransitions.toList
         .map { case (transition, data) => transition.sourceNodeId -> data.totalCount }
-        .groupBy(_._1)
-        .map { case (nodeId, counts) => nodeId -> counts.map(_._2).sum }
+        .toGroupedMap
+        .mapValuesNow(_.sum)
+
+    val uniqueNodeIds: List[String] =
+      liveData.nodeTransitions.keys
+        .flatMap(t => t.sourceNodeId :: t.destinationNodeId.toList)
+        .toList
+        .distinct
 
     // We calculate counts based on transitions incoming to node, but if there are none (for sources) we use outgoing counts
     val nodeCounts = uniqueNodeIds.map { nodeId =>
@@ -101,21 +101,20 @@ class ScenarioLiveDataApiHttpService(
         .get(nodeId)
         .orElse(outgoingCounts.get(nodeId))
         .getOrElse(throw new IllegalStateException(s"Could not calculate counts for node $nodeId"))
-    }
-
-    val counts = nodeCounts.map { case (nodeId, count) =>
-      nodeId -> RawCount(
-        count,
-        liveData.exceptions.getOrElse(NodeId(nodeId), List.empty).size.toLong
-      )
     }.toMap
+
+    def getCount(nodeId: String): Option[RawCount] = {
+      nodeCounts.get(nodeId).map {
+        RawCount(_, liveData.exceptions.getOrElse(NodeId(nodeId), List.empty).size.toLong)
+      }
+    }
 
     val canonical = CanonicalProcessConverter.fromScenarioGraph(
       scenarioWithDetails.scenarioGraphUnsafe,
       scenarioWithDetails.processVersionUnsafe.processName
     )
 
-    processCounter.computeCounts(canonical, scenarioWithDetails.isFragment, counts.get)
+    processCounter.computeCounts(canonical, scenarioWithDetails.isFragment, getCount)
   }
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(
