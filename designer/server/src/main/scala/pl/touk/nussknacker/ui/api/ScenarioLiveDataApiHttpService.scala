@@ -95,7 +95,7 @@ class ScenarioLiveDataApiHttpService(
         .groupBy(_._1)
         .map { case (nodeId, counts) => nodeId -> counts.map(_._2).sum }
 
-    // We calculate counts based on transitions incoming to node, but if there are non (for sources) we use outgoing counts
+    // We calculate counts based on transitions incoming to node, but if there are none (for sources) we use outgoing counts
     val nodeCounts = uniqueNodeIds.map { nodeId =>
       nodeId -> incomingCounts
         .get(nodeId)

@@ -6073,6 +6073,7 @@ components:
       - invocationResults
       - externalInvocationResults
       - exceptionsByNodeId
+      - counts
       properties:
         timestamp:
           type: string
@@ -6087,6 +6088,8 @@ components:
           $ref: '#/components/schemas/Map_List_InvocationResultDto'
         exceptionsByNodeId:
           $ref: '#/components/schemas/Map_List_ExceptionResultDto'
+        counts:
+          $ref: '#/components/schemas/Map_NodeCount'
     LiveDataForNodeTransitionDto:
       title: LiveDataForNodeTransitionDto
       type: object
