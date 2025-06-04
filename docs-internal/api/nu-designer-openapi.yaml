@@ -6070,24 +6070,14 @@ components:
       type: object
       required:
       - timestamp
-      - invocationResults
-      - externalInvocationResults
-      - exceptionsByNodeId
+      - results
       - counts
       properties:
         timestamp:
           type: string
           format: date-time
-        nodeTransitions:
-          type: array
-          items:
-            $ref: '#/components/schemas/LiveDataForNodeTransitionDto'
-        invocationResults:
-          $ref: '#/components/schemas/Map_List_InvocationResultDto'
-        externalInvocationResults:
-          $ref: '#/components/schemas/Map_List_InvocationResultDto'
-        exceptionsByNodeId:
-          $ref: '#/components/schemas/Map_List_ExceptionResultDto'
+        results:
+          $ref: '#/components/schemas/LiveDataResultsDto'
         counts:
           $ref: '#/components/schemas/Map_NodeCount'
     LiveDataForNodeTransitionDto:
@@ -6113,6 +6103,24 @@ components:
           format: int64
         currentThroughput:
           type: number
+    LiveDataResultsDto:
+      title: LiveDataResultsDto
+      type: object
+      required:
+      - invocationResults
+      - externalInvocationResults
+      - exceptionsByNodeId
+      properties:
+        nodeTransitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveDataForNodeTransitionDto'
+        invocationResults:
+          $ref: '#/components/schemas/Map_List_InvocationResultDto'
+        externalInvocationResults:
+          $ref: '#/components/schemas/Map_List_InvocationResultDto'
+        exceptionsByNodeId:
+          $ref: '#/components/schemas/Map_List_ExceptionResultDto'
     LiveDataSampleDto:
       title: LiveDataSampleDto
       type: object
