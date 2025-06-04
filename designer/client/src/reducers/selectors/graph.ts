@@ -5,10 +5,12 @@ import ProcessUtils from "../../common/ProcessUtils";
 import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
+import { ScenarioGraphSourceType } from "../../http/HttpService";
 import type { ScenarioGraph } from "../../types";
 import type { ProcessCounts, TestData } from "../graph";
 import type { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
+import { getUserSettings } from "./userSettings";
 
 export const getGraph = (state: RootState) => state.graphReducer.present;
 
@@ -52,13 +54,19 @@ export const isProcessRenamed = createSelector(
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeDeploy(state));
 export const isDeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment, getUserSettings],
+    (saveDisabled, error, state, fragment, userSettings) => {
+        const isAllowedByScenarioSave = userSettings["toolbar.autoSaveDuringDeployRedeploy"] || saveDisabled;
+        return !fragment && isAllowedByScenarioSave && !error && ProcessStateUtils.canDeploy(state);
+    },
 );
 export const isRedeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRedeploy(state));
 export const isRedeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canRedeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment, getUserSettings],
+    (saveDisabled, error, state, fragment, userSettings) => {
+        const isAllowedByScenarioSave = userSettings["toolbar.autoSaveDuringDeployRedeploy"] || saveDisabled;
+        return !fragment && isAllowedByScenarioSave && !error && ProcessStateUtils.canRedeploy(state);
+    },
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isRunOffScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOffSchedule(state));
@@ -103,3 +111,16 @@ export const getAdditionalFields = createSelector(getProperties, (p) => p?.addit
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
+
+export const getScenarioGraphSource = createSelector(
+    [isSaveDisabled, getGraph, getScenarioLabels, getProcessVersionId],
+    (isSaveDisabled, graph, labels, versionId) =>
+        isSaveDisabled
+            ? { type: ScenarioGraphSourceType.LATEST_VERSION }
+            : {
+                  type: ScenarioGraphSourceType.FROM_GRAPH,
+                  scenarioGraph: graph?.scenario?.scenarioGraph,
+                  scenarioLabels: labels,
+                  baseScenarioVersionId: versionId,
+              },
+);

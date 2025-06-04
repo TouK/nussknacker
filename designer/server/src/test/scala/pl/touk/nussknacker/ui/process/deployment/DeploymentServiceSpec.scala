@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import cats.implicits.toTraverseOps
 import cats.instances.list._
+import io.circe.{parser, Decoder}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.LoneElement._
 import org.scalatest.matchers.should.Matchers
@@ -17,9 +18,17 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.S
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{
+  DeploymentId,
+  ExternalDeploymentId,
+  FromGraph,
+  LatestVersion,
+  ScenarioGraphSource
+}
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
@@ -42,7 +51,7 @@ import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.FragmentStateException
 import pl.touk.nussknacker.ui.process.periodic.flink.FlinkClientStub
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Instant
@@ -130,7 +139,8 @@ class DeploymentServiceSpec
           RunDeploymentCommand(
             CommonCommandData(scenario, None, user),
             StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-            NodesDeploymentData.empty
+            NodesDeploymentData.empty,
+            scenarioSource = LatestVersion,
           )
         )
         .failed
@@ -154,7 +164,8 @@ class DeploymentServiceSpec
       RunDeploymentCommand(
         CommonCommandData(scenario, None, user),
         StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-        NodesDeploymentData.empty
+        NodesDeploymentData.empty,
+        scenarioSource = LatestVersion,
       )
     )
 
@@ -184,10 +195,10 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, Comment.from("samplePattern"), user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty
+              NodesDeploymentData.empty,
+              scenarioSource = LatestVersion,
             )
           )
-          .futureValue
       }
       .futureValue
   }
@@ -232,7 +243,8 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty
+              NodesDeploymentData.empty,
+              scenarioSource = LatestVersion,
             )
           )
           .futureValue
@@ -334,7 +346,8 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty
+              NodesDeploymentData.empty,
+              scenarioSource = LatestVersion,
             )
           )
           .futureValue
@@ -376,7 +389,8 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty
+              NodesDeploymentData.empty,
+              scenarioSource = LatestVersion,
             )
           )
           .failed
@@ -769,7 +783,8 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty
+              NodesDeploymentData.empty,
+              scenarioSource = LatestVersion,
             )
           )
           .futureValue
@@ -918,7 +933,7 @@ class DeploymentServiceSpec
           }
         }
 
-        result should not be None
+        result.externalDeploymentId should not be None
       }
     }
     "two processing types are considered" when {
@@ -1013,7 +1028,7 @@ class DeploymentServiceSpec
           }
         }
 
-        result should not be None
+        result.externalDeploymentId should not be None
       }
     }
   }
@@ -1211,10 +1226,112 @@ class DeploymentServiceSpec
     }
   }
 
+  "should deploy scenario taking scenario from different sources" when {
+    "should deploy scenario latest version" in {
+      val scenarioName = generateScenarioName()
+      val result =
+        deploymentManager1.withScenarioStateStatus(ProcessName(scenarioName), SimpleStateStatus.NotDeployed) {
+          deployExampleScenario(scenarioName, LatestVersion)
+        }
+
+      result should not be None
+    }
+
+    "should deploy scenario from given scenario graph" in {
+      val scenarioName  = generateScenarioName()
+      val scenario      = prepareScenario(scenarioName)
+      val scenarioGraph = graphForExampleScenarioWithAdditionalVariableAdded()
+
+      val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(1L)))
+      }
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
+
+      result should not be None
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "DEPLOYED" -> 2L,
+      )
+    }
+
+    "should deploy given scenario version with scenario update" in {
+      val scenarioName      = generateScenarioName()
+      val scenario          = prepareScenario(scenarioName)
+      val maybeNewVersionId = updateScenario(scenario)
+      val scenarioGraph     = graphForExampleScenarioWithAdditionalVariableAdded()
+
+      maybeNewVersionId.value shouldBe VersionId(2)
+
+      val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(2)))
+      }
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
+
+      result should not be None
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "MODIFIED" -> 3L,
+        "DEPLOYED" -> 3L,
+      )
+    }
+
+    "should deploy scenario from given scenario graph without updating scenario if scenario graph is the same" in {
+      val scenarioName = generateScenarioName()
+      val scenario     = prepareScenario(scenarioName)
+      updateScenario(scenario, "newVariable2").value shouldBe VersionId(2)
+      updateScenario(scenario, "newVariable3").value shouldBe VersionId(3)
+      val scenarioGraph = graphForExampleScenarioWithAdditionalVariableAdded("newVariable2")
+
+      val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(2L)))
+      }
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
+
+      result should not be None
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "MODIFIED" -> 3L,
+        "DEPLOYED" -> 2L,
+      )
+    }
+
+    "should deploy scenario from given scenario graph without updating scenario if scenario graph is the same as latest version" in {
+      val scenarioName = generateScenarioName()
+      val scenario     = prepareScenario(scenarioName)
+      updateScenario(scenario, "newVariable2").value shouldBe VersionId(2)
+      updateScenario(scenario, "newVariable3").value shouldBe VersionId(3)
+      val scenarioGraph = graphForExampleScenarioWithAdditionalVariableAdded("newVariable3")
+
+      val result = deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+        deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(2L)))
+      }
+      val activities = activityRepository.findActivities(scenario.id).dbioActionValues
+
+      result should not be None
+      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
+        "CREATED"  -> 1L,
+        "MODIFIED" -> 2L,
+        "MODIFIED" -> 3L,
+        "DEPLOYED" -> 2L,
+      )
+    }
+  }
+
   private def deployExampleScenario(
-      scenarioName: String = generateScenarioName()
+      scenarioName: String = generateScenarioName(),
+      scenarioGraphSource: ScenarioGraphSource = LatestVersion,
   ): Option[ExternalDeploymentId] = {
     val scenario = prepareScenario(scenarioName)
+    deployExistingScenario(scenario, scenarioGraphSource)
+  }
+
+  private def deployExistingScenario(
+      scenario: ProcessIdWithName,
+      scenarioGraphSource: ScenarioGraphSource = LatestVersion,
+  ): Option[ExternalDeploymentId] = {
     deploymentManager1
       .withWaitForDeployFinish(scenario.name, result = Some(ExternalDeploymentId("1"))) {
         deploymentService
@@ -1222,15 +1339,17 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty
+              NodesDeploymentData.empty,
+              scenarioSource = scenarioGraphSource,
             )
           )
           .futureValue
       }
+      .externalDeploymentId
       .futureValue
   }
 
-  private def redeployExampleScenario(scenarioId: ProcessIdWithName): Option[ExternalDeploymentId] = {
+  private def redeployExampleScenario(scenarioId: ProcessIdWithName): RunDeploymentResult = {
     deploymentManager1
       .withWaitForDeployFinish(scenarioId.name, result = Some(ExternalDeploymentId("1"))) {
         deploymentService
@@ -1238,10 +1357,10 @@ class DeploymentServiceSpec
             RunRedeploymentCommand(
               CommonCommandData(scenarioId, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty
+              NodesDeploymentData.empty,
+              scenarioSource = LatestVersion,
             )
           )
-          .futureValue
       }
       .futureValue
   }
@@ -1383,6 +1502,28 @@ class DeploymentServiceSpec
       .dbioActionValues
   }
 
+  private def updateScenario(
+      scenario: ProcessIdWithName,
+      newVariableId: String = "newVariableAddedWithUpdateScenario"
+  ): Option[VersionId] = {
+    val canonicalProcess = ScenarioBuilder
+      .streaming(scenario.name.value)
+      .source("source", ProcessTestData.existingSourceFactory)
+      .buildSimpleVariable(newVariableId, "newVar", "updated process with new variable".spelTemplate)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+    val action = UpdateProcessAction(
+      processId = scenario.id,
+      canonicalProcess = canonicalProcess,
+      comment = Comment.from("Update Comment"),
+      labels = Nil,
+      increaseVersionWhenJsonNotChanged = true
+    )
+    writeProcessRepository
+      .updateProcess(action)
+      .map(_.newVersion)
+      .dbioActionValues
+  }
+
   private def prepareFragment(
       scenarioName: String,
       processingType: TestProcessingType = Streaming1
@@ -1424,5 +1565,87 @@ class DeploymentServiceSpec
     first = DeploymentId(UUID.randomUUID().toString)  -> SimpleStateStatus.Running(VersionId(0), Instant.now()),
     second = DeploymentId(UUID.randomUUID().toString) -> SimpleStateStatus.Running(VersionId(0), Instant.now())
   )
+
+  private def graphForExampleScenarioWithAdditionalVariableAdded(
+      variableId: String = "newVariableAddedFromGraph"
+  ): ScenarioGraph = {
+    val scenarioGraphJson =
+      s"""
+        |{
+        |  "properties" : {
+        |    "additionalFields" : {
+        |      "description" : null,
+        |      "properties" : {
+        |        "parallelism" : "",
+        |        "spillStateToDisk" : "true",
+        |        "useAsyncInterpretation" : "",
+        |        "checkpointIntervalInSeconds" : ""
+        |      },
+        |      "metaDataType" : "StreamMetaData",
+        |      "showDescription" : false
+        |    }
+        |  },
+        |  "nodes" : [
+        |    {
+        |      "id" : "source",
+        |      "ref" : {
+        |        "typ" : "barSource",
+        |        "parameters" : [
+        |        ]
+        |      },
+        |      "additionalFields" : null,
+        |      "type" : "Source"
+        |    },
+        |    {
+        |      "id" : "$variableId",
+        |      "varName" : "newVar",
+        |      "value" : {
+        |        "language" : "spelTemplate",
+        |        "expression" : "updated process with new variable"
+        |      },
+        |      "additionalFields" : null,
+        |      "type" : "Variable"
+        |    },
+        |    {
+        |      "id" : "sink",
+        |      "ref" : {
+        |        "typ" : "barSink",
+        |        "parameters" : [
+        |        ]
+        |      },
+        |      "endResult" : null,
+        |      "isDisabled" : null,
+        |      "additionalFields" : null,
+        |      "type" : "Sink"
+        |    }
+        |  ],
+        |  "edges" : [
+        |    {
+        |      "from" : "source",
+        |      "to" : "$variableId",
+        |      "edgeType" : null
+        |    },
+        |    {
+        |      "from" : "$variableId",
+        |      "to" : "sink",
+        |      "edgeType" : null
+        |    }
+        |  ],
+        |  "stickyNotes" : [
+        |  ]
+        |}
+        |""".stripMargin
+    parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson).rightValue
+  }
+
+  private def mapActivitiesToTypeWithVersion(activities: Seq[ScenarioActivity]): Seq[(String, Long)] =
+    activities.map {
+      case activity: DeploymentRelatedActivity => "DEPLOYED" -> activity.scenarioVersionId.value.value
+      case ScenarioActivity.ScenarioCreated(_, _, _, _, scenarioVersionId) => "CREATED" -> scenarioVersionId.value.value
+      case ScenarioActivity.ScenarioModified(_, _, _, _, _, scenarioVersionId, _) =>
+        "MODIFIED" ->
+          scenarioVersionId.value.value
+      case other => "OTHER" -> other.scenarioVersionId.value.value
+    }
 
 }

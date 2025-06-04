@@ -2,11 +2,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
+import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
-import type { NodesDeploymentData } from "../../../../http/HttpService";
+import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
 import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
@@ -20,8 +20,7 @@ import {
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -73,8 +72,21 @@ export default function RedeployButton(props: ToolbarButtonProps) {
 
     const message = t("panels.actions.redeploy.dialog", "Redeploy scenario {{name}}", { name: processName });
     const action = useCallback(
-        (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
-            HttpService.redeploy(name, comment, nodesDeploymentData).finally(() => dispatch(loadProcessState(name, versionId))),
+        async (
+            name: ProcessName,
+            versionId: ProcessVersionId,
+            comment: string,
+            nodesDeploymentData?: NodesDeploymentData,
+            scenarioGraphSource?: ScenarioGraphSource,
+        ) => {
+            const result = await HttpService.redeploy(name, comment, nodesDeploymentData, scenarioGraphSource);
+            if (result.scenarioActionResultType === ScenarioActionResultType.DeploySuccess) {
+                dispatch(fetchProcessToDisplay(name, result.deployedScenarioVersionId));
+            } else {
+                dispatch(loadProcessState(name, versionId));
+            }
+            return result;
+        },
         [dispatch],
     );
 
@@ -84,11 +96,17 @@ export default function RedeployButton(props: ToolbarButtonProps) {
                 if (!res.data.isLatest) {
                     await confirm({
                         text: t(
-                            "panels.actions.confirm-unsafe-deployment.message",
-                            `There is newer version #{{latestVersion}} created by {{modifyBy}} available. Scenario will be redeployed using the newest version.
-                         You're currently checked out on version #{{localVersion}}. 
-                         Are you sure you want to perform this action?`,
-                            { latestVersion: res.data.latestVersion, modifyBy: res.data.modifiedBy, localVersion: res.data.localVersion },
+                            `You're currently checked out on version #{{localVersion}} and there is newer version
+                             #{{latestVersion}} created by {{modifyBy}} available. Scenario will be deployed using 
+                             version #{{versionToDeploy}}. Are you sure you want to perform this action?`,
+                            {
+                                latestVersion: res.data.latestVersion,
+                                modifyBy: res.data.modifiedBy,
+                                versionToDeploy: settings["toolbar.autoSaveDuringDeployRedeploy"]
+                                    ? res.data.localVersion
+                                    : res.data.latestVersion,
+                                localVersion: res.data.localVersion,
+                            },
                         ),
                         confirmText: t("panels.actions.confirm-unsafe-deployment.confirmButton", "Confirm"),
                         denyText: t("panels.actions.confirm-unsafe-deployment.cancelButton", "Cancel"),
@@ -104,7 +122,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
                 }
             });
         },
-        [confirm, processName, processVersionId, t],
+        [confirm, processName, processVersionId, t, settings],
     );
 
     const handleRedeploy = useCallback(async () => {
@@ -112,14 +130,12 @@ export default function RedeployButton(props: ToolbarButtonProps) {
             setIsRedeployCallProcessing(true);
             const response = await action(processName, processVersionId, "");
             switch (response.scenarioActionResultType) {
+                case ScenarioActionResultType.DeploySuccess:
                 case ScenarioActionResultType.Success:
                 case ScenarioActionResultType.UnhandledError:
                     break;
                 case ScenarioActionResultType.ValidationError:
                     dispatch(notificationActions.error(response.msg));
-                    break;
-                default:
-                    console.log("Unexpected result type:", response.scenarioActionResultType);
                     break;
             }
         } finally {

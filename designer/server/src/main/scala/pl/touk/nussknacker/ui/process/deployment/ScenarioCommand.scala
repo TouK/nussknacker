@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.RunOffScheduleResult
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
+import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, ScenarioGraphSource}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -18,6 +19,11 @@ case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Opti
   implicit def implicitUser: LoggedUser = user
 }
 
+final case class RunDeploymentResult(
+    externalDeploymentId: Future[Option[ExternalDeploymentId]],
+    deployedScenarioVersionId: VersionId
+)
+
 // Inner Future in result allows to wait for deployment finish, while outer handles validation
 // We split deploy process that way because we want to be able to split FE logic into two phases:
 // - validations - it is quick part, the result will be displayed on deploy modal
@@ -25,21 +31,24 @@ case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Opti
 case class RunDeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
-    nodesDeploymentData: NodesDeploymentData
+    nodesDeploymentData: NodesDeploymentData,
+    scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
-    with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
+    with ScenarioCommand[RunDeploymentResult]
 
 case class RunRedeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
-    nodesDeploymentData: NodesDeploymentData
+    nodesDeploymentData: NodesDeploymentData,
+    scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
-    with ScenarioCommand[Future[Option[ExternalDeploymentId]]]
+    with ScenarioCommand[RunDeploymentResult]
 
 trait CommonDeploymentCommand {
   val commonData: CommonCommandData
   val stateRestoringStrategy: StateRestoringStrategy
   val nodesDeploymentData: NodesDeploymentData
+  val scenarioSource: ScenarioGraphSource
 }
 
 case class RunOffScheduleCommand(

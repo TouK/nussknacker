@@ -5,15 +5,14 @@ import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { NodesDeploymentData } from "../../../http/HttpService";
-import { getProcessName, getProcessVersionId } from "../../../reducers/selectors/graph";
+import type { NodesDeploymentData, ScenarioGraphSource } from "../../../http/HttpService";
+import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import type { WindowKind } from "../../../windowManager";
 import { PromptContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import CommentInput from "../../comment/CommentInput";
-import { ErrorBoundary } from "../../common/error-boundary";
-import { TextErrorBoundaryFallbackComponent } from "../../common/error-boundary";
+import { ErrorBoundary, TextErrorBoundaryFallbackComponent } from "../../common/error-boundary";
 import LoaderSpinner from "../../spinner/Spinner";
 import { ScenarioActionResultType } from "../../toolbars/scenarioActions/buttons/types";
 import type { ToggleProcessActionModalData } from "../DeployProcessDialog";
@@ -33,10 +32,12 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
     const [validationError, setValidationError] = useState("");
     const featureSettings = useSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
+    const scenarioGraphSource: ScenarioGraphSource = useSelector(getScenarioGraphSource);
 
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment, parametersValues);
+        const response = await action(processName, processVersionId, comment, parametersValues, scenarioGraphSource);
         switch (response.scenarioActionResultType) {
+            case ScenarioActionResultType.DeploySuccess:
             case ScenarioActionResultType.Success:
             case ScenarioActionResultType.UnhandledError:
                 props.close();
@@ -44,11 +45,8 @@ export function DeployWithParametersDialog(props: WindowContentProps<WindowKind,
             case ScenarioActionResultType.ValidationError:
                 setValidationError(response.msg);
                 break;
-            default:
-                console.log("Unexpected result type:", response.scenarioActionResultType);
-                break;
         }
-    }, [action, comment, processName, props, processVersionId, parametersValues]);
+    }, [action, comment, processName, props, processVersionId, parametersValues, scenarioGraphSource]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

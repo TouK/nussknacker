@@ -23,7 +23,8 @@ type SettingsNames =
     | "scenario.allowQuickSave"
     | "scenario.allowQuickDeploy"
     | "scenario.showBreadcrumbs"
-    | "editor.showRangeMessages";
+    | "editor.showRangeMessages"
+    | "toolbar.autoSaveDuringDeployRedeploy";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
@@ -48,6 +49,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "scenario.allowQuickSave": getInitialUserFlag("scenario.allowQuickSave"),
     "scenario.allowQuickDeploy": getInitialUserFlag("scenario.allowQuickDeploy"),
     "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
+    "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
     "editor.showRangeMessages": getInitialUserFlag("editor.showRangeMessages"),
 });
 

@@ -122,7 +122,6 @@ object TapirHttpServiceFactory {
     val liveDataApiHttpService = new ScenarioLiveDataApiHttpService(
       authManager = authManager,
       scenarioAuthorizer = processAuthorizer,
-      processingTypeToScenarioTestServices = processingTypeServicesProvider.mapValues(_.scenarioTestService),
       scenarioService = processService,
       dmDispatcher = dmDispatcher,
     )

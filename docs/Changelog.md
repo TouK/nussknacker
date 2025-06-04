@@ -177,7 +177,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8042](https://github.com/TouK/nussknacker/pull/8042) Merge OpenAPI components into one with multiple services.
 * [7684](https://github.com/TouK/nussknacker/pull/7684) Add action redeploy. Till now action deploy was responsible for both deploy and redeploy operations. 
   Now they are separated in scenario workflow and UI. Kafka source has different deployment parameters for deploy and redeploy actions.
-* [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition throughput
+* [#8047](https://github.com/TouK/nussknacker/pull/8047) Added functionality of collecting live data samples and node transition throughput, modified in [#8165](https://github.com/TouK/nussknacker/pull/8165)
     * live data preview is optional and available for now only for Flink minicluster 
     * there is a new endpoint `/liveData/{scenarioName}`, which returns live data samples and throughput information
     * the functionality can be configured by setting in the 'modelConfig' section of the scenario type:
@@ -190,6 +190,7 @@ description: Stay informed with detailed changelogs covering new features, impro
       ```
 * [#7982](https://github.com/TouK/nussknacker/pull/7982) Mock expression added to enrichers (except decision-table) which can be used to hardcode enricher output in tests without calling external services.
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
+* [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
 
 ## 1.18
 

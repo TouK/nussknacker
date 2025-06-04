@@ -5693,6 +5693,25 @@ components:
       oneOf:
       - $ref: '#/components/schemas/CoordinatesBasedTextRange'
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
+    ExceptionResultDto:
+      title: ExceptionResultDto
+      type: object
+      required:
+      - contextId
+      - timestamp
+      - variables
+      properties:
+        contextId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        variables:
+          $ref: '#/components/schemas/Map_Json'
+        errorMessage:
+          type:
+          - string
+          - 'null'
     ExceptionResult_Json:
       title: ExceptionResult_Json
       type: object
@@ -5996,6 +6015,23 @@ components:
     InvalidScenario:
       title: InvalidScenario
       type: object
+    InvocationResultDto:
+      title: InvocationResultDto
+      type: object
+      required:
+      - contextId
+      - timestamp
+      - name
+      - value
+      properties:
+        contextId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        name:
+          type: string
+        value: {}
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
@@ -6033,38 +6069,62 @@ components:
       title: LiveDataDto
       type: object
       required:
-      - results
-      - counts
-      properties:
-        results:
-          $ref: '#/components/schemas/LiveDataSamplesDto'
-        counts:
-          $ref: '#/components/schemas/Map_NodeCount'
-        nodeTransitionThroughput:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/NodeTransitionThroughputDto'
-    LiveDataSamplesDto:
-      title: LiveDataSamplesDto
-      type: object
-      required:
+      - timestamp
       - invocationResults
       - externalInvocationResults
+      - exceptionsByNodeId
       properties:
-        nodeTransitionResults:
+        timestamp:
+          type: string
+          format: date-time
+        nodeTransitions:
           type: array
           items:
-            $ref: '#/components/schemas/NodeTransitionResult'
+            $ref: '#/components/schemas/LiveDataForNodeTransitionDto'
         invocationResults:
-          $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
+          $ref: '#/components/schemas/Map_List_InvocationResultDto'
         externalInvocationResults:
-          $ref: '#/components/schemas/Map_List_ExternalInvocationResult_Json'
-        exceptions:
+          $ref: '#/components/schemas/Map_List_InvocationResultDto'
+        exceptionsByNodeId:
+          $ref: '#/components/schemas/Map_List_ExceptionResultDto'
+    LiveDataForNodeTransitionDto:
+      title: LiveDataForNodeTransitionDto
+      type: object
+      required:
+      - sourceNodeId
+      - totalCount
+      - currentThroughput
+      properties:
+        sourceNodeId:
+          type: string
+        destinationNodeId:
+          type:
+          - string
+          - 'null'
+        samples:
           type: array
           items:
-            $ref: '#/components/schemas/ExceptionResult_Json'
+            $ref: '#/components/schemas/LiveDataSampleDto'
+        totalCount:
+          type: integer
+          format: int64
+        currentThroughput:
+          type: number
+    LiveDataSampleDto:
+      title: LiveDataSampleDto
+      type: object
+      required:
+      - contextId
+      - timestamp
+      - variables
+      properties:
+        contextId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        variables:
+          $ref: '#/components/schemas/Map_Json'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6076,6 +6136,20 @@ components:
       title: Map_Json
       type: object
       additionalProperties: {}
+    Map_List_ExceptionResultDto:
+      title: Map_List_ExceptionResultDto
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/ExceptionResultDto'
+    Map_List_ExceptionResult_Json:
+      title: Map_List_ExceptionResult_Json
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/ExceptionResult_Json'
     Map_List_ExpressionInvocationResult_Json:
       title: Map_List_ExpressionInvocationResult_Json
       type: object
@@ -6090,6 +6164,13 @@ components:
         type: array
         items:
           $ref: '#/components/schemas/ExternalInvocationResult_Json'
+    Map_List_InvocationResultDto:
+      title: Map_List_InvocationResultDto
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/InvocationResultDto'
     Map_List_ResultContext_Json:
       title: Map_List_ResultContext_Json
       type: object
@@ -6633,37 +6714,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResultContext_Json'
-    NodeTransitionResult1:
-      title: NodeTransitionResult
-      type: object
-      required:
-      - sourceNodeId
-      properties:
-        sourceNodeId:
-          type: string
-        destinationNodeId:
-          type:
-          - string
-          - 'null'
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ResultContext_Json'
-    NodeTransitionThroughputDto:
-      title: NodeTransitionThroughputDto
-      type: object
-      required:
-      - sourceNodeId
-      - throughput
-      properties:
-        sourceNodeId:
-          type: string
-        destinationNodeId:
-          type:
-          - string
-          - 'null'
-        throughput:
-          type: number
     NodeTypes:
       title: NodeTypes
       type: string
@@ -7632,6 +7682,7 @@ components:
       required:
       - invocationResults
       - externalInvocationResults
+      - exceptionsByNodeId
       properties:
         nodeResults:
           anyOf:
@@ -7642,7 +7693,7 @@ components:
           - array
           - 'null'
           items:
-            $ref: '#/components/schemas/NodeTransitionResult1'
+            $ref: '#/components/schemas/NodeTransitionResult'
         invocationResults:
           $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
         externalInvocationResults:
@@ -7651,6 +7702,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExceptionResult_Json'
+        exceptionsByNodeId:
+          $ref: '#/components/schemas/Map_List_ExceptionResult_Json'
     TestSourceParameters:
       title: TestSourceParameters
       type: object
