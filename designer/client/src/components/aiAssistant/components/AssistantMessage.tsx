@@ -22,19 +22,34 @@ export const AssistantMessage = () => {
         );
     }
 
-    if ((messageText.length === 0 && status.type === "complete") || status.type === "incomplete") {
+    if ((status.type === "complete" && messageText.length === 0) || (status.type === "incomplete" && status.reason === "cancelled")) {
         return null;
     }
 
-    return (
-        <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
-            <Box position={"relative"} pb={0.5}>
-                <MarkdownStyled>{messageText}</MarkdownStyled>
-                <ActionsContainer show={showActions} placement={"left"}>
-                    <CopyContent text={messageText} />
-                    <RefreshAssistantAnswer />
-                </ActionsContainer>
+    if (status.type === "running" || status.type === "complete") {
+        return (
+            <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
+                <Box position={"relative"} pb={0.5}>
+                    <MarkdownStyled>{messageText}</MarkdownStyled>
+                    <ActionsContainer show={showActions} placement={"left"}>
+                        <CopyContent text={messageText} />
+                        <RefreshAssistantAnswer />
+                    </ActionsContainer>
+                </Box>
             </Box>
-        </Box>
-    );
+        );
+    }
+
+    if (status.type == "incomplete" && status.reason === "error") {
+        return (
+            <Box position={"relative"} onMouseEnter={handleShowActions} onMouseLeave={handleHideActions}>
+                <Box position={"relative"} pb={0.5}>
+                    <MarkdownStyled sx={{ color: "error.main" }}>{status.error?.toString()}</MarkdownStyled>
+                    <ActionsContainer show={showActions} placement={"left"}>
+                        <RefreshAssistantAnswer />
+                    </ActionsContainer>
+                </Box>
+            </Box>
+        );
+    }
 };
