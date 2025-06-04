@@ -20,11 +20,15 @@ object Dtos {
 
   final case class LiveDataDto(
       timestamp: Instant,
+      results: LiveDataResultsDto,
+      counts: Map[String, NodeCount],
+  )
+
+  final case class LiveDataResultsDto(
       nodeTransitions: List[LiveDataForNodeTransitionDto],
       invocationResults: Map[String, List[InvocationResultDto]],
       externalInvocationResults: Map[String, List[InvocationResultDto]],
       exceptionsByNodeId: Map[String, List[ExceptionResultDto]],
-      counts: Map[String, NodeCount],
   )
 
   object LiveDataDto {
@@ -32,24 +36,26 @@ object Dtos {
     def from(liveData: LiveData, counts: Map[String, NodeCount]): LiveDataDto = {
       LiveDataDto(
         timestamp = liveData.timestamp,
-        nodeTransitions = liveData.nodeTransitions.map { case (nodeTransition, liveData) =>
-          LiveDataForNodeTransitionDto(
-            sourceNodeId = nodeTransition.sourceNodeId,
-            destinationNodeId = nodeTransition.destinationNodeId,
-            samples = liveData.samples.map(LiveDataSampleDto.from),
-            totalCount = liveData.totalCount,
-            currentThroughput = liveData.currentThroughput,
-          )
-        }.toList,
-        invocationResults = liveData.invocationResults.map { case (nodeId, results) =>
-          nodeId.id -> results.map(InvocationResultDto.from)
-        },
-        externalInvocationResults = liveData.externalInvocationResults.map { case (nodeId, results) =>
-          nodeId.id -> results.map(InvocationResultDto.from)
-        },
-        exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
-          nodeId.id -> results.map(ExceptionResultDto.from)
-        },
+        results = LiveDataResultsDto(
+          nodeTransitions = liveData.nodeTransitions.map { case (nodeTransition, liveData) =>
+            LiveDataForNodeTransitionDto(
+              sourceNodeId = nodeTransition.sourceNodeId,
+              destinationNodeId = nodeTransition.destinationNodeId,
+              samples = liveData.samples.map(LiveDataSampleDto.from),
+              totalCount = liveData.totalCount,
+              currentThroughput = liveData.currentThroughput,
+            )
+          }.toList,
+          invocationResults = liveData.invocationResults.map { case (nodeId, results) =>
+            nodeId.id -> results.map(InvocationResultDto.from)
+          },
+          externalInvocationResults = liveData.externalInvocationResults.map { case (nodeId, results) =>
+            nodeId.id -> results.map(InvocationResultDto.from)
+          },
+          exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
+            nodeId.id -> results.map(ExceptionResultDto.from)
+          },
+        ),
         counts = counts,
       )
     }
@@ -118,6 +124,7 @@ object Dtos {
   implicit def liveDataSampleDtoSchema: Schema[LiveDataSampleDto]                       = Schema.derived
   implicit def liveDataForNodeTransitionDtoSchema: Schema[LiveDataForNodeTransitionDto] = Schema.derived
   implicit def nodeCountSchema: Schema[NodeCount]                                       = Schema.anyObject
+  implicit def liveDataResultsDtoSchema: Schema[LiveDataResultsDto]                     = Schema.derived
   implicit def liveDataDtoSchema: Schema[LiveDataDto]                                   = Schema.derived
 
   sealed trait LiveDataError

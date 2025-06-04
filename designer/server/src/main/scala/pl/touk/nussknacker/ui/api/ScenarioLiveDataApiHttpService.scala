@@ -89,25 +89,15 @@ class ScenarioLiveDataApiHttpService(
         .toGroupedMap
         .mapValuesNow(_.sum)
 
-    val uniqueNodeIds: List[String] =
-      liveData.nodeTransitions.keys
-        .flatMap(t => t.sourceNodeId :: t.destinationNodeId.toList)
-        .toList
-        .distinct
-
-    // We calculate counts based on transitions incoming to node, but if there are none (for sources) we use outgoing counts
-    val nodeCounts = uniqueNodeIds.map { nodeId =>
-      nodeId -> incomingCounts
-        .get(nodeId)
-        .orElse(outgoingCounts.get(nodeId))
-        .getOrElse(throw new IllegalStateException(s"Could not calculate counts for node $nodeId"))
-    }.toMap
-
-    def getCount(nodeId: String): Option[RawCount] = {
-      nodeCounts.get(nodeId).map {
-        RawCount(_, liveData.exceptions.getOrElse(NodeId(nodeId), List.empty).size.toLong)
-      }
-    }
+    def getCount(nodeId: String): Option[RawCount] = Some(
+      RawCount(
+        incomingCounts
+          .get(nodeId)
+          .orElse(outgoingCounts.get(nodeId))
+          .getOrElse(0),
+        liveData.exceptions.getOrElse(NodeId(nodeId), List.empty).size.toLong
+      )
+    )
 
     val canonical = CanonicalProcessConverter.fromScenarioGraph(
       scenarioWithDetails.scenarioGraphUnsafe,
