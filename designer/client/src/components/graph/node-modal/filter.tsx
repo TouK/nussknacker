@@ -49,7 +49,7 @@ export function Filter({
             <StaticExpressionField
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                fieldLabel={"Expression"}
+                fieldLabel={"Condition"}
                 parameterDefinitions={parameterDefinitions}
                 showSwitch={showSwitch}
                 variableTypes={variableTypes}
