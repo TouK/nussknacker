@@ -10,7 +10,7 @@ export const StyledAceEditor = styled(Box)(({ theme }) => ({
         background: `${theme.palette.background.paper}`,
         borderColor: getBorderColor(theme),
         borderRadius: "6px",
-        position: "sticky",
+        position: "sticky", // To keep the tooltip near error button in a Ace editor gutter
         minWidth: "400px",
     },
     "& .ace-error-marker": {
