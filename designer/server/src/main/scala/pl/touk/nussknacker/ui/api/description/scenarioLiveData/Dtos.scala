@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{
 }
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.{Codec, CodecFormat, Schema}
 
 import java.time.Instant
@@ -23,11 +24,12 @@ object Dtos {
       invocationResults: Map[String, List[InvocationResultDto]],
       externalInvocationResults: Map[String, List[InvocationResultDto]],
       exceptionsByNodeId: Map[String, List[ExceptionResultDto]],
+      counts: Map[String, NodeCount],
   )
 
   object LiveDataDto {
 
-    def from(liveData: LiveData): LiveDataDto = {
+    def from(liveData: LiveData, counts: Map[String, NodeCount]): LiveDataDto = {
       LiveDataDto(
         timestamp = liveData.timestamp,
         nodeTransitions = liveData.nodeTransitions.map { case (nodeTransition, liveData) =>
@@ -48,6 +50,7 @@ object Dtos {
         exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
           nodeId.id -> results.map(ExceptionResultDto.from)
         },
+        counts = counts,
       )
     }
 
@@ -114,6 +117,7 @@ object Dtos {
   implicit def invocationResultDtoSchema: Schema[InvocationResultDto]                   = Schema.derived
   implicit def liveDataSampleDtoSchema: Schema[LiveDataSampleDto]                       = Schema.derived
   implicit def liveDataForNodeTransitionDtoSchema: Schema[LiveDataForNodeTransitionDto] = Schema.derived
+  implicit def nodeCountSchema: Schema[NodeCount]                                       = Schema.anyObject
   implicit def liveDataDtoSchema: Schema[LiveDataDto]                                   = Schema.derived
 
   sealed trait LiveDataError

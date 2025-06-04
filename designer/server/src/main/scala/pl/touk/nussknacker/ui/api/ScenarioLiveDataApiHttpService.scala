@@ -2,10 +2,12 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPreviewSupported, NoLiveDataPreviewSupport}
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
@@ -16,6 +18,8 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,7 +28,8 @@ class ScenarioLiveDataApiHttpService(
     authManager: AuthManager,
     scenarioAuthorizer: AuthorizeProcess,
     dmDispatcher: DeploymentManagerDispatcher,
-    protected override val scenarioService: ProcessService
+    protected override val scenarioService: ProcessService,
+    processCounter: ProcessCounter,
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with ScenarioHttpServiceExtensions
@@ -64,8 +69,53 @@ class ScenarioLiveDataApiHttpService(
                 Future.successful(Left(LiveDataNotSupported))
             }
           }
-        } yield LiveDataDto.from(liveData)
+        } yield LiveDataDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
       }
+  }
+
+  private def computeCounts(scenarioWithDetails: ScenarioWithDetails, liveData: LiveData)(
+      implicit loggedUser: LoggedUser
+  ): Map[String, NodeCount] = {
+    val uniqueNodeIds: Set[String] = liveData.nodeTransitions.keys.flatMap { t =>
+      t.destinationNodeId match {
+        case Some(dest) => List(t.sourceNodeId, dest)
+        case None       => List(t.sourceNodeId)
+      }
+    }.toSet
+
+    val incomingCounts =
+      liveData.nodeTransitions.toList
+        .flatMap { case (transition, data) => transition.destinationNodeId.map(_ -> data.totalCount) }
+        .groupBy(_._1)
+        .map { case (nodeId, counts) => nodeId -> counts.map(_._2).sum }
+
+    val outgoingCounts =
+      liveData.nodeTransitions.toList
+        .map { case (transition, data) => transition.sourceNodeId -> data.totalCount }
+        .groupBy(_._1)
+        .map { case (nodeId, counts) => nodeId -> counts.map(_._2).sum }
+
+    // We calculate counts based on transitions incoming to node, but if there are non (for sources) we use outgoing counts
+    val nodeCounts = uniqueNodeIds.map { nodeId =>
+      nodeId -> incomingCounts
+        .get(nodeId)
+        .orElse(outgoingCounts.get(nodeId))
+        .getOrElse(throw new IllegalStateException(s"Could not calculate counts for node $nodeId"))
+    }
+
+    val counts = nodeCounts.map { case (nodeId, count) =>
+      nodeId -> RawCount(
+        count,
+        liveData.exceptions.getOrElse(NodeId(nodeId), List.empty).size.toLong
+      )
+    }.toMap
+
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(
+      scenarioWithDetails.scenarioGraphUnsafe,
+      scenarioWithDetails.processVersionUnsafe.processName
+    )
+
+    processCounter.computeCounts(canonical, scenarioWithDetails.isFragment, counts.get)
   }
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(

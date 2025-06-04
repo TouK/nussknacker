@@ -82,7 +82,23 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "nodeTransitions": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
-             |    "exceptionsByNodeId": {}
+             |    "exceptionsByNodeId": {},
+             |    "counts": {
+             |        "Event Generator": {
+             |            "all": 0,
+             |            "errors": 0,
+             |            "fragmentCounts": {
+             |
+             |            }
+             |        },
+             |        "end": {
+             |            "all": 0,
+             |            "errors": 0,
+             |            "fragmentCounts": {
+             |
+             |            }
+             |        }
+             |    }
              |}""".stripMargin
         )
     }
@@ -211,6 +227,22 @@ class ScenarioLiveDataApiHttpServiceSpec
              |                "errorMessage": "Something bad happened"
              |            }
              |        ]
+             |    },
+             |    "counts": {
+             |        "Event Generator": {
+             |            "all": 0,
+             |            "errors": 0,
+             |            "fragmentCounts": {
+             |
+             |            }
+             |        },
+             |        "end": {
+             |            "all": 0,
+             |            "errors": 0,
+             |            "fragmentCounts": {
+             |
+             |            }
+             |        }
              |    }
              |}""".stripMargin
         )
