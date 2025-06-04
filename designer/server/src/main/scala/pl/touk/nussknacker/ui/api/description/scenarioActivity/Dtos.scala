@@ -185,6 +185,13 @@ object Dtos {
       override def supportedActions: List[String]     = commentRelatedActions ::: "compare" :: Nil
     }
 
+    case object ScenarioModifiedWithAutosave extends ScenarioActivityType {
+      override def displayableNameForScenario: String = s"Scenario modified"
+      override def displayableNameForFragment: String = s"Fragment modified"
+      override def icon: String                       = "/assets/activities/scenarioModifiedWithAutosave.svg"
+      override def supportedActions: List[String]     = commentRelatedActions ::: "compare" :: Nil
+    }
+
     case object ScenarioNameChanged extends ScenarioActivityType {
       override def displayableNameForScenario: String = s"Scenario name changed"
       override def displayableNameForFragment: String = s"Fragment name changed"
@@ -520,7 +527,9 @@ object Dtos {
         comment: ScenarioActivityComment,
     ): ScenarioActivity = ScenarioActivity(
       id = id,
-      `type` = ScenarioActivityType.ScenarioModified,
+      `type` =
+        if (isInternallyUpdatedByNussknacker(user)) ScenarioActivityType.ScenarioModifiedWithAutosave
+        else ScenarioActivityType.ScenarioModified,
       user = user,
       date = date,
       scenarioVersionId = scenarioVersionId,
@@ -528,7 +537,7 @@ object Dtos {
       attachment = None,
       additionalFields = List.empty,
       overrideDisplayableName = updatedVersionId(previousScenarioVersionId, scenarioVersionId).map {
-        case updatedVersion if isInternallyUpdatedByNussknacker(user) => s"(A) Version $updatedVersion saved"
+        case updatedVersion if isInternallyUpdatedByNussknacker(user) => s"Version $updatedVersion autosaved"
         case updatedVersion                                           => s"Version $updatedVersion saved"
       }
     )

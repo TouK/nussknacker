@@ -11,6 +11,7 @@ import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
     getProcessVersionId,
+    getScenarioGraphSource,
     hasError,
     isRedeployPossible,
     isRedeployVisible,
@@ -49,6 +50,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const isRedeploying = useSelector(getIsRedeploying);
+    const scenarioGraphSource = useSelector(getScenarioGraphSource);
 
     const { disabled, type } = props;
 
@@ -128,7 +130,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const handleRedeploy = useCallback(async () => {
         try {
             setIsRedeployCallProcessing(true);
-            const response = await action(processName, processVersionId, "");
+            const response = await action(processName, processVersionId, "", null, scenarioGraphSource);
             switch (response.scenarioActionResultType) {
                 case ScenarioActionResultType.DeploySuccess:
                 case ScenarioActionResultType.Success:
@@ -141,7 +143,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
         } finally {
             setIsRedeployCallProcessing(false);
         }
-    }, [action, dispatch, processName, processVersionId, setIsRedeployCallProcessing]);
+    }, [action, dispatch, processName, processVersionId, setIsRedeployCallProcessing, scenarioGraphSource]);
 
     const presets = useMemo<RedeployPreset[]>(
         () => [
