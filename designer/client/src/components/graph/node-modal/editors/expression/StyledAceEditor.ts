@@ -5,11 +5,12 @@ import { getBorderColor } from "../../../../../containers/theme/helpers";
 export const StyledAceEditor = styled(Box)(({ theme }) => ({
     "& .ace_tooltip": {
         ...theme.typography.body2,
+        fontSize: "0.75rem",
         padding: theme.spacing(1),
         background: `${theme.palette.background.paper}`,
         borderColor: getBorderColor(theme),
         borderRadius: "6px",
-        transform: "translate(-110%, -50%)",
+        position: "sticky",
         minWidth: "400px",
     },
     "& .ace-error-marker": {
