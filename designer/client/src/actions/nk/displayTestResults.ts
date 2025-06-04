@@ -1,9 +1,9 @@
 import type { ProcessName } from "src/components/Process/types";
 
-import type { TestResults } from "../../common/TestResultUtils";
 import type { TestType } from "../../components/modals/Testing/useTestOptions";
-import type { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
+import type { SourceWithParametersTest } from "../../http/HttpService";
 import HttpService from "../../http/HttpService";
+import type { ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import type { ScenarioGraph } from "../../types";
 import type { Action, ThunkAction } from "../reduxTypes";
@@ -51,7 +51,7 @@ export type TestsActions =
       }
     | {
           type: "DISPLAY_TEST_RESULTS_DETAILS";
-          testResults: TestResults;
+          testResults: TestResultsDto;
           testData?: SourceWithParametersTest;
       }
     | {
@@ -72,7 +72,7 @@ function wrapWithTestAction(
         processName: ProcessName,
         scenarioGraph: ScenarioGraph,
     ) => Promise<{
-        testResults: TestProcessResponse;
+        testResults: ResultsWithCountsDto;
         testData?: SourceWithParametersTest;
     }>,
 ): ThunkAction {
@@ -87,7 +87,7 @@ function wrapWithTestAction(
     };
 }
 
-function displayTestResultsDetails(testResults: TestResults, testData?: SourceWithParametersTest): Action {
+export function displayTestResultsDetails(testResults: TestResultsDto, testData?: SourceWithParametersTest): Action {
     return {
         type: "DISPLAY_TEST_RESULTS_DETAILS",
         testResults,
@@ -109,7 +109,7 @@ export function setPerformedTestType(performedTestType: PerformedTestType): Acti
     };
 }
 
-function displayTestResults({ counts, results }: TestProcessResponse, testData?: SourceWithParametersTest): ThunkAction {
+function displayTestResults({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
         dispatch(displayTestResultsDetails(results, testData));
         dispatch(displayProcessCounts(counts));

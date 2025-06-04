@@ -4,13 +4,13 @@ import React, { useContext } from "react";
 
 import { ButtonsVariant, ToolbarButtonsContext } from "../../../toolbarComponents/toolbarButtons";
 
-export function ButtonProgress({
-    enabled,
-    variant,
-    value,
-}: {
+export type ButtonProgressProps = {
     enabled?: boolean;
-} & Pick<LinearProgressProps, "variant" | "value">) {
+    value?: LinearProgressProps["value"];
+    variant?: LinearProgressProps["variant"];
+};
+
+export function ButtonProgress({ enabled, value, variant }: ButtonProgressProps) {
     const btnCtx = useContext(ToolbarButtonsContext);
     return (
         <Fade in={enabled}>

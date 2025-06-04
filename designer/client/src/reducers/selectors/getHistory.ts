@@ -6,7 +6,7 @@ export const getHistoryPast = (state: RootState) => state.graphReducer.past;
 const getHistoryFuture = (state: RootState) => state.graphReducer.future;
 const getHistorySnapshots = (state: RootState) => state.graphReducer.snapshots;
 
-const getHistorySnapshot = createSelector(getHistorySnapshots, (snapshots = []) => {
+export const getHistorySnapshot = createSelector(getHistorySnapshots, (snapshots = []) => {
     return snapshots[snapshots.length - 1] || -1;
 });
 

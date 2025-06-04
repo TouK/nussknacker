@@ -38,7 +38,8 @@ type Preset = {
     isDisabled?: boolean;
 };
 
-function ScenarioTestButton({ disabled, name, title, docs, markdownContent, type }: PropsOfButton<CustomButtonTypes.scenarioTest>) {
+function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
+    const { disabled, name, title, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
 

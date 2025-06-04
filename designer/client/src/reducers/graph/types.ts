@@ -1,16 +1,9 @@
 import type { Layout, RefreshData } from "../../actions/nk";
 import type { PerformedTestType } from "../../actions/nk/displayTestResults";
-import type { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
+import type { TestCapabilities, TestFormParameters } from "../../common/TestResultUtils";
 import type { Scenario } from "../../components/Process/types";
 import type { SourceWithParametersTest } from "../../http/HttpService";
-
-export interface NodeCounts {
-    errors?: number;
-    all?: number;
-    fragmentCounts?: ProcessCounts;
-}
-
-export type ProcessCounts = Record<string, NodeCounts>;
+import type { ProcessCounts, ResultsWithCountsDto, TestResultsDto } from "../../http/resultsWithCountsDto";
 
 type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
@@ -25,9 +18,11 @@ export type GraphState = {
     testType?: string;
     performedTestType?: PerformedTestType;
     testFormParameters?: TestFormParameters[];
-    testResults: TestResults;
+    testResults: TestResultsDto;
     testResultsLoading?: boolean;
     testData?: TestData;
     processCountsRefresh?: RefreshData;
     processCounts: ProcessCounts;
+    liveData: ResultsWithCountsDto;
+    liveDataRefresh?: RefreshData;
 };

@@ -10,7 +10,7 @@ import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities
 import DialogMessages from "../../../../common/DialogMessages";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getScenario, isPristine } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
@@ -188,7 +188,7 @@ const WithOpenVersion = ({
     isFound: boolean;
     activityType: ActivityType;
 }>) => {
-    const nothingToSave = useSelector(isSaveDisabled);
+    const nothingToSave = useSelector(isPristine);
     const scenario = useSelector(getScenario);
     const { name } = scenario || {};
     const dispatch = useDispatch();

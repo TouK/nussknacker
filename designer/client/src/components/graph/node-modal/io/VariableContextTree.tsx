@@ -3,7 +3,7 @@ import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Context } from "../../../../common/TestResultUtils";
+import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTitle } from "./ContextTitle";
 import { ContextTree } from "./ContextTree";
@@ -15,7 +15,7 @@ type ValuesContextTreeProps = {
     onIsEmptyChange?: (value: boolean) => void;
 };
 
-export type VariableContextType = Context & {
+export type VariableContextType = ResultContextJson & {
     nodeIds: string[];
     error?: string;
     disabled?: boolean;
@@ -32,7 +32,8 @@ function useVariableContext(direction: "input" | "output") {
 
     const value = useMemo(() => (direction === "input" ? inputDataSetId : outputDataSetId), [direction, inputDataSetId, outputDataSetId]);
     const [availableContexts, hiddenAvailableContexts] = useMemo(() => {
-        const contexts = getAvailableContexts(direction);
+        const contexts = getAvailableContexts(direction).sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getDate());
+
         const pageSize = 30;
         if (contexts.length > pageSize) {
             const sliced = contexts

@@ -2,7 +2,7 @@ import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 
-import type { Variable } from "../../../../common/TestResultUtils";
+import type { Variable } from "../../../../http/resultsWithCountsDto";
 import { nodeInput, nodeValue, partlyHidden } from "../NodeDetailsContent/NodeTableStyled";
 
 interface Props {

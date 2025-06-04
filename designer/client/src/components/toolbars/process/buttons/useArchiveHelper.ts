@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
-import ProcessUtils from "../../../../common/ProcessUtils";
 import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService";
+import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
 
@@ -15,7 +15,7 @@ export const useArchiveHelper = (processName: string) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { confirm } = useWindows();
-    const nothingToSave = useSelector(ProcessUtils.nothingToSave);
+    const nothingToSave = useSelector(isPristine);
     const { redirectAfterArchive } = useSelector(getFeatureSettings);
 
     const archive = useCallback(async () => {
