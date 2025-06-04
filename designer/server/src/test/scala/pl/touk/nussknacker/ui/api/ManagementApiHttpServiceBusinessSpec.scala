@@ -74,9 +74,10 @@ class ManagementApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
-        .equalsJsonBody(
+        .matchJsonWithRegexValuesBody(
           s"""
              |{
+             |  "timestamp": "${regexes.zuluDateRegex}",
              |  "results": {
              |    "nodeResults": {},
              |    "nodeTransitionResults": [],

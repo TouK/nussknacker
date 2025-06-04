@@ -4613,7 +4613,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LiveDataDto'
+                $ref: '#/components/schemas/ResultsWithCountsDto'
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
@@ -5695,25 +5695,6 @@ components:
       oneOf:
       - $ref: '#/components/schemas/CoordinatesBasedTextRange'
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
-    ExceptionResultDto:
-      title: ExceptionResultDto
-      type: object
-      required:
-      - contextId
-      - timestamp
-      - variables
-      properties:
-        contextId:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-        variables:
-          $ref: '#/components/schemas/Map_Json'
-        errorMessage:
-          type:
-          - string
-          - 'null'
     ExceptionResult_Json:
       title: ExceptionResult_Json
       type: object
@@ -5745,11 +5726,15 @@ components:
       type: object
       required:
       - contextId
+      - timestamp
       - name
       - value
       properties:
         contextId:
           type: string
+        timestamp:
+          type: string
+          format: date-time
         name:
           type: string
         value: {}
@@ -5802,11 +5787,15 @@ components:
       type: object
       required:
       - contextId
+      - timestamp
       - name
       - value
       properties:
         contextId:
           type: string
+        timestamp:
+          type: string
+          format: date-time
         name:
           type: string
         value: {}
@@ -6017,23 +6006,6 @@ components:
     InvalidScenario:
       title: InvalidScenario
       type: object
-    InvocationResultDto:
-      title: InvocationResultDto
-      type: object
-      required:
-      - contextId
-      - timestamp
-      - name
-      - value
-      properties:
-        contextId:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-        name:
-          type: string
-        value: {}
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
@@ -6067,66 +6039,6 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
-    LiveDataDto:
-      title: LiveDataDto
-      type: object
-      required:
-      - timestamp
-      - invocationResults
-      - externalInvocationResults
-      - exceptionsByNodeId
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-        nodeTransitions:
-          type: array
-          items:
-            $ref: '#/components/schemas/LiveDataForNodeTransitionDto'
-        invocationResults:
-          $ref: '#/components/schemas/Map_List_InvocationResultDto'
-        externalInvocationResults:
-          $ref: '#/components/schemas/Map_List_InvocationResultDto'
-        exceptionsByNodeId:
-          $ref: '#/components/schemas/Map_List_ExceptionResultDto'
-    LiveDataForNodeTransitionDto:
-      title: LiveDataForNodeTransitionDto
-      type: object
-      required:
-      - sourceNodeId
-      - totalCount
-      - currentThroughput
-      properties:
-        sourceNodeId:
-          type: string
-        destinationNodeId:
-          type:
-          - string
-          - 'null'
-        samples:
-          type: array
-          items:
-            $ref: '#/components/schemas/LiveDataSampleDto'
-        totalCount:
-          type: integer
-          format: int64
-        currentThroughput:
-          type: number
-    LiveDataSampleDto:
-      title: LiveDataSampleDto
-      type: object
-      required:
-      - contextId
-      - timestamp
-      - variables
-      properties:
-        contextId:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-        variables:
-          $ref: '#/components/schemas/Map_Json'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6138,13 +6050,6 @@ components:
       title: Map_Json
       type: object
       additionalProperties: {}
-    Map_List_ExceptionResultDto:
-      title: Map_List_ExceptionResultDto
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/ExceptionResultDto'
     Map_List_ExceptionResult_Json:
       title: Map_List_ExceptionResult_Json
       type: object
@@ -6166,13 +6071,6 @@ components:
         type: array
         items:
           $ref: '#/components/schemas/ExternalInvocationResult_Json'
-    Map_List_InvocationResultDto:
-      title: Map_List_InvocationResultDto
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/InvocationResultDto'
     Map_List_ResultContext_Json:
       title: Map_List_ResultContext_Json
       type: object
@@ -6716,6 +6614,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResultContext_Json'
+        totalCount:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        currentThroughput:
+          type:
+          - number
+          - 'null'
     NodeTypes:
       title: NodeTypes
       type: string
@@ -7182,9 +7089,13 @@ components:
       title: ResultsWithCountsDto
       type: object
       required:
+      - timestamp
       - results
       - counts
       properties:
+        timestamp:
+          type: string
+          format: date-time
         results:
           $ref: '#/components/schemas/TestResultsDto'
         counts:

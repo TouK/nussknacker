@@ -111,6 +111,7 @@ class BatchDataGenerationSpec
       .statusCode(200)
       .matchJsonWithRegexValuesBody(
         s"""{
+           |  "timestamp": "${regexes.zuluDateRegex}",
            |  "results": {
            |    "nodeResults": {
            |      "sourceId": [
@@ -214,6 +215,7 @@ class BatchDataGenerationSpec
       .statusCode(200)
       .matchJsonWithRegexValuesBody(
         s"""{
+           |  "timestamp": "${regexes.zuluDateRegex}",
            |  "results": {
            |    "nodeResults": {
            |      "sourceId": [

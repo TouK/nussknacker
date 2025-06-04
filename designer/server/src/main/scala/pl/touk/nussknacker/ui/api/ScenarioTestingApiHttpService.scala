@@ -14,11 +14,8 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationResultDto
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{
-  ResultsWithCountsDto,
-  ScenarioTestData,
-  TestingError
-}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.{ResultsWithCountsDto, ScenarioTestingApiEndpoints}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ScenarioTestData, TestingError}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
@@ -33,7 +30,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipRes
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError._
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.ScenarioTestingApiEndpoints
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider

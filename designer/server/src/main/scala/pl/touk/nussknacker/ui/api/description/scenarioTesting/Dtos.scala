@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -23,10 +22,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   EmptyDetails,
   TestWithParametersDetails
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
-import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
-import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.{Codec, CodecFormat, Schema}
 import sttp.tapir.derevo.schema
 
@@ -35,7 +31,6 @@ import scala.collection.immutable
 
 object Dtos {
 
-  import sttp.tapir.json.circe._
   lazy val typingResultEncoder: Encoder[TypingResult] = TypingResult.encoder
 
   object Capabilities {
@@ -209,65 +204,6 @@ object Dtos {
 
   }
 
-  final case class ResultsWithCountsDto(results: TestResultsDto, counts: Map[String, NodeCount])
-
-  object ResultsWithCountsDto {
-
-    def from(
-        resultsWithCounts: ResultsWithCounts,
-        skipResultsPerNode: SkipResultsPerNode,
-        skipResultsPerTransition: SkipResultsPerTransition
-    ): ResultsWithCountsDto = {
-      lazy val nodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
-        case (nodeTransition, results) =>
-          NodeTransitionResult(
-            sourceNodeId = nodeTransition.sourceNodeId,
-            destinationNodeId = nodeTransition.destinationNodeId,
-            results = results,
-          )
-      }.toList
-      lazy val exceptionsByNodeId = resultsWithCounts.results.exceptions.groupBy(_.nodeId).collect {
-        case (Some(nodeId), exceptions) => (nodeId, exceptions)
-      }
-      ResultsWithCountsDto(
-        results = TestResultsDto(
-          nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
-          nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
-          invocationResults = resultsWithCounts.results.invocationResults,
-          externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
-          exceptions = resultsWithCounts.results.exceptions,
-          exceptionsByNodeId = exceptionsByNodeId,
-        ),
-        counts = resultsWithCounts.counts,
-      )
-    }
-
-  }
-
-  final case class TestResultsDto(
-      nodeResults: Option[Map[String, List[ResultContext[Json]]]],
-      nodeTransitionResults: Option[List[NodeTransitionResult]],
-      invocationResults: Map[String, List[ExpressionInvocationResult[Json]]],
-      externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
-      exceptions: List[ExceptionResult[Json]],
-      exceptionsByNodeId: Map[String, List[ExceptionResult[Json]]],
-  )
-
-  final case class NodeTransitionResult(
-      sourceNodeId: String,
-      destinationNodeId: Option[String],
-      results: List[ResultContext[Json]]
-  )
-
-  implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
-  implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
-  implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived
-  implicit def throwableSchema: Schema[Throwable]                                         = Schema.string
-  implicit def exceptionResultSchema: Schema[ExceptionResult[Json]]                       = Schema.derived
-  implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
-  implicit def testResultsSchema: Schema[TestResultsDto]                                  = Schema.derived
-  implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
-  implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
 

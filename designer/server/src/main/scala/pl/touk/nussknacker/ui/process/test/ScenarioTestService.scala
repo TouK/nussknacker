@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioTestService(
@@ -144,7 +145,7 @@ class ScenarioTestService(
         )
       )
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
+    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def performTest(
@@ -163,7 +164,7 @@ class ScenarioTestService(
         )
       )
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))).value
+    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def resultsWithCounts(
@@ -173,7 +174,7 @@ class ScenarioTestService(
       isFragment: Boolean,
   )(implicit user: LoggedUser): ResultsWithCounts = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
+    ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))
   }
 
   def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {

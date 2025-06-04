@@ -59,7 +59,7 @@ import sttp.tapir.json.circe.jsonBody
 class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import Dtos._
-  import TestResultsCodecs._
+  import ResultsWithCountsDtoCodecs._
 
   def scenarioTestCapabilitiesEndpoint: SecuredEndpoint[
     (ProcessName, ScenarioGraph),

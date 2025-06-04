@@ -1,6 +1,6 @@
 import { createSelector } from "reselect";
 
-import type { NodeTransitionResult, NodeTransitionThroughputDto } from "../../http/resultsWithCountsDto";
+import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
 import { getGraph, getSavedScenario, getScenario, isDeployed } from "./graph";
 import { isGraphUpdated } from "./helpers";
 
@@ -18,9 +18,6 @@ export const getLiveDataRefresh = createSelector(getGraph, isReadyForLiveData, (
 });
 
 const EMPTY = [];
-export const getNodeTransitionThroughput = createSelector(getLiveData, (liveData): NodeTransitionThroughputDto[] => {
-    return liveData?.nodeTransitionThroughput || EMPTY;
-});
 export const getNodeTransitionResults = createSelector(getLiveData, (liveData): NodeTransitionResult[] => {
     return liveData?.results.nodeTransitionResults || EMPTY;
 });

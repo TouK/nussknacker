@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import { useGraph } from "../../components/graph/GraphContext";
-import { getLiveDataRefresh, getNodeTransitionResults, getNodeTransitionThroughput } from "../../reducers/selectors/getLiveData";
+import { getLiveDataRefresh, getNodeTransitionResults } from "../../reducers/selectors/getLiveData";
 import { CLASS_NAME } from "./useLiveDataRefreshEnabled";
 
 const PULSE_KEYFRAMES: Keyframe[] = [
@@ -19,7 +19,6 @@ const PULSE2_KEYFRAMES: Keyframe[] = [
 const DASH_KEYFRAMES: Keyframe[] = [{ strokeDashoffset: 0 }, { strokeDashoffset: 20 }];
 
 export function LiveDataThroughputs() {
-    const throughputData = useSelector(getNodeTransitionThroughput);
     const transitionResults = useSelector(getNodeTransitionResults);
     const liveDataRefresh = useSelector(getLiveDataRefresh);
     const graphGetter = useGraph();
@@ -48,10 +47,10 @@ export function LiveDataThroughputs() {
 
     const maxThroughput = useMemo(
         () =>
-            throughputData.reduce((max, link) => {
-                return Math.max(max, link.throughput, 0.1);
+            transitionResults.reduce((max, link) => {
+                return Math.max(max, link.currentThroughput, 0.1);
             }, 0),
-        [throughputData],
+        [transitionResults],
     );
 
     const newEvents = useMemo(() => {
@@ -68,12 +67,12 @@ export function LiveDataThroughputs() {
             const el = graphInstance.processGraphPaper.findViewByModel(model)?.el;
 
             const nodeInputThroughput = enabled
-                ? throughputData
+                ? transitionResults
                       .filter(({ sourceNodeId, destinationNodeId }) => {
                           if (model.hasPort("In")) return destinationNodeId === model.id;
                           if (model.hasPort("Out")) return sourceNodeId === model.id;
                       })
-                      .reduce((sum, { throughput }) => sum + throughput, 0)
+                      .reduce((sum, { currentThroughput }) => sum + currentThroughput, 0)
                 : 0;
 
             const animation = el.getAnimations().find((a) => a.id === "pulse2");
@@ -104,7 +103,7 @@ export function LiveDataThroughputs() {
                 });
             });
         });
-    }, [enabled, graphGetter, liveDataRefresh?.nextIn, newEvents, throughputData]);
+    }, [enabled, graphGetter, liveDataRefresh?.nextIn, newEvents, transitionResults]);
 
     useEffect(() => {
         const graphInstance = graphGetter();
@@ -113,7 +112,7 @@ export function LiveDataThroughputs() {
         graphInstance?.graph.getLinks()?.forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".connection");
 
-            const transitionThroughput = throughputData.find(
+            const transitionThroughput = transitionResults.find(
                 ({ sourceNodeId, destinationNodeId }) =>
                     sourceNodeId === model.attributes.edgeData.from && destinationNodeId === model.attributes.edgeData.to,
             );
@@ -123,7 +122,7 @@ export function LiveDataThroughputs() {
                     sourceNodeId === transitionThroughput?.sourceNodeId && destinationNodeId === transitionThroughput?.destinationNodeId,
             );
 
-            const normalizedThroughput = transitionThroughput && recentEvent ? transitionThroughput.throughput / maxThroughput : 0;
+            const normalizedThroughput = transitionThroughput && recentEvent ? transitionThroughput.currentThroughput / maxThroughput : 0;
             el.classList.toggle(CLASS_NAME, normalizedThroughput > 0);
 
             const animation = el.getAnimations().find((a) => a.id === "dash");
@@ -141,7 +140,7 @@ export function LiveDataThroughputs() {
                 fill: "forwards",
             });
         });
-    }, [flatEvents, graphGetter, liveDataRefresh?.last, liveDataRefresh?.nextIn, maxThroughput, throughputData]);
+    }, [flatEvents, graphGetter, liveDataRefresh?.last, liveDataRefresh?.nextIn, maxThroughput, transitionResults]);
 
     return (
         <GlobalStyles

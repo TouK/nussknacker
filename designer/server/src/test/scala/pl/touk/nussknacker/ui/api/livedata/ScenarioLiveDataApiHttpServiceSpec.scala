@@ -78,11 +78,27 @@ class ScenarioLiveDataApiHttpServiceSpec
         .statusCode(StatusCodes.OK.intValue)
         .equalsJsonBody(
           s"""{
-             |    "timestamp": "2025-05-27T21:48:20Z",
-             |    "nodeTransitions": [],
+             |  "timestamp": "2025-05-27T21:48:20Z",
+             |  "results": {
+             |    "nodeResults": null,
+             |    "nodeTransitionResults": [],
              |    "invocationResults": {},
              |    "externalInvocationResults": {},
+             |    "exceptions": [],
              |    "exceptionsByNodeId": {}
+             |  },
+             |  "counts": {
+             |    "Event Generator": {
+             |      "all": 0,
+             |      "errors": 0,
+             |      "fragmentCounts": {}
+             |    },
+             |    "end": {
+             |      "all": 0,
+             |      "errors": 0,
+             |      "fragmentCounts": {}
+             |    }
+             |  }
              |}""".stripMargin
         )
     }
@@ -153,65 +169,100 @@ class ScenarioLiveDataApiHttpServiceSpec
         .statusCode(StatusCodes.OK.intValue)
         .equalsJsonBody(
           s"""{
-             |    "timestamp": "2025-05-27T21:48:20Z",
-             |    "nodeTransitions": [
-             |        {
-             |            "sourceNodeId": "start",
-             |            "destinationNodeId": "variable",
-             |            "samples": [
-             |                {
-             |                    "contextId": "",
-             |                    "timestamp": "2025-05-27T21:48:20Z",
-             |                    "variables": {
-             |                        "v1": {
-             |                            "a": "aaa",
-             |                            "b": 1
-             |                        }
-             |                    }
-             |                }
-             |            ],
-             |            "totalCount": 101,
-             |            "currentThroughput": 0.9811
-             |        }
+             |  "timestamp": "2025-05-27T21:48:20Z",
+             |  "results": {
+             |    "nodeResults": null,
+             |    "nodeTransitionResults": [
+             |      {
+             |        "sourceNodeId": "start",
+             |        "destinationNodeId": "variable",
+             |        "results": [
+             |          {
+             |            "id": "",
+             |            "timestamp": "2025-05-27T21:48:20Z",
+             |            "variables": {
+             |              "v1": {
+             |                "a": "aaa",
+             |                "b": 1
+             |              }
+             |            }
+             |          }
+             |        ],
+             |        "totalCount": 101,
+             |        "currentThroughput": 0.9811
+             |      }
              |    ],
              |    "invocationResults": {
-             |        "start": [
-             |            {
-             |                "contextId": "mocked-context-id",
-             |                "timestamp": "2025-05-27T21:48:20Z",
-             |                "name": "var",
-             |                "value": {
-             |                    "pretty": 1
-             |                }
-             |            }
-             |        ]
+             |      "start": [
+             |        {
+             |          "contextId": "mocked-context-id",
+             |          "timestamp": "2025-05-27T21:48:20Z",
+             |          "name": "var",
+             |          "value": {
+             |            "pretty": 1
+             |          }
+             |        }
+             |      ]
              |    },
              |    "externalInvocationResults": {
-             |        "start": [
-             |            {
-             |                "contextId": "mocked-context-id",
-             |                "timestamp": "2025-05-27T21:48:20Z",
-             |                "name": "var",
-             |                "value": {
-             |                    "pretty": 1
-             |                }
-             |            }
-             |        ]
+             |      "start": [
+             |        {
+             |          "contextId": "mocked-context-id",
+             |          "timestamp": "2025-05-27T21:48:20Z",
+             |          "name": "var",
+             |          "value": {
+             |            "pretty": 1
+             |          }
+             |        }
+             |      ]
              |    },
-             |    "exceptionsByNodeId": {
-             |        "start": [
-             |            {
-             |                "contextId": "mocked-context-id",
-             |                "timestamp": "2025-05-27T21:48:20Z",
-             |                "variables": {
-             |                    "var1": {
-             |                        "pretty": "abc"
-             |                    }
-             |                },
-             |                "errorMessage": "Something bad happened"
+             |    "exceptions": [
+             |      {
+             |        "context": {
+             |          "id": "mocked-context-id",
+             |          "timestamp": "2025-05-27T21:48:20Z",
+             |          "variables": {
+             |            "var1": {
+             |              "pretty": "abc"
              |            }
-             |        ]
+             |          }
+             |        },
+             |        "nodeId": "start",
+             |        "throwable": "Something bad happened"
+             |      }
+             |    ],
+             |    "exceptionsByNodeId": {
+             |      "start": [
+             |        {
+             |          "context": {
+             |            "id": "mocked-context-id",
+             |            "timestamp": "2025-05-27T21:48:20Z",
+             |            "variables": {
+             |              "var1": {
+             |                "pretty": "abc"
+             |              }
+             |            }
+             |          },
+             |          "nodeId": "start",
+             |          "throwable": "Something bad happened"
+             |        }
+             |      ]
              |    }
+             |  },
+             |  "counts": {
+             |    "Event Generator": {
+             |      "all": 0,
+             |      "errors": 0,
+             |      "fragmentCounts": {
+             |      }
+             |    },
+             |    "end": {
+             |      "all": 0,
+             |      "errors": 0,
+             |      "fragmentCounts": {
+             |      }
+             |    }
+             |  }
              |}""".stripMargin
         )
     }

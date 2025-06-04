@@ -15,10 +15,11 @@ import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
+import java.time.Instant
 import scala.concurrent.duration._
 
 class StreamingEmbeddedDeploymentManagerTest
@@ -31,6 +32,8 @@ class StreamingEmbeddedDeploymentManagerTest
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
   import KafkaUniversalComponentTransformer._
+
+  private val mockedTimestamp = Instant.now()
 
   test("Deploys scenario and cancels") {
     val fixture @ FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
@@ -233,16 +236,29 @@ class StreamingEmbeddedDeploymentManagerTest
     val id1               = idGenerator.nextContextId()
     val id2               = idGenerator.nextContextId()
 
-    invocationResults.toSet shouldBe Set(
-      ExpressionInvocationResult(id1, "Key", Json.Null),
-      ExpressionInvocationResult(id1, sinkValueParamName.value, variable(Map("message" -> "1", "other" -> "1"))),
-      ExpressionInvocationResult(id2, "Key", Json.Null),
-      ExpressionInvocationResult(id2, sinkValueParamName.value, variable(Map("message" -> "2", "other" -> "1")))
+    invocationResults.toSet.map(withMockedTimestamp) shouldBe Set(
+      ExpressionInvocationResult(id1, mockedTimestamp, "Key", Json.Null),
+      ExpressionInvocationResult(
+        id1,
+        mockedTimestamp,
+        sinkValueParamName.value,
+        variable(Map("message" -> "1", "other" -> "1"))
+      ),
+      ExpressionInvocationResult(id2, mockedTimestamp, "Key", Json.Null),
+      ExpressionInvocationResult(
+        id2,
+        mockedTimestamp,
+        sinkValueParamName.value,
+        variable(Map("message" -> "2", "other" -> "1"))
+      )
     )
 
   }
 
   private def variable(value: Map[String, String]): Json =
     Json.obj("pretty" -> Json.fromFields(value.mapValuesNow(Json.fromString)))
+
+  private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
+    result.copy(timestamp = mockedTimestamp)
 
 }
