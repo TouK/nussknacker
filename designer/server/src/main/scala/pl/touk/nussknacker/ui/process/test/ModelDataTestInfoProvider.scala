@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.test
+package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
@@ -6,17 +6,17 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider._
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.ListUtil
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider._
 import shapeless.syntax.typeable._
 
 class ModelDataTestInfoProvider(

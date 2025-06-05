@@ -10,12 +10,6 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
-  ParametersDefinitionError,
-  SourceTestDataGenerationError,
-  TestingCapabilitiesError
-}
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
@@ -25,6 +19,11 @@ import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{FetchLiveDataError, PerformTestError, SourceTestError}
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider.{
+  ParametersDefinitionError,
+  SourceTestDataGenerationError,
+  TestingCapabilitiesError
+}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -83,11 +82,11 @@ class ScenarioTestService(
 
     for {
       _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
-      generatedData <- testInfoProvider
+      testData <- testInfoProvider
         .fetchSourcesLiveData(processVersion, canonical, maxNumberOfSamples)
         .leftMap(FetchLiveDataError.SourcesLiveDataFetchingError)
       rawTestData <- preliminaryScenarioTestDataSerDe
-        .serialize(generatedData)
+        .serialize(testData)
         .leftMap(FetchLiveDataError.ScenarioTestDataSerializationError)
     } yield rawTestData
   }

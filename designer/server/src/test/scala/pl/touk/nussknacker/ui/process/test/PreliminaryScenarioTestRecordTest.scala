@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.test
+package pl.touk.nussknacker.ui.process.test
 
 import io.circe.Json
 import io.circe.parser.decode

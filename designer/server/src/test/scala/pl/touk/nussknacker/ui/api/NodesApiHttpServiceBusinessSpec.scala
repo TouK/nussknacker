@@ -1181,9 +1181,9 @@ class NodesApiHttpServiceBusinessSpec
        |    }
        |}""".stripMargin
 
-  private val sourceTestingScenarioSourceId = "sourceId"
+  private lazy val sourceTestingScenarioSourceId = "sourceId"
 
-  private val sourceTestingScenario = ScenarioBuilder
+  private lazy val sourceTestingScenario = ScenarioBuilder
     .streaming("source_testing_scenario")
     .source(sourceTestingScenarioSourceId, "genericSourceWithCustomVariables", "elements" -> "{'test'}".spel)
     .emptySink("sinkId", "barSink")

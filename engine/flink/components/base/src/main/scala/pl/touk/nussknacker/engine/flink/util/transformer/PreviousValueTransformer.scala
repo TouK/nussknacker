@@ -18,15 +18,15 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
 
   @MethodToInvoke(returnType = classOf[Value])
   def execute(
-      @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
-      @ParamName("value") value: LazyParameter[Value]
+      @ParamName("Key") key: LazyParameter[CharSequence],
+      @ParamName("Value") value: LazyParameter[Value]
   ): FlinkCustomStreamTransformation with ReturningType = FlinkCustomStreamTransformation(
     (start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       val valueTypeInfo = TypeInformationDetection.instance.forType[AnyRef](value.returnType)
       setUidToNodeIdIfNeed(
         ctx,
         start
-          .groupBy(groupBy)(ctx)
+          .groupBy(key)(ctx)
           .flatMap(
             new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
             ctx.valueWithContextInfo.forType(valueTypeInfo)
