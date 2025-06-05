@@ -22,6 +22,7 @@ type SettingsNames =
     | "debug.userSettingsVisible"
     | "scenario.allowQuickSave"
     | "scenario.allowQuickDeploy"
+    | "scenario.allowQuickCancelDeploy"
     | "scenario.showBreadcrumbs"
     | "toolbar.autoSaveDuringDeployRedeploy";
 
@@ -47,6 +48,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "editor.jsonTemplate.showLines": getInitialUserFlag("editor.jsonTemplate.showLines", true),
     "scenario.allowQuickSave": getInitialUserFlag("scenario.allowQuickSave"),
     "scenario.allowQuickDeploy": getInitialUserFlag("scenario.allowQuickDeploy"),
+    "scenario.allowQuickCancelDeploy": getInitialUserFlag("scenario.allowQuickCancelDeploy"),
     "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
     "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
 });
