@@ -29,9 +29,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
-import scala.compat.java8.FutureConverters._
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 
 class ModelUtilExceptionHandlingSpec
     extends AnyFunSuite
@@ -56,8 +54,8 @@ class ModelUtilExceptionHandlingSpec
               "previousValue",
               "out1",
               "previousValue",
-              "groupBy" -> generator.throwFromString().spel,
-              "value"   -> generator.throwFromString().spel
+              "Key"   -> generator.throwFromString().spel,
+              "Value" -> generator.throwFromString().spel
             )
             .customNode(
               "aggregate-sliding",
