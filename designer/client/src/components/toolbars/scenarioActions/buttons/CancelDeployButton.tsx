@@ -39,8 +39,6 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
 
     const [isCancelCallProcessing, setIsCancelCallProcessing] = useState(false);
 
-    const isLoading = useMemo(() => isCancelCallProcessing, [isCancelCallProcessing]);
-
     const { open } = useWindows();
     const action = useCallback(
         (name: ProcessName, versionId: ProcessVersionId, comment?: string) =>
@@ -71,10 +69,14 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
 
     const presets = useMemo<CancelDeployPreset[]>(
         () => [
-            { value: "cancel", label: "stop", isDisabled: !available },
-            { value: "cancelWithComment", label: "stop with comment", isDisabled: !available },
+            { value: "cancel", label: t("panels.actions.deploy-stop.button", "stop"), isDisabled: !available },
+            {
+                value: "cancelWithComment",
+                label: t("panels.actions.deploy-stop.stopWithComment", "stop with comment"),
+                isDisabled: !available,
+            },
         ],
-        [available],
+        [available, t],
     );
 
     const handlePresetChange = useCallback(
@@ -97,8 +99,8 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
         return (
             <ToolbarButton
                 name={t("panels.actions.deploy-stop.button", "stop")}
-                disabled={!available || isLoading}
-                isLoading={isLoading}
+                disabled={!available || isCancelCallProcessing}
+                isLoading={isCancelCallProcessing}
                 icon={<Icon />}
                 onClick={handleCancelDeploy}
                 presets={presets}
