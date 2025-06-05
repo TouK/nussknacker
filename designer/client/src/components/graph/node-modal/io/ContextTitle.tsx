@@ -15,7 +15,7 @@ export function ContextTitle({ context, showNodes, reversed }: { context: Variab
     return (
         <Stack spacing={1}>
             <Stack spacing={1} direction="row">
-                <Typography>{label}</Typography>
+                <Typography>{context.timestamp || label}</Typography>
                 {context.error ? (
                     <Warning
                         sx={(theme) => ({

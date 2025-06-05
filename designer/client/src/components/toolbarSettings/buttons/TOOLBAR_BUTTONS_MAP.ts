@@ -26,6 +26,7 @@ import FromFileButton from "../../toolbars/test/buttons/FromFileButton";
 import GenerateAndTestButton from "../../toolbars/test/buttons/GenerateAndTestButton";
 import GenerateButton from "../../toolbars/test/buttons/GenerateButton";
 import HideButton from "../../toolbars/test/buttons/HideButton";
+import { LiveDataButton } from "../../toolbars/test/buttons/LiveDataButton";
 import ScenarioTestButton from "../../toolbars/test/buttons/ScenarioTestButton";
 import { ResetViewButton } from "../../toolbars/view/buttons/ResetViewButton";
 import { ZoomInButton } from "../../toolbars/view/buttons/ZoomInButton";
@@ -75,4 +76,5 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [CustomButtonTypes.adhocTesting]: AdhocTestingButton,
     [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
     [CustomButtonTypes.scenarioTest]: ScenarioTestButton,
+    [BuiltinButtonTypes.liveData]: LiveDataButton,
 };

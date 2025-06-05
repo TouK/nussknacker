@@ -6,7 +6,7 @@ import { after, cloneDeepWith, isEmpty, toString } from "lodash";
 import millify from "millify";
 
 import { blendLighten, getNodeBorderColor } from "../../../containers/theme/helpers";
-import type { NodeCounts, ProcessCounts } from "../../../reducers/graph";
+import type { NodeCounts, ProcessCounts } from "../../../http/resultsWithCountsDto";
 import type { UserSettings } from "../../../reducers/userSettings";
 import type { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";

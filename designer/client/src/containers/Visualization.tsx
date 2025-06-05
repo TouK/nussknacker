@@ -5,11 +5,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DndProvider } from "react-dnd-multi-backend";
 import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import ProcessUtils from "../common/ProcessUtils";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import type { Graph } from "../components/graph/Graph";
@@ -21,15 +20,25 @@ import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
-import type { RootState } from "../reducers";
-import { getGraph, getProcessVersionId, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
+import {
+    getGraph,
+    getProcessVersionId,
+    getScenario,
+    getScenarioGraph,
+    getVersions,
+    isLatestProcessVersion,
+    isPristine,
+} from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { getProcessDefinitionData } from "../reducers/selectors/processDefinitionData";
 import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
+import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
+import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
 import { GraphPage } from "./Page";
+import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
 
 function useUnmountCleanup() {
@@ -77,22 +86,51 @@ function useCountsIfNeeded() {
     useEffect(() => {
         if (!scenario?.name || scenario.isFragment) return;
 
-        const countParams = extractCountParams({ from, to, refresh });
+        const countParams = extractCountParams({
+            from,
+            to,
+            refresh,
+        });
         if (!countParams) return;
 
         dispatch(
             fetchAndDisplayProcessCounts({
                 processName: scenario.name,
-                scenarioGraph,
                 ...countParams,
             }),
         );
     }, [dispatch, from, refresh, scenario, scenarioGraph, to]);
 }
 
+function useVersionSwitchIfNeeded(processName: string, version: string) {
+    const isLatestVersion = useSelector(isLatestProcessVersion);
+    const currentVersionId = useSelector(getProcessVersionId);
+    const [latestVersion, ...otherVersions] = useSelector(getVersions);
+    const navigate = useNavigate();
+    // const dispatch = useDispatch();
+
+    useEffect(() => {
+        const urlVersionId = parseInt(version);
+        console.debug({
+            processName,
+            isLatestVersion,
+            urlVersionId,
+            currentVersionId,
+            latestVersion,
+            otherVersions,
+        });
+        if (version) {
+            navigate(`${VisualizationBasePath}/${processName}`);
+        }
+        // navigate(`${VisualizationBasePath}/${processName}/${currentVersionId}`);
+        // dispatch(displayScenarioVersion(processName, urlVersionId));
+    }, [currentVersionId, isLatestVersion, latestVersion, navigate, otherVersions, processName, version]);
+}
+
 function Visualization() {
-    const { processName } = useDecodedParams<{
+    const { processName, version } = useDecodedParams<{
         processName: string;
+        version: string;
     }>();
     const dispatch = useDispatch();
     const { showBoundary } = useErrorBoundary();
@@ -125,7 +163,7 @@ function Visualization() {
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
-    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state as RootState));
+    const nothingToSave = useSelector(isPristine);
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
@@ -145,6 +183,8 @@ function Visualization() {
 
     useProcessState();
     useCountsIfNeeded();
+    useLiveDataIfNeeded();
+    // useVersionSwitchIfNeeded(processName, version);
 
     const { openNodes } = useModalDetailsIfNeeded();
     const openAndHighlightNodes = useCallback(
@@ -174,6 +214,7 @@ function Visualization() {
                 </SpinnerWrapper>
 
                 <GraphProvider graph={getGraphInstance}>
+                    <LiveDataThroughputs />
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>

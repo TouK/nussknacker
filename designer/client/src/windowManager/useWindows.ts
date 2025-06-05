@@ -10,7 +10,7 @@ import { StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
 import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import type { Scenario } from "../components/Process/types";
-import type { RootState } from "../reducers";
+import { getWindowsIdMapping } from "../reducers/selectors/getWindowsIdMapping";
 import type { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
 
@@ -80,7 +80,7 @@ export function useWindows(parent?: WindowId) {
         [forceDisableModals, _open],
     );
 
-    const nodeWindowIdMap = useSelectorRef((state: RootState) => state.nodeWindowIdMap);
+    const nodeWindowIdMap = useSelectorRef(getWindowsIdMapping);
 
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {

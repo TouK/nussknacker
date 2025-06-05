@@ -3,14 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import DryRunTestingIcon from "../../../assets/img/icons/test-dry-run.svg";
-import GenerateAndTestIcon from "../../../assets/img/icons/test-using-generated-data.svg";
+import GenerateAndTestIcon from "../../../assets/img/icons/test-using-live-data.svg";
 import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
 import type { CustomRadioProps } from "../../customRadio/CustomRadio";
 
 export enum TestType {
     withParameters = "withParameters",
-    withGeneratedData = "withGeneratedData",
+    withLiveData = "withLiveData",
 }
 
 export type TestingOption = CustomRadioProps & {
@@ -45,16 +45,16 @@ export const useTestOptions = (): {
                     "testingForm.withGeneratedData.title",
                     "A specified number of samples will be retrieved from the underlying sources and used as an input data. The test will fail if no data is available.",
                 ),
-                value: TestType.withGeneratedData,
+                value: TestType.withLiveData,
                 Icon: GenerateAndTestIcon,
-                disabled: testCapabilities?.testWithGeneratedData.status !== TestCapabilityStatus.AVAILABLE,
+                disabled: testCapabilities?.testWithLiveData.status !== TestCapabilityStatus.AVAILABLE,
                 disableReason: t(
                     "testingForm.withGeneratedData.disableReason",
                     "Currently configured scenario sources do not support testing with live data",
                 ),
             },
         ],
-        [t, testCapabilities?.testWithGeneratedData.status, testCapabilities?.testWithParameters.status],
+        [t, testCapabilities?.testWithLiveData.status, testCapabilities?.testWithParameters.status],
     );
 
     const testType = useMemo(() => {

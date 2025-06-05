@@ -124,6 +124,7 @@ object TapirHttpServiceFactory {
       scenarioAuthorizer = processAuthorizer,
       scenarioService = processService,
       dmDispatcher = dmDispatcher,
+      processCounter = processCounter,
     )
 
     val actionInfoHttpService = new ActionInfoHttpService(

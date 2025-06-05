@@ -69,8 +69,8 @@ export type StatusRunning = {
     versionId: string;
 };
 
-export function isStatusRunning(statusType: StatusType): statusType is StatusRunning {
-    return statusType.name === "RUNNING";
+export function isStatusRunning(statusType?: StatusType): statusType is StatusRunning {
+    return statusType?.name === "RUNNING";
 }
 
 export type StatusDefinitionType = {

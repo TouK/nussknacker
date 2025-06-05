@@ -8,6 +8,7 @@ import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
 import type { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
 import type { TestsActions } from "./nk/displayTestResults";
+import type { LiveDataActions } from "./nk/liveData";
 import type { NotificationActions } from "./nk/notifications";
 import type { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
 import type { ToolbarActions } from "./nk/toolbars";
@@ -19,6 +20,7 @@ type TypedAction =
     | CloudDataActions
     | CountsActions
     | GetScenarioActivitiesAction
+    | LiveDataActions
     | NodeActions
     | NodeDetailsActions
     | NotificationActions

@@ -8,13 +8,8 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExternalInvocationResult,
   ResultContext
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{
-  NodeTransitionResult,
-  ResultsWithCountsDto,
-  TestResultsDto
-}
 
-object TestResultsCodecs {
+object ResultsWithCountsDtoCodecs {
 
   import io.circe.syntax._
   import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -49,7 +44,7 @@ object TestResultsCodecs {
           "nodeResults" -> nodeResults
             .map(_.map { case (node, list) => node -> list.sortBy(_.id) }.asJson)
             .getOrElse(Json.Null),
-          "nodeTransitionResults" -> nodeTransitionResults.asJson,
+          "nodeTransitionResults" -> nodeTransitionResults.asJson.deepDropNullValues,
           "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
           "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId)

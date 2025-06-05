@@ -21,21 +21,21 @@ trait TestInfoProvider {
       scenario: CanonicalProcess
   ): Either[ParametersDefinitionError, Map[String, List[Parameter]]]
 
-  def generateTestData(
-      processVersion: ProcessVersion,
-      scenario: CanonicalProcess,
-      size: Int
-  ): Either[ScenarioTestDataGenerationError, PreliminaryScenarioTestData]
-
   def prepareTestData(
       preliminaryTestData: PreliminaryScenarioTestData,
       scenario: CanonicalProcess
   ): Either[TestDataPreparationError, ScenarioTestData]
 
-  def generateTestDataForSource(
+  def fetchSourcesLiveData(
+      processVersion: ProcessVersion,
+      scenario: CanonicalProcess,
+      maxNumberOfSamples: Int
+  ): Either[SourcesLiveDataFetchingError, PreliminaryScenarioTestData]
+
+  def fetchSourceLiveData(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
-      size: Int
+      maxNumberOfSamples: Int
   ): Either[SourceTestDataGenerationError, PreliminaryScenarioTestData]
 
 }
@@ -50,19 +50,19 @@ object TestInfoProvider {
     final case class SourceCompilationError(nodeId: NodeId, errors: NonEmptyList[ProcessCompilationError])
         extends SourceTestDataGenerationError
     final case class UnsupportedSourceError(nodeId: NodeId) extends SourceTestDataGenerationError
-    final case object NoDataGenerated                       extends SourceTestDataGenerationError
+    final case object NoLiveDataAvailable                   extends SourceTestDataGenerationError
   }
 
-  sealed trait ScenarioTestDataGenerationError extends TestDataError
+  sealed trait SourcesLiveDataFetchingError extends TestDataError
 
-  object ScenarioTestDataGenerationError {
+  object SourcesLiveDataFetchingError {
 
     final case class ScenarioGraphValidationError(
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
-    ) extends ScenarioTestDataGenerationError
+    ) extends SourcesLiveDataFetchingError
 
-    final case object NoDataGenerated                 extends ScenarioTestDataGenerationError
-    final case object NoSourcesWithTestDataGeneration extends ScenarioTestDataGenerationError
+    final case object NoLiveDataAvailable                  extends SourcesLiveDataFetchingError
+    final case object NoSourcesWithLiveDataFetchingSupport extends SourcesLiveDataFetchingError
   }
 
   sealed trait TestDataPreparationError extends TestDataError

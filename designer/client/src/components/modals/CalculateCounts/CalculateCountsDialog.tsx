@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
 import Icon from "../../../assets/img/toolbarButtons/counts.svg";
-import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
+import { getProcessName } from "../../../reducers/selectors/graph";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
@@ -34,21 +34,19 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
     const [state, setState] = useState(initState);
     const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
-    const scenarioGraph = useSelector(getScenarioGraph);
 
     const from = useMemo(() => moment(state?.from), [state?.from]);
     const to = useMemo(() => moment(state?.to), [state?.to]);
     const confirm = useCallback(() => {
         return dispatch(
             fetchAndDisplayProcessCounts({
-                scenarioGraph,
                 processName,
                 from,
                 to,
                 refreshIn: state?.refresh,
             }),
         );
-    }, [dispatch, from, processName, scenarioGraph, state?.refresh, to]);
+    }, [dispatch, from, processName, state?.refresh, to]);
 
     const isStateValid = from.isValid() && to.isValid() && from.isBefore(to);
     const buttons: WindowButtonProps[] = useMemo(

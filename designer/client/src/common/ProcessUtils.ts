@@ -1,12 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
-import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
+import { flatten, isEmpty, pickBy, transform } from "lodash";
 import type { Scenario } from "src/components/Process/types";
 
 import { StickyNoteDefinition, StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
 import type { ScenarioLabelValidationError } from "../components/Labels/types";
 import type { RootState } from "../reducers";
-import { getHistoryPast } from "../reducers/selectors/getHistory";
-import { getScenario, isProcessRenamed } from "../reducers/selectors/graph";
+import { getScenario } from "../reducers/selectors/graph";
 import type {
     ComponentDefinition,
     NodeId,
@@ -22,48 +21,6 @@ import type {
 } from "../types";
 
 class ProcessUtils {
-    nothingToSave = (state: RootState): boolean => {
-        const scenario: Scenario = getScenario(state);
-        const savedProcessState: Scenario = getHistoryPast(state)?.[0]?.scenario || scenario;
-
-        /**
-         * It's a fix of https://touk-jira.atlassian.net/browse/NU-2194
-         * When node is added from a toolbar, branchParametersTemplate are initially added to the node, but when we perform a scenario save, node has no branchParametersTemplate
-         * Let's ignore branchParametersTemplate in a button save state checking
-         */
-        const omitBranchParametersTemplate = (details: ScenarioGraph) => {
-            if (!details.nodes?.length) {
-                return details;
-            }
-
-            return {
-                ...details,
-                nodes: details.nodes.map((node) => omit(node, ["branchParametersTemplate"])),
-            };
-        };
-        const processRenamed = isProcessRenamed(state);
-
-        if (processRenamed) {
-            return false;
-        }
-
-        if (isEmpty(scenario)) {
-            return true;
-        }
-
-        const labelsFor = (scenario: Scenario): string[] => {
-            return scenario.labels ? scenario.labels.slice().sort((a, b) => a.localeCompare(b)) : [];
-        };
-
-        const isGraphUpdated = isEqual(
-            omitBranchParametersTemplate(scenario.scenarioGraph),
-            omitBranchParametersTemplate(savedProcessState.scenarioGraph),
-        );
-        const areScenarioLabelsUpdated = isEqual(labelsFor(scenario), labelsFor(savedProcessState));
-
-        return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
-    };
-
     canExport = (state: RootState): boolean => {
         const scenario = getScenario(state);
         return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);

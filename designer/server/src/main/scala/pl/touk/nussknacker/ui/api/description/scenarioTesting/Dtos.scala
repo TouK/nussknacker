@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
@@ -23,10 +22,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   EmptyDetails,
   TestWithParametersDetails
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.utils.ValidationErrorOps.ValidationErrorOps
-import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
-import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.{Codec, CodecFormat, Schema}
 import sttp.tapir.derevo.schema
 
@@ -35,14 +31,15 @@ import scala.collection.immutable
 
 object Dtos {
 
-  import sttp.tapir.json.circe._
   lazy val typingResultEncoder: Encoder[TypingResult] = TypingResult.encoder
 
   object Capabilities {
 
     final case class ScenarioTestCapabilities(
         testWithParameters: CapabilityStatus[TestWithParametersDetails],
+        // TODO: legacy: to be removed
         testWithGeneratedData: CapabilityStatus[EmptyDetails],
+        testWithLiveData: CapabilityStatus[EmptyDetails],
     )
 
     object ScenarioTestCapabilities {
@@ -50,11 +47,11 @@ object Dtos {
       implicit def schema: Schema[ScenarioTestCapabilities]     = Schema.derived
     }
 
-    sealed trait CapabilityStatus[T <: TestCapabilityDetails]
+    sealed trait CapabilityStatus[+T <: TestCapabilityDetails]
 
     object CapabilityStatus {
-      final case class NotAvailable[T <: TestCapabilityDetails](reason: NotAvailableReason) extends CapabilityStatus[T]
-      final case class Available[T <: TestCapabilityDetails](data: T)                       extends CapabilityStatus[T]
+      final case class NotAvailable(reason: NotAvailableReason)       extends CapabilityStatus[Nothing]
+      final case class Available[T <: TestCapabilityDetails](data: T) extends CapabilityStatus[T]
       def available: Available[EmptyDetails] = Available(EmptyDetails())
 
       implicit def codec[DATA <: TestCapabilityDetails: circe.Codec]: circe.Codec[CapabilityStatus[DATA]] =
@@ -64,7 +61,7 @@ object Dtos {
               statusStr <- c.downField("status").as[String]
               status <- statusStr match {
                 case "NOT_AVAILABLE" =>
-                  c.downField("reason").as[NotAvailableReason].map(CapabilityStatus.NotAvailable[DATA](_))
+                  c.downField("reason").as[NotAvailableReason].map(CapabilityStatus.NotAvailable)
                 case "AVAILABLE" =>
                   c.as[DATA].map(CapabilityStatus.Available.apply)
               }
@@ -152,10 +149,10 @@ object Dtos {
 
   }
 
-  object GeneratedTestData {
+  object LiveDataFetching {
 
     @derive(schema, encoder, decoder)
-    final case class GeneratedTestDataRequest(
+    final case class FetchSourcesLiveDataRequest(
         scenarioGraph: ScenarioGraph,
         numberOfSamples: Int,
     )
@@ -166,11 +163,14 @@ object Dtos {
 
   object ScenarioTestData {
 
+    // TODO: legacy: to be removed
+    private val legacyLiveDataType = "WITH_GENERATED_DATA"
+
     final case class WithParameters(
         sourceParameters: TestSourceParameters,
     ) extends ScenarioTestData
 
-    final case class WithGeneratedData(
+    final case class WithLiveData(
         numberOfSamples: Int,
     ) extends ScenarioTestData
 
@@ -181,8 +181,8 @@ object Dtos {
           testData <- typeStr match {
             case "WITH_PARAMETERS" =>
               c.downField("sourceParameters").as[TestSourceParameters].map(WithParameters.apply)
-            case "WITH_GENERATED_DATA" =>
-              c.downField("numberOfSamples").as[Int].map(WithGeneratedData.apply)
+            case `legacyLiveDataType` | "WITH_LIVE_DATA" =>
+              c.downField("numberOfSamples").as[Int].map(WithLiveData.apply)
           }
         } yield testData
       ),
@@ -192,9 +192,9 @@ object Dtos {
             ("type", "WITH_PARAMETERS".asJson),
             ("sourceParameters", sourceParameters.asJson),
           )
-        case WithGeneratedData(numberOfSamples) =>
+        case WithLiveData(numberOfSamples) =>
           Json.obj(
-            ("type", "WITH_GENERATED_DATA".asJson),
+            ("type", "WITH_LIVE_DATA".asJson),
             ("numberOfSamples", numberOfSamples.asJson),
           )
       }
@@ -204,65 +204,6 @@ object Dtos {
 
   }
 
-  final case class ResultsWithCountsDto(results: TestResultsDto, counts: Map[String, NodeCount])
-
-  object ResultsWithCountsDto {
-
-    def from(
-        resultsWithCounts: ResultsWithCounts,
-        skipResultsPerNode: SkipResultsPerNode,
-        skipResultsPerTransition: SkipResultsPerTransition
-    ): ResultsWithCountsDto = {
-      lazy val nodeTransitionResults = resultsWithCounts.results.nodeTransitionResults.map {
-        case (nodeTransition, results) =>
-          NodeTransitionResult(
-            sourceNodeId = nodeTransition.sourceNodeId,
-            destinationNodeId = nodeTransition.destinationNodeId,
-            results = results,
-          )
-      }.toList
-      lazy val exceptionsByNodeId = resultsWithCounts.results.exceptions.groupBy(_.nodeId).collect {
-        case (Some(nodeId), exceptions) => (nodeId, exceptions)
-      }
-      ResultsWithCountsDto(
-        results = TestResultsDto(
-          nodeResults = Option.when(!skipResultsPerNode.value)(resultsWithCounts.results.nodeResults),
-          nodeTransitionResults = Option.when(!skipResultsPerTransition.value)(nodeTransitionResults),
-          invocationResults = resultsWithCounts.results.invocationResults,
-          externalInvocationResults = resultsWithCounts.results.externalInvocationResults,
-          exceptions = resultsWithCounts.results.exceptions,
-          exceptionsByNodeId = exceptionsByNodeId,
-        ),
-        counts = resultsWithCounts.counts,
-      )
-    }
-
-  }
-
-  final case class TestResultsDto(
-      nodeResults: Option[Map[String, List[ResultContext[Json]]]],
-      nodeTransitionResults: Option[List[NodeTransitionResult]],
-      invocationResults: Map[String, List[ExpressionInvocationResult[Json]]],
-      externalInvocationResults: Map[String, List[ExternalInvocationResult[Json]]],
-      exceptions: List[ExceptionResult[Json]],
-      exceptionsByNodeId: Map[String, List[ExceptionResult[Json]]],
-  )
-
-  final case class NodeTransitionResult(
-      sourceNodeId: String,
-      destinationNodeId: Option[String],
-      results: List[ResultContext[Json]]
-  )
-
-  implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
-  implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
-  implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived
-  implicit def throwableSchema: Schema[Throwable]                                         = Schema.string
-  implicit def exceptionResultSchema: Schema[ExceptionResult[Json]]                       = Schema.derived
-  implicit def nodeTransitionResultSchema: Schema[NodeTransitionResult]                   = Schema.derived
-  implicit def testResultsSchema: Schema[TestResultsDto]                                  = Schema.derived
-  implicit def nodeCountSchema: Schema[NodeCount]                                         = Schema.anyObject
-  implicit def resultsWithCountsSchema: Schema[ResultsWithCountsDto]                      = Schema.derived
   implicit def typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
   implicit def scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
 
@@ -286,9 +227,9 @@ object Dtos {
           case ScenarioGraphValidationError(errors) =>
             errors.toHumanReadableMessage
           case TooManyCharactersGenerated(length, limit) =>
-            TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
+            TestingApiErrorMessages.fetchedLiveData.tooManyCharacters(length, limit)
           case TooManySamplesRequested(maxSamples) =>
-            TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
+            TestingApiErrorMessages.fetchedLiveData.requestedTooManySamplesToFetch(maxSamples)
           case UnsupportedOperation(message) =>
             message
           case ErrorResult(message) =>
@@ -302,15 +243,15 @@ object Dtos {
 
     object NotFoundTestingError {
       final case class NoScenario(scenarioName: ProcessName) extends NotFoundTestingError
-      final case object NoDataGenerated                      extends NotFoundTestingError
-      final case object NoSourcesWithTestDataGeneration      extends NotFoundTestingError
+      final case object NoLiveDataAvailable                  extends NotFoundTestingError
+      final case object NoSourcesWithLiveDataFetchingSupport extends NotFoundTestingError
 
       implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
           case NoScenario(scenarioName) => s"No scenario ${scenarioName.value} found"
-          case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
-          case NoSourcesWithTestDataGeneration =>
-            TestingApiErrorMessages.generatedTestData.noSourcesWithTestDataGeneration
+          case NoLiveDataAvailable      => TestingApiErrorMessages.fetchedLiveData.noLiveDataAvailable
+          case NoSourcesWithLiveDataFetchingSupport =>
+            TestingApiErrorMessages.fetchedLiveData.noSourcesWithTestDataGeneration
         }
       }
 

@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.
   ScenarioTestCapabilities
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.GeneratedTestData.GeneratedTestDataRequest
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.LiveDataFetching.FetchSourcesLiveDataRequest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{
   PerformTestRequest,
   SkipResultsPerNode,
@@ -45,9 +45,9 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
   TooManySamplesRequested
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError.{
-  NoDataGenerated,
+  NoLiveDataAvailable,
   NoScenario,
-  NoSourcesWithTestDataGeneration
+  NoSourcesWithLiveDataFetchingSupport
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService
@@ -59,7 +59,7 @@ import sttp.tapir.json.circe.jsonBody
 class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import Dtos._
-  import TestResultsCodecs._
+  import ResultsWithCountsDtoCodecs._
 
   def scenarioTestCapabilitiesEndpoint: SecuredEndpoint[
     (ProcessName, ScenarioGraph),
@@ -97,6 +97,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                       )
                     ),
                     testWithGeneratedData = CapabilityStatus.available,
+                    testWithLiveData = CapabilityStatus.available,
                   )
                 )
               )
@@ -198,7 +199,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .map(cond => cond.map(SkipResultsPerTransition(_)))(_.map(_.value))
 
   def scenarioTestGeneratedDataEndpoint: SecuredEndpoint[
-    (ProcessName, GeneratedTestDataRequest),
+    (ProcessName, FetchSourcesLiveDataRequest),
     TestingError,
     String,
     Any
@@ -208,7 +209,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .tag("Testing")
       .post
       .in("scenarioTesting" / path[ProcessName]("scenarioName") / "generatedTestData")
-      .in(jsonBody[GeneratedTestDataRequest])
+      .in(jsonBody[FetchSourcesLiveDataRequest])
       .out(
         statusCode(Ok).and(
           stringBody
@@ -237,12 +238,12 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
               value = NoScenario(ProcessName("'example scenario'"))
             ),
             Example.of(
-              summary = Some("No data was generated"),
-              value = NoDataGenerated
+              summary = Some("No live test data available"),
+              value = NoLiveDataAvailable
             ),
             Example.of(
               summary = Some("No sources with test data generation available"),
-              value = NoSourcesWithTestDataGeneration
+              value = NoSourcesWithLiveDataFetchingSupport
             )
           )
         )

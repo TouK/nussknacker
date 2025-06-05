@@ -84,7 +84,8 @@ final class DomainServices(
     val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
     val reloadModelData: IO[Unit],
     val processAuthorizer: AuthorizeProcess,
-    val limitsService: LimitsService
+    val limitsService: LimitsService,
+    val processCounter: ProcessCounter,
 )
 
 object DomainServices extends LazyLogging {
@@ -349,7 +350,8 @@ object DomainServices extends LazyLogging {
       processingTypeServicesProvider = processingTypeServicesProvider,
       reloadModelData = modelDataProvider.reloadAll,
       processAuthorizer = processAuthorizer,
-      limitsService = limitsService
+      limitsService = limitsService,
+      processCounter = counter,
     )
   }
 

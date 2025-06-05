@@ -15,11 +15,14 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult}
 
+import java.time.Instant
 import scala.jdk.CollectionConverters._
 
 class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
+  private val mockedTimestamp = Instant.now()
 
   test("should test single source scenario") {
     val scenario = ScenarioBuilder
@@ -54,14 +57,14 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ("C", Map("input" -> 3, "out1" -> 3, "sum" -> 5).mapValuesNow(variable))
     )
 
-    results.invocationResults("sum") shouldBe List(
-      ExpressionInvocationResult("A", "value", variable(2)),
-      ExpressionInvocationResult("C", "value", variable(3))
+    results.invocationResults("sum").map(withMockedTimestamp) shouldBe List(
+      ExpressionInvocationResult("A", mockedTimestamp, "value", variable(2)),
+      ExpressionInvocationResult("C", mockedTimestamp, "value", variable(3))
     )
 
-    results.externalInvocationResults("end") shouldBe List(
-      ExternalInvocationResult("A", "end", variable("2:2.0")),
-      ExternalInvocationResult("C", "end", variable("3:5.0"))
+    results.externalInvocationResults("end").map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult("A", mockedTimestamp, "end", variable("2:2.0")),
+      ExternalInvocationResult("C", mockedTimestamp, "end", variable("3:5.0"))
     )
   }
 
@@ -88,11 +91,13 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     )
     nodeResults(results, "source2") shouldBe List(("C", Map("input" -> variable(3))))
 
-    results.externalInvocationResults("end1") shouldBe List(
-      ExternalInvocationResult("A", "end1", variable(1)),
-      ExternalInvocationResult("B", "end1", variable(2))
+    results.externalInvocationResults("end1").map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult("A", mockedTimestamp, "end1", variable(1)),
+      ExternalInvocationResult("B", mockedTimestamp, "end1", variable(2))
     )
-    results.externalInvocationResults("end2") shouldBe List(ExternalInvocationResult("C", "end2", variable(3)))
+    results.externalInvocationResults("end2").map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult("C", mockedTimestamp, "end2", variable(3))
+    )
   }
 
   test("should accept and run scenario test with parameters") {
@@ -158,12 +163,12 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       )
     )
 
-    results.invocationResults("sumNumbers") shouldBe List(
-      ExpressionInvocationResult("some-ctx-id", "value", variable(List(1, 2, 3, 4, 5)))
+    results.invocationResults("sumNumbers").map(withMockedTimestamp) shouldBe List(
+      ExpressionInvocationResult("some-ctx-id", mockedTimestamp, "value", variable(List(1, 2, 3, 4, 5)))
     )
 
-    results.externalInvocationResults("end") shouldBe List(
-      ExternalInvocationResult("some-ctx-id", "end", variable(120))
+    results.externalInvocationResults("end").map(withMockedTimestamp) shouldBe List(
+      ExternalInvocationResult("some-ctx-id", mockedTimestamp, "end", variable(120))
     )
   }
 
@@ -183,8 +188,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     nodeResults(results, "fragmentEnd") shouldBe List(
       ("fragment1", Map("in" -> variable("some-text-id"), "out" -> variable("some-text-id")))
     )
-    results.invocationResults("fragmentEnd") shouldBe List(
-      ExpressionInvocationResult("fragment1", "out", variable("some-text-id"))
+    results.invocationResults("fragmentEnd").map(withMockedTimestamp) shouldBe List(
+      ExpressionInvocationResult("fragment1", mockedTimestamp, "out", variable("some-text-id"))
     )
     results.exceptions shouldBe empty
   }
@@ -234,5 +239,11 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
   private def nodeResults[T](results: TestProcess.TestResults[T], key: String) =
     results.nodeResults(key).map(r => (r.id, r.variables))
+
+  private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
+    result.copy(timestamp = mockedTimestamp)
+
+  private def withMockedTimestamp(result: ExternalInvocationResult[Json]) =
+    result.copy(timestamp = mockedTimestamp)
 
 }

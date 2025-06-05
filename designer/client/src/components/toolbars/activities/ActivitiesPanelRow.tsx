@@ -3,11 +3,11 @@ import React, { memo, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { isDeploymentActivity } from "../../../reducers/selectors/activities";
 import { getIsRunning } from "../../../reducers/selectors/scenarioState";
 import type { UIActivity } from "./ActivitiesPanel";
 import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
-import { ActivityTypesRelatedToExecutions } from "./types";
 
 interface Props {
     index: number;
@@ -25,16 +25,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     const { t } = useTranslation();
     const rowRef = useRef<HTMLDivElement>(null);
     const activity = useMemo(() => activities[index], [activities, index]);
-    const firstDeployedIndex = useMemo(
-        () =>
-            activities.findIndex(
-                (activeItem) =>
-                    activeItem.uiType === "item" &&
-                    (activeItem.type === ActivityTypesRelatedToExecutions.ScenarioDeployed ||
-                        activeItem.type === ActivityTypesRelatedToExecutions.ScenarioRedeployed),
-            ),
-        [activities],
-    );
+    const firstDeployedIndex = useMemo(() => activities.findIndex(isDeploymentActivity), [activities]);
     const isDeploymentActive = firstDeployedIndex === index && isRunning;
     const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
