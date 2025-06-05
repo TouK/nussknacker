@@ -4346,6 +4346,14 @@ paths:
                       - edit_comment
                       - add_comment
                       - compare
+                    - type: SCENARIO_MODIFIED_WITH_AUTOSAVE
+                      displayableName: Scenario modified
+                      icon: /assets/activities/scenarioModifiedWithAutosave.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                      - compare
                     - type: SCENARIO_NAME_CHANGED
                       displayableName: Scenario name changed
                       icon: /assets/activities/scenarioModified.svg
@@ -4461,6 +4469,14 @@ paths:
                     - type: SCENARIO_MODIFIED
                       displayableName: Fragment modified
                       icon: /assets/activities/scenarioModified.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                      - compare
+                    - type: SCENARIO_MODIFIED_WITH_AUTOSAVE
+                      displayableName: Fragment modified
+                      icon: /assets/activities/scenarioModifiedWithAutosave.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
@@ -7194,6 +7210,7 @@ components:
           - SCENARIO_PAUSED
           - SCENARIO_CANCELED
           - SCENARIO_MODIFIED
+          - SCENARIO_MODIFIED_WITH_AUTOSAVE
           - SCENARIO_NAME_CHANGED
           - COMMENT_ADDED
           - ATTACHMENT_ADDED

@@ -11,6 +11,7 @@ import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
     getProcessVersionId,
+    getScenarioGraphSource,
     hasError,
     isDeployPossible,
     isDeployVisible,
@@ -51,6 +52,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const isDeploying = useSelector(getIsDeploying);
+    const scenarioGraphSource = useSelector(getScenarioGraphSource);
 
     const { disabled, type } = props;
 
@@ -131,7 +133,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const handleDeploy = useCallback(async () => {
         try {
             setIsDeployCallProcessing(true);
-            const response = await action(processName, processVersionId, "");
+            const response = await action(processName, processVersionId, "", null, scenarioGraphSource);
             switch (response.scenarioActionResultType) {
                 case ScenarioActionResultType.DeploySuccess:
                 case ScenarioActionResultType.Success:
@@ -144,7 +146,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
         } finally {
             setIsDeployCallProcessing(false);
         }
-    }, [action, dispatch, processName, processVersionId, setIsDeployCallProcessing]);
+    }, [action, dispatch, processName, processVersionId, setIsDeployCallProcessing, scenarioGraphSource]);
 
     const presets = useMemo<DeployPreset[]>(
         () => [
