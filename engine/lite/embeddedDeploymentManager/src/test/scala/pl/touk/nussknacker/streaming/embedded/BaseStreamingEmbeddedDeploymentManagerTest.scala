@@ -38,7 +38,6 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
 
   sealed case class FixtureParam(
       deploymentManager: DeploymentManager,
-      modelData: ModelData,
       inputTopic: TopicName.ForSource,
       outputTopic: TopicName.ForSink
   ) {
@@ -128,7 +127,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       }
       strategy.open(modelData.toModelDataProvider, LiteEngineRuntimeContextPreparer.noOp)
       val manager = new EmbeddedDeploymentManager(modelData.toModelDataProvider, strategy)
-      FixtureParam(manager, modelData, inputTopic, outputTopic)
+      FixtureParam(manager, inputTopic, outputTopic)
     }
   }
 

@@ -1,21 +1,22 @@
 package pl.touk.nussknacker.streaming.embedded
 
-import cats.effect.kernel.Resource
 import io.circe.Json
-import io.circe.Json.{fromInt, fromString, obj}
+import io.circe.Json._
+import io.circe.syntax._
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.User
+import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult}
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
@@ -32,11 +33,12 @@ class StreamingEmbeddedDeploymentManagerTest
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
   import KafkaUniversalComponentTransformer._
+  import SchemaBasedSerializableConsumerRecord._
 
   private val mockedTimestamp = Instant.now()
 
   test("Deploys scenario and cancels") {
-    val fixture @ FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
+    val fixture @ FixtureParam(manager, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
@@ -81,8 +83,8 @@ class StreamingEmbeddedDeploymentManagerTest
   test(
     "Deploy scenario json incompatible with current component API should throw exception immediately instead of moving scenario to Failed state"
   ) {
-    val fixture @ FixtureParam(_, _, inputTopic, outputTopic) = prepareFixture()
-    val name                                                  = ProcessName("testName")
+    val fixture @ FixtureParam(_, inputTopic, outputTopic) = prepareFixture()
+    val name                                               = ProcessName("testName")
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
     val scenarioWithIncompatibleParameters = ScenarioBuilder
       .streamingLite(name.value)
@@ -125,7 +127,7 @@ class StreamingEmbeddedDeploymentManagerTest
         |}
         |""".stripMargin
 
-    val fixture @ FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
+    val fixture @ FixtureParam(manager, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
 
     val name = ProcessName("testName")
     def scenarioForOutput(outputPrefix: String) = ScenarioBuilder
@@ -193,11 +195,7 @@ class StreamingEmbeddedDeploymentManagerTest
         |}
         |""".stripMargin
 
-    val FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
-    val testInfoProvider =
-      new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
-
-    def message(input: String) = obj("message" -> fromString(input)).noSpaces
+    val FixtureParam(manager, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
 
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
@@ -220,13 +218,32 @@ class StreamingEmbeddedDeploymentManagerTest
         sinkValueParamName.value          -> s"{message: #input.message, other: '1'}".spel
       )
 
-    kafkaClient.sendMessage(inputTopic.name, message("1")).futureValue
-    kafkaClient.sendMessage(inputTopic.name, message("2")).futureValue
+    val processVersion = ProcessVersion.empty.copy(processName = scenario.metaData.name)
 
-    val processVersion      = ProcessVersion.empty.copy(processName = scenario.metaData.name)
-    val preliminaryTestData = testInfoProvider.fetchSourcesLiveData(processVersion, scenario, 2).rightValue
+    def testRecord(input: String): Json =
+      SchemaBasedSerializableConsumerRecord(
+        keySchemaId = None,
+        valueSchemaId = None,
+        consumerRecord = SerializableConsumerRecord[Json, Json](
+          key = None,
+          value = obj("message" -> fromString(input)),
+          topic = None,
+          partition = None,
+          offset = None,
+          timestamp = None,
+          timestampType = None,
+          headers = None,
+          leaderEpoch = None
+        )
+      ).asJson
 
-    val testData = testInfoProvider.prepareTestData(preliminaryTestData, scenario).rightValue
+    val testData = ScenarioTestData(
+      List(
+        ScenarioTestJsonRecord("source", testRecord("1")),
+        ScenarioTestJsonRecord("source", testRecord("2"))
+      )
+    )
+
     val results = wrapInFailingLoader {
       manager.processCommand(DMTestScenarioCommand(processVersion, scenario, testData)).futureValue
     }

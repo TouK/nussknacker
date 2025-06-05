@@ -1,13 +1,13 @@
-package pl.touk.nussknacker.engine.definition.test
+package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider._
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider._
 
 trait TestInfoProvider {
 

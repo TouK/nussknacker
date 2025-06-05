@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.test
+package pl.touk.nussknacker.ui.process.test
 
 case class TestingCapabilities(canBeTested: Boolean, canFetchLiveData: Boolean, canTestWithForm: Boolean)
 

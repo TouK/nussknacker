@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
 import io.circe.parser
-import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord}
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
 
