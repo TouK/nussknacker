@@ -82,11 +82,11 @@ class ScenarioTestService(
 
     for {
       _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
-      generatedData <- testInfoProvider
+      testData <- testInfoProvider
         .fetchSourcesLiveData(processVersion, canonical, maxNumberOfSamples)
         .leftMap(FetchLiveDataError.SourcesLiveDataFetchingError)
       rawTestData <- preliminaryScenarioTestDataSerDe
-        .serialize(generatedData)
+        .serialize(testData)
         .leftMap(FetchLiveDataError.ScenarioTestDataSerializationError)
     } yield rawTestData
   }
