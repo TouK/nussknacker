@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.test
+package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
 import cats.effect.kernel.Resource
@@ -16,21 +16,13 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.validationHelpers.{
-  GenericParametersSource,
-  GenericParametersSourceNoGenerate,
-  GenericParametersSourceNoTestSupport,
-  SourceWithTestParameters
-}
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataPreparationError.{
-  MissingSource,
-  MultipleSourcesRequired
-}
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestingCapabilitiesError.NoSourcesError
+import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport, SourceWithTestParameters}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider.TestDataPreparationError.{MissingSource, MultipleSourcesRequired}
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider.TestingCapabilitiesError._
 
 class ModelDataTestInfoProviderSpec
     extends AnyFunSuite

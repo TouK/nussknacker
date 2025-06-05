@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.TestDataPreparationError
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider.TestDataPreparationError
 
 object TestingApiErrorMessages {
 

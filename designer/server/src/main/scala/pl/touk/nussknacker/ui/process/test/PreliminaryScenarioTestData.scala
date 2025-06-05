@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.definition.test
+package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
-import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
+import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestJsonRecord
 
 case class PreliminaryScenarioTestData(testRecords: NonEmptyList[PreliminaryScenarioTestRecord])
