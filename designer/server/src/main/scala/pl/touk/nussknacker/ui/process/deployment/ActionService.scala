@@ -8,6 +8,8 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{FromGraph, LatestVersion, ScenarioGraphSource}
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
@@ -48,6 +50,7 @@ class ActionService(
     scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
+  private lazy val userForAutomaticUpdate = NussknackerInternalUser.instance
 
   def markActionExecutionFinished(
       processingType: ProcessingType,
@@ -204,8 +207,12 @@ class ActionService(
                     checkIfLabelsAreEqual(scenarioLabels, scenario) =>
                 logger.debug("Scenario is not updated because nothing changed")
                 DBIOAction.successful(Some(convertScenarioToTargetShape(scenario)))
-              case Some(scenario) =>
+              case Some(scenario) if hasUserPermissionToUpdateScenario(user, scenario) =>
                 updateScenario(processId, scenarioGraph, scenarioLabels, scenario)
+              case Some(_) =>
+                val msg = "User does not have permission to write scenario"
+                logger.info(msg)
+                DBIOAction.failed(new UnauthorizedError(msg))
               case None =>
                 DBIOAction.successful[Option[ScenarioWithDetailsEntity[ScenarioDetailsShape]]](None)
             }
@@ -224,7 +231,7 @@ class ActionService(
         .fromEntityIgnoringGraphAndValidationResult(scenario, parameters)
       val updateCommand = UpdateScenarioCommand(scenarioGraph, comment = None, scenarioLabels = scenarioLabels)
       processService
-        .updateProcessDBIO(processId, scenarioDetails, updateCommand)
+        .updateProcessDBIO(processId, scenarioDetails, updateCommand)(userForAutomaticUpdate)
         .flatMap(response =>
           response.processResponse match {
             case Some(updateResult) =>
@@ -378,6 +385,8 @@ class ActionService(
     ): ScenarioWithDetailsEntity[ScenarioDetailsShape] = scenario
       .mapScenario(s => ScenarioShapeFetchStrategy.convertToTargetShape[ScenarioDetailsShape](s, scenario.name))
 
+    private def hasUserPermissionToUpdateScenario(user: LoggedUser, scenario: ScenarioWithDetailsEntity[_]): Boolean =
+      user.can(scenario.processCategory, Permission.Write)
   }
 
 }

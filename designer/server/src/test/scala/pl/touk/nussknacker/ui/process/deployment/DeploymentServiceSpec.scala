@@ -5,6 +5,7 @@ import cats.instances.list._
 import io.circe.{parser, Decoder}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.LoneElement._
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -29,6 +30,7 @@ import pl.touk.nussknacker.engine.deployment.{
   ScenarioGraphSource
 }
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
@@ -43,6 +45,7 @@ import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.limits.GlobalLimitsConfig
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.MaxActiveScenariosCountExceededError
@@ -1248,10 +1251,10 @@ class DeploymentServiceSpec
       val activities = activityRepository.findActivities(scenario.id).dbioActionValues
 
       result should not be None
-      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
-        "CREATED"  -> 1L,
-        "MODIFIED" -> 2L,
-        "DEPLOYED" -> 2L,
+      mapActivitiesToTypeWithVersionAndUser(activities) shouldBe Seq(
+        ("CREATED", 1L, "admin"),
+        ("MODIFIED", 2L, "Nussknacker"),
+        ("DEPLOYED", 2L, "admin"),
       )
     }
 
@@ -1269,11 +1272,11 @@ class DeploymentServiceSpec
       val activities = activityRepository.findActivities(scenario.id).dbioActionValues
 
       result should not be None
-      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
-        "CREATED"  -> 1L,
-        "MODIFIED" -> 2L,
-        "MODIFIED" -> 3L,
-        "DEPLOYED" -> 3L,
+      mapActivitiesToTypeWithVersionAndUser(activities) shouldBe Seq(
+        ("CREATED", 1L, "admin"),
+        ("MODIFIED", 2L, "admin"),
+        ("MODIFIED", 3L, "Nussknacker"),
+        ("DEPLOYED", 3L, "admin"),
       )
     }
 
@@ -1290,11 +1293,11 @@ class DeploymentServiceSpec
       val activities = activityRepository.findActivities(scenario.id).dbioActionValues
 
       result should not be None
-      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
-        "CREATED"  -> 1L,
-        "MODIFIED" -> 2L,
-        "MODIFIED" -> 3L,
-        "DEPLOYED" -> 2L,
+      mapActivitiesToTypeWithVersionAndUser(activities) shouldBe Seq(
+        ("CREATED", 1L, "admin"),
+        ("MODIFIED", 2L, "admin"),
+        ("MODIFIED", 3L, "admin"),
+        ("DEPLOYED", 2L, "admin"),
       )
     }
 
@@ -1311,12 +1314,30 @@ class DeploymentServiceSpec
       val activities = activityRepository.findActivities(scenario.id).dbioActionValues
 
       result should not be None
-      mapActivitiesToTypeWithVersion(activities) shouldBe Seq(
-        "CREATED"  -> 1L,
-        "MODIFIED" -> 2L,
-        "MODIFIED" -> 3L,
-        "DEPLOYED" -> 2L,
+      mapActivitiesToTypeWithVersionAndUser(activities) shouldBe Seq(
+        ("CREATED", 1L, "admin"),
+        ("MODIFIED", 2L, "admin"),
+        ("MODIFIED", 3L, "admin"),
+        ("DEPLOYED", 2L, "admin"),
       )
+    }
+
+    "should not deploy unsaved scenario when user hasn't permission to write scenario" in {
+      val scenarioName  = generateScenarioName()
+      val scenario      = prepareScenario(scenarioName)
+      val scenarioGraph = graphForExampleScenarioWithAdditionalVariableAdded()
+      val userWithoutWritePermission = TestFactory.user(
+        username = "test",
+        permissions = List(Permission.Read, Permission.Deploy)
+      )
+
+      intercept[TestFailedException] {
+        deploymentManager1.withScenarioStateStatus(scenario.name, SimpleStateStatus.NotDeployed) {
+          deployExistingScenario(scenario, FromGraph(scenarioGraph, None, VersionId(1)))(userWithoutWritePermission)
+        }
+      } should matchPattern {
+        case ex: TestFailedException if ex.getCause.isInstanceOf[UnauthorizedError] =>
+      }
     }
   }
 
@@ -1331,7 +1352,7 @@ class DeploymentServiceSpec
   private def deployExistingScenario(
       scenario: ProcessIdWithName,
       scenarioGraphSource: ScenarioGraphSource = LatestVersion,
-  ): Option[ExternalDeploymentId] = {
+  )(implicit user: LoggedUser): Option[ExternalDeploymentId] = {
     deploymentManager1
       .withWaitForDeployFinish(scenario.name, result = Some(ExternalDeploymentId("1"))) {
         deploymentService
@@ -1638,14 +1659,16 @@ class DeploymentServiceSpec
     parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson).rightValue
   }
 
-  private def mapActivitiesToTypeWithVersion(activities: Seq[ScenarioActivity]): Seq[(String, Long)] =
+  private def mapActivitiesToTypeWithVersionAndUser(activities: Seq[ScenarioActivity]): Seq[(String, Long, String)] =
     activities.map {
-      case activity: DeploymentRelatedActivity => "DEPLOYED" -> activity.scenarioVersionId.value.value
-      case ScenarioActivity.ScenarioCreated(_, _, _, _, scenarioVersionId) => "CREATED" -> scenarioVersionId.value.value
-      case ScenarioActivity.ScenarioModified(_, _, _, _, _, scenarioVersionId, _) =>
-        "MODIFIED" ->
-          scenarioVersionId.value.value
-      case other => "OTHER" -> other.scenarioVersionId.value.value
+      case activity: DeploymentRelatedActivity =>
+        ("DEPLOYED", activity.scenarioVersionId.value.value, activity.user.name.value)
+      case ScenarioActivity.ScenarioCreated(_, _, user, _, scenarioVersionId) =>
+        ("CREATED", scenarioVersionId.value.value, user.name.value)
+      case ScenarioActivity.ScenarioModified(_, _, user, _, _, scenarioVersionId, _) =>
+        ("MODIFIED", scenarioVersionId.value.value, user.name.value)
+      case other =>
+        ("OTHER", other.scenarioVersionId.value.value, other.user.name.value)
     }
 
 }
