@@ -32,7 +32,6 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationErr
   InsufficientPermission,
   InvalidScenario
 }
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import sttp.model.StatusCode._
 import sttp.tapir._

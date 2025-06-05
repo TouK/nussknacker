@@ -10,7 +10,6 @@ import pl.touk.nussknacker.config.WithE2EInstallationExampleRestAssuredUsersExte
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike

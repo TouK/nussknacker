@@ -12,7 +12,6 @@ import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersB
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 trait WithAdHocTestsLogic {
   self: WithSimplifiedConfigScenarioHelper with NuItTest =>

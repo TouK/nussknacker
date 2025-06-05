@@ -29,7 +29,6 @@ import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator._
 
 class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {

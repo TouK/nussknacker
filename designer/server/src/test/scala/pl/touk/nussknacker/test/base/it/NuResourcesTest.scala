@@ -58,7 +58,6 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider => OldApproachScenarioStatusProvider
 }
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider

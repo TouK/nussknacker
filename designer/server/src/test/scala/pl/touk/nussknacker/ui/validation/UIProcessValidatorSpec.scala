@@ -79,7 +79,6 @@ import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import java.time.LocalDateTime

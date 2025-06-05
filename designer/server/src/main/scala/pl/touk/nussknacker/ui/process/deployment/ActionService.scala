@@ -20,7 +20,6 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusWithAllowedActions
 }
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._

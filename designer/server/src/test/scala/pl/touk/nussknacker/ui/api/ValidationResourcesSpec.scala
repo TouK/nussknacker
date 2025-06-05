@@ -31,7 +31,6 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 class ValidationResourcesSpec

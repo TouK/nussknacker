@@ -14,7 +14,6 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 class ScenarioLabelsApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike

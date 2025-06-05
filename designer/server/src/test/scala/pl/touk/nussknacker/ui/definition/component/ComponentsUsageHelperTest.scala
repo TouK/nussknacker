@@ -32,7 +32,6 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{toCanonical, wrapGraphWithScenarioDetailsEntity}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.repository.{ScenarioComponentsUsagesHelper, ScenarioWithDetailsEntity}
 
 import java.time.Instant

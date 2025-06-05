@@ -39,7 +39,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests._
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 import java.util.{Collections, UUID}
 import java.util.Arrays.asList

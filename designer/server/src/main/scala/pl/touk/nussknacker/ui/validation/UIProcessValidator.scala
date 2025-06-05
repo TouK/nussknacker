@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
@@ -27,7 +27,6 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNotesSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class UIProcessValidator(

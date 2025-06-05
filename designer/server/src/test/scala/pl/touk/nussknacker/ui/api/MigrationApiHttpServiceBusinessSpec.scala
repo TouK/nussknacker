@@ -20,7 +20,6 @@ import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceC
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 // FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
 class MigrationApiHttpServiceBusinessSpec

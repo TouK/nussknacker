@@ -43,7 +43,6 @@ import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}

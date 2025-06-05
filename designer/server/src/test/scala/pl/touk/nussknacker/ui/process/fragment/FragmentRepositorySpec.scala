@@ -11,7 +11,6 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 class FragmentRepositorySpec
     extends AnyFlatSpec

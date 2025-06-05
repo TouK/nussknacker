@@ -27,7 +27,6 @@ import pl.touk.nussknacker.ui.definition.{
   DefinitionsService,
   ScenarioPropertiesConfigFinalizer
 }
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 import scala.concurrent.duration.DurationInt
 

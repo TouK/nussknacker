@@ -14,7 +14,6 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 

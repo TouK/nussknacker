@@ -38,7 +38,6 @@ import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessValidator}
 
 object ProcessTestData {

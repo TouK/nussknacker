@@ -15,7 +15,6 @@ import pl.touk.nussknacker.test.config.{
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 class MigrationApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike

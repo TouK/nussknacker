@@ -18,7 +18,6 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 import java.util.UUID
 

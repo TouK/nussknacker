@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.{Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 import java.io.FileOutputStream
 import java.time.Instant

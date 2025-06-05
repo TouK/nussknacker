@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -15,8 +15,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator

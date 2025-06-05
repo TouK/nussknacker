@@ -14,7 +14,6 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.migrate.StandardRemoteEnvironmentSpec._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 

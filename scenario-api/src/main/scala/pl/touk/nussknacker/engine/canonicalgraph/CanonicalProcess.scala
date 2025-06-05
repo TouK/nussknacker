@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -106,6 +107,8 @@ case class CanonicalProcess(
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
 
   def collectAllNodes: List[NodeData] = allStartNodes.toList.flatten.flatMap(canonicalnode.collectAllNodes)
+
+  def toScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(this)
 
 }
 
