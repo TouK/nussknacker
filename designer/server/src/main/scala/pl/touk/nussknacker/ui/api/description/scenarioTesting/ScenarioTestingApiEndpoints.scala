@@ -40,7 +40,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
   NotFoundTestingError
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError.{
-  ScenarioGraphValidationError,
+  SourcesCompilationError,
   TooManyCharactersGenerated,
   TooManySamplesRequested
 }
@@ -263,7 +263,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
             ),
             Example.of(
               summary = Some("Scenario validation error"),
-              value = ScenarioGraphValidationError(
+              value = SourcesCompilationError(
                 ValidationErrors(
                   invalidNodes = Map(
                     "source" -> List(

@@ -32,16 +32,16 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
       .flatten
   }
 
-  def validate(sourceParameters: TestSourceParameters, parametersDefinition: Map[String, List[Parameter]])(
+  def validate(sourceParameters: TestSourceParameters, parametersDefinition: Map[NodeId, List[Parameter]])(
       implicit metaData: MetaData
   ): List[NodeValidationError] = {
-    implicit val nodeId: NodeId   = NodeId("")
-    implicit val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    val context                   = validationContextGlobalVariablesOnly
+    implicit val sourceNodeId: NodeId = NodeId(sourceParameters.sourceId)
+    implicit val jobData: JobData     = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
+    val context = validationContextGlobalVariablesOnly
     val parameterList: List[Parameter] =
       parametersDefinition.getOrElse(
-        sourceParameters.sourceId,
+        sourceNodeId,
         throw new IllegalStateException( // This should never happen, it would mean that API is not consistent
           s"There is no source ${sourceParameters.sourceId} associated with live test parameters"
         )

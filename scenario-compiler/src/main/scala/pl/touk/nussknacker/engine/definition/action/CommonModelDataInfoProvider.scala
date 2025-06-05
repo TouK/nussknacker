@@ -47,7 +47,8 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
   )
 
   def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
-    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
+    val allNodes = scenario.collectAllNodes
+    allNodes.flatMap(asSource) ++ allNodes.flatMap(asFragmentInputDefinition)
   }
 
   def compileSourceNode(
