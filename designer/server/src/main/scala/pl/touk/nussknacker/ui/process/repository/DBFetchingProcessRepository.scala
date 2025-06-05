@@ -14,7 +14,6 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -331,9 +330,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchCanonical) =>
         canonical
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchScenarioGraph) =>
-        val scenarioGraph =
-          CanonicalProcessConverter.toScenarioGraph(canonical)
-        scenarioGraph
+        canonical.toScenarioGraph
       case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ()
       case (_, Some(componentsUsages), ScenarioShapeFetchStrategy.FetchComponentsUsages) =>
         componentsUsages

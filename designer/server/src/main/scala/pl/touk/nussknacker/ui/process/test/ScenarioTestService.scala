@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
@@ -17,7 +17,6 @@ import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{FetchLiveDataError, PerformTestError, SourceTestError}
 import pl.touk.nussknacker.ui.process.test.TestInfoProvider.{
   ParametersDefinitionError,

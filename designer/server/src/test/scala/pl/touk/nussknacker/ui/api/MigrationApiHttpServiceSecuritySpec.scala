@@ -15,7 +15,6 @@ import pl.touk.nussknacker.test.config.{
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class MigrationApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -158,7 +157,7 @@ class MigrationApiHttpServiceSecuritySpec
       .source("source", "csv-source-lite")
       .emptySink("sink", "dead-end-lite")
 
-  private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+  private lazy val exampleGraph = exampleScenario.toScenarioGraph
 
   private def prepareRequestData(scenarioName: String, processCategory: TestCategory): String =
     s"""

@@ -12,13 +12,12 @@ import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.Deploy
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
@@ -34,7 +33,7 @@ object TestProcessUtil {
     CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
 
   def toJson(scenario: CanonicalProcess): Json =
-    Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(scenario))
+    Encoder[ScenarioGraph].apply(scenario.toScenarioGraph)
 
   def createScenarioEntity(
       name: String,

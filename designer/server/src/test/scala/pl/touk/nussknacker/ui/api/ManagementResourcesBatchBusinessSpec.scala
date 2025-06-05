@@ -14,7 +14,6 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 import java.util.UUID
 
@@ -61,7 +60,7 @@ class ManagementResourcesBatchBusinessSpec
                      |     }
                      |   }
                      | },
-                     | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
+                     | "scenarioGraph": ${exampleScenario.toScenarioGraph.asJson.spaces2}
                      |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()

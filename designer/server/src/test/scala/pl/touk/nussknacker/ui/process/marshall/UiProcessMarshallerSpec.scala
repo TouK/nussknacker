@@ -7,6 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcessConverter
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 
@@ -72,9 +73,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
       """.stripMargin).fold(throw _, identity)
 
   it should "unmarshall to scenarioGraph scenario properly" in {
-    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(
-      ProcessMarshaller.fromJsonUnsafe(processWithoutScenarioProperties)
-    )
+    val scenarioGraph = ProcessMarshaller.fromJsonUnsafe(processWithoutScenarioProperties).toScenarioGraph
 
     val processDescription = scenarioGraph.properties.additionalFields.description
     val nodeDescription    = scenarioGraph.nodes.head.additionalFields.flatMap(_.description)
@@ -83,11 +82,9 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "marshall and unmarshall scenario" in {
-    val baseProcess = processWithFullAdditionalFields(ProcessTestData.sampleProcessName)
-    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(
-      ProcessMarshaller.fromJsonUnsafe(baseProcess)
-    )
-    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessTestData.sampleProcessName)
+    val baseProcess   = processWithFullAdditionalFields(ProcessTestData.sampleProcessName)
+    val scenarioGraph = ProcessMarshaller.fromJsonUnsafe(baseProcess).toScenarioGraph
+    val canonical     = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessTestData.sampleProcessName)
 
     val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(humanReadablePrinter)
 

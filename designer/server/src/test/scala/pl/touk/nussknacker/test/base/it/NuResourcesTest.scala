@@ -58,15 +58,18 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider => OldApproachScenarioStatusProvider
 }
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.{
+  ModelDataTestInfoProvider,
+  PreliminaryScenarioTestDataSerDe,
+  ScenarioTestService,
+  TestInfoProvider
+}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
@@ -400,7 +403,7 @@ trait NuResourcesTest
   ): Assertion =
     doUpdateProcess(
       UpdateScenarioCommand(
-        CanonicalProcessConverter.toScenarioGraph(process),
+        process.toScenarioGraph,
         comment,
         Some(List.empty),
       ),
@@ -481,7 +484,7 @@ trait NuResourcesTest
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
     implicit val timeout: RouteTestTimeout = RouteTestTimeout(10.seconds.dilated)
 
-    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
+    val scenarioGraph = scenario.toScenarioGraph
     val multiPart = MultipartUtils.prepareMultiParts(
       "testData"      -> testDataContent,
       "scenarioGraph" -> scenarioGraph.asJson.noSpaces

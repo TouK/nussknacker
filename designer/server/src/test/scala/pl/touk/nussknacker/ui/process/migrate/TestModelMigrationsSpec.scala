@@ -16,7 +16,6 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{multipleSourcesValidScenarioGraph, validScenarioGraph}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapWithDetailsForMigration
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import scala.concurrent.ExecutionContext
@@ -80,14 +79,13 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
 
     val invalidGraph: ScenarioGraph =
-      CanonicalProcessConverter.toScenarioGraph(
-        ScenarioBuilder
-          .streaming(ProcessTestData.sampleProcessName.value)
-          .source("source", ProcessTestData.existingSourceFactory)
-          .processor("notExistingService", "IDONTEXIST")
-          .processor("processor", ProcessTestData.existingServiceId)
-          .emptySink("sink", ProcessTestData.existingSinkFactory)
-      )
+      ScenarioBuilder
+        .streaming(ProcessTestData.sampleProcessName.value)
+        .source("source", ProcessTestData.existingSourceFactory)
+        .processor("notExistingService", "IDONTEXIST")
+        .processor("processor", ProcessTestData.existingServiceId)
+        .emptySink("sink", ProcessTestData.existingSinkFactory)
+        .toScenarioGraph
 
     val validationResult = flinkProcessValidator().validate(
       invalidGraph,
@@ -104,21 +102,20 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should migrate fragment and its usage within scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
-    val fragment      = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragmentOneOut)
+    val fragment      = ProcessTestData.sampleFragmentOneOut.toScenarioGraph
     val process =
-      CanonicalProcessConverter.toScenarioGraph(
-        ScenarioBuilder
-          .streaming("fooProcess")
-          .source("source", ProcessTestData.existingSourceFactory)
-          .fragmentOneOut(
-            "fragment",
-            ProcessTestData.sampleFragmentOneOut.name.value,
-            "output",
-            "fragmentResult",
-            "param1" -> "'foo'".spel
-          )
-          .emptySink("sink", ProcessTestData.existingSinkFactory)
-      )
+      ScenarioBuilder
+        .streaming("fooProcess")
+        .source("source", ProcessTestData.existingSourceFactory)
+        .fragmentOneOut(
+          "fragment",
+          ProcessTestData.sampleFragmentOneOut.name.value,
+          "output",
+          "fragmentResult",
+          "param1" -> "'foo'".spel
+        )
+        .emptySink("sink", ProcessTestData.existingSinkFactory)
+        .toScenarioGraph
 
     val results = testMigration.testMigrations(
       List(wrapWithDetailsForMigration(process)),
@@ -130,7 +127,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
   }
 
   test("should migrate scenario with fragment which does not require any migrations") {
-    val fragment = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragmentOneOut)
+    val fragment = ProcessTestData.sampleFragmentOneOut.toScenarioGraph
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider("streaming" -> new ProcessModelMigrator(new TestMigrations(8))),
@@ -138,19 +135,18 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     )
 
     val process =
-      CanonicalProcessConverter.toScenarioGraph(
-        ScenarioBuilder
-          .streaming("fooProcess")
-          .source("source", ProcessTestData.existingSourceFactory)
-          .fragmentOneOut(
-            "fragment",
-            ProcessTestData.sampleFragmentOneOut.name.value,
-            "output",
-            "fragmentResult",
-            "param1" -> "'foo'".spel
-          )
-          .emptySink("sink", ProcessTestData.existingSinkFactory)
-      )
+      ScenarioBuilder
+        .streaming("fooProcess")
+        .source("source", ProcessTestData.existingSourceFactory)
+        .fragmentOneOut(
+          "fragment",
+          ProcessTestData.sampleFragmentOneOut.name.value,
+          "output",
+          "fragmentResult",
+          "param1" -> "'foo'".spel
+        )
+        .emptySink("sink", ProcessTestData.existingSinkFactory)
+        .toScenarioGraph
 
     val results = testMigration.testMigrations(
       List(wrapWithDetailsForMigration(process)),

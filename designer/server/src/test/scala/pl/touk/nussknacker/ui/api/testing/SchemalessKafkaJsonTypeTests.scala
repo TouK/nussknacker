@@ -1,12 +1,6 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import com.dimafeng.testcontainers.{
-  Container,
-  ForAllTestContainer,
-  KafkaContainer,
-  MultipleContainers,
-  SchemaRegistryContainer
-}
+import com.dimafeng.testcontainers._
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromMap
 import com.typesafe.scalalogging.StrictLogging
@@ -44,19 +38,7 @@ import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests.{
-  ageVariable,
-  getScenarioWithDataSample,
-  isAdultVariable,
-  kafkaContainerAlias,
-  nameVariable,
-  sinkTopicName,
-  sourceTopicName,
-  variablesNodeName,
-  WithSchemalessAdHocTestsLogic
-}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests._
 
 import java.util.{Collections, UUID}
 import java.util.Arrays.asList
@@ -115,7 +97,7 @@ class SchemalessKafkaJsonTypeTests
         val request =
           ScenarioValidationRequest(
             scenarioWithEmptyDataSample.name,
-            CanonicalProcessConverter.toScenarioGraph(scenarioWithEmptyDataSample)
+            scenarioWithEmptyDataSample.toScenarioGraph
           ).asJson.toString()
 
         val response = given()
@@ -152,7 +134,7 @@ class SchemalessKafkaJsonTypeTests
         .basicAuthAllPermUser()
         .jsonBody(
           testDataGenerationRequest(
-            Encoder[ScenarioGraph].apply(toScenarioGraph(exampleScenario)).toString(),
+            Encoder[ScenarioGraph].apply(exampleScenario.toScenarioGraph).toString(),
             numberOfSamples = 3
           )
         )
@@ -176,7 +158,7 @@ class SchemalessKafkaJsonTypeTests
         .jsonBody(
           ScenarioTestValidationRequest(
             testData = ScenarioTestData.WithLiveData(10),
-            scenarioGraph = toScenarioGraph(exampleScenario)
+            scenarioGraph = exampleScenario.toScenarioGraph
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
@@ -304,7 +286,7 @@ object SchemalessKafkaJsonTypeTests {
     override protected def parametersProvidedForDryRun: String =
       ScenarioTestValidationRequest(
         testData = ScenarioTestData.WithParameters(validParameters),
-        scenarioGraph = toScenarioGraph(exampleScenario)
+        scenarioGraph = exampleScenario.toScenarioGraph
       ).asJson.toString()
 
     override protected def expectedValidationErrorsOnInvalidParametersJson: String =

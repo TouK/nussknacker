@@ -2,9 +2,8 @@ package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 sealed trait ScenarioShapeFetchStrategy[ScenarioShape]
 
@@ -20,7 +19,7 @@ object ScenarioShapeFetchStrategy {
 
   def convertToTargetShape[TARGET: ScenarioShapeFetchStrategy](source: Any, processName: ProcessName): TARGET = {
     (source, implicitly[ScenarioShapeFetchStrategy[TARGET]]) match {
-      case (c: CanonicalProcess, FetchScenarioGraph) => CanonicalProcessConverter.toScenarioGraph(c)
+      case (c: CanonicalProcess, FetchScenarioGraph) => c.toScenarioGraph
       case (c: CanonicalProcess, FetchCanonical)     => c
       case (s: ScenarioGraph, FetchScenarioGraph)    => s
       case (s: ScenarioGraph, FetchCanonical) =>
