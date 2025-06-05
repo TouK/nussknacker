@@ -25,13 +25,17 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
   ): FlinkCustomStreamTransformation with ReturningType = {
     FlinkCustomStreamTransformation(
       { (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+        val nodeId = ctx.nodeId
         stream
           .flatMap(elements)(ctx)
           .flatMap(
             (valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
               valueWithContext.value.asScala.zipWithIndex
                 .map { case (partToRun, index) =>
-                  new ValueWithContext[AnyRef](partToRun, valueWithContext.context.appendIdSuffix(index.toString))
+                  new ValueWithContext[AnyRef](
+                    partToRun,
+                    valueWithContext.context.withContextIdTransformation(nodeId, index.toString)
+                  )
                 }
                 .foreach(c.collect)
             },

@@ -177,8 +177,12 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val sourceContextId = contextIdGenForFirstSource(process).nextContextId()
     results.nodeResults("union1") should have size 2
 
-    val unionContextIds = results.nodeResults("union1").map(_.id)
-    unionContextIds should contain only (s"$sourceContextId-v1-$branch1NodeId", s"$sourceContextId-v2-$branch2NodeId")
+    val unionContextIds           = results.nodeResults("union1").map(_.id)
+    val serializedUnionContextIds = unionContextIds.map(_.serialize)
+    serializedUnionContextIds should contain only (
+      s"${sourceContextId.serialize}-v1-v1-$branch1NodeId",
+      s"${sourceContextId.serialize}-v2-v2-$branch2NodeId"
+    )
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     nodeResults(results, "union1") shouldBe nodeResults(results, "collect1")
 
@@ -196,7 +200,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     contextIdGenForNodeId(scenario, scenario.nodes.head.id)
 
   private def contextIdGenForNodeId(scenario: CanonicalProcess, nodeId: String): IncContextIdGenerator =
-    IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, nodeId)
+    IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, nodeId, taskId = 0)
 
   private def runTest(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
     val jobData = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))

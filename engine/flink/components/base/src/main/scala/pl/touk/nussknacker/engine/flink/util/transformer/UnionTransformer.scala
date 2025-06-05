@@ -134,7 +134,7 @@ class UnionMapFunction(valueParam: LazyParameter[AnyRef], customNodeContext: Fli
   private lazy val evaluateValue = toEvaluateFunctionConverter.toEvaluateFunction(valueParam)
 
   override def flatMap(context: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val unionContext = context.appendIdSuffix(branchId)
+    val unionContext = context.withContextIdTransformation(customNodeContext.nodeId, branchId)
     collectHandlingErrors(unionContext, out) {
       ValueWithContext[AnyRef](evaluateValue(unionContext), unionContext)
     }

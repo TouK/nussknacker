@@ -49,7 +49,7 @@ class OneParamInterpreterBenchmark {
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkFutureSyncService(): AnyRef = {
     Await.result(
-      interpreterFuture(Context(""), ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)),
+      interpreterFuture(Context.dummy, ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)),
       1 second
     )
   }
@@ -59,7 +59,7 @@ class OneParamInterpreterBenchmark {
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkFutureAsyncService(): AnyRef = {
     Await.result(
-      interpreterFuture(Context(""), ServiceExecutionContext(ExecutionContext.global)),
+      interpreterFuture(Context.dummy, ServiceExecutionContext(ExecutionContext.global)),
       1 second
     )
   }
@@ -69,7 +69,7 @@ class OneParamInterpreterBenchmark {
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkIOSyncService(): AnyRef = {
     import SynchronousExecutionContextAndIORuntime.syncIoRuntime
-    interpreterIO(Context(""), ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc))
+    interpreterIO(Context.dummy, ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc))
       .unsafeRunSync()
   }
 
@@ -78,7 +78,7 @@ class OneParamInterpreterBenchmark {
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkIOAsyncService(): AnyRef = {
     import SynchronousExecutionContextAndIORuntime.syncIoRuntime
-    interpreterIO(Context(""), ServiceExecutionContext(ExecutionContext.global))
+    interpreterIO(Context.dummy, ServiceExecutionContext(ExecutionContext.global))
       .unsafeRunSync()
   }
 

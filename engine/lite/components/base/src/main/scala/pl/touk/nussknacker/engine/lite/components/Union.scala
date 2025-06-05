@@ -49,7 +49,7 @@ object Union extends CustomStreamTransformer {
               val branchNewValue = outputExpressionByBranchId(branchId.value).evaluate(branchContext)
               branchContext.clearUserVariables
                 .withVariable(variableName, branchNewValue)
-                .appendIdSuffix(branchId.value)
+                .withContextIdTransformation(context.nodeId, branchId.value)
             }
             continuation(DataBatch(contextWithNewValue))
           }

@@ -248,7 +248,7 @@ class StreamingEmbeddedDeploymentManagerTest
       manager.processCommand(DMTestScenarioCommand(processVersion, scenario, testData)).futureValue
     }
     results.nodeResults("sink") should have length 2
-    val idGenerator       = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")
+    val idGenerator       = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source", taskId = 0)
     val invocationResults = results.invocationResults("sink")
     val id1               = idGenerator.nextContextId()
     val id2               = idGenerator.nextContextId()

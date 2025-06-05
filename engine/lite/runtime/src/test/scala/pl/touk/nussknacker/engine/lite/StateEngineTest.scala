@@ -22,12 +22,12 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     )
 
     // we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
-    results.value.map(er => (er.context.id, er.result)) shouldBe List(
+    results.value.map(er => (er.context.id.serialize, er.result)) shouldBe List(
       "0" -> "0:10.0",
       "2" -> "2:14.0",
       "3" -> "3:20.0"
     )
-    results.written.map(_.context.id) shouldBe List("1")
+    results.written.map(_.context.id.serialize) shouldBe List("1")
   }
 
   test("run scenario failing on source") {
@@ -40,13 +40,13 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     )
 
     // we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
-    results.value.map(er => (er.context.id, er.result)) shouldBe List(
+    results.value.map(er => (er.context.id.serialize, er.result)) shouldBe List(
       "0" -> 0,
       "2" -> 2,
       "3" -> 3
     )
     val error = results.written.headOption.value
-    error.context.id shouldEqual "1"
+    error.context.id.serialize shouldEqual "1"
     error.throwable shouldEqual SourceFailure
   }
 

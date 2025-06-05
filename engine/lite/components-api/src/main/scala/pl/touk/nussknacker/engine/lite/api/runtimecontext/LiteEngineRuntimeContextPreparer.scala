@@ -27,7 +27,7 @@ case class LiteEngineRuntimeContext(jobData: JobData, metricsProvider: MetricsPr
     with AutoCloseable {
 
   override def contextIdGenerator(nodeId: String): ContextIdGenerator =
-    IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId)
+    IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId, taskId = 0)
 
   override def close(): Unit = metricsProvider.close()
 

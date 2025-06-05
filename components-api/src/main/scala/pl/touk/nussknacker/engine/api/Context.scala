@@ -1,35 +1,43 @@
 package pl.touk.nussknacker.engine.api
 
-import java.util.UUID
-import scala.util.Random
+import scala.jdk.CollectionConverters._
 
 object Context {
 
-  // prefix is to distinguish between externally provided and internal (initially created) id
-  private val initialContextIdPrefix = "initial-"
+  def apply(id: ContextId): Context = Context(id, Map.empty, None)
 
-  /**
-   * For performance reasons, is used unsecure random - see UUIDBenchmark for details. In this case random correlation id
-   * is used only for internal purpose so is not important in security context.
-   */
-  private val random = new Random()
-
-  /**
-   * Deprecated: should be used ContextIdGenerator e.g. via EngineRuntimeContext.contextIdGenerator
-   * Should be used for newly created context - when there is no suitable external correlation / tracing id
-   */
-  def withInitialId: Context = {
-    Context(initialContextIdPrefix + new UUID(random.nextLong(), random.nextLong()).toString)
-  }
-
-  def apply(id: String): Context = Context(id, Map.empty, None)
-
-  def apply(id: String, variables: Map[String, Any]): Context =
+  def apply(id: ContextId, variables: Map[String, Any]): Context =
     Context(id, variables, None)
+
+  def dummy: Context = Context(ContextId.dummy)
 
 }
 
-case class ContextId(value: String)
+case class ContextId(
+    scenarioId: String,
+    originatingNodeId: String,
+    taskId: Long,
+    index: Long,
+    transformations: java.util.List[ContextIdTransformation] = java.util.List.of(),
+) {
+
+  def serialize: String = List(
+    List(scenarioId),
+    List(originatingNodeId),
+    List(taskId.toString),
+    List(index.toString),
+    transformations.asScala.map(_.transformation),
+  ).flatten.mkString("-")
+
+}
+
+case class ContextIdTransformation(nodeId: String, transformation: String)
+
+object ContextId {
+  object DummyContextId extends ContextId("dummy", "dummy", 0, 0, List.empty.asJava)
+
+  def dummy: ContextId = DummyContextId
+}
 
 /**
  * Context is container for variables used in expression evaluation
@@ -39,13 +47,15 @@ case class ContextId(value: String)
  * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
  */
 case class Context(
-    id: String,
+    id: ContextId,
     variables: Map[String, Any],
     parentContext: Option[Context]
 ) {
 
-  def appendIdSuffix(suffix: String): Context =
-    copy(id = s"$id-$suffix")
+  def withContextIdTransformation(nodeId: String, transformation: String): Context = {
+    id.transformations.add(ContextIdTransformation(nodeId, transformation))
+    this
+  }
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing
   //       into parameter

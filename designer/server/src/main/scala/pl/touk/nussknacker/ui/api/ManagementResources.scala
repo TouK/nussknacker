@@ -247,7 +247,7 @@ class ManagementResources(
                                   ResultsWithCountsDto.from(
                                     resultsWithCounts = value,
                                     skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
-                                    skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition)
+                                    skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition),
                                   )
                                 )
                             }

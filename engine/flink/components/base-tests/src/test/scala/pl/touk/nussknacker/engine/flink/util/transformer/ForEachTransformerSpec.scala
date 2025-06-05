@@ -126,7 +126,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   private def extractContextIds(results: TestProcess.TestResults[_]): List[String] = results
     .nodeResults(forEachNodeResultId)
-    .map(_.id)
+    .map(_.id.serialize)
 
   private def runScenario(model: LocalModelData, testScenario: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>

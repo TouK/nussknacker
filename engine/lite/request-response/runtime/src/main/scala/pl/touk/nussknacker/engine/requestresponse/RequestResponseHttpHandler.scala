@@ -55,7 +55,7 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
           NuExceptionInfo(
             Some(NodeComponentInfo(requestResponseInterpreter.sourceId.value, None)),
             ex,
-            Context("")
+            Context.dummy,
           )
         )
       )

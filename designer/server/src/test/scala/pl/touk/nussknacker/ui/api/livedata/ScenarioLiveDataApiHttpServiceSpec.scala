@@ -7,7 +7,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewSupported, NoLiveDataPreviewSupport}
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -109,7 +109,7 @@ class ScenarioLiveDataApiHttpServiceSpec
           NodeTransition("start", Some("variable")) -> LiveDataForNodeTransition(
             samples = List(
               LiveDataSample(
-                contextId = "",
+                contextId = ContextId("mocked-scenario-id", "source", 0, 0),
                 timestamp = mockedInstant,
                 variables = Map(
                   "v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson)
@@ -123,7 +123,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         invocationResults = Map(
           NodeId("start") -> List(
             InvocationResult(
-              "mocked-context-id",
+              ContextId("mocked-scenario-id", "source", 0, 0),
               mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
@@ -133,7 +133,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         externalInvocationResults = Map(
           NodeId("start") -> List(
             InvocationResult(
-              "mocked-context-id",
+              ContextId("mocked-scenario-id", "source", 0, 0),
               mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
@@ -143,7 +143,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         exceptions = Map(
           NodeId("start") -> List(
             ExceptionResult(
-              "mocked-context-id",
+              ContextId("mocked-scenario-id", "source", 0, 0),
               mockedInstant,
               Map("var1" -> Json.obj("pretty" -> "abc".asJson)),
               new Exception("Something bad happened")

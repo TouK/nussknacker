@@ -4,9 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdTransformation}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class ResultCollectingListenerSpec
@@ -135,35 +137,91 @@ class ResultCollectingListenerSpec
       testResults => {
         transitionVariables(testResults, "bv1", Some("end1")).size shouldBe 4
         transitionVariables(testResults, "bv2", Some("end2")).size shouldBe 4
-        transitionVariables(testResults, "start-foo", Some("split")) shouldBe Set(
-          Map("input" -> 10),
-          Map("input" -> 20),
-          Map("input" -> 30),
-          Map("input" -> 40),
+        transitionVariablesByContextId(testResults, "start-foo", Some("split")) shouldBe Map(
+          ContextId("sample-split", "start-foo", 0, 0) -> Map("input" -> 10),
+          ContextId("sample-split", "start-foo", 0, 1) -> Map("input" -> 20),
+          ContextId("sample-split", "start-foo", 0, 2) -> Map("input" -> 30),
+          ContextId("sample-split", "start-foo", 0, 3) -> Map("input" -> 40),
         )
-        transitionVariables(testResults, "split", Some("bv1")) shouldBe Set(
-          Map("input" -> 10),
-          Map("input" -> 20),
-          Map("input" -> 30),
-          Map("input" -> 40),
+        transitionVariablesByContextId(testResults, "split", Some("bv1")) shouldBe Map(
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            0,
+            java.util.List.of(ContextIdTransformation("split", "bv1"))
+          ) -> Map("input" -> 10),
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            1,
+            java.util.List.of(ContextIdTransformation("split", "bv1"))
+          ) -> Map("input" -> 20),
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            2,
+            java.util.List.of(ContextIdTransformation("split", "bv1"))
+          ) -> Map("input" -> 30),
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            3,
+            java.util.List.of(ContextIdTransformation("split", "bv1"))
+          ) -> Map("input" -> 40),
         )
-        transitionVariables(testResults, "split", Some("bv2")) shouldBe Set(
-          Map("input" -> 10),
-          Map("input" -> 20),
-          Map("input" -> 30),
-          Map("input" -> 40),
+        transitionVariablesByContextId(testResults, "split", Some("bv2")) shouldBe Map(
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            0,
+            java.util.List.of(ContextIdTransformation("split", "bv2"))
+          ) -> Map("input" -> 10),
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            1,
+            java.util.List.of(ContextIdTransformation("split", "bv2"))
+          ) -> Map("input" -> 20),
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            2,
+            java.util.List.of(ContextIdTransformation("split", "bv2"))
+          ) -> Map("input" -> 30),
+          ContextId(
+            "sample-split",
+            "start-foo",
+            0,
+            3,
+            java.util.List.of(ContextIdTransformation("split", "bv2"))
+          ) -> Map("input" -> 40),
         )
-        transitionVariables(testResults, "bv1", Some("end1")) shouldBe Set(
-          Map("input" -> 10, "timesTwo" -> 20),
-          Map("input" -> 20, "timesTwo" -> 40),
-          Map("input" -> 30, "timesTwo" -> 60),
-          Map("input" -> 40, "timesTwo" -> 80),
+        transitionVariablesByContextId(testResults, "bv1", Some("end1")) shouldBe Map(
+          ContextId("sample-split", "start-foo", 0, 0, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+            Map("input" -> 10, "timesTwo" -> 20),
+          ContextId("sample-split", "start-foo", 0, 1, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+            Map("input" -> 20, "timesTwo" -> 40),
+          ContextId("sample-split", "start-foo", 0, 2, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+            Map("input" -> 30, "timesTwo" -> 60),
+          ContextId("sample-split", "start-foo", 0, 3, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+            Map("input" -> 40, "timesTwo" -> 80),
         )
-        transitionVariables(testResults, "bv2", Some("end2")) shouldBe Set(
-          Map("input" -> 10, "timesFour" -> 40),
-          Map("input" -> 20, "timesFour" -> 80),
-          Map("input" -> 30, "timesFour" -> 120),
-          Map("input" -> 40, "timesFour" -> 160),
+        transitionVariablesByContextId(testResults, "bv2", Some("end2")) shouldBe Map(
+          ContextId("sample-split", "start-foo", 0, 0, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+            Map("input" -> 10, "timesFour" -> 40),
+          ContextId("sample-split", "start-foo", 0, 1, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+            Map("input" -> 20, "timesFour" -> 80),
+          ContextId("sample-split", "start-foo", 0, 2, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+            Map("input" -> 30, "timesFour" -> 120),
+          ContextId("sample-split", "start-foo", 0, 3, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+            Map("input" -> 40, "timesFour" -> 160),
         )
       }
     )
@@ -226,6 +284,77 @@ class ResultCollectingListenerSpec
           Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),
         )
       }
+    )
+  }
+
+  test("there is a switch") {
+    val scenario =
+      ScenarioBuilder
+        .streaming("sample-split")
+        .source("start-foo", "start1")
+        .switch(
+          "switch",
+          "''".spel,
+          "var",
+          Case("#input < 25".spel, GraphBuilder.emptySink("end1", "dead-end")),
+          Case("#input >= 25".spel, GraphBuilder.emptySink("end2", "dead-end"))
+        )
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        assertNumberOfSamplesThatFinishedInNode(testResults, "end1", 2)
+        assertNumberOfSamplesThatFinishedInNode(testResults, "end2", 2)
+        transitionVariablesByContextId(testResults, "start-foo", Some("switch")) shouldBe Map(
+          ContextId("sample-split", "start-foo", 0, 0) -> Map("input" -> 10),
+          ContextId("sample-split", "start-foo", 0, 1) -> Map("input" -> 20),
+          ContextId("sample-split", "start-foo", 0, 2) -> Map("input" -> 30),
+          ContextId("sample-split", "start-foo", 0, 3) -> Map("input" -> 40),
+        )
+        transitionVariablesByContextId(testResults, "switch", Some("end1")) shouldBe Map(
+          ContextId("sample-split", "start-foo", 0, 0) -> Map("input" -> 10, "var" -> ""),
+          ContextId("sample-split", "start-foo", 0, 1) -> Map("input" -> 20, "var" -> ""),
+        )
+        transitionVariablesByContextId(testResults, "switch", Some("end2")) shouldBe Map(
+          ContextId("sample-split", "start-foo", 0, 2) -> Map("input" -> 30, "var" -> ""),
+          ContextId("sample-split", "start-foo", 0, 3) -> Map("input" -> 40, "var" -> ""),
+        )
+      }
+    )
+  }
+
+  test("there is a logging processor") {
+    val scenario =
+      ScenarioBuilder
+        .streaming("sample-split")
+        .source("start-foo", "start1")
+        .processor("processor", "loggerService", "all" -> "'abrakadabra'".spel)
+        .emptySink("end", "dead-end")
+
+    withCollectingTestResults(
+      scenario,
+      testResults => {
+        assertNumberOfSamplesThatFinishedInNode(testResults, "end", 4)
+        transitionVariables(testResults, "start-foo", Some("processor")) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+        transitionVariables(testResults, "processor", Some("end")) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+        transitionVariables(testResults, "end", None) shouldBe Set(
+          Map("input" -> 10),
+          Map("input" -> 20),
+          Map("input" -> 30),
+          Map("input" -> 40),
+        )
+      },
+      allowEndingScenarioWithoutSink = true,
     )
   }
 

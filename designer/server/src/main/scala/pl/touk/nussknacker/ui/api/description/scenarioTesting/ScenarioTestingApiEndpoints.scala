@@ -173,7 +173,12 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
   }
 
   def scenarioTestEndpoint: SecuredEndpoint[
-    (ProcessName, PerformTestRequest, Option[SkipResultsPerNode], Option[SkipResultsPerTransition]),
+    (
+        ProcessName,
+        PerformTestRequest,
+        Option[SkipResultsPerNode],
+        Option[SkipResultsPerTransition],
+    ),
     TestingError,
     ResultsWithCountsDto,
     Any

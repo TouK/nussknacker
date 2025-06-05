@@ -64,7 +64,7 @@ final class SinkInvocationCollector(
     resultsCollectingListener.updateResults(
       _.updateExternalInvocationResult(
         nodeId,
-        ContextId(context.id),
+        context.id,
         ref,
         result,
         resultsCollectingListener.variableEncoder
