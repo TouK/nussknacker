@@ -22,13 +22,12 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   )
 
   private val scenarioTestData = PreliminaryScenarioTestData(
-    NonEmptyList(
-      PreliminaryScenarioTestRecord.Standard(
+    NonEmptyList.one(
+      PreliminaryScenarioTestRecord(
         "source1",
         Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)),
         timestamp = Some(24L)
-      ),
-      PreliminaryScenarioTestRecord.Simplified(Json.fromString("a JSON string")) :: Nil
+      )
     )
   )
 
@@ -46,7 +45,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
     val testData = PreliminaryScenarioTestData(
       NonEmptyList.fromListUnsafe(
         List.fill(10)(
-          PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a long JSON string...".repeat(10)))
+          PreliminaryScenarioTestRecord("source1", Json.fromString("a long JSON string...".repeat(10)))
         )
       )
     )
