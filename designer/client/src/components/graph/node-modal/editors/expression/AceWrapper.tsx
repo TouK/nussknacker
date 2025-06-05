@@ -11,7 +11,6 @@ import type { ICommand } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
 
 import type { FieldError } from "../Validators";
-import AceEditor from "./ace";
 import { StyledAceEditor } from "./StyledAceEditor";
 import type { EditorMode } from "./types";
 import { ExpressionLang } from "./types";
@@ -190,15 +189,15 @@ export default forwardRef(function AceWrapper(
     );
 
     return (
-        <StyledAceEditor>
-            <AceEditor
+        <>
+            <StyledAceEditor
                 {...props}
                 ref={ref}
                 mode={editorLangToMode(language, editorMode)}
                 width={"100%"}
                 minLines={rows}
                 maxLines={512}
-                theme={"nussknacker"}
+                codeTheme={"nussknacker"}
                 showPrintMargin={false}
                 cursorStart={-1} //line start
                 readOnly={readOnly}
@@ -231,6 +230,6 @@ export default forwardRef(function AceWrapper(
                     {InputAdornmentEnd}
                 </Box>
             )}
-        </StyledAceEditor>
+        </>
     );
 });

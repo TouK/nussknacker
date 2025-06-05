@@ -47,7 +47,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
-            <StyledAceEditor
+            <Box
                 className={cx([
                     rowAceEditor,
                     showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
@@ -56,14 +56,14 @@ export const JsonEditor: SimpleEditor<Props> = ({
                 ])}
                 sx={{ position: "relative" }}
             >
-                <AceEditor
+                <StyledAceEditor
                     onLoad={setAnnotationsOnLoad}
                     readOnly={readOnly}
                     mode={"json"}
                     width={"100%"}
                     minLines={5}
                     maxLines={50}
-                    theme={THEME}
+                    codeTheme={THEME}
                     onChange={onChange}
                     value={value}
                     showPrintMargin={false}
@@ -82,7 +82,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
                     annotations={annotations}
                     markers={markers}
                 />
-            </StyledAceEditor>
+            </Box>
             {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>
     );
