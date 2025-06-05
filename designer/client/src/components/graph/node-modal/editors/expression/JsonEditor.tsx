@@ -87,5 +87,3 @@ export const JsonEditor: SimpleEditor<Props> = ({
         </Box>
     );
 };
-
-export default JsonEditor;
