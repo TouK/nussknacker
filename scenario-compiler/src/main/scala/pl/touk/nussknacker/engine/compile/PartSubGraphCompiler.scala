@@ -37,7 +37,6 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
   def compile(n: SplittedNode[_], ctx: ValidationContext)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.node.Node] = {
-    implicit val nodeId: NodeId = NodeId(n.id)
 
     def toCompilationResult[T](
         validated: ValidatedNel[ProcessCompilationError, T],
@@ -73,9 +72,9 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           )
         )
 
-      case splittednode.SwitchNode(Switch(id, expression, varName, _), nexts, defaultNext) =>
+      case splittednode.SwitchNode(switch @ Switch(id, _, varName, _), nexts, defaultNext) =>
         val result = nodeCompiler.compileSwitch(
-          Applicative[Option].product(varName, expression),
+          switch,
           nexts.flatMap(c => c.node.map(next => (next.id, c.expression))),
           ctx
         )
@@ -114,9 +113,9 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       ctx: ValidationContext,
       data: EndingNodeData
   )(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.node.Node] = {
+    implicit val nodeId: NodeId = NodeId(data.id)
     def toCompilationResult[T](
         validated: ValidatedNel[ProcessCompilationError, T],
         expressionsTypingInfo: Map[String, ExpressionTypingInfo],
@@ -144,7 +143,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       case FragmentInput(id, _, _, _, _) =>
         toCompilationResult(Invalid(NonEmptyList.of(UnresolvedFragment(id))), Map.empty, None)
 
-      case FragmentOutputDefinition(id, _, List(), _) =>
+      case FragmentOutputDefinition(id, _, Nil, _) =>
         // TODO: should we validate it's process?
         // TODO: does it make sense to validate FragmentOutput?
         toCompilationResult(
@@ -152,8 +151,8 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           Map.empty,
           None
         )
-      case FragmentOutputDefinition(id, _, fields, _) =>
-        val fieldTypedExpressions = nodeCompiler.fieldToTypedExpression(fields, ctx)
+      case fod @ FragmentOutputDefinition(id, _, _, _) =>
+        val fieldTypedExpressions = nodeCompiler.compileFragmentOutputDefinition(fod, ctx)
         toCompilationResult(
           fieldTypedExpressions.map(typedExpressions =>
             compiledgraph.node.FragmentOutput(id, typedExpressions, isDisabled = false)
@@ -169,8 +168,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
   }
 
   private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Option[Next])(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[Node] = {
     import scenarioCompilationDependencies._
 
@@ -193,6 +191,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
           compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
         }
       case VariableBuilder(id, varName, fields, _) =>
+        implicit val nodeId: NodeId = NodeId(id)
         val NodeCompilationResult(typingInfo, parameters, newCtxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.variable(varName)))
         CompilationResult.map3(
@@ -250,6 +249,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
             toCompilationResult(Valid(FragmentUsageEnd(id, None, compiledNext)), Map.empty, None)
           )
       case FragmentUsageOutput(id, outputName, Some(outputVar), _) =>
+        implicit val nodeId: NodeId = NodeId(id)
         val NodeCompilationResult(typingInfo, parameters, ctxWithSubOutV, compiledFields, typingResult) =
           nodeCompiler.compileFields(outputVar.fields, ctx, outputVar = None)
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).

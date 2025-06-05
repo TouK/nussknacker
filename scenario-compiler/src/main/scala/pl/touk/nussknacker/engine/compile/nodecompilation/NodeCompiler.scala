@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.Applicative
 import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
@@ -89,7 +90,7 @@ class NodeCompiler(
     else MissingSinkHandler.DoNotAllowMissingSinkHandler
   }
 
-  def scenarioIsAllowedToEndWithoutSink(
+  private def scenarioIsAllowedToEndWithoutSink(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ) = {
     import scenarioCompilationDependencies._
@@ -112,7 +113,7 @@ class NodeCompiler(
     )
   }
 
-  type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
+  private type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
 
   private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
   private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
@@ -132,8 +133,8 @@ class NodeCompiler(
       nodeData: SourceNodeData
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
   ): NodeCompilationResult[Source] = {
+    implicit val nodeId: NodeId = NodeId(nodeData.id)
     import scenarioCompilationDependencies._
     nodeData match {
       case a @ Source(_, ref, _) =>
@@ -260,8 +261,8 @@ class NodeCompiler(
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
   ): NodeCompilationResult[AnyRef] = {
+    implicit val nodeId: NodeId = NodeId(data.id)
     import scenarioCompilationDependencies._
 
     val outputVar       = data.outputVar.map(OutputVar.customNode)
@@ -293,10 +294,10 @@ class NodeCompiler(
       sink: Sink,
       ctx: ValidationContext
   )(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[api.process.Sink] = {
-    val ref = sink.ref
+    implicit val nodeId: NodeId = NodeId(sink.id)
+    val ref                     = sink.ref
 
     definitions.getComponent(ComponentType.Sink, ref.typ) match {
       case Some(definition) =>
@@ -315,9 +316,9 @@ class NodeCompiler(
   }
 
   def compileFragmentInput(fragmentInput: FragmentInput, ctx: ValidationContext)(
-      implicit nodeId: NodeId,
-      jobData: JobData
+      implicit jobData: JobData
   ): NodeCompilationResult[List[CompiledParameter]] = {
+    implicit val nodeId: NodeId = NodeId(fragmentInput.id)
 
     val ref            = fragmentInput.ref
     val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
@@ -346,31 +347,31 @@ class NodeCompiler(
 
   // expression is deprecated, will be removed in the future
   def compileSwitch(
-      expressionRaw: Option[(String, Expression)],
+      switch: Switch,
       choices: List[(String, Expression)],
-      ctx: ValidationContext
-  )(
-      implicit nodeId: NodeId
+      ctx: ValidationContext,
   ): NodeCompilationResult[(Option[CompiledExpression], List[CompiledExpression])] = {
+    implicit val nodeId: NodeId                     = NodeId(switch.id)
+    val expressionRaw: Option[(String, Expression)] = Applicative[Option].product(switch.exprVal, switch.expression)
     builtInNodeCompiler.compileSwitch(expressionRaw, choices, ctx)
   }
 
-  def compileFilter(filter: Filter, ctx: ValidationContext)(
-      implicit nodeId: NodeId
-  ): NodeCompilationResult[CompiledExpression] = {
+  def compileFilter(filter: Filter, ctx: ValidationContext): NodeCompilationResult[CompiledExpression] = {
+    implicit val nodeId: NodeId = NodeId(filter.id)
     builtInNodeCompiler.compileFilter(filter, ctx)
   }
 
-  def compileVariable(variable: Variable, ctx: ValidationContext)(
-      implicit nodeId: NodeId
-  ): NodeCompilationResult[CompiledExpression] = {
+  def compileVariable(variable: Variable, ctx: ValidationContext): NodeCompilationResult[CompiledExpression] = {
+    implicit val nodeId: NodeId = NodeId(variable.id)
     builtInNodeCompiler.compileVariable(variable, ctx)
   }
 
-  def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
-      implicit nodeId: NodeId
+  def compileFragmentOutputDefinition(
+      fod: FragmentOutputDefinition,
+      ctx: ValidationContext
   ): ValidatedNel[PartSubGraphCompilationError, Map[String, TypedExpression]] = {
-    fields.map { field =>
+    implicit val nodeId: NodeId = NodeId(fod.id)
+    fod.fields.map { field =>
       expressionCompiler
         .compile(field.expression, Some(ParameterName(field.name)), ctx, Unknown)
         .map(typedExpr => field.name -> typedExpr)
@@ -389,16 +390,16 @@ class NodeCompiler(
       n: Processor,
       ctx: ValidationContext
   )(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    implicit val nodeId: NodeId = NodeId(n.id)
     compileService(n.service, ctx, None)
   }
 
   def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: OutputVar)(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[EnricherCompilationResult] = {
+    implicit val nodeId: NodeId  = NodeId(n.id)
     val serviceCompilationResult = compileService(n.service, ctx, Some(outputVar))
 
     val expressionCompilationResult = n.mockExpression match {
