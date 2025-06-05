@@ -81,8 +81,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
       "previousValue",
       "previousValue",
       "previousValue",
-      "groupBy" -> "'constant'".spel,
-      "value"   -> "#input".spel
+      "Key"   -> "'constant'".spel,
+      "Value" -> "#input".spel
     )
     .emptySink(
       "sink",

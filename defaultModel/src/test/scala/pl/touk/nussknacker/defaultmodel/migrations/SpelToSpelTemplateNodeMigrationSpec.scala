@@ -1,8 +1,7 @@
-package pl.touk.nussknacker.defaultModel.migrations
+package pl.touk.nussknacker.defaultmodel.migrations
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.defaultmodel.migrations.SpelToSpelTemplateNodeMigration
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
