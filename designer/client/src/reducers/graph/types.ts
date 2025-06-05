@@ -25,4 +25,5 @@ export type GraphState = {
     processCounts: ProcessCounts;
     liveData: ResultsWithCountsDto;
     liveDataRefresh?: RefreshData;
+    liveDataWasEnabled?: boolean;
 };

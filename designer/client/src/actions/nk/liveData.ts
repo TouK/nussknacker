@@ -31,7 +31,7 @@ export const stopLiveData = (): ThunkAction => (dispatch) => {
     clearTimeout(refreshTimeout);
 };
 
-export function fetchAndDisplayLiveData(refreshIn: number | false = 1): ThunkAction {
+export function fetchAndDisplayLiveData(refreshIn: number | false = 1, showErrors = false): ThunkAction {
     return async (dispatch, getState) => {
         clearTimeout(refreshTimeout);
         if (!isReadyForLiveData(getState())) {
@@ -39,7 +39,7 @@ export function fetchAndDisplayLiveData(refreshIn: number | false = 1): ThunkAct
         }
 
         const scenario = getScenario(getState());
-        const { data: results } = await HttpService.fetchProcessLiveData(scenario.name);
+        const { data: results } = await HttpService.fetchProcessLiveData(scenario.name, showErrors);
 
         const now = moment();
         if (refreshIn) {

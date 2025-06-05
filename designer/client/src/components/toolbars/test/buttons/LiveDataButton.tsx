@@ -54,7 +54,7 @@ export function LiveDataButton(props: ToolbarButtonProps) {
             disabled={!readyForLiveData || disabled}
             onClick={() => {
                 if (!enabled) {
-                    dispatch(fetchAndDisplayLiveData());
+                    dispatch(fetchAndDisplayLiveData(1, true));
                 } else {
                     dispatch(stopLiveData());
                 }
