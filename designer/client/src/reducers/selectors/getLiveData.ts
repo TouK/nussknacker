@@ -21,3 +21,5 @@ const EMPTY = [];
 export const getNodeTransitionResults = createSelector(getLiveData, (liveData): NodeTransitionResult[] => {
     return liveData?.results.nodeTransitionResults || EMPTY;
 });
+
+export const getLiveDataWasEnabled = createSelector(getGraph, (graph) => graph.liveDataWasEnabled);
