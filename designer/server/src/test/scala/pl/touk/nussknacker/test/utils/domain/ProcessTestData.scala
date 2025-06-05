@@ -38,7 +38,7 @@ import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessValidator}
 
 object ProcessTestData {
@@ -195,7 +195,7 @@ object ProcessTestData {
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
-  val validScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(validProcess)
+  val validScenarioGraph: ScenarioGraph = validProcess.toScenarioGraph
 
   val versionId: VersionId = VersionId(7L)
 
@@ -247,7 +247,7 @@ object ProcessTestData {
     .customNode("custom", "out1", otherExistingServiceId2, param)
     .emptySink("sink", existingSinkFactory)
 
-  val multipleSourcesValidScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(
+  val multipleSourcesValidScenarioGraph: ScenarioGraph =
     ScenarioBuilder
       .streaming("fooProcess")
       .sources(
@@ -269,7 +269,7 @@ object ProcessTestData {
           )
           .emptySink("sink1", existingSinkFactory)
       )
-  )
+      .toScenarioGraph
 
   val invalidProcess: CanonicalProcess = {
     val missingSourceFactory = "missingSource"

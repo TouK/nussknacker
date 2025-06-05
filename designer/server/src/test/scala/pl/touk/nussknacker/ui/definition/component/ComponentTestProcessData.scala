@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 private[component] object ComponentTestProcessData {
@@ -67,7 +67,7 @@ private[component] object ComponentTestProcessData {
           .filter(DefaultFilterName, "#input.id != null".spel)
           .filter(SecondFilterName, "#input.id != null".spel)
           .emptySink(DefaultSinkName, DefaultSinkName)
-        CanonicalProcessConverter.toScenarioGraph(process)
+        process.toScenarioGraph
       },
       name = DeployedFraudProcessName,
       processingType = ProcessingTypeFraud,
@@ -83,7 +83,7 @@ private[component] object ComponentTestProcessData {
           .enricher(DefaultCustomName, "customOut", CustomerDataEnricherName)
           .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
           .emptySink(DefaultSinkName, DefaultSinkName)
-        CanonicalProcessConverter.toScenarioGraph(process)
+        process.toScenarioGraph
       },
       name = CanceledFraudProcessName,
       processingType = ProcessingTypeFraud,
@@ -99,13 +99,11 @@ private[component] object ComponentTestProcessData {
   )
 
   val FraudFragment: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
-    scenarioGraph = {
-      val scenario = ScenarioBuilder
-        .fragment("not-used-name", "in" -> classOf[String])
-        .filter(FragmentFilterName, "#input.id != null".spel)
-        .fragmentOutput("fraudEnd", "output")
-      CanonicalProcessConverter.toScenarioGraph(scenario)
-    },
+    scenarioGraph = ScenarioBuilder
+      .fragment("not-used-name", "in" -> classOf[String])
+      .filter(FragmentFilterName, "#input.id != null".spel)
+      .fragmentOutput("fraudEnd", "output")
+      .toScenarioGraph,
     name = FraudFragmentName,
     processingType = ProcessingTypeFraud,
     category = CategoryFraud,
@@ -114,21 +112,20 @@ private[component] object ComponentTestProcessData {
 
   val FraudProcessWithFragment: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     name = FraudProcessWithFragmentName,
-    scenarioGraph = CanonicalProcessConverter.toScenarioGraph(
-      ScenarioBuilder
-        .streaming("not-used-name")
-        .source(SecondSourceName, SharedSourceName)
-        .filter(SecondFilterName, "#input.id != null".spel)
-        .fragment(
-          FraudFragment.name.value,
-          FraudFragment.name.value,
-          Nil,
-          Map.empty,
-          Map(
-            "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
-          )
+    scenarioGraph = ScenarioBuilder
+      .streaming("not-used-name")
+      .source(SecondSourceName, SharedSourceName)
+      .filter(SecondFilterName, "#input.id != null".spel)
+      .fragment(
+        FraudFragment.name.value,
+        FraudFragment.name.value,
+        Nil,
+        Map.empty,
+        Map(
+          "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
         )
-    ),
+      )
+      .toScenarioGraph,
     processingType = ProcessingTypeFraud,
     category = CategoryFraud
   )
@@ -136,12 +133,12 @@ private[component] object ComponentTestProcessData {
   private def createSimpleDisplayableProcess(
       source: NodeConf,
       sink: NodeConf
-  ): ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(
+  ): ScenarioGraph =
     ScenarioBuilder
       .streaming("not-used-name")
       .source(source.name, source.id)
       .emptySink(sink.name, sink.id)
-  )
+      .toScenarioGraph
 
   /**
    * @param name - created by user on GUI

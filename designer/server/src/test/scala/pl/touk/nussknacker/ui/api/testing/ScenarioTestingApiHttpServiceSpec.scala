@@ -29,8 +29,7 @@ import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
@@ -444,7 +443,7 @@ trait ScenarioTestingApiHttpServiceSpec
             testData = ScenarioTestData.WithParameters(
               TestSourceParameters(missingSourceId, Map(ParameterName("a parameter") -> "{'123'}".spel))
             ),
-            scenarioGraph = toScenarioGraph(scenarioWithMissingSource)
+            scenarioGraph = scenarioWithMissingSource.toScenarioGraph
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenarioWithMissingSource.name}/validate")
@@ -479,7 +478,7 @@ trait ScenarioTestingApiHttpServiceSpec
         .jsonBody(
           ScenarioTestValidationRequest(
             testData = ScenarioTestData.WithLiveData(0),
-            scenarioGraph = toScenarioGraph(exampleScenario)
+            scenarioGraph = exampleScenario.toScenarioGraph
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
@@ -503,5 +502,5 @@ trait ScenarioTestingApiHttpServiceSpec
        |}""".stripMargin
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =
-    Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(canonical)).toString()
+    Encoder[ScenarioGraph].apply(canonical.toScenarioGraph).toString()
 }

@@ -12,8 +12,7 @@ import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.UsersB
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 trait WithAdHocTestsLogic {
   self: WithSimplifiedConfigScenarioHelper with NuItTest =>
@@ -21,7 +20,7 @@ trait WithAdHocTestsLogic {
   def shouldValidateParametersProperly(): Unit = {
     val request = ScenarioTestValidationRequest(
       testData = ScenarioTestData.WithParameters(validParameters),
-      scenarioGraph = toScenarioGraph(exampleScenario)
+      scenarioGraph = exampleScenario.toScenarioGraph
     ).asJson.toString()
 
     given()
@@ -101,6 +100,6 @@ trait WithAdHocTestsLogic {
 
   protected def expectedTestParametersJson: String
 
-  protected def exampleScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+  protected def exampleScenarioGraph: ScenarioGraph = exampleScenario.toScenarioGraph
 
 }

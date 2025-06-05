@@ -18,7 +18,7 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 import java.util.UUID
 
@@ -208,7 +208,7 @@ class ScenarioLabelsApiHttpServiceBusinessSpec
 
   private def updateScenarioLabels(scenario: CanonicalProcess, labels: List[String]): Unit = {
     val scenarioName  = scenario.metaData.id
-    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
+    val scenarioGraph = scenario.toScenarioGraph
 
     given()
       .when()

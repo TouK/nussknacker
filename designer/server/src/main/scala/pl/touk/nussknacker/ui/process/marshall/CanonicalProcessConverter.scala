@@ -12,84 +12,84 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object CanonicalProcessConverter {
 
-  def toScenarioGraph(process: CanonicalProcess): ScenarioGraph = {
-    val (nodes, edges) = {
-      process.allStartNodes
-        .map(toGraphInner)
-        .reduceLeft[(List[NodeData], List[Edge])] { case ((n1, e1), (n2, e2)) =>
-          (n1 ++ n2, e1 ++ e2)
-        }
-    }
-    val props = ProcessProperties(process.metaData.additionalFields)
-    ScenarioGraph(props, nodes, edges, process.stickyNotes)
-  }
+  implicit class CanonicalProcessOps(process: CanonicalProcess) {
 
-  def findNodes(process: CanonicalProcess): List[NodeData] = {
-    process.allStartNodes.toList.flatMap(branch => toGraphInner(branch)._1)
-  }
-
-  private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[Edge]) =
-    nodes match {
-      case canonicalnode.FlatNode(BranchEndData(_)) :: _ => (List(), List())
-      case canonicalnode.FlatNode(data) :: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        (data :: tailNodes, createNextEdge(data.id, tail) ::: tailEdges)
-      case canonicalnode.FilterNode(data, nextFalse) :: tail =>
-        val (nextFalseNodes, nextFalseEdges) = toGraphInner(nextFalse)
-        val nextFalseEdgesConnectedToFilter =
-          createNextEdge(data.id, nextFalse, Some(EdgeType.FilterFalse)) ::: nextFalseEdges
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        (
-          data :: nextFalseNodes ::: tailNodes,
-          createNextEdge(data.id, tail, Some(EdgeType.FilterTrue)) ::: nextFalseEdgesConnectedToFilter ::: tailEdges
-        )
-      case canonicalnode.SwitchNode(data, nexts, defaultNext) :: tail =>
-        val (defaultNextNodes, defaultNextEdges) = toGraphInner(defaultNext)
-        val defaultNextEdgesConnectedToSwitch =
-          createNextEdge(data.id, defaultNext, Some(EdgeType.SwitchDefault)) ::: defaultNextEdges
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        val (nextNodes, nextEdges) = unzipListTuple(nexts.map { c =>
-          val (nextNodeNodes, nextNodeEdges) = toGraphInner(c.nodes)
-          (nextNodeNodes, createNextEdge(data.id, c.nodes, Some(EdgeType.NextSwitch(c.expression))) ::: nextNodeEdges)
-        })
-        (
-          data :: defaultNextNodes ::: nextNodes ::: tailNodes,
-          createNextEdge(data.id, tail) ::: nextEdges ::: defaultNextEdgesConnectedToSwitch ::: tailEdges
-        )
-      case canonicalnode.SplitNode(data, nexts) :: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        val nextInner              = nexts.map(toGraphInner).unzip
-        val nodes                  = nextInner._1.flatten
-        val edges                  = nextInner._2.flatten
-        val connecting             = nexts.flatMap(createNextEdge(data.id, _, None))
-        (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
-      case canonicalnode.Fragment(data, outputs) :: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        val nextInner              = outputs.values.toList.map(toGraphInner).unzip
-        val nodes                  = nextInner._1.flatten
-        val edges                  = nextInner._2.flatten
-        val connecting = outputs.flatMap { case (name, outputEdges) =>
-          createNextEdge(data.id, outputEdges, Some(FragmentOutput(name)))
-        }.toList
-        (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
-      case Nil =>
-        (List(), List())
+    def toScenarioGraph: ScenarioGraph = {
+      val (nodes, edges) = {
+        process.allStartNodes
+          .map(toGraphInner)
+          .reduceLeft[(List[NodeData], List[Edge])] { case ((n1, e1), (n2, e2)) =>
+            (n1 ++ n2, e1 ++ e2)
+          }
+      }
+      val props = ProcessProperties(process.metaData.additionalFields)
+      ScenarioGraph(props, nodes, edges, process.stickyNotes)
     }
 
-  private def createNextEdge(
-      id: String,
-      tail: List[CanonicalNode],
-      edgeType: Option[EdgeType] = None
-  ): List[Edge] = {
-    tail.headOption.map {
-      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => graph.Edge(id, joinId, edgeType)
-      case n                                                       => graph.Edge(id, n.id, edgeType)
-    }.toList
-  }
+    private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[Edge]) =
+      nodes match {
+        case canonicalnode.FlatNode(BranchEndData(_)) :: _ => (List(), List())
+        case canonicalnode.FlatNode(data) :: tail =>
+          val (tailNodes, tailEdges) = toGraphInner(tail)
+          (data :: tailNodes, createNextEdge(data.id, tail) ::: tailEdges)
+        case canonicalnode.FilterNode(data, nextFalse) :: tail =>
+          val (nextFalseNodes, nextFalseEdges) = toGraphInner(nextFalse)
+          val nextFalseEdgesConnectedToFilter =
+            createNextEdge(data.id, nextFalse, Some(EdgeType.FilterFalse)) ::: nextFalseEdges
+          val (tailNodes, tailEdges) = toGraphInner(tail)
+          (
+            data :: nextFalseNodes ::: tailNodes,
+            createNextEdge(data.id, tail, Some(EdgeType.FilterTrue)) ::: nextFalseEdgesConnectedToFilter ::: tailEdges
+          )
+        case canonicalnode.SwitchNode(data, nexts, defaultNext) :: tail =>
+          val (defaultNextNodes, defaultNextEdges) = toGraphInner(defaultNext)
+          val defaultNextEdgesConnectedToSwitch =
+            createNextEdge(data.id, defaultNext, Some(EdgeType.SwitchDefault)) ::: defaultNextEdges
+          val (tailNodes, tailEdges) = toGraphInner(tail)
+          val (nextNodes, nextEdges) = unzipListTuple(nexts.map { c =>
+            val (nextNodeNodes, nextNodeEdges) = toGraphInner(c.nodes)
+            (nextNodeNodes, createNextEdge(data.id, c.nodes, Some(EdgeType.NextSwitch(c.expression))) ::: nextNodeEdges)
+          })
+          (
+            data :: defaultNextNodes ::: nextNodes ::: tailNodes,
+            createNextEdge(data.id, tail) ::: nextEdges ::: defaultNextEdgesConnectedToSwitch ::: tailEdges
+          )
+        case canonicalnode.SplitNode(data, nexts) :: tail =>
+          val (tailNodes, tailEdges) = toGraphInner(tail)
+          val nextInner              = nexts.map(toGraphInner).unzip
+          val nodes                  = nextInner._1.flatten
+          val edges                  = nextInner._2.flatten
+          val connecting             = nexts.flatMap(createNextEdge(data.id, _, None))
+          (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
+        case canonicalnode.Fragment(data, outputs) :: tail =>
+          val (tailNodes, tailEdges) = toGraphInner(tail)
+          val nextInner              = outputs.values.toList.map(toGraphInner).unzip
+          val nodes                  = nextInner._1.flatten
+          val edges                  = nextInner._2.flatten
+          val connecting = outputs.flatMap { case (name, outputEdges) =>
+            createNextEdge(data.id, outputEdges, Some(FragmentOutput(name)))
+          }.toList
+          (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
+        case Nil =>
+          (List(), List())
+      }
 
-  private def unzipListTuple[A, B](a: List[(List[A], List[B])]): (List[A], List[B]) = {
-    val (aList, bList) = a.unzip
-    (aList.flatten, bList.flatten)
+    private def createNextEdge(
+        id: String,
+        tail: List[CanonicalNode],
+        edgeType: Option[EdgeType] = None
+    ): List[Edge] = {
+      tail.headOption.map {
+        case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => graph.Edge(id, joinId, edgeType)
+        case n                                                       => graph.Edge(id, n.id, edgeType)
+      }.toList
+    }
+
+    private def unzipListTuple[A, B](a: List[(List[A], List[B])]): (List[A], List[B]) = {
+      val (aList, bList) = a.unzip
+      (aList.flatten, bList.flatten)
+    }
+
   }
 
   def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {

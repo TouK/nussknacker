@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 trait EventGeneratorSourceTestingApiHttpServiceSpec extends ScenarioTestingApiHttpServiceSpec {
 
@@ -40,7 +40,7 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec extends ScenarioTestingApiHt
   override protected def parametersProvidedForDryRun: String =
     ScenarioTestValidationRequest(
       testData = ScenarioTestData.WithParameters(validParameters),
-      scenarioGraph = toScenarioGraph(exampleScenario)
+      scenarioGraph = exampleScenario.toScenarioGraph
     ).asJson.toString()
 
   override protected def expectedSourceTestingParametersJson: String = ""

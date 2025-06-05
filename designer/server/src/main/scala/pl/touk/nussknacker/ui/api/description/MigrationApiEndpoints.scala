@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.MigrationErr
   InsufficientPermission,
   InvalidScenario
 }
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import sttp.model.StatusCode._
 import sttp.tapir._
@@ -179,7 +179,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
     .source("source", "csv-source-lite")
     .emptySink("sink", "dead-end-lite")
 
-  private val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleProcess)
+  private val exampleGraph = exampleProcess.toScenarioGraph
 
 }
 

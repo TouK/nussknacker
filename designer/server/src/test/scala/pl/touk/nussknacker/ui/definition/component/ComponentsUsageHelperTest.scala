@@ -32,7 +32,7 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{toCanonical, wrapGraphWithScenarioDetailsEntity}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.repository.{ScenarioComponentsUsagesHelper, ScenarioWithDetailsEntity}
 
 import java.time.Instant
@@ -56,7 +56,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val fragmentScenario = wrapGraphWithScenarioDetailsEntity(
     fragment.name,
-    CanonicalProcessConverter.toScenarioGraph(fragment),
+    fragment.toScenarioGraph,
   )
 
   private val process1 = ScenarioBuilder
@@ -67,7 +67,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .emptySink("sink", ProcessTestData.existingSinkFactory)
 
   private val processDetails1 =
-    wrapGraphWithScenarioDetailsEntity(process1.name, CanonicalProcessConverter.toScenarioGraph(process1))
+    wrapGraphWithScenarioDetailsEntity(process1.name, process1.toScenarioGraph)
 
   private val processDetails1ButDeployed = processDetails1.copy(lastAction =
     Option(
@@ -92,7 +92,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .emptySink("sink", ProcessTestData.existingSinkFactory)
 
   private val processDetails2 =
-    wrapGraphWithScenarioDetailsEntity(process2.name, CanonicalProcessConverter.toScenarioGraph(process2))
+    wrapGraphWithScenarioDetailsEntity(process2.name, process2.toScenarioGraph)
 
   private val processWithSomeBasesStreaming = ScenarioBuilder
     .streaming("processWithSomeBasesStreaming")
@@ -109,7 +109,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val processDetailsWithSomeBasesStreaming = wrapGraphWithScenarioDetailsEntity(
     processWithSomeBasesStreaming.name,
-    CanonicalProcessConverter.toScenarioGraph(processWithSomeBasesStreaming),
+    processWithSomeBasesStreaming.toScenarioGraph,
   )
 
   private val processWithSomeBasesFraud = ScenarioBuilder
@@ -126,7 +126,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val processDetailsWithSomeBasesFraud = wrapGraphWithScenarioDetailsEntity(
     processWithSomeBasesFraud.name,
-    CanonicalProcessConverter.toScenarioGraph(processWithSomeBasesFraud),
+    processWithSomeBasesFraud.toScenarioGraph,
     "Streaming2"
   )
 
@@ -147,7 +147,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private val processDetailsWithFragment =
     wrapGraphWithScenarioDetailsEntity(
       processWithFragment.name,
-      CanonicalProcessConverter.toScenarioGraph(processWithFragment),
+      processWithFragment.toScenarioGraph,
     )
 
   private def nonFragmentComponents(determineDesignerWideId: ComponentId => DesignerWideComponentId) = {

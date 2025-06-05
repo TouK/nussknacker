@@ -12,6 +12,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioVersionQuery}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchCanonical,
@@ -121,7 +122,7 @@ class MockFetchingProcessRepository private (
       case FetchCanonical => process
       case FetchScenarioGraph =>
         process
-          .mapScenario(canonical => CanonicalProcessConverter.toScenarioGraph(canonical))
+          .mapScenario(canonical => canonical.toScenarioGraph)
           .asInstanceOf[ScenarioWithDetailsEntity[PS]]
       case FetchComponentsUsages =>
         process

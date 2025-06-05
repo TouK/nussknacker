@@ -12,6 +12,7 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.repository.{ScenarioShapeFetchStrategy, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -32,7 +33,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val processingTypeFraud     = "fraud"
 
   private val scenarioGraph = ProcessTestData.sampleScenarioGraph
-  private val fragmentGraph = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
+  private val fragmentGraph = ProcessTestData.sampleFragment.toScenarioGraph
 
   private val someVersion = VersionId(666L)
 

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.config.WithE2EInstallationExampleRestAssuredUsersExte
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
@@ -43,7 +43,7 @@ class BatchDataGenerationSpec
         .when()
         .request()
         .basicAuthAdmin()
-        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioRandomMode).asJson.spaces2, 10))
+        .jsonBody(testDataGenerationRequest(simpleBatchTableScenarioRandomMode.toScenarioGraph.asJson.spaces2, 10))
         .post(
           s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generatedTestData"
         )
@@ -68,7 +68,7 @@ class BatchDataGenerationSpec
         .when()
         .request()
         .basicAuthAdmin()
-        .jsonBody(testDataGenerationRequest(toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2, 1))
+        .jsonBody(testDataGenerationRequest(simpleBatchTableScenarioLiveMode.toScenarioGraph.asJson.spaces2, 1))
         .post(
           s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generatedTestData"
         )
@@ -101,7 +101,7 @@ class BatchDataGenerationSpec
            |   "type": "WITH_LIVE_DATA",
            |   "numberOfSamples": 1
            | },
-           | "scenarioGraph": ${toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2}
+           | "scenarioGraph": ${simpleBatchTableScenarioLiveMode.toScenarioGraph.asJson.spaces2}
            |}""".stripMargin
       )
       .post(
@@ -200,7 +200,7 @@ class BatchDataGenerationSpec
       .basicAuthAdmin()
       .multiPart(
         "scenarioGraph",
-        toScenarioGraph(simpleBatchTableScenarioLiveMode).asJson.spaces2,
+        simpleBatchTableScenarioLiveMode.toScenarioGraph.asJson.spaces2,
         "application/json"
       )
       .multiPart(

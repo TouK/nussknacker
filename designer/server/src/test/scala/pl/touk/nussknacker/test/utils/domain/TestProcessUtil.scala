@@ -19,6 +19,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
@@ -34,7 +35,7 @@ object TestProcessUtil {
     CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
 
   def toJson(scenario: CanonicalProcess): Json =
-    Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(scenario))
+    Encoder[ScenarioGraph].apply(scenario.toScenarioGraph)
 
   def createScenarioEntity(
       name: String,

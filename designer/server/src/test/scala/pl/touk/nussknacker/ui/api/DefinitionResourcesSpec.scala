@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.definition.{
   DefinitionsService,
   ScenarioPropertiesConfigFinalizer
 }
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 import scala.concurrent.duration.DurationInt
 
@@ -148,7 +148,7 @@ class DefinitionResourcesSpec
 
     val processName         = ProcessTestData.sampleScenario.name
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
-    val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+    val fragmentGraph       = processWithFragment.fragment.toScenarioGraph
     saveFragment(fragmentGraph)(succeed)
     saveCanonicalProcess(processWithFragment.process)(succeed)
 
@@ -346,7 +346,7 @@ class DefinitionResourcesSpec
 
       val processName         = ProcessTestData.sampleScenario.name
       val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
-      val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+      val fragmentGraph       = processWithFragment.fragment.toScenarioGraph
       saveFragment(fragmentGraph)(succeed)
       saveCanonicalProcess(processWithFragment.process)(succeed)
 

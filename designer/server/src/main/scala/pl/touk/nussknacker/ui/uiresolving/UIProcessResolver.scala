@@ -10,6 +10,7 @@ import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResul
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -88,7 +89,7 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       validationResult: ValidationResult
   ): ScenarioGraphWithValidationResult = {
     val substituted   = substitutor.reversed.substitute(canonical, validationResult.typingInfo)
-    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(substituted)
+    val scenarioGraph = substituted.toScenarioGraph
     val uiValidations =
       uiValidator.uiValidation(
         scenarioGraph,

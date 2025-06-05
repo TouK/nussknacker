@@ -15,20 +15,20 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
   def canonicalDisplayableRoundTrip(canonicalProcess: CanonicalProcess): CanonicalProcess = {
-    val scenarioGraph =
-      CanonicalProcessConverter.toScenarioGraph(canonicalProcess)
+    val scenarioGraph = canonicalProcess.toScenarioGraph
     CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, canonicalProcess.name)
   }
 
   def scenarioGraphCanonicalRoundTrip(scenarioGraph: ScenarioGraph): ScenarioGraph = {
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("not-used-name"))
-    CanonicalProcessConverter.toScenarioGraph(canonical)
+    canonical.toScenarioGraph
   }
 
   test("be able to convert empty process") {
@@ -103,7 +103,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
           .emptySink("end", "outType1")
       )
 
-    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(process)
+    val scenarioGraph = process.toScenarioGraph
 
     scenarioGraph.edges.toSet shouldBe Set(
       Edge("sourceId1", "join1", None),
@@ -125,7 +125,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
           .emptySink("end", "outType1")
       )
 
-    val foundNodes = CanonicalProcessConverter.findNodes(process)
+    val foundNodes = process.toScenarioGraph.nodes
 
     foundNodes.map(_.id).toSet shouldBe Set("sourceId1", "split1", "join1", "end")
   }
@@ -150,7 +150,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
             .join("join1", "union", Some("outPutVar"), List("branch1" -> Nil, "branch2" -> Nil))
             .emptySink("end", "outType1")
         )
-      val edges = CanonicalProcessConverter.toScenarioGraph(process).edges
+      val edges = process.toScenarioGraph.edges
       edges.toSet shouldBe Set(
         Edge("source1", nodeId, None),
         Edge(nodeId, "join1", typ),

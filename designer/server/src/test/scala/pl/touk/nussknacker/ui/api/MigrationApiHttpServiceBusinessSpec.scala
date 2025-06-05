@@ -20,7 +20,7 @@ import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceC
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 // FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
 class MigrationApiHttpServiceBusinessSpec
@@ -339,13 +339,13 @@ class MigrationApiHttpServiceBusinessSpec
   private lazy val validFragmentV2 =
     ScenarioBuilder.fragmentWithInputNodeId("source2", "csv-source-lite").emptySink("sink2", "dead-end-lite")
 
-  private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+  private lazy val exampleGraph = exampleScenario.toScenarioGraph
 
-  private lazy val exampleGraphV2 = CanonicalProcessConverter.toScenarioGraph(exampleScenarioV2)
+  private lazy val exampleGraphV2 = exampleScenarioV2.toScenarioGraph
 
-  private lazy val exampleFragmentGraph = CanonicalProcessConverter.toScenarioGraph(validFragment)
+  private lazy val exampleFragmentGraph = validFragment.toScenarioGraph
 
-  private lazy val exampleFragmentGraphV2 = CanonicalProcessConverter.toScenarioGraph(validFragmentV2)
+  private lazy val exampleFragmentGraphV2 = validFragmentV2.toScenarioGraph
 
   private def prepareRequestJsonDataV1(
       scenarioName: String,

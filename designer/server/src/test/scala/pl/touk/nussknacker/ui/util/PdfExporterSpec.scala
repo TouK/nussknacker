@@ -10,11 +10,9 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.{Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 
 import java.io.FileOutputStream
 import java.time.Instant
@@ -26,8 +24,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
   )
 
   it should "export process to " in {
-    val scenarioGraph: ScenarioGraph =
-      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleScenario)
+    val scenarioGraph: ScenarioGraph = ProcessTestData.sampleScenario.toScenarioGraph
     val graphWithFilterWithComment: ScenarioGraph = scenarioGraph.copy(nodes = scenarioGraph.nodes.map {
       case a: Filter =>
         a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"), None)))
@@ -59,12 +56,11 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
   it should "render parameter names correctly in generated xml" in {
     val givenSourceParamName = "someParamName"
     val sampleScenarioGraph =
-      CanonicalProcessConverter.toScenarioGraph(
-        ScenarioBuilder
-          .streaming("foo")
-          .source("sourceId", "sourceType", givenSourceParamName -> "123".spel)
-          .emptySink("sinkId", "sinkType")
-      )
+      ScenarioBuilder
+        .streaming("foo")
+        .source("sourceId", "sourceType", givenSourceParamName -> "123".spel)
+        .emptySink("sinkId", "sinkType")
+        .toScenarioGraph
     val xml = PdfExporter.prepareFopXml(
       "<empty/>",
       createDetails(sampleScenarioGraph),

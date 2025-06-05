@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -346,9 +346,7 @@ class DBProcessService(
     val parameters =
       scenarioParametersServiceProvider.combined.getParametersWithReadPermissionUnsafe(entity.processingType)
     ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
-      entity.mapScenario { canonical =>
-        CanonicalProcessConverter.toScenarioGraph(canonical)
-      },
+      entity.mapScenario(_.toScenarioGraph),
       parameters
     )
   }
@@ -551,7 +549,7 @@ class DBProcessService(
         .valueOr(msg => throw ProcessUnmarshallingError(msg))
 
       val canonical     = jsonCanonicalProcess.withProcessName(processId.name)
-      val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(canonical)
+      val scenarioGraph = canonical.toScenarioGraph
       val validationResult = processResolverByProcessingType
         .forProcessingTypeUnsafe(process.processingType)
         .validateBeforeUiReverseResolving(canonical, process.processVersionUnsafe, process.isFragment)

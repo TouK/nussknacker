@@ -16,6 +16,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
@@ -76,7 +77,7 @@ class TestModelMigrations(
         scenarioWithDetails.processCategory,
         skipEmptyMigrations = false
       )
-      scenarioGraph = CanonicalProcessConverter.toScenarioGraph(newProcess)
+      scenarioGraph = newProcess.toScenarioGraph
     } yield {
       MigratedProcessDetails(
         scenarioWithDetails.name,

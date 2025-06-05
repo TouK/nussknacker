@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.CanonicalProcessOps
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator._
 
 class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
@@ -115,22 +115,20 @@ class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
   }
 
   private def toDisplayable(
-      sceanrio: GraphBuilder[CanonicalProcess] => CanonicalProcess,
+      scenario: GraphBuilder[CanonicalProcess] => CanonicalProcess,
       description: Option[String] = None,
       properties: Map[String, String] = Map.empty
   ): ScenarioGraph =
-    CanonicalProcessConverter.toScenarioGraph(
-      sceanrio(
-        ScenarioBuilder
-          .streaming("test")
-          .additionalFields(
-            description = description,
-            properties = properties
-          )
-          .parallelism(1)
-          .source("start", "testSource")
-      )
-    )
+    scenario(
+      ScenarioBuilder
+        .streaming("test")
+        .additionalFields(
+          description = description,
+          properties = properties
+        )
+        .parallelism(1)
+        .source("start", "testSource")
+    ).toScenarioGraph
 
   private def caseWithExpression(expr: String, id: Int = 1): Case = {
     Case(expr.spel, GraphBuilder.emptySink(s"end$id", "end"))
