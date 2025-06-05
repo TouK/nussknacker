@@ -15,7 +15,8 @@ class DefaultModelMigrations extends ProcessMigrations {
     // 100 -> NewMigration,
     // Newly added migrations should be in the hundreds: 100, 200, 300 and so on. We do this because
     // many ProcessMigrations can be loaded using SPI, and we want to avoid overlapping numbers when merging.
-    100 -> SampleGeneratorToEventGeneratorAndPeriodToScheduleParameter
+    100 -> SampleGeneratorToEventGeneratorAndPeriodToScheduleParameter,
+    200 -> PreviousValueParameterNamesMigration,
   )
 
 }
