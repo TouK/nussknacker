@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
+import pl.touk.nussknacker.engine.livedata._
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -92,7 +91,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       eventually {
         if (useMiniClusterForDeployment) {
           // Wait until first live data samples are collected
-          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName).toOption
+          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName)
           liveDataOpt shouldBe defined
           val liveDataSamples = liveDataOpt.get
 
@@ -104,7 +103,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
           val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
 
           externalDeploymentIdOpt shouldBe defined
-          val expected = LiveData(
+          val expected = CollectedLiveData(
             timestamp = mockedTimestamp,
             nodeTransitions = Map(
               NodeTransition("start", Some("endSend")) ->
@@ -437,10 +436,10 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
   private def deploymentStatus(name: ProcessName): List[DeploymentStatusDetails] =
     deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value
 
-  private def withFixedTimestamp(testResults: LiveData): (LiveData, Instant) = {
+  private def withFixedTimestamp(testResults: CollectedLiveData): (CollectedLiveData, Instant) = {
     val fixedInstant = Instant.now
     (
-      LiveData(
+      CollectedLiveData(
         timestamp = fixedInstant,
         nodeTransitions = withFixedTimestamp(testResults.nodeTransitions, fixedInstant),
         invocationResults = withFixedTimestamp[NodeId, InvocationResult](

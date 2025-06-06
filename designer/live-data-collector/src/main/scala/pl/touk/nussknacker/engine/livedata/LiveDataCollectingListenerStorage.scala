@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.livedata
 
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.ConcurrentHashMap
@@ -23,8 +22,8 @@ private[livedata] class LiveDataCollectingListenerStorage(
   private val transitionsSlidingWindowCounter: SlidingWindowCounter[NodeTransition] =
     new SlidingWindowCounter[NodeTransition](Instant.now, throughputTimeWindowInSeconds)
 
-  def getLiveData: LiveData = {
-    LiveData(
+  def getLiveData: CollectedLiveData = {
+    CollectedLiveData(
       timestamp = Instant.now,
       nodeTransitions = samples.asScala.toMap.map { case (transition, values) =>
         transition -> LiveDataForNodeTransition(

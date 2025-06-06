@@ -3,9 +3,11 @@ package pl.touk.nussknacker.engine.management.jobrunner
 import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.BaseModelDataProvider
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
+  LiveDataPreviewStoredInDesignerDb,
   LiveDataPreviewSupport,
   NoLiveDataPreviewSupport
 }
@@ -43,8 +45,18 @@ class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, cli
     )
   }
 
-  override def liveDataPreviewSupport: LiveDataPreviewSupport =
-    NoLiveDataPreviewSupport
+  override def liveDataPreviewSupport: LiveDataPreviewSupport = {
+    modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
+      case LiveDataPreviewMode.Enabled(_, _, None) =>
+        throw new IllegalStateException(
+          "Synchronisation in the DB must be enabled for the live data preview in the RemoteFlinkScenarioJobRunner"
+        )
+      case LiveDataPreviewMode.Enabled(maxSamples, _, Some(dbUploader)) =>
+        LiveDataPreviewStoredInDesignerDb(maxSamples, dbUploader.uploadIntervalInSeconds)
+      case LiveDataPreviewMode.Disabled =>
+        NoLiveDataPreviewSupport
+    }
+  }
 
 }
 
