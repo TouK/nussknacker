@@ -4,4 +4,6 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.ui.processreport.NodeCount
 
-final case class ResultsWithCounts(results: TestResults[Json], counts: Map[String, NodeCount])
+import java.time.Instant
+
+final case class ResultsWithCounts(timestamp: Instant, results: TestResults[Json], counts: Map[String, NodeCount])

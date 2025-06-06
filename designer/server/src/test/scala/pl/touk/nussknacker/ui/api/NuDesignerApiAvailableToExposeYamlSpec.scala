@@ -23,7 +23,7 @@ import scala.util.Try
 
 // if the test fails it probably means that you should regenerate the Nu Designer OpenAPI document
 // you can do it but running manually the object `GenerateDesignerOpenApiYamlFile` with main method or
-// using SBT's task: `sbt generateDesignerOpenApi`
+// using SBT's task: `NUSSKNACKER_SCALA_VERSION=2.13 sbt generateDesignerOpenApi`
 // Warning! OpenAPI can be generated differently depending on the scala version.
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 

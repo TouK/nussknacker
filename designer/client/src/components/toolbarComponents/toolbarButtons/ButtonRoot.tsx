@@ -46,7 +46,7 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                     color: hasError ? theme.palette.error.main : isActive ? theme.palette.success.main : null,
                 })}
             >
-                <Badge color="warning" overlap={"circular"} variant={showIndicator ? "dot" : null}>
+                <Badge color="warning" overlap={"circular"} variant={showIndicator && variant === ButtonsVariant.xs ? "dot" : null}>
                     <Icon
                         title={title}
                         className={"toolbarButton-Icon"}
@@ -82,6 +82,7 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                             : "overline"
                     }
                     className={"toolbarButton-Label"}
+                    data-testid={"toolbarButton-label"}
                     sx={{
                         color: "inherit",
                         display: [ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? "none" : null,
@@ -92,6 +93,17 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
                             : [ButtonsVariant.horizontal].includes(variant)
                             ? 1
                             : null,
+                        position: "relative",
+                        ...(showIndicator && {
+                            "&::after": {
+                                content: '"*"',
+                                color: "warning.main",
+                                marginLeft: "2px",
+                                position: "absolute",
+                                right: -8, // Position to the right of text
+                                top: 0,
+                            },
+                        }),
                     }}
                 >
                     {name}

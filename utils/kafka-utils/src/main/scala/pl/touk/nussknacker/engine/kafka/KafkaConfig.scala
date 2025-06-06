@@ -33,7 +33,7 @@ case class KafkaConfig(
     idleTimeout: Option[IdlenessConfig] = None,
     sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
     showTopicsWithoutSchema: Boolean = true,
-    topicsWithoutSchemaFetchTimeout: FiniteDuration = 1 second
+    kafkaAdminConfig: KafkaAdminConfig = KafkaAdminConfig(),
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -96,24 +96,7 @@ object KafkaConfig {
 
 final case class TopicsExistenceValidationConfig(
     enabled: Boolean,
-    validatorConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig
 )
-
-final case class CachedTopicsExistenceValidatorConfig(
-    autoCreateFlagFetchCacheTtl: FiniteDuration,
-    topicsFetchCacheTtl: FiniteDuration,
-    adminClientTimeout: FiniteDuration
-)
-
-object CachedTopicsExistenceValidatorConfig {
-
-  val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
-    autoCreateFlagFetchCacheTtl = 5 minutes,
-    topicsFetchCacheTtl = 30 seconds,
-    adminClientTimeout = 10 seconds
-  )
-
-}
 
 case class IdlenessConfig(enabled: Boolean, duration: FiniteDuration = DefaultDuration)
 
@@ -137,3 +120,13 @@ object OffsetResetStrategy extends Enum[OffsetResetStrategy] {
   case object ToEarliest extends OffsetResetStrategy
   case object ToLatest   extends OffsetResetStrategy
 }
+
+final case class KafkaAdminConfig(
+    clientTimeout: FiniteDuration = 10 seconds,
+    cacheConfig: KafkaAdminCacheConfig = KafkaAdminCacheConfig(),
+)
+
+final case class KafkaAdminCacheConfig(
+    topicsExpirationTime: FiniteDuration = 30 seconds,
+    autoCreateTopicSettingExpirationTime: FiniteDuration = 5 minutes,
+)

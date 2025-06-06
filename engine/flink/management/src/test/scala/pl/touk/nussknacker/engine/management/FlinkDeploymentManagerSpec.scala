@@ -403,9 +403,8 @@ class FlinkDeploymentManagerSpec extends AnyFunSuite with Matchers with PatientS
     val manager = createManager(statuses)
     manager.getScenarioDeploymentsStatuses(processName).map(_.value).futureValue shouldBe List(
       DeploymentStatusDetails(
-        SimpleStateStatus.Finished,
+        SimpleStateStatus.Finished(VersionId(version)),
         Some(DeploymentId(deploymentId)),
-        Some(VersionId(version)),
       )
     )
   }

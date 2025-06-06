@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.StandardParamet
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
+import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedRecordParameter, SingleSchemaBasedParameter}
 
 class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
@@ -55,7 +56,7 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
       .nullDefault()
       .endRecord()
 
-    val result = AvroSchemaBasedParameter(recordSchema, Set.empty)
+    val result = AvroSchemaBasedParameter(recordSchema, Set.empty, AvroSchemaTypeDefinitionExtractorWithUnderlyingMap)
       .valueOr(e => fail(e.toString))
       .asInstanceOf[SchemaBasedRecordParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(
@@ -83,7 +84,7 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
 
   test("typing result to AvroSinkPrimitiveValueParameter") {
     val longSchema = SchemaBuilder.builder().longType()
-    val result = AvroSchemaBasedParameter(longSchema, Set.empty)
+    val result = AvroSchemaBasedParameter(longSchema, Set.empty, AvroSchemaTypeDefinitionExtractorWithUnderlyingMap)
       .valueOr(e => fail(e.toString))
       .asInstanceOf[SingleSchemaBasedParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(
@@ -110,7 +111,8 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
       .longType()
       .noDefault()
       .endRecord()
-    val result = AvroSchemaBasedParameter(recordSchema, restrictedNames)
+    val result =
+      AvroSchemaBasedParameter(recordSchema, restrictedNames, AvroSchemaTypeDefinitionExtractorWithUnderlyingMap)
     result shouldBe Invalid(
       NonEmptyList.one(
         CustomNodeError(

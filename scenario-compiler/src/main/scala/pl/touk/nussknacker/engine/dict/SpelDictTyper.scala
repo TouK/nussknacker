@@ -10,14 +10,14 @@ import pl.touk.nussknacker.engine.api.dict.DictRegistry.{
   DictEntryWithLabelNotExists,
   DictNotDeclared
 }
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.DictError.{
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.DictError.{
   DictIndexCountError,
   DictKeyError,
   DictLabelError,
   NoDictError
 }
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SpelExpressionTypingError
 import pl.touk.nussknacker.engine.spel.ast
 
 /**
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.spel.ast
   */
 trait SpelDictTyper {
 
-  def typeDictValue(dict: TypedDict, node: SpelNode): Writer[List[ExpressionParseError], TypingResult]
+  def typeDictValue(dict: TypedDict, node: SpelNode): Writer[List[SpelExpressionTypingError], TypingResult]
 
 }
 
@@ -35,7 +35,7 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
 
   protected def dictRegistry: DictRegistry
 
-  override def typeDictValue(dict: TypedDict, node: SpelNode): Writer[List[ExpressionParseError], TypingResult] = {
+  override def typeDictValue(dict: TypedDict, node: SpelNode): Writer[List[SpelExpressionTypingError], TypingResult] = {
     node match {
       case _: Indexer =>
         node.children match {
@@ -50,8 +50,8 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
     }
   }
 
-  private def findKey(dict: TypedDict, value: String): Writer[List[ExpressionParseError], TypingResult] = {
-    val w = Writer.value[List[ExpressionParseError], TypingResult](dict.valueType)
+  private def findKey(dict: TypedDict, value: String): Writer[List[SpelExpressionTypingError], TypingResult] = {
+    val w = Writer.value[List[SpelExpressionTypingError], TypingResult](dict.valueType)
     valueForDictKey(dict, value)
       .fold(
         {

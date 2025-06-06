@@ -6,10 +6,8 @@ import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeploymentStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
@@ -19,6 +17,8 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
+
+import java.time.Instant
 
 class AppApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -40,8 +40,8 @@ class AppApiHttpServiceSecuritySpec
 
           MockableDeploymentManager.configureScenarioStatuses(
             Map(
-              "id1" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
-              "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1)))
+              "id1" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
+              "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now())
             )
           )
         }
@@ -71,8 +71,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> DeploymentStatus.Problem.Failed,
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -100,8 +100,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> DeploymentStatus.Problem.Failed,
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -123,9 +123,9 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None),
-                "id3" -> BasicStatusDetails(SimpleStateStatus.ProblemStateStatus.Failed, None)
+                "id1" -> DeploymentStatus.Problem.Failed,
+                "id2" -> DeploymentStatus.Problem.Failed,
+                "id3" -> DeploymentStatus.Problem.Failed
               )
             )
           }
@@ -154,10 +154,7 @@ class AppApiHttpServiceSecuritySpec
             createDeployedExampleScenario(ProcessName("id2"), category = Category2)
 
             MockableDeploymentManager.configureScenarioStatuses(
-              Map(
-                "id1" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.NotDeployed, None)
-              )
+              Map.empty
             )
           }
           .when()
@@ -184,8 +181,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> DeploymentStatus.Problem.Failed,
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -310,8 +307,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> DeploymentStatus.Problem.Failed,
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -337,8 +334,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> DeploymentStatus.Problem.Failed,
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -360,8 +357,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.Failed, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> DeploymentStatus.Problem.Failed,
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -390,8 +387,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> ProblemDeploymentStatus(s"Failed to get a state of the scenario."),
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -410,8 +407,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> ProblemDeploymentStatus(s"Failed to get a state of the scenario."),
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -433,8 +430,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> ProblemDeploymentStatus("Failed to get a state of the scenario."),
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }
@@ -456,8 +453,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configureScenarioStatuses(
               Map(
-                "id1" -> BasicStatusDetails(ProblemStateStatus.FailedToGet, None),
-                "id2" -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))),
+                "id1" -> ProblemDeploymentStatus("Failed to get a state of the scenario."),
+                "id2" -> DeploymentStatus.Running(VersionId(1), Instant.now()),
               )
             )
           }

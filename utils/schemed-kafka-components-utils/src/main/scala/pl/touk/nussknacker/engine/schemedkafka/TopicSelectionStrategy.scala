@@ -2,56 +2,50 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.admin.ListTopicsOptions
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
 import pl.touk.nussknacker.engine.api.util.ExceptionUtils
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{CachingKafkaAdminClient, KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
 import java.util.regex.Pattern
-import scala.jdk.CollectionConverters._
 
 trait TopicSelectionStrategy extends Serializable {
 
-  def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]]
+  def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 
 }
 
-class TopicsWithExistingSubjectSelectionStrategy extends TopicSelectionStrategy {
+class TopicsWithExistingSubjectSelectionStrategy(schemaRegistryClient: SchemaRegistryClient)
+    extends TopicSelectionStrategy {
 
-  override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
+  override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     schemaRegistryClient.getAllTopics
   }
 
 }
 
-class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy with LazyLogging {
+object AllNonHiddenTopicsSelectionStrategy {
+  def apply(schemaRegistryClient: SchemaRegistryClient, kafkaConfig: KafkaConfig): AllNonHiddenTopicsSelectionStrategy =
+    new AllNonHiddenTopicsSelectionStrategy(schemaRegistryClient, KafkaUtils.createCachingAdminClient(kafkaConfig))
+}
 
-  override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
+class AllNonHiddenTopicsSelectionStrategy(
+    schemaRegistryClient: SchemaRegistryClient,
+    cachingKafkaAdminClient: CachingKafkaAdminClient
+) extends TopicSelectionStrategy
+    with LazyLogging {
+
+  override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     val topicsFromSchemaRegistry = schemaRegistryClient.getAllTopics
 
     val schemaLessTopics: List[UnspecializedTopicName] = {
       try {
-        KafkaUtils.usingAdminClient(kafkaConfig) {
-          _.listTopics(new ListTopicsOptions().timeoutMs(kafkaConfig.topicsWithoutSchemaFetchTimeout.toMillis.toInt))
-            .names()
-            .get()
-            .asScala
-            .toSet
-            .map(UnspecializedTopicName.apply)
-            .filterNot(topic => topic.name.startsWith("_"))
-            .toList
-        }
+        // Since this validator is used to provide possible values for the topic parameter, it must always fetch fresh topics from Kafka
+        // to ensure newly created topics can be selected.
+        cachingKafkaAdminClient.fetchFreshTopicsAndCache
+          .filterNot(topic => topic.name.startsWith("_"))
+          .toList
       } catch {
         // In some tests we pass dummy kafka address, so when we try to get topics from kafka it fails
         case err if ExceptionUtils.unwrapCommonWrappingExceptions(err).isInstanceOf[TimeoutException] =>
@@ -67,13 +61,12 @@ class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy with La
 
 }
 
-class TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(val topicPattern: Pattern)
-    extends TopicSelectionStrategy {
+class TopicsMatchingPatternWithExistingSubjectsSelectionStrategy(
+    val topicPattern: Pattern,
+    schemaRegistryClient: SchemaRegistryClient
+) extends TopicSelectionStrategy {
 
-  override def getTopics(
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig
-  ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
+  override def getTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
     schemaRegistryClient.getAllTopics.map(_.filter(topic => topicPattern.matcher(topic.name).matches()))
 
 }

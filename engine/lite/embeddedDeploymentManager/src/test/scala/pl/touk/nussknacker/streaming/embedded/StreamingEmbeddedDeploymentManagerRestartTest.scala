@@ -2,9 +2,11 @@ package pl.touk.nussknacker.streaming.embedded
 
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+import scala.concurrent.duration._
 
 class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -13,7 +15,7 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
 
   // This test is in separate suite to make sure that restarting of kafka server have no influence on other test case scenarios
   test("Set status to restarting when scenario fails and back to running when the problems are fixed") {
-    val fixture @ FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
+    val fixture @ FixtureParam(manager, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
@@ -51,9 +53,9 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     kafkaServer.startupKafkaServer()
 
     eventually {
-      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) shouldBe List(
-        SimpleStateStatus.Running
-      )
+      manager.getScenarioDeploymentsStatuses(name).futureValue.value.map(_.status) should matchPattern {
+        case SimpleStateStatus.Running(VersionId(1), startedAt) :: Nil if isWithinLast(startedAt, 30 seconds) =>
+      }
     }
   }
 

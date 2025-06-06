@@ -46,7 +46,7 @@ case object MandatoryParameterValidator extends ParameterValidator {
     if (!expression.expression.isBlank) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
-    message = "This field is mandatory and can not be empty",
+    message = s"Field: ${paramName.value} is mandatory and can not be empty",
     description = "Please fill field for this parameter",
     paramName = paramName,
     nodeId = nodeId

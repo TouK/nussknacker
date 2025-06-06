@@ -2323,9 +2323,9 @@ paths:
                   summary: No scenario found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No test data generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4346,6 +4346,14 @@ paths:
                       - edit_comment
                       - add_comment
                       - compare
+                    - type: SCENARIO_MODIFIED_WITH_AUTOSAVE
+                      displayableName: Scenario modified
+                      icon: /assets/activities/scenarioModifiedWithAutosave.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                      - compare
                     - type: SCENARIO_NAME_CHANGED
                       displayableName: Scenario name changed
                       icon: /assets/activities/scenarioModified.svg
@@ -4461,6 +4469,14 @@ paths:
                     - type: SCENARIO_MODIFIED
                       displayableName: Fragment modified
                       icon: /assets/activities/scenarioModified.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                      - compare
+                    - type: SCENARIO_MODIFIED_WITH_AUTOSAVE
+                      displayableName: Fragment modified
+                      icon: /assets/activities/scenarioModifiedWithAutosave.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
@@ -4613,7 +4629,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LiveDataDto'
+                $ref: '#/components/schemas/ResultsWithCountsDto'
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
@@ -4744,6 +4760,8 @@ paths:
                       status: AVAILABLE
                     testWithGeneratedData:
                       status: AVAILABLE
+                    testWithLiveData:
+                      status: AVAILABLE
         '400':
           description: ''
           content:
@@ -4801,9 +4819,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4924,9 +4942,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -4967,7 +4985,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GeneratedTestDataRequest'
+              $ref: '#/components/schemas/FetchSourcesLiveDataRequest'
         required: true
       responses:
         '200':
@@ -5037,9 +5055,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -5189,9 +5207,9 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
                 Example1:
-                  summary: No data was generated
-                  value: 'Could not provide a sample of test data. Possible cause:
-                    no live data available'
+                  summary: No live test data available
+                  value: No live test data available. Please ensure that the storage
+                    used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
                   value: No sources with test data generation available
@@ -5371,7 +5389,7 @@ components:
       title: CapabilityStatus_T
       oneOf:
       - $ref: '#/components/schemas/Available_T'
-      - $ref: '#/components/schemas/NotAvailable_T'
+      - $ref: '#/components/schemas/NotAvailable1'
     CaretPosition2d:
       title: CaretPosition2d
       type: object
@@ -5537,6 +5555,17 @@ components:
           format: date-time
         createdBy:
           type: string
+    CoordinatesBasedTextRange:
+      title: CoordinatesBasedTextRange
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          $ref: '#/components/schemas/TextCoordinates'
+        end:
+          $ref: '#/components/schemas/TextCoordinates'
     CronParameterEditor:
       title: CronParameterEditor
       type: object
@@ -5680,6 +5709,7 @@ components:
     ErrorDetails:
       title: ErrorDetails
       oneOf:
+      - $ref: '#/components/schemas/CoordinatesBasedTextRange'
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
     ExceptionResult_Json:
       title: ExceptionResult_Json
@@ -5712,11 +5742,15 @@ components:
       type: object
       required:
       - contextId
+      - timestamp
       - name
       - value
       properties:
         contextId:
           type: string
+        timestamp:
+          type: string
+          format: date-time
         name:
           type: string
         value: {}
@@ -5769,14 +5803,30 @@ components:
       type: object
       required:
       - contextId
+      - timestamp
       - name
       - value
       properties:
         contextId:
           type: string
+        timestamp:
+          type: string
+          format: date-time
         name:
           type: string
         value: {}
+    FetchSourcesLiveDataRequest:
+      title: FetchSourcesLiveDataRequest
+      type: object
+      required:
+      - scenarioGraph
+      - numberOfSamples
+      properties:
+        scenarioGraph:
+          type: object
+        numberOfSamples:
+          type: integer
+          format: int32
     Field:
       title: Field
       type: object
@@ -5915,18 +5965,6 @@ components:
           type: string
         nodeId:
           type: string
-    GeneratedTestDataRequest:
-      title: GeneratedTestDataRequest
-      type: object
-      required:
-      - scenarioGraph
-      - numberOfSamples
-      properties:
-        scenarioGraph:
-          type: object
-        numberOfSamples:
-          type: integer
-          format: int32
     GetDeploymentStatusResponse:
       title: GetDeploymentStatusResponse
       type: object
@@ -6017,42 +6055,6 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
-    LiveDataDto:
-      title: LiveDataDto
-      type: object
-      required:
-      - results
-      - counts
-      properties:
-        results:
-          $ref: '#/components/schemas/LiveDataSamplesDto'
-        counts:
-          $ref: '#/components/schemas/Map_NodeCount'
-        nodeTransitionThroughput:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/NodeTransitionThroughputDto'
-    LiveDataSamplesDto:
-      title: LiveDataSamplesDto
-      type: object
-      required:
-      - invocationResults
-      - externalInvocationResults
-      properties:
-        nodeTransitionResults:
-          type: array
-          items:
-            $ref: '#/components/schemas/NodeTransitionResult'
-        invocationResults:
-          $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
-        externalInvocationResults:
-          $ref: '#/components/schemas/Map_List_ExternalInvocationResult_Json'
-        exceptions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ExceptionResult_Json'
     Map_EngineSetupName_List_String:
       title: Map_EngineSetupName_List_String
       type: object
@@ -6064,6 +6066,13 @@ components:
       title: Map_Json
       type: object
       additionalProperties: {}
+    Map_List_ExceptionResult_Json:
+      title: Map_List_ExceptionResult_Json
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/ExceptionResult_Json'
     Map_List_ExpressionInvocationResult_Json:
       title: Map_List_ExpressionInvocationResult_Json
       type: object
@@ -6621,37 +6630,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResultContext_Json'
-    NodeTransitionResult1:
-      title: NodeTransitionResult
-      type: object
-      required:
-      - sourceNodeId
-      properties:
-        sourceNodeId:
-          type: string
-        destinationNodeId:
+        totalCount:
           type:
-          - string
+          - integer
           - 'null'
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ResultContext_Json'
-    NodeTransitionThroughputDto:
-      title: NodeTransitionThroughputDto
-      type: object
-      required:
-      - sourceNodeId
-      - throughput
-      properties:
-        sourceNodeId:
-          type: string
-        destinationNodeId:
+          format: int64
+        currentThroughput:
           type:
-          - string
+          - number
           - 'null'
-        throughput:
-          type: number
     NodeTypes:
       title: NodeTypes
       type: string
@@ -6825,6 +6812,14 @@ components:
         status:
           type: string
           const: NOT_AVAILABLE
+    NotAvailable1:
+      title: NotAvailable
+      type: object
+      required:
+      - reason
+      properties:
+        reason:
+          $ref: '#/components/schemas/NotAvailableReason'
     NotAvailableReason:
       title: NotAvailableReason
       oneOf:
@@ -6832,14 +6827,6 @@ components:
       - $ref: '#/components/schemas/NoSources'
       - $ref: '#/components/schemas/NotSupportedBySources'
       - $ref: '#/components/schemas/UserDoesNotHavePermission'
-    NotAvailable_T:
-      title: NotAvailable_T
-      type: object
-      required:
-      - reason
-      properties:
-        reason:
-          $ref: '#/components/schemas/NotAvailableReason'
     NotSupportedBySources:
       title: NotSupportedBySources
       type: object
@@ -7118,9 +7105,13 @@ components:
       title: ResultsWithCountsDto
       type: object
       required:
+      - timestamp
       - results
       - counts
       properties:
+        timestamp:
+          type: string
+          format: date-time
         results:
           $ref: '#/components/schemas/TestResultsDto'
         counts:
@@ -7219,6 +7210,7 @@ components:
           - SCENARIO_PAUSED
           - SCENARIO_CANCELED
           - SCENARIO_MODIFIED
+          - SCENARIO_MODIFIED_WITH_AUTOSAVE
           - SCENARIO_NAME_CHANGED
           - COMMENT_ADDED
           - ATTACHMENT_ADDED
@@ -7378,15 +7370,18 @@ components:
       required:
       - testWithParameters
       - testWithGeneratedData
+      - testWithLiveData
       properties:
         testWithParameters:
           $ref: '#/components/schemas/CapabilityStatus_T'
         testWithGeneratedData:
           $ref: '#/components/schemas/CapabilityStatus_T'
+        testWithLiveData:
+          $ref: '#/components/schemas/CapabilityStatus_T'
     ScenarioTestData:
       title: ScenarioTestData
       oneOf:
-      - $ref: '#/components/schemas/WithGeneratedData'
+      - $ref: '#/components/schemas/WithLiveData'
       - $ref: '#/components/schemas/WithParameters'
     ScenarioTestValidationRequest:
       title: ScenarioTestValidationRequest
@@ -7620,6 +7615,7 @@ components:
       required:
       - invocationResults
       - externalInvocationResults
+      - exceptionsByNodeId
       properties:
         nodeResults:
           anyOf:
@@ -7630,7 +7626,7 @@ components:
           - array
           - 'null'
           items:
-            $ref: '#/components/schemas/NodeTransitionResult1'
+            $ref: '#/components/schemas/NodeTransitionResult'
         invocationResults:
           $ref: '#/components/schemas/Map_List_ExpressionInvocationResult_Json'
         externalInvocationResults:
@@ -7639,6 +7635,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExceptionResult_Json'
+        exceptionsByNodeId:
+          $ref: '#/components/schemas/Map_List_ExceptionResult_Json'
     TestSourceParameters:
       title: TestSourceParameters
       type: object
@@ -7658,6 +7656,19 @@ components:
           type: array
           items:
             type: object
+    TextCoordinates:
+      title: TextCoordinates
+      type: object
+      required:
+      - column
+      - row
+      properties:
+        column:
+          type: integer
+          format: int32
+        row:
+          type: integer
+          format: int32
     TextareaParameterEditor:
       title: TextareaParameterEditor
       type: object
@@ -8059,8 +8070,8 @@ components:
           $ref: '#/components/schemas/NodeTypes14'
         varName:
           type: string
-    WithGeneratedData:
-      title: WithGeneratedData
+    WithLiveData:
+      title: WithLiveData
       type: object
       required:
       - numberOfSamples

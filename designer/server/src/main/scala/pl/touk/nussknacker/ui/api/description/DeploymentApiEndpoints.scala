@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 }
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -132,7 +132,11 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
           jsonBody[GetDeploymentStatusResponse].examples(
             List(
               Example.of(
-                GetDeploymentStatusResponse(DeploymentStatus.Running.name, None, exampleInstant),
+                GetDeploymentStatusResponse(
+                  DeploymentStatusName.runningStatusName,
+                  None,
+                  exampleInstant
+                ),
                 Some("RUNNING status")
               ),
               Example.of(

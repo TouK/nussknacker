@@ -31,7 +31,6 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.test.utils.scalas.PekkoHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 class ValidationResourcesSpec
@@ -99,7 +98,7 @@ class ValidationResourcesSpec
     createAndValidateScenario(ProcessTestData.invalidProcessWithEmptyMandatoryParameter) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include("This field is mandatory and can not be empty")
+      entity should include("Field: expression is mandatory and can not be empty")
     }
   }
 
@@ -215,7 +214,7 @@ class ValidationResourcesSpec
         "This field is required and can not be null"
       )
       validation.errors.invalidNodes("variable").head.message should include(
-        "This field is mandatory and can not be empty"
+        "Field: $expression is mandatory and can not be empty"
       )
     }
   }
@@ -247,7 +246,7 @@ class ValidationResourcesSpec
   }
 
   private def createAndValidateScenario(scenario: CanonicalProcess)(testCode: => Assertion): Assertion =
-    createAndValidateScenario(CanonicalProcessConverter.toScenarioGraph(scenario), scenario.name)(testCode)
+    createAndValidateScenario(scenario.toScenarioGraph, scenario.name)(testCode)
 
   private def createAndValidateScenario(
       scenarioGraph: ScenarioGraph,

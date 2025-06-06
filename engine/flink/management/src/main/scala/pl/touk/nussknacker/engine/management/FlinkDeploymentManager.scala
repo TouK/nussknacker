@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, OptionT}
 import cats.effect.{Resource, SyncIO}
 import cats.implicits._
 import com.typesafe.config.Config
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
@@ -26,10 +26,12 @@ import pl.touk.nussknacker.engine.flink.minicluster.util.DurationToRetryPolicyCo
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
 import pl.touk.nussknacker.engine.management.jobrunner.FlinkScenarioJobRunner
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
+import pl.touk.nussknacker.engine.management.rest.FlinkClient.ExecutionConfigOps
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusMapOps
 
+import java.time.Instant
 import scala.concurrent.Future
 
 class FlinkDeploymentManager(
@@ -143,7 +145,7 @@ class FlinkDeploymentManager(
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getScenarioDeploymentsStatusesWithJobOverview(processVersion.processName)
       .map(_.value.collect {
-        case (details, jobOverview) if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status) =>
+        case (details, jobOverview) if SimpleStateStatus.isDefaultFollowingDeployStatus(details.status) =>
           jobOverview
       })
   }
@@ -171,7 +173,7 @@ class FlinkDeploymentManager(
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getScenarioDeploymentsStatusesWithJobOverview(processName).flatMap { statusesWithJobOverviews =>
       val runningJobIds = statusesWithJobOverviews.value.collect {
-        case (details @ DeploymentStatusDetails(SimpleStateStatus.Running, Some(_), _), jobOverview)
+        case (details @ DeploymentStatusDetails(SimpleStateStatus.Running(_, _), Some(_)), jobOverview)
             if statusDetailsPredicate(details) =>
           jobOverview.jid
       }
@@ -232,12 +234,16 @@ class FlinkDeploymentManager(
           .sequence(
             deploymentIdsToCheck.toSeq
               .map { deploymentId =>
-                client
-                  .getJobDetails(deploymentId.toJobID)
-                  .map(_.map { jobDetails =>
-                    deploymentId -> FlinkStatusDetailsDeterminer
-                      .toDeploymentStatus(JobStatus.valueOf(jobDetails.state), jobDetails.`status-counts`)
-                  })
+                (for {
+                  jobDetails      <- OptionT(client.getJobDetails(deploymentId.toJobID))
+                  scenarioVersion <- OptionT(client.getJobConfig(deploymentId.toJobID).map(_.versionId))
+                } yield deploymentId -> FlinkStatusDetailsDeterminer
+                  .toDeploymentStatus(
+                    jobStatus = JobStatus.valueOf(jobDetails.state),
+                    jobStatusCounts = jobDetails.`status-counts`,
+                    startedAt = Instant.ofEpochMilli(jobDetails.`start-time`),
+                    version = scenarioVersion
+                  )).value
               }
           )
           .map(_.flatten.toMap)
@@ -293,7 +299,7 @@ class FlinkDeploymentManager(
             getScenarioDeploymentsStatusesWithJobOverview(processName).map { statusesWithJobOverview =>
               statusesWithJobOverview.value
                 .find { case (details, jobOverview) =>
-                  jobOverview.jid == jobId && details.status == SimpleStateStatus.DuringDeploy
+                  jobOverview.jid == jobId && details.status.name == SimpleStateStatus.DuringDeploy.name
                 }
                 .map(Left(_))
                 .getOrElse(Right(()))

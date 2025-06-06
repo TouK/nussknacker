@@ -15,7 +15,7 @@ function FromFileButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;
     const { t } = useTranslation();
 
-    const available = !disabled && testCapabilities?.testWithGeneratedData.status === TestCapabilityStatus.AVAILABLE;
+    const available = !disabled && testCapabilities?.testWithLiveData.status === TestCapabilityStatus.AVAILABLE;
 
     return (
         <CapabilitiesToolbarButton

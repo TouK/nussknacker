@@ -2,8 +2,8 @@ import type { PropsWithChildren } from "react";
 import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
 import { useSelector } from "react-redux";
 
-import type { TransitionResults } from "../../../../common/TestResultUtils";
 import TestResultUtils from "../../../../common/TestResultUtils";
+import type { NodeTransitionResult } from "../../../../http/resultsWithCountsDto";
 import { getScenarioGraph, getTestResults } from "../../../../reducers/selectors/graph";
 import NodeUtils from "../../NodeUtils";
 import type { VariableContextType } from "./VariableContextTree";
@@ -26,7 +26,7 @@ type Action =
           context: VariableContextType;
       };
 
-type Created = TransitionResults & { id: string };
+type Created = NodeTransitionResult & { id: string };
 type ContextType = {
     state: InputOutputState;
     dispatch: React.Dispatch<Action>;
@@ -127,8 +127,8 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
             const transitionResults = direction === "input" ? inputs : outputs;
             const contexts: VariableContextType[] = [];
             transitionResults.forEach(({ id: contextNodeId, destinationNodeId, results }) => {
-                results?.forEach(({ id, variables }) => {
-                    const foundContext = contexts.find((context) => context.id === id);
+                results?.forEach(({ id, variables, timestamp }) => {
+                    const foundContext = contexts.find((context) => context.id === id && context.timestamp === timestamp);
                     if (foundContext) {
                         foundContext.nodeIds.push(contextNodeId);
                         return;
@@ -142,6 +142,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                         disabled: isContextDisabled(id, direction),
                         nodeIds: [contextNodeId],
                         error: error?.throwable,
+                        timestamp,
                     });
                 });
             });

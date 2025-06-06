@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import type { TextContentPart } from "@assistant-ui/react";
 import type { AxiosError, AxiosResponse } from "axios";
+import axios from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import type { Moment } from "moment";
@@ -10,7 +11,6 @@ import type { GenericValidationRequest, TestAdhocValidationRequest } from "../ac
 import api from "../api";
 import type { UserData } from "../common/models/User";
 import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "../common/SystemUtils";
-import type { TestResults } from "../common/TestResultUtils";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import type { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import type { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
@@ -19,7 +19,13 @@ import type { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "
 import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario, StatusDefinitionType } from "../components/Process/types";
 import type { ActivitiesResponse, ActivityMetadataResponse, ActivityType } from "../components/toolbars/activities/types";
 import { ActivityTypesRelatedToExecutions } from "../components/toolbars/activities/types";
-import type { ScenarioActionResult } from "../components/toolbars/scenarioActions/buttons/types";
+import type {
+    ScenarioActionResultDeploySuccess,
+    ScenarioActionResult,
+    ScenarioActionUnhandledError,
+    ScenarioActionValidationError,
+    ScenarioActionResultSuccess,
+} from "../components/toolbars/scenarioActions/buttons/types";
 import { ScenarioActionResultType } from "../components/toolbars/scenarioActions/buttons/types";
 import type { ToolbarsConfig } from "../components/toolbarSettings/types";
 import type { ProcessVersionValidationResponse } from "../components/versionControl/types";
@@ -27,11 +33,11 @@ import { API_URL } from "../config";
 import type { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import type { BackendNotification } from "../containers/Notifications";
 import { handleAxiosError } from "../devHelpers";
-import type { ProcessCounts } from "../reducers/graph";
 import type { AuthenticationSettings } from "../reducers/settings";
 import type { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import type { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import type { ProcessCounts, ResultsWithCountsDto } from "./resultsWithCountsDto";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -103,6 +109,22 @@ export type SourceWithParametersTest = {
 
 export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 
+export type ScenarioGraphSource = {
+    type: ScenarioGraphSourceType;
+    scenarioGraph?: ScenarioGraph;
+    scenarioLabels?: string[];
+    baseScenarioVersionId?: number;
+};
+
+export enum ScenarioGraphSourceType {
+    LATEST_VERSION = "LatestVersion",
+    FROM_GRAPH = "FromGraph",
+}
+
+type DeployResponse = {
+    deployedScenarioVersionId: number;
+};
+
 export type NodeUsageData = {
     fragmentNodeId?: string;
     nodeId: string;
@@ -126,11 +148,6 @@ export type NotificationActions = {
     error(message: string, error: string, showErrorText: boolean): void;
     warn(message: string): void;
 };
-
-export interface TestProcessResponse {
-    results: TestResults;
-    counts: ProcessCounts;
-}
 
 export interface PropertiesValidationRequest {
     name: string;
@@ -324,7 +341,11 @@ class HttpService {
     }
 
     fetchProcessState(processName: ProcessName, processVersionId: number) {
-        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status?currentlyPresentedVersionId=${processVersionId}`);
+        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status`, {
+            params: {
+                currentlyPresentedVersionId: processVersionId,
+            },
+        });
         promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error));
         return promise;
     }
@@ -342,12 +363,28 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
-        const runDeploymentRequest = { nodesDeploymentData, comment };
-        return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
-            .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+    async deploy(
+        processName: string,
+        comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
+        scenarioGraphSource?: ScenarioGraphSource,
+    ): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = {
+            nodesDeploymentData,
+            comment,
+            scenarioGraphSource: {
+                ...scenarioGraphSource,
+                scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
+            },
+        };
+        return await api
+            .post<DeployResponse>(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
+            .then((resp) => {
+                const result: ScenarioActionResultDeploySuccess = {
+                    deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
+                    scenarioActionResultType: ScenarioActionResultType.DeploySuccess,
+                };
+                return result;
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -374,12 +411,28 @@ class HttpService {
             });
     }
 
-    redeploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<ScenarioActionResult> {
-        const runDeploymentRequest = { nodesDeploymentData, comment };
-        return api
-            .post(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
-            .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+    async redeploy(
+        processName: string,
+        comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
+        scenarioGraphSource?: ScenarioGraphSource,
+    ): Promise<ScenarioActionResult> {
+        const runDeploymentRequest = {
+            nodesDeploymentData,
+            comment,
+            scenarioGraphSource: {
+                ...scenarioGraphSource,
+                scenarioGraph: scenarioGraphSource.scenarioGraph ? this.#sanitizeScenarioGraph(scenarioGraphSource.scenarioGraph) : null,
+            },
+        };
+        return await api
+            .post<DeployResponse>(`/processManagement/redeploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
+            .then((resp) => {
+                const result: ScenarioActionResultDeploySuccess = {
+                    deployedScenarioVersionId: resp.data.deployedScenarioVersionId,
+                    scenarioActionResultType: ScenarioActionResultType.DeploySuccess,
+                };
+                return result;
             })
             .catch((error: AxiosError) => {
                 if (error?.response?.status != 400) {
@@ -415,14 +468,15 @@ class HttpService {
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
-                return {
+                const result: ScenarioActionResultSuccess = {
                     scenarioActionResultType: ScenarioActionResultType.Success,
                     msg: msg.toString(),
                 };
+                return result;
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
-                const result = {
+                const result: ScenarioActionUnhandledError = {
                     scenarioActionResultType: ScenarioActionResultType.UnhandledError,
                     msg: msg.toString(),
                 };
@@ -438,7 +492,11 @@ class HttpService {
         return api
             .post(`/processManagement/cancel/${encodeURIComponent(processName)}`, comment)
             .then(() => {
-                return { scenarioActionResultType: ScenarioActionResultType.Success, msg: "" };
+                const result: ScenarioActionResultSuccess = {
+                    scenarioActionResultType: ScenarioActionResultType.Success,
+                    msg: "",
+                };
+                return result;
             })
             .catch((error) => {
                 if (error?.response?.status != 400) {
@@ -772,6 +830,26 @@ class HttpService {
         return promise;
     }
 
+    fetchProcessLiveData(processName: string, showErrors: boolean): Promise<AxiosResponse<ResultsWithCountsDto>> {
+        return api.get<ResultsWithCountsDto>(`/liveData/${encodeURIComponent(processName)}`).catch((error) => {
+            if (axios.isAxiosError(error) && error.response) {
+                const status = error.response.status;
+                if (showErrors) {
+                    if (status === 501) {
+                        this.#addError(
+                            i18next.t("notification.error.liveDataNotSupported", "Live data is not supported for this scenario"),
+                            error,
+                            true,
+                        );
+                    } else {
+                        this.#addError(i18next.t("notification.error.failedToFetchLiveData", "Cannot fetch live data"), error, true);
+                    }
+                }
+            }
+            throw error;
+        });
+    }
+
     //to prevent closing edit node modal and corrupting graph display
     saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
         const data = {
@@ -830,7 +908,7 @@ class HttpService {
         data.append("testData", file);
         data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
-        const promise = api.post<TestProcessResponse>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
+        const promise = api.post<ResultsWithCountsDto>(`/processManagement/test/${encodeURIComponent(processName)}`, data, {
             params: {
                 skipResultsPerTransition: this.#skipResultsPerTransition,
             },
@@ -856,12 +934,12 @@ class HttpService {
                   sourceParameters: SourceWithParametersTest;
               }
             | {
-                  type: "WITH_GENERATED_DATA";
+                  type: "WITH_LIVE_DATA";
                   numberOfSamples: number;
               },
     ) {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
-        const promise = api.post<TestProcessResponse>(
+        const promise = api.post<ResultsWithCountsDto>(
             `/scenarioTesting/${encodeURIComponent(processName)}/performTest`,
             {
                 testData,
@@ -911,7 +989,13 @@ class HttpService {
                     }),
                 ),
             )
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true));
+            .catch((error) =>
+                this.#addError(
+                    i18next.t("notification.error.failedToMigrate", "Failed to migrate: {{ cause }}", { cause: error.response.data }),
+                    error,
+                    true,
+                ),
+            );
     }
 
     fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {

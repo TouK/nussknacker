@@ -2,22 +2,18 @@ package pl.touk.nussknacker.engine.definition.clazz
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{
-  ExpressionParseError,
-  GenericFunctionTypingError,
-  MethodTypeInfo,
-  Parameter
-}
+import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SpelExpressionTypingError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingErrorConverter
 
 sealed trait MethodDefinition {
 
   def computeResultType(
       instanceType: TypingResult,
       arguments: List[TypingResult]
-  ): ValidatedNel[ExpressionParseError, TypingResult]
+  ): ValidatedNel[SpelExpressionTypingError, TypingResult]
 
   def signatures: NonEmptyList[MethodTypeInfo]
 
@@ -25,8 +21,11 @@ sealed trait MethodDefinition {
 
   def description: Option[String]
 
-  protected def convertError(error: GenericFunctionTypingError, arguments: List[TypingResult]): ExpressionParseError =
-    SpelExpressionParseErrorConverter(this, arguments).convert(error)
+  protected def convertError(
+      error: GenericFunctionTypingError,
+      arguments: List[TypingResult]
+  ): SpelExpressionTypingError =
+    SpelExpressionTypingErrorConverter(this, arguments).convert(error)
 
   protected def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
     val checkNoVarArgs = arguments.length >= methodTypeInfo.noVarArgs.length &&
@@ -53,7 +52,7 @@ case class StaticMethodDefinition(signature: MethodTypeInfo, name: String, descr
   override def computeResultType(
       instanceType: TypingResult,
       arguments: List[TypingResult]
-  ): ValidatedNel[ExpressionParseError, TypingResult] = {
+  ): ValidatedNel[SpelExpressionTypingError, TypingResult] = {
     if (isValidMethodInfo(arguments, signature)) signature.result.validNel
     else convertError(ArgumentTypeError, arguments).invalidNel
   }
@@ -82,8 +81,8 @@ case class FunctionalMethodDefinition(
   override def computeResultType(
       methodInvocationTarget: TypingResult,
       arguments: List[TypingResult]
-  ): ValidatedNel[ExpressionParseError, TypingResult] = {
-    val errorConverter            = SpelExpressionParseErrorConverter(this, arguments)
+  ): ValidatedNel[SpelExpressionTypingError, TypingResult] = {
+    val errorConverter            = SpelExpressionTypingErrorConverter(this, arguments)
     val typesFromStaticMethodInfo = signatures.filter(isValidMethodInfo(arguments, _)).map(_.result)
     if (typesFromStaticMethodInfo.isEmpty) return convertError(ArgumentTypeError, arguments).invalidNel
 

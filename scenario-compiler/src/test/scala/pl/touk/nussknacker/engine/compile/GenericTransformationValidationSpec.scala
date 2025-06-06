@@ -33,10 +33,16 @@ import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefini
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
-class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
+class GenericTransformationValidationSpec
+    extends AnyFunSuite
+    with Matchers
+    with OptionValues
+    with Inside
+    with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -275,17 +281,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(
-      NonEmptyList.of(
-        ExpressionParserCompilationError(
-          message = s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
-          nodeId = "generic",
-          paramName = Some(ParameterName("par1")),
-          originalExpr = "12",
-          details = None
-        )
-      )
-    )
+    result.result.invalidValue.toList should matchPattern {
+      case ExpressionParserCompilationError(message, "generic", Some(ParameterName("par1")), "12", _) :: Nil
+          if message == s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}" =>
+    }
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe Typed.record(Map.empty[String, TypingResult])
@@ -349,17 +348,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(
-      NonEmptyList.of(
-        ExpressionParserCompilationError(
-          message = s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
-          nodeId = "generic",
-          paramName = Some(ParameterName("par1")),
-          originalExpr = "12",
-          details = None
-        )
-      )
-    )
+    result.result.invalidValue.toList should matchPattern {
+      case ExpressionParserCompilationError(message, "generic", Some(ParameterName("par1")), "12", _) :: Nil
+          if message == s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}" =>
+    }
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe Typed.record(Map.empty[String, TypingResult])

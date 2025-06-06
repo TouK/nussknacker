@@ -29,8 +29,6 @@ import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
 import sttp.model.{MediaType, StatusCode}
@@ -104,6 +102,9 @@ trait ScenarioTestingApiHttpServiceSpec
              |    },
              |    "testWithGeneratedData": {
              |      "status": "AVAILABLE"
+             |    },
+             |    "testWithLiveData": {
+             |      "status": "AVAILABLE"
              |    }
              |}""".stripMargin
         )
@@ -126,6 +127,10 @@ trait ScenarioTestingApiHttpServiceSpec
              |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
              |    },
              |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
+             |    },
+             |    "testWithLiveData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason": "USER_DOES_NOT_HAVE_PERMISSION"
              |    }
@@ -277,6 +282,10 @@ trait ScenarioTestingApiHttpServiceSpec
              |    "testWithGeneratedData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason":"NOT_SUPPORTED_BY_SOURCES"
+             |    },
+             |    "testWithLiveData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
              |    }
              |}""".stripMargin
         )
@@ -344,6 +353,10 @@ trait ScenarioTestingApiHttpServiceSpec
              |      "sourceParameters": $expectedTestParameters
              |    },
              |    "testWithGeneratedData": {
+             |      "status": "NOT_AVAILABLE",
+             |      "reason":"NOT_SUPPORTED_BY_SOURCES"
+             |    },
+             |    "testWithLiveData": {
              |      "status": "NOT_AVAILABLE",
              |      "reason":"NOT_SUPPORTED_BY_SOURCES"
              |    }
@@ -429,7 +442,7 @@ trait ScenarioTestingApiHttpServiceSpec
             testData = ScenarioTestData.WithParameters(
               TestSourceParameters(missingSourceId, Map(ParameterName("a parameter") -> "{'123'}".spel))
             ),
-            scenarioGraph = toScenarioGraph(scenarioWithMissingSource)
+            scenarioGraph = scenarioWithMissingSource.toScenarioGraph
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenarioWithMissingSource.name}/validate")
@@ -463,14 +476,16 @@ trait ScenarioTestingApiHttpServiceSpec
         .basicAuthAllPermUser()
         .jsonBody(
           ScenarioTestValidationRequest(
-            testData = ScenarioTestData.WithGeneratedData(0),
-            scenarioGraph = toScenarioGraph(exampleScenario)
+            testData = ScenarioTestData.WithLiveData(0),
+            scenarioGraph = exampleScenario.toScenarioGraph
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
+        .equalsPlainBody(
+          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
+        )
     }
   }
 
@@ -486,5 +501,5 @@ trait ScenarioTestingApiHttpServiceSpec
        |}""".stripMargin
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =
-    Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(canonical)).toString()
+    Encoder[ScenarioGraph].apply(canonical.toScenarioGraph).toString()
 }

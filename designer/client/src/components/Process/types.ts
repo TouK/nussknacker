@@ -57,9 +57,21 @@ export type ProcessStateType = {
     description: string;
 };
 
-export type StatusType = {
-    name: string;
+export type StatusType =
+    | StatusRunning
+    | {
+          name: string;
+      };
+
+export type StatusRunning = {
+    name: "RUNNING";
+    startedAt: string;
+    versionId: string;
 };
+
+export function isStatusRunning(statusType?: StatusType): statusType is StatusRunning {
+    return statusType?.name === "RUNNING";
+}
 
 export type StatusDefinitionType = {
     name: string;

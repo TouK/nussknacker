@@ -53,7 +53,7 @@ class DeploymentService(
     // a running job. In that case there is no deploy action and action cancel is removed.
     // TODO: This inconsistent action-state handling needs a fix.
     actionService
-      .actionProcessorForVersion[Unit](_.lastDeployedAction.map(_.processVersionId))
+      .actionProcessorForVersion[Unit](_.lastDeployedAction.map(_.processVersionId), LatestVersion)
       .processAction[CancelScenarioCommand, Unit](command = command, actionName = ScenarioActionName.Cancel) { ctx =>
         import command.commonData._
         dispatcher
@@ -84,15 +84,16 @@ class DeploymentService(
       }
   }
 
-  private def runDeploymentOrRedeploy[T <: CommonDeploymentCommand with ScenarioCommand[
-    Future[Option[ExternalDeploymentId]]
-  ]](
+  private def runDeploymentOrRedeploy[T <: CommonDeploymentCommand with ScenarioCommand[RunDeploymentResult]](
       command: T
-  ): Future[Future[Option[ExternalDeploymentId]]] = {
+  ): Future[RunDeploymentResult] = {
     import command.commonData._
-    actionService
-      .actionProcessorForLatestVersion[CanonicalProcess]
-      .processActionWithCustomFinalization[T, Future[Option[ExternalDeploymentId]]](
+    val actionProcessor = command.scenarioSource match {
+      case LatestVersion     => actionService.actionProcessorForLatestVersion[CanonicalProcess]
+      case source: FromGraph => actionService.actionProcessorForScenarioGraph[CanonicalProcess](source)
+    }
+    actionProcessor
+      .processActionWithCustomFinalization[T, RunDeploymentResult](
         command = command,
         actionName = command match {
           case _: RunDeploymentCommand   => ScenarioActionName.Deploy
@@ -135,7 +136,13 @@ class DeploymentService(
             }
           }
             .flatMap {
-              case Right(result) => Future.successful(result)
+              case Right(result) =>
+                Future.successful(
+                  RunDeploymentResult(
+                    result,
+                    ctx.latestScenarioDetails.processVersionId
+                  )
+                )
               case Left(error: MaxActiveScenariosCountExceededError) =>
                 Future.failed(error).removeInvalidActionOnFailure()
             }

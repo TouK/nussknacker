@@ -222,7 +222,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
           val ds = deployments
             .sortBy(d => -d.runAt.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli)
             .take(deploymentsPerScheduleMaxCount)
-            .map(scheduleDeploymentData(_))
+            .map(scheduleDeploymentData(_, process))
             .toList
           scheduleId -> ScheduleData(createPeriodicProcessWithoutJson(process), ds)
         }
@@ -471,10 +471,14 @@ object InMemPeriodicProcessesRepository {
     scheduleProperty
   }
 
-  private def scheduleDeploymentData(deployment: TestPeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
+  private def scheduleDeploymentData(
+      deployment: TestPeriodicProcessDeploymentEntity,
+      process: TestPeriodicProcessEntity
+  ): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
       deployment.periodicProcessId,
+      process.processVersionId,
       deployment.createdAt,
       deployment.runAt,
       deployment.deployedAt,

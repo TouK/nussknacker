@@ -98,10 +98,10 @@ class UnionTransformersTestModeSpec
       contextIds should have size (data.size * 2)
       contextIds should contain theSameElementsAs contextIds.toSet
       contextIds should contain only (
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$leftBranchId",
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$leftBranchId",
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$rightBranchId",
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$rightBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$leftBranchId-$leftBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$leftBranchId-$leftBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$rightBranchId-$rightBranchId",
+        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$rightBranchId-$rightBranchId",
       )
     }
   }

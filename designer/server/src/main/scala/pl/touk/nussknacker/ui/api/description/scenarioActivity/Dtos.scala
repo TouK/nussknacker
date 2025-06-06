@@ -14,6 +14,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.enumSchema
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity.AdditionalField
+import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.MediaType
 import sttp.tapir._
@@ -181,6 +182,13 @@ object Dtos {
       override def displayableNameForScenario: String = s"Scenario modified"
       override def displayableNameForFragment: String = s"Fragment modified"
       override def icon: String                       = "/assets/activities/scenarioModified.svg"
+      override def supportedActions: List[String]     = commentRelatedActions ::: "compare" :: Nil
+    }
+
+    case object ScenarioModifiedWithAutosave extends ScenarioActivityType {
+      override def displayableNameForScenario: String = s"Scenario modified"
+      override def displayableNameForFragment: String = s"Fragment modified"
+      override def icon: String                       = "/assets/activities/scenarioModifiedWithAutosave.svg"
       override def supportedActions: List[String]     = commentRelatedActions ::: "compare" :: Nil
     }
 
@@ -519,16 +527,19 @@ object Dtos {
         comment: ScenarioActivityComment,
     ): ScenarioActivity = ScenarioActivity(
       id = id,
-      `type` = ScenarioActivityType.ScenarioModified,
+      `type` =
+        if (isInternallyUpdatedByNussknacker(user)) ScenarioActivityType.ScenarioModifiedWithAutosave
+        else ScenarioActivityType.ScenarioModified,
       user = user,
       date = date,
       scenarioVersionId = scenarioVersionId,
       comment = Some(comment),
       attachment = None,
       additionalFields = List.empty,
-      overrideDisplayableName = updatedVersionId(previousScenarioVersionId, scenarioVersionId).map(updatedVersion =>
-        s"Version $updatedVersion saved"
-      )
+      overrideDisplayableName = updatedVersionId(previousScenarioVersionId, scenarioVersionId).map {
+        case updatedVersion if isInternallyUpdatedByNussknacker(user) => s"Version $updatedVersion autosaved"
+        case updatedVersion                                           => s"Version $updatedVersion saved"
+      }
     )
 
     private def updatedVersionId(oldVersionIdOpt: Option[Long], newVersionIdOpt: Option[Long]) = {
@@ -538,6 +549,9 @@ object Dtos {
         updatedVersionId <- if (newVersionId > oldVersionIdOrZero) Some(newVersionId) else None
       } yield updatedVersionId
     }
+
+    private def isInternallyUpdatedByNussknacker(user: String) =
+      user == NussknackerInternalUser.instance.username
 
     def forScenarioNameChanged(
         id: UUID,

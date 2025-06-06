@@ -1,12 +1,6 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import com.dimafeng.testcontainers.{
-  Container,
-  ForAllTestContainer,
-  KafkaContainer,
-  MultipleContainers,
-  SchemaRegistryContainer
-}
+import com.dimafeng.testcontainers._
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromMap
 import com.typesafe.scalalogging.StrictLogging
@@ -44,19 +38,7 @@ import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests.{
-  ageVariable,
-  getScenarioWithDataSample,
-  isAdultVariable,
-  kafkaContainerAlias,
-  nameVariable,
-  sinkTopicName,
-  sourceTopicName,
-  variablesNodeName,
-  WithSchemalessAdHocTestsLogic
-}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests._
 
 import java.util.{Collections, UUID}
 import java.util.Arrays.asList
@@ -115,7 +97,7 @@ class SchemalessKafkaJsonTypeTests
         val request =
           ScenarioValidationRequest(
             scenarioWithEmptyDataSample.name,
-            CanonicalProcessConverter.toScenarioGraph(scenarioWithEmptyDataSample)
+            scenarioWithEmptyDataSample.toScenarioGraph
           ).asJson.toString()
 
         val response = given()
@@ -152,14 +134,16 @@ class SchemalessKafkaJsonTypeTests
         .basicAuthAllPermUser()
         .jsonBody(
           testDataGenerationRequest(
-            Encoder[ScenarioGraph].apply(toScenarioGraph(exampleScenario)).toString(),
+            Encoder[ScenarioGraph].apply(exampleScenario.toScenarioGraph).toString(),
             numberOfSamples = 3
           )
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
+        .equalsPlainBody(
+          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
+        )
     }
   }
 
@@ -173,14 +157,16 @@ class SchemalessKafkaJsonTypeTests
         .basicAuthAllPermUser()
         .jsonBody(
           ScenarioTestValidationRequest(
-            testData = ScenarioTestData.WithGeneratedData(10),
-            scenarioGraph = toScenarioGraph(exampleScenario)
+            testData = ScenarioTestData.WithLiveData(10),
+            scenarioGraph = exampleScenario.toScenarioGraph
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(404)
-        .equalsPlainBody("Could not provide a sample of test data. Possible cause: no live data available")
+        .equalsPlainBody(
+          "No live test data available. Please ensure that the storage used by source contains at least one data sample"
+        )
     }
   }
 
@@ -300,7 +286,7 @@ object SchemalessKafkaJsonTypeTests {
     override protected def parametersProvidedForDryRun: String =
       ScenarioTestValidationRequest(
         testData = ScenarioTestData.WithParameters(validParameters),
-        scenarioGraph = toScenarioGraph(exampleScenario)
+        scenarioGraph = exampleScenario.toScenarioGraph
       ).asJson.toString()
 
     override protected def expectedValidationErrorsOnInvalidParametersJson: String =
@@ -308,11 +294,11 @@ object SchemalessKafkaJsonTypeTests {
          |[
          |  {
          |    "typ": "ExpressionParserCompilationError",
-         |    "message": "Failed to parse expression: expected } or , got 'a0.00}...' (line 3, column 45)",
+         |    "message": "Failed to parse expression: expected } or , got 'a0.00}...'",
          |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
          |    "fieldName": "Input",
          |    "errorType": "SaveAllowed",
-         |    "details": null
+         |    "details": {"start":{"column":44,"row":2},"end":{"column":45,"row":2},"type":"CoordinatesBasedTextRange"}
          |  }
          |]""".stripMargin
 

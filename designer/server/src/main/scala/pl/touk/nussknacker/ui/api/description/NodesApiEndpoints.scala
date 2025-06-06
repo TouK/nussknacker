@@ -17,7 +17,12 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterCategory,
   ParameterEditor
 }
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  CellError,
+  ColumnDefinition,
+  ErrorDetails,
+  TextCoordinates
+}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.json.decoders.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.parameter.{
@@ -67,7 +72,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
-  NoDataGenerated,
+  NoLiveDataAvailable,
   NoProcessingType,
   NoScenario
 }
@@ -441,8 +446,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     value = NoScenario(ProcessName("'example scenario'"))
                   ),
                   Example.of(
-                    summary = Some("No test data generated"),
-                    value = NoDataGenerated
+                    summary = Some("No live test data available"),
+                    value = NoLiveDataAvailable
                   )
                 )
               )
@@ -697,10 +702,11 @@ object NodesApiEndpoints {
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
     implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
 
-    implicit lazy val parameterSchema: Schema[EvaluatedParameter] = Schema.derived
-    implicit lazy val edgeTypeSchema: Schema[EdgeType]            = Schema.derived
-    implicit lazy val edgeSchema: Schema[Edge]                    = Schema.derived
-    implicit lazy val cellErrorSchema: Schema[CellError]          = Schema.derived
+    implicit lazy val parameterSchema: Schema[EvaluatedParameter]    = Schema.derived
+    implicit lazy val edgeTypeSchema: Schema[EdgeType]               = Schema.derived
+    implicit lazy val edgeSchema: Schema[Edge]                       = Schema.derived
+    implicit lazy val cellErrorSchema: Schema[CellError]             = Schema.derived
+    implicit lazy val textCoordinatesSchema: Schema[TextCoordinates] = Schema.derived
     import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
     implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]                         = Schema.derived
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                                 = Schema.derived
@@ -1573,10 +1579,10 @@ object NodesApiEndpoints {
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
             case TooManySamplesRequested(maxSamples) =>
-              TestingApiErrorMessages.generatedTestData.requestedTooManySamplesToGenerate(maxSamples)
+              TestingApiErrorMessages.fetchedLiveData.requestedTooManySamplesToFetch(maxSamples)
             case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
-              TestingApiErrorMessages.generatedTestData.tooManyCharacters(length, limit)
+              TestingApiErrorMessages.fetchedLiveData.tooManyCharacters(length, limit)
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -1589,13 +1595,13 @@ object NodesApiEndpoints {
 
       object NotFoundNodesError {
         case class NoScenario(scenarioName: ProcessName)            extends NotFoundNodesError
-        case object NoDataGenerated                                 extends NotFoundNodesError
+        case object NoLiveDataAvailable                             extends NotFoundNodesError
         case class NoProcessingType(processingType: ProcessingType) extends NotFoundNodesError
 
         implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
-            case NoScenario(scenarioName) => s"No scenario ${scenarioName} found"
-            case NoDataGenerated          => TestingApiErrorMessages.generatedTestData.couldNotProvideTestDataSample
+            case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
+            case NoLiveDataAvailable              => TestingApiErrorMessages.fetchedLiveData.noLiveDataAvailable
             case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
           }
 

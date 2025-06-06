@@ -6,6 +6,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.scenarioLiveData.Dtos.LiveDataError._
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDto
 import sttp.model.StatusCode
 import sttp.model.StatusCode._
 import sttp.tapir._
@@ -14,13 +15,15 @@ import sttp.tapir.json.circe.jsonBody
 
 class ScenarioLiveDataApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
+  import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDto._
+  import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDtoCodecs._
+
   import Dtos._
-  import LiveDataCodecs._
 
   def scenarioLiveDataEndpoint: SecuredEndpoint[
     ProcessName,
     LiveDataError,
-    LiveDataDto,
+    ResultsWithCountsDto,
     Any
   ] =
     baseNuApiEndpoint
@@ -28,7 +31,7 @@ class ScenarioLiveDataApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .tag("Live data")
       .get
       .in("liveData" / path[ProcessName]("scenarioName"))
-      .out(statusCode(Ok).and(jsonBody[LiveDataDto]))
+      .out(statusCode(Ok).and(jsonBody[ResultsWithCountsDto]))
       .errorOut(errorOutput)
       .withSecurity(auth)
 

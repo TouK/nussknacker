@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, isEqual, omit as _omit, partition, pick as _pick, sortBy } from "lodash";
+import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
 
@@ -14,7 +14,8 @@ import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
 import { correctFetchedDetails } from "./correctFetchedDetails";
 import { appendHistorySquashLogic } from "./historySquash";
-import type { NestedKeyOf } from "./nestedKeyOf";
+import type { NestedKeyOf } from "./lodashWrappers";
+import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import type { GraphState } from "./types";
 import {
@@ -44,6 +45,7 @@ const emptyGraphState: GraphState = {
     selectionState: [],
     processCounts: {},
     testResults: null,
+    liveData: null,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -133,12 +135,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "PROCESS_VERSIONS_LOADED": {
-            const { history } = action;
             return {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    history: history,
+                    history: action.history,
                 },
             };
         }
@@ -343,6 +344,24 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 processCountsRefresh: action.refresh,
             };
         }
+        case "DISPLAY_LIVE_DATA": {
+            return {
+                ...state,
+                liveData: action.results || null,
+                liveDataRefresh: action.refresh,
+                testResults: action.results?.results || null,
+                processCounts: action.results?.counts || {},
+                processCountsRefresh: null,
+                liveDataWasEnabled: true,
+            };
+        }
+        case "NODE_DETAILS_OPENED":
+        case "LIVE_DATA_STOP": {
+            return {
+                ...state,
+                liveDataRefresh: null,
+            };
+        }
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
                 ...state,
@@ -370,6 +389,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testResults: null,
                 processCounts: null,
                 processCountsRefresh: null,
+                liveData: null,
+                liveDataRefresh: null,
             };
         }
         default:
@@ -390,9 +411,6 @@ export type GraphStateWithHistory = StateWithHistory<GraphState> & {
     snapshots: number[];
 };
 
-const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
-const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
-
 const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.validationResult", "scenario.history"];
 
@@ -405,7 +423,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
     groupBy: batchGroupBy.init(),
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-    }, excludeAction(["VALIDATION_RESULT", "STICKY_NOTE_SET_ERRORS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ"])),
+    }, excludeAction(["VALIDATION_RESULT", "STICKY_NOTE_SET_ERRORS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ", "GET_SCENARIOS", "SCENARIOS_FETCHED"])),
 });
 
 // apply only undoable changes for undo actions

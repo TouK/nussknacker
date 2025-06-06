@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.engine.spel.ast
 
 import org.springframework.expression.spel.SpelNode
-import pl.touk.nussknacker.engine.expression.PositionRange
+import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
 
 object SpelAst {
 
   // Node identifier in expression. Is it ok? Or mayby we should add some extra info like class?
-  type SpelNodeId = PositionRange
+  type SpelNodeId = IndexBasedTextRange
 
   object SpelNodeId {
 
     def apply(node: SpelNode): SpelNodeId =
-      node.positionRange
+      node.textRange
   }
 
   implicit class RichSpelNode(n: SpelNode) {
@@ -20,12 +20,8 @@ object SpelAst {
       (0 until n.getChildCount).map(i => n.getChild(i))
     }.toList
 
-    def childrenHead: SpelNode = {
-      n.getChild(0)
-    }
-
-    def positionRange: PositionRange =
-      PositionRange(n.getStartPosition, n.getEndPosition)
+    def textRange: IndexBasedTextRange =
+      IndexBasedTextRange(n.getStartPosition, n.getEndPosition)
 
   }
 

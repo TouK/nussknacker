@@ -27,7 +27,6 @@ import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -163,6 +162,15 @@ trait ProcessService {
   def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateScenarioCommand)(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse]
+
+  // TODO: move dto mapping to appropriate resource
+  def updateProcessDBIO(
+      processIdWithName: ProcessIdWithName,
+      details: ScenarioWithDetails,
+      action: UpdateScenarioCommand
+  )(
+      implicit user: LoggedUser
+  ): DB[UpdateProcessResponse]
 
   def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
       implicit user: LoggedUser
@@ -337,9 +345,7 @@ class DBProcessService(
     val parameters =
       scenarioParametersServiceProvider.combined.getParametersWithReadPermissionUnsafe(entity.processingType)
     ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
-      entity.mapScenario { canonical =>
-        CanonicalProcessConverter.toScenarioGraph(canonical)
-      },
+      entity.mapScenario(_.toScenarioGraph),
       parameters
     )
   }
@@ -455,35 +461,45 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
-      val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
-      val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
-      val validation =
-        FatalValidationError.saveNotAllowedAsError(
-          processResolver.validateBeforeUiResolving(
-            action.scenarioGraph,
-            details.processVersionUnsafe,
-            details.isFragment,
-          )
-        )
-      val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
-      val updateProcessAction = UpdateProcessAction(
-        processId = processIdWithName.id,
-        canonicalProcess = substituted,
-        comment = action.comment.flatMap(Comment.from),
-        labels = scenarioLabels,
-        increaseVersionWhenJsonNotChanged = false,
-      )
-      dbioRunner
-        .runInTransaction(processRepository.updateProcess(updateProcessAction))
-        .map { processUpdated =>
-          UpdateProcessResponse(
-            processUpdated.newVersion
-              .map(ProcessCreated(processIdWithName.id, _))
-              .map(toProcessResponse(processIdWithName.name, _)),
-            validation
-          )
-        }
+      dbioRunner.runInTransaction(updateProcessDBIO(processIdWithName, details, action))
     }
+
+  override def updateProcessDBIO(
+      processIdWithName: ProcessIdWithName,
+      details: ScenarioWithDetails,
+      action: UpdateScenarioCommand
+  )(
+      implicit user: LoggedUser
+  ): DB[UpdateProcessResponse] = {
+    val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
+    val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
+    val validation =
+      FatalValidationError.saveNotAllowedAsError(
+        processResolver.validateBeforeUiResolving(
+          action.scenarioGraph,
+          details.processVersionUnsafe,
+          details.isFragment,
+        )
+      )
+    val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
+    val updateProcessAction = UpdateProcessAction(
+      processId = processIdWithName.id,
+      canonicalProcess = substituted,
+      comment = action.comment.flatMap(Comment.from),
+      labels = scenarioLabels,
+      increaseVersionWhenJsonNotChanged = false,
+    )
+    processRepository
+      .updateProcess(updateProcessAction)
+      .map { processUpdated =>
+        UpdateProcessResponse(
+          processUpdated.newVersion
+            .map(ProcessCreated(processIdWithName.id, _))
+            .map(toProcessResponse(processIdWithName.name, _)),
+          validation
+        )
+      }
+  }
 
   override def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
       implicit user: LoggedUser
@@ -532,7 +548,7 @@ class DBProcessService(
         .valueOr(msg => throw ProcessUnmarshallingError(msg))
 
       val canonical     = jsonCanonicalProcess.withProcessName(processId.name)
-      val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(canonical)
+      val scenarioGraph = canonical.toScenarioGraph
       val validationResult = processResolverByProcessingType
         .forProcessingTypeUnsafe(process.processingType)
         .validateBeforeUiReverseResolving(canonical, process.processVersionUnsafe, process.isFragment)

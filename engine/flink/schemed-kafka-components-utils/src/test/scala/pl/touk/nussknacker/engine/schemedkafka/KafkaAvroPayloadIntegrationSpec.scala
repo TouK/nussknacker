@@ -110,7 +110,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     }.getMessage
 
     message should include(
-      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,Topic,start"
+      "EmptyMandatoryParameter(Field: Topic is mandatory and can not be empty,Please fill field for this parameter,Topic,start"
     )
   }
 

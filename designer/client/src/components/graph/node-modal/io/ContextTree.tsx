@@ -4,9 +4,9 @@ import React from "react";
 import type { InspectorNodeParams } from "react-inspector";
 import Inspector, { chromeDark, ObjectLabel, ObjectName } from "react-inspector";
 
-import type { Context } from "../../../../common/TestResultUtils";
+import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 
-export function ContextTree({ context, oldFields = [] }: { context: Context; oldFields?: string[] }): JSX.Element {
+export function ContextTree({ context, oldFields = [] }: { context: ResultContextJson; oldFields?: string[] }): JSX.Element {
     const data = mapValues(context?.variables, (v) => v?.pretty);
     const keys = Object.keys(data);
     const expandedFields = keys.filter((k) => !oldFields.includes(k) || (k !== "inputMeta" && keys.length === oldFields.length));

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.generics._
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{ArgumentTypeError, SpelExpressionTypingError}
 import pl.touk.nussknacker.engine.spel.typer.MethodReferenceTyper
 
 class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
@@ -50,7 +50,7 @@ class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  private def extractMethod(name: String, args: List[TypingResult]): Either[ExpressionParseError, TypingResult] = {
+  private def extractMethod(name: String, args: List[TypingResult]): Either[SpelExpressionTypingError, TypingResult] = {
     methodReferenceTyper.typeMethodReference(typer.MethodReference(Typed[Helper], isStatic = false, name, args))
   }
 

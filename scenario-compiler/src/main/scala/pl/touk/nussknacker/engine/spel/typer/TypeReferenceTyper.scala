@@ -4,17 +4,17 @@ import cats.data.Writer
 import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.TypeReferenceError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownClassError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError.TypeReferenceError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError.UnknownClassError
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SpelExpressionTypingError
 
 import scala.util.{Failure, Success, Try}
 
 class TypeReferenceTyper(evaluationContext: EvaluationContext, classDefinitionSet: ClassDefinitionSet) {
 
-  def typeTypeReference(typeReference: TypeReference): Writer[List[ExpressionParseError], TypingResult] = {
+  def typeTypeReference(typeReference: TypeReference): Writer[List[SpelExpressionTypingError], TypingResult] = {
 
     /**
       * getValue mutates TypeReference but is still safe

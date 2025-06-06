@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, LatestVersion}
 import pl.touk.nussknacker.engine.util.ExecutionContextWithIORuntimeAdapter
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
@@ -24,11 +24,15 @@ import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{
+  mapProcessingTypeDataProvider,
+  scenarioParametersServiceProvider
+}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.deploymentstatus.EngineSideDeploymentStatusesProvider
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
@@ -127,10 +131,12 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            scenarioSource = LatestVersion,
           )
         )
-        .flatten
+        .futureValue
+        .externalDeploymentId
         .futureValue
     }
 
@@ -173,7 +179,7 @@ class NotificationServiceTest
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
-    ): Option[ExternalDeploymentId] = {
+    ): RunDeploymentResult = {
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
@@ -183,10 +189,10 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            scenarioSource = LatestVersion,
           )
         )
-        .flatten
         .futureValue
     }
 
@@ -242,7 +248,7 @@ class NotificationServiceTest
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
-    ): Option[ExternalDeploymentId] = {
+    ): RunDeploymentResult = {
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenAnswer { invocation =>
@@ -255,10 +261,10 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            scenarioSource = LatestVersion,
           )
         )
-        .flatten
         .futureValue
     }
 
@@ -312,6 +318,7 @@ class NotificationServiceTest
       TestFactory.newDeploymentRepository(testDbRef, clock),
       dbioRunner
     )
+    val processService = mock[ProcessService]
     val actionService = new ActionService(
       dbProcessRepository,
       actionRepository,
@@ -319,7 +326,9 @@ class NotificationServiceTest
       mock[ProcessChangeListener],
       oldApproachScenarioStatusProvider,
       None,
-      clock
+      clock,
+      processService,
+      scenarioParametersServiceProvider()
     )
     val deploymentService = new DeploymentService(
       managerDispatcher,

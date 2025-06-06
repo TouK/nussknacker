@@ -107,7 +107,7 @@ object PeriodicProcessStateDefinitionManager {
         MaxDeploymentsStatus - activeDeploymentsStatuses.size
       )).sorted(PeriodicDeploymentStatus.ordering.reverse)
     limitedAndSortedDeployments
-      .map { case d @ PeriodicDeploymentStatus(_, scheduleId, _, runAt, status, _, _) =>
+      .map { case d @ PeriodicDeploymentStatus(_, scheduleId, _, _, runAt, status, _, _) =>
         val refinedStatus = {
           if (d.isCanceled) {
             "Canceled"

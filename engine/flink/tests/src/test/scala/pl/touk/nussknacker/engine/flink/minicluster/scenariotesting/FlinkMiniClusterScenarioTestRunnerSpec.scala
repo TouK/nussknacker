@@ -45,6 +45,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import java.time.Instant
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -69,6 +70,8 @@ class FlinkMiniClusterScenarioTestRunnerSpec
   private val firstSubtaskIndex = 0
 
   private val miniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
+
+  private val mockedTimestamp = Instant.now()
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -156,27 +159,47 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val invocationResults = results.invocationResults
 
-      invocationResults("proc2") shouldBe
-        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "all", variable("0")))
+      invocationResults("proc2").map(withMockedTimestamp) shouldBe
+        List(
+          ExpressionInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            mockedTimestamp,
+            "all",
+            variable("0")
+          )
+        )
 
-      invocationResults("out") shouldBe
-        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", variable(11)))
+      invocationResults("out").map(withMockedTimestamp) shouldBe
+        List(
+          ExpressionInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            mockedTimestamp,
+            "Value",
+            variable(11)
+          )
+        )
 
-      results.externalInvocationResults("proc2") shouldBe List(
-        ExternalInvocationResult(
+      results.externalInvocationResults("proc2").map(r => (r.contextId, r.name, r.value)) shouldBe List(
+        (
           s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
           "logService",
           variable("0-collectedDuringServiceInvocation")
         )
       )
 
-      results.externalInvocationResults("out") shouldBe List(
-        ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "valueMonitor", variable(11))
-      )
-
-      results.externalInvocationResults("eager1") shouldBe List(
+      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe List(
         ExternalInvocationResult(
           s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+          mockedTimestamp,
+          "valueMonitor",
+          variable(11)
+        )
+      )
+
+      results.externalInvocationResults("eager1").map(withMockedTimestamp) shouldBe List(
+        ExternalInvocationResult(
+          s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+          mockedTimestamp,
           "collectingEager",
           variable("static-s-dynamic-0")
         )
@@ -216,11 +239,23 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
         val invocationResults = results.invocationResults
 
-        invocationResults("out") shouldBe
-          List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable(11)))
+        invocationResults("out").map(withMockedTimestamp) shouldBe
+          List(
+            ExpressionInvocationResult(
+              s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+              mockedTimestamp,
+              "Value",
+              variable(11)
+            )
+          )
 
-        results.externalInvocationResults("out") shouldBe List(
-          ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "valueMonitor", variable(11))
+        results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe List(
+          ExternalInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            mockedTimestamp,
+            "valueMonitor",
+            variable(11)
+          )
         )
       }
 
@@ -288,28 +323,50 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       val invocationResults = results.invocationResults
 
-      invocationResults("cid") shouldBe
+      invocationResults("cid").map(withMockedTimestamp) shouldBe
         List(
           // we record only LazyParameter execution results
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "groupBy", variable("0")),
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "groupBy", variable("0"))
+          ExpressionInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            mockedTimestamp,
+            "groupBy",
+            variable("0")
+          ),
+          ExpressionInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            mockedTimestamp,
+            "groupBy",
+            variable("0")
+          )
         )
 
-      invocationResults("out") shouldBe
+      invocationResults("out").map(withMockedTimestamp) shouldBe
         List(
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable("1 0")),
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", variable("11 1"))
+          ExpressionInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            mockedTimestamp,
+            "Value",
+            variable("1 0")
+          ),
+          ExpressionInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            mockedTimestamp,
+            "Value",
+            variable("11 1")
+          )
         )
 
-      results.externalInvocationResults("out") shouldBe
+      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            mockedTimestamp,
             "valueMonitor",
             variable("1 0")
           ),
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            mockedTimestamp,
             "valueMonitor",
             variable("11 1")
           )
@@ -476,20 +533,23 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
       nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 3
-      results.externalInvocationResults("out") shouldBe
+      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            mockedTimestamp,
             "valueMonitor",
             variable(SimpleJsonRecord("1", "11"))
           ),
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            mockedTimestamp,
             "valueMonitor",
             variable(SimpleJsonRecord("2", "22"))
           ),
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2",
+            mockedTimestamp,
             "valueMonitor",
             variable(SimpleJsonRecord("3", "33"))
           )
@@ -507,10 +567,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         prepareTestRunner(useIOMonadInInterpreter).runTests(process, testData).futureValue
 
       nodeResultsWithoutTimestamp(results)(sourceNodeId) should have size 1
-      results.externalInvocationResults("out") shouldBe
+      results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            mockedTimestamp,
             "valueMonitor",
             variable("transformed:abc|3")
           )
@@ -688,10 +749,10 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .futureValue
 
       results.invocationResults("proc2").map(_.contextId) should contain only (
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1-end1",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-end1",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0-end2",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-end2"
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1-left-end1",
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-left-end1",
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0-right-end2",
+        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-right-end2"
       )
 
       results
@@ -769,10 +830,25 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         nodeResult(2, "source2", "end2", "input" -> recordC, "joinInput" -> recordC)
       )
 
-      results.invocationResults("proc2") should contain only (
-        ExpressionInvocationResult(s"$scenarioName-source1-$firstSubtaskIndex-1-end1", "all", variable("d")),
-        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-0-end2", "all", variable("a")),
-        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-2-end2", "all", variable("c"))
+      results.invocationResults("proc2").map(withMockedTimestamp) should contain only (
+        ExpressionInvocationResult(
+          s"$scenarioName-source1-$firstSubtaskIndex-1-end1",
+          mockedTimestamp,
+          "all",
+          variable("d")
+        ),
+        ExpressionInvocationResult(
+          s"$scenarioName-source2-$firstSubtaskIndex-0-end2",
+          mockedTimestamp,
+          "all",
+          variable("a")
+        ),
+        ExpressionInvocationResult(
+          s"$scenarioName-source2-$firstSubtaskIndex-2-end2",
+          mockedTimestamp,
+          "all",
+          variable("c")
+        )
       )
 
       results
@@ -956,6 +1032,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
   private def nodeResultsWithoutTimestamp[T](results: TestProcess.TestResults[T]) =
     results.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }
+
+  private def withMockedTimestamp(result: ExpressionInvocationResult[Json]) =
+    result.copy(timestamp = mockedTimestamp)
+
+  private def withMockedTimestamp(result: ExternalInvocationResult[Json]) =
+    result.copy(timestamp = mockedTimestamp)
 
 }
 

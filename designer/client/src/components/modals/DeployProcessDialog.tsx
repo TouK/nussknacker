@@ -5,8 +5,8 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { NodesDeploymentData } from "../../http/HttpService";
-import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import type { NodesDeploymentData, ScenarioGraphSource } from "../../http/HttpService";
+import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import type { WindowKind } from "../../windowManager";
 import { PromptContent } from "../../windowManager";
@@ -23,6 +23,7 @@ export type ToggleProcessActionModalData = {
         processVersionId: ProcessVersionId,
         comment: string,
         nodeData?: NodesDeploymentData,
+        scenarioSource?: ScenarioGraphSource,
     ) => Promise<ScenarioActionResult>;
     displayWarnings?: boolean;
     actionName?: string;
@@ -39,22 +40,21 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const [validationError, setValidationError] = useState("");
     const featureSettings = useSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
+    const scenarioGraphSource: ScenarioGraphSource = useSelector(getScenarioGraphSource);
 
     const confirmAction = useCallback(async () => {
-        const response = await action(processName, processVersionId, comment);
+        const response = await action(processName, processVersionId, comment, null, scenarioGraphSource);
         switch (response.scenarioActionResultType) {
             case ScenarioActionResultType.Success:
+            case ScenarioActionResultType.DeploySuccess:
             case ScenarioActionResultType.UnhandledError:
                 props.close();
                 break;
             case ScenarioActionResultType.ValidationError:
                 setValidationError(response.msg);
                 break;
-            default:
-                console.log("Unexpected result type:", response.scenarioActionResultType);
-                break;
         }
-    }, [action, comment, processName, props, processVersionId]);
+    }, [action, comment, processName, props, processVersionId, scenarioGraphSource]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

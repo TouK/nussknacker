@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.PositionRange
+import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
@@ -202,7 +202,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "filter1",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               _
             )
@@ -252,7 +252,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "filter1",
                 Some(DefaultExpressionIdParamName),
                 "T(String).copyValueOf('test')",
-                None
+                _
               ),
               _
             )
@@ -283,7 +283,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "filter1",
                 Some(DefaultExpressionIdParamName),
                 "T(System).exit()",
-                None
+                _
               ),
               _
             )
@@ -327,7 +327,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "filter1",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               _
             )
@@ -631,7 +631,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "customNodeId",
                 Some(ParameterName("nullableLiteralIntegerParam")),
                 "as",
-                None
+                _
               ),
               List(
                 ExpressionParserCompilationError(
@@ -639,7 +639,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                   "customNodeId2",
                   Some(ParameterName("nullableLiteralIntegerParam")),
                   "1.23",
-                  None
+                  _
                 )
               )
             )
@@ -659,7 +659,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(_, "customNodeId", Some(ParameterName("regExpParam")), "as", None),
+              ExpressionParserCompilationError(_, "customNodeId", Some(ParameterName("regExpParam")), "as", _),
               _
             )
           ) =>
@@ -785,7 +785,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "sampleFilter",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               List(
                 ExpressionParserCompilationError(
@@ -793,7 +793,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                   "sampleFilter",
                   Some(DefaultExpressionIdParamName),
                   _,
-                  None
+                  _
                 )
               )
             )
@@ -816,7 +816,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "sampleFilter2",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               _
             )
@@ -839,7 +839,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "sampleFilter2",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               _
             )
@@ -864,7 +864,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "sampleFilter2",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               _
             )
@@ -893,7 +893,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "sampleFilter2",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               _
             )
@@ -930,7 +930,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "sampleFilter2",
                 Some(DefaultExpressionIdParamName),
                 "#out1.terefere",
-                None
+                _
               ),
               _
             )
@@ -954,7 +954,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "cNode1",
                 Some(ParameterName("par1")),
                 "#strangeVar",
-                None
+                _
               ),
               _
             )
@@ -993,7 +993,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "enricher1",
                 Some(NodeCompiler.MockExpressionParameterName),
                 _,
-                None
+                _
               ),
               Nil
             )
@@ -1021,7 +1021,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "enricher1",
                 Some(NodeCompiler.MockExpressionParameterName),
                 _,
-                None
+                _
               ),
               Nil
             )
@@ -1043,7 +1043,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "sampleFilter1",
                 Some(DefaultExpressionIdParamName),
                 _,
-                None
+                _
               ),
               _
             )
@@ -1073,7 +1073,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "c1",
                 Some(ParameterName("par1")),
                 _,
-                None
+                _
               ),
               List(
                 ExpressionParserCompilationError(
@@ -1081,14 +1081,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                   "p1",
                   Some(ParameterName("par1")),
                   _,
-                  None
+                  _
                 ),
                 ExpressionParserCompilationError(
                   "Unresolved reference 'terefere22'",
                   "v1",
                   Some(ParameterName("$fields-0-$value")),
                   _,
-                  None
+                  _
                 )
               )
             )
@@ -1169,7 +1169,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "notWorking",
                 Some(DefaultExpressionIdParamName),
                 "#var1.a > 10",
-                None
+                _
               ),
               _
             )
@@ -1244,7 +1244,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "id3",
                 Some(DefaultExpressionIdParamName),
                 "#var3",
-                None
+                _
               ),
               _
             )
@@ -1266,7 +1266,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "switch",
                 Some(ParameterName("end1")),
                 "#notExist",
-                None
+                _
               ),
               _
             )
@@ -1456,7 +1456,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "custom",
                 Some(ParameterName("par1")),
                 "#input.toString()",
-                None
+                _
               ),
               _
             )
@@ -1544,7 +1544,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "source" -> Map.empty,
       "filter" -> Map(
         DefaultExpressionIdParamName.value -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 4) -> Typed.fromInstance(true)),
+          Map(IndexBasedTextRange(0, 4) -> Typed.fromInstance(true)),
           Typed.fromInstance(true)
         )
       ),
@@ -1567,7 +1567,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map(
         "param" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 3) -> Typed.fromInstance(123)),
+          Map(IndexBasedTextRange(0, 3) -> Typed.fromInstance(123)),
           Typed.fromInstance(123)
         )
       ),
@@ -1591,7 +1591,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "source" -> Map.empty,
       "sink" -> Map(
         "lazyString" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 5) -> Typed.fromInstance("123")),
+          Map(IndexBasedTextRange(0, 5) -> Typed.fromInstance("123")),
           Typed.fromInstance("123")
         )
       )
@@ -1615,7 +1615,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "source" -> Map.empty,
       "customNode" -> Map(
         "par1" -> SpelExpressionTypingInfo(
-          Map(PositionRange(0, 5) -> Typed.fromInstance("123")),
+          Map(IndexBasedTextRange(0, 5) -> Typed.fromInstance("123")),
           Typed.fromInstance("123")
         )
       ),
@@ -1641,7 +1641,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 _,
                 _,
                 _,
-                None
+                _
               ),
               Nil
             )
@@ -1708,7 +1708,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "customNodeId",
                 Some(ParameterName("param")),
                 _,
-                None
+                _
               ),
               _
             )

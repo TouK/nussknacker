@@ -66,6 +66,7 @@ enum ClickEventsSelector {
     ScenarioActivitiesDeleteComment = "SCENARIO_ACTIVITIES_DELETE_COMMENT",
     ScenarioActivitiesEditComment = "SCENARIO_ACTIVITIES_EDIT_COMMENT",
     ScenarioActivitiesOpenVersion = "SCENARIO_ACTIVITIES_OPEN_VERSION",
+    LiveData = "LIVE_DATA",
 }
 
 enum SearchEventsSelector {

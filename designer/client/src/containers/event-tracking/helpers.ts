@@ -111,6 +111,9 @@ export const mapToolbarButtonToStatisticsEvent = (
         case CustomButtonTypes.customLink: {
             return EventTrackingSelector.ScenarioCustomLink;
         }
+        case BuiltinButtonTypes.liveData: {
+            return EventTrackingSelector.LiveData;
+        }
         default: {
             const exhaustiveCheck: never = btnType;
 

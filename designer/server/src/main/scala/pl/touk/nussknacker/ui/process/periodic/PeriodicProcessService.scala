@@ -223,7 +223,7 @@ class PeriodicProcessService(
       .map(
         _.value
           .map(_.status)
-          .find(SimpleStateStatus.DefaultFollowingDeployStatuses.contains)
+          .find(SimpleStateStatus.isDefaultFollowingDeployStatus)
           .map { _ =>
             logger.debug(s"Deferring run of ${toDeploy.display} as scenario is currently running")
             None
@@ -293,8 +293,7 @@ class PeriodicProcessService(
         })
         .map(_.flatten.toSet)
       followingDeployDeploymentsForSchedules = scheduleDeploymentsWithStatus.collect {
-        case (_, _, deployment, Some(status))
-            if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(status.status) =>
+        case (_, _, deployment, Some(status)) if SimpleStateStatus.isDefaultFollowingDeployStatus(status.status) =>
           deployment.id
         // Without considering the `restarting` scenario status, we silently succeed cancelling of the scenario in Restarting status, without sending anything to Flink
         case (_, _, deployment, Some(status)) if status.status == SimpleStateStatus.Restarting =>
@@ -319,9 +318,7 @@ class PeriodicProcessService(
           ) && deployment.state.status != PeriodicProcessDeploymentStatus.Failed =>
         markFailedAction(deployment, statusDetails).needsReschedule(executionConfig.rescheduleOnFailure)
       case Some(status)
-          if EngineStatusesToReschedule.contains(
-            status
-          ) && deployment.state.status != PeriodicProcessDeploymentStatus.Finished =>
+          if shouldBeRescheduled(status) && deployment.state.status != PeriodicProcessDeploymentStatus.Finished =>
         markFinished(processName, versionId, deployment, statusDetails).needsReschedule(value = true)
       case None
           if deployment.state.status == PeriodicProcessDeploymentStatus.Deployed
@@ -601,6 +598,7 @@ class PeriodicProcessService(
           PeriodicDeploymentStatus(
             deployment.id,
             scheduleId,
+            deployment.processVersionId,
             deployment.createdAt,
             deployment.runAt,
             deployment.state.status,
@@ -633,6 +631,7 @@ class PeriodicProcessService(
             PeriodicDeploymentStatus(
               deployment.id,
               scheduleId,
+              deployment.processVersionId,
               deployment.createdAt,
               deployment.runAt,
               deployment.state.status,
@@ -757,7 +756,9 @@ object PeriodicProcessService {
     Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Failed)
 
   // Should we reschedule canceled status? It can be useful in case when job hang, we cancel it and want to be rescheduled
-  private val EngineStatusesToReschedule = Set(SimpleStateStatus.Finished, SimpleStateStatus.Canceled)
+  private def shouldBeRescheduled(status: StateStatus) = {
+    SimpleStateStatus.isFinished(status) || status == SimpleStateStatus.Canceled
+  }
 
   // This class represents status of all schedules for given scenario. It is designed to contain simple representation of statuses
   // for each historical and active deployments. mergedStatusDetails and methods below are for purpose of presentation
@@ -780,7 +781,6 @@ object PeriodicProcessService {
       DeploymentStatusDetails(
         status = toPeriodicProcessStatusWithMergedStatus(mergedStatus),
         deploymentId = periodicDeploymentIdOpt.map(_.toString).map(DeploymentId(_)),
-        version = None
       )
 
     pickMostImportantActiveDeployment(activeDeploymentsStatuses)
@@ -795,7 +795,10 @@ object PeriodicProcessService {
             .contains(deploymentStatus.status)) {
           createStatusDetails(ProblemStateStatus.Failed, Some(deploymentStatus.deploymentId))
         } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.RetryingDeploy) {
-          createStatusDetails(SimpleStateStatus.DuringDeploy, Some(deploymentStatus.deploymentId))
+          createStatusDetails(
+            SimpleStateStatus.DuringDeploy(deploymentStatus.processVersion),
+            Some(deploymentStatus.deploymentId)
+          )
         } else {
           deploymentStatus.runtimeStatusOpt
             .map(runtimeDetails =>
@@ -819,7 +822,9 @@ object PeriodicProcessService {
           if (latestDeploymentsForEachScheduleOfLatestProcessId.forall(
               _.status == PeriodicProcessDeploymentStatus.Finished
             )) {
-            createStatusDetails(SimpleStateStatus.Finished, None)
+            val versionId =
+              latestDeploymentsForEachScheduleOfLatestProcessId.map(_.processVersion).headOption.getOrElse(VersionId(0))
+            createStatusDetails(SimpleStateStatus.Finished(versionId), None)
           } else {
             createStatusDetails(SimpleStateStatus.Canceled, None)
           }
@@ -882,6 +887,7 @@ object PeriodicProcessService {
       // to present to users is scheduleName+runAt
       deploymentId: PeriodicProcessDeploymentId,
       scheduleId: ScheduleId,
+      processVersion: VersionId,
       createdAt: LocalDateTime,
       runAt: LocalDateTime,
       // This status is almost fine but:
@@ -898,7 +904,7 @@ object PeriodicProcessService {
     def isWaitingForReschedule: Boolean = {
       processActive &&
       DeploymentStatusesToReschedule.contains(status) &&
-      runtimeStatusOpt.exists(st => EngineStatusesToReschedule.contains(st.status))
+      runtimeStatusOpt.exists(st => shouldBeRescheduled(st.status))
     }
 
     def isCanceled: Boolean = {

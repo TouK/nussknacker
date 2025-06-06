@@ -84,7 +84,8 @@ final class DomainServices(
     val processingTypeServicesProvider: ProcessingTypeDataProvider[ProcessingTypeServices, CombinedProcessingTypeData],
     val reloadModelData: IO[Unit],
     val processAuthorizer: AuthorizeProcess,
-    val limitsService: LimitsService
+    val limitsService: LimitsService,
+    val processCounter: ProcessCounter,
 )
 
 object DomainServices extends LazyLogging {
@@ -183,20 +184,6 @@ object DomainServices extends LazyLogging {
         actionRepository,
         dbioRunner,
       )
-      actionService = new ActionService(
-        processRepository,
-        actionRepository,
-        dbioRunner,
-        processChangeListener,
-        oldApproachScenarioStatusProvider,
-        alreadyLoadedConfig.deploymentCommentSettings,
-        clock
-      )
-      _ = {
-        actionService.invalidateInProgressActions()
-        actionServiceSupplier.set(actionService)
-      }
-      // end of ActionService initialization
 
       deploymentRepository = new DeploymentRepository(dbRef, clock)
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -276,6 +263,23 @@ object DomainServices extends LazyLogging {
         writeProcessRepository,
       )
 
+      actionService = new ActionService(
+        processRepository,
+        actionRepository,
+        dbioRunner,
+        processChangeListener,
+        oldApproachScenarioStatusProvider,
+        alreadyLoadedConfig.deploymentCommentSettings,
+        clock,
+        processService,
+        processingTypeDataProvider.mapCombined(_.parametersService),
+      )
+      _ = {
+        actionService.invalidateInProgressActions()
+        actionServiceSupplier.set(actionService)
+      }
+      // end of ActionService initialization
+
       componentService = {
         new DefaultComponentService(
           alreadyLoadedConfig.componentLinks,
@@ -346,7 +350,8 @@ object DomainServices extends LazyLogging {
       processingTypeServicesProvider = processingTypeServicesProvider,
       reloadModelData = modelDataProvider.reloadAll,
       processAuthorizer = processAuthorizer,
-      limitsService = limitsService
+      limitsService = limitsService,
+      processCounter = counter,
     )
   }
 

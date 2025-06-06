@@ -16,14 +16,16 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.Streaming1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
-import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser}
+import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser, ScenarioStatusPresenter}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
-import pl.touk.nussknacker.ui.process.NewProcessPreparer
-import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
+import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ProcessService}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, ScenarioResolver}
+import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.processingtype.{
@@ -265,5 +267,23 @@ object TestFactory {
       Map(data: _*).mapValuesNow(ValueWithRestriction.anyUser)
     )
   }
+
+  def newProcessService(
+      dbRef: DbRef,
+      clock: Clock,
+      oldApproachScenarioStatusProvider: ScenarioStatusProvider,
+      dmDispatcher: DeploymentManagerDispatcher,
+      processingTypes: List[String] = List(Streaming1.stringify)
+  ): ProcessService = new DBProcessService(
+    oldApproachScenarioStatusProvider,
+    new ScenarioStatusPresenter(dmDispatcher),
+    newProcessPreparerByProcessingType(processingTypes),
+    scenarioParametersServiceProvider(processingTypes),
+    processResolverByProcessingType(processingTypes),
+    newDBIOActionRunner(dbRef),
+    newFutureFetchingScenarioRepository(dbRef),
+    newActionProcessRepository(dbRef),
+    newWriteProcessRepository(dbRef, clock, processingTypes),
+  )
 
 }

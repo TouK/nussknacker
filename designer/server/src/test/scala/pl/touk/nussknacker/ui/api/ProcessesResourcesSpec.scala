@@ -13,7 +13,6 @@ import org.scalatest._
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.development.manager.BasicStatusDetails
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -58,12 +57,12 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 
+import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
@@ -95,10 +94,11 @@ class ProcessesResourcesSpec
   //       the RouteInterceptor and its usages
   private lazy val applicationRoute = RouteInterceptor.get()
 
-  private val processName: ProcessName = ProcessTestData.sampleProcessName
-  private val archivedProcessName      = ProcessName("archived")
-  private val fragmentName             = ProcessName("fragment")
-  private val archivedFragmentName     = ProcessName("archived-fragment")
+  private val processName: ProcessName  = ProcessTestData.sampleProcessName
+  private val processVersion: VersionId = VersionId(0)
+  private val archivedProcessName       = ProcessName("archived")
+  private val fragmentName              = ProcessName("fragment")
+  private val archivedFragmentName      = ProcessName("archived-fragment")
 
   private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
 
@@ -110,7 +110,7 @@ class ProcessesResourcesSpec
 
   test("should return list of process with state") {
     createDeployedExampleScenario(processName, category = Category1)
-    verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
+    verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running(processVersion, Instant.now())))
   }
 
   test("should return list of fragment with no state") {
@@ -172,22 +172,25 @@ class ProcessesResourcesSpec
   }
 
   test("return single process") {
+    val status = DeploymentStatus.Running(VersionId(1), Instant.now)
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(processName.value -> status)
     )
+
+    val stateStatus = SimpleStateStatus.fromDeploymentStatus(status)
 
     forScenarioReturned(processName) { process =>
       process.name shouldBe processName.value
       process.state.map(_.name) shouldBe Some(SimpleStateStatus.Running.name)
       process.state.map(_.tooltip) shouldBe Some(
-        SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
+        SimpleProcessStateDefinitionManager.statusTooltip(stateStatus)
       )
       process.state.map(_.description) shouldBe Some(
-        SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
+        SimpleProcessStateDefinitionManager.statusDescription(stateStatus)
       )
       process.state.map(_.icon) shouldBe Some(
-        SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+        SimpleProcessStateDefinitionManager.statusIcon(stateStatus)
       )
     }
   }
@@ -229,7 +232,7 @@ class ProcessesResourcesSpec
   // FIXME: Implement fragment validation
   ignore("not allow to archive still used fragment") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
-    val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+    val fragmentGraph       = processWithFragment.fragment.toScenarioGraph
     saveFragment(ProcessName("f1"), fragmentGraph, category = Category1)(succeed)
     saveCanonicalProcess(processWithFragment.process, category = Category1)(succeed)
 
@@ -240,7 +243,7 @@ class ProcessesResourcesSpec
 
   test("should return validation error when fragment was modified in an incompatible way") {
     // Create a fragment that has a preset parameter and a scenario that uses that fragment
-    val fragmentWithPreset = CanonicalProcessConverter.toScenarioGraph(sampleFragmentWithPreset)
+    val fragmentWithPreset = sampleFragmentWithPreset.toScenarioGraph
     val fragmentName       = sampleFragmentWithPreset.name.value
     val scenarioWithFragment = ScenarioBuilder
       .streaming(processName.value)
@@ -258,7 +261,7 @@ class ProcessesResourcesSpec
     saveCanonicalProcess(scenarioWithFragment, category = Category1)(succeed)
 
     // Modify fragment so the parameter is no longer a preset
-    updateProcess(CanonicalProcessConverter.toScenarioGraph(sampleFragmentOneOut), ProcessName(fragmentName))(succeed)
+    updateProcess(sampleFragmentOneOut.toScenarioGraph, ProcessName(fragmentName))(succeed)
 
     // Verify that incompatible changes were introduced in the fragment and thus error is returned for scenario
     Get(
@@ -277,7 +280,9 @@ class ProcessesResourcesSpec
   test("not allow to archive still running process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()),
+      )
     )
 
     archiveProcess(processName) { status =>
@@ -288,7 +293,7 @@ class ProcessesResourcesSpec
   test("allow to archive fragment used in archived process") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
     val fragmentName        = processWithFragment.fragment.name
-    val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+    val fragmentGraph       = processWithFragment.fragment.toScenarioGraph
     saveFragment(fragmentName, fragmentGraph, category = Category1)(succeed)
     saveCanonicalProcess(processWithFragment.process, category = Category1)(succeed)
 
@@ -338,7 +343,9 @@ class ProcessesResourcesSpec
   test("should not allow to rename deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now()),
+      )
     )
 
     val newName = ProcessName("ProcessChangedName")
@@ -364,7 +371,9 @@ class ProcessesResourcesSpec
   ignore("should not allow to rename process with running state") {
     createEmptyScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now())
+      )
     )
 
     val newName = ProcessName("ProcessChangedName")
@@ -597,8 +606,8 @@ class ProcessesResourcesSpec
 
     MockableDeploymentManager.configureScenarioStatuses(
       Map(
-        secondProcessor.value -> BasicStatusDetails(SimpleStateStatus.Canceled, Some(VersionId(1))),
-        thirdProcessor.value  -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1)))
+        secondProcessor.value -> DeploymentStatus.Canceled,
+        thirdProcessor.value  -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now),
       )
     )
 
@@ -1251,7 +1260,9 @@ class ProcessesResourcesSpec
   test("should return status for single deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now)
+      )
     )
 
     forScenarioStatus(processName) { (code, state) =>
@@ -1381,7 +1392,9 @@ class ProcessesResourcesSpec
 
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
     MockableDeploymentManager.configureScenarioStatuses(
-      Map(processName.value -> BasicStatusDetails(SimpleStateStatus.Running, Some(VersionId(1))))
+      Map(
+        processName.value -> DeploymentStatus.Running(VersionId(1), startedAt = Instant.now)
+      )
     )
 
     forScenariosReturned(ScenarioQuery.empty) { processes =>
@@ -1578,7 +1591,7 @@ class ProcessesResourcesSpec
   ): Assertion =
     doUpdateProcess(
       UpdateScenarioCommand(
-        CanonicalProcessConverter.toScenarioGraph(process),
+        process.toScenarioGraph,
         comment,
         Some(List.empty),
       ),

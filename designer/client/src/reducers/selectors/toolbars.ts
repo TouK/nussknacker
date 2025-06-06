@@ -42,4 +42,6 @@ export const getClosedComponentGroups = createSelector(getComponentGroupsToolbox
 const getCollapsed = createSelector(getToolbars, (t) => t.collapsed);
 
 export const getIsCollapsed = createSelector(getCollapsed, (collapsed) => (id: string) => !!collapsed[id]);
-export const getOrderForPosition = (side: ToolbarsSide) => (state: RootState) => getPositions(state)[side] || [];
+
+const emptyArray = [];
+export const getOrderForPosition = (side: ToolbarsSide) => (state: RootState) => getPositions(state)[side] || emptyArray;

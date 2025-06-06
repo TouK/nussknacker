@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
@@ -53,15 +54,21 @@ class DeploymentRepositorySpec
     .value
     .processId
 
+  private val instant = Instant.now()
+
   test("status should be updated only when changed") {
     forAll(
       Table(
         ("initial status", "to update status"),
-        (DeploymentStatus.DuringDeploy, DeploymentStatus.DuringDeploy),
-        (DeploymentStatus.DuringDeploy, DeploymentStatus.Running),
-        (DeploymentStatus.Running, DeploymentStatus.Finished),
-        (DeploymentStatus.Running, DeploymentStatus.Problem.Failed),
-        (DeploymentStatus.Problem.Failed, DeploymentStatus.Running),
+        (DeploymentStatus.DuringDeploy(VersionId(0)), DeploymentStatus.DuringDeploy(VersionId(0))),
+        (DeploymentStatus.DuringDeploy(VersionId(0)), DeploymentStatus.Running(VersionId(0), instant)),
+        (
+          DeploymentStatus.Running(VersionId(0), instant),
+          DeploymentStatus.Running(VersionId(0), instant.plusSeconds(600))
+        ),
+        (DeploymentStatus.Running(VersionId(0), instant), DeploymentStatus.Finished(VersionId(0))),
+        (DeploymentStatus.Running(VersionId(0), instant), DeploymentStatus.Problem.Failed),
+        (DeploymentStatus.Problem.Failed, DeploymentStatus.Running(VersionId(0), instant)),
         (DeploymentStatus.Problem.Failed, DeploymentStatus.Problem.FailureDuringDeploymentRequesting),
       )
     ) { (initialStatus, toUpdatedStatus) =>

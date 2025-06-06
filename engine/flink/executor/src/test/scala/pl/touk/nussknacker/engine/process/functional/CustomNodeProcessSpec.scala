@@ -261,7 +261,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val thrown = the[IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, data)
 
     thrown.getMessage should startWith(
-      "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all),#input.id,None)"
+      "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all)"
     )
   }
 
@@ -276,7 +276,9 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val thrown = the[IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
 
-    thrown.getMessage shouldBe s"Compilation errors: ExpressionParserCompilationError(There is no property 'value999' in type: SimpleRecord,delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5,None)"
+    thrown.getMessage should startWith(
+      "Compilation errors: ExpressionParserCompilationError(There is no property 'value999' in type: SimpleRecord,delta,Some($expression)"
+    )
   }
 
   test("should evaluate blank expression used in lazy parameter as a null") {

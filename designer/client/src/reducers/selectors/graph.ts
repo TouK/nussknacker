@@ -5,14 +5,23 @@ import ProcessUtils from "../../common/ProcessUtils";
 import type { TestFormParameters } from "../../common/TestResultUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
+import type { Scenario } from "../../components/Process/types";
+import { isStatusRunning } from "../../components/Process/types";
+import type { ProcessCounts } from "../../http/resultsWithCountsDto";
+import { ScenarioGraphSourceType } from "../../http/HttpService";
 import type { ScenarioGraph } from "../../types";
-import type { ProcessCounts, TestData } from "../graph";
+import type { TestData } from "../graph";
 import type { RootState } from "../index";
+import { getHistoryPast } from "./getHistory";
+import { areLabelsUpdated, isGraphUpdated } from "./helpers";
 import { getProcessState } from "./scenarioState";
+import { getUserSettings } from "./userSettings";
 
 export const getGraph = (state: RootState) => state.graphReducer.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
+export const getSavedScenario = createSelector(getHistoryPast, getScenario, (past, scenario): Scenario => past?.[0]?.scenario || scenario);
+
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
     memoizeOptions: { equalityCheck: isEqual, resultEqualityCheck: isEqual },
 });
@@ -21,15 +30,32 @@ export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);
 
 export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
+
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getScenarioGraph, (g) => g.properties?.name);
+export const getUnsavedOrCurrentName = createSelector(getProcessName, getProcessUnsavedNewName, (currentName, unsavedNewName) => {
+    return unsavedNewName || currentName;
+});
+export const isProcessRenamed = createSelector(
+    getProcessName,
+    getUnsavedOrCurrentName,
+    (currentName, unsavedNewName) => unsavedNewName !== currentName,
+);
+
 export const getProcessVersionId = createSelector(getScenario, (d) => d?.processVersionId);
 export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
 export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
 export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
 export const isFragment = createSelector(getScenario, (p) => p?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
-export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
+export const isPristine = createSelector(getScenario, isProcessRenamed, getSavedScenario, (scenario, isProcessRenamed, savedScenario) => {
+    if (isEmpty(scenario)) return true;
+    if (isProcessRenamed) return false;
+    if (areLabelsUpdated(scenario.labels, savedScenario.labels)) return false;
+    if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph)) return false;
+    return true;
+});
+
 export const isValidationResultPresent = createSelector(getScenario, (p) => ProcessUtils.isValidationResultPresent(p));
 export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
 export const hasWarnings = createSelector(getScenario, (p) => !ProcessUtils.hasNoWarnings(p));
@@ -38,27 +64,22 @@ export const getScenarioLabelsErrors = createSelector(getScenario, (p) => Proces
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-
-export const getUnsavedOrCurrentName = createSelector(getProcessName, getProcessUnsavedNewName, (currentName, unsavedNewName) => {
-    return unsavedNewName || currentName;
-});
-
-export const isProcessRenamed = createSelector(
-    getProcessName,
-    getUnsavedOrCurrentName,
-    (currentName, unsavedNewName) => unsavedNewName !== currentName,
-);
-
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeDeploy(state));
 export const isDeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment, getUserSettings],
+    (saveDisabled, error, state, fragment, userSettings) => {
+        const isAllowedByScenarioSave = userSettings["toolbar.autoSaveDuringDeployRedeploy"] || saveDisabled;
+        return !fragment && isAllowedByScenarioSave && !error && ProcessStateUtils.canDeploy(state);
+    },
 );
 export const isRedeployVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRedeploy(state));
 export const isRedeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canRedeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment, getUserSettings],
+    (saveDisabled, error, state, fragment, userSettings) => {
+        const isAllowedByScenarioSave = userSettings["toolbar.autoSaveDuringDeployRedeploy"] || saveDisabled;
+        return !fragment && isAllowedByScenarioSave && !error && ProcessStateUtils.canRedeploy(state);
+    },
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isRunOffScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOffSchedule(state));
@@ -103,3 +124,19 @@ export const getAdditionalFields = createSelector(getProperties, (p) => p?.addit
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
+export const isDeployed = createSelector(getProcessVersionId, getProcessState, (version, state) => {
+    return isStatusRunning(state?.status) && state.status.versionId === `${version}`;
+});
+
+export const getScenarioGraphSource = createSelector(
+    [isSaveDisabled, getGraph, getScenarioLabels, getProcessVersionId],
+    (isSaveDisabled, graph, labels, versionId) =>
+        isSaveDisabled
+            ? { type: ScenarioGraphSourceType.LATEST_VERSION }
+            : {
+                  type: ScenarioGraphSourceType.FROM_GRAPH,
+                  scenarioGraph: graph?.scenario?.scenarioGraph,
+                  scenarioLabels: labels,
+                  baseScenarioVersionId: versionId,
+              },
+);

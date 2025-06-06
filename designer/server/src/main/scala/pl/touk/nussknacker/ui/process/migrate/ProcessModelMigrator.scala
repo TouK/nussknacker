@@ -3,10 +3,9 @@ package pl.touk.nussknacker.ui.process.migrate
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.AutomaticProcessUpdateAction
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 

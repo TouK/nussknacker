@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import io.circe.{Decoder, Json, JsonObject}
-import io.circe.Json.{arr, fromBoolean, fromFields, fromJsonObject, fromString, fromValues, obj, Null}
+import io.circe.Json.{arr, fromBoolean, fromFields, fromString, fromValues, obj, Null}
 import io.circe.syntax.EncoderOps
 import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
@@ -43,7 +43,6 @@ import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{quickRequest, UriContext}
@@ -602,8 +601,7 @@ class BaseFlowTest
   }
 
   private def testProcess(process: CanonicalProcess, data: String): Json = {
-    val scenarioGraph =
-      CanonicalProcessConverter.toScenarioGraph(process)
+    val scenarioGraph = process.toScenarioGraph
 
     val response = httpClient.send(
       quickRequest

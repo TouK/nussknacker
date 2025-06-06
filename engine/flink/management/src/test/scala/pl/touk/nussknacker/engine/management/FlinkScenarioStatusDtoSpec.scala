@@ -9,8 +9,13 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{
   ScenarioStatusWithScenarioContext
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
+
+import java.time.Instant
 
 class FlinkScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Inside {
+
+  private val versionId = VersionId(1)
 
   def statusPresentation(stateStatus: StateStatus): ScenarioStatusPresentationDetails =
     FlinkProcessStateDefinitionManager.statusPresentation(
@@ -22,17 +27,17 @@ class FlinkScenarioStatusDtoSpec extends AnyFunSuiteLike with Matchers with Insi
     )
 
   test("scenario state should be during deploy") {
-    val state = statusPresentation(SimpleStateStatus.DuringDeploy)
+    val state = statusPresentation(SimpleStateStatus.DuringDeploy(versionId))
     state.allowedActions shouldBe Set(ScenarioActionName.Cancel)
   }
 
   test("scenario state should be running") {
-    val state = statusPresentation(SimpleStateStatus.Running)
+    val state = statusPresentation(SimpleStateStatus.Running(versionId, Instant.now))
     state.allowedActions shouldBe Set(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Redeploy)
   }
 
   test("scenario state should be finished") {
-    val state = statusPresentation(SimpleStateStatus.Finished)
+    val state = statusPresentation(SimpleStateStatus.Finished(versionId))
     state.allowedActions shouldBe Set(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
 

@@ -669,13 +669,14 @@ export const state: GraphState = {
         testWithParameters: {
             status: TestCapabilityStatus.NOT_AVAILABLE,
         },
-        testWithGeneratedData: {
+        testWithLiveData: {
             status: TestCapabilityStatus.NOT_AVAILABLE,
         },
     },
     testFormParameters: [],
     processCounts: {},
     testResults: null,
+    liveData: null,
 };
 
 export const nodesWithPositions: NodesWithPositions = [

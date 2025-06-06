@@ -94,7 +94,7 @@ class CollectTransformerTest
     val compilationError = runScenario(scenario, List(1)).invalidValue.toList.loneElement
 
     inside(compilationError) {
-      case ExpressionParserCompilationError("Unresolved reference 'previousCtxVar'", `nodeIdWithError`, _, _, None) =>
+      case ExpressionParserCompilationError("Unresolved reference 'previousCtxVar'", `nodeIdWithError`, _, _, _) =>
     }
   }
 

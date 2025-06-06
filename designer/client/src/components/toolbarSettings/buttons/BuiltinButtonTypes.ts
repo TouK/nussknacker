@@ -24,6 +24,7 @@ export enum BuiltinButtonTypes {
     generateAndTest = "generate-and-test",
     testCounts = "test-counts",
     testHide = "test-hide",
+    liveData = "live-data",
     viewZoomIn = "view-zoom-in",
     viewZoomOut = "view-zoom-out",
     viewReset = "view-reset",

@@ -42,7 +42,7 @@ object TestProcess {
         result: Any,
         variableEncoder: Any => T
     ): TestResults[T] = {
-      val invocationResult = ExpressionInvocationResult(context.id, name, variableEncoder(result))
+      val invocationResult = ExpressionInvocationResult(context.id, Instant.now(), name, variableEncoder(result))
       copy(invocationResults =
         invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List())))
       )
@@ -55,7 +55,7 @@ object TestProcess {
         result: Any,
         variableEncoder: Any => T
     ): TestResults[T] = {
-      val invocation = ExternalInvocationResult(contextId.value, name, variableEncoder(result))
+      val invocation = ExternalInvocationResult(contextId.value, Instant.now(), name, variableEncoder(result))
       copy(externalInvocationResults =
         externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation))
       )
@@ -106,9 +106,9 @@ object TestProcess {
 
   final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
 
-  case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
+  case class ExpressionInvocationResult[T](contextId: String, timestamp: Instant, name: String, value: T)
 
-  case class ExternalInvocationResult[T](contextId: String, name: String, value: T)
+  case class ExternalInvocationResult[T](contextId: String, timestamp: Instant, name: String, value: T)
 
   object ExceptionResult {
 
