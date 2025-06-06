@@ -180,8 +180,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val unionContextIds           = results.nodeResults("union1").map(_.id)
     val serializedUnionContextIds = unionContextIds.map(_.serialize)
     serializedUnionContextIds should contain only (
-      s"${sourceContextId.serialize}-v1-v1-$branch1NodeId",
-      s"${sourceContextId.serialize}-v2-v2-$branch2NodeId"
+      s"${sourceContextId.serialize}-v1-$branch1NodeId",
+      s"${sourceContextId.serialize}-v2-$branch2NodeId"
     )
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     nodeResults(results, "union1") shouldBe nodeResults(results, "collect1")

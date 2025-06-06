@@ -53,8 +53,9 @@ case class Context(
 ) {
 
   def withContextIdTransformation(nodeId: String, transformation: String): Context = {
-    id.transformations.add(ContextIdTransformation(nodeId, transformation))
-    this
+    val copied = copy(id = id.copy(transformations = new java.util.ArrayList(id.transformations)))
+    copied.id.transformations.add(ContextIdTransformation(nodeId, transformation))
+    copied
   }
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing

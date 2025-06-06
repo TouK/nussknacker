@@ -5555,6 +5555,40 @@ components:
           format: date-time
         createdBy:
           type: string
+    ContextIdDto:
+      title: ContextIdDto
+      type: object
+      required:
+      - sid
+      - nid
+      - tid
+      - idx
+      properties:
+        sid:
+          type: string
+        nid:
+          type: string
+        tid:
+          type: integer
+          format: int64
+        idx:
+          type: integer
+          format: int64
+        t:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContextIdTransformationDto'
+    ContextIdTransformationDto:
+      title: ContextIdTransformationDto
+      type: object
+      required:
+      - n
+      - t
+      properties:
+        n:
+          type: string
+        t:
+          type: string
     CoordinatesBasedTextRange:
       title: CoordinatesBasedTextRange
       type: object
@@ -5747,7 +5781,7 @@ components:
       - value
       properties:
         contextId:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time
@@ -5808,7 +5842,7 @@ components:
       - value
       properties:
         contextId:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time
@@ -7095,7 +7129,7 @@ components:
       - variables
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time

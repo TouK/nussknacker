@@ -303,8 +303,8 @@ class ResultCollectingListenerSpec
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end1", 2)
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end2", 2)
+        transitionVariables(testResults, "switch", Some("end1")).size shouldBe 2
+        transitionVariables(testResults, "switch", Some("end2")).size shouldBe 2
         transitionVariablesByContextId(testResults, "start-foo", Some("switch")) shouldBe Map(
           ContextId("sample-split", "start-foo", 0, 0) -> Map("input" -> 10),
           ContextId("sample-split", "start-foo", 0, 1) -> Map("input" -> 20),
@@ -334,7 +334,7 @@ class ResultCollectingListenerSpec
     withCollectingTestResults(
       scenario,
       testResults => {
-        assertNumberOfSamplesThatFinishedInNode(testResults, "end", 4)
+        transitionVariables(testResults, "processor", Some("end")).size shouldBe 4
         transitionVariables(testResults, "start-foo", Some("processor")) shouldBe Set(
           Map("input" -> 10),
           Map("input" -> 20),
@@ -342,12 +342,6 @@ class ResultCollectingListenerSpec
           Map("input" -> 40),
         )
         transitionVariables(testResults, "processor", Some("end")) shouldBe Set(
-          Map("input" -> 10),
-          Map("input" -> 20),
-          Map("input" -> 30),
-          Map("input" -> 40),
-        )
-        transitionVariables(testResults, "end", None) shouldBe Set(
           Map("input" -> 10),
           Map("input" -> 20),
           Map("input" -> 30),

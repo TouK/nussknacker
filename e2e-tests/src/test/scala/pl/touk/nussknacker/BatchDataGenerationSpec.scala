@@ -115,7 +115,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
-           |          "cid":{"p":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"s":null},
+           |          "cid":{"sid":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"t":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -133,7 +133,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
-           |          "cid":{"p":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"s":null},
+           |          "cid":{"sid":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"t":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -156,7 +156,7 @@ class BatchDataGenerationSpec
            |        "destinationNodeId": "end",
            |        "results": [
            |        {
-           |          "cid":{"p":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"s":null},
+           |          "cid":{"sid":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"t":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -222,7 +222,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
-           |          "cid":{"p":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"s":null},
+           |          "cid":{"sid":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"t":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -240,7 +240,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
-           |          "cid":{"p":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"s":null},
+           |          "cid":{"sid":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"t":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -263,7 +263,7 @@ class BatchDataGenerationSpec
            |        "destinationNodeId": "end",
            |        "results": [
            |        {
-           |          "cid":{"p":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"s":null},
+           |          "cid":{"sid":"E2ETest-SumTransactions","nid":"sourceId","tid":0,"idx":0,"t":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {

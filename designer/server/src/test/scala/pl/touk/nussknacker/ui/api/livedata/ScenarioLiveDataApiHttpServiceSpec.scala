@@ -178,7 +178,15 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        "destinationNodeId": "variable",
              |        "results": [
              |          {
-             |            "id": "",
+             |            "cid": {
+             |              "sid": "mocked-scenario-id",
+             |              "nid": "source",
+             |              "tid": 0,
+             |              "idx": 0,
+             |              "t": [
+             |              ]
+             |            },
+             |            "id": "mocked-scenario-id-source-0-0",
              |            "timestamp": "2025-05-27T21:48:20Z",
              |            "variables": {
              |              "v1": {
@@ -195,7 +203,15 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "invocationResults": {
              |      "start": [
              |        {
-             |          "contextId": "mocked-context-id",
+             |          "cid": {
+             |            "sid": "mocked-scenario-id",
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "t": [
+             |            ]
+             |          },
+             |          "contextId": "mocked-scenario-id-source-0-0",
              |          "timestamp": "2025-05-27T21:48:20Z",
              |          "name": "var",
              |          "value": {
@@ -207,7 +223,15 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "externalInvocationResults": {
              |      "start": [
              |        {
-             |          "contextId": "mocked-context-id",
+             |          "cid": {
+             |            "sid": "mocked-scenario-id",
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "t": [
+             |            ]
+             |          },
+             |          "contextId": "mocked-scenario-id-source-0-0",
              |          "timestamp": "2025-05-27T21:48:20Z",
              |          "name": "var",
              |          "value": {
@@ -219,7 +243,15 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "exceptions": [
              |      {
              |        "context": {
-             |          "id": "mocked-context-id",
+             |          "cid": {
+             |            "sid": "mocked-scenario-id",
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "t": [
+             |            ]
+             |          },
+             |          "id": "mocked-scenario-id-source-0-0",
              |          "timestamp": "2025-05-27T21:48:20Z",
              |          "variables": {
              |            "var1": {
@@ -235,7 +267,15 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      "start": [
              |        {
              |          "context": {
-             |            "id": "mocked-context-id",
+             |            "cid": {
+             |              "sid": "mocked-scenario-id",
+             |              "nid": "source",
+             |              "tid": 0,
+             |              "idx": 0,
+             |              "t": [
+             |              ]
+             |            },
+             |            "id": "mocked-scenario-id-source-0-0",
              |            "timestamp": "2025-05-27T21:48:20Z",
              |            "variables": {
              |              "var1": {
