@@ -59,7 +59,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const [status, setStatus] = useEditState();
 
     const setEditedNodeWithDebounce = useDebounce((node) => {
-        console.log("node", node);
         setEditedNode((currentNode) => (isEqual(currentNode, node) ? currentNode : node));
     }, NODE_UPDATE_DEBOUNCE_TIMEOUT);
 
