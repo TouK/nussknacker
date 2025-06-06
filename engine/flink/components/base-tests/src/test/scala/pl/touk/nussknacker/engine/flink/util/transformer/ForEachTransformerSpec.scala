@@ -6,7 +6,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdTransformation, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process._
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
 
 import java.time.Duration
+import scala.jdk.CollectionConverters._
 
 class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
@@ -53,7 +54,10 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
         aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
 
       val results = collectTestResults(model, testScenario, collectingListener)
-      extractContextIds(results) shouldBe List("forEachProcess-start-0-0-0", "forEachProcess-start-0-0-1")
+      extractContextIds(results) shouldBe List(
+        ContextId("forEachProcess", "start", 0, 0, List(ContextIdTransformation("for-each", "0")).asJava),
+        ContextId("forEachProcess", "start", 0, 0, List(ContextIdTransformation("for-each", "1")).asJava),
+      )
     }
   }
 
@@ -124,9 +128,8 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     .nodeResults(sinkId)
     .map(_.variableTyped(resultVariableName).get.asInstanceOf[String])
 
-  private def extractContextIds(results: TestProcess.TestResults[_]): List[String] = results
-    .nodeResults(forEachNodeResultId)
-    .map(_.id.serialize)
+  private def extractContextIds(results: TestProcess.TestResults[_]): List[ContextId] =
+    results.nodeResults(forEachNodeResultId).map(_.id)
 
   private def runScenario(model: LocalModelData, testScenario: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>

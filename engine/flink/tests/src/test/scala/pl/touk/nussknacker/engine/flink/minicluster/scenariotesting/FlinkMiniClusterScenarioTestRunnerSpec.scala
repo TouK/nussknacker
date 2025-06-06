@@ -755,11 +755,47 @@ class FlinkMiniClusterScenarioTestRunnerSpec
           .runTests(process, ScenarioTestData(List(recA, recB, recC)))
           .futureValue
 
-      results.invocationResults("proc2").map(_.contextId.serialize) should contain only (
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1-left-end1",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-left-end1",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0-right-end2",
-        s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-right-end2"
+      results.invocationResults("proc2").map(_.contextId) should contain only (
+        ContextId(
+          scenarioName,
+          sourceNodeId,
+          firstSubtaskIndex,
+          1,
+          List(
+            ContextIdTransformation("split", "left"),
+            ContextIdTransformation("join1", "end1"),
+          ).asJava
+        ),
+        ContextId(
+          scenarioName,
+          sourceNodeId,
+          firstSubtaskIndex,
+          2,
+          List(
+            ContextIdTransformation("split", "left"),
+            ContextIdTransformation("join1", "end1"),
+          ).asJava
+        ),
+        ContextId(
+          scenarioName,
+          sourceNodeId,
+          firstSubtaskIndex,
+          0,
+          List(
+            ContextIdTransformation("split", "right"),
+            ContextIdTransformation("join1", "end2"),
+          ).asJava
+        ),
+        ContextId(
+          scenarioName,
+          sourceNodeId,
+          firstSubtaskIndex,
+          2,
+          List(
+            ContextIdTransformation("split", "right"),
+            ContextIdTransformation("join1", "end2"),
+          ).asJava
+        ),
       )
 
       results

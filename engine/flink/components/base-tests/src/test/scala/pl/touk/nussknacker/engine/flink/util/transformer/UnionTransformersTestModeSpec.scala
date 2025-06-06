@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdTransformation}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -20,6 +21,8 @@ import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
+
+import scala.jdk.CollectionConverters._
 
 class UnionTransformersTestModeSpec
     extends AnyFunSuite
@@ -98,10 +101,46 @@ class UnionTransformersTestModeSpec
       contextIds should have size (data.size * 2)
       contextIds should contain theSameElementsAs contextIds.toSet
       contextIds should contain only (
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$leftBranchId-$leftBranchId",
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$leftBranchId-$leftBranchId",
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-0-$rightBranchId-$rightBranchId",
-        s"$scenarioName-$sourceId-$firstSubtaskIndex-1-$rightBranchId-$rightBranchId",
+        ContextId(
+          scenarioName,
+          sourceId,
+          firstSubtaskIndex,
+          0,
+          List(
+            ContextIdTransformation("split", leftBranchId),
+            ContextIdTransformation("union-node-id", leftBranchId)
+          ).asJava
+        ),
+        ContextId(
+          scenarioName,
+          sourceId,
+          firstSubtaskIndex,
+          1,
+          List(
+            ContextIdTransformation("split", leftBranchId),
+            ContextIdTransformation("union-node-id", leftBranchId)
+          ).asJava
+        ),
+        ContextId(
+          scenarioName,
+          sourceId,
+          firstSubtaskIndex,
+          0,
+          List(
+            ContextIdTransformation("split", rightBranchId),
+            ContextIdTransformation("union-node-id", rightBranchId)
+          ).asJava
+        ),
+        ContextId(
+          scenarioName,
+          sourceId,
+          firstSubtaskIndex,
+          1,
+          List(
+            ContextIdTransformation("split", rightBranchId),
+            ContextIdTransformation("union-node-id", rightBranchId)
+          ).asJava
+        ),
       )
     }
   }
@@ -132,9 +171,8 @@ class UnionTransformersTestModeSpec
     collectingListener.results
   }
 
-  private def extractContextIds(results: TestProcess.TestResults[_]): List[String] = results
-    .nodeResults(endSinkId)
-    .map(_.id.serialize)
+  private def extractContextIds(results: TestProcess.TestResults[_]): List[ContextId] =
+    results.nodeResults(endSinkId).map(_.id)
 
   private def runScenario(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>

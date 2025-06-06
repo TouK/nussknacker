@@ -26,7 +26,7 @@ object ResultsWithCountsDtoCodecs {
 
   private implicit val testResultsEncoder: Encoder[TestResultsDto] = new Encoder[TestResultsDto]() {
 
-    implicit val contextId: Encoder[ContextId] = Encoder.encodeString.contramap(_.serialize)
+    implicit val contextId: Encoder[ContextId] = Encoder.encodeString.contramap(_.legacySerialized)
 
     implicit val nodeResult: Encoder[ResultContext[Json]] =
       encoderWithDetailedContextId(deriveConfiguredEncoder[ResultContext[Json]], _.id)
@@ -54,18 +54,18 @@ object ResultsWithCountsDtoCodecs {
           ) =>
         Json.obj(
           "nodeResults" -> nodeResults
-            .map(_.map { case (node, list) => node -> list.sortBy(_.id.serialize) }.asJson)
+            .map(_.map { case (node, list) => node -> list.sortBy(_.id.legacySerialized) }.asJson)
             .getOrElse(Json.Null),
           "nodeTransitionResults" -> nodeTransitionResults.asJson.deepDropNullValues,
           "invocationResults" -> invocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId.serialize)
+            node -> list.sortBy(_.contextId.legacySerialized)
           }.asJson,
           "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId.serialize)
+            node -> list.sortBy(_.contextId.legacySerialized)
           }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id.serialize).asJson,
+          "exceptions" -> exceptions.sortBy(_.context.id.legacySerialized).asJson,
           "exceptionsByNodeId" -> exceptionsByNodeId.map { case (nodeId, exs) =>
-            nodeId -> exs.sortBy(_.context.id.serialize)
+            nodeId -> exs.sortBy(_.context.id.legacySerialized)
           }.asJson,
         )
     }

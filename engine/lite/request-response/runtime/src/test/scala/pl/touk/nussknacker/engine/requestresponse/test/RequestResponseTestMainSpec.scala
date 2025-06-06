@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextIdTransformation, DisplayJsonWithEncoder, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters._
 
 class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeAndAfterEach {
 
@@ -177,11 +178,20 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val sourceContextId = contextIdGenForFirstSource(process).nextContextId()
     results.nodeResults("union1") should have size 2
 
-    val unionContextIds           = results.nodeResults("union1").map(_.id)
-    val serializedUnionContextIds = unionContextIds.map(_.serialize)
-    serializedUnionContextIds should contain only (
-      s"${sourceContextId.serialize}-v1-$branch1NodeId",
-      s"${sourceContextId.serialize}-v2-$branch2NodeId"
+    val unionContextIds = results.nodeResults("union1").map(_.id)
+    unionContextIds should contain only (
+      sourceContextId.copy(
+        transformations = List(
+          ContextIdTransformation("spl", "v1"),
+          ContextIdTransformation("union1", branch1NodeId),
+        ).asJava
+      ),
+      sourceContextId.copy(
+        transformations = List(
+          ContextIdTransformation("spl", "v2"),
+          ContextIdTransformation("union1", branch2NodeId),
+        ).asJava
+      ),
     )
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     nodeResults(results, "union1") shouldBe nodeResults(results, "collect1")

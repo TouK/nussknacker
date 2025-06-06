@@ -21,7 +21,7 @@ case class ContextId(
     transformations: java.util.List[ContextIdTransformation] = List.empty.asJava,
 ) {
 
-  def serialize: String = List(
+  lazy val legacySerialized: String = List(
     List(scenarioId),
     List(originatingNodeId),
     List(taskId.toString),
