@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.CustomTimestampExtractingTransformation
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
 
 import java.util.UUID
@@ -83,7 +82,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
       val variablesInNodes = r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }
       val timestampAsJson =
-        variablesInNodes("endSend")(0)._2(CustomTimestampExtractingTransformation.timestampVariableName)
+        variablesInNodes("endSend")(0)._2("eventTimeTimestampCopy")
       val timestampReadAsObject = timestampAsJson.asObject
       val firstValue            = timestampReadAsObject.get.values.toList(0)
       val timestamp             = firstValue.asNumber.get.toLong.get

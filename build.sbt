@@ -698,7 +698,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     scenarioCompiler     % Provided,
     flinkExecutor        % Test,
-    flinkTestUtils,
+    flinkTestUtils       % Test,
     kafkaTestUtils       % Test
   )
 
