@@ -685,7 +685,6 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     }
   )
   .dependsOn(
-    flinkTestUtils,
     extensionsApi,
     commonComponents,
     flinkSchemedKafkaComponentsUtils,
@@ -699,7 +698,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     scenarioCompiler     % Provided,
     flinkExecutor        % Test,
-    flinkTestUtils       % Test,
+    flinkTestUtils,
     kafkaTestUtils       % Test
   )
 
