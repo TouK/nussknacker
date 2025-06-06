@@ -89,9 +89,9 @@ abstract class CaseClassSerializer[T <: Product](clazz: Class[T], scalaFieldSeri
       var i = 0
       while (i < arity) {
         val fieldValue = from.productElement(i)
-        fields(i) = if (fieldValue != null) {
-          fieldSerializers(i).copy(fieldValue.asInstanceOf[AnyRef])
-        } else null
+        fields(i) =
+          if (fieldValue != null) fieldSerializers(i).copy(fieldValue.asInstanceOf[AnyRef])
+          else null
         i += 1
       }
       createInstance(fields)

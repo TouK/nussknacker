@@ -190,17 +190,17 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results          = sample.test(fragment, processVersionFor(fragment), scenarioTestData)
 
     nodeResults(results, "fragment1") shouldBe List(
-      (ContextId("fragment1", "", 0, 0), Map("in" -> variable("some-text-id")))
+      (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable("some-text-id")))
     )
     nodeResults(results, "fragmentEnd") shouldBe List(
       (
-        ContextId("fragment1", "", 0, 0),
+        ContextId("fragment1", "fragment1", 0, 0),
         Map("in" -> variable("some-text-id"), "out" -> variable("some-text-id"))
       )
     )
     results.invocationResults("fragmentEnd").map(withMockedTimestamp) shouldBe List(
       ExpressionInvocationResult(
-        ContextId("fragment1", "", 0, 0),
+        ContextId("fragment1", "fragment1", 0, 0),
         mockedTimestamp,
         "out",
         variable("some-text-id")
@@ -221,19 +221,19 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results          = sample.test(fragment, processVersionFor(fragment), scenarioTestData)
 
     nodeResults(results, "fragment1") shouldBe List(
-      (ContextId("fragment1", "", 0, 0), Map("in" -> variable(0)))
+      (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0)))
     )
     nodeResults(results, "fragmentEnd") shouldBe List(
-      (ContextId("fragment1", "", 0, 0), Map("in" -> variable(0)))
+      (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0)))
     )
     results.exceptions.map(e => ((e.context.id, e.context.variables), e.nodeId, e.throwable.getMessage)) shouldBe List(
       (
-        (ContextId("fragment1", "", 0, 0), Map("in" -> variable(0))),
+        (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0))),
         Some("fragmentEnd"),
         "Expression [4 / #in] evaluation failed, message: / by zero"
       ),
       (
-        (ContextId("fragment1", "", 0, 0), Map("in" -> variable(0))),
+        (ContextId("fragment1", "fragment1", 0, 0), Map("in" -> variable(0))),
         Some("fragmentEnd"),
         "Expression [8 / #in] evaluation failed, message: / by zero"
       )

@@ -47,7 +47,12 @@ object sample {
 
   case object SourceFailure extends Exception("Source failure")
 
+  // The sample engine uses simplified representation of ContextId.
+  // Only the first field (scenarioId) is used, other fields are constant values.
+  // Example: ContextId("the_value_used_in_sample_engine", "", 0, 0, [])
   case class SampleInput(contextId: String, value: Int)
+
+  private def dummyContextId(str: String): ContextId = ContextId(str, "", 0, 0)
 
   case class SampleInputWithListAndMap(
       contextId: ContextId,
@@ -275,7 +280,5 @@ object sample {
     }
 
   }
-
-  def dummyContextId(str: String): ContextId = ContextId(str, "", 0, 0)
 
 }

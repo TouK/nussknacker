@@ -66,7 +66,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
     val process = SampleProcess.prepareProcess(processName)
 
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
-      r.nodeResults.map(r => (r._1, r._2)) shouldBe Map(
+      r.nodeResults.map(r => (r._1, r._2.map(r => (r.id, r.variables)))) shouldBe Map(
         "startProcess" -> List(
           (
             ContextId(processName.value, "startProcess", 0, 0),
