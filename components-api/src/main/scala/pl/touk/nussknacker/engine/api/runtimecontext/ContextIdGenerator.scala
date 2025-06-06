@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.util.concurrent.atomic.AtomicLong
+import scala.jdk.CollectionConverters._
 
 /**
   * Context id generator - it should fulfill rules:
@@ -26,7 +27,7 @@ class IncContextIdGenerator(
 ) extends ContextIdGenerator {
 
   override def nextContextId(): ContextId =
-    ContextId(scenarioId.value, nodeId, taskId, counter.getAndIncrement(), java.util.List.of())
+    ContextId(scenarioId.value, nodeId, taskId, counter.getAndIncrement(), List.empty.asJava)
 
 }
 

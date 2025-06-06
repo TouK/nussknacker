@@ -97,7 +97,7 @@ object RowConversions {
     } yield contextId) match {
       case Left(_) =>
         // Legacy case, contextId was serialized by older version of Nu
-        ContextId(str, "", 0, 0, java.util.List.of())
+        ContextId(str, "", 0, 0, List.empty.asJava)
       case Right(contextId) =>
         contextId
     }

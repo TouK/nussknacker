@@ -8,13 +8,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pl.touk.nussknacker.engine.api.{
-  ContextId,
-  ContextIdTransformation,
-  DisplayJsonWithEncoder,
-  FragmentSpecificData,
-  MetaData
-}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
@@ -53,6 +47,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.Instant
 import java.util.{Date, UUID}
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.implicitConversions
@@ -849,7 +844,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "source1",
             firstSubtaskIndex,
             1,
-            java.util.List.of(ContextIdTransformation("a", "end1"))
+            List(ContextIdTransformation("join", "end1")).asJava
           ),
           mockedTimestamp,
           "all",
@@ -861,7 +856,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "source2",
             firstSubtaskIndex,
             0,
-            java.util.List.of(ContextIdTransformation("a", "end2"))
+            List(ContextIdTransformation("join", "end2")).asJava
           ),
           mockedTimestamp,
           "all",
@@ -873,7 +868,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
             "source2",
             firstSubtaskIndex,
             2,
-            java.util.List.of(ContextIdTransformation("a", "end2"))
+            List(ContextIdTransformation("join", "end2")).asJava
           ),
           mockedTimestamp,
           "all",
@@ -1051,7 +1046,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         sourceId,
         firstSubtaskIndex,
         count,
-        java.util.List.of(ContextIdTransformation("a", branchId))
+        List(ContextIdTransformation("join", branchId)).asJava,
       ),
       Map(vars: _*).mapValuesNow(variable)
     )

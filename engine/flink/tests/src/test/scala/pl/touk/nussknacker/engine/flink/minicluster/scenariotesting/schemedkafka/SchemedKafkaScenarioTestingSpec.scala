@@ -203,14 +203,14 @@ class SchemedKafkaScenarioTestingSpec
     val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
 
     nodeResults(results, "fragment1").loneElement shouldBe (
-      "fragment1-fragment1-0-0",
+      ContextId("fragment1", "fragment1", 0, 0),
       Map(
         "in" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
       )
     )
 
     nodeResults(results, "fragmentEnd").loneElement shouldBe (
-      "fragment1-fragment1-0-0",
+      ContextId("fragment1", "fragment1", 0, 0),
       Map(
         "in"  -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id"))),
         "out" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))

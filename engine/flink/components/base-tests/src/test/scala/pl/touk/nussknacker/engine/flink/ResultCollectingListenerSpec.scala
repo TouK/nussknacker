@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import scala.collection.JavaConverters._
+
 class ResultCollectingListenerSpec
     extends AnyFunSuite
     with BeforeAndAfterAll
@@ -149,28 +151,28 @@ class ResultCollectingListenerSpec
             "start-foo",
             0,
             0,
-            java.util.List.of(ContextIdTransformation("split", "bv1"))
+            List(ContextIdTransformation("split", "bv1")).asJava
           ) -> Map("input" -> 10),
           ContextId(
             "sample-split",
             "start-foo",
             0,
             1,
-            java.util.List.of(ContextIdTransformation("split", "bv1"))
+            List(ContextIdTransformation("split", "bv1")).asJava
           ) -> Map("input" -> 20),
           ContextId(
             "sample-split",
             "start-foo",
             0,
             2,
-            java.util.List.of(ContextIdTransformation("split", "bv1"))
+            List(ContextIdTransformation("split", "bv1")).asJava
           ) -> Map("input" -> 30),
           ContextId(
             "sample-split",
             "start-foo",
             0,
             3,
-            java.util.List.of(ContextIdTransformation("split", "bv1"))
+            List(ContextIdTransformation("split", "bv1")).asJava
           ) -> Map("input" -> 40),
         )
         transitionVariablesByContextId(testResults, "split", Some("bv2")) shouldBe Map(
@@ -179,48 +181,48 @@ class ResultCollectingListenerSpec
             "start-foo",
             0,
             0,
-            java.util.List.of(ContextIdTransformation("split", "bv2"))
+            List(ContextIdTransformation("split", "bv2")).asJava
           ) -> Map("input" -> 10),
           ContextId(
             "sample-split",
             "start-foo",
             0,
             1,
-            java.util.List.of(ContextIdTransformation("split", "bv2"))
+            List(ContextIdTransformation("split", "bv2")).asJava
           ) -> Map("input" -> 20),
           ContextId(
             "sample-split",
             "start-foo",
             0,
             2,
-            java.util.List.of(ContextIdTransformation("split", "bv2"))
+            List(ContextIdTransformation("split", "bv2")).asJava
           ) -> Map("input" -> 30),
           ContextId(
             "sample-split",
             "start-foo",
             0,
             3,
-            java.util.List.of(ContextIdTransformation("split", "bv2"))
+            List(ContextIdTransformation("split", "bv2")).asJava
           ) -> Map("input" -> 40),
         )
         transitionVariablesByContextId(testResults, "bv1", Some("end1")) shouldBe Map(
-          ContextId("sample-split", "start-foo", 0, 0, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+          ContextId("sample-split", "start-foo", 0, 0, List(ContextIdTransformation("split", "bv1")).asJava) ->
             Map("input" -> 10, "timesTwo" -> 20),
-          ContextId("sample-split", "start-foo", 0, 1, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+          ContextId("sample-split", "start-foo", 0, 1, List(ContextIdTransformation("split", "bv1")).asJava) ->
             Map("input" -> 20, "timesTwo" -> 40),
-          ContextId("sample-split", "start-foo", 0, 2, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+          ContextId("sample-split", "start-foo", 0, 2, List(ContextIdTransformation("split", "bv1")).asJava) ->
             Map("input" -> 30, "timesTwo" -> 60),
-          ContextId("sample-split", "start-foo", 0, 3, java.util.List.of(ContextIdTransformation("split", "bv1"))) ->
+          ContextId("sample-split", "start-foo", 0, 3, List(ContextIdTransformation("split", "bv1")).asJava) ->
             Map("input" -> 40, "timesTwo" -> 80),
         )
         transitionVariablesByContextId(testResults, "bv2", Some("end2")) shouldBe Map(
-          ContextId("sample-split", "start-foo", 0, 0, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+          ContextId("sample-split", "start-foo", 0, 0, List(ContextIdTransformation("split", "bv2")).asJava) ->
             Map("input" -> 10, "timesFour" -> 40),
-          ContextId("sample-split", "start-foo", 0, 1, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+          ContextId("sample-split", "start-foo", 0, 1, List(ContextIdTransformation("split", "bv2")).asJava) ->
             Map("input" -> 20, "timesFour" -> 80),
-          ContextId("sample-split", "start-foo", 0, 2, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+          ContextId("sample-split", "start-foo", 0, 2, List(ContextIdTransformation("split", "bv2")).asJava) ->
             Map("input" -> 30, "timesFour" -> 120),
-          ContextId("sample-split", "start-foo", 0, 3, java.util.List.of(ContextIdTransformation("split", "bv2"))) ->
+          ContextId("sample-split", "start-foo", 0, 3, List(ContextIdTransformation("split", "bv2")).asJava) ->
             Map("input" -> 40, "timesFour" -> 160),
         )
       }

@@ -18,7 +18,7 @@ case class ContextId(
     originatingNodeId: String,
     taskId: Long,
     index: Long,
-    transformations: java.util.List[ContextIdTransformation] = java.util.List.of(),
+    transformations: java.util.List[ContextIdTransformation] = List.empty.asJava,
 ) {
 
   def serialize: String = List(

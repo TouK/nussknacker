@@ -43,7 +43,7 @@ class LiveDataCollectingListener private[livedata] (
       nextNodeId: String,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = {
+  ): Unit = ignoringDummyContextId(context) {
     storage.addLiveDataSample(
       NodeTransition(nodeId, Some(nextNodeId)),
       sampleFromContext(context, Instant.now())
@@ -54,7 +54,7 @@ class LiveDataCollectingListener private[livedata] (
       nodeId: String,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = {
+  ): Unit = ignoringDummyContextId(context) {
     storage.addLiveDataSample(
       NodeTransition(nodeId, None),
       sampleFromContext(context, Instant.now())
@@ -81,7 +81,7 @@ class LiveDataCollectingListener private[livedata] (
       context: Context,
       processMetaData: MetaData,
       result: Any,
-  ): Unit = {
+  ): Unit = ignoringDummyContextId(context) {
     storage.addExpressionEvaluation(
       NodeId(nodeId),
       InvocationResult(context.id, Instant.now(), expressionId, encode(result)),
@@ -94,7 +94,7 @@ class LiveDataCollectingListener private[livedata] (
       context: Context,
       processMetaData: MetaData,
       result: Try[Any],
-  ): Unit = {
+  ): Unit = ignoringDummyContextId(context) {
     storage.addExternalInvocation(
       NodeId(nodeId),
       InvocationResult(context.id, Instant.now(), id, encode(result)),
@@ -103,7 +103,7 @@ class LiveDataCollectingListener private[livedata] (
 
   override def exceptionThrown(
       exceptionInfo: NuExceptionInfo,
-  ): Unit = {
+  ): Unit = ignoringDummyContextId(exceptionInfo.context) {
     exceptionInfo.nodeComponentInfo match {
       case Some(nodeComponentInfo) =>
         storage.addException(
@@ -119,6 +119,12 @@ class LiveDataCollectingListener private[livedata] (
         ()
     }
   }
+
+  private def ignoringDummyContextId(context: Context)(f: => Unit): Unit =
+    context.id match {
+      case ContextId.DummyContextId => ()
+      case _                        => f
+    }
 
   override final def close(): Unit = ()
 
