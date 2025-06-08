@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.livedata
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.NodeId
@@ -72,28 +73,32 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
       collectedLiveData: List[CollectedLiveData],
       maxNumberOfSamples: Int,
   ): CollectedLiveData = {
-    CollectedLiveData(
-      timestamp = collectedLiveData.map(_.timestamp).min,
-      nodeTransitions = aggregate(
-        collectedLiveData.map(_.nodeTransitions),
-        maxNumberOfSamples
-      ),
-      invocationResults = aggregate[InvocationResult](
-        collectedLiveData.map(_.invocationResults),
-        maxNumberOfSamples,
-        _.timestamp
-      ),
-      externalInvocationResults = aggregate[InvocationResult](
-        collectedLiveData.map(_.externalInvocationResults),
-        maxNumberOfSamples,
-        _.timestamp
-      ),
-      exceptions = aggregate[ExceptionResult](
-        collectedLiveData.map(_.exceptions),
-        maxNumberOfSamples,
-        _.timestamp
-      ),
-    )
+    NonEmptyList.fromList(collectedLiveData) match {
+      case Some(collectedLiveData) =>
+        CollectedLiveData(
+          timestamp = collectedLiveData.toList.map(_.timestamp).min,
+          nodeTransitions = aggregate(
+            collectedLiveData.toList.map(_.nodeTransitions).toList,
+            maxNumberOfSamples
+          ),
+          invocationResults = aggregate[InvocationResult](
+            collectedLiveData.toList.map(_.invocationResults),
+            maxNumberOfSamples,
+            _.timestamp
+          ),
+          externalInvocationResults = aggregate[InvocationResult](
+            collectedLiveData.toList.map(_.externalInvocationResults),
+            maxNumberOfSamples,
+            _.timestamp
+          ),
+          exceptions = aggregate[ExceptionResult](
+            collectedLiveData.toList.map(_.exceptions),
+            maxNumberOfSamples,
+            _.timestamp
+          ),
+        )
+      case None => CollectedLiveData.empty
+    }
   }
 
   def aggregate(

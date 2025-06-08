@@ -16,6 +16,9 @@ final case class CollectedLiveData(
 )
 
 object CollectedLiveData {
+
+  def empty: CollectedLiveData = CollectedLiveData(Instant.now, Map.empty, Map.empty, Map.empty, Map.empty)
+
   private implicit val throwableEncoder: Encoder[Throwable] = Encoder.encodeString.contramap(_.getMessage)
   private implicit val throwableDecoder: Decoder[Throwable] = Decoder.decodeString.map(new RuntimeException(_))
 

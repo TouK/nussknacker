@@ -73,7 +73,7 @@ class ScenarioLiveDataApiHttpService(
               case LiveDataPreviewStoredInDesignerJvm =>
                 Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name)).map {
                   case Some(liveData) => Right(liveData)
-                  case None           => Left(LiveDataNotAvailable)
+                  case None           => Right(CollectedLiveData.empty)
                 }
               case LiveDataPreviewStoredInDesignerDb(maxSamples, uploadIntervalInSeconds) =>
                 dbioActionRunner
