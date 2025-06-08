@@ -1,8 +1,10 @@
-CREATE TABLE live_data
+CREATE TABLE "live_data"
 (
-    scenario_id  BIGINT NOT NULL,
-    collector_id VARCHAR NOT NULL,
-    live_data    LONGVARCHAR,
-    updated_at   BIGINT  NOT NULL,
-    CONSTRAINT pk_scenario_id_collector_id PRIMARY KEY (scenario_id, collector_id)
+    "scenario_id"  BIGINT NOT NULL,
+    "collector_id" VARCHAR NOT NULL,
+    "live_data"    LONGVARCHAR,
+    "updated_at"   BIGINT  NOT NULL,
+
 );
+
+ALTER TABLE "live_data" ADD CONSTRAINT pk_scenario_id_collector_id PRIMARY KEY ("scenario_id", "collector_id")

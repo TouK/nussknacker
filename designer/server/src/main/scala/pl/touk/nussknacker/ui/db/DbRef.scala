@@ -4,15 +4,12 @@ import cats.effect.{IO, Resource}
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc._
 
 class DbRef private (val db: JdbcBackend.Database, val profile: NuJdbcProfile)
 
 object DbRef {
-
-  private val logger = LoggerFactory.getLogger(getClass)
 
   val defaultSchemaName = "public"
 

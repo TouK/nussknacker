@@ -110,11 +110,11 @@ object PeriodicLiveDataUploader {
         insertStatement.executeUpdate()
       } match {
         case Success(_) =>
-          logger.info("Uploaded scenario live data")
+          logger.debug("Uploaded scenario live data")
         case Failure(exception) =>
           logger.error("Could not update scenario live data", exception)
           Option(exception.getCause)
-            .foreach(cause => logger.error("Could not update scenario live data cause", cause))
+            .foreach(cause => logger.error("Could not update scenario live data with cause", cause))
       }
 
       ctx.timerService.registerProcessingTimeTimer(
