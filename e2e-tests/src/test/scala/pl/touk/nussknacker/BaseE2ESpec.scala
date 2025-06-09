@@ -23,13 +23,21 @@ trait BaseE2ESpec extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLog
 
 object BaseE2ESpec extends LazyLogging {
 
-  val dockerBasedInstallationExampleNuEnvironmentSingleton =
-    new DockerBasedInstallationExampleNuEnvironment(
+  val dockerBasedInstallationExampleNuEnvironmentSingleton: DockerBasedInstallationExampleNuEnvironment = {
+    val singleton = new DockerBasedInstallationExampleNuEnvironment(
       nussknackerImageVersion = BuildInfo.version,
       dockerComposeTweakFiles = List(
         new JFile(Resource.getUrl("bootstrap-setup-scenarios.override.yml").toURI),
         new JFile(Resource.getUrl("debuggable-nu-designer.override.yml").toURI)
       )
     )
+    Runtime.getRuntime.addShutdownHook(new Thread() {
+      override def run(): Unit = {
+        logger.info("Closing docker compose...")
+        singleton.close()
+      }
+    })
+    singleton
+  }
 
 }

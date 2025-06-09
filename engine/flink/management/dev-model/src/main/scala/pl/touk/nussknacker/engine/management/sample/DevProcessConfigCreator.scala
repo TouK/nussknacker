@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.management.sample.dict._
-import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord}
+import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
@@ -41,6 +41,7 @@ import pl.touk.nussknacker.engine.util.functions.{
 }
 
 import java.time.LocalDateTime
+import java.util.{List => JList}
 import scala.annotation.nowarn
 
 object DevProcessConfigCreator {
@@ -92,11 +93,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "boundedSourceWithOffset" -> all(BoundedSourceWithOffset),
       "oneSource"               -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
       "communicationSource"     -> categories(DynamicParametersSource),
-      "csv-source"              -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new CsvSource)),
-      "csv-source-lite" -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new LiteCsvSource(_))),
-      "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
-      "sql-source"                       -> categories(SqlSource),
-      "classInstanceSource"              -> all(new ReturningClassInstanceSource)
+      "csv-source"      -> categories(SourceFactory.noParamUnboundedStreamFactory[Array[String]](new CsvSource)),
+      "csv-source-lite" -> categories(SourceFactory.noParamUnboundedStreamFactory[JList[String]](new LiteCsvSource(_))),
+      "genericSourceWithCustomTestingSupport" -> categories(GenericSourceWithCustomTestingSupport),
+      "sql-source"                            -> categories(SqlSource),
+      "classInstanceSource"                   -> all(new ReturningClassInstanceSource)
     )
   }
 

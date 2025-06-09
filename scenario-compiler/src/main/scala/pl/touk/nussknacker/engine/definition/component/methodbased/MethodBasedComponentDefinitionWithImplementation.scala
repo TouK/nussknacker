@@ -4,7 +4,10 @@ import pl.touk.nussknacker.engine.api.component.{Component, ComponentGroupName}
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.definition.component._
+
+import scala.reflect.ClassTag
 
 final case class MethodBasedComponentDefinitionWithImplementation(
     override val name: String,
@@ -36,7 +39,7 @@ final case class MethodBasedComponentDefinitionWithImplementation(
 
 object MethodBasedComponentDefinitionWithImplementation {
 
-  def withDumbImplementation(
+  def withDumbImplementation[ComponentExecutor: NotNothing: ClassTag](
       name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
@@ -45,7 +48,7 @@ object MethodBasedComponentDefinitionWithImplementation {
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
       name = name,
-      implementationInvoker = ComponentImplementationInvoker.dumbImplementationInvoker,
+      implementationInvoker = ComponentImplementationInvoker.dumbImplementationInvoker[ComponentExecutor],
       component = new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
       componentTypeSpecificData = componentTypeSpecificData,
       staticDefinition = staticDefinition,

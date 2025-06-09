@@ -14,11 +14,13 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 
+import scala.reflect.{classTag, ClassTag}
+
 // This class helps to create an Executor using Component. Most Components are just a factories that creates "Executors".
 // The situation is different for non-eager Services where Component is an Executor, so invokeMethod is run for each request
 class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends LazyLogging {
 
-  def createComponentExecutor[ComponentExecutor](
+  def createComponentExecutor[ComponentExecutor: ClassTag](
       deps: ComponentExecutorDependencies
   ): IorNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
@@ -26,7 +28,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     }(deps.nodeId, deps.metaData).toIor
   }
 
-  private def doCreateComponentExecutor[ComponentExecutor](deps: ComponentExecutorDependencies): ComponentExecutor = {
+  private def doCreateComponentExecutor[ComponentExecutor: ClassTag](
+      deps: ComponentExecutorDependencies
+  ): ComponentExecutor = {
     import deps._
     implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
       deps.componentDefinition.component match {
@@ -42,13 +46,19 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       }.toMap
     )
 
-    deps.componentDefinition.implementationInvoker
+    val invocationResult = deps.componentDefinition.implementationInvoker
       .invokeMethod(
         paramsMap,
         deps.nodeCompilationDependencies,
         deps.invocationContext
       )
-      .asInstanceOf[ComponentExecutor]
+    invocationResult match {
+      case a: ComponentExecutor => a
+      case _ =>
+        throw new ClassCastException(
+          s"Object returned by [${deps.componentDefinition.id}] component is ${Option(invocationResult).map(ir => s"of ${ir.getClass.getName} class").orNull} but should be a ${classTag[ComponentExecutor].runtimeClass.getName}"
+        )
+    }
   }
 
 }

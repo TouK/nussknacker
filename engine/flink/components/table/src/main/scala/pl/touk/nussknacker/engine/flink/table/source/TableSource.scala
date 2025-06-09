@@ -7,7 +7,9 @@ import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
 import org.apache.flink.types.Row
+import pl.touk.nussknacker.engine.api.VariableConstants
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{
   BasicContextInitializer,
@@ -45,6 +47,7 @@ class TableSource(
     with TestWithParametersSupport[Row]
     with FlinkSourceTestSupport[Row]
     with TestDataGenerator
+    with LiveDataProvider
     with LazyLogging {
 
   override def sourceStream(
@@ -105,7 +108,7 @@ class TableSource(
         .parseTestRecords(testRecords, tableDataParserSchema)
   }
 
-  override def generateTestData(size: Int): TestData = {
+  override def generateTestData(maxNumberOfRecords: Int): TestData = {
     val generateDataSchema = {
       val dataType = DataTypes.ROW(fieldsWithoutComputedColumns: _*)
       Schema.newBuilder().fromRowDataType(dataType).build()
@@ -114,16 +117,30 @@ class TableSource(
     testDataGenerationMode match {
       case TestDataGenerationMode.Random =>
         tableOps.generateRandomTestData(
-          amount = size,
+          amount = maxNumberOfRecords,
           schema = generateDataSchema
         )
       case TestDataGenerationMode.Live =>
         tableOps.generateLiveTestData(
-          limit = size,
+          limit = maxNumberOfRecords,
           schema = generateDataSchema,
           tableId = tableDefinition.tableId
         )
     }
+  }
+
+  override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = {
+    val records = environmentForTestingPurposes
+      .from(tableDefinition.tableId.toString)
+      .limit(maxNumberOfRecords)
+      .execute()
+      .collect()
+      .asScala
+      .toList
+      .map { row =>
+        DataRecord(Map(VariableConstants.InputVariableName -> row), timestamp = None)
+      }
+    DataRecords(records)
   }
 
   // We don't want to generate data for computed columns - they will be added during parsing of test data

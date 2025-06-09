@@ -406,15 +406,20 @@ class ManagementResourcesSpec
 
   test("return test results") {
     val testDataContent =
-      """{"sourceId":"startProcess","record":"ala"}
-        |{"sourceId":"startProcess","record":"bela"}""".stripMargin
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
 
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
 
       status shouldEqual StatusCodes.OK
 
-      val ctx = responseAs[Json].hcursor
+      val responseJson = responseAs[Json]
+      logger.debug(s"The response from the endpoint running scenario test from files was: $responseJson")
+
+      val ctx = responseJson.hcursor
         .downField("results")
         .downField("nodeResults")
         .downField("endsuffix")
@@ -430,7 +435,7 @@ class ManagementResourcesSpec
       ctx
         .downField("input")
         .downField("pretty")
-        .downField("firstField")
+        .downN(0)
         .focus shouldBe Some(Json.fromString("ala"))
     }
   }
@@ -451,8 +456,10 @@ class ManagementResourcesSpec
         SinkValueParamName.value -> "''".spel
       )
     val testDataContent =
-      """{"sourceId":"startProcess","record":"ala"}
-        |{"sourceId":"startProcess","record":"bela"}""".stripMargin
+      """[
+        |  {"sourceId":"startProcess","variables":{"input":["ala"]}},
+        |  {"sourceId":"startProcess","variables":{"input":["bela"]}}
+        |]""".stripMargin
     saveCanonicalProcessAndAssertSuccess(process)
 
     testScenario(process, testDataContent) ~> check {
@@ -480,7 +487,7 @@ class ManagementResourcesSpec
 
     val tooManyRecords = List
       .fill(50)("""{"sourceId":"startProcess","record":"a json string"}""")
-      .mkString("\n")
+      .mkString("[", ",", "]")
     testScenario(process, tooManyRecords) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[
@@ -491,17 +498,16 @@ class ManagementResourcesSpec
     val longString = "a long json string".repeat(50)
     val tooManyCharacters = List
       .fill(20)(s"""{"sourceId":"startProcess","record":"$longString"}""")
-      .mkString("\n")
+      .mkString("[", ",", "]")
     testScenario(process, tooManyCharacters) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Test data has too many characters (18799). The maximum numbers of permitted characters is 10000. Contact the system administrator to increase this limit."
+      ] shouldBe "Test data has too many characters (18801). The maximum numbers of permitted characters is 10000. Contact the system administrator to increase this limit."
     }
   }
 
   test("refuses to test if too big test results generated") {
-
     import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     val bigListExpression = (1 to 1000).mkString("{", ",", "}").spel
@@ -522,7 +528,7 @@ class ManagementResourcesSpec
 
     val testDataContent = List
       .fill(10)("""{"sourceId":"startProcess","record":"a json string"}""")
-      .mkString("\n")
+      .mkString("[", ",", "]")
     testScenario(process, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
       // Approximate size can differ slightly depending on test execution environment.
@@ -535,8 +541,10 @@ class ManagementResourcesSpec
   test("rejects test record with non-existing source") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     val testDataContent =
-      """{"sourceId":"startProcess","record":"ala"}
-        |{"sourceId":"unknown","record":"bela"}""".stripMargin
+      """[
+        |  {"sourceId":"startProcess","record":"ala"},
+        |  {"sourceId":"unknown","record":"bela"}
+        |]""".stripMargin
 
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest

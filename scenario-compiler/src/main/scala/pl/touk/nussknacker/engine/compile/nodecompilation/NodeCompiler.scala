@@ -52,6 +52,8 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
+import scala.reflect.{classTag, ClassTag}
+
 object NodeCompiler {
 
   val MockExpressionParameterName: ParameterName = ParameterName("$mockExpression")
@@ -294,7 +296,7 @@ class NodeCompiler(
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some(componentDefinition) =>
-        compileComponentWithContextTransformation[AnyRef](
+        compileComponentWithContextTransformation[AnyRef]( // For custom nodes, we don't have a base class yet
           nodeData = data,
           customNodeIsEndingNode = customNodeIsEndingNode,
           inputContext = ctx,
@@ -521,17 +523,12 @@ class NodeCompiler(
     }
   }
 
-  private def unwrapContextTransformation[T](value: Any): T = (value match {
-    case ct: ContextTransformation => ct.implementation
-    case a                         => a
-  }).asInstanceOf[T]
-
   private def contextWithOnlyGlobalVariables(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidationContext =
     globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(scenarioCompilationDependencies.jobData)
 
-  private def compileComponentWithContextTransformation[ComponentExecutor](
+  private def compileComponentWithContextTransformation[ComponentExecutor: ClassTag](
       nodeData: NodeData,
       customNodeIsEndingNode: Option[Boolean],
       inputContext: NodeInputValidationContext,
@@ -542,7 +539,7 @@ class NodeCompiler(
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
     componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
-        val nodeCompilationDependencies = createNodeCompilationDependencies(nodeData)
+        val nodeCompilationDependencies = createNodeCompilationDependencies(nodeData, inputContext)
         val afterValidation =
           dynamicNodeValidator
             .validateNode(
@@ -552,7 +549,7 @@ class NodeCompiler(
               nodeInputValidationContext = inputContext
             )
             .map {
-              case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
+              case TransformationResult(Nil, computedParameters, outputValidationContext, finalState, nodeParameters) =>
                 val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
                 val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
                 val (typingInfo, validComponentExecutor) = withCompiledParameters[ComponentExecutor](
@@ -568,14 +565,15 @@ class NodeCompiler(
                         compiledParameters = compiledParameters,
                         nodeCompilationDependencies = nodeCompilationDependencies,
                         nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
-                        invocationContext = Some(DynamicComponentInvocationContext(FinalStateValue(finalState))),
+                        invocationContext =
+                          Some(DynamicComponentInvocationContext(FinalStateValue(finalState), outputValidationContext)),
                       )
                     )
                 }
                 (
                   typingInfo,
                   Some(computedParameters),
-                  outputContext,
+                  outputValidationContext,
                   validComponentExecutor.map((_, withoutRedundant))
                 )
               case TransformationResult(h :: t, computedParameters, outputContext, _, _) =>
@@ -594,17 +592,17 @@ class NodeCompiler(
           afterValidation.andThen(_._4)
         )
       case staticComponent: MethodBasedComponentDefinitionWithImplementation =>
-        val (typingInfo, validComponentExecutor) = withCompiledParameters[ComponentExecutor](
+        val (typingInfo, validComponentExecutor) = withCompiledParameters[Any](
           parameterDefinitionsToUse = staticComponent.parameters,
           nodeParameters = nodeData.parametersOrEmpty,
           nodeBranchParameters = nodeData.branchParametersOrEmpty,
           nodeInputValidationContext = inputContext
         ) { compiledParameters =>
           factory
-            .createComponentExecutor[ComponentExecutor](
+            .createComponentExecutor[Any]( // We expect either ComponentExecutor or ContextTransformation
               new ComponentExecutorDependencies(
                 componentDefinition = componentDefinition,
-                nodeCompilationDependencies = createNodeCompilationDependencies(nodeData),
+                nodeCompilationDependencies = createNodeCompilationDependencies(nodeData, inputContext),
                 compiledParameters = compiledParameters,
                 nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
                 invocationContext = None,
@@ -620,9 +618,27 @@ class NodeCompiler(
         )(scenarioCompilationDependencies.jobData)
         val unwrappedComponentExecutor =
           validComponentExecutor
-            .map(unwrapContextTransformation[ComponentExecutor](_))
+            .map(unwrapContextTransformation[ComponentExecutor](componentDefinition, _))
             .map((_, nodeData.parametersOrEmpty))
         NodeCompilationResult(typingInfo, Some(staticComponent.parameters), nextCtx, unwrappedComponentExecutor)
+    }
+  }
+
+  private def unwrapContextTransformation[ComponentExecutor: ClassTag](
+      componentDefinition: ComponentDefinitionWithImplementation,
+      value: Any
+  ): ComponentExecutor = {
+    def handleUnexpectedExecutorClass(obj: Any): Nothing = throw new ClassCastException(
+      s"Object returned by [${componentDefinition.id}] component is ${Option(obj).map(ir => s"of ${ir.getClass.getName} class").orNull} but should be a ${classTag[ComponentExecutor].runtimeClass.getName}"
+    )
+    value match {
+      case ct: AbstractContextTransformation =>
+        ct.implementation match {
+          case a: ComponentExecutor => a
+          case other                => handleUnexpectedExecutorClass(other)
+        }
+      case a: ComponentExecutor => a
+      case other                => handleUnexpectedExecutorClass(other)
     }
   }
 
@@ -702,7 +718,7 @@ class NodeCompiler(
           id = serviceNodeData.service.id,
           invoker = new MethodBasedServiceInvoker(
             componentDefinition,
-            createNodeCompilationDependencies(serviceNodeData),
+            createNodeCompilationDependencies(serviceNodeData, inputContext),
             evaluateParams
           ),
           resultCollector = resultCollector
@@ -720,12 +736,14 @@ class NodeCompiler(
   }
 
   private def createNodeCompilationDependencies(
-      nodeData: NodeData
+      nodeData: NodeData,
+      inputValidationContext: NodeInputValidationContext
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies) = {
     new NodeCompilationDependencies(
-      scenarioCompilationDependencies,
-      nodeData,
-      runtimeMode.createContext(nodesDeploymentData.get(NodeId(nodeData.id)))
+      scenarioCompilationDependencies = scenarioCompilationDependencies,
+      nodeData = nodeData,
+      componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(NodeId(nodeData.id))),
+      inputValidationContext = inputValidationContext
     )
   }
 

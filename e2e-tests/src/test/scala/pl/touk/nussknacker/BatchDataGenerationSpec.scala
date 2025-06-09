@@ -27,9 +27,8 @@ class BatchDataGenerationSpec
     .source("sourceId", sourceId, "Table" -> "'`default_catalog`.`default_database`.`transactions`'".spel)
     .emptySink("end", "dead-end")
 
-  private val simpleBatchTableScenarioRandomMode = simpleBatchTableScenario("random-test-mode-table")
-  private val simpleBatchTableScenarioLiveMode   = simpleBatchTableScenario("live-test-mode-table")
-  private val designerServiceUrl                 = "http://localhost:8080"
+  private val simpleBatchTableScenarioLiveMode = simpleBatchTableScenario("live-test-mode-table")
+  private val designerServiceUrl               = "http://localhost:8080"
 
   override def beforeAll(): Unit = {
     createEmptyBatchScenario(scenarioName)
@@ -37,31 +36,6 @@ class BatchDataGenerationSpec
   }
 
   "Generate file endpoint for scenario with table source should generate" - {
-    "randomized records when configured with random mode" in {
-      given()
-        .when()
-        .request()
-        .basicAuthAdmin()
-        .jsonBody(testDataGenerationRequest(simpleBatchTableScenarioRandomMode.toScenarioGraph.asJson.spaces2, 10))
-        .post(
-          s"$designerServiceUrl/api/scenarioTesting/$scenarioName/generatedTestData"
-        )
-        .Then()
-        .statusCode(200)
-        .body(
-          matchAllNdJsonWithRegexValues(s"""
-               |{
-               |   "sourceId": "sourceId",
-               |   "record": {
-               |      "datetime": "${regexes.localDateRegex}",
-               |      "client_id": "[a-z\\\\d]{100}",
-               |      "amount": "${regexes.decimalRegex}",
-               |      "file.name": "[a-z\\\\d]{100}"
-               |   }
-               |}
-               |""".stripMargin)
-        )
-    }
     "live records from data source with default configuration" in {
       given()
         .when()
@@ -74,17 +48,20 @@ class BatchDataGenerationSpec
         .Then()
         .statusCode(200)
         .body(
-          equalsJson(s"""
-               |{
-               |   "sourceId": "sourceId",
-               |   "record": {
-               |      "datetime": "2024-01-01 10:00:00",
-               |      "client_id": "client1",
-               |      "amount": 100.1,
-               |      "file.name": "transactions.ndjson"
-               |   }
-               |}
-               |""".stripMargin)
+          equalsJson(s"""[
+                        |  {
+                        |     "sourceId": "sourceId",
+                        |     "variables": {
+                        |        "input": {
+                        |          "datetime": "2024-01-01T10:00:00",
+                        |          "client_id": "client1",
+                        |          "amount": 100.1,
+                        |          "amountDoubled": 200.2,
+                        |          "file.name": "transactions.ndjson"
+                        |        }
+                        |     }
+                        |  }
+                        |]""".stripMargin)
         )
     }
   }
@@ -207,8 +184,21 @@ class BatchDataGenerationSpec
       )
       .multiPart(
         "testData",
-        """{"sourceId":"sourceId","record":{"datetime":"2024-07-19 08:56:08.485","client_id":"aClientId","amount":123123.12,"file.name":"foo.ndjson"}}""",
-        "text/ plain"
+        """[
+          |  {
+          |    "sourceId":"sourceId",
+          |    "variables": {
+          |      "input": {
+          |        "datetime":"2024-07-19T08:56:08.485",
+          |        "client_id":"aClientId",
+          |        "amount":123123.12,
+          |        "amountDoubled":246246.24,
+          |        "file.name":"foo.ndjson"
+          |      }
+          |    }
+          |  }
+          |]""".stripMargin,
+        "application/json"
       )
       .post(
         s"$designerServiceUrl/api/processManagement/test/$scenarioName"

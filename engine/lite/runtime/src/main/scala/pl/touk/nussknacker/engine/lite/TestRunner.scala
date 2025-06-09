@@ -2,13 +2,16 @@ package pl.touk.nussknacker.engine.lite
 
 import cats.{~>, Id, Monad}
 import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.{JobData, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.Source
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestCommonFormatJsonRecord, ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
@@ -37,7 +40,8 @@ trait TestRunner {
 
 //TODO: integrate with Engine somehow?
 class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Input, Res <: AnyRef]
-    extends TestRunner {
+    extends TestRunner
+    with LazyLogging {
 
   def runTest(
       modelData: ModelData,
@@ -86,10 +90,13 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
           .groupBy(_.sourceId)
           .toList
           .flatMap { case (nodeId, scenarioTestRecords) =>
-            val sourceId                     = SourceId(nodeId.id)
-            val source                       = getSourceById(sourceId)
-            val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
-            preparedRecords.map(record => sourceId -> record)
+            val sourceId = SourceId(nodeId.id)
+            val source   = getSourceById(sourceId)
+            val recordsFromSourceSpecificTestDataFormat: List[Input] =
+              testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
+            val recordsFromCommonTestDataFormat = decodeCommonFormatRecords(scenarioTestRecords)
+            (recordsFromSourceSpecificTestDataFormat ++ recordsFromCommonTestDataFormat)
+              .map(record => sourceId -> record)
           }
       )
 
@@ -104,6 +111,35 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
         scenarioInterpreter.close()
         testContext.close()
       }
+    }
+  }
+
+  // We currently have a limited support for "common" test data format for Lite engine. See inline comments for details
+  private def decodeCommonFormatRecords(scenarioTestRecords: List[ScenarioTestRecord]) = {
+    val commonFormatRecords = scenarioTestRecords.zipWithIndex.collect {
+      case (record: ScenarioTestCommonFormatJsonRecord, index) => (record, index)
+    }
+    if (commonFormatRecords.nonEmpty) {
+      logger.warn(
+        "Common format test records in input test data were found. Will be used experimental test records decoding mechanism"
+      )
+    }
+    commonFormatRecords.map { case (record, testRecordIndex) =>
+      // It will work only when in test data there is only one "input" variable and. To make it work for other cases, we should redesign ScenarioInputBatch
+      assume(
+        record.variables.keySet == Set(VariableConstants.InputVariableName),
+        s"Test record should contain '${VariableConstants.InputVariableName}' variable"
+      )
+      CommonTestDataFormatVariablesDecoder
+        .decode(
+          record.variables,
+          // For test data encoding will be used FromJsonSimpleDecoder instead of FromJsonSchemaBasedDecoder. It doesn't handle some types properly.
+          // To make it work correctly, we should redesign Lite compilation approach to pass here source's output ValidationContext
+          ValidationContext.empty.withVariableUnsafe(VariableConstants.InputVariableName, Unknown),
+          record.sourceId,
+          testRecordIndex
+        )(VariableConstants.InputVariableName)
+        .asInstanceOf[Input]
     }
   }
 

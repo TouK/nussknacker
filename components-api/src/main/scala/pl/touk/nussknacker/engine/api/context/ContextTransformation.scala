@@ -4,6 +4,9 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
+
+import scala.reflect.ClassTag
 
 /**
   * Wrapper for tuple of definition and implementation of variable context transformation
@@ -105,6 +108,9 @@ object ContextTransformation {
     })
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
+    def notImplemented[T: NotNothing: ClassTag]: ContextTransformation =
+      ContextTransformation(definition, ReflectUtils.createADumbInstanceOf[T])
+
     def implementedBy(implementation: Any): ContextTransformation =
       ContextTransformation(definition, implementation)
   }
@@ -128,9 +134,16 @@ object ContextTransformation {
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
+    def notImplemented[T: NotNothing: ClassTag]: JoinContextTransformation =
+      JoinContextTransformation(definition, ReflectUtils.createADumbInstanceOf[T])
+
     def implementedBy(implementation: Any): JoinContextTransformation =
       JoinContextTransformation(definition, implementation)
   }
+
+  object DumbStreamTransformerImplementation extends DumbStreamTransformerImplementation
+
+  trait DumbStreamTransformerImplementation
 
 }
 

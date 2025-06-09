@@ -7,24 +7,28 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ContextTransformation.DumbStreamTransformerImplementation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import javax.validation.constraints.NotBlank
 import scala.concurrent.Future
+import scala.reflect.{classTag, ClassTag}
 
 object validationHelpers {
 
   object SimpleStringSource extends SourceFactory with UnboundedStreamComponent {
     @MethodToInvoke(returnType = classOf[String])
-    def create(): api.process.Source = null
+    def create(): api.process.Source = new Source {}
   }
 
   object SimpleStreamTransformer extends CustomStreamTransformer {
@@ -36,7 +40,7 @@ object validationHelpers {
           Array(new api.AdditionalVariable(name = "additionalVar1", clazz = classOf[String]))
         )
         stringVal: LazyParameter[String]
-    ) = {}
+    ) = DumbStreamTransformerImplementation
 
   }
 
@@ -56,7 +60,7 @@ object validationHelpers {
     def execute(@OutputVariableName variableName: String)(implicit nodeId: NodeId) = {
       ContextTransformation
         .definedBy(_.withVariable(variableName, Typed[String], paramName = None))
-        .implementedBy(null)
+        .notImplemented[DumbStreamTransformerImplementation]
     }
 
   }
@@ -67,7 +71,7 @@ object validationHelpers {
     def execute() = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .implementedBy(null)
+        .notImplemented[DumbStreamTransformerImplementation]
     }
 
   }
@@ -85,7 +89,7 @@ object validationHelpers {
           })
           context.withVariable(variableName, newType, paramName = None)
         }
-        .implementedBy(null)
+        .notImplemented[DumbStreamTransformerImplementation]
     }
 
   }
@@ -107,7 +111,7 @@ object validationHelpers {
           })
           Valid(ValidationContext(Map(variableName -> newType)))
         }
-        .implementedBy(null)
+        .notImplemented[DumbStreamTransformerImplementation]
     }
 
   }
@@ -138,7 +142,7 @@ object validationHelpers {
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
         }
-        .implementedBy(null)
+        .notImplemented[DumbStreamTransformerImplementation]
     }
 
   }
@@ -149,7 +153,7 @@ object validationHelpers {
     def execute(@ParamName("stringVal") stringVal: String): ContextTransformation = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .implementedBy(null)
+        .notImplemented[DumbStreamTransformerImplementation]
     }
 
     override def canBeEnding: Boolean = false
@@ -166,7 +170,7 @@ object validationHelpers {
   object OptionalEndingStreamTransformer extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@ParamName("stringVal") stringVal: String): Unit = {}
+    def execute(@ParamName("stringVal") stringVal: String) = DumbStreamTransformerImplementation
 
     override def canBeEnding: Boolean = true
   }
@@ -174,7 +178,8 @@ object validationHelpers {
   object AddingVariableOptionalEndingStreamTransformer extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@ParamName("stringVal") stringVal: String, @OutputVariableName variableName: String): Unit = {}
+    def execute(@ParamName("stringVal") stringVal: String, @OutputVariableName variableName: String) =
+      DumbStreamTransformerImplementation
 
     override def canBeEnding: Boolean = true
   }
@@ -191,7 +196,7 @@ object validationHelpers {
             case _          => Invalid(CustomNodeError("Validation contexts do not match", Option.empty)).toValidatedNel
           }
         })
-        .implementedBy(null)
+        .notImplemented[DumbStreamTransformerImplementation]
     }
 
   }
@@ -216,7 +221,9 @@ object validationHelpers {
 
   }
 
-  object GenericParametersTransformer extends CustomStreamTransformer with GenericParameters[Null] {
+  object GenericParametersTransformer
+      extends CustomStreamTransformer
+      with GenericParameters[DumbStreamTransformerImplementation] {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -233,6 +240,9 @@ object validationHelpers {
 
     override def nodeDependencies: List[NodeDependency] =
       List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
+
+    override protected def classTagT: ClassTag[DumbStreamTransformerImplementation] =
+      classTag[DumbStreamTransformerImplementation]
 
   }
 
@@ -286,19 +296,26 @@ object validationHelpers {
         finalState: Option[List[String]]
     ): Source = {
 
-      new Source with SourceTestSupport[String] with TestDataGenerator {
+      new Source with SourceTestSupport[ProcessingType] with TestDataGenerator with LiveDataProvider {
 
         override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
           testRecords.map { testRecord =>
             CirceUtil.decodeJsonUnsafe[String](testRecord.json)
           }
 
-        override def generateTestData(size: Int): TestData = TestData((for {
-          number <- 1 to size
+        override def generateTestData(maxNumberOfRecords: Int): TestData = TestData((for {
+          number <- 1 to maxNumberOfRecords
           record = TestRecord(Json.fromString(s"record $number"), timestamp = Some(number))
+        } yield record).toList)
+
+        override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords((for {
+          number <- 1 to maxNumberOfRecords
+          record = DataRecord(Map("input" -> s"record $number"), timestamp = Some(number))
         } yield record).toList)
       }
     }
+
+    override protected def classTagT: ClassTag[Source] = classTag[Source]
 
   }
 
@@ -366,6 +383,8 @@ object validationHelpers {
       FinalResults(context)
     }
 
+    override protected def classTagT: ClassTag[Sink] = classTag[Sink]
+
   }
 
   object OptionalParametersSink extends SinkFactory with GenericParameters[Sink] {
@@ -387,6 +406,8 @@ object validationHelpers {
       FinalResults(context)
     }
 
+    override protected def classTagT: ClassTag[Sink] = classTag[Sink]
+
   }
 
   object GenericParametersProcessor extends EagerService with GenericParameters[ServiceInvoker] {
@@ -398,6 +419,8 @@ object validationHelpers {
     )(implicit nodeId: NodeId): this.FinalResults = {
       FinalResults(context)
     }
+
+    override protected def classTagT: ClassTag[ServiceInvoker] = classTag[ServiceInvoker]
 
   }
 
@@ -412,6 +435,8 @@ object validationHelpers {
     )(implicit nodeId: NodeId): this.FinalResults = {
       throw SomeException
     }
+
+    override protected def classTagT: ClassTag[ServiceInvoker] = classTag[ServiceInvoker]
 
   }
 
@@ -432,9 +457,14 @@ object validationHelpers {
 
     override def nodeDependencies: List[NodeDependency] =
       List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
+
+    override protected def classTagT: ClassTag[ServiceInvoker] = classTag[ServiceInvoker]
+
   }
 
   trait GenericParameters[T] extends SingleInputDynamicComponent[T] {
+
+    protected def classTagT: ClassTag[T]
 
     override type State = List[String]
 
@@ -497,7 +527,8 @@ object validationHelpers {
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): T = {
-      null.asInstanceOf[T]
+      implicit val implicitClassTagT: ClassTag[T] = classTagT
+      ReflectUtils.createADumbInstanceOf[T]
     }
 
     override def nodeDependencies: List[NodeDependency] =
