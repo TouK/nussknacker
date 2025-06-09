@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -98,7 +98,8 @@ class ScenarioTestServiceSpec
       TestDataSettings(
         maxSamplesCount = None,
         testDataMaxLength = None,
-        resultsMaxBytes = None
+        resultsMaxBytes = None,
+        TestDataFormat.SourceSpecific,
       ),
       modelData,
       Resource.pure(EngineScenarioCompilationDependencies.empty),

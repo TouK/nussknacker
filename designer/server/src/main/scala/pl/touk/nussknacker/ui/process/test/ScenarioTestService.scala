@@ -26,10 +26,10 @@ import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
+import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import shapeless.syntax.typeable.typeableOps
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -45,6 +45,8 @@ class ScenarioTestService(
 ) extends LazyLogging {
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
+
+  private val testDataFormatHandler = TestDataFormatHandler(testDataSettings.testDataFormat, modelData)
 
   private val preliminaryScenarioRecordsSerDe = new PreliminaryScenarioRecordsSerDe(
     serializedContentMaxLength = testDataSettings.testDataMaxLength,
@@ -160,7 +162,7 @@ class ScenarioTestService(
 
         fetchedLiveDataForSources = compiledSources
           .flatMap { case (sourceId, compiledSource) =>
-            fetchLiveData(sourceId, compiledSource, maxNumberOfRecords)
+            testDataFormatHandler.fetchLiveData(sourceId, compiledSource, maxNumberOfRecords).toOption
           }
 
         fetchedLiveDataForSourcesNel <- fetchedLiveDataForSources.toNel.toRight(
@@ -201,8 +203,9 @@ class ScenarioTestService(
 
         (_, compiledSource) = compiledSourceWithId
 
-        fetchedLiveData <- fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
-          .toRight(FetchLiveDataError.LiveDataFetchingNotSupportedError)
+        fetchedLiveData <- testDataFormatHandler
+          .fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
+          .leftMap(_ => FetchLiveDataError.LiveDataFetchingNotSupportedError)
 
         fetchedLiveDataNel <- NonEmptyList
           .fromList(fetchedLiveData)
@@ -229,20 +232,6 @@ class ScenarioTestService(
         NonEmptyList.one(nodeId -> compilationErrors)
       }
       .map(nodeId -> _)
-  }
-
-  private def fetchLiveData(
-      sourceId: NodeId,
-      compiledSource: Source,
-      maxNumberOfRecords: Int
-  ): Option[List[PreliminaryScenarioRecord]] = {
-    compiledSource.cast[TestDataGenerator].map { testDataGenerator =>
-      val sourceTestRecords = modelData.withModelClassloaderAsContextClassLoader {
-        testDataGenerator.generateTestData(maxNumberOfRecords).testRecords
-      }
-      sourceTestRecords
-        .map(testRecord => PreliminaryScenarioRecord(sourceId.id, testRecord.json, testRecord.timestamp))
-    }
   }
 
   def performTest(
