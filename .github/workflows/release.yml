@@ -47,7 +47,7 @@ jobs:
 
       - uses: coursier/setup-action@v1
         with:
-          jvm: temurin:1.11.0.17
+          jvm: temurin:1.17.0.5
 
       - name: Get Node.js version
         id: nvm
