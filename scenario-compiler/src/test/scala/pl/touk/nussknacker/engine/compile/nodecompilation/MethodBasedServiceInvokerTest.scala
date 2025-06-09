@@ -5,6 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
@@ -34,9 +35,10 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
     new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
 
   private val nodeCompilationContext = new NodeCompilationDependencies(
-    scenarioCompilationDependencies,
-    Processor("id", ServiceRef("id", List.empty)),
-    componentUseContext
+    scenarioCompilationDependencies = scenarioCompilationDependencies,
+    nodeData = Processor("id", ServiceRef("id", List.empty)),
+    componentUseContext = componentUseContext,
+    inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
   )
 
   it should "invoke service method with declared parameters as scala params" in {

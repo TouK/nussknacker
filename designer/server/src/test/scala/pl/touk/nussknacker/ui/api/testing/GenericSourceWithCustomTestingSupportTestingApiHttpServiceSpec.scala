@@ -1,25 +1,35 @@
 package pl.touk.nussknacker.ui.api.testing
 
 import io.circe.syntax.EncoderOps
+import org.scalatest.Assertion
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
+import sttp.client3.Response
 
-class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec
+class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
     extends ScenarioTestingApiHttpServiceSpec
-    with WithAdHocInvalidParametersTestsLogic {
+    with WithAdHocInvalidParametersTestsLogic
+    with EitherValuesDetailedMessage
+    with Matchers {
 
   override protected def exampleScenarioSourceId = "sourceId"
 
   override protected def exampleScenario: CanonicalProcess =
     ScenarioBuilder
       .streaming("scenario_1")
-      .source(exampleScenarioSourceId, "genericSourceWithCustomVariables", "elements" -> "{'test'}".spel)
+      .source(exampleScenarioSourceId, "genericSourceWithCustomTestingSupport", "elements" -> "{'test'}".spel)
       .emptySink("end", "monitor")
+
+  override protected def exampleScenarioInputVariableType: TypingResult = Typed[String]
 
   override protected def parametersProvidedForDryRun: String =
     ScenarioTestValidationRequest(
@@ -69,9 +79,11 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec
       |""".stripMargin
 
   override protected def expectedTestDataJson: String =
-    s"""{"sourceId":"sourceId","record":"test-0"}
-       |{"sourceId":"sourceId","record":"test-1"}
-       |{"sourceId":"sourceId","record":"test-2"}""".stripMargin
+    s"""[
+       |  {"sourceId":"sourceId","variables":{"input": "test-0"},"timestamp":123},
+       |  {"sourceId":"sourceId","variables":{"input": "test-1"},"timestamp":123},
+       |  {"sourceId":"sourceId","variables":{"input": "test-2"},"timestamp":123}
+       |]""".stripMargin
 
   override protected def validParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map(ParameterName("elements") -> "{'123'}".spel))
@@ -136,6 +148,15 @@ class GenericSourceWithCustomVariablesTestingApiHttpServiceSpec
        |  }
        |]
        |""".stripMargin
+  }
+
+  override protected def verifyTestFromFileWithCorrectTestDataResponse(response: Response[String]): Assertion = {
+    response.bodyAsJson.hcursor
+      .downField("counts")
+      .downField(exampleScenarioSourceId)
+      .downField("all")
+      .as[Int]
+      .rightValue shouldBe 3
   }
 
 }

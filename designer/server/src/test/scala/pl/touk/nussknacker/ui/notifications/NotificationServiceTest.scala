@@ -181,7 +181,7 @@ class NotificationServiceTest
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
-    ): RunDeploymentResult = {
+    ): Option[ExternalDeploymentId] = {
       when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
@@ -196,6 +196,8 @@ class NotificationServiceTest
             scenarioSource = LatestVersion,
           )
         )
+        .futureValue
+        .externalDeploymentId
         .futureValue
     }
 
@@ -251,7 +253,7 @@ class NotificationServiceTest
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
-    ): RunDeploymentResult = {
+    ): Option[ExternalDeploymentId] = {
       when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
@@ -269,6 +271,8 @@ class NotificationServiceTest
             scenarioSource = LatestVersion,
           )
         )
+        .futureValue
+        .externalDeploymentId
         .futureValue
     }
 

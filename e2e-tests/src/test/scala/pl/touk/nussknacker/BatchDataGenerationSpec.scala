@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
 
+// FIXME abr: switch to common-format
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
     with BaseE2ESpec

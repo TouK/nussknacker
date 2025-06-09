@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, Params, Service}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.{Sink, Source}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
@@ -42,8 +43,10 @@ object ComponentImplementationInvoker {
 
   sealed trait ComponentImplementationSpecificInvocationContext
 
-  case class DynamicComponentInvocationContext(finalStateValue: FinalStateValue)
-      extends ComponentImplementationSpecificInvocationContext
+  case class DynamicComponentInvocationContext(
+      finalStateValue: FinalStateValue,
+      outputValidationContext: ValidationContext
+  ) extends ComponentImplementationSpecificInvocationContext
 
   case class LazyServiceInvocationContext(
       executionContext: ExecutionContext,

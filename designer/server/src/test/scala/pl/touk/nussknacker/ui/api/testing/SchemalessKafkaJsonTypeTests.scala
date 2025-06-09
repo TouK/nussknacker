@@ -10,6 +10,7 @@ import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.kafka.clients.admin.NewTopic
+import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -170,6 +171,33 @@ class SchemalessKafkaJsonTypeTests
     }
   }
 
+  "The endpoint for test with custom test data should" - {
+    "perform a test on given data" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .multiPart(
+          "scenarioGraph",
+          exampleScenario.toScenarioGraph.asJson.spaces2,
+          "application/json"
+        )
+        .multiPart(
+          "testData",
+          s"""[
+             |  { "sourceId":"$exampleScenarioSourceId","variables": { "input": {"name": "Foo"} } }
+             |]""".stripMargin,
+          "application/json"
+        )
+        .post(s"$nuDesignerHttpAddress/api/processManagement/test/${exampleScenario.name}")
+        .Then()
+        .statusCode(200)
+        .body(s"counts.$exampleScenarioSourceId.all", equalTo(1))
+    }
+  }
+
   protected val kafkaContainer: KafkaContainer =
     KafkaContainer().configure { self =>
       self.setNetwork(network)
@@ -265,6 +293,8 @@ object SchemalessKafkaJsonTypeTests {
           "Content type" -> "'JSON'".spel,
           "Data sample"  -> Expression.json("{\"name\": \"Tom\"}")
         )
+        // We add filtering logic to ensure that types are correctly verified during testing
+        .filter("filter", "#input.name != 'asdf'".spel)
         .emptySink(
           "end",
           "kafka",

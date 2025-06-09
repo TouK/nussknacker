@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component.{ComponentImplementationInvoker, NodeCompilationDependencies}
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 import pl.touk.nussknacker.engine.process.compiler.{ComponentDefinitionContext, FlinkProcessCompilerDataFactory}
@@ -36,7 +37,8 @@ object VerificationFlinkProcessCompilerDataFactory {
                 override def transformOriginalInvocationResult(
                     originalInvocationResult: Any,
                     typingResult: TypingResult,
-                    compilationDependencies: NodeCompilationDependencies
+                    compilationDependencies: NodeCompilationDependencies,
+                    invocationContext: Option[ComponentImplementationSpecificInvocationContext]
                 ): Any =
                   EmptySource(typingResult)
               }

@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.context.ScenarioCompilationErrors
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
@@ -258,11 +260,13 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val data = List()
 
-    val thrown = the[IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, data)
-
-    thrown.getMessage should startWith(
-      "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all)"
-    )
+    the[ScenarioCompilationErrors] thrownBy {
+      processInvoker.invokeWithSampleData(process, data)
+    } should matchPattern {
+      case ScenarioCompilationErrors(
+            ExpressionParserCompilationError("Unresolved reference 'input'", "proc2", _, _, _) :: _
+          ) =>
+    }
   }
 
   test("should validate types in custom node output variable") {
@@ -274,11 +278,19 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
       .processor("proc2", "logService", "all" -> "#outRec".spel)
       .emptySink("out", "monitor")
 
-    val thrown = the[IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
-
-    thrown.getMessage should startWith(
-      "Compilation errors: ExpressionParserCompilationError(There is no property 'value999' in type: SimpleRecord,delta,Some($expression)"
-    )
+    the[ScenarioCompilationErrors] thrownBy {
+      processInvoker.invokeWithSampleData(process, List.empty)
+    } should matchPattern {
+      case ScenarioCompilationErrors(
+            ExpressionParserCompilationError(
+              "There is no property 'value999' in type: SimpleRecord",
+              "delta",
+              _,
+              _,
+              _
+            ) :: _
+          ) =>
+    }
   }
 
   test("should evaluate blank expression used in lazy parameter as a null") {

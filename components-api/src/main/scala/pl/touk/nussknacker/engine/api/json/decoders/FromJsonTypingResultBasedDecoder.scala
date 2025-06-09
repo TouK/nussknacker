@@ -4,6 +4,8 @@ import cats.implicits.toTraverseOps
 import io.circe._
 import org.apache.commons.lang3.LocaleUtils
 import org.springframework.util.StringUtils
+import com.typesafe.scalalogging.LazyLogging
+import io.circe._
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.math.BigInteger
@@ -12,7 +14,7 @@ import java.time._
 import java.util.{Currency, Locale, UUID}
 import scala.jdk.CollectionConverters._
 
-object FromJsonTypingResultBasedDecoder {
+object FromJsonTypingResultBasedDecoder extends LazyLogging {
   private val intClass        = Typed.typedClass[Int]
   private val shortClass      = Typed.typedClass[Short]
   private val longClass       = Typed.typedClass[Long]
@@ -92,6 +94,15 @@ object FromJsonTypingResultBasedDecoder {
         case None =>
           Left(DecodingFailure(s"Expected encoded List to be a Json array", List()))
       }
+    case TypedClass(klass, List(elementType: TypingResult)) if klass == Typed.KlassForArrays =>
+      obj.values match {
+        case Some(values) =>
+          values.toList
+            .traverse(v => decodeValue(elementType, v.hcursor))
+            .map(convertToArray(_, elementType))
+        case None =>
+          Left(DecodingFailure(s"Expected encoded Array to be a Json array", List()))
+      }
     case record: TypedObjectTypingResult =>
       for {
         fieldsJson <- obj.as[Map[String, Json]]
@@ -100,11 +111,32 @@ object FromJsonTypingResultBasedDecoder {
             val fieldType = record.fields.getOrElse(fieldName, Unknown)
             decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
           }
-      } yield decodedFields.toMap.asJava
-    case Unknown(_) =>
+        // We don't check runtimeObjType and assume that the runtime type is java Map which is wrong in some cases (Avro, table-api) and might cause Flink serialization problems
+        // TODO: We should either accept any supported record type during serialization/deserialization in every place or respect runtimeObjType
+        javaMap = decodedFields.toMap.asJava
+      } yield javaMap
+    case unknown @ Unknown(_) =>
       /// For Unknown we fallback to generic json to any conversion. It won't work for some types such as LocalDate but for others should work correctly
-      obj.as[Json].map(FromJsonSimpleDecoder.jsonToAny)
+      obj.as[Json].map { json =>
+        val result = FromJsonSimpleDecoder.jsonToAny(json)
+        logger.debug(
+          s"Target type for json [${json.noSpaces}] decoding is [$unknown] type. For decoding was used simple decoder. Result is [$result]"
+        )
+        result
+      }
     case typ => Left(DecodingFailure(s"Decoding of type [$typ] is not supported.", List()))
+  }
+
+  private def convertToArray(list: List[Any], elementType: TypingResult) = elementType match {
+    case single: SingleTypingResult =>
+      val reflectiveCreatedArray =
+        java.lang.reflect.Array.newInstance(single.runtimeObjType.klass, list.size).asInstanceOf[Array[Any]]
+      list.copyToArray(
+        reflectiveCreatedArray
+      ) // Idea marks this line as unused code, but it is not true - it produces a side effect that is important for us
+      reflectiveCreatedArray
+    case _ =>
+      list.toArray[Any]
   }
 
 }

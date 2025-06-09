@@ -542,7 +542,7 @@ class NodeCompiler(
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
     componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
-        val nodeCompilationDependencies = createNodeCompilationDependencies(nodeData)
+        val nodeCompilationDependencies = createNodeCompilationDependencies(nodeData, inputContext)
         val afterValidation =
           dynamicNodeValidator
             .validateNode(
@@ -552,7 +552,7 @@ class NodeCompiler(
               nodeInputValidationContext = inputContext
             )
             .map {
-              case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
+              case TransformationResult(Nil, computedParameters, outputValidationContext, finalState, nodeParameters) =>
                 val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
                 val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
                 val (typingInfo, validComponentExecutor) = withCompiledParameters[ComponentExecutor](
@@ -568,14 +568,15 @@ class NodeCompiler(
                         compiledParameters = compiledParameters,
                         nodeCompilationDependencies = nodeCompilationDependencies,
                         nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
-                        invocationContext = Some(DynamicComponentInvocationContext(FinalStateValue(finalState))),
+                        invocationContext =
+                          Some(DynamicComponentInvocationContext(FinalStateValue(finalState), outputValidationContext)),
                       )
                     )
                 }
                 (
                   typingInfo,
                   Some(computedParameters),
-                  outputContext,
+                  outputValidationContext,
                   validComponentExecutor.map((_, withoutRedundant))
                 )
               case TransformationResult(h :: t, computedParameters, outputContext, _, _) =>
@@ -604,7 +605,7 @@ class NodeCompiler(
             .createComponentExecutor[ComponentExecutor](
               new ComponentExecutorDependencies(
                 componentDefinition = componentDefinition,
-                nodeCompilationDependencies = createNodeCompilationDependencies(nodeData),
+                nodeCompilationDependencies = createNodeCompilationDependencies(nodeData, inputContext),
                 compiledParameters = compiledParameters,
                 nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
                 invocationContext = None,
@@ -702,7 +703,7 @@ class NodeCompiler(
           id = serviceNodeData.service.id,
           invoker = new MethodBasedServiceInvoker(
             componentDefinition,
-            createNodeCompilationDependencies(serviceNodeData),
+            createNodeCompilationDependencies(serviceNodeData, inputContext),
             evaluateParams
           ),
           resultCollector = resultCollector
@@ -720,12 +721,14 @@ class NodeCompiler(
   }
 
   private def createNodeCompilationDependencies(
-      nodeData: NodeData
+      nodeData: NodeData,
+      inputValidationContext: NodeInputValidationContext
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies) = {
     new NodeCompilationDependencies(
-      scenarioCompilationDependencies,
-      nodeData,
-      runtimeMode.createContext(nodesDeploymentData.get(NodeId(nodeData.id)))
+      scenarioCompilationDependencies = scenarioCompilationDependencies,
+      nodeData = nodeData,
+      componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(NodeId(nodeData.id))),
+      inputValidationContext = inputValidationContext
     )
   }
 

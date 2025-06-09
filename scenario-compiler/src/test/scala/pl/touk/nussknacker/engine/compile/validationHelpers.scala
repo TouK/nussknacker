@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
@@ -286,16 +287,21 @@ object validationHelpers {
         finalState: Option[List[String]]
     ): Source = {
 
-      new Source with SourceTestSupport[String] with TestDataGenerator {
+      new Source with SourceTestSupport[ProcessingType] with TestDataGenerator with LiveDataProvider {
 
         override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
           testRecords.map { testRecord =>
             CirceUtil.decodeJsonUnsafe[String](testRecord.json)
           }
 
-        override def generateTestData(size: Int): TestData = TestData((for {
-          number <- 1 to size
+        override def generateTestData(maxNumberOfRecords: Int): TestData = TestData((for {
+          number <- 1 to maxNumberOfRecords
           record = TestRecord(Json.fromString(s"record $number"), timestamp = Some(number))
+        } yield record).toList)
+
+        override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords((for {
+          number <- 1 to maxNumberOfRecords
+          record = DataRecord(Map("input" -> s"record $number"), timestamp = Some(number))
         } yield record).toList)
       }
     }
