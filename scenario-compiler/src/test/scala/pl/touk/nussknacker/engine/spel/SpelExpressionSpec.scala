@@ -1710,7 +1710,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       ctx
     ).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
-            "Unexpected token: 'oo'",
+            "Unexpected text",
             Some(CoordinatesBasedTextRange(TextCoordinates(4, 0), TextCoordinates(5, 0)))
           ) :: Nil =>
     }

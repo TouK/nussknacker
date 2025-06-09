@@ -245,7 +245,7 @@ class SpelExpressionParser(
             ex.getMessageCode match {
               case SpelMessage.MORE_INPUT =>
                 // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
-                MessageFormat.format("Unexpected token: ''{0}''", ex.getInserts: _*)
+                "Unexpected text"
               case _ => removeErrorCodeIndicator(ex)
             }
           }
