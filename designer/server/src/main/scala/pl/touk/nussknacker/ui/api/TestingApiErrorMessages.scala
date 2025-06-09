@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
-import pl.touk.nussknacker.ui.process.test.TestInfoProvider.TestDataPreparationError
 
 object TestingApiErrorMessages {
 
@@ -20,29 +20,24 @@ object TestingApiErrorMessages {
           case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
             TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
         }
-      case PerformTestError.TestDataPreparationError(cause) =>
-        cause match {
-          case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
-            TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
-          case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
-            TestingApiErrorMessages.problemInSample(recordIndex).multipleSourcesRequired
-        }
+      case PerformTestError.MissingSource(sourceId, recordIndex) =>
+        TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
       case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
     }
   }
 
-  object fetchedLiveData {
+  object liveDataFetching {
     def requestedTooManySamplesToFetch(maxSamples: Int) =
       s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
 
     val noLiveDataAvailable =
       "No live test data available. Please ensure that the storage used by source contains at least one data sample"
 
-    val noSourcesWithTestDataGeneration = "No sources with test data generation available"
+    val noSourcesWithLiveDataFetching = "No sources with live data fetching support available"
 
     def tooManyCharacters(length: Int, limit: Int) =
-      s"Too many characters were found in the generated test data ($length). Please try to decrease the number of requested samples or configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
+      s"Too many characters were found in the fetched test data ($length). Please try to decrease the number of requested samples or configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
   }
 
   object passedTestData {
@@ -53,6 +48,13 @@ object TestingApiErrorMessages {
 
     def tooManySamples(count: Int, maxSamples: Int) =
       s"Test data has too many samples ($count). Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
+  }
+
+  object testingWithCustomInput {
+
+    def notSupportedBySource(sourceId: NodeId) =
+      s"Testing with custom input is not supported by source '$sourceId'"
+
   }
 
   case class problemInSample(private val recordIndex: Int) {
@@ -68,9 +70,6 @@ object TestingApiErrorMessages {
 
     def missingSource(sourceId: String): String =
       messageForSample(s"source with id '$sourceId' doesn't exist in the scenario")
-
-    def multipleSourcesRequired: String =
-      messageForSample("scenario has multiple sources, but got sample with unspecified source id")
 
     private def messageForSample(message: String) =
       s"Problem in sample ${recordIndex + 1} detected: $message"

@@ -2285,10 +2285,9 @@ paths:
                     to increase the limit (100)
                 Example4:
                   summary: Too many characters generated
-                  value: Too many characters were found in the generated test data
-                    (1000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (500)
+                  value: Too many characters were found in the fetched test data (1000).
+                    Please try to decrease the number of requested samples or configure
+                    'testDataSettings.testDataMaxLength' to increase the limit (500)
         '401':
           description: ''
           content:
@@ -4771,10 +4770,9 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched test data (5000).
+                    Please try to decrease the number of requested samples or configure
+                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
                 Example1:
                   summary: Too many samples requested
                   value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
@@ -4824,7 +4822,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4894,10 +4892,9 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched test data (5000).
+                    Please try to decrease the number of requested samples or configure
+                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
                 Example1:
                   summary: Too many samples requested
                   value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
@@ -4947,7 +4944,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -5007,10 +5004,9 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched test data (5000).
+                    Please try to decrease the number of requested samples or configure
+                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
                 Example1:
                   summary: Too many samples requested
                   value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
@@ -5060,7 +5056,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -5159,10 +5155,9 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched test data (5000).
+                    Please try to decrease the number of requested samples or configure
+                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
                 Example1:
                   summary: Too many samples requested
                   value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
@@ -5212,7 +5207,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:

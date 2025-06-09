@@ -64,12 +64,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.test.{
-  ModelDataTestInfoProvider,
-  PreliminaryScenarioTestDataSerDe,
-  ScenarioTestService,
-  TestInfoProvider
-}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
@@ -284,19 +279,14 @@ trait NuResourcesTest
       writeProcessRepository,
     )
 
-  protected def createScenarioTestService(modelData: ModelData): ScenarioTestService =
-    createScenarioTestService(
-      new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
-    )
-
   protected def createScenarioTestService(
-      testInfoProvider: TestInfoProvider
+      modelData: ModelData
   ): ScenarioTestService =
     new ScenarioTestService(
-      testInfoProvider,
-      processResolver(),
       designerConfig.testDataSettings,
-      new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
+      modelData,
+      Resource.pure(EngineScenarioCompilationDependencies.empty),
+      processResolver(),
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository()),
       new ScenarioTestExecutorServiceImpl(
         new ScenarioResolver(sampleResolver(), Streaming.stringify),
