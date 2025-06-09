@@ -24,7 +24,10 @@ export const ScenarioDetailsItemWrapper = styled("div")(
     `,
 );
 
-export const ProcessName = styled(Typography)``;
+export const ProcessName = styled(Typography)({
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+});
 
 ProcessName.defaultProps = {
     title: i18next.t("panels.scenarioDetails.tooltip.name", "Name"),
