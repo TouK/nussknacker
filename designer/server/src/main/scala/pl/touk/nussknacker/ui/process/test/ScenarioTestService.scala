@@ -188,9 +188,11 @@ class ScenarioTestService(
       for {
         _ <- validateSampleSize(maxNumberOfSamples)(SourceTestError.TooManySamplesRequestedError)
 
-        compiledSource <- compileSource(sourceNodeData)
+        compiledSourceWithId <- compileSource(sourceNodeData)
           .leftMap(errors => SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString)))
           .toEither
+
+        (_, compiledSource) = compiledSourceWithId
 
         // We assume that TestDataGenerator.generateTestData implementation will always fetch live data
         // TODO: In the future we want to extract another interface which would explicitly fetch live data in the standardized format which would not require to define TestRecordParser

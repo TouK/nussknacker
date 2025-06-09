@@ -449,7 +449,9 @@ trait ScenarioTestingApiHttpServiceSpec
         .Then()
         .statusCode(400)
         .equalsPlainBody(
-          "Requested test parameters from source [missing source] that is not valid. Errors: MissingSourceFactory(missing source,missing source)"
+          """Scenario is invalid.
+            |Node errors:
+            |  missing source: Missing source: missing source""".stripMargin
         )
     }
   }
