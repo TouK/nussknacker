@@ -58,6 +58,7 @@ import pl.touk.nussknacker.engine.schemedkafka.typed.{
 import pl.touk.nussknacker.engine.util.json.JsonSchemaUtils.jsonToCirce
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
+import scala.collection.compat.immutable.LazyList
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag

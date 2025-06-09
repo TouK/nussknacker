@@ -208,6 +208,10 @@ description: Stay informed with detailed changelogs covering new features, impro
             disabled: { oneOfUserRoles: ["AllPermissions"], type: "allof" } // Disabled, when user has role `AllPermissions` 
          }
       ```
+* [#8213](https://github.com/TouK/nussknacker/pull/8213) Added functionality to replace dynamic forms with a single parameter with a JSON template
+    * set `modelConfig.enableSingleParameterWithTemplateInsteadOfDynamicForm` of the scenarioType in the `scenarioTypes` config section to `true` in order to replace dynamic form with single param
+    * the flag is optional, the default value of the flag is `false` (no changes in behavior)
+    * currently supported for Kafka Sinks only.
 
 ## 1.18
 
