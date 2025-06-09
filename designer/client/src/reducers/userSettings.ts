@@ -25,6 +25,7 @@ type SettingsNames =
     | "scenario.allowQuickCancelDeploy"
     | "scenario.showBreadcrumbs"
     | "scenario.autoEnableLiveData"
+    | "editor.showRangeMessages"
     | "toolbar.autoSaveDuringDeployRedeploy";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
@@ -53,6 +54,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
     "scenario.autoEnableLiveData": getInitialUserFlag("scenario.autoEnableLiveData", false),
     "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
+    "editor.showRangeMessages": getInitialUserFlag("editor.showRangeMessages"),
 });
 
 /**

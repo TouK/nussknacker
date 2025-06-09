@@ -10,7 +10,9 @@ import AceEditor from "./ace";
 import { DEFAULT_OPTIONS } from "./AceWrapper";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import { StyledAceEditor } from "./StyledAceEditor";
 import type { ExpressionObj } from "./types";
+import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
     expressionObj: ExpressionObj;
@@ -33,6 +35,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     isMarked,
 }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
+    const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
 
     const onChange = (newValue: string) => {
         setValue(newValue);
@@ -53,13 +56,14 @@ export const JsonEditor: SimpleEditor<Props> = ({
                 ])}
                 sx={{ position: "relative" }}
             >
-                <AceEditor
+                <StyledAceEditor
+                    onLoad={setAnnotationsOnLoad}
                     readOnly={readOnly}
                     mode={"json"}
                     width={"100%"}
                     minLines={5}
                     maxLines={50}
-                    theme={THEME}
+                    codeTheme={THEME}
                     onChange={onChange}
                     value={value}
                     showPrintMargin={false}
@@ -75,11 +79,11 @@ export const JsonEditor: SimpleEditor<Props> = ({
                         // We don't want to check syntax correctness with ace
                         useWorker: false,
                     }}
+                    annotations={annotations}
+                    markers={markers}
                 />
             </Box>
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>
     );
 };
-
-export default JsonEditor;
