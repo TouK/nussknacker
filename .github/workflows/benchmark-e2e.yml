@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v2
       - uses: coursier/setup-action@v1
         with:
-          jvm: temurin:1.11.0.17
+          jvm: temurin:1.17.0.5
       - uses: sbt/setup-sbt@v1
       - name: Run benchmarks
         run: |

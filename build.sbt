@@ -399,7 +399,7 @@ lazy val commonDockerSettings = {
     // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java and we want to have same jre in both designer and lite-runner
     // to make analysis of problems with jre compatibility easier using testing mechanism and embedded server
     // TODO: we want to support jre17+ but before that flink must be compatible with jre17+ and we should handle opening of modules for spel reflectional access to java modules classes
-    dockerBaseImage       := "eclipse-temurin:11-jre-jammy",
+    dockerBaseImage       := "eclipse-temurin:17-jre-jammy",
     dockerUsername        := dockerUserName,
     dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64"), // not used in case of Docker/publishLocal
