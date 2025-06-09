@@ -5,6 +5,7 @@ import org.apache.avro.{JsonProperties, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.jdk.CollectionConverters._
+import scala.reflect.ClassTag
 
 object JsonTemplateFromAvroSchemaDeterminer {
 
@@ -73,7 +74,7 @@ object JsonTemplateFromAvroSchemaDeterminer {
     }
   }
 
-  private def withDefaultValueAs[T <: AnyRef: Encoder](fieldSchema: Schema.Field): Option[Json] =
+  private def withDefaultValueAs[T <: AnyRef: ClassTag: Encoder](fieldSchema: Schema.Field): Option[Json] =
     Option(fieldSchema.defaultVal()) match {
       case Some(JsonProperties.NULL_VALUE) => Some(Json.Null)
       case Some(value: T)                  => Some(Encoder[T].apply(value))
