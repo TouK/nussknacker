@@ -821,6 +821,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     }.toList,
   )
   .dependsOn(
+    liveDataCollector,
     scenarioCompilerFlinkDeps,
     flinkComponentsUtils,
     flinkExtensionsApi,
@@ -2033,9 +2034,8 @@ lazy val liveDataCollector = (project in file("designer/live-data-collector"))
     ),
   )
   .dependsOn(
-    deploymentManagerApi % Provided,
     // For testResultsVariableEncoder purpose
-    scenarioCompiler     % Provided,
+    scenarioCompiler % Provided,
   )
 
 lazy val prepareDesignerTests     = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")
