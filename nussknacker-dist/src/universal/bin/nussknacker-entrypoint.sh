@@ -54,6 +54,7 @@ MODULES_OPEN_OPTS="--add-exports=java.base/sun.net.util=ALL-UNNAMED \
 --add-opens=java.base/java.text=ALL-UNNAMED \
 --add-opens=java.base/java.time=ALL-UNNAMED \
 --add-opens=java.base/java.util=ALL-UNNAMED \
+--add-opens=java.base/java.math=ALL-UNNAMED \
 --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
 --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
 --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED"
