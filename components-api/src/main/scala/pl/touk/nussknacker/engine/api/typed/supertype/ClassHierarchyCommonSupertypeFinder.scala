@@ -20,14 +20,31 @@ import scala.collection.immutable.ListSet
   */
 object ClassHierarchyCommonSupertypeFinder {
 
-  private val IgnoredCommonInterfaces = Set[Class[_]](
-    classOf[java.io.Serializable],
-    classOf[java.lang.Comparable[_]],
-    classOf[java.lang.Cloneable],
-    classOf[scala.Serializable],
-    classOf[scala.Cloneable],
-    classOf[scala.Product],
-  )
+  private lazy val jvmMajorVersion = {
+    val version = System.getProperty("java.version")
+    if (version.startsWith("1.")) version.split("\\.")(1).toInt
+    else version.split("\\.")(0).toInt
+  }
+
+  private lazy val IgnoredCommonInterfaces = {
+    // we stick to target 1.8 due to scala 2.12.10 incompatibility with jvm 17 so we can't refer statically to those interfaces
+    val jvmVersionDependentInterfaces = if (jvmMajorVersion > 12) {
+      Set(
+        Class.forName("java.lang.constant.ConstantDesc"),
+        Class.forName("java.lang.constant.Constable")
+      )
+    } else {
+      Set()
+    }
+    Set[Class[_]](
+      classOf[java.io.Serializable],
+      classOf[java.lang.Comparable[_]],
+      classOf[java.lang.Cloneable],
+      classOf[scala.Serializable],
+      classOf[scala.Cloneable],
+      classOf[scala.Product],
+    ) ++ jvmVersionDependentInterfaces
+  }
 
   def findCommonSupertypes(first: Class[_], sec: Class[_]): Set[Class[_]] = {
     // We need to have breadth first search to make reduction below work
