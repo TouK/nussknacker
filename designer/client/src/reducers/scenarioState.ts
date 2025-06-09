@@ -19,6 +19,9 @@ export const reducer: Reducer<ProcessStateType> = produce((draft, action) => {
             merge(draft, action.processState);
             return draft;
         }
+        case "CLEAR_STATE": {
+            return {} as ProcessStateType;
+        }
     }
     return draft;
 }, {} as ProcessStateType);

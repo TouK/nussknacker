@@ -46,14 +46,21 @@ const labelUniqueValidation = (label: string) => ({
     ],
 });
 
-const AddLabel = ({ onClick }: AddLabelProps) => {
+const AddLabel = ({ onClick, disabled }: AddLabelProps & { disabled?: boolean }) => {
     return (
         <Typography
             data-testid="AddLabel"
             component={Link}
             variant={"caption"}
-            sx={(theme) => ({ cursor: "pointer", textDecoration: "none", color: theme.palette.text.primary })}
-            onClick={onClick}
+            sx={(theme) => ({
+                cursor: disabled ? "default" : "pointer",
+                textDecoration: "none",
+                color: disabled ? theme.palette.text.disabled : theme.palette.text.primary,
+                "&:hover": {
+                    textDecoration: disabled ? "none" : "underline",
+                },
+            })}
+            onClick={!disabled ? onClick : undefined}
         >
             {i18next.t("panels.scenarioDetails.labels.addLabelTitle", "+ Add label")}
         </Typography>
@@ -264,7 +271,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
     return (
         <>
             {!showEditor ? (
-                <AddLabel onClick={handleAddLabelClick} />
+                <AddLabel onClick={handleAddLabelClick} disabled={readOnly} />
             ) : (
                 <StyledAutocomplete
                     ref={autocompleteRef}
@@ -369,6 +376,9 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 helperText={inputHelperText}
                                 inputProps={{
                                     ...params.inputProps,
+                                    sx: {
+                                        display: params.inputProps.disabled ? "none" : "block", // Hides the input when edition is disbaled
+                                    },
                                     onKeyDown: (event) => {
                                         const input = (event.target as HTMLInputElement).value;
 
