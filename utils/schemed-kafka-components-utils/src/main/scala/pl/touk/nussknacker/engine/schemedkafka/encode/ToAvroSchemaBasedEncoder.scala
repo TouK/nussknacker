@@ -7,7 +7,6 @@ import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.util.Utf8
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}

@@ -191,6 +191,10 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#7982](https://github.com/TouK/nussknacker/pull/7982) Mock expression added to enrichers (except decision-table) which can be used to hardcode enricher output in tests without calling external services.
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
+* [#8213](https://github.com/TouK/nussknacker/pull/8213) Added functionality to replace dynamic forms with a single parameter with a JSON template
+    * set `modelConfig.enableSingleParameterWithTemplateInsteadOfDynamicForm` of the scenarioType in the `scenarioTypes` config section to `true` in order to replace dynamic form with single param
+    * the flag is optional, the default value of the flag is `false` (no changes in behavior)
+    * currently supported for Kafka Sinks only.
 
 ## 1.18
 
