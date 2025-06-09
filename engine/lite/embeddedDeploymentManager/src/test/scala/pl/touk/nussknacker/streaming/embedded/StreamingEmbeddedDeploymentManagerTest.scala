@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
@@ -239,8 +239,8 @@ class StreamingEmbeddedDeploymentManagerTest
 
     val testData = ScenarioTestData(
       List(
-        ScenarioTestJsonRecord("source", testRecord("1")),
-        ScenarioTestJsonRecord("source", testRecord("2"))
+        ScenarioTestSourceSpecificFormatJsonRecord("source", testRecord("1")),
+        ScenarioTestSourceSpecificFormatJsonRecord("source", testRecord("2"))
       )
     )
 

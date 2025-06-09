@@ -51,11 +51,12 @@ import java.util.Properties
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
+// TODO: rename to just FlinkKafkaSource
 class FlinkConsumerRecordBasedKafkaSource[K, V](
     preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
-    val kafkaConfig: KafkaConfig,
-    deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
-    val formatter: UniversalToJsonFormatter[K, V],
+    protected override val kafkaConfig: KafkaConfig,
+    protected override val deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
+    protected override val formatter: UniversalToJsonFormatter[K, V],
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
     namingStrategy: NamingStrategy
@@ -65,7 +66,8 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     with TestDataGenerator
     with TestWithParametersSupport[ConsumerRecord[K, V]]
     with WithActionParametersSupport
-    with LazyLogging {
+    with LazyLogging
+    with KafkaLiveDataProvider[K, V] {
 
   private val typeInformation = ConsumerRecordTypeInfo[K, V](kafkaConfig)
 
@@ -197,11 +199,8 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
       )
     )
 
-  override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)
-
-  private def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
-    deserializationSchema.deserialize(record)
-  }
+  override def generateTestData(maxNumberOfRecords: Int): TestData =
+    formatter.generateTestData(topics, maxNumberOfRecords, kafkaConfig)
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
@@ -219,6 +218,10 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
         testParametersInfo.createTestRecord(removedValue)
       )
     )
+  }
+
+  private def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
+    deserializationSchema.deserialize(record)
   }
 
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {

@@ -105,6 +105,8 @@ object ContextTransformation {
     })
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
+    def notImplemented: ContextTransformation = ContextTransformation(definition, DumbImplementation)
+
     def implementedBy(implementation: Any): ContextTransformation =
       ContextTransformation(definition, implementation)
   }
@@ -128,9 +130,13 @@ object ContextTransformation {
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
+    def notImplemented: JoinContextTransformation = JoinContextTransformation(definition, DumbImplementation)
+
     def implementedBy(implementation: Any): JoinContextTransformation =
       JoinContextTransformation(definition, implementation)
   }
+
+  object DumbImplementation
 
 }
 

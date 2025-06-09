@@ -38,7 +38,7 @@ object NodeValidationExceptionHandler extends LazyLogging {
           s"Exception during validation handling of node '${nodeId.id}' in scenario ${metaData.name.value}",
           e
         )
-        Validated.invalidNel(CannotCreateObjectError(e.getMessage, nodeId.id))
+        Validated.invalidNel(CannotCreateObjectError(e, nodeId.id))
     }
   }
 

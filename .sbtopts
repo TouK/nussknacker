@@ -5,6 +5,7 @@
 -J-XX:MaxMetaspaceSize=5g
 -J-XX:+UnlockExperimentalVMOptions
 -J-XX:-UseJVMCICompiler
+-J-Dsun.io.serialization.extendedDebugInfo=true
 -J--add-exports=java.base/sun.net.util=ALL-UNNAMED
 -J--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED
 -J--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED

@@ -10,7 +10,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownPro
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestWithParametersSupport}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, ScenarioTestParametersRecord, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.test.{
+  ScenarioTestParametersRecord,
+  ScenarioTestRecord,
+  ScenarioTestSourceSpecificFormatJsonRecord,
+  TestRecord
+}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   EvaluableLazyParameterCreator,
@@ -46,16 +51,9 @@ class TestDataPreparer(
   }
 
   def prepareRecordsForTest[T](source: Source, records: List[ScenarioTestRecord]): List[T] = {
-    val (jsonRecordList, parametersRecordList) = records.partition {
-      case _: ScenarioTestJsonRecord       => true
-      case _: ScenarioTestParametersRecord => false
-    } match {
-      case (jsonsRecords, paramsRecords) =>
-        (
-          jsonsRecords.collect { case r: ScenarioTestJsonRecord => r },
-          paramsRecords.collect { case r: ScenarioTestParametersRecord => r }
-        )
-    }
+    val jsonRecordList       = records.collect { case r: ScenarioTestSourceSpecificFormatJsonRecord => r }
+    val parametersRecordList = records.collect { case r: ScenarioTestParametersRecord => r }
+    // We don't handle ScenarioTestCommonFormatJsonRecord - it is handled by CommonTestDataFormatComponentExecutorStubber
     val testRecordsFromJsonRecords = jsonRecordList match {
       case Nil => List.empty
       case _ =>
@@ -63,7 +61,7 @@ class TestDataPreparer(
           case s: SourceTestSupport[T @unchecked] =>
             val parser = s.testRecordParser
             ThreadUtils.withContextClassLoader(classloader) {
-              parser.parse(jsonRecordList.map(_.record))
+              parser.parse(jsonRecordList.map(record => TestRecord(record.record, record.timestamp)))
             }
           case other =>
             throw new IllegalArgumentException(

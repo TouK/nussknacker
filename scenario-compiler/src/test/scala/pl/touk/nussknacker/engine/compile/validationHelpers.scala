@@ -7,9 +7,11 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ContextTransformation.DumbImplementation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
@@ -24,7 +26,7 @@ object validationHelpers {
 
   object SimpleStringSource extends SourceFactory with UnboundedStreamComponent {
     @MethodToInvoke(returnType = classOf[String])
-    def create(): api.process.Source = null
+    def create(): api.process.Source = new Source {}
   }
 
   object SimpleStreamTransformer extends CustomStreamTransformer {
@@ -36,7 +38,7 @@ object validationHelpers {
           Array(new api.AdditionalVariable(name = "additionalVar1", clazz = classOf[String]))
         )
         stringVal: LazyParameter[String]
-    ) = {}
+    ) = DumbImplementation
 
   }
 
@@ -56,7 +58,7 @@ object validationHelpers {
     def execute(@OutputVariableName variableName: String)(implicit nodeId: NodeId) = {
       ContextTransformation
         .definedBy(_.withVariable(variableName, Typed[String], paramName = None))
-        .implementedBy(null)
+        .notImplemented
     }
 
   }
@@ -67,7 +69,7 @@ object validationHelpers {
     def execute() = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .implementedBy(null)
+        .notImplemented
     }
 
   }
@@ -78,14 +80,12 @@ object validationHelpers {
     def execute(@ParamName("numberOfFields") numberOfFields: Int, @OutputVariableName variableName: String)(
         implicit nodeId: NodeId
     ): ContextTransformation = {
-      ContextTransformation
-        .definedBy { context =>
-          val newType = Typed.record((1 to numberOfFields).map { i =>
-            s"field$i" -> Typed[String]
-          })
-          context.withVariable(variableName, newType, paramName = None)
-        }
-        .implementedBy(null)
+      ContextTransformation.definedBy { context =>
+        val newType = Typed.record((1 to numberOfFields).map { i =>
+          s"field$i" -> Typed[String]
+        })
+        context.withVariable(variableName, newType, paramName = None)
+      }.notImplemented
     }
 
   }
@@ -100,14 +100,12 @@ object validationHelpers {
         @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[_]],
         @OutputVariableName variableName: String
     ): JoinContextTransformation = {
-      ContextTransformation.join
-        .definedBy { contexts =>
-          val newType = Typed.record(contexts.toSeq.map { case (branchId, _) =>
-            branchId -> valueByBranchId(branchId).returnType
-          })
-          Valid(ValidationContext(Map(variableName -> newType)))
-        }
-        .implementedBy(null)
+      ContextTransformation.join.definedBy { contexts =>
+        val newType = Typed.record(contexts.toSeq.map { case (branchId, _) =>
+          branchId -> valueByBranchId(branchId).returnType
+        })
+        Valid(ValidationContext(Map(variableName -> newType)))
+      }.notImplemented
     }
 
   }
@@ -121,24 +119,22 @@ object validationHelpers {
         @BranchParamName("mainBranch") mainBranch: Map[String, Boolean],
         @OutputVariableName variableName: String
     )(implicit nodeId: NodeId): JoinContextTransformation = {
-      ContextTransformation.join
-        .definedBy { contexts =>
-          val (mainBranches, joinedBranches) = contexts.partition { case (branchId, _) =>
-            mainBranch(branchId)
-          }
-          if (mainBranches.size != 1) {
-            Invalid(FatalUnknownError("Should be exact one main branch")).toValidatedNel
-          } else {
-            val mainBranchContext = mainBranches.head._2
-
-            val newType = Typed.record(joinedBranches.map { case (branchId, _) =>
-              branchId -> valueByBranchId(branchId).returnType
-            })
-
-            mainBranchContext.withVariable(variableName, newType, paramName = None)
-          }
+      ContextTransformation.join.definedBy { contexts =>
+        val (mainBranches, joinedBranches) = contexts.partition { case (branchId, _) =>
+          mainBranch(branchId)
         }
-        .implementedBy(null)
+        if (mainBranches.size != 1) {
+          Invalid(FatalUnknownError("Should be exact one main branch")).toValidatedNel
+        } else {
+          val mainBranchContext = mainBranches.head._2
+
+          val newType = Typed.record(joinedBranches.map { case (branchId, _) =>
+            branchId -> valueByBranchId(branchId).returnType
+          })
+
+          mainBranchContext.withVariable(variableName, newType, paramName = None)
+        }
+      }.notImplemented
     }
 
   }
@@ -149,7 +145,7 @@ object validationHelpers {
     def execute(@ParamName("stringVal") stringVal: String): ContextTransformation = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .implementedBy(null)
+        .notImplemented
     }
 
     override def canBeEnding: Boolean = false
@@ -166,7 +162,7 @@ object validationHelpers {
   object OptionalEndingStreamTransformer extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@ParamName("stringVal") stringVal: String): Unit = {}
+    def execute(@ParamName("stringVal") stringVal: String) = DumbImplementation
 
     override def canBeEnding: Boolean = true
   }
@@ -174,7 +170,8 @@ object validationHelpers {
   object AddingVariableOptionalEndingStreamTransformer extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@ParamName("stringVal") stringVal: String, @OutputVariableName variableName: String): Unit = {}
+    def execute(@ParamName("stringVal") stringVal: String, @OutputVariableName variableName: String) =
+      DumbImplementation
 
     override def canBeEnding: Boolean = true
   }
@@ -191,7 +188,7 @@ object validationHelpers {
             case _          => Invalid(CustomNodeError("Validation contexts do not match", Option.empty)).toValidatedNel
           }
         })
-        .implementedBy(null)
+        .notImplemented
     }
 
   }
@@ -286,16 +283,21 @@ object validationHelpers {
         finalState: Option[List[String]]
     ): Source = {
 
-      new Source with SourceTestSupport[String] with TestDataGenerator {
+      new Source with SourceTestSupport[ProcessingType] with TestDataGenerator with LiveDataProvider {
 
         override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
           testRecords.map { testRecord =>
             CirceUtil.decodeJsonUnsafe[String](testRecord.json)
           }
 
-        override def generateTestData(size: Int): TestData = TestData((for {
-          number <- 1 to size
+        override def generateTestData(maxNumberOfRecords: Int): TestData = TestData((for {
+          number <- 1 to maxNumberOfRecords
           record = TestRecord(Json.fromString(s"record $number"), timestamp = Some(number))
+        } yield record).toList)
+
+        override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords((for {
+          number <- 1 to maxNumberOfRecords
+          record = DataRecord(Map("input" -> s"record $number"), timestamp = Some(number))
         } yield record).toList)
       }
     }

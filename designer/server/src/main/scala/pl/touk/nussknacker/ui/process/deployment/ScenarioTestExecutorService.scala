@@ -13,6 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ScenarioTestExecutorService {
 
+  // TODO: explicit errors in the method signature
   def testProcess(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax.EncoderOps
@@ -36,7 +37,8 @@ class DictsFlowTest
     with WithTestHttpClient
     with Matchers
     with OptionValues
-    with EitherValuesDetailedMessage {
+    with EitherValuesDetailedMessage
+    with LazyLogging {
 
   private val VariableNodeId = "variableCheck"
   private val VariableName   = "variableToCheck"
@@ -272,7 +274,7 @@ class DictsFlowTest
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
-            "testData"      -> """{"sourceId":"source","record":"field1|field2"}""",
+            "testData"      -> """[{"sourceId":"source","variables":{"input":["field1","field2"]}}]""",
             "scenarioGraph" -> toJson(process).noSpaces
           )()
         )
@@ -280,6 +282,7 @@ class DictsFlowTest
         .basic("admin", "admin")
     )
 
+    logger.debug(s"The response from the endpoint running scenario test from files was: $response")
     response.code shouldEqual StatusCode.Ok
     val endInvocationResult = extractedVariableResultFrom(response.bodyAsJson, variableToCheck)
     endInvocationResult shouldEqual expectedResult

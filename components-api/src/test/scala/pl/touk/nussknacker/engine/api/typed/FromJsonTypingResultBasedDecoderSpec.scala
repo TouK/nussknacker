@@ -118,4 +118,12 @@ class FromJsonTypingResultBasedDecoderSpec
     FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(null)
   }
 
+  test("decodeValue should return error when boolean is used in context where numeric value was expected") {
+    val json = Json.fromBoolean(false)
+
+    val typedRecord = Typed[Int]
+
+    FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldBe Symbol("left")
+  }
+
 }

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies

@@ -43,7 +43,7 @@ class DynamicComponentImplementationInvoker(obj: DynamicComponent[_]) extends Co
       case other => throw new IllegalArgumentException(s"Cannot handle dependency $other")
     }
     val rawFinalStateValue = invocationContext match {
-      case Some(DynamicComponentInvocationContext(finalStateValue)) =>
+      case Some(DynamicComponentInvocationContext(finalStateValue, _)) =>
         finalStateValue.value.asInstanceOf[Option[obj.State]]
       case other => throw new IllegalArgumentException(s"Illegal implementation specific context: $other")
     }
