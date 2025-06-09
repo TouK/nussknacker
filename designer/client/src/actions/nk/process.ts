@@ -14,6 +14,9 @@ export type ScenarioActions =
           processState: ProcessStateType;
       }
     | {
+          type: "CLEAR_STATE";
+      }
+    | {
           type: "CORRECT_INVALID_SCENARIO";
           processDefinitionData: ProcessDefinitionData;
       }
@@ -85,4 +88,11 @@ export function clearProcess(): ThunkAction {
 export function hideRunProcessDetails(): Action {
     replaceSearchQuery(omit(["from", "to", "refresh"]));
     return { type: "HIDE_RUN_PROCESS_DETAILS" };
+}
+
+export function clearScenarioState(): ThunkAction {
+    return (dispatch) =>
+        dispatch({
+            type: "CLEAR_STATE",
+        });
 }

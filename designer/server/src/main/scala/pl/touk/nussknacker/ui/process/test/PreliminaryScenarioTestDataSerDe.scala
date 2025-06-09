@@ -2,10 +2,9 @@ package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
 import io.circe.parser
-import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
 
-class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
+class PreliminaryScenarioTestDataSerDe(testDataMaxLength: Option[Int], maxSamplesCount: Option[Int]) {
 
   def serialize(scenarioTestData: PreliminaryScenarioTestData): Either[SerializationError, RawScenarioTestData] = {
     import io.circe.syntax._
@@ -14,11 +13,7 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
       .map(_.asJson.noSpaces)
       .toList
       .mkString("\n")
-    Either.cond(
-      content.length <= testDataSettings.testDataMaxLength,
-      RawScenarioTestData(content),
-      SerializationError.TooManyCharactersGenerated(length = content.length, limit = testDataSettings.testDataMaxLength)
-    )
+    validateTestDataMaxLength(content, SerializationError.TooManyCharactersGenerated).map(RawScenarioTestData)
   }
 
   def deserialize(rawTestData: RawScenarioTestData): Either[DeserializationError, PreliminaryScenarioTestData] = {
@@ -27,20 +22,9 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
     import cats.syntax.traverse._
 
     for {
-      _ <- Either.cond(
-        rawTestData.content.length <= testDataSettings.testDataMaxLength,
-        (),
-        DeserializationError.TooManyCharacters(
-          length = rawTestData.content.length,
-          limit = testDataSettings.testDataMaxLength
-        )
-      )
+      _ <- validateTestDataMaxLength(rawTestData.content, DeserializationError.TooManyCharacters)
       rawRecords = rawTestData.content.linesIterator.toList
-      _ <- Either.cond(
-        rawRecords.size <= testDataSettings.maxSamplesCount,
-        (),
-        DeserializationError.TooManySamples(size = rawRecords.size, limit = testDataSettings.maxSamplesCount)
-      )
+      _ <- validateMaxSamplesCount(rawRecords)
       decodedRecords <- rawRecords.mapWithIndex { (rawTestRecord, recordIndex) =>
         val parsedRecord = parser.decode[PreliminaryScenarioTestRecord](rawTestRecord)
         parsedRecord.leftMap(_ => DeserializationError.RecordParsingError(rawTestRecord, recordIndex))
@@ -50,6 +34,36 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
         .map(nel => Right(PreliminaryScenarioTestData(nel)))
         .getOrElse(Left(DeserializationError.NoRecords))
     } yield result
+  }
+
+  private def validateTestDataMaxLength[TooManyCharactersError](
+      content: String,
+      createError: (Int, Int) => TooManyCharactersError
+  ) = {
+    testDataMaxLength
+      .map { definedTestDataMaxLength =>
+        Either.cond(
+          content.length <= definedTestDataMaxLength,
+          content,
+          createError(
+            content.length,
+            definedTestDataMaxLength
+          )
+        )
+      }
+      .getOrElse(Right(content))
+  }
+
+  private def validateMaxSamplesCount(rawRecords: List[String]) = {
+    maxSamplesCount
+      .map { definedMaxSamplesCount =>
+        Either.cond(
+          rawRecords.size <= definedMaxSamplesCount,
+          (),
+          DeserializationError.TooManySamples(size = rawRecords.size, limit = definedMaxSamplesCount)
+        )
+      }
+      .getOrElse(Right(()))
   }
 
 }
@@ -69,5 +83,7 @@ object PreliminaryScenarioTestDataSerDe {
     final case class RecordParsingError(rawTestRecord: String, recordIndex: Int) extends DeserializationError
     final case object NoRecords                                                  extends DeserializationError
   }
+
+  val noLimit = new PreliminaryScenarioTestDataSerDe(None, None)
 
 }

@@ -10,15 +10,12 @@ import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{Des
 
 class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
-  private val maxSamplesCount   = 5
   private val testDataMaxLength = 1000
+  private val maxSamplesCount   = 5
 
   private val serDe = new PreliminaryScenarioTestDataSerDe(
-    TestDataSettings(
-      maxSamplesCount = maxSamplesCount,
-      testDataMaxLength = testDataMaxLength,
-      resultsMaxBytes = Long.MaxValue
-    )
+    testDataMaxLength = Some(testDataMaxLength),
+    maxSamplesCount = Some(maxSamplesCount),
   )
 
   private val testDataRecord = PreliminaryScenarioTestRecord(
