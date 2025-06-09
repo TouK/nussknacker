@@ -68,8 +68,6 @@ class NodeDataValidator(modelData: ModelData) {
     import scenarioCompilationDependencies._
 
     modelData.withModelClassloaderAsContextClassLoader {
-      implicit val nodeId: NodeId = NodeId(nodeData.id)
-
       val compilationErrors = nodeData match {
         case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))
         case a: CustomNode =>
@@ -90,22 +88,25 @@ class NodeDataValidator(modelData: ModelData) {
             compiler.compileVariable(a, validationContext)
           )
         case a: VariableBuilder =>
+          implicit val nodeId: NodeId = NodeId(a.id)
           toValidationResponse(
             compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName)))
           )
         case a: FragmentOutputDefinition =>
+          implicit val nodeId: NodeId = NodeId(a.id)
           toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = None))
         case a: Switch =>
           toValidationResponse(
             compiler.compileSwitch(
-              Applicative[Option].product(a.exprVal, a.expression),
+              a,
               outgoingEdges.collect { case OutgoingEdge(k, Some(NextSwitch(expression))) =>
                 (k, expression)
               },
               validationContext
             )
           )
-        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, a, fragmentResolver)
+        case a: FragmentInput =>
+          validateFragment(validationContext, outgoingEdges, a, fragmentResolver)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
@@ -127,7 +128,8 @@ class NodeDataValidator(modelData: ModelData) {
       outgoingEdges: List[OutgoingEdge],
       a: FragmentInput,
       fragmentResolver: FragmentResolver
-  )(implicit nodeId: NodeId, jobData: JobData) = {
+  )(implicit jobData: JobData) = {
+    implicit val nodeId: NodeId = NodeId(a.id)
     fragmentResolver
       .resolveInput(a)
       .map { definition =>

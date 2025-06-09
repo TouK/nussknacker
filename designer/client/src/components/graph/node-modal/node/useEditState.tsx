@@ -13,16 +13,14 @@ export const getHasPendingChanges = createSelector(
     (pendingChanges) => Object.values(pendingChanges).filter((s) => s !== "idle").length > 0,
 );
 
-export function useEditState(): [EditState, (value?: EditState) => void, MutableRefObject<EditState>] {
+export function useEditState(): [EditState, (value?: EditState) => void] {
     const dispatch = useDispatch();
     const id = useId();
 
     const editState = useSelector((state: RootState) => getPendingChanges(state)[id]);
-    const editStateRef = useRef<EditState>();
 
     const setState = useCallback(
         (value?: EditState) => {
-            editStateRef.current = value;
             dispatch({
                 type: "SET_PENDING_CHANGES",
                 id,
@@ -39,7 +37,5 @@ export function useEditState(): [EditState, (value?: EditState) => void, Mutable
         };
     }, [setState]);
 
-    useImperativeHandle(editStateRef, () => editState, [editState]);
-
-    return [editState, setState, editStateRef];
+    return [editState, setState];
 }

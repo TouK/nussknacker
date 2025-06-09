@@ -11,7 +11,6 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class FragmentRepositorySpec
     extends AnyFlatSpec
@@ -22,8 +21,8 @@ class FragmentRepositorySpec
     with VeryPatientScalaFutures {
 
   it should "load fragments" in {
-    val sampleFragment  = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
-    val sampleFragment2 = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment2)
+    val sampleFragment  = ProcessTestData.sampleFragment.toScenarioGraph
+    val sampleFragment2 = ProcessTestData.sampleFragment2.toScenarioGraph
 
     saveFragment(sampleFragment) {
       status shouldEqual StatusCodes.OK

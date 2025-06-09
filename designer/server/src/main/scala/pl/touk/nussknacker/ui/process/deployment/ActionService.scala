@@ -20,7 +20,6 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusWithAllowedActions
 }
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -240,7 +239,7 @@ class ActionService(
                   s"updated with automatic update. New version is: ${updateResult.versionId.value}"
               )
               val mappedScenario = scenario
-                .mapScenario(CanonicalProcessConverter.toScenarioGraph)
+                .mapScenario(_.toScenarioGraph)
                 .copy(
                   json = scenarioGraph,
                   scenarioLabels = scenarioLabels.getOrElse(Nil),
@@ -373,7 +372,7 @@ class ActionService(
         scenarioGraph: ScenarioGraph,
         scenario: ScenarioWithDetailsEntity[CanonicalProcess]
     ): Boolean =
-      CanonicalProcessConverter.toScenarioGraph(scenario.json) == scenarioGraph
+      scenario.json.toScenarioGraph == scenarioGraph
 
     private def checkIfLabelsAreEqual(
         scenarioLabels: Option[List[String]],

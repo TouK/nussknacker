@@ -18,7 +18,6 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 import java.util.UUID
 
@@ -69,7 +68,7 @@ class ManagementApiHttpServiceBusinessSpec
             |     }
             |   }
             | },
-            | "scenarioGraph": ${toScenarioGraph(exampleScenario).asJson.spaces2}
+            | "scenarioGraph": ${exampleScenario.toScenarioGraph.asJson.spaces2}
             |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()

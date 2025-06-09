@@ -7,20 +7,13 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLoggingIfValidationFails}
-import pl.touk.nussknacker.test.base.it.{
-  NuItTest,
-  WithAccessControlCheckingConfigScenarioHelper,
-  WithSimplifiedConfigScenarioHelper
-}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
   WithAccessControlCheckingDesignerConfig,
   WithMockableDeploymentManager
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-
-import java.util.UUID
 
 class ScenarioLabelsApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -268,7 +261,7 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
 
   private def updateScenarioLabels(scenario: CanonicalProcess, labels: List[String]): Unit = {
     val scenarioName  = scenario.metaData.id
-    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
+    val scenarioGraph = scenario.toScenarioGraph
 
     given()
       .when()

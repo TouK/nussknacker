@@ -352,6 +352,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testResults: action.results?.results || null,
                 processCounts: action.results?.counts || {},
                 processCountsRefresh: null,
+                liveDataWasEnabled: true,
             };
         }
         case "NODE_DETAILS_OPENED":

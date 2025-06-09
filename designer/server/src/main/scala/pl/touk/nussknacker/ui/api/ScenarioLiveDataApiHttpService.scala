@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPre
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcessConverter
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 

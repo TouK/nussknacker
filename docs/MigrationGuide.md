@@ -210,6 +210,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   To keep `#key` value as before, you'll need to embrace previous values inside curly braces and add `.toString`, e.g. `#input.a` `#input.b` -> `{#input.a, #input.b}.toString`. 
   Also, if you provide one element in `groupBy` expression, it will be presented as one element list instead of scalar.
 * [#8011](https://github.com/TouK/nussknacker/pull/8011) During scenario compilation, redundant parameters used in node are treated only as warning now. They are skipped and compilation passes.
+* [#8198](https://github.com/TouK/nussknacker/pull/8198) Support for test data without `sourceId` specified is removed - now, you always have to specify it
 
 ## In version 1.18.0
 

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.test
+package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
@@ -14,9 +14,9 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider._
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.ListUtil
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider._
 import shapeless.syntax.typeable._
 
 class ModelDataTestInfoProvider(
@@ -71,8 +71,7 @@ class ModelDataTestInfoProvider(
   ): Either[TestingCapabilitiesError, TestingCapabilities] = {
     (for {
       sourceObj <- commonModelDataInfoProvider.compileSourceNode(source)(
-        scenarioCompilationDependencies,
-        NodeId(source.id)
+        scenarioCompilationDependencies
       )
       canTest         = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
@@ -120,7 +119,7 @@ class ModelDataTestInfoProvider(
       source: SourceNodeData,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): Either[ParametersDefinitionError, List[Parameter]] = {
-    commonModelDataInfoProvider.compileSourceNode(source)(scenarioCompilationDependencies, NodeId(source.id)) match {
+    commonModelDataInfoProvider.compileSourceNode(source)(scenarioCompilationDependencies) match {
       case Valid(s: TestWithParametersSupport[_]) => Right(s.testParametersDefinition)
       case Valid(sourceWithoutTestWithParametersSupport) =>
         Left(
@@ -162,7 +161,7 @@ class ModelDataTestInfoProvider(
       val nodeId = NodeId(sourceNodeData.id)
       for {
         compiledSource <- commonModelDataInfoProvider
-          .compileSourceNode(sourceNodeData)(scenarioCompilationDependencies, nodeId)
+          .compileSourceNode(sourceNodeData)(scenarioCompilationDependencies)
           .toEither
           .left
           .map(errors => SourceTestDataGenerationError.SourceCompilationError(nodeId, errors))
@@ -212,7 +211,7 @@ class ModelDataTestInfoProvider(
       .map { source =>
         val nodeId = NodeId(source.id)
         commonModelDataInfoProvider
-          .compileSourceNode(source)(scenarioCompilationDependencies, nodeId)
+          .compileSourceNode(source)(scenarioCompilationDependencies)
           .leftMap { compilationErrors =>
             NonEmptyList.one(nodeId -> compilationErrors)
           }
@@ -244,16 +243,11 @@ class ModelDataTestInfoProvider(
     val allScenarioSourceIds = commonModelDataInfoProvider.collectAllSources(scenario).map(_.id).toSet
     preliminaryTestData.testRecords.zipWithIndex
       .map {
-        case (PreliminaryScenarioTestRecord.Standard(sourceId, record, timestamp), _)
+        case (PreliminaryScenarioTestRecord(sourceId, record, timestamp), _)
             if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
-        case (PreliminaryScenarioTestRecord.Standard(sourceId, _, _), recordIdx) =>
+        case (PreliminaryScenarioTestRecord(sourceId, _, _), recordIdx) =>
           Left(TestDataPreparationError.MissingSource(NodeId(sourceId), recordIdx))
-        case (PreliminaryScenarioTestRecord.Simplified(record), _) if allScenarioSourceIds.size == 1 =>
-          val sourceId = allScenarioSourceIds.head
-          Right(ScenarioTestJsonRecord(sourceId, record))
-        case (_: PreliminaryScenarioTestRecord.Simplified, recordIdx) =>
-          Left(TestDataPreparationError.MultipleSourcesRequired(recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))

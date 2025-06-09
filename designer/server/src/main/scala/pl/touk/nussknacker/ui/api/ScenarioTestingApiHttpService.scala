@@ -3,11 +3,6 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
-  ParametersDefinitionError,
-  SourcesLiveDataFetchingError,
-  TestingCapabilitiesError
-}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
@@ -36,6 +31,11 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
+import pl.touk.nussknacker.ui.process.test.TestInfoProvider.{
+  ParametersDefinitionError,
+  SourcesLiveDataFetchingError,
+  TestingCapabilitiesError
+}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ParametersValidator
 

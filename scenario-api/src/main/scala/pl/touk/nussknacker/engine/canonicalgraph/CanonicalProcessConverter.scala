@@ -1,9 +1,8 @@
-package pl.touk.nussknacker.ui.process.marshall
+package pl.touk.nussknacker.engine.canonicalgraph
 
 import pl.touk.nussknacker.engine.api.graph
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
@@ -12,7 +11,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object CanonicalProcessConverter {
 
-  def toScenarioGraph(process: CanonicalProcess): ScenarioGraph = {
+  private[canonicalgraph] def toScenarioGraph(process: CanonicalProcess): ScenarioGraph = {
     val (nodes, edges) = {
       process.allStartNodes
         .map(toGraphInner)
@@ -22,10 +21,6 @@ object CanonicalProcessConverter {
     }
     val props = ProcessProperties(process.metaData.additionalFields)
     ScenarioGraph(props, nodes, edges, process.stickyNotes)
-  }
-
-  def findNodes(process: CanonicalProcess): List[NodeData] = {
-    process.allStartNodes.toList.flatMap(branch => toGraphInner(branch)._1)
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[Edge]) =
