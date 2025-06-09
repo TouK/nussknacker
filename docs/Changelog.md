@@ -188,6 +188,24 @@ description: Stay informed with detailed changelogs covering new features, impro
         throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated
       }
       ```
+    * [#8208](https://github.com/TouK/nussknacker/pull/8208) added functionality of collecting live data for scenarios running on standalone Flink with synchronisation in Designer DB  
+    * DB uploader must be configured in order to use the live data feature for standalone Flink  
+      ```hocon
+      liveDataPreview {              
+        enabled: true               
+        maxNumberOfSamples: 20      
+        throughputTimeWindowInSeconds: 60
+        dbUploader {  // This section must be configured for standalone FLink
+           // Small `uploadIntervalInSeconds` values make the live data preview look more smooth and similar to the Flink MiniCluster version, bigger values are easier on the db
+          uploadIntervalInSeconds: 3 
+           // Designer db url, the same as the one provided for the Nussknacker app
+          dbUrl: "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF"  
+          dbUser: "NU"       // db user
+          dbPassword: "NU"   // db password
+          dbSchema: "public" // db schema must be always provided, even if it is "public"
+        }
+      }
+      ```
 * [#7982](https://github.com/TouK/nussknacker/pull/7982) Mock expression added to enrichers (except decision-table) which can be used to hardcode enricher output in tests without calling external services.
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
