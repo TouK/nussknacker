@@ -1,37 +1,27 @@
 package pl.touk.nussknacker.ui.process.test
 
 import cats.data.NonEmptyList
-import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
+import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestJsonRecord
 
 case class PreliminaryScenarioTestData(testRecords: NonEmptyList[PreliminaryScenarioTestRecord])
 
-sealed trait PreliminaryScenarioTestRecord
+final case class PreliminaryScenarioTestRecord(
+    sourceId: String,
+    record: Json,
+    timestamp: Option[Long] = None
+)
 
 object PreliminaryScenarioTestRecord {
 
-  case class Simplified(record: Json) extends PreliminaryScenarioTestRecord
-  @JsonCodec case class Standard(sourceId: String, record: Json, timestamp: Option[Long] = None)
-      extends PreliminaryScenarioTestRecord
-
-  implicit val simplifiedEncoder: Encoder[Simplified] = Encoder.instance(_.record)
-
-  implicit val simplifiedDecoder: Decoder[Simplified] = Decoder.decodeJson.map(Simplified)
-
-  implicit val encoder: Encoder[PreliminaryScenarioTestRecord] = Encoder.instance {
-    case record: Standard   => implicitly[Encoder[Standard]].apply(record).dropNullValues
-    case record: Simplified => implicitly[Encoder[Simplified]].apply(record)
-  }
-
-  implicit val decoder: Decoder[PreliminaryScenarioTestRecord] = {
-    val standardDecoder: Decoder[PreliminaryScenarioTestRecord]   = implicitly[Decoder[Standard]].map(identity)
-    val simplifiedDecoder: Decoder[PreliminaryScenarioTestRecord] = implicitly[Decoder[Simplified]].map(identity)
-    standardDecoder.or(simplifiedDecoder)
-  }
+  implicit val encoder: Encoder[PreliminaryScenarioTestRecord] =
+    deriveEncoder[PreliminaryScenarioTestRecord].mapJson(_.dropNullValues)
+  implicit val decoder: Decoder[PreliminaryScenarioTestRecord] = deriveDecoder[PreliminaryScenarioTestRecord]
 
   def apply(ScenarioTestJsonRecord: ScenarioTestJsonRecord): PreliminaryScenarioTestRecord = {
-    Standard(
+    PreliminaryScenarioTestRecord(
       ScenarioTestJsonRecord.sourceId.id,
       ScenarioTestJsonRecord.record.json,
       ScenarioTestJsonRecord.record.timestamp

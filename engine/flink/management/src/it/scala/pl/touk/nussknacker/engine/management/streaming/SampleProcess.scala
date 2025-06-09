@@ -19,6 +19,14 @@ object SampleProcess {
       .emptySink("endSend", "sendSms", "Value" -> "'message'".spel)
   }
 
+  def prepareProcessWithNoTimestampAssignerForTest(name: ProcessName): CanonicalProcess = {
+    ScenarioBuilder
+      .streaming(name.value)
+      .source("startProcess", "kafka-transaction-no-test-timestamp-assigner")
+      .customNodeNoOutput("timestampReadingNode", "timestampReader")
+      .emptySink("endSend", "sendSms", "Value" -> "'message'".spel)
+  }
+
   def prepareProcessWithEventGeneratorSource(name: ProcessName, parallelism: Option[Int] = None): CanonicalProcess = {
     val baseProcessBuilder = ScenarioBuilder.streaming(name.value)
     parallelism

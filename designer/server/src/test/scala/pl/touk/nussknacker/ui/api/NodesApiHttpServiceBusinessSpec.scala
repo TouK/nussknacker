@@ -949,7 +949,7 @@ class NodesApiHttpServiceBusinessSpec
              |    }
              |  },
              |  "nodeData": {
-             |    "id": "${sourceTestingScenarioSourceId}",
+             |    "id": "$sourceTestingScenarioSourceId",
              |    "type": "Source",
              |    "ref": {
              |      "typ": "genericSourceWithCustomVariables",

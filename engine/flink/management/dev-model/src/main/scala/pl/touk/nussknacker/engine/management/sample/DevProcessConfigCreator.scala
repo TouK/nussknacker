@@ -104,7 +104,10 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           )(TypeInformation.of(classOf[SampleProduct]))
         )
       ),
-      "kafka-transaction"       -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource)),
+      "kafka-transaction" -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource(true))),
+      "kafka-transaction-no-test-timestamp-assigner" -> all(
+        SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource(false))
+      ),
       "boundedSource"           -> all(BoundedSource),
       "boundedSourceWithOffset" -> all(BoundedSourceWithOffset),
       "oneSource"               -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
@@ -225,6 +228,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> categories(NoneReturnTypeTransformer),
+    "timestampReader"           -> categories(CustomTimestampExtractingTransformationCopy),
     "stateful"                  -> categories(StatefulTransformer),
     "customFilter"              -> categories(CustomFilter),
     "constantStateTransformer" -> categories(

@@ -10,7 +10,8 @@ import type ReactAce from "react-ace/lib/ace";
 import type { ICommand } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
 
-import AceEditor from "./ace";
+import type { FieldError } from "../Validators";
+import { StyledAceEditor } from "./StyledAceEditor";
 import type { EditorMode } from "./types";
 import { ExpressionLang } from "./types";
 
@@ -27,12 +28,14 @@ export type AceWrapperInputProps = {
     useAceWorker?: boolean;
 };
 
-export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
+export interface AceWrapperProps
+    extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled" | "annotations" | "markers" | "onLoad"> {
     inputProps: AceWrapperInputProps;
     customAceEditorCompleter?;
     showLineNumbers?: boolean;
     commands?: AceKeyCommand[];
     enableLiveAutocompletion?: boolean;
+    fieldErrors: FieldError[];
 }
 
 export const DEFAULT_OPTIONS: IAceOptions = {
@@ -147,6 +150,8 @@ export default forwardRef(function AceWrapper(
         wrapEnabled = true,
         commands = [],
         enableLiveAutocompletion = true,
+        annotations = [],
+        markers = [],
         ...props
     }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
@@ -185,14 +190,14 @@ export default forwardRef(function AceWrapper(
 
     return (
         <>
-            <AceEditor
+            <StyledAceEditor
                 {...props}
                 ref={ref}
                 mode={editorLangToMode(language, editorMode)}
                 width={"100%"}
                 minLines={rows}
                 maxLines={512}
-                theme={"nussknacker"}
+                codeTheme={"nussknacker"}
                 showPrintMargin={false}
                 cursorStart={-1} //line start
                 readOnly={readOnly}
@@ -210,6 +215,8 @@ export default forwardRef(function AceWrapper(
                 enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
                 commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
                 placeholder={inputProps.placeholder}
+                annotations={annotations}
+                markers={markers}
             />
             {InputAdornmentEnd && (
                 <Box
