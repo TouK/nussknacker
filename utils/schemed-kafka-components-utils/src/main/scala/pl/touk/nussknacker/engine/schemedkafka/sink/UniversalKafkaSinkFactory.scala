@@ -270,7 +270,6 @@ class UniversalKafkaSinkFactory(
         validationAgainstSchemaErrors,
         Some(state)
       )
-
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(_: String, _)) ::
