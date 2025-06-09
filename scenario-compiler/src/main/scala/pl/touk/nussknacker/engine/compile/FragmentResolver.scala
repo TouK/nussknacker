@@ -75,7 +75,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
           resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
             val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
             FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(
-              FragmentUsageOutput(outputId, output, None, None)
+              FragmentUsageOutput(outputId, data.ref.id, output, None, None)
             ) :: resolvedNexts
           }
         // here is the only interesting part - not disabled fragment
@@ -152,7 +152,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
         case FlatNode(FragmentOutputDefinition(id, name, fields, add)) => {
           replacement.get(name) match {
             case Some(nodes) if fields.isEmpty =>
-              validBranches(FlatNode(FragmentUsageOutput(id, name, None, add)) :: nodes)
+              validBranches(FlatNode(FragmentUsageOutput(id, parentId, name, None, add)) :: nodes)
             case Some(nodes) =>
               val outputName = outputs.getOrElse(
                 name,
@@ -160,7 +160,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
               ) // when no `outputVariableName` defined we use output name from fragment as variable name
               validBranches(
                 FlatNode(
-                  FragmentUsageOutput(id, name, Some(FragmentOutputVarDefinition(outputName, fields)), add)
+                  FragmentUsageOutput(id, parentId, name, Some(FragmentOutputVarDefinition(outputName, fields)), add)
                 ) :: nodes
               )
             case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))

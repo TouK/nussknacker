@@ -54,16 +54,16 @@ private class InterpreterInternal[F[_]: Monad](
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
-  private def onTransitionToNextNode(node: Node, nextNode: Next, ctx: Context): Unit = {
+  private def onTransitionToNextNode(nodeId: String, nextNode: Next, ctx: Context): Unit = {
     val nextNodeId = nextNode match {
       case NextNode(BranchEnd(definition)) => definition.joinId
       case other                           => other.id
     }
-    listeners.foreach(_.transitionToNextNode(node.id, nextNodeId, ctx, jobData.metaData))
+    listeners.foreach(_.transitionToNextNode(nodeId, nextNodeId, ctx, jobData.metaData))
   }
 
-  private def onProcessingFinishedInNode(node: Node, ctx: Context): Unit = {
-    listeners.foreach(_.processingFinishedInNode(node.id, ctx, jobData.metaData))
+  private def onProcessingFinishedInNode(nodeId: String, ctx: Context): Unit = {
+    listeners.foreach(_.processingFinishedInNode(nodeId, ctx, jobData.metaData))
   }
 
   @silent("deprecated")
@@ -84,14 +84,14 @@ private class InterpreterInternal[F[_]: Monad](
       case VariableBuilder(_, varName, Left(expression), next) =>
         val valueWithModifiedContext = expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx)
         interpretOptionalNext(node, next, ctx.withVariable(varName, valueWithModifiedContext.value))
-      case FragmentUsageStart(_, params, next) =>
+      case FragmentUsageStart(_, _, params, next) =>
         val (newCtx, vars) = expressionEvaluator.evaluateParameters(params, ctx)
         interpretOptionalNext(
           node,
           next,
           newCtx.pushNewContext(vars.map { case (paramName, value) => (paramName.value, value) })
         )
-      case FragmentUsageEnd(_, outputVar, next) =>
+      case FragmentUsageEnd(_, fragmentId, outputVar, next) =>
         // Here we need parent context so we can compile rest of scenario. Unfortunately some component inside fragment
         // could've cleared that context. In that case, we take current (fragment's) context so we can keep the id,
         // clear it's variables, and keep using it in further processing.
@@ -101,6 +101,13 @@ private class InterpreterInternal[F[_]: Monad](
             val parsedFieldsMap = evaluateFragmentOutput(ctx, fields)
             parentContext.withVariable(varName, parsedFieldsMap)
           case None => parentContext
+        }
+        // This part is responsible for reporting the transition between the node that represents the entire fragment and the next node
+        // - the `interpretOptionalNext` method triggers only reporting of the transition between the last node of the fragment graph and the next node
+        // - we have to also report the transition between the single node representing the entire fragment and the next node
+        next match {
+          case Some(next) => onTransitionToNextNode(fragmentId, next, newParentContext)
+          case None       => onProcessingFinishedInNode(fragmentId, newParentContext)
         }
         interpretOptionalNext(node, next, newParentContext)
       case Processor(_, ref, next, false) =>
@@ -199,7 +206,7 @@ private class InterpreterInternal[F[_]: Monad](
         listeners.foreach(_.endEncountered(id, ref, ctx, jobData.metaData))
         interpretationResult(node, EndReference(id), ctx)
       case SplitNode(_, Nil) =>
-        onProcessingFinishedInNode(node, ctx)
+        onProcessingFinishedInNode(node.id, ctx)
         Applicative[F].pure(List.empty)
       case SplitNode(_, nexts) =>
         import cats.implicits._
@@ -219,7 +226,7 @@ private class InterpreterInternal[F[_]: Monad](
       reference: PartReference,
       ctx: Context
   ): FF[List[Result[InterpretationResult]]] = {
-    onProcessingFinishedInNode(node, ctx)
+    onProcessingFinishedInNode(node.id, ctx)
     Applicative[FF].pure(List(Left(InterpretationResult(reference, ctx))))
   }
 
@@ -244,7 +251,7 @@ private class InterpreterInternal[F[_]: Monad](
   }
 
   private def interpretNext(node: Node, next: Next, ctx: Context): F[List[Result[InterpretationResult]]] = {
-    onTransitionToNextNode(node, next, ctx)
+    onTransitionToNextNode(node.id, next, ctx)
     next match {
       case NextNode(node) =>
         interpret(node, ctx)

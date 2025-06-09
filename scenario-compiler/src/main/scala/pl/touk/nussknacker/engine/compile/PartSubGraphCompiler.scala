@@ -239,16 +239,16 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         CompilationResult.map2(
           toCompilationResult(combinedValidParams, typingInfo, parameters),
           compile(next, newCtx.getOrElse(ctx))
-        )((params, next) => compiledgraph.node.FragmentUsageStart(fragmentInput.id, params, next))
+        )((params, next) => compiledgraph.node.FragmentUsageStart(fragmentInput.id, fragmentInput.ref.id, params, next))
 
-      case FragmentUsageOutput(id, outputName, None, _) =>
+      case FragmentUsageOutput(id, fragmentId, outputName, None, _) =>
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
         val parentContext = ctx.popContextOrEmptyWithGlobals()
         compile(next, parentContext)
           .andThen(compiledNext =>
-            toCompilationResult(Valid(FragmentUsageEnd(id, None, compiledNext)), Map.empty, None)
+            toCompilationResult(Valid(FragmentUsageEnd(id, fragmentId, None, compiledNext)), Map.empty, None)
           )
-      case FragmentUsageOutput(id, outputName, Some(outputVar), _) =>
+      case FragmentUsageOutput(id, fragmentId, outputName, Some(outputVar), _) =>
         implicit val nodeId: NodeId = NodeId(id)
         val NodeCompilationResult(typingInfo, parameters, ctxWithSubOutV, compiledFields, typingResult) =
           nodeCompiler.compileFields(outputVar.fields, ctx, outputVar = None)
@@ -265,6 +265,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
         ) { (_, _, compiledFields, compiledNext) =>
           compiledgraph.node.FragmentUsageEnd(
             id,
+            fragmentId,
             Some(node.FragmentOutputVarDefinition(outputVar.name, compiledFields)),
             compiledNext
           )

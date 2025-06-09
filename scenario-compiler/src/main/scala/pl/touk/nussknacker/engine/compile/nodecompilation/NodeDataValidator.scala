@@ -107,7 +107,7 @@ class NodeDataValidator(modelData: ModelData) {
           )
         case a: FragmentInput =>
           validateFragment(validationContext, outgoingEdges, a, fragmentResolver)
-        case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
+        case Split(_, _) | FragmentUsageOutput(_, _, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
 

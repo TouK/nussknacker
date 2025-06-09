@@ -251,7 +251,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
           case e => fail(e.toString)
         }
         flatNodes(2) match {
-          case FlatNode(FragmentUsageOutput(_, _, _, _)) =>
+          case FlatNode(FragmentUsageOutput(_, _, _, _, _)) =>
           // output id is unpredictable
           case e => fail(e.toString)
         }
