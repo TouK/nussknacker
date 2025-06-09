@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata._
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 
@@ -107,7 +108,7 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
   ): Map[NodeTransition, LiveDataForNodeTransition] = {
     data.flatten
       .groupBy(_._1)
-      .mapValues { entries =>
+      .mapValuesNow { entries =>
         LiveDataForNodeTransition(
           samples = entries
             .flatMap(_._2.samples)
@@ -127,7 +128,7 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
   ): Map[NodeId, List[V]] = {
     data.flatten
       .groupBy(_._1)
-      .mapValues { entries =>
+      .mapValuesNow { entries =>
         val allValues = entries.flatMap(_._2)
         allValues
           .sortBy(getTimestamp)
