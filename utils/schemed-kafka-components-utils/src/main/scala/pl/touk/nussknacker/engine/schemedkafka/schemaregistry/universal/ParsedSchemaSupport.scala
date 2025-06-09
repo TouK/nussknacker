@@ -2,26 +2,12 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
 import cats.data.{Validated, ValidatedNel}
 import cats.data.Validated.Valid
-import cats.implicits.catsSyntaxOptionId
-import io.circe.{Encoder, Json}
+import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.{JsonProperties, LogicalTypes, Schema}
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Serializer
-import org.everit.json.schema.{
-  ArraySchema,
-  BooleanSchema,
-  CombinedSchema,
-  EmptySchema,
-  EnumSchema,
-  NullSchema,
-  NumberSchema,
-  ObjectSchema,
-  ReferenceSchema,
-  Schema => JsonSchema,
-  StringSchema
-}
+import org.everit.json.schema.EmptySchema
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.{
@@ -34,7 +20,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
+import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonTemplateFromJsonSchemaDeterminer}
 import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{inputParamName, sinkValueParamName}
@@ -55,13 +41,7 @@ import pl.touk.nussknacker.engine.schemedkafka.typed.{
   AvroSchemaTypeDefinitionExtractor,
   AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
 }
-import pl.touk.nussknacker.engine.util.json.JsonSchemaUtils.jsonToCirce
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
-
-import scala.collection.compat.immutable.LazyList
-import scala.collection.immutable.ListMap
-import scala.jdk.CollectionConverters._
-import scala.reflect.ClassTag
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
 
@@ -180,107 +160,8 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     )
 
   private def defaultJsonTemplateFor(parsedSchema: ParsedSchema): Expression = {
-    val schema         = parsedSchema.cast().rawSchema()
-    val expressionJson = defaultJsonFor(schema)
-    Expression.jsonTemplate(expressionJson.getOrElse(Json.obj()).spaces2)
-  }
-
-  private def defaultJsonFor(schema: Schema): Option[Json] = {
-    schema.getType match {
-      case Schema.Type.RECORD =>
-        val recordFields = schema.getFields.asScala.toList
-        val jsonFields = recordFields.map { field =>
-          field
-            .name() -> defaultJsonForRecordField(field)
-            .orElse(jsonBasedOnSchema(field.schema()))
-            .getOrElse(Json.Null)
-        }
-        Some(Json.fromFields(jsonFields.sortBy(_._1)))
-      case other => // only record fields can have defaults
-        jsonBasedOnSchema(schema)
-    }
-  }
-
-  private def defaultJsonForRecordField(fieldSchema: Schema.Field): Option[Json] = {
-    val schema = fieldSchema.schema()
-    schema.getType match {
-      case Schema.Type.RECORD =>
-        val fields = schema.getFields.asScala.flatMap { field =>
-          defaultJsonFor(field.schema()).map(fieldJson => field.name() -> fieldJson)
-        }.toMap
-        Json.obj(fields.toSeq: _*).some
-      case Schema.Type.ENUM =>
-        withDefaultValueAs[String](fieldSchema)
-      case Schema.Type.ARRAY =>
-        None
-      case Schema.Type.MAP =>
-        Json.obj().some
-      case Schema.Type.UNION =>
-        // For unions Avro supports default to be the type of the first type in the union. See: https://issues.apache.org/jira/browse/AVRO-1118
-        schema.getTypes.asScala.headOption match {
-          case Some(firstUnionSchema) => defaultJsonFor(firstUnionSchema)
-          case None                   => Json.Null.some
-        }
-      case Schema.Type.STRING => withDefaultValueAs[String](fieldSchema)
-      case Schema.Type.BYTES  => None
-      case Schema.Type.INT if schema.getLogicalType == LogicalTypes.date() =>
-        None
-      case Schema.Type.INT if schema.getLogicalType == LogicalTypes.timeMillis() =>
-        None
-      case Schema.Type.INT => withDefaultValueAs[Integer](fieldSchema)
-      case Schema.Type.LONG =>
-        withDefaultValueAs[java.lang.Long](fieldSchema)
-      case Schema.Type.FLOAT =>
-        withDefaultValueAs[java.lang.Float](fieldSchema)
-      case Schema.Type.DOUBLE =>
-        withDefaultValueAs[java.lang.Double](fieldSchema)
-      case Schema.Type.BOOLEAN =>
-        withDefaultValueAs[java.lang.Boolean](fieldSchema)
-      case Schema.Type.NULL => Some(Json.Null)
-      case Schema.Type.FIXED =>
-        Option(fieldSchema.defaultVal()) match {
-          case Some(array: Array[Byte]) => Some(Json.fromString(fixed(array)))
-          case _                        => None
-        }
-    }
-  }
-
-  private def withDefaultValueAs[T <: AnyRef: ClassTag: Encoder](fieldSchema: Schema.Field): Option[Json] =
-    Option(fieldSchema.defaultVal()) match {
-      case Some(JsonProperties.NULL_VALUE) => Some(Json.Null)
-      case Some(value: T)                  => Some(Encoder[T].apply(value))
-      case Some(_) | None                  => None
-    }
-
-  private def jsonBasedOnSchema(schema: Schema): Option[Json] = {
-    schema.getType match {
-      case Schema.Type.RECORD =>
-        val fields = schema.getFields.asScala.flatMap { field =>
-          jsonBasedOnSchema(field.schema()).map(defaultValue => field.name() -> defaultValue)
-        }
-        Json.fromFields(fields.sortBy(_._1)).some
-      case Schema.Type.ENUM =>
-        Option(schema.getEnumDefault).orElse(schema.getEnumSymbols.asScala.headOption).map(Json.fromString)
-      case Schema.Type.ARRAY =>
-        jsonBasedOnSchema(schema.getElementType).map(Json.arr(_)).getOrElse(Json.arr()).some
-      case Schema.Type.MAP =>
-        Json.obj().some
-      case Schema.Type.UNION =>
-        schema.getTypes.asScala.headOption.flatMap(jsonBasedOnSchema)
-      case Schema.Type.STRING  => Json.fromString("#{ '' }").some
-      case Schema.Type.BYTES   => Json.fromString("").some
-      case Schema.Type.INT     => Some(Json.fromInt(0))
-      case Schema.Type.LONG    => Some(Json.fromLong(0L))
-      case Schema.Type.BOOLEAN => Some(Json.fromBoolean(true))
-      case Schema.Type.FLOAT   => Some(Json.fromFloatOrNull(0.0f))
-      case Schema.Type.DOUBLE  => Some(Json.fromDoubleOrNull(0.0))
-      case Schema.Type.NULL    => Some(Json.Null)
-      case Schema.Type.FIXED   => Json.fromString(fixed(Array.fill[Byte](schema.getFixedSize)(0))).some
-    }
-  }
-
-  private def fixed(array: Array[Byte]): String = {
-    new String(array, "ISO-8859-1")
+    val schema = parsedSchema.cast().rawSchema()
+    JsonTemplateFromAvroSchemaDeterminer.jsonTemplateFor(schema)
   }
 
 }
@@ -360,69 +241,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   private def defaultJsonTemplateFor(parsedSchema: ParsedSchema): Expression = {
     val schema = parsedSchema.cast().rawSchema()
-    val json   = defaultJsonFor(schema).getOrElse(Json.obj())
-    Expression.jsonTemplate(json.spaces2)
-  }
-
-  private def defaultJsonFor(schema: JsonSchema): Option[Json] = schema match {
-    case schema: JsonSchema if schema.hasDefaultValue =>
-      val defaultValue = schema.getDefaultValue
-      Some(jsonToCirce(defaultValue))
-    case other =>
-      defaultValueBasedOnSchema(other)
-  }
-
-  private def defaultValueBasedOnSchema(schema: JsonSchema): Option[Json] = schema match {
-    case _: EmptySchema => Some(Json.obj())
-    case objSchema: ObjectSchema =>
-      val props    = ListMap(objSchema.getPropertySchemas.asScala.toList.sortBy(_._1): _*)
-      val required = objSchema.getRequiredProperties.asScala.toSet
-      val fields = props.flatMap { case (key, subSchema) =>
-        defaultJsonFor(subSchema) match {
-          case Some(value)                    => Some(key -> value)
-          case None if required.contains(key) => Some(key -> Json.Null)
-          case _                              => None
-        }
-      }
-      Some(Json.obj(fields.toSeq: _*))
-    case arraySchema: ArraySchema =>
-      Option(arraySchema.getAllItemSchema)
-        .flatMap(defaultValueBasedOnSchema)
-        .map(Json.arr(_))
-        .orElse(Some(Json.arr()))
-    case combinedSchema: CombinedSchema =>
-      val criterion  = combinedSchema.getCriterion
-      val subschemas = combinedSchema.getSubschemas.asScala.toSeq
-      criterion match {
-        case CombinedSchema.ALL_CRITERION =>
-          subschemas.collectFirst { case schema: EnumSchema =>
-            schema.getPossibleValuesAsList.asScala.headOption.map(jsonToCirce)
-          } match {
-            case Some(json) =>
-              json
-            case None =>
-              // Merge all defaults
-              val mergedFields = subschemas
-                .flatMap(schema => defaultJsonFor(schema))
-                .collect { case jsonObj if jsonObj.isObject => jsonObj.asObject.get.toMap }
-                .foldLeft(Map.empty[String, Json])(_ ++ _)
-              Some(Json.fromFields(mergedFields))
-          }
-        case CombinedSchema.ANY_CRITERION | CombinedSchema.ONE_CRITERION =>
-          // Pick the first schema with extractable defaults
-          subschemas
-            .to(LazyList)
-            .flatMap(schema => defaultJsonFor(schema))
-            .headOption
-        case _ => None
-      }
-    case refSchema: ReferenceSchema             => defaultJsonFor(refSchema.getReferredSchema)
-    case _: StringSchema                        => Some(Json.fromString("#{ '' }"))
-    case s: NumberSchema if s.requiresInteger() => Some(Json.fromInt(0))
-    case _: NumberSchema                        => Some(Json.fromDoubleOrNull(0.0))
-    case _: BooleanSchema                       => Some(Json.fromBoolean(true))
-    case s: EnumSchema                          => s.getPossibleValuesAsList.asScala.headOption.map(jsonToCirce)
-    case s: NullSchema                          => Some(Json.Null)
+    JsonTemplateFromJsonSchemaDeterminer.jsonTemplateFor(schema)
   }
 
   implicit class WithJsonEditorsExtension(

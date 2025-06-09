@@ -173,23 +173,8 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     ) :: Nil
   }
 
-  test("should validate for empty params") {
-    val result = validate()(defaultUniversalSinkFactory)
-
-    result.parameters.map(_.name) shouldBe List(topicParamName, schemaVersionParamName, sinkKeyParamName)
-    result.errors shouldBe List(
-      EmptyMandatoryParameter(
-        "Field: Topic is mandatory and can not be empty",
-        "Please fill field for this parameter",
-        topicParamName,
-        sinkNodeId.id
-      )
-    )
-  }
-
   test("sink should be validated when the topic is empty, and a minimal list of parameters should be returned") {
-    val result = validate(
-    )(universalKafkaSinkFactoryWithTemplateParam)
+    val result = validate()(universalKafkaSinkFactoryWithTemplateParam)
 
     result.parameters.map(_.name) shouldBe List(topicParamName, schemaVersionParamName, sinkKeyParamName)
     result.errors shouldBe List(
@@ -491,7 +476,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val expectedDefaultValue =
       Expression.jsonTemplate(
         s"""{
-           |
+           |  
            |}""".stripMargin
       )
     val result = validate(
