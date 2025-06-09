@@ -6,16 +6,16 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.util.ListUtil
-import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.ui.process.test.TestInfoProvider._
 import shapeless.syntax.typeable._
 
@@ -244,16 +244,11 @@ class ModelDataTestInfoProvider(
     val allScenarioSourceIds = commonModelDataInfoProvider.collectAllSources(scenario).map(_.id).toSet
     preliminaryTestData.testRecords.zipWithIndex
       .map {
-        case (PreliminaryScenarioTestRecord.Standard(sourceId, record, timestamp), _)
+        case (PreliminaryScenarioTestRecord(sourceId, record, timestamp), _)
             if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
-        case (PreliminaryScenarioTestRecord.Standard(sourceId, _, _), recordIdx) =>
+        case (PreliminaryScenarioTestRecord(sourceId, _, _), recordIdx) =>
           Left(TestDataPreparationError.MissingSource(NodeId(sourceId), recordIdx))
-        case (PreliminaryScenarioTestRecord.Simplified(record), _) if allScenarioSourceIds.size == 1 =>
-          val sourceId = allScenarioSourceIds.head
-          Right(ScenarioTestJsonRecord(sourceId, record))
-        case (_: PreliminaryScenarioTestRecord.Simplified, recordIdx) =>
-          Left(TestDataPreparationError.MultipleSourcesRequired(recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))

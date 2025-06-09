@@ -21,20 +21,18 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
     )
   )
 
+  private val testDataRecord = PreliminaryScenarioTestRecord(
+    "source1",
+    Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)),
+    timestamp = Some(24L)
+  )
+
   private val scenarioTestData = PreliminaryScenarioTestData(
-    NonEmptyList(
-      PreliminaryScenarioTestRecord.Standard(
-        "source1",
-        Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)),
-        timestamp = Some(24L)
-      ),
-      PreliminaryScenarioTestRecord.Simplified(Json.fromString("a JSON string")) :: Nil
-    )
+    NonEmptyList.one(testDataRecord)
   )
 
   private val rawStringScenarioTestData =
-    """{"sourceId":"source1","record":{"f1":"field value","f2":42},"timestamp":24}
-      |"a JSON string"""".stripMargin
+    """{"sourceId":"source1","record":{"f1":"field value","f2":42},"timestamp":24}""".stripMargin
 
   test("should serialize scenario test data") {
     val rawScenarioTestData = serDe.serialize(scenarioTestData).rightValue
@@ -45,15 +43,13 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   test("should fail trying to serialize too much bytes") {
     val testData = PreliminaryScenarioTestData(
       NonEmptyList.fromListUnsafe(
-        List.fill(10)(
-          PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a long JSON string...".repeat(10)))
-        )
+        List.fill(30)(testDataRecord)
       )
     )
 
     val error = serDe.serialize(testData).leftValue
 
-    error shouldBe SerializationError.TooManyCharactersGenerated(length = 2449, limit = testDataMaxLength)
+    error shouldBe SerializationError.TooManyCharactersGenerated(length = 2279, limit = testDataMaxLength)
   }
 
   test("should deserialize scenario test data") {
@@ -84,7 +80,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   test("should fail trying to parse invalid record") {
     val invalidRecord = "not a test record"
     val scenarioTestData =
-      s""""a JSON string"
+      s"""$rawStringScenarioTestData
         |$invalidRecord""".stripMargin
 
     val error = serDe.deserialize(RawScenarioTestData(scenarioTestData)).leftValue
