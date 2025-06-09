@@ -377,7 +377,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 inputProps={{
                                     ...params.inputProps,
                                     sx: {
-                                        display: params.inputProps.disabled ? "none" : "block", // Hides the input when edition is disbaled
+                                        display: params.inputProps.disabled ? "none" : "block", // Hides the input when edition is disabled
                                     },
                                     onKeyDown: (event) => {
                                         const input = (event.target as HTMLInputElement).value;
