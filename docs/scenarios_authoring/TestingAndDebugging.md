@@ -48,16 +48,11 @@ If the scenario relies on sources that do not support the generation of a testin
 A scenario can be tested with events coming from a file; this can be very handy if several test passes on the same input events are needed before the scenario is deemed ready. Similarly, as with test data capture, this feature also works with multiple sources.
 All you need to do is to reuse file you already have from the `Test data capture` step or prepare such file manually e.g. for the **Request-Response** processing mode.
 
-Designer accepts the following formats of test records:
-- standard records that are generated using `generate file` button and have `sourceId`, `record` and optional `timestamp` fields
-- simplified records that have only `record` JSON inlined. Simplified format can be helpful in **Request-Response**
-  or when source records are persisted in logs and can be copied directly to the test file. Note, this format can be
-  used only if the tested scenario has exactly one source.
+Test records contain the following fields: `sourceId`, `record` and optional `timestamp` field. Example test records can be generated using `generate file` button.
 
-For example, the below records can be used to test if the scenario has exactly one source:
+Here is an example record for a scenario using kafka source:
 ```json
 {"sourceId":"kafka1","record":{"keySchemaId":null,"valueSchemaId":null,"consumerRecord":{"key":null,"value":{"clientId":"4","amount":30,"eventDate":1674548921},"topic":"transactions","partition":0,"offset":58209,"timestamp":1674548933921,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}},"timestamp":1674548933921}
-{"keySchemaId":null,"valueSchemaId":null,"consumerRecord":{"key":null,"value":{"clientId":"4","amount":30,"eventDate":1674548921},"topic":"transactions","partition":0,"offset":58209,"timestamp":1674548933921,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}}
 ```
 The `sourceId` field contains name of the source node as specified in the scenario; the `record` field contains the json representation of the event. 
 
