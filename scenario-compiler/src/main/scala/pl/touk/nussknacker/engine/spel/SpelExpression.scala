@@ -6,12 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.{
-  standard,
-  SpelCompilerMode,
-  SpelEvaluationException,
-  SpelParserConfiguration
-}
+import org.springframework.expression.spel._
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
@@ -33,6 +28,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.parser.{ExpressionWithTextRange, NuSpelExpressionParser}
 
+import java.text.MessageFormat
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
 
@@ -244,11 +240,26 @@ class SpelExpressionParser(
         val textRangeOpt = Option(ex).collect { case ex: ParseException =>
           IndexBasedTextRange(ex.getPosition, ex.getPosition + 1).toCoordinatesBasedTextRange(original)
         }
+        val message = Option(ex)
+          .collect { case ex: SpelParseException =>
+            ex.getMessageCode match {
+              case SpelMessage.MORE_INPUT =>
+                // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
+                MessageFormat.format("Unexpected token: ''{0}''", ex.getInserts: _*)
+              case _ => removeErrorCodeIndicator(ex)
+            }
+          }
+          .getOrElse(ex.getMessage)
         NonEmptyList.of(
-          SpelExpressionUnderlyingParserError(ex.getMessage, textRangeOpt)
+          SpelExpressionUnderlyingParserError(message, textRangeOpt)
         )
       }
   }
+
+  // SpEL adds sth like EL1001E: error code indicator to every message. We remove it to make messages more human-readable
+  // See SpelMessage.formatMessage for details
+  private def removeErrorCodeIndicator(ex: SpelParseException) =
+    ex.getMessage.replaceFirst("^EL\\d{4}E?: ", "")
 
   private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
     if (enableSpelForceCompile) {
