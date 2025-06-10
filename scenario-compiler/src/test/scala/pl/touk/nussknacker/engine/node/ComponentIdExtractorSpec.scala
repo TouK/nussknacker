@@ -52,7 +52,7 @@ class ComponentIdExtractorSpec
         FragmentInput("fragment", FragmentRef(componentName, Nil)),
         Some(ComponentId(ComponentType.Fragment, componentName))
       ),
-      (FragmentUsageOutput("output", "", None), None),
+      (FragmentUsageOutput("output", "fragmentId", "", None), None),
       (BranchEndData(BranchEndDefinition("", "")), None),
       (Source("source", SourceRef(componentId, Nil)), Some(ComponentId(ComponentType.Source, componentId))),
     )
