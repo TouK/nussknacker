@@ -46,16 +46,13 @@ const prepareNotification =
 
 const handleRefresh =
     (
-        { scenarioName, toRefresh }: BackendNotification,
+        toRefresh: DataToRefresh,
         currentScenarioName: string,
         processVersionId: number,
         currentProcessingType: string,
         currentIsFragment: boolean,
     ): ThunkAction =>
     (dispatch) => {
-        if (scenarioName && scenarioName !== currentScenarioName) {
-            return;
-        }
         if (toRefresh.indexOf("activity") >= 0 && currentScenarioName) {
             dispatch(getScenarioActivities(currentScenarioName));
         }
@@ -87,9 +84,22 @@ const prepareNotifications =
             return !isProcessed && !isDisplayed;
         };
 
-        notifications.filter(onlyUnreadPredicate).forEach((notification) => {
+        const unreadNotifications = notifications.filter(onlyUnreadPredicate);
+
+        unreadNotifications.forEach((notification) => {
             dispatch(prepareNotification(notification));
-            dispatch(handleRefresh(notification, scenarioName, processVersionId, currentProcessingType, currentIsFragment));
+        });
+
+        const uniqueEventsToRefresh = Array.from(
+            new Set(
+                unreadNotifications
+                    .filter((notification) => !notification.scenarioName || notification.scenarioName === scenarioName)
+                    .flatMap((notification) => notification.toRefresh),
+            ),
+        );
+
+        uniqueEventsToRefresh.forEach((refreshItem) => {
+            dispatch(handleRefresh(refreshItem, scenarioName, processVersionId, currentProcessingType, currentIsFragment));
         });
     };
 
