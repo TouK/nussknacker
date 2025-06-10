@@ -165,12 +165,16 @@ variable name" parameter will be present instead:
 
 ![previous_value_window](img/previous_value_window.png)
 
-`previousValue` stores arbitrary value for the given key. This element has two parameters:
-- groupBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
-- value - stored value
+The `PreviousValue` node recalls a value that was captured during a previous occurrence of an event with a specific key. It allows you to access the *last seen* value of a given expression for each group of events defined by a grouping key.
+
+#### Parameters
+
+- **Output variable name** - The recalled previous value will be available under this variable name.
+- **key** - Defines how input events are grouped. The component keeps track of the last value separately for each unique key, based on this expression.
+- **value** - The value to remember. It will be recalled when another event with the same group key arrives.
 
 For example, given stream of events which contain users with their current location, when we set 
-- groupBy is `#input.userId`
+- key is `#input.userId`
 - value is `#input.location`
 
 then the value of the output variable is the previous location for the current user. If this is the first appearance 
@@ -182,7 +186,7 @@ of this user, the **current** location will be returned.
 **(Flink engine only)**
 
 Holds event in the node until 
-  *event time* + `delay` >= max (*event time* ever seen by the delay node). 
+  *event time* + `delay` >= max (*event time* ever seen by the Delay node). 
 
 The `key` parameter will be removed in the future release of Nussknacker, for the time being, configure it to `#inputMeta.key`.
 

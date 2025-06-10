@@ -23,7 +23,9 @@ types of data like JSON, Binary, and DB data. In each case format of these data 
 
 To provide consistent and proper support for these formats Nussknacker converts meta-information about data to its
 own `Typing Information`, which is used on the Designer's part to hint and validate the data. Each part of the diagram
-is statically validated and typed on an ongoing basis.
+is statically validated and typed on an ongoing basis. 
+
+The internal Nussknacker's `Typing Information` "system" is based on Java datatypes. Consequently, the data mappings presented in the remaining part of this document map data types between the non Java datatypes and Java datatypes.
 
 ## Avro schema
 
