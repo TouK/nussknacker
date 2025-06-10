@@ -13,7 +13,13 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   ProcessServiceBasedScenarioServiceAdapter,
   TapirCustomHttpServiceProvider
 }
-import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
+import pl.touk.nussknacker.ui.customhttpservice.services.{DbRefInstance, NussknackerServicesForCustomHttpService}
+import pl.touk.nussknacker.ui.customhttpservice.services.{
+  NuExPostgresProfile => ApiNuExPostgresProfile,
+  NuHsqldbProfile => ApiNuHsqldbProfile,
+  NuPostgresProfile => ApiNuPostgresProfile
+}
+import pl.touk.nussknacker.ui.db.{NuExPostgresProfile, NuHsqldbProfile, NuPostgresProfile}
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 
 import scala.concurrent.ExecutionContext
@@ -63,7 +69,8 @@ object CustomHttpServiceProvidersLoader {
   )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
-      new DatabaseRunnerImpl(infrastructureServices.dbioRunner)
+      new DatabaseRunnerImpl(infrastructureServices.dbioRunner),
+      buildDbRefInstance(infrastructureServices)
     )
     customHttpServiceProviderFactories
       .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
@@ -81,5 +88,18 @@ object CustomHttpServiceProvidersLoader {
       pekko: Map[String, PekkoCustomHttpServiceProvider],
       tapir: Map[String, TapirCustomHttpServiceProvider]
   )
+
+  private def buildDbRefInstance(infrastructureServices: InfrastructureServices) = {
+    val dbRef = infrastructureServices.dbRef
+    val profile = dbRef.profile match {
+      case profile: NuHsqldbProfile => new ApiNuHsqldbProfile(profile.schemaName)
+      case profile: NuPostgresProfile =>
+        profile match {
+          case profile: NuExPostgresProfile => new ApiNuExPostgresProfile(profile.schemaName)
+          case profile: NuPostgresProfile   => new ApiNuPostgresProfile(profile.schemaName)
+        }
+    }
+    DbRefInstance(dbRef.db, profile)
+  }
 
 }
