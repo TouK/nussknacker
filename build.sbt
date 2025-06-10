@@ -1203,7 +1203,14 @@ lazy val testUtils = (project in utils("test-utils"))
 
 // rest-assured is not cross compiled, so we have to use different versions
 def restAssuredDependency(scalaVersion: String) = forScalaVersion(scalaVersion) {
-  case (2, 12) => Seq("io.rest-assured" % "scala-support" % "4.0.0")
+  case (2, 12) =>
+    Seq(
+      "io.rest-assured"     % "scala-support" % "4.0.0",
+      // groovy 2.5.6 which comes with rest assured doesn't work on jdk 17
+      "org.codehaus.groovy" % "groovy"        % "2.5.10",
+      "org.codehaus.groovy" % "groovy-xml"    % "2.5.10",
+      "org.codehaus.groovy" % "groovy-json"   % "2.5.10"
+    )
   case (2, 13) => Seq("io.rest-assured" % "scala-support" % "5.5.0")
 }
 
