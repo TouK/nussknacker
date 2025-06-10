@@ -28,7 +28,6 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.parser.{ExpressionWithTextRange, NuSpelExpressionParser}
 
-import java.text.MessageFormat
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
 
