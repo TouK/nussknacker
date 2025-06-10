@@ -246,7 +246,7 @@ class SpelExpressionParser(
               case SpelMessage.MORE_INPUT =>
                 // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
                 "Unexpected text"
-              case _ => removeErrorCodeIndicator(ex)
+              case _ => messageWithoutExpressionAndErrorCodeIndicator(ex)
             }
           }
           .getOrElse(ex.getMessage)
@@ -256,10 +256,13 @@ class SpelExpressionParser(
       }
   }
 
-  // SpEL adds sth like EL1001E: error code indicator to every message. We remove it to make messages more human-readable
-  // See SpelMessage.formatMessage for details
-  private def removeErrorCodeIndicator(ex: SpelParseException) =
-    ex.getMessage.replaceFirst("^EL\\d{4}E?: ", "")
+  // SpEL adds:
+  // - Expression [<expression>]: prefix - see ExpressionException.toDetailedString
+  // - EL1001E: prefix - (error code indicator), see SpelMessage.formatMessage
+  // We remove both things to make messages more human-readable
+  // To avoid first prefix we call getSimpleMessage instead of getMessage.
+  private def messageWithoutExpressionAndErrorCodeIndicator(ex: SpelParseException) =
+    ex.getSimpleMessage.replaceFirst("^EL\\d{4}E?: ", "")
 
   private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
     if (enableSpelForceCompile) {

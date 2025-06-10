@@ -221,7 +221,7 @@ object PrettyValidationErrors {
         )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>
         node(
-          message = s"Failed to parse expression: $message",
+          message = s"$message",
           description = s"There is a problem with expression: $originalExpr",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
         )

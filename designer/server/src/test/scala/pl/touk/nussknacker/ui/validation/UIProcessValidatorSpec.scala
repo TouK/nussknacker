@@ -753,7 +753,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             ),
             NodeValidationError(
               "ExpressionParserCompilationErrorInFragmentDefinition",
-              "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
+              "Bad expression type, expected: Boolean, found: String(someValue)",
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
               NodeValidationErrorType.SaveAllowed,

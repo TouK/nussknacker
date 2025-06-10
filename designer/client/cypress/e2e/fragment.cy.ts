@@ -59,9 +59,7 @@ describe("Fragment", () => {
             // Display Add list item errors from a backend when Non reference value occurs
             cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("w");
             cy.get("[data-testid='settings:4']").find("[data-testid='form-helper-text']").should("be.visible");
-            cy.get("[data-testid='settings:4']").contains(
-                "Failed to parse expression: Non reference 'w' occurred. Maybe you missed '#' in front of it?",
-            );
+            cy.get("[data-testid='settings:4']").contains("Non reference 'w' occurred. Maybe you missed '#' in front of it?");
             cy.get("[data-testid='settings:4']").find("[role='button']").should("not.exist");
 
             // Display Add list item value without error
