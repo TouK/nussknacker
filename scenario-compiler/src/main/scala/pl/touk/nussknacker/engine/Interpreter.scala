@@ -84,14 +84,14 @@ private class InterpreterInternal[F[_]: Monad](
       case VariableBuilder(_, varName, Left(expression), next) =>
         val valueWithModifiedContext = expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx)
         interpretOptionalNext(node, next, ctx.withVariable(varName, valueWithModifiedContext.value))
-      case FragmentUsageStart(_, _, params, next) =>
+      case FragmentUsageStart(_, params, next) =>
         val (newCtx, vars) = expressionEvaluator.evaluateParameters(params, ctx)
         interpretOptionalNext(
           node,
           next,
           newCtx.pushNewContext(vars.map { case (paramName, value) => (paramName.value, value) })
         )
-      case FragmentUsageEnd(_, fragmentId, outputVar, next) =>
+      case FragmentUsageEnd(_, fragmentUsageStartNodeId, outputVar, next) =>
         // Here we need parent context so we can compile rest of scenario. Unfortunately some component inside fragment
         // could've cleared that context. In that case, we take current (fragment's) context so we can keep the id,
         // clear it's variables, and keep using it in further processing.
@@ -106,8 +106,8 @@ private class InterpreterInternal[F[_]: Monad](
         // - the `interpretOptionalNext` method triggers only reporting of the transition between the last node of the fragment graph and the next node
         // - we have to also report the transition between the single node representing the entire fragment and the next node
         next match {
-          case Some(next) => onTransitionToNextNode(fragmentId, next, newParentContext)
-          case None       => onProcessingFinishedInNode(fragmentId, newParentContext)
+          case Some(next) => onTransitionToNextNode(fragmentUsageStartNodeId, next, newParentContext)
+          case None       => onProcessingFinishedInNode(fragmentUsageStartNodeId, newParentContext)
         }
         interpretOptionalNext(node, next, newParentContext)
       case Processor(_, ref, next, false) =>

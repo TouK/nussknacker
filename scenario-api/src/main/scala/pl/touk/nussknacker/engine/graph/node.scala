@@ -306,7 +306,7 @@ object node {
   // this is used after resolving fragment, used for detecting when fragment ends and context should change
   case class FragmentUsageOutput(
       id: String,
-      fragmentId: String,
+      fragmentUsageStartNodeId: String,
       outputName: String,
       outputVar: Option[FragmentOutputVarDefinition],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None

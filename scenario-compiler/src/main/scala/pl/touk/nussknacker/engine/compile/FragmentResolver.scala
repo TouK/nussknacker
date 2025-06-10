@@ -75,7 +75,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
           resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
             val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
             FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(
-              FragmentUsageOutput(outputId, data.ref.id, output, None, None)
+              FragmentUsageOutput(outputId, data.id, output, None, None)
             ) :: resolvedNexts
           }
         // here is the only interesting part - not disabled fragment

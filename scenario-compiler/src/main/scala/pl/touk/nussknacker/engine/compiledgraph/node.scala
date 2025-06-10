@@ -62,12 +62,11 @@ object node {
   case class FragmentOutput(id: String, fieldsWithExpression: Map[String, TypedExpression], isDisabled: Boolean)
       extends Node
 
-  case class FragmentUsageStart(id: String, fragmentId: String, params: List[CompiledParameter], next: Option[Next])
-      extends Node
+  case class FragmentUsageStart(id: String, params: List[CompiledParameter], next: Option[Next]) extends Node
 
   case class FragmentUsageEnd(
       id: String,
-      fragmentId: String,
+      fragmentUsageStartNodeId: String,
       outputVarDefinition: Option[FragmentOutputVarDefinition],
       next: Option[Next]
   ) extends Node
