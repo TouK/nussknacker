@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
   FetchLiveDataError,
@@ -161,14 +161,14 @@ class ScenarioTestingApiHttpService(
                 ) match {
                   case Left(error) =>
                     EitherT.fromEither[Future](Left(toDto(error)))
-                  case Right(rawScenarioTestData) =>
+                  case Right(serializedLiveData) =>
                     EitherT(
                       scenarioTestService
                         .performTest(
                           request.scenarioGraph,
                           scenarioWithDetails.processVersionUnsafe,
                           scenarioWithDetails.isFragment,
-                          rawScenarioTestData
+                          serializedLiveData
                         )
                     ).leftMap[TestingError] { error =>
                       ErrorResult(TestingApiErrorMessages.from(error))
@@ -244,8 +244,8 @@ class ScenarioTestingApiHttpService(
                 case Left(error) =>
                   logger.error(s"Error during generation of test data: $error")
                   Future(Left(toDto(error)))
-                case Right(rawScenarioTestData) =>
-                  Future(Right(rawScenarioTestData.content))
+                case Right(serializedLiveData) =>
+                  Future(Right(serializedLiveData.content))
               }
             )
           } yield parametersDefinition
@@ -282,7 +282,7 @@ class ScenarioTestingApiHttpService(
         NoLiveDataAvailable
       case FetchLiveDataError.LiveDataFetchingNotSupportedError =>
         NoSourcesWithLiveDataFetchingSupport
-      case FetchLiveDataError.ScenarioTestDataSerializationError(cause) =>
+      case FetchLiveDataError.ScenarioRecordsSerializationError(cause) =>
         cause match {
           case SerializationError.TooManyCharactersGenerated(length, limit) =>
             TooManyCharactersGenerated(length, limit)

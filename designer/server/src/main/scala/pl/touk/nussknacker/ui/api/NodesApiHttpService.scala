@@ -48,7 +48,7 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -186,15 +186,15 @@ class NodesApiHttpService(
                   Future(Left(UnsupportedSourcePreview(sourceNodeData.id)))
                 case Left(FetchLiveDataError.NoLiveDataAvailableError) =>
                   Future(Left(NoLiveDataAvailable))
-                case Left(FetchLiveDataError.ScenarioTestDataSerializationError(cause)) =>
+                case Left(FetchLiveDataError.ScenarioRecordsSerializationError(cause)) =>
                   Future(Left(cause match {
                     case SerializationError.TooManyCharactersGenerated(length, limit) =>
                       TooManyCharactersGenerated(length, limit)
                   }))
                 case Left(FetchLiveDataError.TooManySamplesRequestedError(maxSamples)) =>
                   Future(Left(TooManySamplesRequested(maxSamples)))
-                case Right(rawScenarioTestData) =>
-                  Future(Right(rawScenarioTestData.content))
+                case Right(rawScenarioRecords) =>
+                  Future(Right(rawScenarioRecords.content))
               }
             )
           } yield parametersDefinition

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
 
@@ -13,12 +13,12 @@ object TestingApiErrorMessages {
         cause match {
           case DeserializationError.TooManyCharacters(length, limit) =>
             TestingApiErrorMessages.passedTestData.tooManyCharacters(length, limit)
-          case DeserializationError.TooManySamples(size, limit) =>
+          case DeserializationError.TooManyRecords(size, limit) =>
             TestingApiErrorMessages.passedTestData.tooManySamples(size, limit)
           case DeserializationError.NoRecords =>
             TestingApiErrorMessages.passedTestData.empty
-          case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
-            TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
+          case DeserializationError.RecordParsingError(serializedTestRecord, recordIndex) =>
+            TestingApiErrorMessages.problemInSample(recordIndex).parsingError(serializedTestRecord)
         }
       case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)

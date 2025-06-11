@@ -12,9 +12,16 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreator
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, ComponentImplementationInvoker}
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  ComponentImplementationInvoker
+}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableContextInitializerSource,
+  FlinkSource,
+  FlinkSourceTestSupport
+}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
@@ -134,7 +141,7 @@ class StubbedSourcePreparer(
       nodeId: NodeId
   ): FlinkSource = {
     val samples: List[Object] = collectSamples(originalSource, nodeId)
-    val assignerForTestOpt = originalSource.timestampAssignerForTest
+    val assignerForTestOpt    = originalSource.timestampAssignerForTest
     // setting timestamp as currentTimeMillis is good default
     // without this default we would run into issues with timestamp being Long.MIN_VALUE and
     // crashing time windows
@@ -143,7 +150,9 @@ class StubbedSourcePreparer(
         new StandardTimestampWatermarkHandler[Object](
           WatermarkStrategy
             .forMonotonousTimestamps[Object]()
-            .withTimestampAssigner(StandardTimestampWatermarkHandler.toAssigner[Object](e => System.currentTimeMillis()))
+            .withTimestampAssigner(
+              StandardTimestampWatermarkHandler.toAssigner[Object](e => System.currentTimeMillis())
+            )
         )
       )
     )
@@ -168,7 +177,7 @@ class StubbedSourcePreparer(
   }
 
   private def collectSamples(originalSource: Source, nodeId: NodeId): List[Object] = {
-    val testRecordsForSource = scenarioTestData.testRecords.filter(_.sourceId == nodeId)
+    val testRecordsForSource = scenarioTestData.inputRecords.filter(_.sourceId == nodeId)
     testDataPreparer.prepareRecordsForTest(originalSource, testRecordsForSource)
   }
 

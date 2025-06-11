@@ -46,9 +46,9 @@ class ScenarioTestService(
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
 
-  private val preliminaryScenarioTestDataSerDe = new PreliminaryScenarioTestDataSerDe(
-    testDataMaxLength = testDataSettings.testDataMaxLength,
-    maxSamplesCount = testDataSettings.maxSamplesCount
+  private val preliminaryScenarioRecordsSerDe = new PreliminaryScenarioRecordsSerDe(
+    serializedContentMaxLength = testDataSettings.testDataMaxLength,
+    maxRecordsCount = testDataSettings.maxSamplesCount
   )
 
   def getTestingCapabilities(
@@ -144,7 +144,7 @@ class ScenarioTestService(
       maxNumberOfSamples: Int
   )(
       implicit user: LoggedUser
-  ): Either[FetchLiveDataError, RawScenarioTestData] = {
+  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     val jobData   = JobData(canonical.metaData, processVersion)
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
@@ -176,10 +176,10 @@ class ScenarioTestService(
           .toRight(
             FetchLiveDataError.NoLiveDataAvailableError
           )
-        rawTestData <- preliminaryScenarioTestDataSerDe
-          .serialize(PreliminaryScenarioTestData(fetchedLiveDataNel))
-          .leftMap(FetchLiveDataError.ScenarioTestDataSerializationError)
-      } yield rawTestData
+        serializedLiveData <- preliminaryScenarioRecordsSerDe
+          .serialize(PreliminaryScenarioRecords(fetchedLiveDataNel))
+          .leftMap(FetchLiveDataError.ScenarioRecordsSerializationError)
+      } yield serializedLiveData
     }
   }
 
@@ -187,7 +187,7 @@ class ScenarioTestService(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       maxNumberOfSamples: Int
-  ): Either[FetchLiveDataError, RawScenarioTestData] = {
+  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     val nodeId  = NodeId(sourceNodeData.id)
 
@@ -210,10 +210,10 @@ class ScenarioTestService(
             FetchLiveDataError.NoLiveDataAvailableError
           )
 
-        rawTestData <- preliminaryScenarioTestDataSerDe
-          .serialize(PreliminaryScenarioTestData(fetchedLiveDataNel))
-          .leftMap(serializationError => FetchLiveDataError.ScenarioTestDataSerializationError(serializationError))
-      } yield rawTestData
+        serializedLiveData <- preliminaryScenarioRecordsSerDe
+          .serialize(PreliminaryScenarioRecords(fetchedLiveDataNel))
+          .leftMap(serializationError => FetchLiveDataError.ScenarioRecordsSerializationError(serializationError))
+      } yield serializedLiveData
     }
   }
 
@@ -235,13 +235,13 @@ class ScenarioTestService(
       sourceId: NodeId,
       compiledSource: Source,
       maxNumberOfSamples: Int
-  ): Option[List[PreliminaryScenarioTestRecord]] = {
+  ): Option[List[PreliminaryScenarioRecord]] = {
     compiledSource.cast[TestDataGenerator].map { testDataGenerator =>
       val sourceTestRecords = modelData.withModelClassloaderAsContextClassLoader {
         testDataGenerator.generateTestData(maxNumberOfSamples).testRecords
       }
       sourceTestRecords
-        .map(testRecord => PreliminaryScenarioTestRecord(sourceId.id, testRecord.json, testRecord.timestamp))
+        .map(testRecord => PreliminaryScenarioRecord(sourceId.id, testRecord.json, testRecord.timestamp))
     }
   }
 
@@ -249,12 +249,12 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-      rawTestData: RawScenarioTestData,
+      serializedTestRecordsContent: SerializedScenarioRecordsContent,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     (for {
-      preliminaryScenarioTestData <- EitherT.fromEither[Future](
-        preliminaryScenarioTestDataSerDe
-          .deserialize(rawTestData)
+      preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
+        preliminaryScenarioRecordsSerDe
+          .deserialize(serializedTestRecordsContent)
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
       )
 
@@ -264,7 +264,7 @@ class ScenarioTestService(
         isFragment
       )
 
-      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestData, canonical))
+      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
 
       testResults <- EitherT.liftF(
         testExecutorService.testProcess(
@@ -279,18 +279,17 @@ class ScenarioTestService(
   }
 
   private[test] def prepareTestData(
-      preliminaryTestData: PreliminaryScenarioTestData,
+      preliminaryScenarioRecords: PreliminaryScenarioRecords,
       scenario: CanonicalProcess
   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
     val allScenarioSourceIds = commonModelDataInfoProvider.collectAllSources(scenario).map(_.id).toSet
-    preliminaryTestData.testRecords.zipWithIndex
+    preliminaryScenarioRecords.records.zipWithIndex
       .map {
-        case (PreliminaryScenarioTestRecord(sourceId, record, timestamp), _)
-            if allScenarioSourceIds.contains(sourceId) =>
+        case (PreliminaryScenarioRecord(sourceId, record, timestamp), _) if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
-        case (PreliminaryScenarioTestRecord(sourceId, _, _), recordIdx) =>
+        case (PreliminaryScenarioRecord(sourceId, _, _), recordIdx) =>
           Left(PerformTestError.MissingSourceError(NodeId(sourceId), recordIdx))
       }
       .sequence
@@ -423,7 +422,7 @@ object ScenarioTestService {
 
     final case object NoLiveDataAvailableError          extends FetchLiveDataError
     final case object LiveDataFetchingNotSupportedError extends FetchLiveDataError
-    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
+    final case class ScenarioRecordsSerializationError(cause: PreliminaryScenarioRecordsSerDe.SerializationError)
         extends FetchLiveDataError
     final case class TooManySamplesRequestedError(maxSamples: Int) extends FetchLiveDataError
   }
@@ -431,7 +430,7 @@ object ScenarioTestService {
   sealed trait PerformTestError
 
   object PerformTestError {
-    final case class DeserializationError(cause: PreliminaryScenarioTestDataSerDe.DeserializationError)
+    final case class DeserializationError(cause: PreliminaryScenarioRecordsSerDe.DeserializationError)
         extends PerformTestError
     final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
