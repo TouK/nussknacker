@@ -5559,13 +5559,10 @@ components:
       title: ContextIdDto
       type: object
       required:
-      - sid
       - nid
       - tid
       - idx
       properties:
-        sid:
-          type: string
         nid:
           type: string
         tid:
