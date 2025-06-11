@@ -86,7 +86,7 @@ object ResultsWithCountsDtoCodecs {
       nid: String,
       tid: Long,
       idx: Long,
-      t: List[ContextIdTransformationDto]
+      p: List[ContextIdTransformationDto]
   )
 
   object ContextIdDto {
@@ -96,7 +96,7 @@ object ResultsWithCountsDtoCodecs {
         nid = id.originatingNodeId,
         tid = id.taskId,
         idx = id.index,
-        t = id.path.map(t => ContextIdTransformationDto(t.nodeId, t.value)),
+        p = id.path.map(t => ContextIdTransformationDto(t.nodeId, t.value)),
       )
     }
 

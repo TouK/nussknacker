@@ -67,18 +67,18 @@ object RowConversions {
 
   }
 
-  private implicit def contextIdTransformationCodec: Codec[ContextIdPathPart] =
-    Codec.forProduct2("n", "t")(ContextIdPathPart.apply)(t => (t.nodeId, t.value))
+  private implicit def contextIdPathPartCodec: Codec[ContextIdPathPart] =
+    Codec.forProduct2("n", "v")(ContextIdPathPart.apply)(t => (t.nodeId, t.value))
 
   private implicit def contextIdCodec: Codec[ContextId] =
-    Codec.forProduct5("p", "nid", "tid", "idx", "s")(
+    Codec.forProduct5("sn", "nid", "tid", "idx", "p")(
       (
-          prefix: String,
+          scenarioName: String,
           nodeId: String,
           taskId: Long,
           index: Long,
-          transformations: List[ContextIdPathPart]
-      ) => ContextId(prefix, nodeId, taskId, index, transformations),
+          path: List[ContextIdPathPart]
+      ) => ContextId(scenarioName, nodeId, taskId, index, path),
     )(cid => (cid.scenarioName, cid.originatingNodeId, cid.taskId, cid.index, cid.path))
 
   private def serializeContextId(contextId: ContextId) = {
