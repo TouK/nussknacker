@@ -141,7 +141,7 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-      maxNumberOfSamples: Int
+      maxNumberOfRecords: Int
   )(
       implicit user: LoggedUser
   ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
@@ -149,7 +149,7 @@ class ScenarioTestService(
     val jobData   = JobData(canonical.metaData, processVersion)
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
-        _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
+        _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
 
         compiledSources <- commonModelDataInfoProvider
           .collectAllSources(canonical)
@@ -160,7 +160,7 @@ class ScenarioTestService(
 
         fetchedLiveDataForSources = compiledSources
           .flatMap { case (sourceId, compiledSource) =>
-            fetchLiveData(sourceId, compiledSource, maxNumberOfSamples)
+            fetchLiveData(sourceId, compiledSource, maxNumberOfRecords)
           }
 
         fetchedLiveDataForSourcesNel <- fetchedLiveDataForSources.toNel.toRight(
@@ -168,7 +168,7 @@ class ScenarioTestService(
         )
 
         mergedLivedData = ListUtil
-          .mergeLists(fetchedLiveDataForSourcesNel.toList, maxNumberOfSamples)
+          .mergeLists(fetchedLiveDataForSourcesNel.toList, maxNumberOfRecords)
           .sortBy(_.timestamp.getOrElse(Long.MaxValue))
 
         fetchedLiveDataNel <- NonEmptyList
@@ -186,14 +186,14 @@ class ScenarioTestService(
   def fetchSourceLiveData(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
-      maxNumberOfSamples: Int
+      maxNumberOfRecords: Int
   ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     val nodeId  = NodeId(sourceNodeData.id)
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
-        _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
+        _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
 
         compiledSourceWithId <- compileSource(sourceNodeData)
           .leftMap(errors => FetchLiveDataError.SourcesCompilationError(errors))
@@ -201,7 +201,7 @@ class ScenarioTestService(
 
         (_, compiledSource) = compiledSourceWithId
 
-        fetchedLiveData <- fetchLiveData(nodeId, compiledSource, maxNumberOfSamples)
+        fetchedLiveData <- fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
           .toRight(FetchLiveDataError.LiveDataFetchingNotSupportedError)
 
         fetchedLiveDataNel <- NonEmptyList
@@ -234,11 +234,11 @@ class ScenarioTestService(
   private def fetchLiveData(
       sourceId: NodeId,
       compiledSource: Source,
-      maxNumberOfSamples: Int
+      maxNumberOfRecords: Int
   ): Option[List[PreliminaryScenarioRecord]] = {
     compiledSource.cast[TestDataGenerator].map { testDataGenerator =>
       val sourceTestRecords = modelData.withModelClassloaderAsContextClassLoader {
-        testDataGenerator.generateTestData(maxNumberOfSamples).testRecords
+        testDataGenerator.generateTestData(maxNumberOfRecords).testRecords
       }
       sourceTestRecords
         .map(testRecord => PreliminaryScenarioRecord(sourceId.id, testRecord.json, testRecord.timestamp))
@@ -325,13 +325,13 @@ class ScenarioTestService(
     ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))
   }
 
-  def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {
+  def validateRecordsCount[E](size: Int)(tooManyRecordsError: Int => E): Either[E, Unit] = {
     testDataSettings.maxSamplesCount
       .map { definedMaxSampleSize =>
         Either.cond(
           size <= definedMaxSampleSize,
           (),
-          tooManySamplesError(definedMaxSampleSize)
+          tooManyRecordsError(definedMaxSampleSize)
         )
       }
       .getOrElse(Right(()))
@@ -424,7 +424,7 @@ object ScenarioTestService {
     final case object LiveDataFetchingNotSupportedError extends FetchLiveDataError
     final case class ScenarioRecordsSerializationError(cause: PreliminaryScenarioRecordsSerDe.SerializationError)
         extends FetchLiveDataError
-    final case class TooManySamplesRequestedError(maxSamples: Int) extends FetchLiveDataError
+    final case class TooManyRecordsRequestedError(maxRecordsCount: Int) extends FetchLiveDataError
   }
 
   sealed trait PerformTestError

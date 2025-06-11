@@ -218,7 +218,7 @@ object Dtos {
 
     object BadRequestTestingError {
       final case class TooManyCharactersGenerated(length: Int, limit: Int)     extends BadRequestTestingError
-      final case class TooManySamplesRequested(maxSamples: Int)                extends BadRequestTestingError
+      final case class TooManyRecordsRequested(maxRecordsCount: Int)           extends BadRequestTestingError
       final case class SourcesCompilationError(errors: ValidationErrors)       extends BadRequestTestingError
       final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends BadRequestTestingError
       final case class ErrorResult(message: String)                            extends BadRequestTestingError
@@ -229,8 +229,8 @@ object Dtos {
             errors.toHumanReadableMessage
           case TooManyCharactersGenerated(length, limit) =>
             TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
-          case TooManySamplesRequested(maxSamples) =>
-            TestingApiErrorMessages.liveDataFetching.requestedTooManySamplesToFetch(maxSamples)
+          case TooManyRecordsRequested(maxSamples) =>
+            TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxSamples)
           case TestingWithCustomInputNotSupportedError(sourceId) =>
             TestingApiErrorMessages.testingWithCustomInput.notSupportedBySource(sourceId)
           case ErrorResult(message) =>

@@ -239,7 +239,7 @@ class ScenarioTestServiceSpec
         scenario.toScenarioGraph,
         processVersionFor(scenario),
         isFragment = false,
-        maxNumberOfSamples = 3
+        maxNumberOfRecords = 3
       )
 
     liveData shouldBe Symbol("left")

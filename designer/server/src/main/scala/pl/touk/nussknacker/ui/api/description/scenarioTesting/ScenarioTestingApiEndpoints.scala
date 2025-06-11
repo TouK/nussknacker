@@ -42,7 +42,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError.{
   SourcesCompilationError,
   TooManyCharactersGenerated,
-  TooManySamplesRequested
+  TooManyRecordsRequested
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError.{
   NoLiveDataAvailable,
@@ -259,7 +259,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
             ),
             Example.of(
               summary = Some("Too many samples requested"),
-              value = TooManySamplesRequested(maxSamples = 1000)
+              value = TooManyRecordsRequested(maxRecordsCount = 1000)
             ),
             Example.of(
               summary = Some("Scenario validation error"),

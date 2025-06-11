@@ -37,7 +37,7 @@ object ModelConfig {
     case object Disabled extends LiveDataPreviewMode
 
     final case class Enabled(
-        maxNumberOfSamples: Int,
+        maxNumberOfRecords: Int,
         throughputTimeWindowInSeconds: Int,
     ) extends LiveDataPreviewMode
 
@@ -46,7 +46,7 @@ object ModelConfig {
   private def parseLiveDataPreviewMode(config: Config): LiveDataPreviewMode = {
     if (config.getOrElse("liveDataPreview.enabled", false)) {
       LiveDataPreviewMode.Enabled(
-        maxNumberOfSamples = config.getOrElse("liveDataPreview.maxNumberOfSamples", 10),
+        maxNumberOfRecords = config.getOrElse("liveDataPreview.maxNumberOfSamples", 10),
         throughputTimeWindowInSeconds = config.getOrElse("liveDataPreview.throughputTimeWindowInSeconds", 60),
       )
     } else {

@@ -28,8 +28,8 @@ object TestingApiErrorMessages {
   }
 
   object liveDataFetching {
-    def requestedTooManySamplesToFetch(maxSamples: Int) =
-      s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
+    def requestedTooManyRecordsToFetch(maxRecordsCount: Int) =
+      s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxRecordsCount)"
 
     val noLiveDataAvailable =
       "No live test data available. Please ensure that the storage used by source contains at least one data sample"

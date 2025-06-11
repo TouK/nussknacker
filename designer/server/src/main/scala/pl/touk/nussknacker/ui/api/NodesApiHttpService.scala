@@ -34,7 +34,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   MalformedTypingResult,
   SourceCompilation,
   TooManyCharactersGenerated,
-  TooManySamplesRequested,
+  TooManyRecordsRequested,
   UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.ForbiddenNodesError.NoPermission
@@ -191,8 +191,8 @@ class NodesApiHttpService(
                     case SerializationError.TooManyCharactersGenerated(length, limit) =>
                       TooManyCharactersGenerated(length, limit)
                   }))
-                case Left(FetchLiveDataError.TooManySamplesRequestedError(maxSamples)) =>
-                  Future(Left(TooManySamplesRequested(maxSamples)))
+                case Left(FetchLiveDataError.TooManyRecordsRequestedError(maxSamples)) =>
+                  Future(Left(TooManyRecordsRequested(maxSamples)))
                 case Right(rawScenarioRecords) =>
                   Future(Right(rawScenarioRecords.content))
               }

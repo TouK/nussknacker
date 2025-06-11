@@ -213,8 +213,8 @@ class ScenarioTestingApiHttpService(
               case ScenarioTestData.WithLiveData(numberOfSamples) =>
                 EitherT
                   .fromEither[Future](
-                    scenarioTestService.validateSampleSize[TestingError](numberOfSamples)(
-                      BadRequestTestingError.TooManySamplesRequested(_)
+                    scenarioTestService.validateRecordsCount[TestingError](numberOfSamples)(
+                      BadRequestTestingError.TooManyRecordsRequested(_)
                     )
                   )
                   .map((_: Unit) => List.empty)
@@ -287,8 +287,8 @@ class ScenarioTestingApiHttpService(
           case SerializationError.TooManyCharactersGenerated(length, limit) =>
             TooManyCharactersGenerated(length, limit)
         }
-      case FetchLiveDataError.TooManySamplesRequestedError(maxSamples) =>
-        TooManySamplesRequested(maxSamples)
+      case FetchLiveDataError.TooManyRecordsRequestedError(maxRecordsCount) =>
+        TooManyRecordsRequested(maxRecordsCount)
     }
   }
 

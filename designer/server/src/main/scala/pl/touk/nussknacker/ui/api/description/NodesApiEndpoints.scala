@@ -68,7 +68,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   MalformedTypingResult,
   SourceCompilation,
   TooManyCharactersGenerated,
-  TooManySamplesRequested,
+  TooManyRecordsRequested,
   UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.NotFoundNodesError.{
@@ -427,7 +427,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   ),
                   Example.of(
                     summary = Some("Too many samples requested"),
-                    value = TooManySamplesRequested(100)
+                    value = TooManyRecordsRequested(100)
                   ),
                   Example.of(
                     summary = Some("Too many characters generated"),
@@ -1568,7 +1568,7 @@ object NodesApiEndpoints {
         case class SourceCompilation(nodeId: String, errors: List[String])   extends BadRequestNodesError
         case class UnsupportedSourcePreview(nodeId: String)                  extends BadRequestNodesError
         case class InvalidNodeType(expectedType: String, actualType: String) extends BadRequestNodesError
-        case class TooManySamplesRequested(maxSamples: Int)                  extends BadRequestNodesError
+        case class TooManyRecordsRequested(maxRecordsCount: Int)             extends BadRequestNodesError
         case class MalformedTypingResult(msg: String)                        extends BadRequestNodesError
         case class TooManyCharactersGenerated(length: Int, limit: Int)       extends BadRequestNodesError
 
@@ -1578,8 +1578,8 @@ object NodesApiEndpoints {
               s"Cannot compile source '$nodeId'. Errors: ${errors.mkString(", ")}"
             case UnsupportedSourcePreview(nodeId)          => s"Source '$nodeId' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected $expectedType but got: ${actualType}"
-            case TooManySamplesRequested(maxSamples) =>
-              TestingApiErrorMessages.liveDataFetching.requestedTooManySamplesToFetch(maxSamples)
+            case TooManyRecordsRequested(maxRecordsCount) =>
+              TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxRecordsCount)
             case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
               TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)

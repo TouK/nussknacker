@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters._
 
 private[livedata] class LiveDataCollectingListenerStorage(
-    maxNumberOfSamples: Int,
+    maxNumberOfRecords: Int,
     throughputTimeWindowInSeconds: Int,
 )(implicit clock: Clock) {
 
@@ -72,7 +72,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
       (_: K, valuesOpt: RingBufferWithTotalCount[V]) => {
         val values = Option(valuesOpt) match {
           case Some(values) => values
-          case None         => new RingBufferWithTotalCount[V](maxNumberOfSamples)
+          case None         => new RingBufferWithTotalCount[V](maxNumberOfRecords)
         }
         values.put(value)
         values
