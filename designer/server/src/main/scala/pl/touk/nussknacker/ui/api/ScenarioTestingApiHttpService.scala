@@ -111,7 +111,7 @@ class ScenarioTestingApiHttpService(
                               UISourceParameters(id.id, params.map(DefinitionsService.createUIParameter))
                             }.toList
                             CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
-                          case Left(ParametersDefinitionError.UnsupportedTestingWithCustomInputError(_)) =>
+                          case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                           case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
@@ -263,8 +263,8 @@ class ScenarioTestingApiHttpService(
             globalErrors = List.empty
           )
         )
-      case ParametersDefinitionError.UnsupportedTestingWithCustomInputError(nodeId) =>
-        BadRequestTestingError.UnsupportedTestingWithCustomInputError(nodeId)
+      case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
+        BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
     }
   }
 
@@ -278,9 +278,9 @@ class ScenarioTestingApiHttpService(
             globalErrors = List.empty
           )
         )
-      case FetchLiveDataError.NoLiveDataAvailable =>
+      case FetchLiveDataError.NoLiveDataAvailableError =>
         NoLiveDataAvailable
-      case FetchLiveDataError.NoSourcesWithLiveDataFetchingSupport =>
+      case FetchLiveDataError.LiveDataFetchingNotSupportedError =>
         NoSourcesWithLiveDataFetchingSupport
       case FetchLiveDataError.ScenarioTestDataSerializationError(cause) =>
         cause match {

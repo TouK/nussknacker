@@ -20,9 +20,9 @@ object TestingApiErrorMessages {
           case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
             TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
         }
-      case PerformTestError.MissingSource(sourceId, recordIndex) =>
+      case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
-      case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
+      case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
     }
   }

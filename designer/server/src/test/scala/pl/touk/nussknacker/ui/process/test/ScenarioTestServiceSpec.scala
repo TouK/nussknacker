@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.api.TestDataSettings
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSource
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -361,7 +361,7 @@ class ScenarioTestServiceSpec
     forEvery(testCases) { scenario =>
       val error = scenarioTestService.prepareTestData(preliminaryScenarioRecords, scenario).leftValue
 
-      error shouldBe MissingSource(NodeId("non-existing source"), 1)
+      error shouldBe MissingSourceError(NodeId("non-existing source"), 1)
     }
   }
 

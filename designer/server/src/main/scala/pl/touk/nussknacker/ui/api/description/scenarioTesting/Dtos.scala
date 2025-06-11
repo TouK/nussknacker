@@ -217,11 +217,11 @@ object Dtos {
     sealed trait BadRequestTestingError extends TestingError
 
     object BadRequestTestingError {
-      final case class TooManyCharactersGenerated(length: Int, limit: Int)    extends BadRequestTestingError
-      final case class TooManySamplesRequested(maxSamples: Int)               extends BadRequestTestingError
-      final case class SourcesCompilationError(errors: ValidationErrors)      extends BadRequestTestingError
-      final case class UnsupportedTestingWithCustomInputError(nodeId: NodeId) extends BadRequestTestingError
-      final case class ErrorResult(message: String)                           extends BadRequestTestingError
+      final case class TooManyCharactersGenerated(length: Int, limit: Int)     extends BadRequestTestingError
+      final case class TooManySamplesRequested(maxSamples: Int)                extends BadRequestTestingError
+      final case class SourcesCompilationError(errors: ValidationErrors)       extends BadRequestTestingError
+      final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends BadRequestTestingError
+      final case class ErrorResult(message: String)                            extends BadRequestTestingError
 
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
@@ -231,7 +231,7 @@ object Dtos {
             TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
           case TooManySamplesRequested(maxSamples) =>
             TestingApiErrorMessages.liveDataFetching.requestedTooManySamplesToFetch(maxSamples)
-          case UnsupportedTestingWithCustomInputError(sourceId) =>
+          case TestingWithCustomInputNotSupportedError(sourceId) =>
             TestingApiErrorMessages.testingWithCustomInput.notSupportedBySource(sourceId)
           case ErrorResult(message) =>
             message

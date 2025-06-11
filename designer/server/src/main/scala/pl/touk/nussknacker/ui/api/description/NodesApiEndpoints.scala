@@ -1575,9 +1575,9 @@ object NodesApiEndpoints {
         implicit val badRequestNodesErrorCodec: Codec[String, BadRequestNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestNodesError] {
             case SourceCompilation(nodeId, errors) =>
-              s"Cannot compile source '${nodeId}'. Errors: ${errors.mkString(", ")}"
-            case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
-            case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
+              s"Cannot compile source '$nodeId'. Errors: ${errors.mkString(", ")}"
+            case UnsupportedSourcePreview(nodeId)          => s"Source '$nodeId' doesn't support records preview"
+            case InvalidNodeType(expectedType, actualType) => s"Expected $expectedType but got: ${actualType}"
             case TooManySamplesRequested(maxSamples) =>
               TestingApiErrorMessages.liveDataFetching.requestedTooManySamplesToFetch(maxSamples)
             case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
@@ -1600,9 +1600,9 @@ object NodesApiEndpoints {
 
         implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
-            case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
+            case NoScenario(scenarioName)         => s"No scenario $scenarioName found"
             case NoLiveDataAvailable              => TestingApiErrorMessages.liveDataFetching.noLiveDataAvailable
-            case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
+            case NoProcessingType(processingType) => s"ProcessingType type: $processingType not found"
           }
 
         implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {

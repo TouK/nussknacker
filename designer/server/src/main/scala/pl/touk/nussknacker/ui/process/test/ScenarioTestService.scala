@@ -133,7 +133,7 @@ class ScenarioTestService(
   ): Either[ParametersDefinitionError, List[Parameter]] = {
     compiledSource match {
       case s: TestWithParametersSupport[_] => Right(s.testParametersDefinition)
-      case _ => Left(ParametersDefinitionError.UnsupportedTestingWithCustomInputError(sourceId))
+      case _ => Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(sourceId))
     }
   }
 
@@ -163,7 +163,7 @@ class ScenarioTestService(
         }
 
         generatorsByNodeIdNel <- generatorsByNodeId.toNel.toRight(
-          FetchLiveDataError.NoSourcesWithLiveDataFetchingSupport
+          FetchLiveDataError.LiveDataFetchingNotSupportedError
         )
 
         fetchedLiveData = fetchLiveData(generatorsByNodeIdNel, maxNumberOfSamples)
@@ -171,7 +171,7 @@ class ScenarioTestService(
         fetchedLiveDataNel <- NonEmptyList
           .fromList(fetchedLiveData)
           .toRight(
-            FetchLiveDataError.NoLiveDataAvailable
+            FetchLiveDataError.NoLiveDataAvailableError
           )
         rawTestData <- preliminaryScenarioTestDataSerDe
           .serialize(PreliminaryScenarioTestData(fetchedLiveDataNel))
@@ -184,16 +184,16 @@ class ScenarioTestService(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
       maxNumberOfSamples: Int
-  ): Either[SourceTestError, RawScenarioTestData] = {
+  ): Either[FetchLiveDataError, RawScenarioTestData] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     val nodeId  = NodeId(sourceNodeData.id)
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
-        _ <- validateSampleSize(maxNumberOfSamples)(SourceTestError.TooManySamplesRequestedError)
+        _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
 
         compiledSourceWithId <- compileSource(sourceNodeData)
-          .leftMap(errors => SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString)))
+          .leftMap(errors => FetchLiveDataError.SourcesCompilationError(errors))
           .toEither
 
         (_, compiledSource) = compiledSourceWithId
@@ -202,19 +202,19 @@ class ScenarioTestService(
         // TODO: In the future we want to extract another interface which would explicitly fetch live data in the standardized format which would not require to define TestRecordParser
         testDataGenerator <- compiledSource
           .cast[TestDataGenerator]
-          .toRight(SourceTestError.UnsupportedSourcePreviewError(nodeId.id))
+          .toRight(FetchLiveDataError.LiveDataFetchingNotSupportedError)
 
         fetchedLiveData = fetchLiveData(NonEmptyList.one(nodeId -> testDataGenerator), maxNumberOfSamples)
 
         fetchedLiveDataNel <- NonEmptyList
           .fromList(fetchedLiveData)
           .toRight(
-            SourceTestError.NoLiveDataFetchedError
+            FetchLiveDataError.NoLiveDataAvailableError
           )
 
         rawTestData <- preliminaryScenarioTestDataSerDe
           .serialize(PreliminaryScenarioTestData(fetchedLiveDataNel))
-          .leftMap(serializationError => SourceTestError.ScenarioTestDataSerializationError(serializationError))
+          .leftMap(serializationError => FetchLiveDataError.ScenarioTestDataSerializationError(serializationError))
       } yield rawTestData
     }
   }
@@ -295,7 +295,7 @@ class ScenarioTestService(
             if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
         case (PreliminaryScenarioTestRecord(sourceId, _, _), recordIdx) =>
-          Left(PerformTestError.MissingSource(NodeId(sourceId), recordIdx))
+          Left(PerformTestError.MissingSourceError(NodeId(sourceId), recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
@@ -361,7 +361,7 @@ class ScenarioTestService(
         Either.cond(
           testDataResultApproxByteSize <= definedResultsMaxBytes,
           (),
-          PerformTestError.TestResultsSizeExceeded(testDataResultApproxByteSize, definedResultsMaxBytes)
+          PerformTestError.TestResultsSizeExceededError(testDataResultApproxByteSize, definedResultsMaxBytes)
         )
       }
       .getOrElse(Right(()))
@@ -413,7 +413,7 @@ object ScenarioTestService {
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
     ) extends ParametersDefinitionError
 
-    final case class UnsupportedTestingWithCustomInputError(nodeId: NodeId) extends ParametersDefinitionError
+    final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends ParametersDefinitionError
 
   }
 
@@ -425,22 +425,11 @@ object ScenarioTestService {
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
     ) extends FetchLiveDataError
 
-    final case object NoLiveDataAvailable                  extends FetchLiveDataError
-    final case object NoSourcesWithLiveDataFetchingSupport extends FetchLiveDataError
+    final case object NoLiveDataAvailableError          extends FetchLiveDataError
+    final case object LiveDataFetchingNotSupportedError extends FetchLiveDataError
     final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
         extends FetchLiveDataError
     final case class TooManySamplesRequestedError(maxSamples: Int) extends FetchLiveDataError
-  }
-
-  sealed trait SourceTestError
-
-  object SourceTestError {
-    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
-    final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
-    final case object NoLiveDataFetchedError                                      extends SourceTestError
-    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
-        extends SourceTestError
-    final case class TooManySamplesRequestedError(maxSamples: Int) extends SourceTestError
   }
 
   sealed trait PerformTestError
@@ -448,8 +437,8 @@ object ScenarioTestService {
   object PerformTestError {
     final case class DeserializationError(cause: PreliminaryScenarioTestDataSerDe.DeserializationError)
         extends PerformTestError
-    final case class MissingSource(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
-    final case class TestResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
+    final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
+    final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
   }
 
 }
