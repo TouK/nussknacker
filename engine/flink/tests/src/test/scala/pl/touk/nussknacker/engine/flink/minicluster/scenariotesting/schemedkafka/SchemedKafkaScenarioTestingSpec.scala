@@ -203,14 +203,14 @@ class SchemedKafkaScenarioTestingSpec
     val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
 
     nodeResults(results, "fragment1").loneElement shouldBe (
-      ContextId("fragment1", "fragment1", 0, 0),
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
       Map(
         "in" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
       )
     )
 
     nodeResults(results, "fragmentEnd").loneElement shouldBe (
-      ContextId("fragment1", "fragment1", 0, 0),
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
       Map(
         "in"  -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id"))),
         "out" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
@@ -222,7 +222,7 @@ class SchemedKafkaScenarioTestingSpec
       .invocationResults("fragmentEnd")
       .loneElement
       .copy(timestamp = mockedTimestamp) shouldBe ExpressionInvocationResult(
-      ContextId("fragment1", "fragment1", 0, 0),
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
       mockedTimestamp,
       "out",
       Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ListTypeInfo
-import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdTransformation}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper}
 
@@ -34,14 +34,14 @@ object ContextTypeHelpers {
       ("originatingNodeId", TypeInformation.of(classOf[String])),
       ("taskId", TypeInformation.of(classOf[Long])),
       ("index", TypeInformation.of(classOf[Long])),
-      ("transformations", new ListTypeInfo[ContextIdTransformation](contextIdTransformationInfo)),
+      ("contextIdPath", new ListTypeInfo[ContextIdPathPart](contextIdTransformationInfo)),
     )
   }
 
-  private def contextIdTransformationInfo: TypeInformation[ContextIdTransformation] = {
+  private def contextIdTransformationInfo: TypeInformation[ContextIdPathPart] = {
     ConcreteCaseClassTypeInfo(
       ("nodeId", TypeInformation.of(classOf[String])),
-      ("transformation", TypeInformation.of(classOf[String])),
+      ("value", TypeInformation.of(classOf[String])),
     )
   }
 

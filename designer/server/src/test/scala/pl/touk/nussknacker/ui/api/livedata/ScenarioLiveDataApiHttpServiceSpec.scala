@@ -109,7 +109,8 @@ class ScenarioLiveDataApiHttpServiceSpec
           NodeTransition("start", Some("variable")) -> LiveDataForNodeTransition(
             samples = List(
               LiveDataSample(
-                contextId = ContextId("mocked-scenario-id", "source", 0, 0),
+                contextId =
+                  ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
                 timestamp = mockedInstant,
                 variables = Map(
                   "v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson)
@@ -123,7 +124,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         invocationResults = Map(
           NodeId("start") -> List(
             InvocationResult(
-              ContextId("mocked-scenario-id", "source", 0, 0),
+              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
               mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
@@ -133,7 +134,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         externalInvocationResults = Map(
           NodeId("start") -> List(
             InvocationResult(
-              ContextId("mocked-scenario-id", "source", 0, 0),
+              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
               mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
@@ -143,7 +144,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         exceptions = Map(
           NodeId("start") -> List(
             ExceptionResult(
-              ContextId("mocked-scenario-id", "source", 0, 0),
+              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
               mockedInstant,
               Map("var1" -> Json.obj("pretty" -> "abc".asJson)),
               new Exception("Something bad happened")
@@ -179,7 +180,6 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        "results": [
              |          {
              |            "cid": {
-             |              "sid": "mocked-scenario-id",
              |              "nid": "source",
              |              "tid": 0,
              |              "idx": 0,
@@ -204,7 +204,6 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      "start": [
              |        {
              |          "cid": {
-             |            "sid": "mocked-scenario-id",
              |            "nid": "source",
              |            "tid": 0,
              |            "idx": 0,
@@ -224,7 +223,6 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      "start": [
              |        {
              |          "cid": {
-             |            "sid": "mocked-scenario-id",
              |            "nid": "source",
              |            "tid": 0,
              |            "idx": 0,
@@ -244,7 +242,6 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      {
              |        "context": {
              |          "cid": {
-             |            "sid": "mocked-scenario-id",
              |            "nid": "source",
              |            "tid": 0,
              |            "idx": 0,
@@ -268,7 +265,6 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        {
              |          "context": {
              |            "cid": {
-             |              "sid": "mocked-scenario-id",
              |              "nid": "source",
              |              "tid": 0,
              |              "idx": 0,

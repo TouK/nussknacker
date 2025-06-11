@@ -9,34 +9,68 @@ object Context {
   def apply(id: ContextId, variables: Map[String, Any]): Context =
     Context(id, variables, None)
 
+  // The dummy Context should only be used in test suites, perhaps also Nu scenario test mechanism or examples
   def dummy: Context = Context(ContextId.dummy)
 
 }
 
-case class ContextId(
-    scenarioId: String,
+final case class ContextId private (
+    scenarioName: String,
     originatingNodeId: String,
     taskId: Long,
     index: Long,
-    transformations: java.util.List[ContextIdTransformation] = List.empty.asJava,
+    // We need to use java.util.List instead of the Scala List implementation, because of Flink typing issues:
+    // - the Flink typing of Context and ContextId is handled in `object ContextTypeHelpers`
+    // - we have our own TypeInformation implementations for Scala Map (TypedScalaMapTypeInformation) and case classes
+    // - but we do not have such implementation for Scala List and creating it would require quite huge, error-prone custom implementation
+    // - the Flink's ListTypeInfo does not support Scala List, because it cannot handle `Nil` - it has type List[Unknown], which causes problems with typing and casting
+    // - as a result, we use java List internally in the ContextId, but we hide that fact in the interface
+    private val contextIdPath: java.util.List[ContextIdPathPart],
 ) {
 
-  lazy val legacySerialized: String = List(
-    List(scenarioId),
+  def path: List[ContextIdPathPart] = contextIdPath.asScala.toList
+
+  def withContextIdPathPart(nodeId: String, value: String): ContextId = {
+    val copied = copy(contextIdPath = new java.util.ArrayList(contextIdPath))
+    copied.contextIdPath.add(ContextIdPathPart(nodeId, value))
+    copied
+  }
+
+  lazy val legacyString: String = List(
+    List(scenarioName),
     List(originatingNodeId),
     List(taskId.toString),
     List(index.toString),
-    transformations.asScala.map(_.transformation),
+    contextIdPath.asScala.map(_.value),
   ).flatten.mkString("-")
 
 }
 
-case class ContextIdTransformation(nodeId: String, transformation: String)
+case class ContextIdPathPart(nodeId: String, value: String)
 
 object ContextId {
-  object DummyContextId extends ContextId("dummy", "dummy", 0, 0, List.empty.asJava)
 
-  def dummy: ContextId = DummyContextId
+  // Override and hide the default apply, in order to hide java list
+  private def apply(
+      scenarioId: String,
+      originatingNodeId: String,
+      taskId: Long,
+      index: Long,
+      contextIdPath: java.util.List[ContextIdPathPart]
+  ): ContextId =
+    new ContextId(scenarioId, originatingNodeId, taskId, index, contextIdPath)
+
+  def apply(
+      scenarioId: String,
+      originatingNodeId: String,
+      taskId: Long,
+      index: Long,
+      path: List[ContextIdPathPart] = List.empty
+  ): ContextId =
+    new ContextId(scenarioId, originatingNodeId, taskId, index, path.asJava)
+
+  // The dummy ContextId should only be used in test suites, perhaps also Nu scenario test mechanism or examples
+  def dummy: ContextId = new ContextId("dummy", "dummy", 0, 0, List.empty.asJava)
 }
 
 /**
@@ -52,11 +86,8 @@ case class Context(
     parentContext: Option[Context]
 ) {
 
-  def withContextIdTransformation(nodeId: String, transformation: String): Context = {
-    val copied = copy(id = id.copy(transformations = new java.util.ArrayList(id.transformations)))
-    copied.id.transformations.add(ContextIdTransformation(nodeId, transformation))
-    copied
-  }
+  def withContextIdTransformation(nodeId: String, transformation: String): Context =
+    copy(id = id.withContextIdPathPart(nodeId, transformation))
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing
   //       into parameter

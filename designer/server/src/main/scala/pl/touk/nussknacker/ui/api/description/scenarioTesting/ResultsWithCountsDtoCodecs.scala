@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioTesting
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.generic.semiauto.deriveEncoder
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdTransformation}
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart}
 import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExceptionResult,
   ExpressionInvocationResult,
@@ -26,7 +26,7 @@ object ResultsWithCountsDtoCodecs {
 
   private implicit val testResultsEncoder: Encoder[TestResultsDto] = new Encoder[TestResultsDto]() {
 
-    implicit val contextId: Encoder[ContextId] = Encoder.encodeString.contramap(_.legacySerialized)
+    implicit val contextId: Encoder[ContextId] = Encoder.encodeString.contramap(_.legacyString)
 
     implicit val nodeResult: Encoder[ResultContext[Json]] =
       encoderWithDetailedContextId(deriveConfiguredEncoder[ResultContext[Json]], _.id)
@@ -54,18 +54,18 @@ object ResultsWithCountsDtoCodecs {
           ) =>
         Json.obj(
           "nodeResults" -> nodeResults
-            .map(_.map { case (node, list) => node -> list.sortBy(_.id.legacySerialized) }.asJson)
+            .map(_.map { case (node, list) => node -> list.sortBy(_.id.legacyString) }.asJson)
             .getOrElse(Json.Null),
           "nodeTransitionResults" -> nodeTransitionResults.asJson.deepDropNullValues,
           "invocationResults" -> invocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId.legacySerialized)
+            node -> list.sortBy(_.contextId.legacyString)
           }.asJson,
           "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId.legacySerialized)
+            node -> list.sortBy(_.contextId.legacyString)
           }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id.legacySerialized).asJson,
+          "exceptions" -> exceptions.sortBy(_.context.id.legacyString).asJson,
           "exceptionsByNodeId" -> exceptionsByNodeId.map { case (nodeId, exs) =>
-            nodeId -> exs.sortBy(_.context.id.legacySerialized)
+            nodeId -> exs.sortBy(_.context.id.legacyString)
           }.asJson,
         )
     }
@@ -83,33 +83,20 @@ object ResultsWithCountsDtoCodecs {
   }
 
   final case class ContextIdDto(
-      sid: String,
       nid: String,
       tid: Long,
       idx: Long,
       t: List[ContextIdTransformationDto]
-  ) {
-
-    def contextId: ContextId =
-      ContextId(
-        scenarioId = sid,
-        originatingNodeId = nid,
-        taskId = tid,
-        index = idx,
-        transformations = t.map(t => ContextIdTransformation(t.n, t.t)).asJava,
-      )
-
-  }
+  )
 
   object ContextIdDto {
 
     def from(id: ContextId): ContextIdDto = {
       ContextIdDto(
-        sid = id.scenarioId,
         nid = id.originatingNodeId,
         tid = id.taskId,
         idx = id.index,
-        t = id.transformations.asScala.toList.map(t => ContextIdTransformationDto(t.nodeId, t.transformation)),
+        t = id.path.map(t => ContextIdTransformationDto(t.nodeId, t.value)),
       )
     }
 

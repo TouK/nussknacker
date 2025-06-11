@@ -69,19 +69,19 @@ class FlinkDeploymentManagerScenarioTestingSpec
       r.nodeResults.map(r => (r._1, r._2.map(r => (r.id, r.variables)))) shouldBe Map(
         "startProcess" -> List(
           (
-            ContextId(processName.value, "startProcess", 0, 0),
+            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
             Map("input" -> variable("terefere"))
           )
         ),
         "nightFilter" -> List(
           (
-            ContextId(processName.value, "startProcess", 0, 0),
+            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
             Map("input" -> variable("terefere"))
           )
         ),
         "endSend" -> List(
           (
-            ContextId(processName.value, "startProcess", 0, 0),
+            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
             Map("input" -> variable("terefere"))
           )
         )

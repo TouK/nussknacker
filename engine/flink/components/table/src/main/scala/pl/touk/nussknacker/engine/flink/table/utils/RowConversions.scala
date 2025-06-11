@@ -5,7 +5,7 @@ import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.RowTypeInfo
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdTransformation}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -67,24 +67,19 @@ object RowConversions {
 
   }
 
-  private implicit def contextIdTransformationCodec: Codec[ContextIdTransformation] =
-    Codec.forProduct2("n", "t")(ContextIdTransformation.apply)(t => (t.nodeId, t.transformation))
+  private implicit def contextIdTransformationCodec: Codec[ContextIdPathPart] =
+    Codec.forProduct2("n", "t")(ContextIdPathPart.apply)(t => (t.nodeId, t.value))
 
   private implicit def contextIdCodec: Codec[ContextId] =
-    Codec.forProduct6("v", "p", "nid", "tid", "idx", "s")(
+    Codec.forProduct5("p", "nid", "tid", "idx", "s")(
       (
-          v: String,
           prefix: String,
           nodeId: String,
           taskId: Long,
           index: Long,
-          transformations: List[ContextIdTransformation]
-      ) =>
-        v match {
-          case "v1" => ContextId(prefix, nodeId, taskId, index, transformations.asJava)
-          case _    => throw new IllegalArgumentException(s"Cannot deserialize ContextId")
-        }
-    )(cid => ("v1", cid.scenarioId, cid.originatingNodeId, cid.taskId, cid.index, cid.transformations.asScala.toList))
+          transformations: List[ContextIdPathPart]
+      ) => ContextId(prefix, nodeId, taskId, index, transformations),
+    )(cid => (cid.scenarioName, cid.originatingNodeId, cid.taskId, cid.index, cid.path))
 
   private def serializeContextId(contextId: ContextId) = {
     contextId.asJson.noSpaces
@@ -96,8 +91,7 @@ object RowConversions {
       contextId <- Decoder[ContextId].decodeJson(json)
     } yield contextId) match {
       case Left(_) =>
-        // Legacy case, contextId was serialized by older version of Nu
-        ContextId(str, "", 0, 0, List.empty.asJava)
+        throw new IllegalStateException(s"Cannot deserialize contextId from [$str]")
       case Right(contextId) =>
         contextId
     }

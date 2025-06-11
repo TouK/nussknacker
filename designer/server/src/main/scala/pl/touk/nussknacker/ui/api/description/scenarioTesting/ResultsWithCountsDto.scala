@@ -91,7 +91,7 @@ object ResultsWithCountsDto {
 
   implicit def contextIdTransformationDtoSchema: Schema[ContextIdTransformationDto] = Schema.derived
   implicit def contextIdSchema: Schema[ContextId] =
-    Schema.derived[ContextIdDto].map(id => Some(id.contextId))(ContextIdDto.from)
+    Schema.derived[ContextIdDto].map(_ => None)(ContextIdDto.from)
   implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
   implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
   implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived

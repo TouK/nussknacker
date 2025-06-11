@@ -6,7 +6,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdTransformation, JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process._
@@ -55,8 +55,20 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
       val results = collectTestResults(model, testScenario, collectingListener)
       extractContextIds(results) shouldBe List(
-        ContextId("forEachProcess", "start", 0, 0, List(ContextIdTransformation("for-each", "0")).asJava),
-        ContextId("forEachProcess", "start", 0, 0, List(ContextIdTransformation("for-each", "1")).asJava),
+        ContextId(
+          scenarioId = "forEachProcess",
+          originatingNodeId = "start",
+          taskId = 0,
+          index = 0,
+          path = List(ContextIdPathPart("for-each", "0"))
+        ),
+        ContextId(
+          scenarioId = "forEachProcess",
+          originatingNodeId = "start",
+          taskId = 0,
+          index = 0,
+          path = List(ContextIdPathPart("for-each", "1"))
+        ),
       )
     }
   }

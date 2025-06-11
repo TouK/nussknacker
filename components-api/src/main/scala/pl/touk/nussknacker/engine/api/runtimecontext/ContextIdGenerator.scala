@@ -27,7 +27,7 @@ class IncContextIdGenerator(
 ) extends ContextIdGenerator {
 
   override def nextContextId(): ContextId =
-    ContextId(scenarioId.value, nodeId, taskId, counter.getAndIncrement(), List.empty.asJava)
+    ContextId(scenarioId.value, nodeId, taskId, counter.getAndIncrement(), List.empty)
 
 }
 

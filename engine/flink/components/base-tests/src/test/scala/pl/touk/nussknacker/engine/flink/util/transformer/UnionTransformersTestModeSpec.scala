@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdTransformation}
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -102,44 +102,44 @@ class UnionTransformersTestModeSpec
       contextIds should contain theSameElementsAs contextIds.toSet
       contextIds should contain only (
         ContextId(
-          scenarioName,
-          sourceId,
-          firstSubtaskIndex,
-          0,
-          List(
-            ContextIdTransformation("split", leftBranchId),
-            ContextIdTransformation("union-node-id", leftBranchId)
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceId,
+          taskId = firstSubtaskIndex,
+          index = 0,
+          path = List(
+            ContextIdPathPart("split", leftBranchId),
+            ContextIdPathPart("union-node-id", leftBranchId)
+          )
         ),
         ContextId(
-          scenarioName,
-          sourceId,
-          firstSubtaskIndex,
-          1,
-          List(
-            ContextIdTransformation("split", leftBranchId),
-            ContextIdTransformation("union-node-id", leftBranchId)
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceId,
+          taskId = firstSubtaskIndex,
+          index = 1,
+          path = List(
+            ContextIdPathPart("split", leftBranchId),
+            ContextIdPathPart("union-node-id", leftBranchId)
+          )
         ),
         ContextId(
-          scenarioName,
-          sourceId,
-          firstSubtaskIndex,
-          0,
-          List(
-            ContextIdTransformation("split", rightBranchId),
-            ContextIdTransformation("union-node-id", rightBranchId)
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceId,
+          taskId = firstSubtaskIndex,
+          index = 0,
+          path = List(
+            ContextIdPathPart("split", rightBranchId),
+            ContextIdPathPart("union-node-id", rightBranchId)
+          )
         ),
         ContextId(
-          scenarioName,
-          sourceId,
-          firstSubtaskIndex,
-          1,
-          List(
-            ContextIdTransformation("split", rightBranchId),
-            ContextIdTransformation("union-node-id", rightBranchId)
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceId,
+          taskId = firstSubtaskIndex,
+          index = 1,
+          path = List(
+            ContextIdPathPart("split", rightBranchId),
+            ContextIdPathPart("union-node-id", rightBranchId)
+          )
         ),
       )
     }

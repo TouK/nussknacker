@@ -111,7 +111,12 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
                 LiveDataForNodeTransition(
                   samples = (0 to 14).map { idx =>
                     LiveDataSample(
-                      ContextId("runningFlinkEventGenerator", "start", 0, idx),
+                      ContextId(
+                        scenarioId = "runningFlinkEventGenerator",
+                        originatingNodeId = "start",
+                        taskId = 0,
+                        index = idx
+                      ),
                       mockedTimestamp,
                       Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
                     )
@@ -121,10 +126,29 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
                 )
             ),
             invocationResults = Map(
+              NodeId("start") ->
+                (0 to 14).map { idx =>
+                  InvocationResult(
+                    ContextId(
+                      scenarioId = "runningFlinkEventGenerator",
+                      originatingNodeId = "start",
+                      taskId = 0,
+                      index = idx
+                    ),
+                    mockedTimestamp,
+                    "value",
+                    Json.obj("pretty" -> "abrakadabra".asJson)
+                  )
+                }.toList,
               NodeId("endSend") ->
                 (0 to 14).map { idx =>
                   InvocationResult(
-                    ContextId("runningFlinkEventGenerator", "start", 0, idx),
+                    ContextId(
+                      scenarioId = "runningFlinkEventGenerator",
+                      originatingNodeId = "start",
+                      taskId = 0,
+                      index = idx
+                    ),
                     mockedTimestamp,
                     "Value",
                     Json.obj("pretty" -> "message".asJson)

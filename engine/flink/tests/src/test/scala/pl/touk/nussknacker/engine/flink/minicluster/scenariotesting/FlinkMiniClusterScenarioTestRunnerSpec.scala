@@ -164,7 +164,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       invocationResults("proc2").map(withMockedTimestamp) shouldBe
         List(
           ExpressionInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 1
+            ),
             mockedTimestamp,
             "all",
             variable("0")
@@ -174,7 +179,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       invocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExpressionInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 1
+            ),
             mockedTimestamp,
             "Value",
             variable(11)
@@ -183,7 +193,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       results.externalInvocationResults("proc2").map(r => (r.contextId, r.name, r.value)) shouldBe List(
         (
-          ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+          ContextId(scenarioId = scenarioName, originatingNodeId = sourceNodeId, taskId = firstSubtaskIndex, index = 1),
           "logService",
           variable("0-collectedDuringServiceInvocation")
         )
@@ -191,7 +201,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe List(
         ExternalInvocationResult(
-          ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+          ContextId(scenarioId = scenarioName, originatingNodeId = sourceNodeId, taskId = firstSubtaskIndex, index = 1),
           mockedTimestamp,
           "valueMonitor",
           variable(11)
@@ -200,7 +210,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       results.externalInvocationResults("eager1").map(withMockedTimestamp) shouldBe List(
         ExternalInvocationResult(
-          ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+          ContextId(scenarioId = scenarioName, originatingNodeId = sourceNodeId, taskId = firstSubtaskIndex, index = 1),
           mockedTimestamp,
           "collectingEager",
           variable("static-s-dynamic-0")
@@ -244,7 +254,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         invocationResults("out").map(withMockedTimestamp) shouldBe
           List(
             ExpressionInvocationResult(
-              ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 0),
+              ContextId(
+                scenarioId = scenarioName,
+                originatingNodeId = sourceNodeId,
+                taskId = firstSubtaskIndex,
+                index = 0
+              ),
               mockedTimestamp,
               "Value",
               variable(11)
@@ -253,7 +268,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
         results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe List(
           ExternalInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 0),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 0
+            ),
             mockedTimestamp,
             "valueMonitor",
             variable(11)
@@ -329,13 +349,23 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         List(
           // we record only LazyParameter execution results
           ExpressionInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 0),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 0
+            ),
             mockedTimestamp,
             "groupBy",
             variable("0")
           ),
           ExpressionInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 1
+            ),
             mockedTimestamp,
             "groupBy",
             variable("0")
@@ -345,13 +375,23 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       invocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExpressionInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 0),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 0
+            ),
             mockedTimestamp,
             "Value",
             variable("1 0")
           ),
           ExpressionInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 1
+            ),
             mockedTimestamp,
             "Value",
             variable("11 1")
@@ -361,13 +401,23 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 0),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 0
+            ),
             mockedTimestamp,
             "valueMonitor",
             variable("1 0")
           ),
           ExternalInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 1
+            ),
             mockedTimestamp,
             "valueMonitor",
             variable("11 1")
@@ -538,19 +588,34 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 0),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 0
+            ),
             mockedTimestamp,
             "valueMonitor",
             variable(SimpleJsonRecord("1", "11"))
           ),
           ExternalInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 1),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 1
+            ),
             mockedTimestamp,
             "valueMonitor",
             variable(SimpleJsonRecord("2", "22"))
           ),
           ExternalInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 2),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 2
+            ),
             mockedTimestamp,
             "valueMonitor",
             variable(SimpleJsonRecord("3", "33"))
@@ -572,7 +637,12 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       results.externalInvocationResults("out").map(withMockedTimestamp) shouldBe
         List(
           ExternalInvocationResult(
-            ContextId(scenarioName, sourceNodeId, firstSubtaskIndex, 0),
+            ContextId(
+              scenarioId = scenarioName,
+              originatingNodeId = sourceNodeId,
+              taskId = firstSubtaskIndex,
+              index = 0
+            ),
             mockedTimestamp,
             "valueMonitor",
             variable("transformed:abc|3")
@@ -715,10 +785,10 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       invocationResults("switch").filter(_.name == "expression").last.value shouldBe variable(false)
       // first record was filtered out
       invocationResults("out").head.contextId shouldBe ContextId(
-        scenarioName,
-        sourceNodeId,
-        firstSubtaskIndex,
-        1,
+        scenarioId = scenarioName,
+        originatingNodeId = sourceNodeId,
+        taskId = firstSubtaskIndex,
+        index = 1,
       )
     }
 
@@ -757,44 +827,44 @@ class FlinkMiniClusterScenarioTestRunnerSpec
 
       results.invocationResults("proc2").map(_.contextId) should contain only (
         ContextId(
-          scenarioName,
-          sourceNodeId,
-          firstSubtaskIndex,
-          1,
-          List(
-            ContextIdTransformation("split", "left"),
-            ContextIdTransformation("join1", "end1"),
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceNodeId,
+          taskId = firstSubtaskIndex,
+          index = 1,
+          path = List(
+            ContextIdPathPart("split", "left"),
+            ContextIdPathPart("join1", "end1"),
+          )
         ),
         ContextId(
-          scenarioName,
-          sourceNodeId,
-          firstSubtaskIndex,
-          2,
-          List(
-            ContextIdTransformation("split", "left"),
-            ContextIdTransformation("join1", "end1"),
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceNodeId,
+          taskId = firstSubtaskIndex,
+          index = 2,
+          path = List(
+            ContextIdPathPart("split", "left"),
+            ContextIdPathPart("join1", "end1"),
+          )
         ),
         ContextId(
-          scenarioName,
-          sourceNodeId,
-          firstSubtaskIndex,
-          0,
-          List(
-            ContextIdTransformation("split", "right"),
-            ContextIdTransformation("join1", "end2"),
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceNodeId,
+          taskId = firstSubtaskIndex,
+          index = 0,
+          path = List(
+            ContextIdPathPart("split", "right"),
+            ContextIdPathPart("join1", "end2"),
+          )
         ),
         ContextId(
-          scenarioName,
-          sourceNodeId,
-          firstSubtaskIndex,
-          2,
-          List(
-            ContextIdTransformation("split", "right"),
-            ContextIdTransformation("join1", "end2"),
-          ).asJava
+          scenarioId = scenarioName,
+          originatingNodeId = sourceNodeId,
+          taskId = firstSubtaskIndex,
+          index = 2,
+          path = List(
+            ContextIdPathPart("split", "right"),
+            ContextIdPathPart("join1", "end2"),
+          )
         ),
       )
 
@@ -876,11 +946,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
       results.invocationResults("proc2").map(withMockedTimestamp) should contain only (
         ExpressionInvocationResult(
           ContextId(
-            scenarioName,
-            "source1",
-            firstSubtaskIndex,
-            1,
-            List(ContextIdTransformation("join", "end1")).asJava
+            scenarioId = scenarioName,
+            originatingNodeId = "source1",
+            taskId = firstSubtaskIndex,
+            index = 1,
+            path = List(ContextIdPathPart("join", "end1"))
           ),
           mockedTimestamp,
           "all",
@@ -888,11 +958,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         ),
         ExpressionInvocationResult(
           ContextId(
-            scenarioName,
-            "source2",
-            firstSubtaskIndex,
-            0,
-            List(ContextIdTransformation("join", "end2")).asJava
+            scenarioId = scenarioName,
+            originatingNodeId = "source2",
+            taskId = firstSubtaskIndex,
+            index = 0,
+            path = List(ContextIdPathPart("join", "end2"))
           ),
           mockedTimestamp,
           "all",
@@ -900,11 +970,11 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         ),
         ExpressionInvocationResult(
           ContextId(
-            scenarioName,
-            "source2",
-            firstSubtaskIndex,
-            2,
-            List(ContextIdTransformation("join", "end2")).asJava
+            scenarioId = scenarioName,
+            originatingNodeId = "source2",
+            taskId = firstSubtaskIndex,
+            index = 2,
+            path = List(ContextIdPathPart("join", "end2"))
           ),
           mockedTimestamp,
           "all",
@@ -1082,7 +1152,7 @@ class FlinkMiniClusterScenarioTestRunnerSpec
         sourceId,
         firstSubtaskIndex,
         count,
-        List(ContextIdTransformation("join", branchId)).asJava,
+        List(ContextIdPathPart("join", branchId)),
       ),
       Map(vars: _*).mapValuesNow(variable)
     )
