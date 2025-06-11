@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import pl.touk.nussknacker.engine.util.JvmVersionUtil
+
 import scala.collection.compat._
 import scala.collection.immutable.ListSet
 
@@ -20,15 +22,9 @@ import scala.collection.immutable.ListSet
   */
 object ClassHierarchyCommonSupertypeFinder {
 
-  private lazy val jvmMajorVersion = {
-    val version = System.getProperty("java.version")
-    if (version.startsWith("1.")) version.split("\\.")(1).toInt
-    else version.split("\\.")(0).toInt
-  }
-
   private lazy val IgnoredCommonInterfaces = {
     // we stick to target 1.8 due to scala 2.12.10 incompatibility with jvm 17 so we can't refer statically to those interfaces
-    val jvmVersionDependentInterfaces = if (jvmMajorVersion > 12) {
+    val jvmVersionDependentInterfaces = if (JvmVersionUtil.jvmMajorVersion > 12) {
       Set(
         Class.forName("java.lang.constant.ConstantDesc"),
         Class.forName("java.lang.constant.Constable")
