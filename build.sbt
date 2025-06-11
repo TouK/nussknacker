@@ -19,7 +19,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // because these versions switched to the same Java collection wrappers used in Scala 2.13.
 // These wrappers lack dedicated Kryo serializers, which we added in flink-scala-2.13 library https://github.com/TouK/flink-scala-2.13.
 // To bump Scala 2.12 we would need to do flink-scala-2.12 similar to flink-scala-2.13.
-val scala212 = "2.12.10"
+val scala212 = "2.12.15"
 val scala213 = "2.13.15"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
@@ -34,8 +34,7 @@ lazy val supportedScalaVersions = List(scala212, scala213)
 // Silencer 1.7.x requires Scala 2.12.11+
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.19"
-lazy val silencerV_2_12 = "1.6.0"
+lazy val silencerV = "1.7.19"
 
 lazy val scalaFixV = "0.14.2"
 
@@ -180,10 +179,7 @@ lazy val commonSettings =
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
       libraryDependencies += compilerPlugin(
-        "com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value) {
-          case (2, 12) => silencerV_2_12
-          case _       => silencerV
-        } cross CrossVersion.full
+        "com.github.ghik" % "silencer-plugin" % silencerV cross CrossVersion.full
       ),
       libraryDependencies ++= forScalaVersion(scalaVersion.value) {
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
@@ -233,10 +229,7 @@ lazy val commonSettings =
       // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       libraryDependencies ++= Seq(
-        "com.github.ghik" % "silencer-lib" % forScalaVersion(scalaVersion.value) {
-          case (2, 12) => silencerV_2_12
-          case _       => silencerV
-        }                 % Provided cross CrossVersion.full
+        "com.github.ghik" % "silencer-lib" % silencerV % Provided cross CrossVersion.full
       ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
