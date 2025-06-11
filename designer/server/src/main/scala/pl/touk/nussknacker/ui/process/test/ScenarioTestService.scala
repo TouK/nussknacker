@@ -158,18 +158,21 @@ class ScenarioTestService(
           .leftMap[FetchLiveDataError](FetchLiveDataError.SourcesCompilationError)
           .toEither
 
-        generatorsByNodeId = compiledSources.flatMap { case (nodeId, compiledSource) =>
-          compiledSource.cast[TestDataGenerator].map(nodeId -> _)
-        }
+        fetchedLiveDataForSources = compiledSources
+          .flatMap { case (sourceId, compiledSource) =>
+            fetchLiveData(sourceId, compiledSource, maxNumberOfSamples)
+          }
 
-        generatorsByNodeIdNel <- generatorsByNodeId.toNel.toRight(
+        fetchedLiveDataForSourcesNel <- fetchedLiveDataForSources.toNel.toRight(
           FetchLiveDataError.LiveDataFetchingNotSupportedError
         )
 
-        fetchedLiveData = fetchLiveData(generatorsByNodeIdNel, maxNumberOfSamples)
+        mergedLivedData = ListUtil
+          .mergeLists(fetchedLiveDataForSourcesNel.toList, maxNumberOfSamples)
+          .sortBy(_.timestamp.getOrElse(Long.MaxValue))
 
         fetchedLiveDataNel <- NonEmptyList
-          .fromList(fetchedLiveData)
+          .fromList(mergedLivedData)
           .toRight(
             FetchLiveDataError.NoLiveDataAvailableError
           )
@@ -198,13 +201,8 @@ class ScenarioTestService(
 
         (_, compiledSource) = compiledSourceWithId
 
-        // We assume that TestDataGenerator.generateTestData implementation will always fetch live data
-        // TODO: In the future we want to extract another interface which would explicitly fetch live data in the standardized format which would not require to define TestRecordParser
-        testDataGenerator <- compiledSource
-          .cast[TestDataGenerator]
+        fetchedLiveData <- fetchLiveData(nodeId, compiledSource, maxNumberOfSamples)
           .toRight(FetchLiveDataError.LiveDataFetchingNotSupportedError)
-
-        fetchedLiveData = fetchLiveData(NonEmptyList.one(nodeId -> testDataGenerator), maxNumberOfSamples)
 
         fetchedLiveDataNel <- NonEmptyList
           .fromList(fetchedLiveData)
@@ -233,20 +231,18 @@ class ScenarioTestService(
       .map(nodeId -> _)
   }
 
-  private def fetchLiveData(generators: NonEmptyList[(NodeId, TestDataGenerator)], maxNumberOfSamples: Int) = {
-    // method TestDataGenerator.generateTestData has to be called within ModelClassLoader context
-    val sourcesLiveData = modelData.withModelClassloaderAsContextClassLoader {
-      generators.map { case (sourceId, testDataGenerator) =>
-        val sourceTestRecords = testDataGenerator.generateTestData(maxNumberOfSamples).testRecords
-        sourceTestRecords.map(testRecord =>
-          PreliminaryScenarioTestRecord(sourceId.id, testRecord.json, testRecord.timestamp)
-        )
+  private def fetchLiveData(
+      sourceId: NodeId,
+      compiledSource: Source,
+      maxNumberOfSamples: Int
+  ): Option[List[PreliminaryScenarioTestRecord]] = {
+    compiledSource.cast[TestDataGenerator].map { testDataGenerator =>
+      val sourceTestRecords = modelData.withModelClassloaderAsContextClassLoader {
+        testDataGenerator.generateTestData(maxNumberOfSamples).testRecords
       }
+      sourceTestRecords
+        .map(testRecord => PreliminaryScenarioTestRecord(sourceId.id, testRecord.json, testRecord.timestamp))
     }
-
-    ListUtil
-      .mergeLists(sourcesLiveData.toList, maxNumberOfSamples)
-      .sortBy(_.timestamp.getOrElse(Long.MaxValue))
   }
 
   def performTest(
