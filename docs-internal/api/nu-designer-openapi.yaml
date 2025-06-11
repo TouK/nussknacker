@@ -930,7 +930,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      filter: Failed to parse expression: Bad expression
+                      filter: Bad expression
                     Global errors: Empty scenario
                     Properties errors: Configured property parallelism is missing
                 Example3:
@@ -1607,8 +1607,7 @@ paths:
                       params: []
                     validationErrors:
                     - typ: ExpressionParserCompilationError
-                      message: 'Failed to parse expression: Bad expression type, expected:
-                        Boolean, found: String'
+                      message: 'Bad expression type, expected: Boolean, found: String'
                       description: There is problem with expression in field Some($expression)
                         - it could not be parsed.
                       fieldName: $expression
@@ -1908,8 +1907,7 @@ paths:
                   value:
                     validationErrors:
                     - typ: ExpressionParserCompilationError
-                      message: 'Failed to parse expression: Bad expression type, expected:
-                        Boolean, found: Long(5)'
+                      message: 'Bad expression type, expected: Boolean, found: Long(5)'
                       description: There is problem with expression in field Some(condition)
                         - it could not be parsed.
                       fieldName: condition
@@ -4782,7 +4780,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -4904,7 +4902,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -5016,7 +5014,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -5139,8 +5137,7 @@ paths:
                   value:
                     validationErrors:
                     - typ: ExpressionParserCompilationError
-                      message: 'Failed to parse expression: Bad expression type, expected:
-                        Boolean, found: Long(5)'
+                      message: 'Bad expression type, expected: Boolean, found: Long(5)'
                       description: There is problem with expression in field Some(condition)
                         - it could not be parsed.
                       fieldName: condition
@@ -5167,7 +5164,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -7536,6 +7533,7 @@ components:
       - CLICK_COLLAPSE_PANEL
       - CLICK_SCENARIO_ACTIVITIES_ADD_ATTACHMENT
       - CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT
+      - CLICK_LIVE_DATA
       - CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT_TO_ACTIVITY
       - CLICK_SCENARIO_ACTIVITIES_COMPARE
       - CLICK_SCENARIO_ACTIVITIES_DOWNLOAD_ATTACHMENT

@@ -6,12 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.{
-  standard,
-  SpelCompilerMode,
-  SpelEvaluationException,
-  SpelParserConfiguration
-}
+import org.springframework.expression.spel._
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult, TemplateRenderedPart}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
@@ -244,11 +239,29 @@ class SpelExpressionParser(
         val textRangeOpt = Option(ex).collect { case ex: ParseException =>
           IndexBasedTextRange(ex.getPosition, ex.getPosition + 1).toCoordinatesBasedTextRange(original)
         }
+        val message = Option(ex)
+          .collect { case ex: SpelParseException =>
+            ex.getMessageCode match {
+              case SpelMessage.MORE_INPUT =>
+                // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
+                "Unexpected text"
+              case _ => messageWithoutExpressionAndErrorCodeIndicator(ex)
+            }
+          }
+          .getOrElse(ex.getMessage)
         NonEmptyList.of(
-          SpelExpressionUnderlyingParserError(ex.getMessage, textRangeOpt)
+          SpelExpressionUnderlyingParserError(message, textRangeOpt)
         )
       }
   }
+
+  // SpEL adds:
+  // - Expression [<expression>]: prefix - see ExpressionException.toDetailedString
+  // - EL1001E: prefix - (error code indicator), see SpelMessage.formatMessage
+  // We remove both things to make messages more human-readable
+  // To avoid first prefix we call getSimpleMessage instead of getMessage.
+  private def messageWithoutExpressionAndErrorCodeIndicator(ex: SpelParseException) =
+    ex.getSimpleMessage.replaceFirst("^EL\\d{4}E?: ", "")
 
   private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
     if (enableSpelForceCompile) {

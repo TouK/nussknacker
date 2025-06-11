@@ -30,7 +30,13 @@ object node {
 
   case class EndingProcessor(id: String, service: ServiceRef, isDisabled: Boolean) extends Node
 
-  case class Enricher(id: String, service: ServiceRef, output: String, next: Option[Next], mockedOutput: Option[CompiledExpression]) extends Node
+  case class Enricher(
+      id: String,
+      service: ServiceRef,
+      output: String,
+      next: Option[Next],
+      mockedOutput: Option[CompiledExpression]
+  ) extends Node
 
   case class Filter(
       id: String,
@@ -58,8 +64,12 @@ object node {
 
   case class FragmentUsageStart(id: String, params: List[CompiledParameter], next: Option[Next]) extends Node
 
-  case class FragmentUsageEnd(id: String, outputVarDefinition: Option[FragmentOutputVarDefinition], next: Option[Next])
-      extends Node
+  case class FragmentUsageEnd(
+      id: String,
+      fragmentUsageStartNodeId: String,
+      outputVarDefinition: Option[FragmentOutputVarDefinition],
+      next: Option[Next]
+  ) extends Node
 
   case class FragmentOutputVarDefinition(name: String, fields: List[Field])
 

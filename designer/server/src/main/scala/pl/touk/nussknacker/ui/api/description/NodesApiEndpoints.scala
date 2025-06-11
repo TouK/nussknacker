@@ -222,7 +222,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
-                        "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
+                        "Bad expression type, expected: Boolean, found: String",
                         "There is problem with expression in field Some($expression) - it could not be parsed.",
                         Some("$expression"),
                         NodeValidationErrorType.SaveAllowed,
@@ -519,7 +519,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
-                        "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
+                        "Bad expression type, expected: Boolean, found: Long(5)",
                         "There is problem with expression in field Some(condition) - it could not be parsed.",
                         Some("condition"),
                         NodeValidationErrorType.SaveAllowed,

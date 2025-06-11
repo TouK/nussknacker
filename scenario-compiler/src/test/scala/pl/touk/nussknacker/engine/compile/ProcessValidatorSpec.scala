@@ -1069,7 +1069,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       case Invalid(
             NonEmptyList(
               ExpressionParserCompilationError(
-                "Expression [{] @0: EL1044E: Unexpectedly ran out of input",
+                "Unexpectedly ran out of input",
                 "c1",
                 Some(ParameterName("par1")),
                 _,
