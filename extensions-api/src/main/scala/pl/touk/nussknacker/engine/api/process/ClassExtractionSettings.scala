@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.{Hidden, HideToString, TemplateEvaluationR
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.util.JvmVersionUtil
 
 import java.lang.reflect.{AccessibleObject, Member, Method}
 import java.text.NumberFormat
@@ -112,6 +113,8 @@ object ClassExtractionSettings {
         // We use these types only programmable
         ClassNamePredicate("pl.touk.nussknacker.engine.spel.SpelExpressionRepr"),
         ExactClassPredicate[TemplateEvaluationResult],
+        ClassNamePredicate("java.lang.constant.DynamicConstantDesc"),
+        ClassNamePredicate("java.lang.Enum$EnumDesc")
       )
 
   lazy val ExcludedCollectionFunctionalClasses: List[ClassPredicate] = List(
@@ -197,6 +200,17 @@ object ClassExtractionSettings {
         ClassPredicate { case cl => cl.isEnum },
         { case m: Method =>
           List("declaringClass", "getDeclaringClass").contains(m.getName)
+        }
+      ),
+      ClassMemberPredicate(
+        ClassPredicate { case _ => JvmVersionUtil.jvmMajorVersion > 12 },
+        { case m: Method =>
+          (Class
+            .forName("java.lang.constant.ConstantDesc")
+            .isAssignableFrom(m.getDeclaringClass) && m.getName == "resolveConstantDesc") ||
+          (Class
+            .forName("java.lang.constant.Constable")
+            .isAssignableFrom(m.getDeclaringClass) && m.getName == "describeConstable")
         }
       )
     )
