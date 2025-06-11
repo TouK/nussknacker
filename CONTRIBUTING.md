@@ -103,7 +103,7 @@ When writing documentation please follow these instructions:
 
 ### Setup
 
-- JDK >= 11 is needed
+- JDK >= 17 is needed (code is compiled for lower java versions but tests are assumed to be run on jdk 17+)
 - For building backend - standard `sbt` setup should be enough
 - For building of frontend `node` and `npm` will be needed - see [client README](designer/client/README.md) for detailed instruction
 - Some tests require `docker`
