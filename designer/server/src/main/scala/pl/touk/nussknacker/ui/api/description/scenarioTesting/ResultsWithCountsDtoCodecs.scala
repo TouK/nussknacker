@@ -82,6 +82,7 @@ object ResultsWithCountsDtoCodecs {
         )
     }
 
+    // todo: remove when we no longer rely on legacy ContextId values on FE
     private def encoderWithLegacyContextId[T](
         fieldName: String,
         valueExtractor: T => ContextId,
