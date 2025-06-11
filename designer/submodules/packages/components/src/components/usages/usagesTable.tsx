@@ -1,3 +1,4 @@
+import type { ProcessStateType } from "nussknackerUi/components/Process/types";
 import type { ComponentUsageType, NodeUsageData } from "nussknackerUi/HttpService";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -56,6 +57,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 headerName: t("table.usages.title.STATUS", "Status"),
                 display: "flex",
                 minWidth: 130,
+                sortComparator: (s1: ProcessStateType, s2: ProcessStateType) => s1.status.name.localeCompare(s2.status.name),
                 renderCell: (props) => {
                     if (!props.value) {
                         return (
