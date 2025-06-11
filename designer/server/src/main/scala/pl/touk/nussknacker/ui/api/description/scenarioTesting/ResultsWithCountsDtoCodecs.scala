@@ -3,15 +3,13 @@ package pl.touk.nussknacker.ui.api.description.scenarioTesting
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.generic.semiauto.deriveEncoder
-import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart}
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExceptionResult,
   ExpressionInvocationResult,
   ExternalInvocationResult,
   ResultContext
 }
-
-import scala.jdk.CollectionConverters._
 
 object ResultsWithCountsDtoCodecs {
 
@@ -26,16 +24,30 @@ object ResultsWithCountsDtoCodecs {
 
   private implicit val testResultsEncoder: Encoder[TestResultsDto] = new Encoder[TestResultsDto]() {
 
-    implicit val contextId: Encoder[ContextId] = Encoder.encodeString.contramap(_.legacyString)
+    implicit val contextIdTransformationDtoEncoder: Encoder[ContextIdTransformationDto] =
+      deriveEncoder[ContextIdTransformationDto]
+    implicit val contextIdEncoder: Encoder[ContextId] =
+      deriveEncoder[ContextIdDto].contramap(ContextIdDto.from)
 
-    implicit val nodeResult: Encoder[ResultContext[Json]] =
-      encoderWithDetailedContextId(deriveConfiguredEncoder[ResultContext[Json]], _.id)
+    implicit val nodeResult: Encoder[ResultContext[Json]] = encoderWithLegacyContextId(
+      fieldName = "id",
+      valueExtractor = _.id,
+      underlying = Encoder.forProduct3("cid", "timestamp", "variables")(r => (r.id, r.timestamp, r.variables)),
+    )
 
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] =
-      encoderWithDetailedContextId(deriveConfiguredEncoder[ExpressionInvocationResult[Json]], _.contextId)
+    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = encoderWithLegacyContextId(
+      fieldName = "contextId",
+      valueExtractor = _.contextId,
+      underlying =
+        Encoder.forProduct4("cid", "timestamp", "name", "value")(r => (r.contextId, r.timestamp, r.name, r.value)),
+    )
 
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]] =
-      encoderWithDetailedContextId(deriveConfiguredEncoder[ExternalInvocationResult[Json]], _.contextId)
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]] = encoderWithLegacyContextId(
+      fieldName = "contextId",
+      valueExtractor = _.contextId,
+      underlying =
+        Encoder.forProduct4("cid", "timestamp", "name", "value")(r => (r.contextId, r.timestamp, r.name, r.value)),
+    )
 
     implicit val nodeTransitionResult: Encoder[NodeTransitionResult] = deriveConfiguredEncoder
 
@@ -70,13 +82,13 @@ object ResultsWithCountsDtoCodecs {
         )
     }
 
-    private def encoderWithDetailedContextId[T](underlying: Encoder[T], f: T => ContextId): Encoder[T] = {
-      implicit val contextIdTransformationDtoEncoder: Encoder[ContextIdTransformationDto] =
-        deriveEncoder[ContextIdTransformationDto]
-      implicit val contextIdEncoder: Encoder[ContextId] =
-        deriveEncoder[ContextIdDto].contramap(ContextIdDto.from)
+    private def encoderWithLegacyContextId[T](
+        fieldName: String,
+        valueExtractor: T => ContextId,
+        underlying: Encoder[T],
+    ): Encoder[T] = {
       Encoder.instance { value =>
-        underlying(value).deepMerge(Json.obj("cid" -> contextIdEncoder(f(value))))
+        underlying(value).deepMerge(Json.obj(fieldName -> valueExtractor(value).legacyString.asJson))
       }
     }
 
