@@ -40,7 +40,7 @@ describe("Expression suggester", () => {
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title=Value]").next().find(".ace_editor").click().type("{selectall}#DATE_FORMAT.parseLocalDat");
         // We wait for validation result to be sure that red message below the form field will be visible
-        cy.contains("Failed to parse expression").should("exist");
+        cy.contains("There is no property").should("exist");
         cy.get(".ace_autocomplete").should("be.visible");
         cy.get("[data-testid=window]").matchImage();
         cy.get(".ace_editor .ace_tooltip").matchImage();
