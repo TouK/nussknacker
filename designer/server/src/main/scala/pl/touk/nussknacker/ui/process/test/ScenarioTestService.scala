@@ -166,11 +166,15 @@ class ScenarioTestService(
           FetchLiveDataError.NoSourcesWithLiveDataFetchingSupport
         )
 
-        testData <- createPreliminaryTestData(generatorsByNodeIdNel, maxNumberOfSamples).toRight(
-          FetchLiveDataError.NoLiveDataAvailable
-        )
+        fetchedLiveData = fetchLiveData(generatorsByNodeIdNel, maxNumberOfSamples)
+
+        fetchedLiveDataNel <- NonEmptyList
+          .fromList(fetchedLiveData)
+          .toRight(
+            FetchLiveDataError.NoLiveDataAvailable
+          )
         rawTestData <- preliminaryScenarioTestDataSerDe
-          .serialize(testData)
+          .serialize(PreliminaryScenarioTestData(fetchedLiveDataNel))
           .leftMap(FetchLiveDataError.ScenarioTestDataSerializationError)
       } yield rawTestData
     }
@@ -200,11 +204,16 @@ class ScenarioTestService(
           .cast[TestDataGenerator]
           .toRight(SourceTestError.UnsupportedSourcePreviewError(nodeId.id))
 
-        testData <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), maxNumberOfSamples)
-          .toRight(SourceTestError.NoLiveDataFetchedError)
+        fetchedLiveData = fetchLiveData(NonEmptyList.one(nodeId -> testDataGenerator), maxNumberOfSamples)
+
+        fetchedLiveDataNel <- NonEmptyList
+          .fromList(fetchedLiveData)
+          .toRight(
+            SourceTestError.NoLiveDataFetchedError
+          )
 
         rawTestData <- preliminaryScenarioTestDataSerDe
-          .serialize(testData)
+          .serialize(PreliminaryScenarioTestData(fetchedLiveDataNel))
           .leftMap(serializationError => SourceTestError.ScenarioTestDataSerializationError(serializationError))
       } yield rawTestData
     }
@@ -224,27 +233,20 @@ class ScenarioTestService(
       .map(nodeId -> _)
   }
 
-  private def createPreliminaryTestData(
-      generators: NonEmptyList[(NodeId, TestDataGenerator)],
-      size: Int
-  ): Option[PreliminaryScenarioTestData] = {
-    val fetchedLiveData        = fetchLiveData(generators, size)
-    val sortedRecords          = fetchedLiveData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
-    val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
-    NonEmptyList
-      .fromList(preliminaryTestRecords)
-      .map(PreliminaryScenarioTestData.apply)
-  }
-
-  private def fetchLiveData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
+  private def fetchLiveData(generators: NonEmptyList[(NodeId, TestDataGenerator)], maxNumberOfSamples: Int) = {
     // method TestDataGenerator.generateTestData has to be called within ModelClassLoader context
-    modelData.withModelClassloaderAsContextClassLoader {
-      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
-        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+    val sourcesLiveData = modelData.withModelClassloaderAsContextClassLoader {
+      generators.map { case (sourceId, testDataGenerator) =>
+        val sourceTestRecords = testDataGenerator.generateTestData(maxNumberOfSamples).testRecords
+        sourceTestRecords.map(testRecord =>
+          PreliminaryScenarioTestRecord(sourceId.id, testRecord.json, testRecord.timestamp)
+        )
       }
-      ListUtil.mergeLists(sourceTestDataList.toList, size)
     }
+
+    ListUtil
+      .mergeLists(sourcesLiveData.toList, maxNumberOfSamples)
+      .sortBy(_.timestamp.getOrElse(Long.MaxValue))
   }
 
   def performTest(

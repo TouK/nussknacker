@@ -319,7 +319,11 @@ class ScenarioTestServiceSpec
     val preliminaryTestData = PreliminaryScenarioTestData(
       NonEmptyList(
         PreliminaryScenarioTestRecord(sourceId = "source1", record = Json.fromString("record 1"), timestamp = Some(1)),
-        PreliminaryScenarioTestRecord(sourceId = "source2", record = Json.fromString("record 2")) :: Nil,
+        PreliminaryScenarioTestRecord(
+          sourceId = "source2",
+          record = Json.fromString("record 2"),
+          timestamp = None
+        ) :: Nil,
       )
     )
 
@@ -333,24 +337,29 @@ class ScenarioTestServiceSpec
   }
 
   test("should reject record assigned to non-existing source") {
-    val preliminaryTestData = PreliminaryScenarioTestData(
+    val preliminaryScenarioRecords = PreliminaryScenarioTestData(
       NonEmptyList(
-        PreliminaryScenarioTestRecord(sourceId = "source1", record = Json.fromString("record 1")),
-        PreliminaryScenarioTestRecord(sourceId = "non-existing source", record = Json.fromString("record 2")) ::
+        PreliminaryScenarioTestRecord(sourceId = "source1", record = Json.fromString("record 1"), timestamp = None),
+        PreliminaryScenarioTestRecord(
+          sourceId = "non-existing source",
+          record = Json.fromString("record 2"),
+          timestamp = None
+        ) ::
           PreliminaryScenarioTestRecord(
             sourceId = "non-existing source 2",
-            record = Json.fromString("record 3")
+            record = Json.fromString("record 3"),
+            timestamp = None
           ) :: Nil
       )
     )
-    val testingData = Table(
+    val testCases = Table(
       "scenario",
       createScenarioWithSingleSource(),
       createScenarioWithMultipleSources(),
     )
 
-    forEvery(testingData) { scenario =>
-      val error = scenarioTestService.prepareTestData(preliminaryTestData, scenario).leftValue
+    forEvery(testCases) { scenario =>
+      val error = scenarioTestService.prepareTestData(preliminaryScenarioRecords, scenario).leftValue
 
       error shouldBe MissingSource(NodeId("non-existing source"), 1)
     }
