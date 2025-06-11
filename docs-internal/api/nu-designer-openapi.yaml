@@ -5563,7 +5563,7 @@ components:
         idx:
           type: integer
           format: int64
-        t:
+        p:
           type: array
           items:
             $ref: '#/components/schemas/ContextIdTransformationDto'
