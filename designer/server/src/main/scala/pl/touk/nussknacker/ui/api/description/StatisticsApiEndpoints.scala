@@ -135,6 +135,7 @@ object StatisticsApiEndpoints {
       case object ClickScenarioExport                  extends StatisticName { override val shortName = "f_csj"   }
       case object ClickScenarioPdf                     extends StatisticName { override val shortName = "f_cspd"  }
       case object ClickScenarioArchive                 extends StatisticName { override val shortName = "f_csa"   }
+      // todo: investigate which of these are still up to date
       case object ClickTestGenerated                   extends StatisticName { override val shortName = "f_ctg"   }
       case object ClickTestAdhoc                       extends StatisticName { override val shortName = "f_cta"   }
       case object ClickScenarioTest                    extends StatisticName { override val shortName = "f_cst"   }
@@ -146,6 +147,7 @@ object StatisticsApiEndpoints {
       case object ClickCollapsePanel                   extends StatisticName { override val shortName = "f_ccp"   }
       case object ClickScenarioActivitiesAddAttachment extends StatisticName { override val shortName = "f_csaaa" }
       case object ClickScenarioActivitiesAddComment    extends StatisticName { override val shortName = "f_csaac" }
+      case object ClickLiveData extends StatisticName { override val shortName: String = "f_cld" }
 
       case object ClickScenarioActivitiesAddCommentToActivity extends StatisticName {
         override val shortName = "f_csaacta"

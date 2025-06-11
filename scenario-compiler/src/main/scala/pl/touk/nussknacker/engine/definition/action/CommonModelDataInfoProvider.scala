@@ -47,14 +47,14 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
   )
 
   def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
-    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
+    val allNodes = scenario.collectAllNodes
+    allNodes.flatMap(asSource) ++ allNodes.flatMap(asFragmentInputDefinition)
   }
 
   def compileSourceNode(
       source: SourceNodeData
   )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[ProcessCompilationError, Source] = {
     // We have to wrap this block with model's class loader because it invokes node compilation
     modelData.withModelClassloaderAsContextClassLoader {

@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import type { ProcessStateType } from "nussknackerUi/components/Process/types";
 import { formatDateTime } from "nussknackerUi/DateUtils";
 import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 import type { ComponentUsageType, NodeUsageData } from "nussknackerUi/HttpService";
@@ -60,6 +61,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 headerName: t("table.usages.title.STATUS", "Status"),
                 display: "flex",
                 minWidth: 130,
+                sortComparator: (s1: ProcessStateType, s2: ProcessStateType) => s1.status.name.localeCompare(s2.status.name),
                 renderCell: (props) => {
                     if (!props.value) {
                         return (

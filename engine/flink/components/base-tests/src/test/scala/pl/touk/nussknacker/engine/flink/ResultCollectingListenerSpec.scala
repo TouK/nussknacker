@@ -315,21 +315,16 @@ class ResultCollectingListenerSpec
           Map("input" -> 30),
           Map("input" -> 40),
         )
+
+        // Transitions withing the fragment graph (fragment has id="sub")
         transitionVariables(testResults, "sub", Some("sub-filter")) shouldBe Set(
           Map("fragment1_input" -> 10),
           Map("fragment1_input" -> 20),
           Map("fragment1_input" -> 30),
           Map("fragment1_input" -> 40),
         )
-        transitionVariables(testResults, "sub", Some("sub-filter")) shouldBe Set(
-          Map("fragment1_input" -> 10),
-          Map("fragment1_input" -> 20),
-          Map("fragment1_input" -> 30),
-          Map("fragment1_input" -> 40),
-        )
-        // This sample is filtered out and does not proceed further
         transitionVariables(testResults, "sub-filter", None) shouldBe Set(
-          Map("fragment1_input" -> 10),
+          Map("fragment1_input" -> 10), // This sample is filtered out and does not proceed further
         )
         transitionVariables(testResults, "sub-filter", Some("sub-fragmentEnd")) shouldBe Set(
           Map("fragment1_input" -> 20),
@@ -337,6 +332,13 @@ class ResultCollectingListenerSpec
           Map("fragment1_input" -> 40),
         )
         transitionVariables(testResults, "sub-fragmentEnd", Some("end")) shouldBe Set(
+          Map("input" -> 20, "fragmentResult" -> Map("output" -> 20)),
+          Map("input" -> 30, "fragmentResult" -> Map("output" -> 30)),
+          Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),
+        )
+
+        // Transitions from the single node representing fragment "sub" to final node
+        transitionVariables(testResults, "sub", Some("end")) shouldBe Set(
           Map("input" -> 20, "fragmentResult" -> Map("output" -> 20)),
           Map("input" -> 30, "fragmentResult" -> Map("output" -> 30)),
           Map("input" -> 40, "fragmentResult" -> Map("output" -> 40)),

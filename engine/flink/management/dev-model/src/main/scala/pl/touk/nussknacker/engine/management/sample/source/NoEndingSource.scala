@@ -23,7 +23,9 @@ import java.time.Duration
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
-class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSupport[String] {
+class NoEndingSource(val implementTimestampAssignerForTest: Boolean)
+    extends StandardFlinkSource[String]
+    with FlinkSourceTestSupport[String] {
 
   @silent("deprecated")
   override def sourceStream(
@@ -58,13 +60,16 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
     )
   }
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(
-    StandardTimestampWatermarkHandler
-      .boundedOutOfOrderness[String](
-        assigner = (_: String) => System.currentTimeMillis(),
-        maxOutOfOrderness = Duration.ofMinutes(10),
-      )
-  )
+  override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = if (!implementTimestampAssignerForTest)
+    None
+  else
+    Option(
+      StandardTimestampWatermarkHandler
+        .boundedOutOfOrderness[String](
+          assigner = (_: String) => System.currentTimeMillis(),
+          maxOutOfOrderness = Duration.ofMinutes(10),
+        )
+    )
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
 

@@ -427,7 +427,7 @@ class ManagementResourcesSpec
       )
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
-        |"bela"""".stripMargin
+        |{"sourceId":"startProcess","record":"bela"}""".stripMargin
     saveCanonicalProcessAndAssertSuccess(process)
 
     testScenario(process, testDataContent) ~> check {
@@ -454,7 +454,7 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(process)
 
     val tooManySamples = List
-      .fill(50)("\"a json string\"")
+      .fill(50)("""{"sourceId":"startProcess","record":"a json string"}""")
       .mkString("\n")
     testScenario(process, tooManySamples) ~> check {
       status shouldEqual StatusCodes.BadRequest
@@ -465,13 +465,13 @@ class ManagementResourcesSpec
 
     val longString = "a long json string".repeat(50)
     val tooManyCharacters = List
-      .fill(20)("\"" + longString + "\"")
+      .fill(20)(s"""{"sourceId":"startProcess","record":"$longString"}""")
       .mkString("\n")
     testScenario(process, tooManyCharacters) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Test data has too many characters (18059). Please configure 'testDataSettings.testDataMaxLength' to increase the limit (10000)"
+      ] shouldBe "Test data has too many characters (18799). Please configure 'testDataSettings.testDataMaxLength' to increase the limit (10000)"
     }
   }
 
@@ -496,7 +496,7 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(process)
 
     val testDataContent = List
-      .fill(10)("\"a json string\"")
+      .fill(10)("""{"sourceId":"startProcess","record":"a json string"}""")
       .mkString("\n")
     testScenario(process, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest

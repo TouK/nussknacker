@@ -45,7 +45,7 @@ export function ScenarioNameItem() {
                     {unsavedNewName}* <ScenarioVersion />
                 </ProcessRename>
             ) : (
-                <ProcessName variant={"subtitle2"}>
+                <ProcessName variant={"subtitle2"} title={scenario.name}>
                     {scenario.name} <ScenarioVersion />
                 </ProcessName>
             )}

@@ -8,12 +8,12 @@ import { NavLink } from "react-router-dom";
 
 import { EnvironmentTag } from "../../containers/EnvironmentTag";
 import { ScenariosBasePath } from "../../containers/paths";
-import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
+import { fetchScenarios, getActiveScenariosNames } from "../../reducers/scenarios";
 import { getProcessName } from "../../reducers/selectors/graph";
 
 export const Breadcrumbs = () => {
     const scenarioName = useSelector(getProcessName);
-    const scenarioNames = useSelector(getScenariosNames);
+    const scenarioNames = useSelector(getActiveScenariosNames);
 
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);

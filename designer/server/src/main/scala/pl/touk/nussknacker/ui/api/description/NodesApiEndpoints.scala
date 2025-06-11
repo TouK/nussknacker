@@ -222,7 +222,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
-                        "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
+                        "Bad expression type, expected: Boolean, found: String",
                         "There is problem with expression in field Some($expression) - it could not be parsed.",
                         Some("$expression"),
                         NodeValidationErrorType.SaveAllowed,
@@ -519,7 +519,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
-                        "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
+                        "Bad expression type, expected: Boolean, found: Long(5)",
                         "There is problem with expression in field Some(condition) - it could not be parsed.",
                         Some("condition"),
                         NodeValidationErrorType.SaveAllowed,
@@ -1579,10 +1579,10 @@ object NodesApiEndpoints {
             case UnsupportedSourcePreview(nodeId)          => s"Source '${nodeId}' doesn't support records preview"
             case InvalidNodeType(expectedType, actualType) => s"Expected ${expectedType} but got: ${actualType}"
             case TooManySamplesRequested(maxSamples) =>
-              TestingApiErrorMessages.fetchedLiveData.requestedTooManySamplesToFetch(maxSamples)
+              TestingApiErrorMessages.liveDataFetching.requestedTooManySamplesToFetch(maxSamples)
             case MalformedTypingResult(msg) => s"The request content was malformed:\n${msg}"
             case TooManyCharactersGenerated(length, limit) =>
-              TestingApiErrorMessages.fetchedLiveData.tooManyCharacters(length, limit)
+              TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
           }
 
         implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
@@ -1601,7 +1601,7 @@ object NodesApiEndpoints {
         implicit val notFoundNodesErrorCodec: Codec[String, NotFoundNodesError, CodecFormat.TextPlain] =
           BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundNodesError] {
             case NoScenario(scenarioName)         => s"No scenario ${scenarioName} found"
-            case NoLiveDataAvailable              => TestingApiErrorMessages.fetchedLiveData.noLiveDataAvailable
+            case NoLiveDataAvailable              => TestingApiErrorMessages.liveDataFetching.noLiveDataAvailable
             case NoProcessingType(processingType) => s"ProcessingType type: ${processingType} not found"
           }
 

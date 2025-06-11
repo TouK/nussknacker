@@ -64,8 +64,12 @@ object node {
 
   case class FragmentUsageStart(id: String, params: List[CompiledParameter], next: Option[Next]) extends Node
 
-  case class FragmentUsageEnd(id: String, outputVarDefinition: Option[FragmentOutputVarDefinition], next: Option[Next])
-      extends Node
+  case class FragmentUsageEnd(
+      id: String,
+      fragmentUsageStartNodeId: String,
+      outputVarDefinition: Option[FragmentOutputVarDefinition],
+      next: Option[Next]
+  ) extends Node
 
   case class FragmentOutputVarDefinition(name: String, fields: List[Field])
 

@@ -20,8 +20,7 @@ import pl.touk.nussknacker.ui.definition.component.ComponentServiceProcessingTyp
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.{ActionInfoService, ScenarioResolver, ScenarioTestExecutorServiceImpl}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
-import pl.touk.nussknacker.ui.process.test.ModelDataTestInfoProvider
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -71,8 +70,6 @@ final class ProcessingTypeServices private (
 
 object ProcessingTypeServices {
 
-  import net.ceedubs.ficus.Ficus._
-
   def create(
       designerConfig: DesignerConfig,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
@@ -106,13 +103,10 @@ object ProcessingTypeServices {
     val scenarioResolver  = new ScenarioResolver(fragmentResolver, processingTypeData.processingType)
     val deploymentManager = processingTypeData.deploymentData.validDeploymentManagerOrStub
     val scenarioTestService = new ScenarioTestService(
-      new ModelDataTestInfoProvider(
-        processingTypeData.designerModelData.modelData,
-        scenarioCompilationDependenciesResource
-      ),
-      processResolver,
       designerConfig.testDataSettings,
-      new PreliminaryScenarioTestDataSerDe(designerConfig.testDataSettings),
+      processingTypeData.designerModelData.modelData,
+      scenarioCompilationDependenciesResource,
+      processResolver,
       counter,
       new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
     )

@@ -45,7 +45,13 @@ type TabularDataDefinitionParserErrorDetails = {
     type: "TabularDataDefinitionParserErrorDetails";
 };
 
-type Details = TabularDataDefinitionParserErrorDetails;
+type TextErrorDetails = {
+    start: { column: number; row: number };
+    end: { column: number; row: number };
+    type: "CoordinatesBasedTextRange";
+};
+
+type Details = TabularDataDefinitionParserErrorDetails | TextErrorDetails;
 
 export interface NodeValidationError {
     fieldName: string;

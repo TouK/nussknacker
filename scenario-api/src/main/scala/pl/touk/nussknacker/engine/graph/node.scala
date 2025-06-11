@@ -115,6 +115,10 @@ object node {
     def parameters: List[NodeParameter]
   }
 
+  trait WithFields {
+    def fields: List[Field]
+  }
+
   sealed trait OneOutputSubsequentNodeData extends NodeData with RealNodeData
 
   sealed trait EndingNodeData extends NodeData
@@ -183,6 +187,7 @@ object node {
       fields: List[Field],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
+      with WithFields
 
   case class Variable(
       id: String,
@@ -301,6 +306,7 @@ object node {
   // this is used after resolving fragment, used for detecting when fragment ends and context should change
   case class FragmentUsageOutput(
       id: String,
+      fragmentUsageStartNodeId: String,
       outputName: String,
       outputVar: Option[FragmentOutputVarDefinition],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
@@ -324,6 +330,7 @@ object node {
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends EndingNodeData
       with RealNodeData
+      with WithFields
 
   // we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has TypedResult which has *real* class inside
   // TODO: probably should be able to handle class parameters or typed maps (i.e. use TypingResult inside FragmentClazzRef)
