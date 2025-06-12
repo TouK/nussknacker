@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.Context
+import org.apache.flink.api.java.typeutils.ListTypeInfo
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper}
 
@@ -12,7 +13,7 @@ object ContextTypeHelpers {
       parentCtx: TypeInformation[Option[Context]]
   ): TypeInformation[Context] =
     ConcreteCaseClassTypeInfo(
-      ("id", TypeInformation.of(classOf[String])),
+      ("id", contextIdInfo),
       ("variables", variables),
       ("parentContext", parentCtx)
     )
@@ -25,6 +26,23 @@ object ContextTypeHelpers {
       parentOpt.getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo)
     )
     infoFromVariablesAndParent(variables, parentCtx)
+  }
+
+  private def contextIdInfo: TypeInformation[ContextId] = {
+    ConcreteCaseClassTypeInfo(
+      ("scenarioId", TypeInformation.of(classOf[String])),
+      ("originatingNodeId", TypeInformation.of(classOf[String])),
+      ("taskId", TypeInformation.of(classOf[Long])),
+      ("index", TypeInformation.of(classOf[Long])),
+      ("contextIdPath", new ListTypeInfo[ContextIdPathPart](contextIdPathPartInfo)),
+    )
+  }
+
+  private def contextIdPathPartInfo: TypeInformation[ContextIdPathPart] = {
+    ConcreteCaseClassTypeInfo(
+      ("nodeId", TypeInformation.of(classOf[String])),
+      ("value", TypeInformation.of(classOf[String])),
+    )
   }
 
 }

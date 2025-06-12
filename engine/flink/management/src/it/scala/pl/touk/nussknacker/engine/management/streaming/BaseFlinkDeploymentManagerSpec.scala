@@ -7,7 +7,7 @@ import org.apache.flink.api.common.JobID
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
-import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
@@ -75,7 +75,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
 
     LiveDataCollectingListenerHolder.createListenerFor(
       processName = processName,
-      maxNumberOfSamples = 20,
+      maxNumberOfRecords = 20,
       throughputTimeWindowInSeconds = 60
     )
     val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
@@ -110,7 +110,12 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
                 LiveDataForNodeTransition(
                   samples = (0 to 14).map { idx =>
                     LiveDataSample(
-                      s"runningFlinkEventGenerator-start-0-$idx",
+                      ContextId(
+                        scenarioId = "runningFlinkEventGenerator",
+                        originatingNodeId = "start",
+                        taskId = 0,
+                        index = idx
+                      ),
                       mockedTimestamp,
                       Map("input" -> Json.obj("pretty" -> "abrakadabra".asJson)),
                     )
@@ -121,9 +126,14 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
             ),
             invocationResults = Map(
               NodeId("start") ->
-                (0 to 14).map { _ =>
+                (0 to 14).map { idx =>
                   InvocationResult(
-                    s"runningFlinkEventGenerator",
+                    ContextId(
+                      scenarioId = "runningFlinkEventGenerator",
+                      originatingNodeId = "start",
+                      taskId = 0,
+                      index = idx
+                    ),
                     mockedTimestamp,
                     "value",
                     Json.obj("pretty" -> "abrakadabra".asJson)
@@ -132,7 +142,12 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
               NodeId("endSend") ->
                 (0 to 14).map { idx =>
                   InvocationResult(
-                    s"runningFlinkEventGenerator-start-0-$idx",
+                    ContextId(
+                      scenarioId = "runningFlinkEventGenerator",
+                      originatingNodeId = "start",
+                      taskId = 0,
+                      index = idx
+                    ),
                     mockedTimestamp,
                     "Value",
                     Json.obj("pretty" -> "message".asJson)

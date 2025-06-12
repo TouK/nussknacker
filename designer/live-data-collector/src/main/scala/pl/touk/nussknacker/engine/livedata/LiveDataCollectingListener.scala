@@ -13,7 +13,7 @@ import scala.util.Try
 // The actual data is stored in the LiveDataCollectingListenerHolder, and all instances of LiveDataCollectingListener can access the data.
 class LiveDataCollectingListener private[livedata] (
     processName: ProcessName,
-    maxNumberOfSamples: Int,
+    maxNumberOfRecords: Int,
     throughputTimeWindowInSeconds: Int,
 ) extends ProcessListener
     with Serializable {
@@ -22,7 +22,7 @@ class LiveDataCollectingListener private[livedata] (
 
   private def storage = LiveDataCollectingListenerHolder.storage(
     processName = processName,
-    maxNumberOfSamples = maxNumberOfSamples,
+    maxNumberOfRecords = maxNumberOfRecords,
     throughputTimeWindowInSeconds = throughputTimeWindowInSeconds,
   )
 

@@ -184,7 +184,7 @@ description: Stay informed with detailed changelogs covering new features, impro
       ```hocon
       liveDataPreview {              // optional config section, functionality disabled by default
         enabled: true                // disabled by default
-        maxNumberOfSamples: 20       // max number of latest live data samples that will be returned
+        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned
         throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated
       }
       ```

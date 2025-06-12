@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
@@ -23,11 +24,11 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
 
     // we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
     results.value.map(er => (er.context.id, er.result)) shouldBe List(
-      "0" -> "0:10.0",
-      "2" -> "2:14.0",
-      "3" -> "3:20.0"
+      ContextId("0", "", 0, 0) -> "0:10.0",
+      ContextId("2", "", 0, 0) -> "2:14.0",
+      ContextId("3", "", 0, 0) -> "3:20.0"
     )
-    results.written.map(_.context.id) shouldBe List("1")
+    results.written.map(_.context.id) shouldBe List(ContextId("1", "", 0, 0))
   }
 
   test("run scenario failing on source") {
@@ -41,12 +42,12 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
 
     // we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
     results.value.map(er => (er.context.id, er.result)) shouldBe List(
-      "0" -> 0,
-      "2" -> 2,
-      "3" -> 3
+      ContextId("0", "", 0, 0) -> 0,
+      ContextId("2", "", 0, 0) -> 2,
+      ContextId("3", "", 0, 0) -> 3
     )
     val error = results.written.headOption.value
-    error.context.id shouldEqual "1"
+    error.context.id shouldEqual ContextId("1", "", 0, 0)
     error.throwable shouldEqual SourceFailure
   }
 

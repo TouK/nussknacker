@@ -42,7 +42,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError.{
   SourcesCompilationError,
   TooManyCharactersGenerated,
-  TooManySamplesRequested
+  TooManyRecordsRequested
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError.{
   NoLiveDataAvailable,
@@ -173,7 +173,12 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
   }
 
   def scenarioTestEndpoint: SecuredEndpoint[
-    (ProcessName, PerformTestRequest, Option[SkipResultsPerNode], Option[SkipResultsPerTransition]),
+    (
+        ProcessName,
+        PerformTestRequest,
+        Option[SkipResultsPerNode],
+        Option[SkipResultsPerTransition],
+    ),
     TestingError,
     ResultsWithCountsDto,
     Any
@@ -258,8 +263,8 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
               value = TooManyCharactersGenerated(length = 5000, limit = 2000)
             ),
             Example.of(
-              summary = Some("Too many samples requested"),
-              value = TooManySamplesRequested(maxSamples = 1000)
+              summary = Some("Too many records requested"),
+              value = TooManyRecordsRequested(maxRecordsCount = 1000)
             ),
             Example.of(
               summary = Some("Scenario validation error"),

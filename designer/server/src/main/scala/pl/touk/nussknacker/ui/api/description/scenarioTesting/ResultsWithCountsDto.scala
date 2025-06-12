@@ -1,9 +1,14 @@
 package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import io.circe._
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDtoCodecs.{
+  ContextIdDto,
+  ContextIdPathPartDto
+}
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import sttp.tapir.Schema
@@ -84,6 +89,9 @@ object ResultsWithCountsDto {
 
   import sttp.tapir.json.circe._
 
+  implicit def contextIdPathPartDtoSchema: Schema[ContextIdPathPartDto] = Schema.derived
+  implicit def contextIdSchema: Schema[ContextId] =
+    Schema.derived[ContextIdDto].map(_ => None)(ContextIdDto.from)
   implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived
   implicit def expressionInvocationResultSchema: Schema[ExpressionInvocationResult[Json]] = Schema.derived
   implicit def externalInvocationResultSchema: Schema[ExternalInvocationResult[Json]]     = Schema.derived

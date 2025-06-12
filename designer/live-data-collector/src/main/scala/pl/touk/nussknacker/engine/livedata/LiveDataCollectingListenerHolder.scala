@@ -21,11 +21,11 @@ object LiveDataCollectingListenerHolder {
 
   def createListenerFor(
       processName: ProcessName,
-      maxNumberOfSamples: Int,
+      maxNumberOfRecords: Int,
       throughputTimeWindowInSeconds: Int,
   ): LiveDataCollectingListener = {
     cleanResults(processName)
-    new LiveDataCollectingListener(processName, maxNumberOfSamples, throughputTimeWindowInSeconds)
+    new LiveDataCollectingListener(processName, maxNumberOfRecords, throughputTimeWindowInSeconds)
   }
 
   def getLiveDataPreview(processName: ProcessName): Option[CollectedLiveData] = {
@@ -34,13 +34,13 @@ object LiveDataCollectingListenerHolder {
 
   private[livedata] def storage(
       processName: ProcessName,
-      maxNumberOfSamples: Int,
+      maxNumberOfRecords: Int,
       throughputTimeWindowInSeconds: Int,
   ): LiveDataCollectingListenerStorage = {
     listenerStorages.get(
       processName.value,
       asJavaFunction((_: String) =>
-        new LiveDataCollectingListenerStorage(maxNumberOfSamples, throughputTimeWindowInSeconds)
+        new LiveDataCollectingListenerStorage(maxNumberOfRecords, throughputTimeWindowInSeconds)
       )
     )
   }

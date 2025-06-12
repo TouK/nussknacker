@@ -210,7 +210,10 @@ private class InterpreterInternal[F[_]: Monad](
         Applicative[F].pure(List.empty)
       case SplitNode(_, nexts) =>
         import cats.implicits._
-        nexts.map(next => interpretNext(node, next, ctx.appendIdSuffix(next.id))).sequence.map(_.flatten)
+        nexts
+          .map(next => interpretNext(node, next, ctx.withContextIdPathPart(node.id, next.id)))
+          .sequence
+          .map(_.flatten)
     }
   }
 

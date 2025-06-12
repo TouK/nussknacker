@@ -81,6 +81,7 @@ object SampleNodes {
   }
 
   class JoinExprBranchFunction(
+      nodeId: String,
       valueByBranchId: Map[String, LazyParameter[AnyRef]],
       val lazyParameterHelper: FlinkLazyParameterFunctionHelper
   ) extends RichCoFlatMapFunction[Context, Context, ValueWithContext[AnyRef]]
@@ -93,14 +94,14 @@ object SampleNodes {
       toEvaluateFunctionConverter.toEvaluateFunction(valueByBranchId("end2"))
 
     override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-      val joinContext = ctx.appendIdSuffix("end1")
+      val joinContext = ctx.withContextIdPathPart(nodeId, "end1")
       collectHandlingErrors(joinContext, out) {
         ValueWithContext(end1Interpreter(joinContext), joinContext)
       }
     }
 
     override def flatMap2(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-      val joinContext = ctx.appendIdSuffix("end2")
+      val joinContext = ctx.withContextIdPathPart(nodeId, "end2")
       collectHandlingErrors(joinContext, out) {
         ValueWithContext(end2Interpreter(joinContext), joinContext)
       }
@@ -354,7 +355,7 @@ object SampleNodes {
               .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
               .keyBy((value: ValueWithContext[String]) => value.value)
               .map(
-                (_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context("new")),
+                (_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context.dummy),
                 context.valueWithContextInfo.forUnknown
               )
           })
@@ -413,7 +414,9 @@ object SampleNodes {
           ): DataStream[ValueWithContext[AnyRef]] = {
             inputs("end1")
               .connect(inputs("end2"))
-              .flatMap(new JoinExprBranchFunction(valueByBranchId, flinkContext.lazyParameterHelper))
+              .flatMap(
+                new JoinExprBranchFunction(flinkContext.nodeId, valueByBranchId, flinkContext.lazyParameterHelper)
+              )
           }
 
         })
@@ -529,7 +532,7 @@ object SampleNodes {
               .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
               .map(
-                (i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)),
+                (i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context.dummy),
                 context.valueWithContextInfo.forUnknown
               )
           })

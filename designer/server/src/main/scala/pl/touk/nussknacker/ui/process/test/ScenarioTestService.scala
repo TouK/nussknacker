@@ -46,9 +46,9 @@ class ScenarioTestService(
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
 
-  private val preliminaryScenarioTestDataSerDe = new PreliminaryScenarioTestDataSerDe(
-    testDataMaxLength = testDataSettings.testDataMaxLength,
-    maxSamplesCount = testDataSettings.maxSamplesCount
+  private val preliminaryScenarioRecordsSerDe = new PreliminaryScenarioRecordsSerDe(
+    serializedContentMaxLength = testDataSettings.testDataMaxLength,
+    maxRecordsCount = testDataSettings.maxSamplesCount
   )
 
   def getTestingCapabilities(
@@ -133,7 +133,7 @@ class ScenarioTestService(
   ): Either[ParametersDefinitionError, List[Parameter]] = {
     compiledSource match {
       case s: TestWithParametersSupport[_] => Right(s.testParametersDefinition)
-      case _ => Left(ParametersDefinitionError.UnsupportedTestingWithCustomInputError(sourceId))
+      case _ => Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(sourceId))
     }
   }
 
@@ -141,15 +141,15 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-      maxNumberOfSamples: Int
+      maxNumberOfRecords: Int
   )(
       implicit user: LoggedUser
-  ): Either[FetchLiveDataError, RawScenarioTestData] = {
+  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     val jobData   = JobData(canonical.metaData, processVersion)
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
-        _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
+        _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
 
         compiledSources <- commonModelDataInfoProvider
           .collectAllSources(canonical)
@@ -158,55 +158,62 @@ class ScenarioTestService(
           .leftMap[FetchLiveDataError](FetchLiveDataError.SourcesCompilationError)
           .toEither
 
-        generatorsByNodeId = compiledSources.flatMap { case (nodeId, compiledSource) =>
-          compiledSource.cast[TestDataGenerator].map(nodeId -> _)
-        }
+        fetchedLiveDataForSources = compiledSources
+          .flatMap { case (sourceId, compiledSource) =>
+            fetchLiveData(sourceId, compiledSource, maxNumberOfRecords)
+          }
 
-        generatorsByNodeIdNel <- generatorsByNodeId.toNel.toRight(
-          FetchLiveDataError.NoSourcesWithLiveDataFetchingSupport
+        fetchedLiveDataForSourcesNel <- fetchedLiveDataForSources.toNel.toRight(
+          FetchLiveDataError.LiveDataFetchingNotSupportedError
         )
 
-        testData <- createPreliminaryTestData(generatorsByNodeIdNel, maxNumberOfSamples).toRight(
-          FetchLiveDataError.NoLiveDataAvailable
-        )
-        rawTestData <- preliminaryScenarioTestDataSerDe
-          .serialize(testData)
-          .leftMap(FetchLiveDataError.ScenarioTestDataSerializationError)
-      } yield rawTestData
+        mergedLivedData = ListUtil
+          .mergeLists(fetchedLiveDataForSourcesNel.toList, maxNumberOfRecords)
+          .sortBy(_.timestamp.getOrElse(Long.MaxValue))
+
+        fetchedLiveDataNel <- NonEmptyList
+          .fromList(mergedLivedData)
+          .toRight(
+            FetchLiveDataError.NoLiveDataAvailableError
+          )
+        serializedLiveData <- preliminaryScenarioRecordsSerDe
+          .serialize(PreliminaryScenarioRecords(fetchedLiveDataNel))
+          .leftMap(FetchLiveDataError.ScenarioRecordsSerializationError)
+      } yield serializedLiveData
     }
   }
 
   def fetchSourceLiveData(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
-      maxNumberOfSamples: Int
-  ): Either[SourceTestError, RawScenarioTestData] = {
+      maxNumberOfRecords: Int
+  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val jobData = JobData(metaData, ProcessVersion.empty)
     val nodeId  = NodeId(sourceNodeData.id)
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
-        _ <- validateSampleSize(maxNumberOfSamples)(SourceTestError.TooManySamplesRequestedError)
+        _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
 
         compiledSourceWithId <- compileSource(sourceNodeData)
-          .leftMap(errors => SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString)))
+          .leftMap(errors => FetchLiveDataError.SourcesCompilationError(errors))
           .toEither
 
         (_, compiledSource) = compiledSourceWithId
 
-        // We assume that TestDataGenerator.generateTestData implementation will always fetch live data
-        // TODO: In the future we want to extract another interface which would explicitly fetch live data in the standardized format which would not require to define TestRecordParser
-        testDataGenerator <- compiledSource
-          .cast[TestDataGenerator]
-          .toRight(SourceTestError.UnsupportedSourcePreviewError(nodeId.id))
+        fetchedLiveData <- fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
+          .toRight(FetchLiveDataError.LiveDataFetchingNotSupportedError)
 
-        testData <- createPreliminaryTestData(NonEmptyList.one(nodeId -> testDataGenerator), maxNumberOfSamples)
-          .toRight(SourceTestError.NoLiveDataFetchedError)
+        fetchedLiveDataNel <- NonEmptyList
+          .fromList(fetchedLiveData)
+          .toRight(
+            FetchLiveDataError.NoLiveDataAvailableError
+          )
 
-        rawTestData <- preliminaryScenarioTestDataSerDe
-          .serialize(testData)
-          .leftMap(serializationError => SourceTestError.ScenarioTestDataSerializationError(serializationError))
-      } yield rawTestData
+        serializedLiveData <- preliminaryScenarioRecordsSerDe
+          .serialize(PreliminaryScenarioRecords(fetchedLiveDataNel))
+          .leftMap(serializationError => FetchLiveDataError.ScenarioRecordsSerializationError(serializationError))
+      } yield serializedLiveData
     }
   }
 
@@ -224,26 +231,17 @@ class ScenarioTestService(
       .map(nodeId -> _)
   }
 
-  private def createPreliminaryTestData(
-      generators: NonEmptyList[(NodeId, TestDataGenerator)],
-      size: Int
-  ): Option[PreliminaryScenarioTestData] = {
-    val fetchedLiveData        = fetchLiveData(generators, size)
-    val sortedRecords          = fetchedLiveData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
-    val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
-    NonEmptyList
-      .fromList(preliminaryTestRecords)
-      .map(PreliminaryScenarioTestData.apply)
-  }
-
-  private def fetchLiveData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
-    // method TestDataGenerator.generateTestData has to be called within ModelClassLoader context
-    modelData.withModelClassloaderAsContextClassLoader {
-      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
-        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+  private def fetchLiveData(
+      sourceId: NodeId,
+      compiledSource: Source,
+      maxNumberOfRecords: Int
+  ): Option[List[PreliminaryScenarioRecord]] = {
+    compiledSource.cast[TestDataGenerator].map { testDataGenerator =>
+      val sourceTestRecords = modelData.withModelClassloaderAsContextClassLoader {
+        testDataGenerator.generateTestData(maxNumberOfRecords).testRecords
       }
-      ListUtil.mergeLists(sourceTestDataList.toList, size)
+      sourceTestRecords
+        .map(testRecord => PreliminaryScenarioRecord(sourceId.id, testRecord.json, testRecord.timestamp))
     }
   }
 
@@ -251,12 +249,12 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-      rawTestData: RawScenarioTestData,
+      serializedTestRecordsContent: SerializedScenarioRecordsContent,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     (for {
-      preliminaryScenarioTestData <- EitherT.fromEither[Future](
-        preliminaryScenarioTestDataSerDe
-          .deserialize(rawTestData)
+      preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
+        preliminaryScenarioRecordsSerDe
+          .deserialize(serializedTestRecordsContent)
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
       )
 
@@ -266,7 +264,7 @@ class ScenarioTestService(
         isFragment
       )
 
-      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestData, canonical))
+      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
 
       testResults <- EitherT.liftF(
         testExecutorService.testProcess(
@@ -281,19 +279,18 @@ class ScenarioTestService(
   }
 
   private[test] def prepareTestData(
-      preliminaryTestData: PreliminaryScenarioTestData,
+      preliminaryScenarioRecords: PreliminaryScenarioRecords,
       scenario: CanonicalProcess
   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
     val allScenarioSourceIds = commonModelDataInfoProvider.collectAllSources(scenario).map(_.id).toSet
-    preliminaryTestData.testRecords.zipWithIndex
+    preliminaryScenarioRecords.records.zipWithIndex
       .map {
-        case (PreliminaryScenarioTestRecord(sourceId, record, timestamp), _)
-            if allScenarioSourceIds.contains(sourceId) =>
+        case (PreliminaryScenarioRecord(sourceId, record, timestamp), _) if allScenarioSourceIds.contains(sourceId) =>
           Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
-        case (PreliminaryScenarioTestRecord(sourceId, _, _), recordIdx) =>
-          Left(PerformTestError.MissingSource(NodeId(sourceId), recordIdx))
+        case (PreliminaryScenarioRecord(sourceId, _, _), recordIdx) =>
+          Left(PerformTestError.MissingSourceError(NodeId(sourceId), recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
@@ -328,13 +325,13 @@ class ScenarioTestService(
     ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))
   }
 
-  def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {
+  def validateRecordsCount[E](size: Int)(tooManyRecordsError: Int => E): Either[E, Unit] = {
     testDataSettings.maxSamplesCount
       .map { definedMaxSampleSize =>
         Either.cond(
           size <= definedMaxSampleSize,
           (),
-          tooManySamplesError(definedMaxSampleSize)
+          tooManyRecordsError(definedMaxSampleSize)
         )
       }
       .getOrElse(Right(()))
@@ -359,7 +356,7 @@ class ScenarioTestService(
         Either.cond(
           testDataResultApproxByteSize <= definedResultsMaxBytes,
           (),
-          PerformTestError.TestResultsSizeExceeded(testDataResultApproxByteSize, definedResultsMaxBytes)
+          PerformTestError.TestResultsSizeExceededError(testDataResultApproxByteSize, definedResultsMaxBytes)
         )
       }
       .getOrElse(Right(()))
@@ -411,7 +408,7 @@ object ScenarioTestService {
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
     ) extends ParametersDefinitionError
 
-    final case class UnsupportedTestingWithCustomInputError(nodeId: NodeId) extends ParametersDefinitionError
+    final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends ParametersDefinitionError
 
   }
 
@@ -423,31 +420,20 @@ object ScenarioTestService {
         nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
     ) extends FetchLiveDataError
 
-    final case object NoLiveDataAvailable                  extends FetchLiveDataError
-    final case object NoSourcesWithLiveDataFetchingSupport extends FetchLiveDataError
-    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
+    final case object NoLiveDataAvailableError          extends FetchLiveDataError
+    final case object LiveDataFetchingNotSupportedError extends FetchLiveDataError
+    final case class ScenarioRecordsSerializationError(cause: PreliminaryScenarioRecordsSerDe.SerializationError)
         extends FetchLiveDataError
-    final case class TooManySamplesRequestedError(maxSamples: Int) extends FetchLiveDataError
-  }
-
-  sealed trait SourceTestError
-
-  object SourceTestError {
-    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
-    final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
-    final case object NoLiveDataFetchedError                                      extends SourceTestError
-    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
-        extends SourceTestError
-    final case class TooManySamplesRequestedError(maxSamples: Int) extends SourceTestError
+    final case class TooManyRecordsRequestedError(maxRecordsCount: Int) extends FetchLiveDataError
   }
 
   sealed trait PerformTestError
 
   object PerformTestError {
-    final case class DeserializationError(cause: PreliminaryScenarioTestDataSerDe.DeserializationError)
+    final case class DeserializationError(cause: PreliminaryScenarioRecordsSerDe.DeserializationError)
         extends PerformTestError
-    final case class MissingSource(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
-    final case class TestResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
+    final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
+    final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
   }
 
 }

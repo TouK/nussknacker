@@ -179,7 +179,7 @@ trait ScenarioTestingApiHttpServiceSpec
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
         .equalsPlainBody(
-          "Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
+          "Too many records requested. The maximum number of records permitted is 20. Contact the system administrator to increase this limit."
         )
     }
   }

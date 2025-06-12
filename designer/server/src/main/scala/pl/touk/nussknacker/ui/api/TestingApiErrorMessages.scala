@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
 
@@ -13,23 +13,23 @@ object TestingApiErrorMessages {
         cause match {
           case DeserializationError.TooManyCharacters(length, limit) =>
             TestingApiErrorMessages.passedTestData.tooManyCharacters(length, limit)
-          case DeserializationError.TooManySamples(size, limit) =>
-            TestingApiErrorMessages.passedTestData.tooManySamples(size, limit)
+          case DeserializationError.TooManyRecords(size, limit) =>
+            TestingApiErrorMessages.passedTestData.tooManyRecords(size, limit)
           case DeserializationError.NoRecords =>
             TestingApiErrorMessages.passedTestData.empty
-          case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
-            TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
+          case DeserializationError.RecordParsingError(serializedTestRecord, recordIndex) =>
+            TestingApiErrorMessages.problemInSample(recordIndex).parsingError(serializedTestRecord)
         }
-      case PerformTestError.MissingSource(sourceId, recordIndex) =>
+      case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
-      case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
+      case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
     }
   }
 
   object liveDataFetching {
-    def requestedTooManySamplesToFetch(maxSamples: Int) =
-      s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
+    def requestedTooManyRecordsToFetch(maxRecordsCount: Int) =
+      s"Too many records requested. The maximum number of records permitted is $maxRecordsCount. Contact the system administrator to increase this limit."
 
     val noLiveDataAvailable =
       "No live test data available. Please ensure that the storage used by source contains at least one data sample"
@@ -37,17 +37,17 @@ object TestingApiErrorMessages {
     val noSourcesWithLiveDataFetching = "No sources with live data fetching support available"
 
     def tooManyCharacters(length: Int, limit: Int) =
-      s"Too many characters were found in the fetched test data ($length). Please try to decrease the number of requested samples or configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
+      s"Too many characters were found in the fetched data ($length). The maximum numbers of permitted characters is $limit. Contact the system administrator to increase this limit."
   }
 
   object passedTestData {
     val empty = "Test data is empty"
 
     def tooManyCharacters(length: Int, limit: Int) =
-      s"Test data has too many characters ($length). Please configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
+      s"Test data has too many characters ($length). The maximum numbers of permitted characters is $limit. Contact the system administrator to increase this limit."
 
-    def tooManySamples(count: Int, maxSamples: Int) =
-      s"Test data has too many samples ($count). Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
+    def tooManyRecords(count: Int, limit: Int) =
+      s"Test data has too many records ($count). The maximum number of records permitted is $limit. Contact the system administrator to increase this limit."
   }
 
   object testingWithCustomInput {
@@ -76,6 +76,6 @@ object TestingApiErrorMessages {
   }
 
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
-    s"Test results size exceeded (approximate size in bytes: $approxSizeInBytes). Please configure 'testDataSettings.resultsMaxBytes' to increase the limit ($maxBytes)"
+    s"Test results size exceeded (approximate size is $approxSizeInBytes B). The maximum permitted size is $maxBytes B. Contact the system administrator to increase this limit."
 
 }

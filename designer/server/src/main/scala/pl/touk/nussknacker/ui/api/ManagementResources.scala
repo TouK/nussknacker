@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.{ScenarioTestService, SerializedScenarioRecordsContent}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -237,7 +237,7 @@ class ManagementResources(
                               scenarioGraph,
                               details.processVersionUnsafe,
                               details.isFragment,
-                              RawScenarioTestData(testDataContent)
+                              SerializedScenarioRecordsContent(testDataContent)
                             )
                             .flatMap {
                               case Left(error) =>
@@ -247,7 +247,7 @@ class ManagementResources(
                                   ResultsWithCountsDto.from(
                                     resultsWithCounts = value,
                                     skipResultsPerNode = SkipResultsPerNode(skipResultsPerNode),
-                                    skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition)
+                                    skipResultsPerTransition = SkipResultsPerTransition(skipResultsPerTransition),
                                   )
                                 )
                             }

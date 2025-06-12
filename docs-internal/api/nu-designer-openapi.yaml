@@ -2278,14 +2278,15 @@ paths:
                   summary: Invalid node type
                   value: 'Expected Filter but got: Source'
                 Example3:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (100)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 100. Contact the system administrator to increase
+                    this limit.
                 Example4:
                   summary: Too many characters generated
-                  value: Too many characters were found in the fetched test data (1000).
-                    Please try to decrease the number of requested samples or configure
-                    'testDataSettings.testDataMaxLength' to increase the limit (500)
+                  value: Too many characters were found in the fetched data (1000).
+                    The maximum numbers of permitted characters is 500. Contact the
+                    system administrator to increase this limit.
         '401':
           description: ''
           content:
@@ -4768,13 +4769,14 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the fetched test data (5000).
-                    Please try to decrease the number of requested samples or configure
-                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
@@ -4890,13 +4892,14 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the fetched test data (5000).
-                    Please try to decrease the number of requested samples or configure
-                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
@@ -5002,13 +5005,14 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the fetched test data (5000).
-                    Please try to decrease the number of requested samples or configure
-                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
@@ -5152,13 +5156,14 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the fetched test data (5000).
-                    Please try to decrease the number of requested samples or configure
-                    'testDataSettings.testDataMaxLength' to increase the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
@@ -5547,6 +5552,37 @@ components:
           format: date-time
         createdBy:
           type: string
+    ContextIdDto:
+      title: ContextIdDto
+      type: object
+      required:
+      - nid
+      - tid
+      - idx
+      properties:
+        nid:
+          type: string
+        tid:
+          type: integer
+          format: int64
+        idx:
+          type: integer
+          format: int64
+        path:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContextIdPathPartDto'
+    ContextIdPathPartDto:
+      title: ContextIdPathPartDto
+      type: object
+      required:
+      - n
+      - t
+      properties:
+        n:
+          type: string
+        t:
+          type: string
     CoordinatesBasedTextRange:
       title: CoordinatesBasedTextRange
       type: object
@@ -5739,7 +5775,7 @@ components:
       - value
       properties:
         contextId:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time
@@ -5800,7 +5836,7 @@ components:
       - value
       properties:
         contextId:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time
@@ -7087,7 +7123,7 @@ components:
       - variables
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time

@@ -7,7 +7,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.component.ComponentType.Source
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewStoredInDesignerJvm, NoLiveDataPreviewSupport}
@@ -15,18 +15,9 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
-import pl.touk.nussknacker.test.{
-  NuRestAssureMatchers,
-  PatientScalaFutures,
-  RestAssuredVerboseLoggingIfValidationFails,
-  WithTestHttpClient
-}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails, WithTestHttpClient}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{
-  WithBusinessCaseRestAssuredUsersExtensions,
-  WithMockableDeploymentManager,
-  WithSimplifiedDesignerConfig
-}
+import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
 
 import java.time.Instant
 import java.util.UUID
@@ -107,21 +98,21 @@ class ScenarioLiveDataApiHttpServiceSpec
       listener.transitionToNextNode(
         nodeId = "start",
         nextNodeId = "variable",
-        context = Context("", Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))),
+        context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))),
         processMetaData = exampleScenario.metaData
       )
       listener.expressionEvaluated(
         nodeId = "start",
         expressionId = "var",
         expression = "ignored_by_live_data_collector",
-        context = Context("mocked-context-id", Map.empty),
+        context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map.empty),
         processMetaData = exampleScenario.metaData,
         result = 1
       )
       listener.serviceInvoked(
         nodeId = "start",
         id = "var",
-        context = Context("mocked-context-id", Map.empty),
+        context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map.empty),
         processMetaData = exampleScenario.metaData,
         result = Try(1),
       )
@@ -129,7 +120,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         NuExceptionInfo(
           nodeComponentInfo = Some(NodeComponentInfo("start", Source, "start")),
           throwable = new Exception("Something bad happened"),
-          context = Context("mocked-context-id", Map("var1" -> Json.obj("pretty" -> "abc".asJson))),
+          context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map("var1" -> Json.obj("pretty" -> "abc".asJson))),
           input = "ignored_by_live_data_collector",
           timestamp = Instant.now,
         )
@@ -156,7 +147,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        "destinationNodeId": "variable",
              |        "results": [
              |          {
-             |            "id": "",
+             |            "cid": {
+             |              "nid": "source",
+             |              "tid": 0,
+             |              "idx": 0,
+             |              "path": [
+             |              ]
+             |            },
+             |            "id": "mocked-scenario-id-source-0-0",
              |            "timestamp": "${regexes.zuluDateRegex}",
              |            "variables": {
              |              "v1": {
@@ -173,7 +171,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "invocationResults": {
              |      "start": [
              |        {
-             |          "contextId": "mocked-context-id",
+             |          "cid": {
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "path": [
+             |            ]
+             |          },
+             |          "contextId": "mocked-scenario-id-source-0-0",
              |          "timestamp": "${regexes.zuluDateRegex}",
              |          "name": "var",
              |          "value": {
@@ -185,7 +190,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "externalInvocationResults": {
              |      "start": [
              |        {
-             |          "contextId": "mocked-context-id",
+             |          "cid": {
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "path": [
+             |            ]
+             |          },
+             |          "contextId": "mocked-scenario-id-source-0-0",
              |          "timestamp": "${regexes.zuluDateRegex}",
              |          "name": "var",
              |          "value": {
@@ -197,7 +209,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "exceptions": [
              |      {
              |        "context": {
-             |          "id": "mocked-context-id",
+             |          "cid": {
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "path": [
+             |            ]
+             |          },
+             |          "id": "mocked-scenario-id-source-0-0",
              |          "timestamp": "${regexes.zuluDateRegex}",
              |          "variables": {
              |            "var1": {
@@ -213,7 +232,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      "start": [
              |        {
              |          "context": {
-             |            "id": "mocked-context-id",
+             |            "cid": {
+             |              "nid": "source",
+             |              "tid": 0,
+             |              "idx": 0,
+             |              "path": [
+             |              ]
+             |            },
+             |            "id": "mocked-scenario-id-source-0-0",
              |            "timestamp": "${regexes.zuluDateRegex}",
              |            "variables": {
              |              "var1": {

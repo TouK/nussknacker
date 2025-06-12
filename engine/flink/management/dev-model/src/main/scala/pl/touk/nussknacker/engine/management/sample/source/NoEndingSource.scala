@@ -34,7 +34,6 @@ class NoEndingSource(val implementTimestampAssignerForTest: Boolean)
   ): DataStreamSource[String] = {
     val flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
       var running       = true
-      var counter       = new AtomicLong()
       val afterFirstRun = new AtomicBoolean(false)
 
       override def cancel(): Unit = {
