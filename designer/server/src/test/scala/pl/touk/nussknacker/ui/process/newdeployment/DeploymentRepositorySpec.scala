@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 
 import java.sql.Timestamp
 import java.time.{Clock, Instant, ZoneOffset}
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeploymentRepositorySpec
@@ -54,7 +55,8 @@ class DeploymentRepositorySpec
     .value
     .processId
 
-  private val instant = Instant.now()
+  // nanos are truncated during db insert
+  private val instant = Instant.now().truncatedTo(ChronoUnit.MICROS)
 
   test("status should be updated only when changed") {
     forAll(
