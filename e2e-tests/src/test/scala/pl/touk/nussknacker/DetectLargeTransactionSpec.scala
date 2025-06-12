@@ -59,6 +59,7 @@ class DetectLargeTransactionSpec
              |                "results": [
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-3",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":3,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -84,6 +85,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-4",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":4,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -109,6 +111,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-5",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":5,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -142,6 +145,7 @@ class DetectLargeTransactionSpec
              |                "results": [
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-0",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":0,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -167,6 +171,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-1",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":1,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -192,6 +197,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-2",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":2,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -217,6 +223,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-3",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":3,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -242,6 +249,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-4",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":4,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -267,6 +275,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-5",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":5,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -299,6 +308,7 @@ class DetectLargeTransactionSpec
              |                "results": [
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-0",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":0,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -324,6 +334,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-1",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":1,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -349,6 +360,7 @@ class DetectLargeTransactionSpec
              |                    },
              |                    {
              |                        "id": "DetectLargeTransactions-transactions-0-2",
+             |                        "cid":{"nid":"transactions","tid":0,"idx":2,"path":[]},
              |                        "timestamp": "${regexes.zuluDateRegex}",
              |                        "variables": {
              |                            "input": {
@@ -381,6 +393,7 @@ class DetectLargeTransactionSpec
              |            "only large ones": [
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-0",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":0,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "expression",
              |                    "value": {
@@ -389,6 +402,7 @@ class DetectLargeTransactionSpec
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-1",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":1,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "expression",
              |                    "value": {
@@ -397,6 +411,7 @@ class DetectLargeTransactionSpec
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-2",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":2,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "expression",
              |                    "value": {
@@ -405,6 +420,7 @@ class DetectLargeTransactionSpec
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-3",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":3,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "expression",
              |                    "value": {
@@ -413,6 +429,7 @@ class DetectLargeTransactionSpec
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-4",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":4,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "expression",
              |                    "value": {
@@ -421,6 +438,7 @@ class DetectLargeTransactionSpec
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-5",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":5,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "expression",
              |                    "value": {
@@ -431,12 +449,14 @@ class DetectLargeTransactionSpec
              |            "send for audit": [
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-3",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":3,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "Key",
              |                    "value": null
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-3",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":3,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "Value",
              |                    "value": {
@@ -449,12 +469,14 @@ class DetectLargeTransactionSpec
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-4",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":4,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "Key",
              |                    "value": null
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-4",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":4,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "Value",
              |                    "value": {
@@ -467,12 +489,14 @@ class DetectLargeTransactionSpec
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-5",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":5,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "Key",
              |                    "value": null
              |                },
              |                {
              |                    "contextId": "DetectLargeTransactions-transactions-0-5",
+             |                    "cid":{"nid":"transactions","tid":0,"idx":5,"path":[]},
              |                    "timestamp": "${regexes.zuluDateRegex}",
              |                    "name": "Value",
              |                    "value": {
