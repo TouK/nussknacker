@@ -32,7 +32,7 @@ class TestDataPreparer(
     jobData: JobData
 ) {
 
-  private lazy val dumbContext             = Context("dumb", Map.empty, None)
+  private lazy val dumbContext             = Context.dummy
   private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
   private lazy val validationContext = globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
   private lazy val evaluator: ExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)

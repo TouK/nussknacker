@@ -86,7 +86,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   test("test context serialization") {
-    val ctx = Context("11").copy(variables =
+    val ctx = Context.dummy.copy(variables =
       Map(
         "one"            -> 11,
         "two"            -> "ala",
@@ -129,7 +129,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   test("number promotion behaviour") {
     val vCtx = ValidationContext(Map("longField" -> Typed[Long])) // we declare Long variable
 
-    val ctx = Context("11").copy(variables =
+    val ctx = Context.dummy.copy(variables =
       Map("longField" -> 11)
     ) // but we put Int in runtime (which e.g. in spel wouldn't be a problem...)!
 

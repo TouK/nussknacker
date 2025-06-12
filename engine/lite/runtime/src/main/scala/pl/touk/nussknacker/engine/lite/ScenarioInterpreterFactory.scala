@@ -183,7 +183,7 @@ object ScenarioInterpreterFactory {
               NuExceptionInfo(
                 Some(NodeComponentInfo(source.value, ComponentType.Source, "source")),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
-                Context("")
+                Context.dummy,
               ) :: Nil,
               Nil
             )
@@ -390,7 +390,7 @@ object ScenarioInterpreterFactory {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
         // Used only in fragment testing, when FragmentInputDefinition is available
         case (_: Source, fragmentInputDef: FragmentInputDefinition) if runtimeMode == RuntimeMode.Test =>
-          sourceForFragmentInputTestng(fragmentInputDef)
+          sourceForFragmentInputTesting(fragmentInputDef)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }
       validatedSource.map { source =>
@@ -398,14 +398,20 @@ object ScenarioInterpreterFactory {
       }
     }
 
-    private def sourceForFragmentInputTestng(fragmentInputDef: FragmentInputDefinition): Valid[LiteSource[Input]] =
+    private def sourceForFragmentInputTesting(fragmentInputDef: FragmentInputDefinition): Valid[LiteSource[Input]] =
       Valid(
         new LiteSource[Input] {
 
           override def createTransformation[F[_]: Monad](
               evaluateLazyParameter: CustomComponentContext[F]
           ): Input => ValidatedNel[ErrorType, Context] = { input =>
-            Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
+            Valid(
+              Context(
+                ContextId(fragmentInputDef.id, evaluateLazyParameter.nodeId, 0, 0),
+                input.asInstanceOf[Map[String, Any]],
+                None
+              )
+            )
           }
 
         }

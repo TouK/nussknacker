@@ -178,7 +178,7 @@ class ScenarioTestingApiHttpService(
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
-            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
+            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false)),
           )
         }
       }

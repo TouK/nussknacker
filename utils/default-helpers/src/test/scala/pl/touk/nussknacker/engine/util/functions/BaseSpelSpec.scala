@@ -54,7 +54,7 @@ trait BaseSpelSpec {
       localVariables.mapValuesNow(Typed.fromInstance),
       globalVariables.mapValuesNow(Typed.fromInstance)
     )
-    val evaluationCtx = Context("fooId").withVariables(localVariables)
+    val evaluationCtx = Context.dummy.withVariables(localVariables)
     parser
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
       .value
@@ -67,7 +67,7 @@ trait BaseSpelSpec {
       localVariables.mapValuesNow(Typed.fromInstance),
       globalVariables.mapValuesNow(Typed.fromInstance)
     )
-    val evaluationCtx = Context("fooId").withVariables(localVariables)
+    val evaluationCtx = Context.dummy.withVariables(localVariables)
     parser.parse(expr, validationCtx, Unknown).value.expression.evaluate[AnyRef](evaluationCtx, globalVariables)
   }
 

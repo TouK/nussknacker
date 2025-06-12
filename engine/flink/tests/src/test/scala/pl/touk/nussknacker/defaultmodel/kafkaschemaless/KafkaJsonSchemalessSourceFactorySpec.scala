@@ -165,7 +165,7 @@ class KafkaJsonSchemalessSourceFactorySpec
       .parse(dataSample, ValidationContext.empty, Unknown)
       .map { typedExpression =>
         DefinedEagerParameter(
-          typedExpression.expression.evaluate(Context("dummy-context"), Map.empty),
+          typedExpression.expression.evaluate(Context.dummy, Map.empty),
           typedExpression.returnType
         )
       }

@@ -1,35 +1,77 @@
 package pl.touk.nussknacker.engine.api
 
-import java.util.UUID
-import scala.util.Random
+import scala.jdk.CollectionConverters._
 
 object Context {
 
-  // prefix is to distinguish between externally provided and internal (initially created) id
-  private val initialContextIdPrefix = "initial-"
+  def apply(id: ContextId): Context = Context(id, Map.empty, None)
 
-  /**
-   * For performance reasons, is used unsecure random - see UUIDBenchmark for details. In this case random correlation id
-   * is used only for internal purpose so is not important in security context.
-   */
-  private val random = new Random()
-
-  /**
-   * Deprecated: should be used ContextIdGenerator e.g. via EngineRuntimeContext.contextIdGenerator
-   * Should be used for newly created context - when there is no suitable external correlation / tracing id
-   */
-  def withInitialId: Context = {
-    Context(initialContextIdPrefix + new UUID(random.nextLong(), random.nextLong()).toString)
-  }
-
-  def apply(id: String): Context = Context(id, Map.empty, None)
-
-  def apply(id: String, variables: Map[String, Any]): Context =
+  def apply(id: ContextId, variables: Map[String, Any]): Context =
     Context(id, variables, None)
+
+  // The dummy Context should only be used in test suites, perhaps also Nu scenario test mechanism or examples
+  def dummy: Context = Context(ContextId.dummy)
 
 }
 
-case class ContextId(value: String)
+final case class ContextId private (
+    scenarioName: String,
+    originatingNodeId: String,
+    taskId: Long,
+    index: Long,
+    // We need to use java.util.List instead of the Scala List implementation, because of Flink typing issues:
+    // - the Flink typing of Context and ContextId is handled in `object ContextTypeHelpers`
+    // - we have our own TypeInformation implementations for Scala Map (TypedScalaMapTypeInformation) and case classes
+    // - but we do not have such implementation for Scala List and creating it would require quite huge, error-prone custom implementation
+    // - the Flink's ListTypeInfo does not support Scala List, because it cannot handle `Nil` - it has type List[Unknown], which causes problems with typing and casting
+    // - as a result, we use java List internally in the ContextId, but we hide that fact in the interface
+    private val contextIdPath: java.util.List[ContextIdPathPart],
+) {
+
+  def path: List[ContextIdPathPart] = contextIdPath.asScala.toList
+
+  def withContextIdPathPart(nodeId: String, value: String): ContextId = {
+    val copied = copy(contextIdPath = new java.util.ArrayList(contextIdPath))
+    copied.contextIdPath.add(ContextIdPathPart(nodeId, value))
+    copied
+  }
+
+  lazy val legacyString: String = List(
+    List(scenarioName),
+    List(originatingNodeId),
+    List(taskId.toString),
+    List(index.toString),
+    contextIdPath.asScala.map(_.value),
+  ).flatten.mkString("-")
+
+}
+
+case class ContextIdPathPart(nodeId: String, value: String)
+
+object ContextId {
+
+  // Override and hide the default apply, in order to hide java list
+  private def apply(
+      scenarioId: String,
+      originatingNodeId: String,
+      taskId: Long,
+      index: Long,
+      contextIdPath: java.util.List[ContextIdPathPart]
+  ): ContextId =
+    new ContextId(scenarioId, originatingNodeId, taskId, index, contextIdPath)
+
+  def apply(
+      scenarioId: String,
+      originatingNodeId: String,
+      taskId: Long,
+      index: Long,
+      path: List[ContextIdPathPart] = List.empty
+  ): ContextId =
+    new ContextId(scenarioId, originatingNodeId, taskId, index, path.asJava)
+
+  // The dummy ContextId should only be used in test suites, perhaps also Nu scenario test mechanism or examples
+  def dummy: ContextId = new ContextId("dummy", "dummy", 0, 0, List.empty.asJava)
+}
 
 /**
  * Context is container for variables used in expression evaluation
@@ -39,13 +81,13 @@ case class ContextId(value: String)
  * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
  */
 case class Context(
-    id: String,
+    id: ContextId,
     variables: Map[String, Any],
     parentContext: Option[Context]
 ) {
 
-  def appendIdSuffix(suffix: String): Context =
-    copy(id = s"$id-$suffix")
+  def withContextIdPathPart(nodeId: String, transformation: String): Context =
+    copy(id = id.withContextIdPathPart(nodeId, transformation))
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing
   //       into parameter
