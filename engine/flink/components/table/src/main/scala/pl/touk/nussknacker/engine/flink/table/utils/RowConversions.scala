@@ -71,7 +71,7 @@ object RowConversions {
     Codec.forProduct2("n", "v")(ContextIdPathPart.apply)(t => (t.nodeId, t.value))
 
   private implicit def contextIdCodec: Codec[ContextId] =
-    Codec.forProduct5("sn", "nid", "tid", "idx", "p")(
+    Codec.forProduct5("sn", "nid", "tid", "idx", "path")(
       (
           scenarioName: String,
           nodeId: String,

@@ -34,11 +34,11 @@ object ContextTypeHelpers {
       ("originatingNodeId", TypeInformation.of(classOf[String])),
       ("taskId", TypeInformation.of(classOf[Long])),
       ("index", TypeInformation.of(classOf[Long])),
-      ("contextIdPath", new ListTypeInfo[ContextIdPathPart](contextIdTransformationInfo)),
+      ("contextIdPath", new ListTypeInfo[ContextIdPathPart](contextIdPathPartInfo)),
     )
   }
 
-  private def contextIdTransformationInfo: TypeInformation[ContextIdPathPart] = {
+  private def contextIdPathPartInfo: TypeInformation[ContextIdPathPart] = {
     ConcreteCaseClassTypeInfo(
       ("nodeId", TypeInformation.of(classOf[String])),
       ("value", TypeInformation.of(classOf[String])),

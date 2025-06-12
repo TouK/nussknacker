@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDtoCodecs.{
   ContextIdDto,
-  ContextIdTransformationDto
+  ContextIdPathPartDto
 }
 import pl.touk.nussknacker.ui.process.test.ResultsWithCounts
 import pl.touk.nussknacker.ui.processreport.NodeCount
@@ -89,7 +89,7 @@ object ResultsWithCountsDto {
 
   import sttp.tapir.json.circe._
 
-  implicit def contextIdTransformationDtoSchema: Schema[ContextIdTransformationDto] = Schema.derived
+  implicit def contextIdPathPartDtoSchema: Schema[ContextIdPathPartDto] = Schema.derived
   implicit def contextIdSchema: Schema[ContextId] =
     Schema.derived[ContextIdDto].map(_ => None)(ContextIdDto.from)
   implicit def resultContextSchema: Schema[ResultContext[Json]]                           = Schema.derived

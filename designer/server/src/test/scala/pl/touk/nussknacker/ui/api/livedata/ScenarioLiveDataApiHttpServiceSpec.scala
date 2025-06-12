@@ -183,7 +183,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |              "nid": "source",
              |              "tid": 0,
              |              "idx": 0,
-             |              "p": [
+             |              "path": [
              |              ]
              |            },
              |            "id": "mocked-scenario-id-source-0-0",
@@ -207,7 +207,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            "nid": "source",
              |            "tid": 0,
              |            "idx": 0,
-             |            "p": [
+             |            "path": [
              |            ]
              |          },
              |          "contextId": "mocked-scenario-id-source-0-0",
@@ -226,7 +226,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            "nid": "source",
              |            "tid": 0,
              |            "idx": 0,
-             |            "p": [
+             |            "path": [
              |            ]
              |          },
              |          "contextId": "mocked-scenario-id-source-0-0",
@@ -245,7 +245,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            "nid": "source",
              |            "tid": 0,
              |            "idx": 0,
-             |            "p": [
+             |            "path": [
              |            ]
              |          },
              |          "id": "mocked-scenario-id-source-0-0",
@@ -268,7 +268,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |              "nid": "source",
              |              "tid": 0,
              |              "idx": 0,
-             |              "p": [
+             |              "path": [
              |              ]
              |            },
              |            "id": "mocked-scenario-id-source-0-0",

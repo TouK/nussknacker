@@ -5563,12 +5563,12 @@ components:
         idx:
           type: integer
           format: int64
-        p:
+        path:
           type: array
           items:
-            $ref: '#/components/schemas/ContextIdTransformationDto'
-    ContextIdTransformationDto:
-      title: ContextIdTransformationDto
+            $ref: '#/components/schemas/ContextIdPathPartDto'
+    ContextIdPathPartDto:
+      title: ContextIdPathPartDto
       type: object
       required:
       - n

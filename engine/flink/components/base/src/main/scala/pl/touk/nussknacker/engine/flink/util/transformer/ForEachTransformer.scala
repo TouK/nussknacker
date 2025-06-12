@@ -34,7 +34,7 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
                 .map { case (partToRun, index) =>
                   new ValueWithContext[AnyRef](
                     partToRun,
-                    valueWithContext.context.withContextIdTransformation(nodeId, index.toString)
+                    valueWithContext.context.withContextIdPathPart(nodeId, index.toString)
                   )
                 }
                 .foreach(c.collect)

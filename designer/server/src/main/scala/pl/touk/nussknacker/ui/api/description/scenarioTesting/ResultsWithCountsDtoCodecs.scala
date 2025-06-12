@@ -24,8 +24,8 @@ object ResultsWithCountsDtoCodecs {
 
   private implicit val testResultsEncoder: Encoder[TestResultsDto] = new Encoder[TestResultsDto]() {
 
-    implicit val contextIdTransformationDtoEncoder: Encoder[ContextIdTransformationDto] =
-      deriveEncoder[ContextIdTransformationDto]
+    implicit val contextIdPathPartDtoEncoder: Encoder[ContextIdPathPartDto] =
+      deriveEncoder[ContextIdPathPartDto]
     implicit val contextIdEncoder: Encoder[ContextId] =
       deriveEncoder[ContextIdDto].contramap(ContextIdDto.from)
 
@@ -99,7 +99,7 @@ object ResultsWithCountsDtoCodecs {
       nid: String,
       tid: Long,
       idx: Long,
-      p: List[ContextIdTransformationDto]
+      path: List[ContextIdPathPartDto]
   )
 
   object ContextIdDto {
@@ -109,12 +109,12 @@ object ResultsWithCountsDtoCodecs {
         nid = id.originatingNodeId,
         tid = id.taskId,
         idx = id.index,
-        p = id.path.map(t => ContextIdTransformationDto(t.nodeId, t.value)),
+        path = id.path.map(t => ContextIdPathPartDto(t.nodeId, t.value)),
       )
     }
 
   }
 
-  final case class ContextIdTransformationDto(n: String, t: String)
+  final case class ContextIdPathPartDto(n: String, t: String)
 
 }

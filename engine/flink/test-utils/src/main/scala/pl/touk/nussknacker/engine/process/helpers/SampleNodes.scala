@@ -94,14 +94,14 @@ object SampleNodes {
       toEvaluateFunctionConverter.toEvaluateFunction(valueByBranchId("end2"))
 
     override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-      val joinContext = ctx.withContextIdTransformation(nodeId, "end1")
+      val joinContext = ctx.withContextIdPathPart(nodeId, "end1")
       collectHandlingErrors(joinContext, out) {
         ValueWithContext(end1Interpreter(joinContext), joinContext)
       }
     }
 
     override def flatMap2(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-      val joinContext = ctx.withContextIdTransformation(nodeId, "end2")
+      val joinContext = ctx.withContextIdPathPart(nodeId, "end2")
       collectHandlingErrors(joinContext, out) {
         ValueWithContext(end2Interpreter(joinContext), joinContext)
       }

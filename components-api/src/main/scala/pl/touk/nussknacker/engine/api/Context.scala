@@ -86,7 +86,7 @@ case class Context(
     parentContext: Option[Context]
 ) {
 
-  def withContextIdTransformation(nodeId: String, transformation: String): Context =
+  def withContextIdPathPart(nodeId: String, transformation: String): Context =
     copy(id = id.withContextIdPathPart(nodeId, transformation))
 
   // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing

@@ -211,7 +211,7 @@ private class InterpreterInternal[F[_]: Monad](
       case SplitNode(_, nexts) =>
         import cats.implicits._
         nexts
-          .map(next => interpretNext(node, next, ctx.withContextIdTransformation(node.id, next.id)))
+          .map(next => interpretNext(node, next, ctx.withContextIdPathPart(node.id, next.id)))
           .sequence
           .map(_.flatten)
     }
