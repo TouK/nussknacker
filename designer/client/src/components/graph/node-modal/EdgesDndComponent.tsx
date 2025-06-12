@@ -102,11 +102,8 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     }, [availableTypes, nodeId]);
 
     useEffect(() => {
-        if (isFirstRender()) {
-            return;
-        }
-
-        onChange?.(edges?.map((e) => ({ ...e, to: e.to || e._id })));
+        // let's remove fake _id  to avoid rerenders on mount, since there is no _id in the initial state from teh backend
+        onChange?.(edges?.map(({ _id, ...edge }) => ({ ...edge, to: edge.to || _id })));
     }, [edges, isFirstRender, onChange]);
 
     const edgeItems = useMemo(() => {

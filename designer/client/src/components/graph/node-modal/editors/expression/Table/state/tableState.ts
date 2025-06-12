@@ -56,12 +56,9 @@ export function useTableState(expressionObj: ExpressionObj): [TableData, Dispatc
     useEffect(() => {
         const expressionAndStateAreEqual = isEqual(state, fromExpression(expressionObj.expression));
 
-        // There are two rerenders on init, with empty state and with the parsed state. Let's skip the first one.
-        if (expressionAndStateAreEqual) {
-            return;
-        }
-
-        if (isFirstRender()) {
+        // There are two rerenders on init, with empty state and with the parsed state. Let's skip the first one,
+        // Also when we add empty table editor, backend sends empty rows and columns, and we set initial table editor state in the ActionTypes.expand
+        if (expressionAndStateAreEqual || isFirstRender()) {
             return;
         }
 
