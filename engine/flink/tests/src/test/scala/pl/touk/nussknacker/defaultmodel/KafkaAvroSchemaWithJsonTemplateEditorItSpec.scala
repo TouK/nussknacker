@@ -60,7 +60,7 @@ class KafkaAvroSchemaWithJsonTemplateEditorItSpec
       validationMode: ValidationMode = ValidationMode.strict
   ) =
     ScenarioBuilder
-      .streaming("todomkp-test")
+      .streaming("test-scenario")
       .parallelism(1)
       .source(
         "start",
