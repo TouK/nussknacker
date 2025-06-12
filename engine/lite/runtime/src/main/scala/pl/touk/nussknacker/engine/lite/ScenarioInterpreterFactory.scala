@@ -316,6 +316,7 @@ object ScenarioInterpreterFactory {
             passingErrors[InterpretationResult, PartResult](
               results,
               successful => {
+                // order from HashMap is accidental - for now we don't have any sensible "order number" here to use
                 Monoid.combineAll(successful.groupBy(_.reference).map { case (pr, ir) =>
                   interpretationInvoke(partsInvokers)(pr, ir)
                 })
