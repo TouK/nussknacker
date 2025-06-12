@@ -1,8 +1,7 @@
 import { defaultsDeep } from "lodash";
-import React, { useCallback, useMemo, useState, useRef, useEffect } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
-import { useFirstRender } from "../../../containers/hooks/useFirstRender";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import type { Edge, NodeValidationError, VariableTypes } from "../../../types";
 import { EdgeKind } from "../../../types";
@@ -66,8 +65,6 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
-    const isFirstRender = useFirstRender();
-
     const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
     const process = useSelector(getScenarioGraph);
     const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => {
@@ -104,7 +101,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     useEffect(() => {
         // let's remove fake _id  to avoid rerenders on mount, since there is no _id in the initial state from teh backend
         onChange?.(edges?.map(({ _id, ...edge }) => ({ ...edge, to: edge.to || _id })));
-    }, [edges, isFirstRender, onChange]);
+    }, [edges, onChange]);
 
     const edgeItems = useMemo(() => {
         return edges.map((edge, index, array) => {
