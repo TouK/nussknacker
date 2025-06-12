@@ -70,7 +70,6 @@ object PeriodicLiveDataUploader {
 
     override def open(openContext: OpenContext): Unit = {
       Class.forName("org.postgresql.Driver")
-      connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
     }
 
     override def processElement(
@@ -89,6 +88,7 @@ object PeriodicLiveDataUploader {
     ): Unit = {
       val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name)
       Try {
+        if (connection == null) connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
         connection.setSchema(dbSchema)
         val insertStatement = connection.prepareStatement(
           """
@@ -112,6 +112,7 @@ object PeriodicLiveDataUploader {
         case Success(_) =>
           logger.debug("Uploaded scenario live data")
         case Failure(exception) =>
+          connection = null
           logger.error("Could not update scenario live data", exception)
           Option(exception.getCause)
             .foreach(cause => logger.error("Could not update scenario live data with cause", cause))

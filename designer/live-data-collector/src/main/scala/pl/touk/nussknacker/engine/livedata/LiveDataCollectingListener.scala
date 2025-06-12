@@ -91,7 +91,7 @@ class LiveDataCollectingListener private[livedata] (
   ): Unit = {
     storage.addExternalInvocation(
       NodeId(nodeId),
-      InvocationResult(context.id, Instant.now(), id, encode(result)),
+      InvocationResult(context.id, Instant.now(), id, result.map(encode).getOrElse(Json.Null)),
     )
   }
 

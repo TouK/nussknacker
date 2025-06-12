@@ -143,7 +143,9 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
     run(
       flinkLiveDataTable
         .filter(_.scenarioId === processIdWithName.id)
-        .filter(_.updatedAt < Instant.now.getEpochSecond - uploadIntervalInSeconds - 10)
+        .filter(
+          _.updatedAt < Instant.now.getEpochSecond - uploadIntervalInSeconds - 5
+        ) // Drop data older than interval + 5 seconds
         .delete
     )
   }

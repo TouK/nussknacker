@@ -1,17 +1,20 @@
 package pl.touk.nussknacker.ui.api.livedata
 
+import io.circe.Json
+import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.deployment.{
-  LiveDataPreviewStoredInDesignerDb,
-  LiveDataPreviewStoredInDesignerJvm,
-  NoLiveDataPreviewSupport
-}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.component.ComponentType.Source
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewStoredInDesignerJvm, NoLiveDataPreviewSupport}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -26,6 +29,8 @@ import pl.touk.nussknacker.test.config.{
 }
 
 import java.time.Instant
+import java.util.UUID
+import scala.util.Try
 
 class ScenarioLiveDataApiHttpServiceSpec
     extends AnyFreeSpecLike
@@ -41,9 +46,9 @@ class ScenarioLiveDataApiHttpServiceSpec
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val exampleScenario: CanonicalProcess =
+  private def createExampleScenario(): CanonicalProcess =
     ScenarioBuilder
-      .streaming("scenario_2")
+      .streaming(UUID.randomUUID().toString)
       .source(
         "Event Generator",
         "event-generator",
@@ -53,10 +58,9 @@ class ScenarioLiveDataApiHttpServiceSpec
       )
       .emptySink("end", "dead-end")
 
-  private val mockedInstant = Instant.ofEpochSecond(1748382500)
-
   "The endpoint for live data should" - {
     "return present, but empty live data" in {
+      val exampleScenario = createExampleScenario()
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -93,183 +97,155 @@ class ScenarioLiveDataApiHttpServiceSpec
              |}""".stripMargin
         )
     }
-//    "return present data" in {
-//      val mockedResults = LiveData(
-//        timestamp = mockedInstant,
-//        nodeTransitions = Map(
-//          NodeTransition("start", Some("variable")) -> LiveDataForNodeTransition(
-//            samples = List(
-//              LiveDataSample(
-//                contextId = "",
-//                timestamp = mockedInstant,
-//                variables = Map(
-//                  "v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson)
-//                ),
-//              )
-//            ),
-//            totalCount = 101,
-//            currentThroughput = 0.9811,
-//          )
-//        ),
-//        invocationResults = Map(
-//          NodeId("start") -> List(
-//            InvocationResult(
-//              "mocked-context-id",
-//              mockedInstant,
-//              "var",
-//              Json.obj("pretty" -> 1.asJson)
-//            )
-//          )
-//        ),
-//        externalInvocationResults = Map(
-//          NodeId("start") -> List(
-//            InvocationResult(
-//              "mocked-context-id",
-//              mockedInstant,
-//              "var",
-//              Json.obj("pretty" -> 1.asJson)
-//            ),
-//          )
-//        ),
-//        exceptions = Map(
-//          NodeId("start") -> List(
-//            ExceptionResult(
-//              "mocked-context-id",
-//              mockedInstant,
-//              Map("var1" -> Json.obj("pretty" -> "abc".asJson)),
-//              new Exception("Something bad happened")
-//            ),
-//          )
-//        ),
-//      )
-//      given()
-//        .applicationState {
-//          createSavedScenario(exampleScenario)
-//          MockableDeploymentManager.configureLiveDataPreviewSupport(
-//            new LiveDataPreviewSupported {
-//              override def getLiveData(
-//                  processIdWithName: ProcessIdWithName
-//              ): Future[Either[LiveDataError, LiveData]] = Future.successful(Right(mockedResults))
-//            }
-//          )
-//        }
-//        .when()
-//        .basicAuthAllPermUser()
-//        .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
-//        .Then()
-//        .statusCode(StatusCodes.OK.intValue)
-//        .equalsJsonBody(
-//          s"""{
-//             |  "timestamp": "2025-05-27T21:48:20Z",
-//             |  "results": {
-//             |    "nodeResults": null,
-//             |    "nodeTransitionResults": [
-//             |      {
-//             |        "sourceNodeId": "start",
-//             |        "destinationNodeId": "variable",
-//             |        "results": [
-//             |          {
-//             |            "id": "",
-//             |            "timestamp": "2025-05-27T21:48:20Z",
-//             |            "variables": {
-//             |              "v1": {
-//             |                "a": "aaa",
-//             |                "b": 1
-//             |              }
-//             |            }
-//             |          }
-//             |        ],
-//             |        "totalCount": 101,
-//             |        "currentThroughput": 0.9811
-//             |      }
-//             |    ],
-//             |    "invocationResults": {
-//             |      "start": [
-//             |        {
-//             |          "contextId": "mocked-context-id",
-//             |          "timestamp": "2025-05-27T21:48:20Z",
-//             |          "name": "var",
-//             |          "value": {
-//             |            "pretty": 1
-//             |          }
-//             |        }
-//             |      ]
-//             |    },
-//             |    "externalInvocationResults": {
-//             |      "start": [
-//             |        {
-//             |          "contextId": "mocked-context-id",
-//             |          "timestamp": "2025-05-27T21:48:20Z",
-//             |          "name": "var",
-//             |          "value": {
-//             |            "pretty": 1
-//             |          }
-//             |        }
-//             |      ]
-//             |    },
-//             |    "exceptions": [
-//             |      {
-//             |        "context": {
-//             |          "id": "mocked-context-id",
-//             |          "timestamp": "2025-05-27T21:48:20Z",
-//             |          "variables": {
-//             |            "var1": {
-//             |              "pretty": "abc"
-//             |            }
-//             |          }
-//             |        },
-//             |        "nodeId": "start",
-//             |        "throwable": "Something bad happened"
-//             |      }
-//             |    ],
-//             |    "exceptionsByNodeId": {
-//             |      "start": [
-//             |        {
-//             |          "context": {
-//             |            "id": "mocked-context-id",
-//             |            "timestamp": "2025-05-27T21:48:20Z",
-//             |            "variables": {
-//             |              "var1": {
-//             |                "pretty": "abc"
-//             |              }
-//             |            }
-//             |          },
-//             |          "nodeId": "start",
-//             |          "throwable": "Something bad happened"
-//             |        }
-//             |      ]
-//             |    }
-//             |  },
-//             |  "counts": {
-//             |    "Event Generator": {
-//             |      "all": 0,
-//             |      "errors": 0,
-//             |      "fragmentCounts": {
-//             |      }
-//             |    },
-//             |    "end": {
-//             |      "all": 0,
-//             |      "errors": 0,
-//             |      "fragmentCounts": {
-//             |      }
-//             |    }
-//             |  }
-//             |}""".stripMargin
-//        )
-//    }
-//    "return not present live data" in {
-//      given()
-//        .applicationState {
-//          createSavedScenario(exampleScenario)
-//          MockableDeploymentManager.configureLiveDataPreviewSupport(LiveDataPreviewStoredInDesignerDb(0, 0))
-//        }
-//        .when()
-//        .basicAuthAllPermUser()
-//        .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
-//        .Then()
-//        .statusCode(StatusCodes.NoContent.intValue)
-//    }
+    "return present data" in {
+      val exampleScenario = createExampleScenario()
+      val listener = LiveDataCollectingListenerHolder.createListenerFor(
+        processName = exampleScenario.name,
+        maxNumberOfSamples = 10,
+        throughputTimeWindowInSeconds = 10
+      )
+      listener.transitionToNextNode(
+        nodeId = "start",
+        nextNodeId = "variable",
+        context = Context("", Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))),
+        processMetaData = exampleScenario.metaData
+      )
+      listener.expressionEvaluated(
+        nodeId = "start",
+        expressionId = "var",
+        expression = "ignored_by_live_data_collector",
+        context = Context("mocked-context-id", Map.empty),
+        processMetaData = exampleScenario.metaData,
+        result = 1
+      )
+      listener.serviceInvoked(
+        nodeId = "start",
+        id = "var",
+        context = Context("mocked-context-id", Map.empty),
+        processMetaData = exampleScenario.metaData,
+        result = Try(1),
+      )
+      listener.exceptionThrown(
+        NuExceptionInfo(
+          nodeComponentInfo = Some(NodeComponentInfo("start", Source, "start")),
+          throwable = new Exception("Something bad happened"),
+          context = Context("mocked-context-id", Map("var1" -> Json.obj("pretty" -> "abc".asJson))),
+          input = "ignored_by_live_data_collector",
+          timestamp = Instant.now,
+        )
+      )
+
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          MockableDeploymentManager.configureLiveDataPreviewSupport(LiveDataPreviewStoredInDesignerJvm)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
+        .Then()
+        .statusCode(StatusCodes.OK.intValue)
+        .matchJsonWithRegexValuesBody(
+          s"""{
+             |  "timestamp": "${regexes.zuluDateRegex}",
+             |  "results": {
+             |    "nodeResults": null,
+             |    "nodeTransitionResults": [
+             |      {
+             |        "sourceNodeId": "start",
+             |        "destinationNodeId": "variable",
+             |        "results": [
+             |          {
+             |            "id": "",
+             |            "timestamp": "${regexes.zuluDateRegex}",
+             |            "variables": {
+             |              "v1": {
+             |                "a": "aaa",
+             |                "b": 1
+             |              }
+             |            }
+             |          }
+             |        ],
+             |        "totalCount": 1,
+             |        "currentThroughput": "${regexes.decimalRegex}"
+             |      }
+             |    ],
+             |    "invocationResults": {
+             |      "start": [
+             |        {
+             |          "contextId": "mocked-context-id",
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "var",
+             |          "value": {
+             |            "pretty": 1
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "externalInvocationResults": {
+             |      "start": [
+             |        {
+             |          "contextId": "mocked-context-id",
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "name": "var",
+             |          "value": {
+             |            "pretty": 1
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "exceptions": [
+             |      {
+             |        "context": {
+             |          "id": "mocked-context-id",
+             |          "timestamp": "${regexes.zuluDateRegex}",
+             |          "variables": {
+             |            "var1": {
+             |              "pretty": "abc"
+             |            }
+             |          }
+             |        },
+             |        "nodeId": "start",
+             |        "throwable": "Something bad happened"
+             |      }
+             |    ],
+             |    "exceptionsByNodeId": {
+             |      "start": [
+             |        {
+             |          "context": {
+             |            "id": "mocked-context-id",
+             |            "timestamp": "${regexes.zuluDateRegex}",
+             |            "variables": {
+             |              "var1": {
+             |                "pretty": "abc"
+             |              }
+             |            }
+             |          },
+             |          "nodeId": "start",
+             |          "throwable": "Something bad happened"
+             |        }
+             |      ]
+             |    }
+             |  },
+             |  "counts": {
+             |    "Event Generator": {
+             |      "all": 0,
+             |      "errors": 0,
+             |      "fragmentCounts": {
+             |      }
+             |    },
+             |    "end": {
+             |      "all": 0,
+             |      "errors": 0,
+             |      "fragmentCounts": {
+             |      }
+             |    }
+             |  }
+             |}""".stripMargin
+        )
+    }
     "return live data not supported error" in {
+      val exampleScenario = createExampleScenario()
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
