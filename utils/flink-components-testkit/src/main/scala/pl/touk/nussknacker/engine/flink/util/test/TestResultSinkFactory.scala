@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import cats.data.NonEmptyList
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api._
@@ -49,6 +50,7 @@ object TestResultSinkFactory {
     ): FlatMapFunction[Context, ValueWithContext[Value]] =
       helper.lazyMapFunction(value)
 
+    @silent("deprecated")
     override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value] =
       new SinkFunction[Value] {
 
