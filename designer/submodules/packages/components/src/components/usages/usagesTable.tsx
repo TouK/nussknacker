@@ -57,7 +57,14 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 headerName: t("table.usages.title.STATUS", "Status"),
                 display: "flex",
                 minWidth: 130,
-                sortComparator: (s1: ProcessStateType, s2: ProcessStateType) => s1.status.name.localeCompare(s2.status.name),
+                sortComparator: (s1: ProcessStateType, s2: ProcessStateType) => {
+                    // Fragments don't have state so s1 or s2 can be undefined
+                    if (!s1 && !s2) return 0;
+                    if (!s1) return 1;
+                    if (!s2) return -1;
+
+                    return s1.status.name.localeCompare(s2.status.name);
+                },
                 renderCell: (props) => {
                     if (!props.value) {
                         return (
