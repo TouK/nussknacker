@@ -34,7 +34,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
   MalformedTypingResult,
   SourceCompilation,
   TooManyCharactersGenerated,
-  TooManySamplesRequested,
+  TooManyRecordsRequested,
   UnsupportedSourcePreview
 }
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.ForbiddenNodesError.NoPermission
@@ -48,9 +48,9 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.SourceTestError._
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -180,21 +180,21 @@ class NodesApiHttpService(
                 sourceNodeData,
                 numberOfRecords
               ) match {
-                case Left(SourceCompilationError(nodeId, errors)) =>
-                  Future(Left(SourceCompilation(nodeId, errors)))
-                case Left(UnsupportedSourcePreviewError(nodeId)) =>
-                  Future(Left(UnsupportedSourcePreview(nodeId)))
-                case Left(NoLiveDataFetchedError) =>
+                case Left(FetchLiveDataError.SourcesCompilationError(errorsByNodeIdNel)) =>
+                  Future(Left(SourceCompilation(sourceNodeData.id, errorsByNodeIdNel.head._2.map(_.toString).toList)))
+                case Left(FetchLiveDataError.LiveDataFetchingNotSupportedError) =>
+                  Future(Left(UnsupportedSourcePreview(sourceNodeData.id)))
+                case Left(FetchLiveDataError.NoLiveDataAvailableError) =>
                   Future(Left(NoLiveDataAvailable))
-                case Left(ScenarioTestDataSerializationError(cause)) =>
+                case Left(FetchLiveDataError.ScenarioRecordsSerializationError(cause)) =>
                   Future(Left(cause match {
                     case SerializationError.TooManyCharactersGenerated(length, limit) =>
                       TooManyCharactersGenerated(length, limit)
                   }))
-                case Left(TooManySamplesRequestedError(maxSamples)) =>
-                  Future(Left(TooManySamplesRequested(maxSamples)))
-                case Right(rawScenarioTestData) =>
-                  Future(Right(rawScenarioTestData.content))
+                case Left(FetchLiveDataError.TooManyRecordsRequestedError(maxRecordsCount)) =>
+                  Future(Left(TooManyRecordsRequested(maxRecordsCount)))
+                case Right(rawScenarioRecords) =>
+                  Future(Right(rawScenarioRecords.content))
               }
             )
           } yield parametersDefinition
