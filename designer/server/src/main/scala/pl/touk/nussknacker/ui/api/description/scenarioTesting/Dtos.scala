@@ -229,8 +229,8 @@ object Dtos {
             errors.toHumanReadableMessage
           case TooManyCharactersGenerated(length, limit) =>
             TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
-          case TooManyRecordsRequested(maxSamples) =>
-            TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxSamples)
+          case TooManyRecordsRequested(maxRecordsCount) =>
+            TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxRecordsCount)
           case TestingWithCustomInputNotSupportedError(sourceId) =>
             TestingApiErrorMessages.testingWithCustomInput.notSupportedBySource(sourceId)
           case ErrorResult(message) =>

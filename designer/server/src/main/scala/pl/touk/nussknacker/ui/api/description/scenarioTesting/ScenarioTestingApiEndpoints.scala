@@ -258,7 +258,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
               value = TooManyCharactersGenerated(length = 5000, limit = 2000)
             ),
             Example.of(
-              summary = Some("Too many samples requested"),
+              summary = Some("Too many records requested"),
               value = TooManyRecordsRequested(maxRecordsCount = 1000)
             ),
             Example.of(

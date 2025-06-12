@@ -426,7 +426,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                     value = InvalidNodeType("Filter", "Source")
                   ),
                   Example.of(
-                    summary = Some("Too many samples requested"),
+                    summary = Some("Too many records requested"),
                     value = TooManyRecordsRequested(100)
                   ),
                   Example.of(

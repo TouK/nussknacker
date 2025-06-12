@@ -191,8 +191,8 @@ class NodesApiHttpService(
                     case SerializationError.TooManyCharactersGenerated(length, limit) =>
                       TooManyCharactersGenerated(length, limit)
                   }))
-                case Left(FetchLiveDataError.TooManyRecordsRequestedError(maxSamples)) =>
-                  Future(Left(TooManyRecordsRequested(maxSamples)))
+                case Left(FetchLiveDataError.TooManyRecordsRequestedError(maxRecordsCount)) =>
+                  Future(Left(TooManyRecordsRequested(maxRecordsCount)))
                 case Right(rawScenarioRecords) =>
                   Future(Right(rawScenarioRecords.content))
               }
