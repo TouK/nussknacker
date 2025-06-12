@@ -31,13 +31,17 @@ export const ParametersListField = (props: Props) => {
     const [settings] = useUserSettings();
 
     if (paramWithIndex.param.name === "Endpoint") {
+        const displayCopyValueEndAdornment = paramWithIndex.param.name === "Endpoint" && node.type === "Source";
+        const displayGenerateEndpointButton =
+            paramWithIndex.param.name === "Endpoint" && node.type === "Source" && settings["node.showGenerateEndpointButton"];
+
         return (
             <>
                 <ParameterExpressionField
                     listFieldPath={handleGetListFieldPath(paramWithIndex.index)}
                     parameter={paramWithIndex.param}
                     endAdornment={
-                        paramWithIndex.param.name === "Endpoint" && (
+                        displayCopyValueEndAdornment && (
                             <CopyIconButton
                                 onClick={() => {
                                     const possibleValues = parameterDefinitions.find(
@@ -58,7 +62,7 @@ export const ParametersListField = (props: Props) => {
                 {/*
                  * TODO: Remove it when the backend is ready and action buttons will be send by default
                  */}
-                {settings["node.showGenerateEndpointButton"] && (
+                {displayGenerateEndpointButton && (
                     <Box display={"flex"} justifyContent={"flex-end"}>
                         <GenerateNewEndpoint
                             node={node}
