@@ -199,7 +199,13 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val endNodeIdInvocationResult = results.externalInvocationResults("endNodeIID").loneElement
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, "collect1").nextContextId()
 
-    endNodeIdInvocationResult.value shouldBe variable(List("bb", "aa"))
+    // todo: we should discuss in Pull Request whether the order of split-union-collect nodes result in RR should be more stable - look InvokerCompiler.partInvoker
+    endNodeIdInvocationResult.value.hcursor
+      .get[List[String]]("pretty")
+      .getOrElse(throw new IllegalStateException("Lack of pretty field")) should contain theSameElementsAs List(
+      "bb",
+      "aa"
+    )
   }
 
   private def createTestRecord(field1: String, field2: String) = {
