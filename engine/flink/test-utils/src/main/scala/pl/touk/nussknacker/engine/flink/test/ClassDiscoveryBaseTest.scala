@@ -67,7 +67,7 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside with 
 
   test("check extracted class for model") {
     val types = model.modelDefinitionWithClasses.classDefinitions.all
-    if (true) {
+    if (Option(System.getenv("CLASS_EXTRACTION_PRINT")).exists(_.toBoolean)) {
       val fileName = s"${Properties.tmpDir}/${getClass.getSimpleName}-result.json"
       logger.info(s"CLASS_EXTRACTION_PRINT is set. The file JSON file will be stored in '$fileName'")
       FileUtils.write(new File(fileName), encode(types), StandardCharsets.UTF_8)
