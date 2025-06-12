@@ -86,6 +86,12 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         validateSchemaWithBaseType[java.lang.Integer](typingResult, schema, path)
       case (_, Type.LONG) if longLogicalTypes.contains(schema.getLogicalType) =>
         validateSchemaWithBaseType[java.lang.Long](typingResult, schema, path)
+      case (_, Type.FLOAT) =>
+        validateSchemaWithBaseType[java.lang.Float](typingResult, schema, path)
+          .orElse(validateSchemaWithBaseType[java.math.BigDecimal](typingResult, schema, path))
+      case (_, Type.DOUBLE) =>
+        validateSchemaWithBaseType[java.lang.Double](typingResult, schema, path)
+          .orElse(validateSchemaWithBaseType[java.math.BigDecimal](typingResult, schema, path))
       case (typingResult, Type.UNION) =>
         validateUnionSchema(typingResult, schema, path)
       case (_, _) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>

@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, PaymentV1}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -194,7 +194,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       Expression.jsonTemplate(
         s"""{
            |  "arrayField" : [
-           |    "#{ '' }"
+           |    ""
            |  ],
            |  "booleanField" : true,
            |  "bytesField" : "",
@@ -211,7 +211,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
            |  },
            |  "nullField" : null,
            |  "recordField" : {
-           |    "nestedString" : "#{ '' }"
+           |    "nestedString" : ""
            |  },
            |  "stringField" : "example",
            |  "unionField" : null
@@ -246,7 +246,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     laxValidationResult.errors shouldBe List(
       CustomNodeError(
         "id",
-        "Provided value does not match scenario output - errors:\nIncorrect type: path 'bytesField' actual: 'String' expected: 'ByteBuffer', path 'doubleField' actual: 'BigDecimal' expected: 'Double', path 'floatField' actual: 'BigDecimal' expected: 'Float'.",
+        "Provided value does not match scenario output - errors:\nIncorrect type: path 'bytesField' actual: 'String' expected: 'ByteBuffer'.",
         Some(sinkValueParamName)
       )
     )
@@ -261,7 +261,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       Expression.jsonTemplate(
         s"""{
            |  "arrayField" : [
-           |    "#{ '' }"
+           |    ""
            |  ],
            |  "booleanField" : true,
            |  "bytesField" : "",
@@ -278,9 +278,9 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
            |  },
            |  "nullField" : null,
            |  "recordField" : {
-           |    "nestedString" : "#{ '' }"
+           |    "nestedString" : ""
            |  },
-           |  "stringField" : "#{ '' }",
+           |  "stringField" : "",
            |  "unionField" : null
            |}""".stripMargin
       )
@@ -407,27 +407,27 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       Expression.jsonTemplate(
         s"""{
            |  "arrayField" : [
-           |    "#{ '' }"
+           |    ""
            |  ],
            |  "booleanField" : true,
-           |  "bytesField" : "#{ '' }",
+           |  "bytesField" : "",
            |  "doubleField" : 0.0,
            |  "enumField" : "RED",
-           |  "fixedField" : "#{ '' }",
+           |  "fixedField" : "",
            |  "floatField" : 0.0,
            |  "intField" : 0,
-           |  "logicalDate" : "#{ '' }",
-           |  "logicalTimestamp" : "#{ '' }",
+           |  "logicalDate" : "",
+           |  "logicalTimestamp" : "",
            |  "longField" : 0,
            |  "mapField" : {
            |    
            |  },
            |  "nullField" : null,
            |  "recordField" : {
-           |    "nestedString" : "#{ '' }"
+           |    "nestedString" : ""
            |  },
-           |  "stringField" : "#{ '' }",
-           |  "unionField" : "#{ '' }"
+           |  "stringField" : "",
+           |  "unionField" : ""
            |}""".stripMargin
       )
     val result = validate(

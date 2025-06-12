@@ -36,7 +36,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport.ParameterExtractionMode
 import pl.touk.nussknacker.engine.schemedkafka.typed.{
   AvroSchemaTypeDefinitionExtractor,
   AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
@@ -114,29 +113,18 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
   override def extractSingleParameterForSink(
       schema: ParsedSchema,
-      parameterExtractionMode: ParameterExtractionMode,
       validationMode: ValidationMode,
       rawParameter: Parameter
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = {
-    parameterExtractionMode match {
-      case ParameterExtractionMode.RawParameter =>
-        Validated.Valid(
-          SingleSchemaBasedParameter(
-            rawParameter,
-            new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
-          )
-        )
-      case ParameterExtractionMode.RawParameterTemplate =>
-        Validated.Valid(
-          SingleSchemaBasedParameter(
-            rawParameter.copy(
-              defaultValue = Some(defaultJsonTemplateFor(schema)),
-              editors = List(JsonTemplateParameterEditor, SpelParameterEditor)
-            ),
-            new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
-          )
-        )
-    }
+    Validated.Valid(
+      SingleSchemaBasedParameter(
+        rawParameter.copy(
+          defaultValue = Some(defaultJsonTemplateFor(schema)),
+          editors = List(JsonTemplateParameterEditor, SpelParameterEditor)
+        ),
+        new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+      )
+    )
   }
 
   override def extractParametersForSink(schema: ParsedSchema, restrictedParamNames: Set[ParameterName])(
@@ -189,37 +177,21 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def extractSingleParameterForSink(
       schema: ParsedSchema,
-      parameterExtractionMode: ParameterExtractionMode,
       validationMode: ValidationMode,
       rawParameter: Parameter
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = {
-    parameterExtractionMode match {
-      case ParameterExtractionMode.RawParameter =>
-        Valid(
-          SingleSchemaBasedParameter(
-            rawParameter.copy(
-              editors = List(
-                JsonTemplateParameterEditor,
-                SpelParameterEditor
-              )
-            ),
-            new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+    Valid(
+      SingleSchemaBasedParameter(
+        rawParameter.copy(
+          defaultValue = Some(defaultJsonTemplateFor(schema)),
+          editors = List(
+            JsonTemplateParameterEditor,
+            SpelParameterEditor
           )
-        )
-      case ParameterExtractionMode.RawParameterTemplate =>
-        Valid(
-          SingleSchemaBasedParameter(
-            rawParameter.copy(
-              defaultValue = Some(defaultJsonTemplateFor(schema)),
-              editors = List(
-                JsonTemplateParameterEditor,
-                SpelParameterEditor
-              )
-            ),
-            new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
-          )
-        )
-    }
+        ),
+        new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+      )
+    )
   }
 
   override def extractParametersForSink(
@@ -285,11 +257,10 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def extractSingleParameterForSink(
       schema: ParsedSchema,
-      parameterExtractionMode: ParameterExtractionMode,
       validationMode: ValidationMode,
       rawParameter: Parameter
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = {
-    jsonSupport.extractSingleParameterForSink(schema, parameterExtractionMode, validationMode, rawParameter)
+    jsonSupport.extractSingleParameterForSink(schema, validationMode, rawParameter)
   }
 
   override def extractParametersForSink(

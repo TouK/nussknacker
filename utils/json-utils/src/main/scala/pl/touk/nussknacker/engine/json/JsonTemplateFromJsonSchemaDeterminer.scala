@@ -81,7 +81,7 @@ object JsonTemplateFromJsonSchemaDeterminer {
         case _ => None
       }
     case refSchema: ReferenceSchema             => defaultJsonFor(refSchema.getReferredSchema)
-    case _: StringSchema                        => Some(Json.fromString("#{ '' }"))
+    case _: StringSchema                        => Some(Json.fromString(""))
     case s: NumberSchema if s.requiresInteger() => Some(Json.fromInt(0))
     case _: NumberSchema                        => Some(Json.fromDoubleOrNull(0.0))
     case _: BooleanSchema                       => Some(Json.fromBoolean(true))

@@ -130,6 +130,10 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
         Valid(number.floatValue().asInstanceOf[AnyRef])
       case (Schema.Type.FLOAT, number: java.lang.Float) =>
         Valid(number)
+      case (Schema.Type.FLOAT, number: java.math.BigDecimal) =>
+        Valid(number.floatValue().asInstanceOf[AnyRef])
+      case (Schema.Type.DOUBLE, number: java.math.BigDecimal) =>
+        Valid(number.doubleValue().asInstanceOf[AnyRef])
       case (Schema.Type.DOUBLE, number: Number) =>
         Valid(number.doubleValue().asInstanceOf[AnyRef])
       case (Schema.Type.BOOLEAN, boolean: java.lang.Boolean) =>

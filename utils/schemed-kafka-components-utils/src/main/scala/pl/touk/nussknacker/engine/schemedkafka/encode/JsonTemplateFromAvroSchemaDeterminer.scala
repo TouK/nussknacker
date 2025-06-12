@@ -96,7 +96,7 @@ object JsonTemplateFromAvroSchemaDeterminer {
         Some(Json.obj())
       case Schema.Type.UNION =>
         schema.getTypes.asScala.headOption.flatMap(jsonBasedOnSchema)
-      case Schema.Type.STRING  => Some(Json.fromString("#{ '' }"))
+      case Schema.Type.STRING  => Some(Json.fromString(""))
       case Schema.Type.BYTES   => Some(Json.fromString(""))
       case Schema.Type.INT     => Some(Json.fromInt(0))
       case Schema.Type.LONG    => Some(Json.fromLong(0L))

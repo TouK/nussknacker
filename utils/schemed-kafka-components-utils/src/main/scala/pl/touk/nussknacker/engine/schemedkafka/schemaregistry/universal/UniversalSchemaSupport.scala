@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ContentTypesSchemas, SchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport.ParameterExtractionMode
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
 class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
@@ -53,7 +52,6 @@ trait UniversalSchemaSupport {
 
   def extractSingleParameterForSink(
       schema: ParsedSchema,
-      parameterExtractionMode: ParameterExtractionMode,
       validationMode: ValidationMode,
       rawParameter: Parameter
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter]
@@ -71,16 +69,6 @@ trait UniversalSchemaSupport {
     val recordFormatter = recordFormatterSupport(schemaRegistryClient)
     val encodeRecord    = formValueEncoder(schema, ValidationMode.lax)
     (data: Any) => recordFormatter.formatMessage(encodeRecord(data))
-  }
-
-}
-
-object UniversalSchemaSupport {
-  sealed trait ParameterExtractionMode
-
-  object ParameterExtractionMode {
-    case object RawParameter         extends ParameterExtractionMode
-    case object RawParameterTemplate extends ParameterExtractionMode
   }
 
 }
