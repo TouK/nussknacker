@@ -8,7 +8,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.{DeserializationError, SerializationError}
 
-class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
+class PreliminaryScenarioRecordsSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   private val testDataMaxLength = 1000
   private val maxSamplesCount   = 5

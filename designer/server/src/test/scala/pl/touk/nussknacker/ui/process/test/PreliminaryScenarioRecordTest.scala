@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-class PreliminaryScenarioTestRecord extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
+class PreliminaryScenarioRecordTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   test("should encode and decoded test record") {
     val inputRecord = PreliminaryScenarioRecord(
