@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.BaseModelDataProvider
@@ -21,7 +22,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, client: FlinkClient)(
     implicit ec: ExecutionContext
-) extends FlinkScenarioJobRunner {
+) extends FlinkScenarioJobRunner
+    with LazyLogging {
 
   private val modelJarProvider = new FlinkModelJarProvider(modelDataProvider.modelClassLoader.getURLs.toList)
 
@@ -48,9 +50,10 @@ class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, cli
   override def liveDataPreviewSupport: LiveDataPreviewSupport = {
     modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
       case LiveDataPreviewMode.Enabled(_, _, None) =>
-        throw new IllegalStateException(
+        logger.error(
           "Synchronisation in the DB must be enabled for the live data preview in the RemoteFlinkScenarioJobRunner"
         )
+        NoLiveDataPreviewSupport
       case LiveDataPreviewMode.Enabled(maxSamples, _, Some(dbUploader)) =>
         LiveDataPreviewStoredInDesignerDb(maxSamples, dbUploader.uploadIntervalInSeconds)
       case LiveDataPreviewMode.Disabled =>
