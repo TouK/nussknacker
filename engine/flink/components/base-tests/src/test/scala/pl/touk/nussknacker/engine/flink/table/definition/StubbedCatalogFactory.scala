@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.definition
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.table.catalog.{Catalog, CatalogTable, GenericInMemoryCatalog, ObjectPath}
 import org.apache.flink.table.factories.CatalogFactory
@@ -26,6 +27,7 @@ object StubbedCatalogFactory {
 
   private val catalog: GenericInMemoryCatalog = populateCatalog(new GenericInMemoryCatalog(catalogName))
 
+  @silent("deprecated")
   private def populateCatalog(inMemoryCatalog: GenericInMemoryCatalog): GenericInMemoryCatalog = {
     val sampleBoundedTable = CatalogTable.of(
       Schema.newBuilder().column(sampleColumnName, DataTypes.STRING()).build(),
