@@ -78,7 +78,7 @@ private[spel] class Typer(
   import ast.SpelAst._
 
   private lazy val evaluationContext: EvaluationContext =
-    evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
+    evaluationContextPreparer.prepareEvaluationContext(Context.dummy, Map.empty)
 
   private val methodReferenceTyper = new MethodReferenceTyper(classDefinitionSet, anyMethodExecutionForUnknownAllowed)
 

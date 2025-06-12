@@ -11,6 +11,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -202,14 +203,14 @@ class SchemedKafkaScenarioTestingSpec
     val results          = testRunner.runTests(fragment, scenarioTestData).futureValue
 
     nodeResults(results, "fragment1").loneElement shouldBe (
-      "fragment1-fragment1-0-0",
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
       Map(
         "in" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
       )
     )
 
     nodeResults(results, "fragmentEnd").loneElement shouldBe (
-      "fragment1-fragment1-0-0",
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
       Map(
         "in"  -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id"))),
         "out" -> Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))
@@ -221,7 +222,7 @@ class SchemedKafkaScenarioTestingSpec
       .invocationResults("fragmentEnd")
       .loneElement
       .copy(timestamp = mockedTimestamp) shouldBe ExpressionInvocationResult(
-      "fragment1-fragment1-0-0",
+      ContextId(scenarioId = "fragment1", originatingNodeId = "fragment1", taskId = 0, index = 0),
       mockedTimestamp,
       "out",
       Json.fromFields(Seq("pretty" -> Json.fromString("some-text-id")))

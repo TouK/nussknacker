@@ -88,7 +88,7 @@ class UnionWithMemoTransformer(
               val flatMapTypeInfo = typeInfoDetector.forValueWithContext(finalCtx, KeyedValueType.info(valueTypeInfo))
 
               stream
-                .map(ctx => ctx.appendIdSuffix(branchId))
+                .map(ctx => ctx.withContextIdPathPart(context.nodeId, branchId))
                 .flatMap(
                   new StringKeyedValueMapper(context, keyByBranchId(branchId), valueParam),
                   flatMapTypeInfo

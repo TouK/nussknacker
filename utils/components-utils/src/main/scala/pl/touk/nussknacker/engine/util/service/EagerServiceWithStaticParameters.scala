@@ -131,7 +131,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseContext: ComponentUseContext,
     ): Future[Any] = {
-      implicit val contextId: ContextId   = ContextId(context.id)
+      implicit val contextId: ContextId   = context.id
       implicit val metaImplicit: MetaData = metaData
       val evaluatedLazyParameters         = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
       EagerServiceWithStaticParametersAndReturnType.this.invoke(eagerParameters ++ evaluatedLazyParameters)

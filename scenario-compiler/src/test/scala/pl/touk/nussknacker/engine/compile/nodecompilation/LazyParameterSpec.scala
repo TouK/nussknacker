@@ -36,7 +36,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       Typed.genericTypeClass[(AnyRef, AnyRef)](List(Typed.fromDetailedType[Integer], Typed.fromDetailedType[String]))
     tupled.returnType shouldEqual expectedType
 
-    val result = tupled.evaluate(Context(""))
+    val result = tupled.evaluate(Context.dummy)
 
     result shouldEqual (123, "foo")
   }
@@ -56,8 +56,8 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
 
     val mappedParam = transform(evalParameter)
     val fun         = mappedParam.evaluate
-    fun(Context(""))
-    fun(Context(""))
+    fun(Context.dummy)
+    fun(Context.dummy)
 
     invoked shouldEqual 1
   }

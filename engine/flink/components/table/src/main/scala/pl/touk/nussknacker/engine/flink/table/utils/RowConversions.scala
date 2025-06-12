@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.flink.table.utils
 
+import io.circe.{Codec, Decoder}
+import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.RowTypeInfo
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ContextIdPathPart}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -19,7 +21,7 @@ object RowConversions {
     } yield contextToRow(parentContext, parentValidationContext)
     val row          = Row.withPositions(parentContextAsRow.map(_ => 3).getOrElse(2))
     val variablesRow = encodeVariables(context.variables, validationContext)
-    row.setField(0, context.id)
+    row.setField(0, serializeContextId(context.id))
     row.setField(1, variablesRow)
     parentContextAsRow.foreach(row.setField(2, _))
     row
@@ -45,7 +47,7 @@ object RowConversions {
       }.toMap
     }
     Context(
-      row.getField(0).asInstanceOf[String],
+      deserializeContextId(row.getField(0).asInstanceOf[String]),
       rowToScalaMap(row.getField(1).asInstanceOf[Row]),
       Option(row).filter(_.getArity >= 3).map(_.getField(2).asInstanceOf[Row]).map(rowToContext)
     )
@@ -63,6 +65,36 @@ object RowConversions {
       Types.ROW(Types.STRING :: variablesRow :: validationContext.parent.map(contextRowTypeInfo).toList: _*)
     }
 
+  }
+
+  private implicit def contextIdPathPartCodec: Codec[ContextIdPathPart] =
+    Codec.forProduct2("n", "v")(ContextIdPathPart.apply)(t => (t.nodeId, t.value))
+
+  private implicit def contextIdCodec: Codec[ContextId] =
+    Codec.forProduct5("sn", "nid", "tid", "idx", "path")(
+      (
+          scenarioName: String,
+          nodeId: String,
+          taskId: Long,
+          index: Long,
+          path: List[ContextIdPathPart]
+      ) => ContextId(scenarioName, nodeId, taskId, index, path),
+    )(cid => (cid.scenarioName, cid.originatingNodeId, cid.taskId, cid.index, cid.path))
+
+  private def serializeContextId(contextId: ContextId) = {
+    contextId.asJson.noSpaces
+  }
+
+  private def deserializeContextId(str: String): ContextId = {
+    (for {
+      json      <- io.circe.parser.parse(str)
+      contextId <- Decoder[ContextId].decodeJson(json)
+    } yield contextId) match {
+      case Left(_) =>
+        throw new IllegalStateException(s"Cannot deserialize contextId from [$str]")
+      case Right(contextId) =>
+        contextId
+    }
   }
 
 }

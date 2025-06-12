@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
@@ -116,14 +116,14 @@ object LiveDataPreviewSupported {
   )
 
   final case class ExceptionResult(
-      contextId: String,
+      contextId: ContextId,
       timestamp: Instant,
       variables: Map[String, Json],
       throwable: Throwable,
   )
 
   final case class InvocationResult(
-      contextId: String,
+      contextId: ContextId,
       timestamp: Instant,
       name: String,
       value: Json,
@@ -136,7 +136,7 @@ object LiveDataPreviewSupported {
   )
 
   case class LiveDataSample(
-      contextId: String,
+      contextId: ContextId,
       timestamp: Instant,
       variables: Map[String, Json],
   )

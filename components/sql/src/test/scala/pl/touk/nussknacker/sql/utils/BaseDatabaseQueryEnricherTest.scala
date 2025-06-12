@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 trait BaseDatabaseQueryEnricherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
   implicit val ec: ExecutionContext                     = ExecutionContext.Implicits.global
-  implicit val context: Context                         = Context("", Map.empty)
+  implicit val context: Context                         = Context.dummy
   implicit val metaData: MetaData                       = MetaData("", StreamMetaData())
   implicit val collector: ServiceInvocationCollector    = EmptyInvocationCollector.Instance
   implicit val componentUseContext: ComponentUseContext = ComponentUseContext.ScenarioTesting

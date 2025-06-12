@@ -6,7 +6,7 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import java.nio.charset.StandardCharsets
@@ -98,7 +98,7 @@ class KafkaJsonExceptionSerializationSchemaSpec extends AnyFunSuite with Matcher
   }
 
   private def createData(contextVariables: Map[String, Any]): NuExceptionInfo = {
-    NuExceptionInfo(None, exception, Context("contextId", contextVariables), input, timestamp)
+    NuExceptionInfo(None, exception, Context(ContextId.dummy, contextVariables), input, timestamp)
   }
 
   private def createKafkaExceptionInfo(variables: Map[String, Any]) = KafkaExceptionInfo(
