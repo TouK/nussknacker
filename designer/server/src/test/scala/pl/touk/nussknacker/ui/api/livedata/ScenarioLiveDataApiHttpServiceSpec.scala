@@ -15,9 +15,18 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails, WithTestHttpClient}
+import pl.touk.nussknacker.test.{
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLoggingIfValidationFails,
+  WithTestHttpClient
+}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
+  WithMockableDeploymentManager,
+  WithSimplifiedDesignerConfig
+}
 
 import java.time.Instant
 import java.util.UUID
@@ -92,27 +101,36 @@ class ScenarioLiveDataApiHttpServiceSpec
       val exampleScenario = createExampleScenario()
       val listener = LiveDataCollectingListenerHolder.createListenerFor(
         processName = exampleScenario.name,
-        maxNumberOfSamples = 10,
+        maxNumberOfRecords = 10,
         throughputTimeWindowInSeconds = 10
       )
       listener.transitionToNextNode(
         nodeId = "start",
         nextNodeId = "variable",
-        context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))),
+        context = Context(
+          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))
+        ),
         processMetaData = exampleScenario.metaData
       )
       listener.expressionEvaluated(
         nodeId = "start",
         expressionId = "var",
         expression = "ignored_by_live_data_collector",
-        context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map.empty),
+        context = Context(
+          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          Map.empty
+        ),
         processMetaData = exampleScenario.metaData,
         result = 1
       )
       listener.serviceInvoked(
         nodeId = "start",
         id = "var",
-        context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map.empty),
+        context = Context(
+          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          Map.empty
+        ),
         processMetaData = exampleScenario.metaData,
         result = Try(1),
       )
@@ -120,7 +138,10 @@ class ScenarioLiveDataApiHttpServiceSpec
         NuExceptionInfo(
           nodeComponentInfo = Some(NodeComponentInfo("start", Source, "start")),
           throwable = new Exception("Something bad happened"),
-          context = Context(ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0), Map("var1" -> Json.obj("pretty" -> "abc".asJson))),
+          context = Context(
+            ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+            Map("var1" -> Json.obj("pretty" -> "abc".asJson))
+          ),
           input = "ignored_by_live_data_collector",
           timestamp = Instant.now,
         )

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.livedata
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, NodeId}
 
 import java.time.Instant
 
@@ -18,6 +18,20 @@ final case class CollectedLiveData(
 object CollectedLiveData {
 
   def empty: CollectedLiveData = CollectedLiveData(Instant.now, Map.empty, Map.empty, Map.empty, Map.empty)
+
+  private implicit def contextIdPathPartCodec: Codec[ContextIdPathPart] =
+    Codec.forProduct2("n", "v")(ContextIdPathPart.apply)(t => (t.nodeId, t.value))
+
+  private implicit def contextIdCodec: Codec[ContextId] =
+    Codec.forProduct5("sn", "nid", "tid", "idx", "path")(
+      (
+          scenarioName: String,
+          nodeId: String,
+          taskId: Long,
+          index: Long,
+          path: List[ContextIdPathPart]
+      ) => ContextId(scenarioName, nodeId, taskId, index, path),
+    )(cid => (cid.scenarioName, cid.originatingNodeId, cid.taskId, cid.index, cid.path))
 
   private implicit val throwableEncoder: Encoder[Throwable] = Encoder.encodeString.contramap(_.getMessage)
   private implicit val throwableDecoder: Decoder[Throwable] = Decoder.decodeString.map(new RuntimeException(_))
@@ -63,14 +77,14 @@ object CollectedLiveData {
 }
 
 final case class ExceptionResult(
-    contextId: String,
+    contextId: ContextId,
     timestamp: Instant,
     variables: Map[String, Json],
     throwable: Throwable,
 )
 
 final case class InvocationResult(
-    contextId: String,
+    contextId: ContextId,
     timestamp: Instant,
     name: String,
     value: Json,
@@ -83,7 +97,7 @@ final case class LiveDataForNodeTransition(
 )
 
 case class LiveDataSample(
-    contextId: String,
+    contextId: ContextId,
     timestamp: Instant,
     variables: Map[String, Json],
 )
