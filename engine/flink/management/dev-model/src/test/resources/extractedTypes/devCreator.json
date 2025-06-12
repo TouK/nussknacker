@@ -1366,6 +1366,24 @@
           }
         }
       ],
+      "empty": [
+        {
+          "name": "empty",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isEmpty": [
+        {
+          "name": "isEmpty",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "length": [
         {
           "name": "length",
@@ -5283,6 +5301,15 @@
       "strip": [
         {
           "name": "strip",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "stripIndent": [
+        {
+          "name": "stripIndent",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
