@@ -1,5 +1,5 @@
 import { defaultsDeep } from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
@@ -99,7 +99,8 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     }, [availableTypes, nodeId]);
 
     useEffect(() => {
-        onChange?.(edges?.map((e) => ({ ...e, to: e.to || e._id })));
+        // let's remove fake _id  to avoid rerenders on mount, since there is no _id in the initial state from teh backend
+        onChange?.(edges?.map(({ _id, ...edge }) => ({ ...edge, to: edge.to || _id })));
     }, [edges, onChange]);
 
     const edgeItems = useMemo(() => {
