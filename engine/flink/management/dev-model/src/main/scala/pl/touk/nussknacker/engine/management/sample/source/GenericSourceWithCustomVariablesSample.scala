@@ -93,7 +93,7 @@ object GenericSourceWithCustomVariablesSample
       override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
       override def generateTestData(size: Int): TestData = TestData(
-        (0 to size).flatMap(index => elementsValue.map(el => TestRecord(Json.fromString(el + s"-$index")))).toList
+        (0 until size).flatMap(index => elementsValue.map(el => TestRecord(Json.fromString(el + s"-$index")))).toList
       )
 
       override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>

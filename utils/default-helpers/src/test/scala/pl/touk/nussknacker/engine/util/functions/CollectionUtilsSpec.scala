@@ -133,7 +133,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     row.setField("foo", 42)
     row.setField("bar", 43)
 
-    val ctxWithMap = Context("abc").withVariable("flinkTableApiRow", row)
+    val ctxWithMap = Context.dummy.withVariable("flinkTableApiRow", row)
 
     val result = parser
       .parse(
@@ -173,7 +173,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     val record = new GenericData.Record(schema)
     record.put("foo", 42)
     record.put("bar", 43)
-    val ctxWithMap = Context("abc").withVariable("genericRecord", record)
+    val ctxWithMap = Context.dummy.withVariable("genericRecord", record)
 
     val result = parser
       .parse("#COLLECTION.merge(#genericRecord, #genericRecord).foo", validationCtx, Typed.typedClass(classOf[Int]))

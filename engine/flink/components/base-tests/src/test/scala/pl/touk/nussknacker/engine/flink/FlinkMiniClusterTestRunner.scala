@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.ConfigFactory
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -80,11 +81,20 @@ trait FlinkMiniClusterTestRunner { _: FlinkSpec =>
       fromNodeId: String,
       toNodeId: Option[String]
   ): Set[Map[String, Any]] =
+    transitionVariablesByContextId(testResults, fromNodeId, toNodeId).values.toSet
+
+  protected def transitionVariablesByContextId(
+      testResults: TestResults[Any],
+      fromNodeId: String,
+      toNodeId: Option[String]
+  ): Map[ContextId, Map[String, Any]] = {
     testResults
       .nodeTransitionResults(NodeTransition(fromNodeId, toNodeId))
-      .map(_.variables)
-      .toSet[Map[String, Any]]
-      .map(_.map { case (key, value) => (key, scalaMap(value)) })
+      .map { result =>
+        (result.id, result.variables.map { case (key, value) => (key, scalaMap(value)) })
+      }
+      .toMap
+  }
 
   private def scalaMap(value: Any): Any = {
     value match {

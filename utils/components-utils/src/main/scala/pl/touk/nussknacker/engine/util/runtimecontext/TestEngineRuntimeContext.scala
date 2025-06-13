@@ -9,5 +9,5 @@ case class TestEngineRuntimeContext(
     metricsProvider: MetricsProviderForScenario = NoOpMetricsProviderForScenario
 ) extends EngineRuntimeContext {
   override def contextIdGenerator(nodeId: String): ContextIdGenerator =
-    IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId)
+    IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId, taskId = 0)
 }

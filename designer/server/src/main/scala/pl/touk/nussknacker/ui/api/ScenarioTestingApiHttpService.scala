@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
   FetchLiveDataError,
@@ -111,7 +111,7 @@ class ScenarioTestingApiHttpService(
                               UISourceParameters(id.id, params.map(DefinitionsService.createUIParameter))
                             }.toList
                             CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
-                          case Left(ParametersDefinitionError.UnsupportedTestingWithCustomInputError(_)) =>
+                          case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                           case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
@@ -161,14 +161,14 @@ class ScenarioTestingApiHttpService(
                 ) match {
                   case Left(error) =>
                     EitherT.fromEither[Future](Left(toDto(error)))
-                  case Right(rawScenarioTestData) =>
+                  case Right(serializedLiveData) =>
                     EitherT(
                       scenarioTestService
                         .performTest(
                           request.scenarioGraph,
                           scenarioWithDetails.processVersionUnsafe,
                           scenarioWithDetails.isFragment,
-                          rawScenarioTestData
+                          serializedLiveData
                         )
                     ).leftMap[TestingError] { error =>
                       ErrorResult(TestingApiErrorMessages.from(error))
@@ -178,7 +178,7 @@ class ScenarioTestingApiHttpService(
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
-            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
+            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false)),
           )
         }
       }
@@ -213,8 +213,8 @@ class ScenarioTestingApiHttpService(
               case ScenarioTestData.WithLiveData(numberOfSamples) =>
                 EitherT
                   .fromEither[Future](
-                    scenarioTestService.validateSampleSize[TestingError](numberOfSamples)(
-                      BadRequestTestingError.TooManySamplesRequested(_)
+                    scenarioTestService.validateRecordsCount[TestingError](numberOfSamples)(
+                      BadRequestTestingError.TooManyRecordsRequested(_)
                     )
                   )
                   .map((_: Unit) => List.empty)
@@ -244,8 +244,8 @@ class ScenarioTestingApiHttpService(
                 case Left(error) =>
                   logger.error(s"Error during generation of test data: $error")
                   Future(Left(toDto(error)))
-                case Right(rawScenarioTestData) =>
-                  Future(Right(rawScenarioTestData.content))
+                case Right(serializedLiveData) =>
+                  Future(Right(serializedLiveData.content))
               }
             )
           } yield parametersDefinition
@@ -263,8 +263,8 @@ class ScenarioTestingApiHttpService(
             globalErrors = List.empty
           )
         )
-      case ParametersDefinitionError.UnsupportedTestingWithCustomInputError(nodeId) =>
-        BadRequestTestingError.UnsupportedTestingWithCustomInputError(nodeId)
+      case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
+        BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
     }
   }
 
@@ -278,17 +278,17 @@ class ScenarioTestingApiHttpService(
             globalErrors = List.empty
           )
         )
-      case FetchLiveDataError.NoLiveDataAvailable =>
+      case FetchLiveDataError.NoLiveDataAvailableError =>
         NoLiveDataAvailable
-      case FetchLiveDataError.NoSourcesWithLiveDataFetchingSupport =>
+      case FetchLiveDataError.LiveDataFetchingNotSupportedError =>
         NoSourcesWithLiveDataFetchingSupport
-      case FetchLiveDataError.ScenarioTestDataSerializationError(cause) =>
+      case FetchLiveDataError.ScenarioRecordsSerializationError(cause) =>
         cause match {
           case SerializationError.TooManyCharactersGenerated(length, limit) =>
             TooManyCharactersGenerated(length, limit)
         }
-      case FetchLiveDataError.TooManySamplesRequestedError(maxSamples) =>
-        TooManySamplesRequested(maxSamples)
+      case FetchLiveDataError.TooManyRecordsRequestedError(maxRecordsCount) =>
+        TooManyRecordsRequested(maxRecordsCount)
     }
   }
 

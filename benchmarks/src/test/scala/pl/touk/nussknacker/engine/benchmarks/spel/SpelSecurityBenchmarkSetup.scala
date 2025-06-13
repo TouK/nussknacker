@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.benchmarks.spel
 
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -36,7 +36,7 @@ class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) 
       case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")
     }
 
-  private val ctx = Context("id", vars, None)
+  private val ctx = Context(ContextId.dummy, vars, None)
 
   def test(): AnyRef = {
     compiledExpression.evaluate[AnyRef](ctx, Map.empty)

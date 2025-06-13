@@ -115,6 +115,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
+           |          "cid":{"nid":"sourceId","tid":0,"idx":0,"path":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -132,6 +133,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
+           |          "cid":{"nid":"sourceId","tid":0,"idx":0,"path":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -154,6 +156,7 @@ class BatchDataGenerationSpec
            |        "destinationNodeId": "end",
            |        "results": [
            |        {
+           |          "cid":{"nid":"sourceId","tid":0,"idx":0,"path":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -219,6 +222,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
+           |          "cid":{"nid":"sourceId","tid":0,"idx":0,"path":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -236,6 +240,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
+           |          "cid":{"nid":"sourceId","tid":0,"idx":0,"path":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {
@@ -258,6 +263,7 @@ class BatchDataGenerationSpec
            |        "destinationNodeId": "end",
            |        "results": [
            |        {
+           |          "cid":{"nid":"sourceId","tid":0,"idx":0,"path":[]},
            |          "id": "E2ETest-SumTransactions-sourceId-0-0",
            |          "timestamp": "${regexes.zuluDateRegex}",
            |          "variables": {

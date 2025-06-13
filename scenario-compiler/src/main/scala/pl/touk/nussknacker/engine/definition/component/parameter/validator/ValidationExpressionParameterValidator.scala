@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import pl.touk.nussknacker.engine.api.{Context, CustomMetaData, JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, CustomMetaData, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.{CompileTimeEvaluableValueValidator, Validator}
@@ -37,7 +37,7 @@ case class ValidationExpressionParameterValidator(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     // TODO: paramName should be used here, but a lot of parameters have names that are not valid variables (e.g. "Topic name")
-    val context = Context("validator", Map(variableName -> value), None)
+    val context = Context(ContextId.dummy, Map(variableName -> value), None)
 
     Try(
       expressionEvaluator.evaluate[java.lang.Boolean](validationExpression, "validationExpression", nodeId.id, context)(
