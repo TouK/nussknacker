@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.serialization.{
 }
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
+import java.lang.reflect.Modifier
 import scala.util.{Failure, Try}
 
 /**
@@ -23,6 +24,7 @@ import scala.util.{Failure, Try}
   * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#readSerializersAndConfigsWithResilience]]
   */
 object Serializers extends LazyLogging {
+  private val SerialVersionUIDFieldName = "serialVersionUID"
 
   def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
     (implicitly[SerializerRegistrar[CaseClassSerializer]] ::
@@ -55,6 +57,7 @@ object Serializers extends LazyLogging {
         )
 
         fields
+          .filter(_.getName != SerialVersionUIDFieldName)
           .take(constructorParamsCount)
           .foreach(field => {
             field.setAccessible(true)
