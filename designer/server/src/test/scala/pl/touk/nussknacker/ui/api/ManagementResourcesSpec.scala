@@ -453,14 +453,14 @@ class ManagementResourcesSpec
     }
     saveCanonicalProcessAndAssertSuccess(process)
 
-    val tooManySamples = List
+    val tooManyRecords = List
       .fill(50)("""{"sourceId":"startProcess","record":"a json string"}""")
       .mkString("\n")
-    testScenario(process, tooManySamples) ~> check {
+    testScenario(process, tooManyRecords) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Test data has too many samples (50). Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
+      ] shouldBe "Test data has too many records (50). The maximum number of records permitted is 20. Contact the system administrator to increase this limit."
     }
 
     val longString = "a long json string".repeat(50)
@@ -471,7 +471,7 @@ class ManagementResourcesSpec
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Test data has too many characters (18799). Please configure 'testDataSettings.testDataMaxLength' to increase the limit (10000)"
+      ] shouldBe "Test data has too many characters (18799). The maximum numbers of permitted characters is 10000. Contact the system administrator to increase this limit."
     }
   }
 
@@ -503,7 +503,7 @@ class ManagementResourcesSpec
       // Approximate size can differ slightly depending on test execution environment.
       responseAs[
         String
-      ] should fullyMatch regex "Test results size exceeded \\(approximate size in bytes: \\d+\\). Please configure 'testDataSettings.resultsMaxBytes' to increase the limit \\(500000\\)"
+      ] should fullyMatch regex "Test results size exceeded \\(approximate size is \\d+ B\\). The maximum permitted size is 500000 B. Contact the system administrator to increase this limit."
     }
   }
 
