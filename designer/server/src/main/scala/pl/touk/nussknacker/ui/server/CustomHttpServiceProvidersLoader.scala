@@ -8,18 +8,17 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.customhttpservice.{
   CustomHttpServiceProviderFactory,
-  DatabaseRunnerImpl,
   PekkoCustomHttpServiceProvider,
   ProcessServiceBasedScenarioServiceAdapter,
   TapirCustomHttpServiceProvider
 }
-import pl.touk.nussknacker.ui.customhttpservice.services.{DbRefInstance, NussknackerServicesForCustomHttpService}
+import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef => ApiDbRef, NussknackerServicesForCustomHttpService}
 import pl.touk.nussknacker.ui.customhttpservice.services.{
   NuExPostgresProfile => ApiNuExPostgresProfile,
   NuHsqldbProfile => ApiNuHsqldbProfile,
   NuPostgresProfile => ApiNuPostgresProfile
 }
-import pl.touk.nussknacker.ui.db.{NuExPostgresProfile, NuHsqldbProfile, NuPostgresProfile}
+import pl.touk.nussknacker.ui.db.{DbRef, NuExPostgresProfile, NuHsqldbProfile, NuPostgresProfile}
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 
 import scala.concurrent.ExecutionContext
@@ -69,8 +68,7 @@ object CustomHttpServiceProvidersLoader {
   )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
-      new DatabaseRunnerImpl(infrastructureServices.dbioRunner),
-      buildDbRefInstance(infrastructureServices)
+      toApiDbRef(infrastructureServices.dbRef)
     )
     customHttpServiceProviderFactories
       .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
@@ -89,17 +87,13 @@ object CustomHttpServiceProvidersLoader {
       tapir: Map[String, TapirCustomHttpServiceProvider]
   )
 
-  private def buildDbRefInstance(infrastructureServices: InfrastructureServices) = {
-    val dbRef = infrastructureServices.dbRef
+  private def toApiDbRef(dbRef: DbRef) = {
     val profile = dbRef.profile match {
-      case profile: NuHsqldbProfile => new ApiNuHsqldbProfile(profile.schemaName)
-      case profile: NuPostgresProfile =>
-        profile match {
-          case profile: NuExPostgresProfile => new ApiNuExPostgresProfile(profile.schemaName)
-          case profile: NuPostgresProfile   => new ApiNuPostgresProfile(profile.schemaName)
-        }
+      case pgex: NuExPostgresProfile => new ApiNuExPostgresProfile(pgex.schemaName)
+      case pg: NuPostgresProfile     => new ApiNuPostgresProfile(pg.schemaName)
+      case hsql: NuHsqldbProfile     => new ApiNuHsqldbProfile(hsql.schemaName)
     }
-    DbRefInstance(dbRef.db, profile)
+    ApiDbRef(dbRef.db, profile)
   }
 
 }

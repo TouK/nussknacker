@@ -1,19 +1,9 @@
 package pl.touk.nussknacker.ui.customhttpservice.services
 
 import com.github.tminglei.slickpg.ExPostgresProfile
-import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
-import scala.concurrent.Future
-
-trait DatabaseRunner {
-  type DB[A] = DBIOAction[A, NoStream, Effect.All]
-
-  def runInTransaction[T](action: DB[T]): Future[T]
-  def run[T](action: DB[T]): Future[T]
-}
-
-case class DbRefInstance(db: JdbcBackend.Database, profile: NuJdbcProfile)
+final case class DbRef(db: JdbcBackend.Database, profile: NuJdbcProfile)
 
 trait NuJdbcProfile extends JdbcProfile {
   this: JdbcProfile =>
