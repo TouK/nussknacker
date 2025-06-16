@@ -1,31 +1,67 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
 import pl.touk.nussknacker.engine.api.definition.{
+  BoolParameterEditor,
+  CronParameterEditor,
+  DateParameterEditor,
+  DateTimeParameterEditor,
   DictParameterEditor,
+  DurationParameterEditor,
   FixedValuesParameterEditor,
+  FixedValuesWithIconParameterEditor,
+  FixedValuesWithRadioParameterEditor,
   JsonParameterEditor,
+  JsonTemplateParameterEditor,
+  ParameterEditor,
+  PeriodParameterEditor,
+  SpelParameterEditor,
   SpelTemplateParameterEditor,
   SqlParameterEditor,
-  TabularTypedDataEditor
+  TabularTypedDataEditor,
+  TextareaParameterEditor,
+  TimeParameterEditor
 }
 import pl.touk.nussknacker.engine.graph.expression.{Expression, TabularTypedData}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 protected object EditorPossibleValuesBasedDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
 
-  override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] = {
-    parameters.determinedEditors match {
-      case FixedValuesParameterEditor(firstValue :: _) :: Nil => Some(Expression.spel(firstValue.expression))
-      // it is better to see error that field is not filled instead of strange default value like '' for String
-      case FixedValuesParameterEditor(Nil) :: Nil => Some(Expression.spel(""))
-      case TabularTypedDataEditor :: Nil => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
-      case (SpelTemplateParameterEditor | SqlParameterEditor) :: Nil => Some(Expression.spelTemplate(""))
-      case DictParameterEditor(_) :: Nil                             => Some(Expression(Language.DictKeyWithLabel, ""))
-      case JsonParameterEditor :: Nil                                => Some(Expression.json("{}"))
-      case FixedValuesParameterEditor(firstValue :: _) :: _ :: Nil   => Some(Expression.spel(firstValue.expression))
-      case _ :: FixedValuesParameterEditor(firstValue :: _) :: Nil   => Some(Expression.spel(firstValue.expression))
-      case _                                                         => None
-    }
+  override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] =
+    defaultFor(parameters.determinedEditors)
+
+  private def defaultFor(editors: List[ParameterEditor]) = {
+    editors
+      .collectFirst[Expression] {
+        case FixedValuesParameterEditor(firstValue :: _) => Expression.spel(firstValue.expression)
+        // it is better to see error that field is not filled instead of strange default value like '' for String
+        case FixedValuesParameterEditor(Nil)                      => Expression.spel("")
+        case FixedValuesWithIconParameterEditor(firstValue :: _)  => Expression.spel(firstValue.expression)
+        case FixedValuesWithIconParameterEditor(_)                => Expression.spel("")
+        case FixedValuesWithRadioParameterEditor(firstValue :: _) => Expression.spel(firstValue.expression)
+        case FixedValuesWithRadioParameterEditor(_)               => Expression.spel("")
+      }
+      .orElse(
+        forEditors(editors)
+      )
+
+  }
+
+  private def forEditors(editors: List[ParameterEditor]): Option[Expression] = editors.headOption.flatMap {
+    case JsonParameterEditor                              => Some(Expression.json("{}"))
+    case JsonTemplateParameterEditor                      => Some(Expression.jsonTemplate("{}"))
+    case SpelTemplateParameterEditor | SqlParameterEditor => Some(Expression.spelTemplate(""))
+    case TabularTypedDataEditor     => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
+    case DictParameterEditor(_)     => Some(Expression(Language.DictKeyWithLabel, ""))
+    case DurationParameterEditor(_) => None
+    case PeriodParameterEditor(_)   => None
+    case CronParameterEditor        => None
+    case DateParameterEditor        => None
+    case TimeParameterEditor        => None
+    case DateTimeParameterEditor    => None
+    case SpelParameterEditor        => None
+    case BoolParameterEditor        => None
+    case TextareaParameterEditor    => None
+    case other                      => None
   }
 
 }

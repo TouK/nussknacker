@@ -11,6 +11,15 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.definition.ParameterCategory
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.{
+  DictKeyWithLabel,
+  Json,
+  JsonTemplate,
+  Spel,
+  SpelTemplate,
+  TabularDataDefinition
+}
 
 object ComponentsUiConfigParser {
 
@@ -34,6 +43,18 @@ object ComponentsUiConfigParser {
           ComponentGroupName(key) -> value.map(ComponentGroupName(_))
         }
       }
+
+  implicit val valueReader: ValueReader[Language] = {
+    ValueReader[String].map {
+      case "spel"                  => Spel
+      case "spelTemplate"          => SpelTemplate
+      case "dictKeyWithLabel"      => DictKeyWithLabel
+      case "tabularDataDefinition" => TabularDataDefinition
+      case "json"                  => Json
+      case "jsonTemplate"          => JsonTemplate
+      case unknown                 => throw new IllegalArgumentException(s"Unknown language [$unknown]")
+    }
+  }
 
   implicit val parameterConfigMapReader: ValueReader[Map[ParameterName, ParameterConfig]] =
     ValueReader[Map[String, ParameterConfig]]

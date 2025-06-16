@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   StaticStringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 case class ComponentConfig(
     params: Option[Map[ParameterName, ParameterConfig]],
@@ -67,7 +68,7 @@ object ComponentConfig {
 }
 
 case class ParameterConfig(
-    defaultValue: Option[String],
+    defaultValue: Option[Expression],
     editors: Option[List[ParameterEditor]],
     validators: Option[List[ParameterValidator]],
     label: Option[String],

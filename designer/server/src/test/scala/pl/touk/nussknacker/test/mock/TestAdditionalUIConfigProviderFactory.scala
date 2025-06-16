@@ -46,9 +46,11 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
         ParameterName("param") -> ParameterAdditionalUIConfig(
           required = true,
           initialValue = Some(
-            FixedExpressionValue(
-              "default-from-additional-ui-config-provider",
-              "'default-from-additional-ui-config-provider'",
+            ParameterInitialValue.FixedValue(
+              FixedExpressionValue(
+                "default-from-additional-ui-config-provider",
+                "'default-from-additional-ui-config-provider'",
+              )
             )
           ),
           hintText = Some("hint-text-from-additional-ui-config-provider"),

@@ -4,7 +4,8 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   ComponentConfig,
   ParameterAdditionalUIConfig,
-  ParameterConfig
+  ParameterConfig,
+  ParameterInitialValue
 }
 import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
@@ -12,6 +13,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object ComponentAdditionalConfigConverter {
 
@@ -38,14 +40,19 @@ object ComponentAdditionalConfigConverter {
         .getOrElse(List.empty)
 
     ParameterConfig(
-      defaultValue = paramAdditionalConfig.initialValue.map(
-        _.expression
-      ), // TODO currently this isn't validated (e.g. can be of incorrect type) - not a big issue as it's only used to initially fill the FE form, if sent with this wrong value the process will fail validation
+      defaultValue = paramAdditionalConfig.initialValue.map {
+        case ParameterInitialValue.AnyValue(expression) => expression
+        case ParameterInitialValue.FixedValue(expression) =>
+          Expression.dictKeyWithLabel(expression.expression, Some(expression.label))
+      },
       editors = paramAdditionalConfig.valueEditor.flatMap(editor =>
         ValueEditorValidator
           .validateAndGetEditor(
             valueEditor = editor,
-            initialValue = paramAdditionalConfig.initialValue,
+            initialValue = paramAdditionalConfig.initialValue.flatMap {
+              case ParameterInitialValue.AnyValue(expression)   => None
+              case ParameterInitialValue.FixedValue(expression) => Some(expression)
+            },
             paramName = paramName,
             nodeIds = Set.empty
           )
