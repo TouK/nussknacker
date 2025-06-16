@@ -39,11 +39,6 @@ fi
 
 MODULES_OPEN_OPTS="--add-exports=java.base/sun.net.util=ALL-UNNAMED \
 --add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED \
---add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
---add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
---add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
---add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
---add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
 --add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
 --add-opens=java.base/java.lang=ALL-UNNAMED \
 --add-opens=java.base/java.net=ALL-UNNAMED \
