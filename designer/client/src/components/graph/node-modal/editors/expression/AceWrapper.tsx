@@ -11,7 +11,7 @@ import type { ICommand } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
 
 import type { FieldError } from "../Validators";
-import { StyledAceEditor } from "./StyledAceEditor";
+import AceEditor from "./ace";
 import type { EditorMode } from "./types";
 import { ExpressionLang } from "./types";
 
@@ -190,14 +190,14 @@ export default forwardRef(function AceWrapper(
 
     return (
         <>
-            <StyledAceEditor
+            <AceEditor
                 {...props}
                 ref={ref}
                 mode={editorLangToMode(language, editorMode)}
                 width={"100%"}
                 minLines={rows}
                 maxLines={512}
-                codeTheme={"nussknacker"}
+                theme={"nussknacker"}
                 showPrintMargin={false}
                 cursorStart={-1} //line start
                 readOnly={readOnly}
