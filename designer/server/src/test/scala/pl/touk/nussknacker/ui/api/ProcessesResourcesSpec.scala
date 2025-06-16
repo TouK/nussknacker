@@ -1295,11 +1295,100 @@ class ProcessesResourcesSpec
     }
   }
 
-  test("fetching scenario toolbar definitions") {
+  test("fetching scenario toolbar definitions as allpermuser") {
     val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(designerRawConfig).getConfig(Category1.stringify)
     val id            = createEmptyScenario(processName, category = Category1)
 
     withProcessToolbars(processName) { toolbar =>
+      val expected = parser
+        .parse(
+          s"""{
+             |  "id" : "${toolbarConfig.uuidCode}-not-archived-scenario",
+             |  "topLeft" : [
+             |    {
+             |      "id" : "search-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : null,
+             |      "additionalParams" : null
+             |    },
+             |    {
+             |      "id" : "tips-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : null,
+             |      "additionalParams" : null
+             |    },
+             |    {
+             |      "id" : "creator-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : null,
+             |      "additionalParams" : null
+             |    }
+             |  ],
+             |  "topRight" : [
+             |    {
+             |      "id" : "process-actions-panel",
+             |      "title" : null,
+             |      "buttonsVariant" : null,
+             |      "buttons" : [
+             |        {
+             |          "type" : "process-save",
+             |          "name" : null,
+             |          "title" : null,
+             |          "icon" : null,
+             |          "url" : null,
+             |          "disabled" : true,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        },
+             |        {
+             |          "type" : "process-deploy",
+             |          "name" : null,
+             |          "title" : null,
+             |          "icon" : null,
+             |          "url" : null,
+             |          "disabled" : false,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        },
+             |        {
+             |          "type" : "process-redeploy",
+             |          "name" : null,
+             |          "title" : null,
+             |          "icon" : null,
+             |          "url" : null,
+             |          "disabled" : false,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        },
+             |        {
+             |          "type" : "custom-link",
+             |          "name" : "custom",
+             |          "title" : "Custom link for user with all permissions for $processName",
+             |          "icon" : null,
+             |          "url" : "/test/${id.value}",
+             |          "disabled" : true,
+             |          "markdownContent" : null,
+             |          "docs" : null
+             |        }
+             |      ],
+             |      "additionalParams" : null
+             |    }
+             |  ]
+             |}""".stripMargin
+        )
+        .fold(throw _, identity)
+      toolbar shouldBe expected
+    }
+  }
+
+  test("fetching scenario toolbar definitions as admin") {
+    val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(designerRawConfig).getConfig(Category1.stringify)
+    val id            = createEmptyScenario(processName, category = Category1)
+
+    withProcessToolbars(processName, isAdmin = true) { toolbar =>
       val expected = parser
         .parse(
           s"""{

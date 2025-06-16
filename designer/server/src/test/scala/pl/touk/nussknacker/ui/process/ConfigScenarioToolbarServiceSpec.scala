@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.ConfigFactory
-import io.circe.{parser, Json, Printer}
+import io.circe.{parser, Json}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil
 import pl.touk.nussknacker.ui.config.scenariotoolbar._
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+import pl.touk.nussknacker.ui.security.api.CommonUser
 
 class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
@@ -77,77 +78,261 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       (archivedFragment, None, false),
 
       // All of conditions match
-      (process, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), true),
-      (process, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), false),
-      (process, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), true),
-      (process, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (process, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), true),
-      (process, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (process, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (process, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (archivedProcess, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), true),
-      (archivedProcess, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), false),
-      (archivedProcess, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedProcess, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), true),
-      (archivedProcess, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedProcess, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), true),
-      (archivedProcess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedProcess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (fragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), false),
-      (fragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), true),
-      (fragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), true),
-      (fragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (fragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (fragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (fragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), true),
-      (fragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (archivedFragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), false),
-      (archivedFragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), true),
-      (archivedFragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedFragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), true),
-      (archivedFragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedFragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (archivedFragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedFragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), true),
+      (process, Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.AllOf))), true),
+      (process, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.AllOf))), false),
+      (process, Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.AllOf))), true),
+      (process, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (process, Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.AllOf))), true),
+      (process, Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (process, Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (process, Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (archivedProcess, Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.AllOf))), true),
+      (archivedProcess, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.AllOf))), false),
+      (archivedProcess, Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (archivedProcess, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.AllOf))), true),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.AllOf))),
+        true
+      ),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (fragment, Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.AllOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.AllOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.AllOf))), true),
+      (fragment, Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.AllOf))), false),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (archivedFragment, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.AllOf))), true),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (archivedFragment, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.AllOf))), true),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.AllOf))),
+        false
+      ),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.AllOf))),
+        true
+      ),
+      // "always" condition
+      (
+        process,
+        Some(
+          ToolbarCondition(fragment = Some(true), None, always = Some(true), None, Some(ToolbarConditionType.AllOf))
+        ),
+        false
+      ),
+      (
+        process,
+        Some(
+          ToolbarCondition(fragment = Some(true), None, always = Some(false), None, Some(ToolbarConditionType.AllOf))
+        ),
+        false
+      ),
+      (
+        fragment,
+        Some(
+          ToolbarCondition(fragment = Some(true), None, always = Some(true), None, Some(ToolbarConditionType.AllOf))
+        ),
+        true
+      ),
+      (
+        fragment,
+        Some(
+          ToolbarCondition(fragment = Some(true), None, always = Some(false), None, Some(ToolbarConditionType.AllOf))
+        ),
+        false
+      ),
+      // "oneOfUserRoles" condition
+      (
+        process,
+        Some(
+          ToolbarCondition(
+            None,
+            None,
+            None,
+            oneOfUserRoles = Some(Set("alfa", "beta")),
+            Some(ToolbarConditionType.AllOf)
+          )
+        ),
+        true
+      ),
+      (
+        process,
+        Some(ToolbarCondition(None, None, None, oneOfUserRoles = Some(Set("alfa")), Some(ToolbarConditionType.AllOf))),
+        true
+      ),
+      (
+        process,
+        Some(ToolbarCondition(None, None, None, oneOfUserRoles = Some(Set("beta")), Some(ToolbarConditionType.AllOf))),
+        false
+      ),
 
       // One of conditions match
-      (process, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), true),
-      (process, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), false),
-      (process, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (process, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), false),
-      (process, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (process, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (process, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (process, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), false),
-      (archivedProcess, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), true),
-      (archivedProcess, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), false),
-      (archivedProcess, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), false),
-      (archivedProcess, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (archivedProcess, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (archivedProcess, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (archivedProcess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), false),
-      (archivedProcess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (fragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), false),
-      (fragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), true),
-      (fragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (fragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), false),
-      (fragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (fragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), false),
-      (fragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (fragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (archivedFragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), false),
-      (archivedFragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), true),
-      (archivedFragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), false),
-      (archivedFragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (archivedFragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), false),
-      (archivedFragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (archivedFragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (archivedFragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true)
+      (process, Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.OneOf))), true),
+      (process, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.OneOf))), false),
+      (process, Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (process, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.OneOf))), false),
+      (process, Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (process, Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (process, Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (process, Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.OneOf))), false),
+      (archivedProcess, Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.OneOf))), true),
+      (archivedProcess, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.OneOf))), false),
+      (archivedProcess, Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.OneOf))), false),
+      (archivedProcess, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.OneOf))),
+        true
+      ),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.OneOf))),
+        true
+      ),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.OneOf))),
+        false
+      ),
+      (
+        archivedProcess,
+        Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.OneOf))),
+        true
+      ),
+      (fragment, Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.OneOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.OneOf))), false),
+      (fragment, Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.OneOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(false), None, None, None, Some(ToolbarConditionType.OneOf))),
+        false
+      ),
+      (archivedFragment, Some(ToolbarCondition(Some(true), None, None, None, Some(ToolbarConditionType.OneOf))), true),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(None, Some(false), None, None, Some(ToolbarConditionType.OneOf))),
+        false
+      ),
+      (archivedFragment, Some(ToolbarCondition(None, Some(true), None, None, Some(ToolbarConditionType.OneOf))), true),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(false), Some(false), None, None, Some(ToolbarConditionType.OneOf))),
+        false
+      ),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(false), Some(true), None, None, Some(ToolbarConditionType.OneOf))),
+        true
+      ),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(true), Some(false), None, None, Some(ToolbarConditionType.OneOf))),
+        true
+      ),
+      (
+        archivedFragment,
+        Some(ToolbarCondition(Some(true), Some(true), None, None, Some(ToolbarConditionType.OneOf))),
+        true
+      ),
+      // "always" condition
+      (process, Some(ToolbarCondition(None, None, always = Some(true), None, Some(ToolbarConditionType.OneOf))), true),
+      (
+        process,
+        Some(ToolbarCondition(None, None, always = Some(false), None, Some(ToolbarConditionType.OneOf))),
+        false
+      ),
+      // "oneOfUserRoles" condition
+      (
+        process,
+        Some(
+          ToolbarCondition(
+            None,
+            None,
+            None,
+            oneOfUserRoles = Some(Set("alfa", "beta")),
+            Some(ToolbarConditionType.OneOf)
+          )
+        ),
+        true
+      ),
+      (
+        process,
+        Some(ToolbarCondition(None, None, None, oneOfUserRoles = Some(Set("alfa")), Some(ToolbarConditionType.OneOf))),
+        true
+      ),
+      (
+        process,
+        Some(ToolbarCondition(None, None, None, oneOfUserRoles = Some(Set("beta")), Some(ToolbarConditionType.OneOf))),
+        false
+      ),
+      (
+        fragment,
+        Some(
+          ToolbarCondition(
+            fragment = Some(true),
+            None,
+            None,
+            oneOfUserRoles = Some(Set("beta")),
+            Some(ToolbarConditionType.OneOf)
+          )
+        ),
+        true
+      ),
     )
 
+    val user = CommonUser(
+      id = "testUser",
+      username = "testUser",
+      categoryPermissions = Map.empty,
+      globalPermissions = List.empty,
+      roles = Set("alfa")
+    )
     forAll(testingData) {
       (process: ScenarioWithDetailsEntity[_], condition: Option[ToolbarCondition], expected: Boolean) =>
-        val result = ToolbarHelper.verifyCondition(condition, process)
+        val result = ToolbarHelper.verifyCondition(condition, process, user)
         result shouldBe expected
     }
   }
@@ -166,6 +351,14 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       fragment,
       archivedFragment,
       processCategory2
+    )
+
+    implicit val user: CommonUser = CommonUser(
+      id = "testUser",
+      username = "testUser",
+      categoryPermissions = Map.empty,
+      globalPermissions = List.empty,
+      roles = Set.empty
     )
 
     forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>

@@ -56,6 +56,7 @@ final case class ToolbarButtonConfig(
     `type`: String,
     name: Option[String],
     title: Option[String],
+    titleForUserRole: Option[Map[String, String]],
     icon: Option[String],
     url: Option[String],
     hidden: Option[ToolbarCondition],
@@ -78,6 +79,8 @@ object ToolbarConditionType extends Enumeration {
 final case class ToolbarCondition(
     fragment: Option[Boolean],
     archived: Option[Boolean],
+    always: Option[Boolean],
+    oneOfUserRoles: Option[Set[String]],
     `type`: Option[ToolbarConditionType]
 ) {
   def shouldMatchAllOfConditions: Boolean = `type`.exists(ToolbarConditionType.isAllOf)

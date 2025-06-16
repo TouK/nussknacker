@@ -30,7 +30,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
 
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const { disabled, type } = props;
+    const { disabled, type, title } = props;
     const cancelPossible = useSelector(isCancelPossible);
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
@@ -102,6 +102,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
                 disabled={!available || isCancelCallProcessing}
                 isLoading={isCancelCallProcessing}
                 icon={<Icon />}
+                title={title}
                 onClick={handleCancelDeploy}
                 presets={presets}
                 onPresetChange={handlePresetChange}
@@ -115,6 +116,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
             name={t("panels.actions.deploy-cancel.button", "cancel")}
             disabled={!available}
             icon={<Icon />}
+            title={title}
             onClick={handleOpenCancelDeployDialog}
             type={type}
         />
