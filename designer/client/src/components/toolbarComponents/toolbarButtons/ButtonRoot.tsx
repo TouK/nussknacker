@@ -17,7 +17,7 @@ export const ButtonRoot = forwardRef<HTMLButtonElement, Omit<ToolbarButtonProps,
 
     return (
         <InfoTooltip
-            title={title || ([ButtonsVariant.small, ButtonsVariant.xs].includes(variant) && name)}
+            title={title || ([ButtonsVariant.small, ButtonsVariant.xs].includes(variant) ? name : '')}
             variant={"hover"}
             customComponentsProps={{
                 tooltip: {
