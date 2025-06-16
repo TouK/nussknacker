@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   TapirCustomHttpServiceProvider
 }
 import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
-import pl.touk.nussknacker.ui.factory.DomainServices
+import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 
 import scala.concurrent.ExecutionContext
 
@@ -22,6 +22,7 @@ object CustomHttpServiceProvidersLoader {
   def loadCustomHttpServiceProviders(
       designerConfig: DesignerConfig,
       domainServices: DomainServices,
+      infrastructureServices: InfrastructureServices
   )(
       implicit executionContext: ExecutionContext
   ): Resource[IO, CustomHttpServiceProviders] = for {
@@ -30,6 +31,7 @@ object CustomHttpServiceProvidersLoader {
       providerFactories,
       designerConfig,
       domainServices,
+      infrastructureServices
     )(executionContext)
   } yield customHttpServiceProviders
 
@@ -56,9 +58,11 @@ object CustomHttpServiceProvidersLoader {
       customHttpServiceProviderFactories: List[CustomHttpServiceProviderFactory],
       designerConfig: DesignerConfig,
       domainServices: DomainServices,
+      infrastructureServices: InfrastructureServices
   )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
+      infrastructureServices.dbRef
     )
     customHttpServiceProviderFactories
       .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }

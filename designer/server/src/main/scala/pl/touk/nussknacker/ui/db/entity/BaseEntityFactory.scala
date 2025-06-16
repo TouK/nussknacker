@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.ui.db.NuJdbcProfile
+import pl.touk.nussknacker.ui.customhttpservice.services.NuJdbcProfile
 
 import java.util.UUID
 
