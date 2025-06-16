@@ -12,19 +12,27 @@ export interface Props {
     children?: ReactElement;
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
+    enterDelay?: number;
 }
 
-export const InfoTooltip = ({ title, variant = "click", children = <StyledInfo />, className, customComponentsProps }: Props) => {
+export const InfoTooltip = ({
+    title,
+    variant = "click",
+    children = <StyledInfo />,
+    className,
+    customComponentsProps,
+    enterDelay,
+}: Props) => {
     if (!title) {
         return children;
     }
 
     return variant === "hover" ? (
-        <InfoTooltipHover title={title} className={className} customComponentsProps={customComponentsProps}>
+        <InfoTooltipHover title={title} className={className} customComponentsProps={customComponentsProps} enterDelay={enterDelay}>
             {children}
         </InfoTooltipHover>
     ) : (
-        <InfoTooltipClick title={title} className={className} customComponentsProps={customComponentsProps}>
+        <InfoTooltipClick title={title} className={className} customComponentsProps={customComponentsProps} enterDelay={enterDelay}>
             {children}
         </InfoTooltipClick>
     );
