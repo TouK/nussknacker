@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.ui.db.NuJdbcProfile
+import pl.touk.nussknacker.ui.customhttpservice.services.NuJdbcProfile
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 
 //TODO: Remove it in next release

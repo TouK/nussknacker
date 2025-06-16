@@ -7,7 +7,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.scalatest.time.{Second, Seconds, Span}
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}

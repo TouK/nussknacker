@@ -21,7 +21,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser, ScenarioStatusPresenter}
-import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ProcessService}
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, ScenarioResolver}

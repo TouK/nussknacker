@@ -12,13 +12,7 @@ import pl.touk.nussknacker.ui.customhttpservice.{
   ProcessServiceBasedScenarioServiceAdapter,
   TapirCustomHttpServiceProvider
 }
-import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef => ApiDbRef, NussknackerServicesForCustomHttpService}
-import pl.touk.nussknacker.ui.customhttpservice.services.{
-  NuExPostgresProfile => ApiNuExPostgresProfile,
-  NuHsqldbProfile => ApiNuHsqldbProfile,
-  NuPostgresProfile => ApiNuPostgresProfile
-}
-import pl.touk.nussknacker.ui.db.{DbRef, NuExPostgresProfile, NuHsqldbProfile, NuPostgresProfile}
+import pl.touk.nussknacker.ui.customhttpservice.services.NussknackerServicesForCustomHttpService
 import pl.touk.nussknacker.ui.factory.{DomainServices, InfrastructureServices}
 
 import scala.concurrent.ExecutionContext
@@ -68,7 +62,7 @@ object CustomHttpServiceProvidersLoader {
   )(implicit executionContext: ExecutionContext): Resource[IO, CustomHttpServiceProviders] = {
     lazy val nussknackerServices = new NussknackerServicesForCustomHttpService(
       new ProcessServiceBasedScenarioServiceAdapter(domainServices.processService),
-      toApiDbRef(infrastructureServices.dbRef)
+      infrastructureServices.dbRef
     )
     customHttpServiceProviderFactories
       .traverse { factory => factory.create(designerConfig.rawConfig, nussknackerServices).map(factory.name -> _) }
@@ -86,14 +80,5 @@ object CustomHttpServiceProvidersLoader {
       pekko: Map[String, PekkoCustomHttpServiceProvider],
       tapir: Map[String, TapirCustomHttpServiceProvider]
   )
-
-  private def toApiDbRef(dbRef: DbRef) = {
-    val profile = dbRef.profile match {
-      case pgex: NuExPostgresProfile => new ApiNuExPostgresProfile(pgex.schemaName)
-      case pg: NuPostgresProfile     => new ApiNuPostgresProfile(pg.schemaName)
-      case hsql: NuHsqldbProfile     => new ApiNuHsqldbProfile(hsql.schemaName)
-    }
-    ApiDbRef(dbRef.db, profile)
-  }
 
 }
