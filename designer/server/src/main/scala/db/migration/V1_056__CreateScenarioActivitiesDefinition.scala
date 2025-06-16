@@ -2,7 +2,7 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
-import pl.touk.nussknacker.ui.db.NuJdbcProfile
+import pl.touk.nussknacker.ui.customhttpservice.services.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import shapeless.syntax.std.tuple._
 import slick.sql.SqlProfile.ColumnOption.NotNull

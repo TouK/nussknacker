@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.data.OptionT
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.db.{DbRef, NuJdbcProfile, NuTables}
+import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef, NuJdbcProfile}
+import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.process.ScenarioMetadata
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 

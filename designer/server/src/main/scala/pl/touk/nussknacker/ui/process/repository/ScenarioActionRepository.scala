@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
+import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity.{
   AdditionalProperties,
   ScenarioActivityEntityData,
