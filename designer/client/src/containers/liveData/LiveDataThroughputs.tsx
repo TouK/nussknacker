@@ -2,6 +2,7 @@ import { GlobalStyles } from "@mui/material";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 
+import { useUserSettings } from "../../common/userSettings";
 import { useGraph } from "../../components/graph/GraphContext";
 import {
     getIsLiveDataWorking,
@@ -23,7 +24,7 @@ const PULSE2_KEYFRAMES: Keyframe[] = [
 ];
 const DASH_KEYFRAMES: Keyframe[] = [{ strokeDashoffset: 0 }, { strokeDashoffset: 20 }];
 
-export function LiveDataThroughputs() {
+function Throughputs() {
     const transitionResults = useSelector(getNodeTransitionResults);
     const nextIn = useSelector(getLiveDataNextUpdate);
     const last = useSelector(getLiveDataLastUpdate);
@@ -175,3 +176,8 @@ export function LiveDataThroughputs() {
         />
     );
 }
+
+export const LiveDataThroughputs = () => {
+    const [settings] = useUserSettings();
+    return settings["scenario.showLiveDataAnimations"] ? <Throughputs /> : null;
+};
