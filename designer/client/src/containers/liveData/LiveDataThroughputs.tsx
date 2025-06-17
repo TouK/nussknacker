@@ -24,17 +24,21 @@ const PULSE2_KEYFRAMES: Keyframe[] = [
 ];
 const DASH_KEYFRAMES: Keyframe[] = [{ strokeDashoffset: 0 }, { strokeDashoffset: 20 }];
 
-function Throughputs() {
-    const transitionResults = useSelector(getNodeTransitionResults);
-    const nextIn = useSelector(getLiveDataNextUpdate);
-    const last = useSelector(getLiveDataLastUpdate);
-    const enabled = useSelector(getIsLiveDataWorking);
+export function LiveDataThroughputs() {
     const graphGetter = useGraph();
-    const lastSeen = useRef(new Date().getTime());
+
+    const [settings] = useUserSettings();
+    const showAnimations = settings["scenario.showLiveDataAnimations"];
+    const isWorking = useSelector(getIsLiveDataWorking);
+    const enabled = showAnimations && isWorking;
 
     useEffect(() => {
         graphGetter()?.processGraphPaper.el.classList.toggle(CLASS_NAME, enabled);
     }, [graphGetter, enabled]);
+
+    const transitionResults = useSelector(getNodeTransitionResults);
+    const nextIn = useSelector(getLiveDataNextUpdate);
+    const last = useSelector(getLiveDataLastUpdate);
 
     const flatEvents = useMemo(() => {
         if (!enabled) return [];
@@ -59,6 +63,7 @@ function Throughputs() {
         [transitionResults],
     );
 
+    const lastSeen = useRef(new Date().getTime());
     const newEvents = useMemo(() => {
         const newEvents = flatEvents.filter(({ timestamp }) => timestamp > lastSeen.current);
         lastSeen.current = newEvents[0]?.timestamp || lastSeen.current;
@@ -119,7 +124,7 @@ function Throughputs() {
 
     useEffect(() => {
         const graphInstance = graphGetter();
-        const recentEvents = flatEvents.filter(({ timestamp }) => timestamp > last - 2000);
+        const recentEvents = flatEvents.filter(({ timestamp }) => timestamp > last - nextIn);
 
         graphInstance?.graph.getLinks()?.forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".connection");
@@ -138,7 +143,7 @@ function Throughputs() {
             el.classList.toggle(CLASS_NAME, normalizedThroughput > 0);
 
             const animation = el.getAnimations().find((a) => a.id === "dash");
-            if (!nextIn) return animation?.cancel();
+            if (!enabled) return animation?.cancel();
             if (animation) return animation.updatePlaybackRate(normalizedThroughput);
             if (!normalizedThroughput) return;
             el.animate(DASH_KEYFRAMES, {
@@ -152,14 +157,14 @@ function Throughputs() {
                 fill: "forwards",
             });
         });
-    }, [flatEvents, graphGetter, last, nextIn, maxThroughput, transitionResults]);
+    }, [flatEvents, graphGetter, last, nextIn, maxThroughput, transitionResults, enabled]);
 
     return (
         <GlobalStyles
             styles={(theme) => ({
                 ".joint-cell.joint-link": {
                     "&& > .connection": {
-                        transition: "1s ease-in-out",
+                        transition: "1s linear",
                         transitionProperty: "filter, stroke, stroke-width",
                         [`.${CLASS_NAME} &`]: {
                             stroke: theme.palette.text.primary,
@@ -176,8 +181,3 @@ function Throughputs() {
         />
     );
 }
-
-export const LiveDataThroughputs = () => {
-    const [settings] = useUserSettings();
-    return settings["scenario.showLiveDataAnimations"] ? <Throughputs /> : null;
-};
