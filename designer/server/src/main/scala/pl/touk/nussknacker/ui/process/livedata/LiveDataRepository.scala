@@ -7,8 +7,9 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata._
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
+import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
+import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 
 import java.time.Instant
@@ -106,16 +107,15 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
       data: List[Map[NodeTransition, LiveDataForNodeTransition]],
       maxNumberOfSamples: Int,
   ): Map[NodeTransition, LiveDataForNodeTransition] = {
-    data.flatten
-      .groupBy(_._1)
+    data.flatten.toGroupedMap
       .mapValuesNow { entries =>
         LiveDataForNodeTransition(
           samples = entries
-            .flatMap(_._2.samples)
+            .flatMap(_.samples)
             .sortBy(_.timestamp)
             .takeRight(maxNumberOfSamples),
-          totalCount = entries.map(_._2.totalCount).sum,
-          currentThroughput = entries.map(_._2.currentThroughput).sum,
+          totalCount = entries.map(_.totalCount).sum,
+          currentThroughput = entries.map(_.currentThroughput).sum,
         )
 
       }
