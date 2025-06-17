@@ -9,7 +9,6 @@ import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/l
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { getPauseReasons } from "../../../../reducers/selectors/getLiveData";
 import { ContextAccordion } from "./ContextAccordion";
-import { ContextTitle } from "./ContextTitle";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";
 import { useInputOutputContext } from "./InputOutputContext";
@@ -56,7 +55,7 @@ function useVariableContext(direction: "input" | "output") {
     useEffect(() => {
         setSelectedContextCache((selected) => {
             if (enabledContexts.find((r) => r.id === selected?.id)) return selected;
-            if (liveDataPausedBy.includes(`${direction}_accordion`)) {
+            if (liveDataPausedBy.includes(direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion)) {
                 return enabledContexts[0];
             }
             return selected;
