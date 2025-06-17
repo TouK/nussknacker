@@ -57,14 +57,7 @@ export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonP
                 isActive={working}
                 name={t("panels.actions.live-data.name", "live data")}
                 title={t("panels.actions.live-data.button.title", "live data")}
-                icon={
-                    <Insights
-                        sx={{
-                            width: "auto",
-                            padding: "5%",
-                        }}
-                    />
-                }
+                icon={<Insights sx={{ width: "auto", padding: "5%" }} />}
                 disabled={!readyForLiveData || disabled}
                 onClick={() => dispatch(toggleLiveData())}
                 type={type}
