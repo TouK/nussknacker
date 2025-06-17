@@ -23,7 +23,11 @@ object ScenarioToolbarsConfig {
   }
 
   def parse(rawConfig: Config): ScenarioToolbarsConfig = {
-    val uuid             = rawConfig.getAs[UUID]("uuid")
+    implicit val toolbarConditionReader: ValueReader[ToolbarCondition]       = arbitraryTypeValueReader
+    implicit val docsButtonConfigReader: ValueReader[DocsButtonConfig]       = arbitraryTypeValueReader
+    implicit val toolbarButtonConfigReader: ValueReader[ToolbarButtonConfig] = arbitraryTypeValueReader
+    implicit val toolbarPanelConfigReader: ValueReader[ToolbarPanelConfig]   = arbitraryTypeValueReader
+    val uuid                                                                 = rawConfig.getAs[UUID]("uuid")
     val panelAreasConfig = rawConfig.withoutPath("uuid").rootAs[Map[PanelsAreaName, List[ToolbarPanelConfig]]]
     ScenarioToolbarsConfig(uuid, panelAreasConfig)
   }
@@ -56,6 +60,7 @@ final case class ToolbarButtonConfig(
     `type`: String,
     name: Option[String],
     title: Option[String],
+    customTitleForUserRole: Option[Map[String, String]],
     icon: Option[String],
     url: Option[String],
     hidden: Option[ToolbarCondition],
@@ -78,6 +83,10 @@ object ToolbarConditionType extends Enumeration {
 final case class ToolbarCondition(
     fragment: Option[Boolean],
     archived: Option[Boolean],
+    // This condition allows to create buttons, that are, for example, always disabled or always hidden
+    // (example: 'disabled: { always: true }')
+    always: Option[Boolean],
+    oneOfUserRoles: Option[Set[String]],
     `type`: Option[ToolbarConditionType]
 ) {
   def shouldMatchAllOfConditions: Boolean = `type`.exists(ToolbarConditionType.isAllOf)

@@ -33,7 +33,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
 
     const { handleSaveScenarioAction } = useSaveScenario();
     const { t } = useTranslation();
-    const { disabled, type } = props;
+    const { disabled, type, title: tooltip } = props;
     const capabilities = useSelector(getCapabilities);
     const saveDisabled = useSelector(isSaveDisabled);
     const [isSaveProcessing, setIsSaveProcessing] = useState(false);
@@ -131,6 +131,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
                     name={t("panels.actions.process-save.button", "save")}
                     showIndicator={unsavedChanges}
                     icon={<Icon />}
+                    title={tooltip}
                     disabled={!available || isSaveProcessing}
                     isLoading={isSaveProcessing}
                     onClick={handleSaveScenarioActionWithValidation}
@@ -144,6 +145,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
                     name={t("panels.actions.process-save.button", "save")}
                     showIndicator={unsavedChanges}
                     icon={<Icon />}
+                    title={tooltip}
                     disabled={!available || isSaveProcessing}
                     isLoading={isSaveProcessing}
                     onClick={handleOpenSaveDialog}
