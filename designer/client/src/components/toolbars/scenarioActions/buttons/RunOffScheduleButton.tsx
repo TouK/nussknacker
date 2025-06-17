@@ -26,7 +26,7 @@ import type { ToolbarButtonProps } from "../../types";
 export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const { disabled, type, title } = props;
+    const { disabled, type, title, titleOverride } = props;
     const scenarioState = useSelector((state: RootState) => getProcessState(state));
     const validationResultPresent = useSelector(isValidationResultPresent);
     const isVisible = useSelector(isRunOffScheduleVisible);
@@ -40,8 +40,12 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
         HttpService.runOffSchedule(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
-    const defaultTooltip = t("panels.actions.run-off-schedule.tooltip", "run now");
-    const tooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.RunOffSchedule) ?? title ?? defaultTooltip;
+    const tooltip =
+        titleOverride === true
+            ? title
+            : ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.RunOffSchedule) ??
+              title ??
+              t("panels.actions.run-off-schedule.tooltip", "run now");
 
     if (isVisible) {
         return (

@@ -60,7 +60,7 @@ final case class ToolbarButtonConfig(
     `type`: String,
     name: Option[String],
     title: Option[String],
-    titleForUserRole: Option[Map[String, String]],
+    customTitleForUserRole: Option[Map[String, String]],
     icon: Option[String],
     url: Option[String],
     hidden: Option[ToolbarCondition],

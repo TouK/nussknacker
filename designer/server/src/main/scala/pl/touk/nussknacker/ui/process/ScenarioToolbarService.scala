@@ -100,18 +100,20 @@ object ToolbarButton {
       scenario: ScenarioWithDetailsEntity[_],
       user: RealLoggedUser,
   ): ToolbarButton = {
-    val title = config.titleForUserRole match {
+    val (title, titleOverride) = config.customTitleForUserRole match {
       case Some(titleForUserRole) =>
-        user.roles
-          .collectFirst { case role if titleForUserRole.contains(role) => titleForUserRole(role) }
-          .orElse(config.title)
+        user.roles.collectFirst { case role if titleForUserRole.contains(role) => titleForUserRole(role) } match {
+          case Some(title) => (Some(title), true)
+          case None        => (config.title, false)
+        }
       case None =>
-        config.title
+        (config.title, false)
     }
     ToolbarButton(
       config.`type`,
       config.name.map(t => fillByScenarioData(t, scenario)),
       title.map(t => fillByScenarioData(t, scenario)),
+      titleOverride,
       config.icon.map(i => fillByScenarioData(i, scenario, urlOption = true)),
       config.url.map(th => fillByScenarioData(th, scenario, urlOption = true)),
       disabled = verifyCondition(config.disabled, scenario, user),
@@ -132,6 +134,7 @@ final case class ToolbarButton(
     `type`: String,
     name: Option[String],
     title: Option[String],
+    titleOverride: Boolean,
     icon: Option[String],
     url: Option[String],
     disabled: Boolean,

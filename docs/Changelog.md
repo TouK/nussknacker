@@ -201,7 +201,7 @@ description: Stay informed with detailed changelogs covering new features, impro
             type: "custom-link",
             url: "/test/$processId",
             title: "Custom link for $processName",
-            titleForUserRole: { // Optional setting, custom button title overrides based on user roles
+            customTitleForUserRole: { // Optional setting, custom button title overrides based on user roles
               "AllPermissions": "Custom link for user with all permissions for $processName"
             }
             name: "custom",

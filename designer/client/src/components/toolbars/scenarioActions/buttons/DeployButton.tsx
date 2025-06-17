@@ -54,7 +54,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const isDeploying = useSelector(getIsDeploying);
     const scenarioGraphSource = useSelector(getScenarioGraphSource);
 
-    const { disabled, type, title } = props;
+    const { disabled, type, title, titleOverride } = props;
 
     const [isDeployCallProcessing, setIsDeployCallProcessing] = useState(false);
 
@@ -62,7 +62,9 @@ export default function DeployButton(props: ToolbarButtonProps) {
 
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
-    const deployToolTip = !capabilities.deploy
+    const deployToolTip = titleOverride
+        ? title
+        : !capabilities.deploy
         ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
         : hasErrors
         ? t("panels.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.")

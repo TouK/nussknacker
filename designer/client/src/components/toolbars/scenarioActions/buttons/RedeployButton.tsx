@@ -52,7 +52,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const isRedeploying = useSelector(getIsRedeploying);
     const scenarioGraphSource = useSelector(getScenarioGraphSource);
 
-    const { disabled, type, title } = props;
+    const { disabled, type, title, titleOverride } = props;
 
     const [isRedeployCallProcessing, setIsRedeployCallProcessing] = useState(false);
 
@@ -60,7 +60,9 @@ export default function RedeployButton(props: ToolbarButtonProps) {
 
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
-    const deployToolTip = !capabilities.deploy
+    const deployToolTip = titleOverride
+        ? title
+        : !capabilities.deploy
         ? t("panels.actions.redeploy.tooltips.forbidden", "Redeploy forbidden for current scenario.")
         : hasErrors
         ? t("panels.actions.redeploy.tooltips.error", "Cannot redeploy due to errors. Please look at the left panel for more details.")
