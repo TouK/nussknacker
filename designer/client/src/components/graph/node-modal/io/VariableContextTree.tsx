@@ -1,17 +1,22 @@
 import { CloudOff } from "@mui/icons-material";
 import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
-import React, { memo, useCallback, useEffect, useMemo } from "react";
+import type { SyntheticEvent } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 
+import { startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
+import { getPauseReasons } from "../../../../reducers/selectors/getLiveData";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTitle } from "./ContextTitle";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";
 import { useInputOutputContext } from "./InputOutputContext";
 
+export type Direction = "input" | "output";
 type ValuesContextTreeProps = {
-    direction?: "input" | "output";
+    direction?: Direction;
     onIsEmptyChange?: (value: boolean) => void;
 };
 
@@ -32,25 +37,40 @@ function useVariableContext(direction: "input" | "output") {
 
     const value = useMemo(() => (direction === "input" ? inputDataSetId : outputDataSetId), [direction, inputDataSetId, outputDataSetId]);
     const [availableContexts, hiddenAvailableContexts] = useMemo(() => {
-        const contexts = getAvailableContexts(direction).sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getDate());
+        const r = getAvailableContexts(direction);
+        const contexts = r[0].sort((b, a) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
         const pageSize = 30;
         if (contexts.length > pageSize) {
-            const sliced = contexts
-                // .sort((a, b) => (b.disabled ? 0 : 1) - (a.disabled ? 0 : 1))
-                .filter((r) => !r.disabled)
-                .slice(0, pageSize);
+            const sliced = contexts.filter((r) => !r.disabled).slice(0, pageSize);
             return [sliced, contexts.length - sliced.length];
         }
-        return [contexts, 0];
+
+        return [contexts, r[1] - contexts.length];
     }, [direction, getAvailableContexts]);
+    const enabledContexts = useMemo(() => availableContexts.filter((c) => !c.disabled), [availableContexts]);
+
+    const [selectedContextCache, setSelectedContextCache] = useState<VariableContextType>(null);
+
+    const liveDataPausedBy = useSelector(getPauseReasons);
+    useEffect(() => {
+        setSelectedContextCache((selected) => {
+            if (enabledContexts.find((r) => r.id === selected?.id)) return selected;
+            if (liveDataPausedBy.includes(`${direction}_accordion`)) {
+                return enabledContexts[0];
+            }
+            return selected;
+        });
+    }, [direction, enabledContexts, liveDataPausedBy]);
 
     const setContext = useCallback(
-        (context: VariableContextType) =>
+        (context: VariableContextType) => {
+            setSelectedContextCache(context);
             dispatch({
                 type: direction === "input" ? "selectInputContext" : "selectOutputContext",
                 context,
-            }),
+            });
+        },
         [direction, dispatch],
     );
 
@@ -58,6 +78,7 @@ function useVariableContext(direction: "input" | "output") {
 
     return {
         value,
+        selectedContextCache,
         availableContexts,
         hiddenAvailableContexts,
         setContext,
@@ -70,22 +91,19 @@ export const VariableContextTree = memo(function ValuesContextTree({
     onIsEmptyChange,
     direction = "input",
 }: ValuesContextTreeProps): JSX.Element {
-    const { value, availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds } =
+    const { availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds, selectedContextCache } =
         useVariableContext(direction);
 
-    useEffect(() => {
-        const enabled = availableContexts.filter(({ disabled }) => !disabled);
-        if (enabled.length <= 0) return;
-        if (value === null) return;
-        if (enabled.find(({ id }) => id === value)) return;
-        setContext(enabled[0]);
-    }, [availableContexts, direction, setContext, value]);
-
-    useEffect(() => {
-        onIsEmptyChange?.(transitionNodesIds.length < 1);
-    }, [onIsEmptyChange, transitionNodesIds.length]);
-
     const { t } = useTranslation();
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        const isEmpty = transitionNodesIds.length < 1;
+        if (isEmpty) {
+            dispatch(startLiveData(`${direction}_accordion`));
+        }
+        onIsEmptyChange?.(isEmpty);
+    }, [direction, dispatch, onIsEmptyChange, transitionNodesIds.length]);
 
     return (
         <Box
@@ -94,6 +112,8 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 height: "100%",
                 minWidth: 260,
             }}
+            onMouseEnter={() => dispatch(stopLiveData("list"))}
+            onMouseLeave={() => dispatch(startLiveData("list"))}
         >
             <Fade in={availableContexts.length < 1}>
                 <Box
@@ -134,9 +154,9 @@ export const VariableContextTree = memo(function ValuesContextTree({
             >
                 <Typography variant="subtitle1">{direction === "input" ? "Input variables" : "Output variables"}</Typography>
                 <CountsForNodes
-                    nodes={transitionNodesIds.map(({ id, results }) => ({
+                    nodes={transitionNodesIds.map(({ id, totalCount }) => ({
                         id,
-                        count: results?.length,
+                        count: totalCount,
                     }))}
                     input={direction === "input"}
                 />
@@ -147,24 +167,39 @@ export const VariableContextTree = memo(function ValuesContextTree({
                     background: theme.palette.background.paper,
                 })}
             >
-                {availableContexts.map((r) => (
-                    <ContextAccordion
-                        key={r.id}
-                        disabled={r.disabled}
-                        expanded={value === r.id && !r.disabled}
-                        onToggle={() => setContext(r)}
-                        title={
-                            <ContextTitle
-                                reversed={direction === "input"}
-                                context={r}
-                                showNodes={transitionNodesIds.filter((t) => t.id).length > 1}
-                            />
-                        }
-                    >
-                        {direction === "output" ? <>{r.error}</> : null}
-                        <ContextTree context={r} oldFields={inputVariables} />
-                    </ContextAccordion>
-                ))}
+                {(!selectedContextCache || availableContexts.find((r) => r.id === selectedContextCache.id)
+                    ? availableContexts
+                    : [...availableContexts, selectedContextCache]
+                ).map((r, index) => {
+                    const expanded = selectedContextCache?.id === r.id && !r.disabled;
+                    return (
+                        <ContextAccordion
+                            key={r.id}
+                            disabled={r.disabled}
+                            expanded={expanded}
+                            onToggle={(e: SyntheticEvent<Element, Event>, expanded: boolean) => {
+                                if (expanded) {
+                                    setContext(r);
+                                    dispatch(stopLiveData(`${direction}_accordion`));
+                                } else {
+                                    setContext(null);
+                                    dispatch(startLiveData(`${direction}_accordion`));
+                                }
+                            }}
+                            title={
+                                <ContextTitle
+                                    reversed={direction === "input"}
+                                    context={r}
+                                    locked={index >= availableContexts.length}
+                                    showNodes={transitionNodesIds.filter((t) => t.id).length > 1}
+                                />
+                            }
+                        >
+                            {direction === "output" ? <>{r.error}</> : null}
+                            <ContextTree context={r} oldFields={inputVariables} />
+                        </ContextAccordion>
+                    );
+                })}
             </Box>
 
             {hiddenAvailableContexts > 0 ? (

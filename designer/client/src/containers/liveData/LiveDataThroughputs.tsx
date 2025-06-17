@@ -1,11 +1,16 @@
 import { GlobalStyles } from "@mui/material";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { useGraph } from "../../components/graph/GraphContext";
-import { getLiveDataRefresh, getNodeTransitionResults } from "../../reducers/selectors/getLiveData";
-import { CLASS_NAME } from "./useLiveDataRefreshEnabled";
+import {
+    getIsLiveDataWorking,
+    getLiveDataLastUpdate,
+    getLiveDataNextUpdate,
+    getNodeTransitionResults,
+} from "../../reducers/selectors/getLiveData";
 
+const CLASS_NAME = "live-data";
 const PULSE_KEYFRAMES: Keyframe[] = [
     { offset: 0, filter: "brightness(1)" },
     { offset: 0.025, filter: "brightness(1.5) hue-rotate(20deg)" },
@@ -20,11 +25,11 @@ const DASH_KEYFRAMES: Keyframe[] = [{ strokeDashoffset: 0 }, { strokeDashoffset:
 
 export function LiveDataThroughputs() {
     const transitionResults = useSelector(getNodeTransitionResults);
-    const liveDataRefresh = useSelector(getLiveDataRefresh);
+    const nextIn = useSelector(getLiveDataNextUpdate);
+    const last = useSelector(getLiveDataLastUpdate);
+    const enabled = useSelector(getIsLiveDataWorking);
     const graphGetter = useGraph();
     const lastSeen = useRef(new Date().getTime());
-
-    const enabled = useMemo(() => Boolean(liveDataRefresh?.nextIn), [liveDataRefresh?.nextIn]);
 
     useEffect(() => {
         graphGetter()?.processGraphPaper.el.classList.toggle(CLASS_NAME, enabled);
@@ -75,9 +80,11 @@ export function LiveDataThroughputs() {
                       .reduce((sum, { currentThroughput }) => sum + currentThroughput, 0)
                 : 0;
 
-            const animation = el.getAnimations().find((a) => a.id === "pulse2");
+            const animations = el.getAnimations().filter(({ id }) => id === "pulse2" || id === "pulse");
+
+            const animation = animations.find((a) => a.id === "pulse2");
             if (nodeInputThroughput && nodeInputThroughput >= 4) {
-                if (!liveDataRefresh?.nextIn) return animation?.cancel();
+                if (!nextIn) return animation?.cancel();
                 if (animation) return animation.updatePlaybackRate(nodeInputThroughput);
                 el.animate(PULSE2_KEYFRAMES, {
                     id: "pulse2",
@@ -90,24 +97,28 @@ export function LiveDataThroughputs() {
                 return;
             }
             animation?.cancel();
-            events.forEach(({ timestamp }) => {
-                const delay = timestamp - newEvents[newEvents.length - 1].timestamp;
-                el?.animate(PULSE_KEYFRAMES, {
-                    id: "pulse",
-                    duration: 1000,
-                    delay,
-                    easing: "ease-in-out",
-                    fill: "none",
-                    composite: "accumulate",
-                    playbackRate: nodeInputThroughput,
+            if (enabled) {
+                events.forEach(({ timestamp }) => {
+                    const delay = timestamp - newEvents[newEvents.length - 1].timestamp;
+                    el?.animate(PULSE_KEYFRAMES, {
+                        id: "pulse",
+                        duration: 1000,
+                        delay,
+                        easing: "ease-in-out",
+                        fill: "none",
+                        composite: "accumulate",
+                        playbackRate: nodeInputThroughput,
+                    });
                 });
-            });
+            } else {
+                animations.forEach((a) => a.cancel());
+            }
         });
-    }, [enabled, graphGetter, liveDataRefresh?.nextIn, newEvents, transitionResults]);
+    }, [enabled, graphGetter, nextIn, newEvents, transitionResults]);
 
     useEffect(() => {
         const graphInstance = graphGetter();
-        const recentEvents = flatEvents.filter(({ timestamp }) => timestamp > liveDataRefresh?.last - 2000);
+        const recentEvents = flatEvents.filter(({ timestamp }) => timestamp > last - 2000);
 
         graphInstance?.graph.getLinks()?.forEach((model) => {
             const [el] = graphInstance.processGraphPaper.findViewByModel(model).findBySelector(".connection");
@@ -126,7 +137,7 @@ export function LiveDataThroughputs() {
             el.classList.toggle(CLASS_NAME, normalizedThroughput > 0);
 
             const animation = el.getAnimations().find((a) => a.id === "dash");
-            if (!liveDataRefresh?.nextIn) return animation?.cancel();
+            if (!nextIn) return animation?.cancel();
             if (animation) return animation.updatePlaybackRate(normalizedThroughput);
             if (!normalizedThroughput) return;
             el.animate(DASH_KEYFRAMES, {
@@ -140,7 +151,7 @@ export function LiveDataThroughputs() {
                 fill: "forwards",
             });
         });
-    }, [flatEvents, graphGetter, liveDataRefresh?.last, liveDataRefresh?.nextIn, maxThroughput, transitionResults]);
+    }, [flatEvents, graphGetter, last, nextIn, maxThroughput, transitionResults]);
 
     return (
         <GlobalStyles

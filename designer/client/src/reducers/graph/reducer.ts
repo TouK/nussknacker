@@ -45,7 +45,6 @@ const emptyGraphState: GraphState = {
     selectionState: [],
     processCounts: {},
     testResults: null,
-    liveData: null,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -340,31 +339,31 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "DISPLAY_PROCESS_COUNTS": {
             return {
                 ...state,
+                visibleDataType: "counts",
+                testResults: null,
                 processCounts: action.processCounts,
                 processCountsRefresh: action.refresh,
+            };
+        }
+        case "FETCH_LIVE_DATA": {
+            return {
+                ...state,
+                visibleDataType: "live",
             };
         }
         case "DISPLAY_LIVE_DATA": {
             return {
                 ...state,
-                liveData: action.results || null,
-                liveDataRefresh: action.refresh,
+                visibleDataType: "live",
                 testResults: action.results?.results || null,
                 processCounts: action.results?.counts || {},
                 processCountsRefresh: null,
-                liveDataWasEnabled: true,
-            };
-        }
-        case "NODE_DETAILS_OPENED":
-        case "LIVE_DATA_STOP": {
-            return {
-                ...state,
-                liveDataRefresh: null,
             };
         }
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
                 ...state,
+                visibleDataType: "test",
                 testResults: action.testResults,
                 testData: {
                     ...state.testData,
@@ -386,11 +385,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "HIDE_RUN_PROCESS_DETAILS": {
             return {
                 ...state,
+                visibleDataType: null,
                 testResults: null,
                 processCounts: null,
                 processCountsRefresh: null,
-                liveData: null,
-                liveDataRefresh: null,
             };
         }
         default:

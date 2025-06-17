@@ -1,11 +1,17 @@
 import { Insights } from "@mui/icons-material";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useIntervalWhen } from "rooks";
 
-import { fetchAndDisplayLiveData, stopLiveData } from "../../../../actions/nk/liveData";
-import { getLiveDataRefresh, isReadyForLiveData } from "../../../../reducers/selectors/getLiveData";
+import { startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
+import type { ThunkAction, ThunkDispatch } from "../../../../actions/reduxTypes";
+import {
+    getIsLiveDataWorking,
+    getLiveDataLastUpdate,
+    getLiveDataNextUpdate,
+    isReadyForLiveData,
+} from "../../../../reducers/selectors/getLiveData";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
@@ -15,51 +21,60 @@ function adjustProgress(percent: number) {
 }
 
 export function LiveDataButton(props: ToolbarButtonProps) {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<ThunkDispatch>();
     const { t } = useTranslation();
 
-    const refresh = useSelector(getLiveDataRefresh);
+    const nextIn = useSelector(getLiveDataNextUpdate);
+    const last = useSelector(getLiveDataLastUpdate);
+    const working = useSelector(getIsLiveDataWorking);
     const readyForLiveData = useSelector(isReadyForLiveData);
 
     const { disabled, type } = props;
 
     const [percent, setPercent] = useState(0);
 
-    const enabled = useMemo(() => refresh && refresh.last + refresh.nextIn > Date.now(), [refresh]);
-
     useIntervalWhen(
         () => {
-            const percent = Math.round(((refresh.last + refresh.nextIn - Date.now()) / refresh.nextIn) * 100);
+            const percent = Math.round(((last + nextIn - Date.now()) / nextIn) * 100);
             setPercent(adjustProgress(percent));
         },
         200,
-        enabled,
+        working && nextIn > 5000,
     );
 
     useEffect(() => {
-        if (!enabled) {
+        if (!working) {
             setPercent(0);
         }
-    }, [enabled]);
+    }, [working]);
 
     return (
         <ToolbarButton
-            isLoading={readyForLiveData && !disabled && refresh?.nextIn > 5000 && percent > 0}
+            isLoading={readyForLiveData && !disabled && nextIn > 5000 && percent > 0}
             loadingVariant={"determinate"}
             loadingProgress={percent}
-            isActive={enabled}
+            isActive={working}
             name={t("panels.actions.live-data.name", "live data")}
             title={t("panels.actions.live-data.button.title", "live data")}
-            icon={<Insights sx={{ width: "auto", padding: "5%" }} />}
+            icon={
+                <Insights
+                    sx={{
+                        width: "auto",
+                        padding: "5%",
+                    }}
+                />
+            }
             disabled={!readyForLiveData || disabled}
-            onClick={() => {
-                if (!enabled) {
-                    dispatch(fetchAndDisplayLiveData(1, true));
-                } else {
-                    dispatch(stopLiveData());
-                }
-            }}
+            onClick={() => dispatch(toggleLiveData())}
             type={type}
         />
     );
+}
+
+function toggleLiveData(): ThunkAction {
+    return (dispatch, getState) => {
+        const state = getState();
+        const action = getIsLiveDataWorking(state) ? stopLiveData("button") : startLiveData(null, true);
+        dispatch(action);
+    };
 }

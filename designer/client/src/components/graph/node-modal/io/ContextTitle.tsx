@@ -1,5 +1,6 @@
-import { NearbyError as Warning } from "@mui/icons-material";
+import { Lock, NearbyError as Warning } from "@mui/icons-material";
 import { alpha, Stack, Typography } from "@mui/material";
+import Moment from "moment/moment";
 import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 
@@ -8,14 +9,22 @@ import { getShadow } from "../../graphStyledWrapper";
 import { RelatedNodes } from "./CountsForNodes";
 import type { VariableContextType } from "./VariableContextTree";
 
-export function ContextTitle({ context, showNodes, reversed }: { context: VariableContextType; showNodes?: boolean; reversed?: boolean }) {
+type ContextTitleProps = {
+    context: VariableContextType;
+    showNodes?: boolean;
+    reversed?: boolean;
+    locked?: boolean;
+};
+
+export function ContextTitle({ context, showNodes, reversed, locked }: ContextTitleProps) {
     const scenarioName = useSelector(getProcessName);
     const label = useMemo(() => context.id.replace(new RegExp(`^${scenarioName}-`), ""), [context.id, scenarioName]);
 
     return (
         <Stack spacing={1}>
             <Stack spacing={1} direction="row">
-                <Typography>{context.timestamp || label}</Typography>
+                <Typography>{Moment(context.timestamp).format("HH:mm:ss.SSS YYYY-MM-DD") || label}</Typography>
+                {locked ? <Lock /> : null}
                 {context.error ? (
                     <Warning
                         sx={(theme) => ({

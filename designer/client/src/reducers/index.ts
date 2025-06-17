@@ -6,6 +6,8 @@ import type { ProcessStateType } from "../components/Process/types";
 import { reducer as cloudData } from "./cloudData";
 import type { GraphStateWithHistory } from "./graph";
 import { reducerWithUndo as graphReducer } from "./graph";
+import type { LiveData } from "./graph/liveData";
+import { liveData } from "./graph/liveData";
 import { reducer as httpErrorHandler } from "./httpErrorHandler";
 import type { NodeDetailsState } from "./nodeDetailsState";
 import { reducer as nodeDetails } from "./nodeDetailsState";
@@ -28,6 +30,7 @@ import { userSettings } from "./userSettings";
 export const reducer = combineReducers<RootState>({
     httpErrorHandler,
     graphReducer,
+    liveData,
     settings,
     ui,
     processActivity,
@@ -45,6 +48,7 @@ export const reducer = combineReducers<RootState>({
 export type RootState = {
     httpErrorHandler: ReturnType<typeof httpErrorHandler>;
     graphReducer: GraphStateWithHistory;
+    liveData: LiveData;
     settings: SettingsState;
     ui: UiState;
     processActivity: ProcessActivityState;

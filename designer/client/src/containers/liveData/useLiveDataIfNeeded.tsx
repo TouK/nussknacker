@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { fetchAndDisplayLiveData, stopLiveData } from "../../actions/nk/liveData";
+import { startLiveData, stopLiveData } from "../../actions/nk/liveData";
 import { useUserSettings } from "../../common/userSettings";
-import { getLiveDataWasEnabled, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
+import { getHasPauseReasons, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getHasOpenedNodeWindows } from "../../reducers/selectors/getWindowsIdMapping";
 
 export function useLiveDataIfNeeded() {
@@ -12,14 +12,18 @@ export function useLiveDataIfNeeded() {
     const readyForResults = useSelector(isReadyForLiveData);
     const hasOpenedNodeWindow = useSelector(getHasOpenedNodeWindows);
     const autoEnableLiveData = settings["scenario.autoEnableLiveData"];
-    const liveDataWasEnabled = useSelector(getLiveDataWasEnabled);
-    const liveDataIsAutoEnabledOrWasManuallyEnabled = autoEnableLiveData || (!!autoEnableLiveData && liveDataWasEnabled);
+    const visibleDataType = useSelector(getVisibleDataType);
 
     useEffect(() => {
-        if (hasOpenedNodeWindow) {
-            dispatch(stopLiveData());
-        } else if (readyForResults && liveDataIsAutoEnabledOrWasManuallyEnabled) {
-            dispatch(fetchAndDisplayLiveData());
+        if (visibleDataType === "test" || visibleDataType === "counts") {
+            dispatch(stopLiveData("tests"));
         }
-    }, [dispatch, hasOpenedNodeWindow, readyForResults, liveDataWasEnabled, liveDataIsAutoEnabledOrWasManuallyEnabled]);
+    }, [dispatch, visibleDataType]);
+
+    const hasPauseReasons = useSelector(getHasPauseReasons);
+    useEffect(() => {
+        if (autoEnableLiveData && readyForResults && !hasOpenedNodeWindow && !hasPauseReasons) {
+            dispatch(startLiveData());
+        }
+    }, [autoEnableLiveData, dispatch, hasOpenedNodeWindow, readyForResults, hasPauseReasons]);
 }

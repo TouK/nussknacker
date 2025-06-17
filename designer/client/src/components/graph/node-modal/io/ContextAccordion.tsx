@@ -1,7 +1,7 @@
 import { ExpandMore } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import type { PropsWithChildren, ReactNode } from "react";
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useLayoutEffect } from "react";
 
 export const ContextAccordion = ({
     disabled,
@@ -12,7 +12,7 @@ export const ContextAccordion = ({
 }: PropsWithChildren<{
     disabled?: boolean;
     expanded?: boolean;
-    onToggle: () => void;
+    onToggle: (event: React.SyntheticEvent, expanded: boolean) => void;
     title?: ReactNode | undefined;
 }>) => {
     const accordionRef = useRef<HTMLDivElement>(null);
