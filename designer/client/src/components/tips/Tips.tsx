@@ -5,7 +5,9 @@ import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
-import { getScenario, getTestResults } from "../../reducers/selectors/graph";
+import { VisibleDataType } from "../../reducers/graph";
+import { getVisibleDataType } from "../../reducers/selectors/getLiveData";
+import { getScenario } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import type { NodeType } from "../../types";
 import { useWindows } from "../../windowManager";
@@ -29,7 +31,7 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
     );
 
     const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
-    const testResults = useSelector(getTestResults);
+    const visibleDataType = useSelector(getVisibleDataType);
     const { errors, warnings } = ProcessUtils.getValidationResult(scenario);
 
     return (
@@ -42,7 +44,7 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
                 >
                     <ValidTips
                         loading={!ProcessUtils.isValidationResultPresent(scenario)}
-                        testing={!!testResults}
+                        testing={visibleDataType === VisibleDataType.test}
                         hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(scenario)}
                     />
                     {!ProcessUtils.hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}

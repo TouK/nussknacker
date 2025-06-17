@@ -18,6 +18,7 @@ import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import type { GraphState } from "./types";
+import { VisibleDataType } from "./types";
 import {
     addNodesWithLayout,
     adjustBranchParametersAfterDisconnect,
@@ -339,7 +340,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "DISPLAY_PROCESS_COUNTS": {
             return {
                 ...state,
-                visibleDataType: "counts",
+                visibleDataType: VisibleDataType.counts,
                 testResults: null,
                 processCounts: action.processCounts,
                 processCountsRefresh: action.refresh,
@@ -348,13 +349,13 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "FETCH_LIVE_DATA": {
             return {
                 ...state,
-                visibleDataType: "live",
+                visibleDataType: VisibleDataType.live,
             };
         }
         case "DISPLAY_LIVE_DATA": {
             return {
                 ...state,
-                visibleDataType: "live",
+                visibleDataType: VisibleDataType.live,
                 testResults: action.results?.results || null,
                 processCounts: action.results?.counts || {},
                 processCountsRefresh: null,
@@ -363,7 +364,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
                 ...state,
-                visibleDataType: "test",
+                visibleDataType: VisibleDataType.test,
                 testResults: action.testResults,
                 testData: {
                     ...state.testData,

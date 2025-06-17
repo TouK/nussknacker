@@ -1,13 +1,20 @@
-import type { Direction } from "../../components/graph/node-modal/io/VariableContextTree";
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto } from "../../http/resultsWithCountsDto";
+import { VisibleDataType } from "../../reducers/graph";
 import { getHasPauseReasons, getIsLiveDataWorking, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
 import type { ThunkAction } from "../reduxTypes";
 
-export type Initiator = "tests" | "button" | "list" | `${Direction}_accordion` | null;
+export enum Initiator {
+    tests = "tests",
+    button = "button",
+    list = "list",
+    inputAccordion = "input_accordion",
+    outputAccordion = "output_accordion",
+}
+
 export type LiveDataActions =
-    | { type: "LIVE_DATA_START"; initiator: Initiator }
+    | { type: "LIVE_DATA_START"; initiator: Initiator | null }
     | { type: "LIVE_DATA_STARTED" }
     | { type: "FETCH_LIVE_DATA" }
     | {
@@ -15,7 +22,7 @@ export type LiveDataActions =
           results: ResultsWithCountsDto;
           nextIn: number;
       }
-    | { type: "LIVE_DATA_STOP"; initiator: Initiator };
+    | { type: "LIVE_DATA_STOP"; initiator: Initiator | null };
 
 const REFRESH_TIME = 1000;
 
@@ -34,8 +41,8 @@ function fetchAndDisplayLiveData(showErrors = false): ThunkAction {
                 return;
             }
 
-            if (intervalId && ["test", "counts"].includes(getVisibleDataType(state))) {
-                dispatch(stopLiveData("tests"));
+            if (intervalId && [VisibleDataType.test, VisibleDataType.counts].includes(getVisibleDataType(state))) {
+                dispatch(stopLiveData(Initiator.tests));
                 return;
             }
 

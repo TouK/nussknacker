@@ -7,7 +7,7 @@ import { getProcessDefinitionData } from "../../reducers/selectors/processDefini
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
-import { stopLiveData } from "./liveData";
+import { Initiator, stopLiveData } from "./liveData";
 
 export type ScenarioActions =
     | {
@@ -89,7 +89,7 @@ export function clearProcess(): ThunkAction {
 export function hideRunProcessDetails(): ThunkAction {
     replaceSearchQuery(omit(["from", "to", "refresh"]));
     return (dispatch, getState) => {
-        dispatch(stopLiveData("button"));
+        dispatch(stopLiveData(Initiator.button));
         dispatch({ type: "HIDE_RUN_PROCESS_DETAILS" });
     };
 }

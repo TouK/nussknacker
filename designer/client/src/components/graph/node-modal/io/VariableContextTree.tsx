@@ -1,11 +1,11 @@
 import { CloudOff } from "@mui/icons-material";
 import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
-import type { SyntheticEvent } from "react";
-import React, { useCallback, useEffect, memo, useMemo, useState } from "react";
+import type { MouseEvent } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
+import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { getPauseReasons } from "../../../../reducers/selectors/getLiveData";
 import { ContextAccordion } from "./ContextAccordion";
@@ -100,10 +100,16 @@ export const VariableContextTree = memo(function ValuesContextTree({
     useEffect(() => {
         const isEmpty = transitionNodesIds.length < 1;
         if (isEmpty) {
-            dispatch(startLiveData(`${direction}_accordion`));
+            dispatch(startLiveData(direction === "input" ? Initiator.inputAccordion : Initiator.outputAccordion));
         }
         onIsEmptyChange?.(isEmpty);
     }, [direction, dispatch, onIsEmptyChange, transitionNodesIds.length]);
+
+    const showNodes = transitionNodesIds.filter((t) => t.id).length > 1;
+    const toggleRefresh = useCallback(
+        (e: MouseEvent) => dispatch(e.type === "mouseenter" ? stopLiveData(Initiator.list) : startLiveData(Initiator.list)),
+        [dispatch],
+    );
 
     return (
         <Box
@@ -112,8 +118,8 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 height: "100%",
                 minWidth: 260,
             }}
-            onMouseEnter={() => dispatch(stopLiveData("list"))}
-            onMouseLeave={() => dispatch(startLiveData("list"))}
+            onMouseEnter={toggleRefresh}
+            onMouseLeave={toggleRefresh}
         >
             <Fade in={availableContexts.length < 1}>
                 <Box
@@ -170,36 +176,21 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 {(!selectedContextCache || availableContexts.find((r) => r.id === selectedContextCache.id)
                     ? availableContexts
                     : [...availableContexts, selectedContextCache]
-                ).map((r, index) => {
-                    const expanded = selectedContextCache?.id === r.id && !r.disabled;
-                    return (
-                        <ContextAccordion
-                            key={r.id}
-                            disabled={r.disabled}
-                            expanded={expanded}
-                            onToggle={(e: SyntheticEvent<Element, Event>, expanded: boolean) => {
-                                if (expanded) {
-                                    setContext(r);
-                                    dispatch(stopLiveData(`${direction}_accordion`));
-                                } else {
-                                    setContext(null);
-                                    dispatch(startLiveData(`${direction}_accordion`));
-                                }
-                            }}
-                            title={
-                                <ContextTitle
-                                    reversed={direction === "input"}
-                                    context={r}
-                                    locked={index >= availableContexts.length}
-                                    showNodes={transitionNodesIds.filter((t) => t.id).length > 1}
-                                />
-                            }
-                        >
-                            {direction === "output" ? <>{r.error}</> : null}
-                            <ContextTree context={r} oldFields={inputVariables} />
-                        </ContextAccordion>
-                    );
-                })}
+                ).map((r, index) => (
+                    <ContextAccordion
+                        key={r.id}
+                        value={r}
+                        direction={direction}
+                        disabled={r.disabled}
+                        expanded={selectedContextCache?.id === r.id && !r.disabled}
+                        onToggle={setContext}
+                        locked={index >= availableContexts.length}
+                        showNodes={showNodes}
+                    >
+                        {direction === "output" ? <>{r.error}</> : null}
+                        <ContextTree context={r} oldFields={inputVariables} />
+                    </ContextAccordion>
+                ))}
             </Box>
 
             {hiddenAvailableContexts > 0 ? (

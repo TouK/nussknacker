@@ -1,10 +1,10 @@
 import { Insights } from "@mui/icons-material";
-import React, { useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useIntervalWhen } from "rooks";
 
-import { startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
+import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ThunkAction, ThunkDispatch } from "../../../../actions/reduxTypes";
 import {
     getIsLiveDataWorking,
@@ -20,7 +20,7 @@ function adjustProgress(percent: number) {
     return Math.min(percent * 3 + 15, 100);
 }
 
-export function LiveDataButton(props: ToolbarButtonProps) {
+export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch<ThunkDispatch>();
     const { t } = useTranslation();
 
@@ -49,32 +49,34 @@ export function LiveDataButton(props: ToolbarButtonProps) {
     }, [working]);
 
     return (
-        <ToolbarButton
-            isLoading={readyForLiveData && !disabled && nextIn > 5000 && percent > 0}
-            loadingVariant={"determinate"}
-            loadingProgress={percent}
-            isActive={working}
-            name={t("panels.actions.live-data.name", "live data")}
-            title={t("panels.actions.live-data.button.title", "live data")}
-            icon={
-                <Insights
-                    sx={{
-                        width: "auto",
-                        padding: "5%",
-                    }}
-                />
-            }
-            disabled={!readyForLiveData || disabled}
-            onClick={() => dispatch(toggleLiveData())}
-            type={type}
-        />
+        <>
+            <ToolbarButton
+                isLoading={readyForLiveData && !disabled && nextIn > 5000 && percent > 0}
+                loadingVariant={"determinate"}
+                loadingProgress={percent}
+                isActive={working}
+                name={t("panels.actions.live-data.name", "live data")}
+                title={t("panels.actions.live-data.button.title", "live data")}
+                icon={
+                    <Insights
+                        sx={{
+                            width: "auto",
+                            padding: "5%",
+                        }}
+                    />
+                }
+                disabled={!readyForLiveData || disabled}
+                onClick={() => dispatch(toggleLiveData())}
+                type={type}
+            />
+        </>
     );
-}
+});
 
 function toggleLiveData(): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
-        const action = getIsLiveDataWorking(state) ? stopLiveData("button") : startLiveData(null, true);
+        const action = getIsLiveDataWorking(state) ? stopLiveData(Initiator.button) : startLiveData(null, true);
         dispatch(action);
     };
 }

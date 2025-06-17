@@ -9,6 +9,12 @@ type Source = SourceWithParametersTest["sourceId"];
 export type SourceTestData = SourceWithParametersTest["parameterExpressions"];
 export type TestData = Record<Source, SourceTestData>;
 
+export enum VisibleDataType {
+    live = "live",
+    test = "test",
+    counts = "counts",
+}
+
 export type GraphState = {
     scenarioLoading: boolean;
     scenario?: Scenario;
@@ -18,7 +24,7 @@ export type GraphState = {
     testType?: string;
     performedTestType?: PerformedTestType;
     testFormParameters?: TestFormParameters[];
-    visibleDataType?: "live" | "test" | "counts" | null;
+    visibleDataType?: VisibleDataType | null;
     testResults: TestResultsDto;
     testResultsLoading?: boolean;
     testData?: TestData;
