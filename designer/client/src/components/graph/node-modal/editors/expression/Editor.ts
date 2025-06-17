@@ -10,7 +10,7 @@ import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import type { Formatter } from "./Formatter";
-import JsonEditor from "./JsonEditor";
+import { JsonEditor } from "./JsonEditor";
 import { JsonTemplateEditor } from "./JsonTemplateEditor";
 import { SpelEditor } from "./SpelEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";

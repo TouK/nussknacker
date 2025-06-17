@@ -294,7 +294,7 @@ object SchemalessKafkaJsonTypeTests {
          |[
          |  {
          |    "typ": "ExpressionParserCompilationError",
-         |    "message": "Failed to parse expression: expected } or , got 'a0.00}...'",
+         |    "message": "expected } or , got 'a0.00}...'",
          |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
          |    "fieldName": "Input",
          |    "errorType": "SaveAllowed",

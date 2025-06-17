@@ -7,7 +7,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewSupported, NoLiveDataPreviewSupport}
 import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -109,7 +109,8 @@ class ScenarioLiveDataApiHttpServiceSpec
           NodeTransition("start", Some("variable")) -> LiveDataForNodeTransition(
             samples = List(
               LiveDataSample(
-                contextId = "",
+                contextId =
+                  ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
                 timestamp = mockedInstant,
                 variables = Map(
                   "v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson)
@@ -123,7 +124,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         invocationResults = Map(
           NodeId("start") -> List(
             InvocationResult(
-              "mocked-context-id",
+              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
               mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
@@ -133,7 +134,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         externalInvocationResults = Map(
           NodeId("start") -> List(
             InvocationResult(
-              "mocked-context-id",
+              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
               mockedInstant,
               "var",
               Json.obj("pretty" -> 1.asJson)
@@ -143,7 +144,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         exceptions = Map(
           NodeId("start") -> List(
             ExceptionResult(
-              "mocked-context-id",
+              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
               mockedInstant,
               Map("var1" -> Json.obj("pretty" -> "abc".asJson)),
               new Exception("Something bad happened")
@@ -178,7 +179,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |        "destinationNodeId": "variable",
              |        "results": [
              |          {
-             |            "id": "",
+             |            "cid": {
+             |              "nid": "source",
+             |              "tid": 0,
+             |              "idx": 0,
+             |              "path": [
+             |              ]
+             |            },
+             |            "id": "mocked-scenario-id-source-0-0",
              |            "timestamp": "2025-05-27T21:48:20Z",
              |            "variables": {
              |              "v1": {
@@ -195,7 +203,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "invocationResults": {
              |      "start": [
              |        {
-             |          "contextId": "mocked-context-id",
+             |          "cid": {
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "path": [
+             |            ]
+             |          },
+             |          "contextId": "mocked-scenario-id-source-0-0",
              |          "timestamp": "2025-05-27T21:48:20Z",
              |          "name": "var",
              |          "value": {
@@ -207,7 +222,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "externalInvocationResults": {
              |      "start": [
              |        {
-             |          "contextId": "mocked-context-id",
+             |          "cid": {
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "path": [
+             |            ]
+             |          },
+             |          "contextId": "mocked-scenario-id-source-0-0",
              |          "timestamp": "2025-05-27T21:48:20Z",
              |          "name": "var",
              |          "value": {
@@ -219,7 +241,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |    "exceptions": [
              |      {
              |        "context": {
-             |          "id": "mocked-context-id",
+             |          "cid": {
+             |            "nid": "source",
+             |            "tid": 0,
+             |            "idx": 0,
+             |            "path": [
+             |            ]
+             |          },
+             |          "id": "mocked-scenario-id-source-0-0",
              |          "timestamp": "2025-05-27T21:48:20Z",
              |          "variables": {
              |            "var1": {
@@ -235,7 +264,14 @@ class ScenarioLiveDataApiHttpServiceSpec
              |      "start": [
              |        {
              |          "context": {
-             |            "id": "mocked-context-id",
+             |            "cid": {
+             |              "nid": "source",
+             |              "tid": 0,
+             |              "idx": 0,
+             |              "path": [
+             |              ]
+             |            },
+             |            "id": "mocked-scenario-id-source-0-0",
              |            "timestamp": "2025-05-27T21:48:20Z",
              |            "variables": {
              |              "var1": {

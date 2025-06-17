@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.DeserializationError
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
-import pl.touk.nussknacker.ui.process.test.TestInfoProvider.TestDataPreparationError
 
 object TestingApiErrorMessages {
 
@@ -13,46 +13,48 @@ object TestingApiErrorMessages {
         cause match {
           case DeserializationError.TooManyCharacters(length, limit) =>
             TestingApiErrorMessages.passedTestData.tooManyCharacters(length, limit)
-          case DeserializationError.TooManySamples(size, limit) =>
-            TestingApiErrorMessages.passedTestData.tooManySamples(size, limit)
+          case DeserializationError.TooManyRecords(size, limit) =>
+            TestingApiErrorMessages.passedTestData.tooManyRecords(size, limit)
           case DeserializationError.NoRecords =>
             TestingApiErrorMessages.passedTestData.empty
-          case DeserializationError.RecordParsingError(rawTestRecord, recordIndex) =>
-            TestingApiErrorMessages.problemInSample(recordIndex).parsingError(rawTestRecord)
+          case DeserializationError.RecordParsingError(serializedTestRecord, recordIndex) =>
+            TestingApiErrorMessages.problemInSample(recordIndex).parsingError(serializedTestRecord)
         }
-      case PerformTestError.TestDataPreparationError(cause) =>
-        cause match {
-          case TestDataPreparationError.MissingSource(sourceId, recordIndex) =>
-            TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
-          case TestDataPreparationError.MultipleSourcesRequired(recordIndex) =>
-            TestingApiErrorMessages.problemInSample(recordIndex).multipleSourcesRequired
-        }
-      case PerformTestError.TestResultsSizeExceeded(approxSizeInBytes, maxBytes) =>
+      case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
+        TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
+      case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
         TestingApiErrorMessages.testResultsSizeExceeded(approxSizeInBytes, maxBytes)
     }
   }
 
-  object fetchedLiveData {
-    def requestedTooManySamplesToFetch(maxSamples: Int) =
-      s"Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
+  object liveDataFetching {
+    def requestedTooManyRecordsToFetch(maxRecordsCount: Int) =
+      s"Too many records requested. The maximum number of records permitted is $maxRecordsCount. Contact the system administrator to increase this limit."
 
     val noLiveDataAvailable =
       "No live test data available. Please ensure that the storage used by source contains at least one data sample"
 
-    val noSourcesWithTestDataGeneration = "No sources with test data generation available"
+    val noSourcesWithLiveDataFetching = "No sources with live data fetching support available"
 
     def tooManyCharacters(length: Int, limit: Int) =
-      s"Too many characters were found in the generated test data ($length). Please try to decrease the number of requested samples or configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
+      s"Too many characters were found in the fetched data ($length). The maximum numbers of permitted characters is $limit. Contact the system administrator to increase this limit."
   }
 
   object passedTestData {
     val empty = "Test data is empty"
 
     def tooManyCharacters(length: Int, limit: Int) =
-      s"Test data has too many characters ($length). Please configure 'testDataSettings.testDataMaxLength' to increase the limit ($limit)"
+      s"Test data has too many characters ($length). The maximum numbers of permitted characters is $limit. Contact the system administrator to increase this limit."
 
-    def tooManySamples(count: Int, maxSamples: Int) =
-      s"Test data has too many samples ($count). Please configure 'testDataSettings.maxSamplesCount' to increase the limit ($maxSamples)"
+    def tooManyRecords(count: Int, limit: Int) =
+      s"Test data has too many records ($count). The maximum number of records permitted is $limit. Contact the system administrator to increase this limit."
+  }
+
+  object testingWithCustomInput {
+
+    def notSupportedBySource(sourceId: NodeId) =
+      s"Testing with custom input is not supported by source '$sourceId'"
+
   }
 
   case class problemInSample(private val recordIndex: Int) {
@@ -69,14 +71,11 @@ object TestingApiErrorMessages {
     def missingSource(sourceId: String): String =
       messageForSample(s"source with id '$sourceId' doesn't exist in the scenario")
 
-    def multipleSourcesRequired: String =
-      messageForSample("scenario has multiple sources, but got sample with unspecified source id")
-
     private def messageForSample(message: String) =
       s"Problem in sample ${recordIndex + 1} detected: $message"
   }
 
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =
-    s"Test results size exceeded (approximate size in bytes: $approxSizeInBytes). Please configure 'testDataSettings.resultsMaxBytes' to increase the limit ($maxBytes)"
+    s"Test results size exceeded (approximate size is $approxSizeInBytes B). The maximum permitted size is $maxBytes B. Contact the system administrator to increase this limit."
 
 }

@@ -184,13 +184,15 @@ description: Stay informed with detailed changelogs covering new features, impro
       ```hocon
       liveDataPreview {              // optional config section, functionality disabled by default
         enabled: true                // disabled by default
-        maxNumberOfSamples: 20       // max number of latest live data samples that will be returned
+        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned
         throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated
       }
       ```
 * [#7982](https://github.com/TouK/nussknacker/pull/7982) Mock expression added to enrichers (except decision-table) which can be used to hardcode enricher output in tests without calling external services.
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
+* [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
+* [#7137](https://github.com/TouK/nussknacker/pull/7137) Updated Flink dependency to 1.20.1
 
 ## 1.18
 

@@ -1,140 +1,271 @@
 package pl.touk.nussknacker.ui.process.test
 
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList, ValidatedNel}
+import cats.effect.SyncIO
+import cats.effect.kernel.Resource
+import cats.implicits.toTraverseOps
 import cats.syntax.either._
+import cats.syntax.list._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
+import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
+import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.restmodel.definition.UISourceParameters
+import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
-import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{FetchLiveDataError, PerformTestError, SourceTestError}
-import pl.touk.nussknacker.ui.process.test.TestInfoProvider.{
-  ParametersDefinitionError,
-  SourceTestDataGenerationError,
-  TestingCapabilitiesError
-}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import shapeless.syntax.typeable.typeableOps
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioTestService(
-    testInfoProvider: TestInfoProvider,
-    processResolver: UIProcessResolver,
     testDataSettings: TestDataSettings,
-    preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
+    modelData: ModelData,
+    engineScenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies],
+    processResolver: UIProcessResolver,
+    // These dependencies are needed for scenario testing execution
     processCounter: ProcessCounter,
     testExecutorService: ScenarioTestExecutorService,
 ) extends LazyLogging {
+
+  private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
+
+  private val preliminaryScenarioRecordsSerDe = new PreliminaryScenarioRecordsSerDe(
+    serializedContentMaxLength = testDataSettings.testDataMaxLength,
+    maxRecordsCount = testDataSettings.maxSamplesCount
+  )
 
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
   ): Either[TestingCapabilitiesError, TestingCapabilities] = {
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-    testInfoProvider.getTestingCapabilities(processVersion, canonical)
+    val jobData   = JobData(canonical.metaData, processVersion)
+    val sources   = commonModelDataInfoProvider.collectAllSources(canonical)
+
+    withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
+      for {
+        sourceNel <- NonEmptyList
+          .fromList(sources)
+          .toRight[TestingCapabilitiesError](TestingCapabilitiesError.NoSourcesError)
+
+        compiledSourcesNel <- sourceNel
+          .map(compileSource)
+          .sequence
+          .leftMap(TestingCapabilitiesError.SourcesCompilationError)
+          .toEither
+
+        capabilitiesForEachSource = compiledSourcesNel.map { case (_, source) =>
+          getTestingCapabilitiesForCompiledSource(source)
+        }
+      } yield {
+        capabilitiesForEachSource.reduceLeft((tc1, tc2) =>
+          TestingCapabilities(
+            canBeTested = tc1.canBeTested || tc2.canBeTested,
+            canFetchLiveData = tc1.canFetchLiveData || tc2.canFetchLiveData,
+            canTestWithForm =
+              tc1.canTestWithForm && tc2.canTestWithForm // TODO change to "or" after adding support for multiple sources
+          )
+        )
+      }
+    }
+  }
+
+  private def getTestingCapabilitiesForCompiledSource(compiledSource: Source): TestingCapabilities = {
+    TestingCapabilities(
+      canBeTested = compiledSource.isInstanceOf[SourceTestSupport[_]],
+      canFetchLiveData = compiledSource.isInstanceOf[TestDataGenerator],
+      canTestWithForm = compiledSource.isInstanceOf[TestWithParametersSupport[_]]
+    )
   }
 
   def validateAndGetTestParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
-  )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[String, List[Parameter]]] = {
+  )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[NodeId, List[Parameter]]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    testInfoProvider
-      .getTestParameters(processVersion, canonical)
+    val jobData   = JobData(canonical.metaData, processVersion)
+    val sources   = commonModelDataInfoProvider.collectAllSources(canonical)
+    withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
+      for {
+        compiledSourcesById <-
+          sources.map(compileSource).sequence.leftMap(ParametersDefinitionError.SourcesCompilationError).toEither
+
+        parametersBySourceId <- compiledSourcesById.map { case (sourceId, compiledSource) =>
+          getTestParametersWithDefaults(sourceId, compiledSource).map(sourceId -> _)
+        }.sequence
+      } yield parametersBySourceId.toMap
+    }
   }
 
-  def testUISourceParametersDefinition(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-  ): Either[ParametersDefinitionError, List[UISourceParameters]] = {
-    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
-    testInfoProvider
-      .getTestParameters(processVersion, canonical)
-      .map(_.map { case (id, params) =>
-        UISourceParameters(id, params.map(DefinitionsService.createUIParameter))
-      }.toList)
+  private def getTestParametersWithDefaults(
+      sourceId: NodeId,
+      compiledSource: Source,
+  ): Either[ParametersDefinitionError, List[Parameter]] = {
+    getTestParameters(sourceId, compiledSource)
+      .map(StandardParameterEnrichment.enrichParameterDefinitions(_, Map.empty))
+  }
+
+  // Currently we rely on the assumption that client always call scenarioTesting / {scenarioName} / parameters endpoint
+  // only when scenarioTesting / {scenarioName} / capabilities endpoint returns canTestWithForm = true. Because of that
+  // for non happy-path cases we throw NotSupportedBySource and causes error notification on FE
+  // TODO: This assumption is wrong. Every endpoint should be treated separately.
+  private def getTestParameters(
+      sourceId: NodeId,
+      compiledSource: Source,
+  ): Either[ParametersDefinitionError, List[Parameter]] = {
+    compiledSource match {
+      case s: TestWithParametersSupport[_] => Right(s.testParametersDefinition)
+      case _ => Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(sourceId))
+    }
   }
 
   def fetchSourcesLiveData(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-      maxNumberOfSamples: Int
+      maxNumberOfRecords: Int
   )(
       implicit user: LoggedUser
-  ): Either[FetchLiveDataError, RawScenarioTestData] = {
+  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    val jobData   = JobData(canonical.metaData, processVersion)
+    withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
+      for {
+        _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
 
-    for {
-      _ <- validateSampleSize(maxNumberOfSamples)(FetchLiveDataError.TooManySamplesRequestedError)
-      testData <- testInfoProvider
-        .fetchSourcesLiveData(processVersion, canonical, maxNumberOfSamples)
-        .leftMap(FetchLiveDataError.SourcesLiveDataFetchingError)
-      rawTestData <- preliminaryScenarioTestDataSerDe
-        .serialize(testData)
-        .leftMap(FetchLiveDataError.ScenarioTestDataSerializationError)
-    } yield rawTestData
+        compiledSources <- commonModelDataInfoProvider
+          .collectAllSources(canonical)
+          .map(compileSource)
+          .sequence
+          .leftMap[FetchLiveDataError](FetchLiveDataError.SourcesCompilationError)
+          .toEither
+
+        fetchedLiveDataForSources = compiledSources
+          .flatMap { case (sourceId, compiledSource) =>
+            fetchLiveData(sourceId, compiledSource, maxNumberOfRecords)
+          }
+
+        fetchedLiveDataForSourcesNel <- fetchedLiveDataForSources.toNel.toRight(
+          FetchLiveDataError.LiveDataFetchingNotSupportedError
+        )
+
+        mergedLivedData = ListUtil
+          .mergeLists(fetchedLiveDataForSourcesNel.toList, maxNumberOfRecords)
+          .sortBy(_.timestamp.getOrElse(Long.MaxValue))
+
+        fetchedLiveDataNel <- NonEmptyList
+          .fromList(mergedLivedData)
+          .toRight(
+            FetchLiveDataError.NoLiveDataAvailableError
+          )
+        serializedLiveData <- preliminaryScenarioRecordsSerDe
+          .serialize(PreliminaryScenarioRecords(fetchedLiveDataNel))
+          .leftMap(FetchLiveDataError.ScenarioRecordsSerializationError)
+      } yield serializedLiveData
+    }
   }
 
   def fetchSourceLiveData(
       metaData: MetaData,
       sourceNodeData: SourceNodeData,
-      size: Int
-  ): Either[SourceTestError, RawScenarioTestData] = {
-    for {
-      _ <- validateSampleSize(size)(SourceTestError.TooManySamplesRequestedError)
-      result <- testInfoProvider
-        .fetchSourceLiveData(metaData, sourceNodeData, size)
-        .leftMap {
-          case SourceTestDataGenerationError.SourceCompilationError(nodeId, errors) =>
-            SourceTestError.SourceCompilationError(nodeId.id, errors.toList.map(_.toString))
-          case SourceTestDataGenerationError.UnsupportedSourceError(nodeId) =>
-            SourceTestError.UnsupportedSourcePreviewError(nodeId.id)
-          case SourceTestDataGenerationError.NoLiveDataAvailable =>
-            SourceTestError.NoLiveDataFetchedError
-        }
-      rawTestData <- preliminaryScenarioTestDataSerDe
-        .serialize(result)
-        .leftMap(serializationError => SourceTestError.ScenarioTestDataSerializationError(serializationError))
-    } yield rawTestData
+      maxNumberOfRecords: Int
+  ): Either[FetchLiveDataError, SerializedScenarioRecordsContent] = {
+    val jobData = JobData(metaData, ProcessVersion.empty)
+    val nodeId  = NodeId(sourceNodeData.id)
+
+    withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
+      for {
+        _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
+
+        compiledSourceWithId <- compileSource(sourceNodeData)
+          .leftMap(errors => FetchLiveDataError.SourcesCompilationError(errors))
+          .toEither
+
+        (_, compiledSource) = compiledSourceWithId
+
+        fetchedLiveData <- fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
+          .toRight(FetchLiveDataError.LiveDataFetchingNotSupportedError)
+
+        fetchedLiveDataNel <- NonEmptyList
+          .fromList(fetchedLiveData)
+          .toRight(
+            FetchLiveDataError.NoLiveDataAvailableError
+          )
+
+        serializedLiveData <- preliminaryScenarioRecordsSerDe
+          .serialize(PreliminaryScenarioRecords(fetchedLiveDataNel))
+          .leftMap(serializationError => FetchLiveDataError.ScenarioRecordsSerializationError(serializationError))
+      } yield serializedLiveData
+    }
+  }
+
+  private def compileSource(
+      source: SourceNodeData
+  )(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): ValidatedNel[(NodeId, NonEmptyList[ProcessCompilationError]), (NodeId, Source)] = {
+    val nodeId = NodeId(source.id)
+    commonModelDataInfoProvider
+      .compileSourceNode(source)
+      .leftMap { compilationErrors =>
+        NonEmptyList.one(nodeId -> compilationErrors)
+      }
+      .map(nodeId -> _)
+  }
+
+  private def fetchLiveData(
+      sourceId: NodeId,
+      compiledSource: Source,
+      maxNumberOfRecords: Int
+  ): Option[List[PreliminaryScenarioRecord]] = {
+    compiledSource.cast[TestDataGenerator].map { testDataGenerator =>
+      val sourceTestRecords = modelData.withModelClassloaderAsContextClassLoader {
+        testDataGenerator.generateTestData(maxNumberOfRecords).testRecords
+      }
+      sourceTestRecords
+        .map(testRecord => PreliminaryScenarioRecord(sourceId.id, testRecord.json, testRecord.timestamp))
+    }
   }
 
   def performTest(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
-      rawTestData: RawScenarioTestData,
+      serializedTestRecordsContent: SerializedScenarioRecordsContent,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     (for {
-      preliminaryScenarioTestData <- EitherT.fromEither[Future](
-        preliminaryScenarioTestDataSerDe
-          .deserialize(rawTestData)
+      preliminaryScenarioTestRecords <- EitherT.fromEither[Future](
+        preliminaryScenarioRecordsSerDe
+          .deserialize(serializedTestRecordsContent)
           .leftMap[PerformTestError](PerformTestError.DeserializationError)
       )
+
       canonical = toCanonicalProcess(
         scenarioGraph,
         processVersion,
         isFragment
       )
-      scenarioTestData <- EitherT.fromEither[Future](
-        testInfoProvider
-          .prepareTestData(preliminaryScenarioTestData, canonical)
-          .leftMap[PerformTestError](PerformTestError.TestDataPreparationError)
-      )
+
+      scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
+
       testResults <- EitherT.liftF(
         testExecutorService.testProcess(
           processVersion,
@@ -142,8 +273,27 @@ class ScenarioTestService(
           scenarioTestData,
         )
       )
+
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
     } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
+  }
+
+  private[test] def prepareTestData(
+      preliminaryScenarioRecords: PreliminaryScenarioRecords,
+      scenario: CanonicalProcess
+  ): Either[PerformTestError, ScenarioTestData] = {
+    import cats.implicits._
+
+    val allScenarioSourceIds = commonModelDataInfoProvider.collectAllSources(scenario).map(_.id).toSet
+    preliminaryScenarioRecords.records.zipWithIndex
+      .map {
+        case (PreliminaryScenarioRecord(sourceId, record, timestamp), _) if allScenarioSourceIds.contains(sourceId) =>
+          Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
+        case (PreliminaryScenarioRecord(sourceId, _, _), recordIdx) =>
+          Left(PerformTestError.MissingSourceError(NodeId(sourceId), recordIdx))
+      }
+      .sequence
+      .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
   }
 
   def performTest(
@@ -175,12 +325,16 @@ class ScenarioTestService(
     ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))
   }
 
-  def validateSampleSize[E](size: Int)(tooManySamplesError: Int => E): Either[E, Unit] = {
-    Either.cond(
-      size <= testDataSettings.maxSamplesCount,
-      (),
-      tooManySamplesError(testDataSettings.maxSamplesCount)
-    )
+  def validateRecordsCount[E](size: Int)(tooManyRecordsError: Int => E): Either[E, Unit] = {
+    testDataSettings.maxSamplesCount
+      .map { definedMaxSampleSize =>
+        Either.cond(
+          size <= definedMaxSampleSize,
+          (),
+          tooManyRecordsError(definedMaxSampleSize)
+        )
+      }
+      .getOrElse(Right(()))
   }
 
   private def toCanonicalProcess(
@@ -196,12 +350,16 @@ class ScenarioTestService(
   }
 
   private def validateTestResultsAreNotTooBig(testResults: TestResults[_]): Either[PerformTestError, Unit] = {
-    val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
-    Either.cond(
-      testDataResultApproxByteSize <= testDataSettings.resultsMaxBytes,
-      (),
-      PerformTestError.TestResultsSizeExceeded(testDataResultApproxByteSize, testDataSettings.resultsMaxBytes)
-    )
+    testDataSettings.resultsMaxBytes
+      .map { definedResultsMaxBytes =>
+        val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
+        Either.cond(
+          testDataResultApproxByteSize <= definedResultsMaxBytes,
+          (),
+          PerformTestError.TestResultsSizeExceededError(testDataResultApproxByteSize, definedResultsMaxBytes)
+        )
+      }
+      .getOrElse(Right(()))
   }
 
   private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults[_])(
@@ -216,37 +374,66 @@ class ScenarioTestService(
     processCounter.computeCounts(canonical, isFragment, counts.get)
   }
 
+  private def withScenarioCompilationDependencies[T](jobData: JobData)(
+      f: ScenarioCompilationDependencies => T
+  ) =
+    engineScenarioCompilationDependenciesResource
+      .use { engineScenarioCompilationDependencies =>
+        SyncIO {
+          f(new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies))
+        }
+      }
+      .unsafeRunSync()
+
 }
 
 object ScenarioTestService {
+
+  sealed trait TestingCapabilitiesError
+
+  object TestingCapabilitiesError {
+    case object NoSourcesError extends TestingCapabilitiesError
+
+    case class SourcesCompilationError(
+        nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
+    ) extends TestingCapabilitiesError
+
+  }
+
+  sealed trait ParametersDefinitionError
+
+  object ParametersDefinitionError {
+
+    final case class SourcesCompilationError(
+        nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
+    ) extends ParametersDefinitionError
+
+    final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends ParametersDefinitionError
+
+  }
+
   sealed trait FetchLiveDataError
 
   object FetchLiveDataError {
-    final case class SourcesLiveDataFetchingError(cause: TestInfoProvider.SourcesLiveDataFetchingError)
-        extends FetchLiveDataError
-    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
-        extends FetchLiveDataError
-    final case class TooManySamplesRequestedError(maxSamples: Int) extends FetchLiveDataError
-  }
 
-  sealed trait SourceTestError
+    final case class SourcesCompilationError(
+        nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
+    ) extends FetchLiveDataError
 
-  object SourceTestError {
-    final case class SourceCompilationError(nodeId: String, errors: List[String]) extends SourceTestError
-    final case class UnsupportedSourcePreviewError(nodeId: String)                extends SourceTestError
-    final case object NoLiveDataFetchedError                                      extends SourceTestError
-    final case class ScenarioTestDataSerializationError(cause: PreliminaryScenarioTestDataSerDe.SerializationError)
-        extends SourceTestError
-    final case class TooManySamplesRequestedError(maxSamples: Int) extends SourceTestError
+    final case object NoLiveDataAvailableError          extends FetchLiveDataError
+    final case object LiveDataFetchingNotSupportedError extends FetchLiveDataError
+    final case class ScenarioRecordsSerializationError(cause: PreliminaryScenarioRecordsSerDe.SerializationError)
+        extends FetchLiveDataError
+    final case class TooManyRecordsRequestedError(maxRecordsCount: Int) extends FetchLiveDataError
   }
 
   sealed trait PerformTestError
 
   object PerformTestError {
-    final case class DeserializationError(cause: PreliminaryScenarioTestDataSerDe.DeserializationError)
+    final case class DeserializationError(cause: PreliminaryScenarioRecordsSerDe.DeserializationError)
         extends PerformTestError
-    final case class TestDataPreparationError(cause: TestInfoProvider.TestDataPreparationError) extends PerformTestError
-    final case class TestResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long)           extends PerformTestError
+    final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
+    final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
   }
 
 }

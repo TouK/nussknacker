@@ -6,28 +6,25 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataSettings
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.{DeserializationError, SerializationError}
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.{DeserializationError, SerializationError}
 
-class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
+class PreliminaryScenarioRecordsSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
-  private val maxSamplesCount   = 5
   private val testDataMaxLength = 1000
+  private val maxSamplesCount   = 5
 
-  private val serDe = new PreliminaryScenarioTestDataSerDe(
-    TestDataSettings(
-      maxSamplesCount = maxSamplesCount,
-      testDataMaxLength = testDataMaxLength,
-      resultsMaxBytes = Long.MaxValue
-    )
+  private val serDe = new PreliminaryScenarioRecordsSerDe(
+    serializedContentMaxLength = Some(testDataMaxLength),
+    maxRecordsCount = Some(maxSamplesCount),
   )
 
-  private val testDataRecord = PreliminaryScenarioTestRecord(
+  private val testDataRecord = PreliminaryScenarioRecord(
     "source1",
     Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)),
     timestamp = Some(24L)
   )
 
-  private val scenarioTestData = PreliminaryScenarioTestData(
+  private val scenarioTestData = PreliminaryScenarioRecords(
     NonEmptyList.one(testDataRecord)
   )
 
@@ -41,7 +38,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   }
 
   test("should fail trying to serialize too much bytes") {
-    val testData = PreliminaryScenarioTestData(
+    val testData = PreliminaryScenarioRecords(
       NonEmptyList.fromListUnsafe(
         List.fill(30)(testDataRecord)
       )
@@ -53,7 +50,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   }
 
   test("should deserialize scenario test data") {
-    val result = serDe.deserialize(RawScenarioTestData(rawStringScenarioTestData)).rightValue
+    val result = serDe.deserialize(SerializedScenarioRecordsContent(rawStringScenarioTestData)).rightValue
 
     result shouldBe scenarioTestData
   }
@@ -61,7 +58,9 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   test("should fail trying to parse too many characters") {
     val longString = "a long JSON string...".repeat(10)
     val tooBigRawScenarioTestData =
-      RawScenarioTestData(List.fill(10)(s"""{"sourceId":"source1","record":"$longString"}""").mkString("\n"))
+      SerializedScenarioRecordsContent(
+        List.fill(10)(s"""{"sourceId":"source1","record":"$longString"}""").mkString("\n")
+      )
 
     val error = serDe.deserialize(tooBigRawScenarioTestData).leftValue
 
@@ -70,11 +69,13 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
   test("should fail trying to parse too many records") {
     val tooBigRawScenarioTestData =
-      RawScenarioTestData(List.fill(10)("""{"sourceId":"source1","record":"a JSON string"}""").mkString("\n"))
+      SerializedScenarioRecordsContent(
+        List.fill(10)("""{"sourceId":"source1","record":"a JSON string"}""").mkString("\n")
+      )
 
     val error = serDe.deserialize(tooBigRawScenarioTestData).leftValue
 
-    error shouldBe DeserializationError.TooManySamples(size = 10, limit = maxSamplesCount)
+    error shouldBe DeserializationError.TooManyRecords(size = 10, limit = maxSamplesCount)
   }
 
   test("should fail trying to parse invalid record") {
@@ -83,7 +84,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
       s"""$rawStringScenarioTestData
         |$invalidRecord""".stripMargin
 
-    val error = serDe.deserialize(RawScenarioTestData(scenarioTestData)).leftValue
+    val error = serDe.deserialize(SerializedScenarioRecordsContent(scenarioTestData)).leftValue
 
     error shouldBe DeserializationError.RecordParsingError(invalidRecord, recordIndex = 1)
   }

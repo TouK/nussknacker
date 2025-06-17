@@ -97,7 +97,11 @@ final case class EmptyDeploymentCommentSettingsError(message: String) extends Ex
 
 @JsonCodec final case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
-@JsonCodec final case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Long)
+@JsonCodec final case class TestDataSettings(
+    maxSamplesCount: Option[Int],
+    testDataMaxLength: Option[Int],
+    resultsMaxBytes: Option[Long]
+)
 
 object TopTabType extends Enumeration {
 

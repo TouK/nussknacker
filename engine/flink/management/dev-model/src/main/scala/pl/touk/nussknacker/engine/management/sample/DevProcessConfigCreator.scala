@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.sample
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
+import com.github.ghik.silencer.silent
 import io.circe.{Decoder, Encoder}
 import io.circe.parser.decode
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
@@ -71,6 +72,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def all[T](value: T): WithCategories[T] =
     WithCategories(value, "Category1", "Category2", "DevelopmentTests", "Periodic")
 
+  @silent("deprecated")
   override def sinkFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
@@ -104,7 +106,10 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           )(TypeInformation.of(classOf[SampleProduct]))
         )
       ),
-      "kafka-transaction"       -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource)),
+      "kafka-transaction" -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource(true))),
+      "kafka-transaction-no-test-timestamp-assigner" -> all(
+        SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource(false))
+      ),
       "boundedSource"           -> all(BoundedSource),
       "boundedSourceWithOffset" -> all(BoundedSourceWithOffset),
       "oneSource"               -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
@@ -225,6 +230,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       modelConfig: ModelConfig
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> categories(NoneReturnTypeTransformer),
+    "timestampReader"           -> categories(CustomTimestampExtractingTransformationCopy),
     "stateful"                  -> categories(StatefulTransformer),
     "customFilter"              -> categories(CustomFilter),
     "constantStateTransformer" -> categories(

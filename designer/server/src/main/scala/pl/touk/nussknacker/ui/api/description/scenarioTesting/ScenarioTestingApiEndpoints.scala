@@ -40,9 +40,9 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.
   NotFoundTestingError
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError.{
-  ScenarioGraphValidationError,
+  SourcesCompilationError,
   TooManyCharactersGenerated,
-  TooManySamplesRequested
+  TooManyRecordsRequested
 }
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError.{
   NoLiveDataAvailable,
@@ -154,7 +154,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                     List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
-                        "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
+                        "Bad expression type, expected: Boolean, found: Long(5)",
                         "There is problem with expression in field Some(condition) - it could not be parsed.",
                         Some("condition"),
                         NodeValidationErrorType.SaveAllowed,
@@ -173,7 +173,12 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
   }
 
   def scenarioTestEndpoint: SecuredEndpoint[
-    (ProcessName, PerformTestRequest, Option[SkipResultsPerNode], Option[SkipResultsPerTransition]),
+    (
+        ProcessName,
+        PerformTestRequest,
+        Option[SkipResultsPerNode],
+        Option[SkipResultsPerTransition],
+    ),
     TestingError,
     ResultsWithCountsDto,
     Any
@@ -258,12 +263,12 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
               value = TooManyCharactersGenerated(length = 5000, limit = 2000)
             ),
             Example.of(
-              summary = Some("Too many samples requested"),
-              value = TooManySamplesRequested(maxSamples = 1000)
+              summary = Some("Too many records requested"),
+              value = TooManyRecordsRequested(maxRecordsCount = 1000)
             ),
             Example.of(
               summary = Some("Scenario validation error"),
-              value = ScenarioGraphValidationError(
+              value = SourcesCompilationError(
                 ValidationErrors(
                   invalidNodes = Map(
                     "source" -> List(

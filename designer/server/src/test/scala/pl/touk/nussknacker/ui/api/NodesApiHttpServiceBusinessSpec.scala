@@ -238,7 +238,7 @@ class NodesApiHttpServiceBusinessSpec
              |  "validationErrors": [
              |    {
              |      "typ": "ExpressionParserCompilationError",
-             |      "message": "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
+             |      "message": "Bad expression type, expected: Boolean, found: String",
              |      "description": "There is problem with expression in field Some($$expression) - it could not be parsed.",
              |      "fieldName": "$$expression",
              |      "errorType": "SaveAllowed",
@@ -389,7 +389,7 @@ class NodesApiHttpServiceBusinessSpec
              |  "validationErrors": [
              |    {
              |      "typ": "ExpressionParserCompilationError",
-             |      "message": "Failed to parse expression: Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
+             |      "message": "Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
              |      "description": "There is problem with expression in field Some(Value) - it could not be parsed.",
              |      "fieldName": "Value",
              |      "errorType": "SaveAllowed",
@@ -815,7 +815,7 @@ class NodesApiHttpServiceBusinessSpec
         .equalsJsonBody(s"""{
              |  "validationErrors": [ {
              |    "typ": "ExpressionParserCompilationError",
-             |    "message": "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
+             |    "message": "Bad expression type, expected: Boolean, found: Long(5)",
              |    "description": "There is problem with expression in field Some(condition) - it could not be parsed.",
              |    "fieldName": "condition",
              |    "errorType": "SaveAllowed",
@@ -949,7 +949,7 @@ class NodesApiHttpServiceBusinessSpec
              |    }
              |  },
              |  "nodeData": {
-             |    "id": "${sourceTestingScenarioSourceId}",
+             |    "id": "$sourceTestingScenarioSourceId",
              |    "type": "Source",
              |    "ref": {
              |      "typ": "genericSourceWithCustomVariables",

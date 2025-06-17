@@ -8,6 +8,7 @@ import io.circe
 import io.circe._
 import io.circe.derivation.deriveCodec
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -216,22 +217,22 @@ object Dtos {
     sealed trait BadRequestTestingError extends TestingError
 
     object BadRequestTestingError {
-      final case class TooManyCharactersGenerated(length: Int, limit: Int)    extends BadRequestTestingError
-      final case class TooManySamplesRequested(maxSamples: Int)               extends BadRequestTestingError
-      final case class ScenarioGraphValidationError(errors: ValidationErrors) extends BadRequestTestingError
-      final case class UnsupportedOperation(message: String)                  extends BadRequestTestingError
-      final case class ErrorResult(message: String)                           extends BadRequestTestingError
+      final case class TooManyCharactersGenerated(length: Int, limit: Int)     extends BadRequestTestingError
+      final case class TooManyRecordsRequested(maxRecordsCount: Int)           extends BadRequestTestingError
+      final case class SourcesCompilationError(errors: ValidationErrors)       extends BadRequestTestingError
+      final case class TestingWithCustomInputNotSupportedError(nodeId: NodeId) extends BadRequestTestingError
+      final case class ErrorResult(message: String)                            extends BadRequestTestingError
 
       implicit val badRequestTestingErrorCodec: Codec[String, BadRequestTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestTestingError] {
-          case ScenarioGraphValidationError(errors) =>
+          case SourcesCompilationError(errors) =>
             errors.toHumanReadableMessage
           case TooManyCharactersGenerated(length, limit) =>
-            TestingApiErrorMessages.fetchedLiveData.tooManyCharacters(length, limit)
-          case TooManySamplesRequested(maxSamples) =>
-            TestingApiErrorMessages.fetchedLiveData.requestedTooManySamplesToFetch(maxSamples)
-          case UnsupportedOperation(message) =>
-            message
+            TestingApiErrorMessages.liveDataFetching.tooManyCharacters(length, limit)
+          case TooManyRecordsRequested(maxRecordsCount) =>
+            TestingApiErrorMessages.liveDataFetching.requestedTooManyRecordsToFetch(maxRecordsCount)
+          case TestingWithCustomInputNotSupportedError(sourceId) =>
+            TestingApiErrorMessages.testingWithCustomInput.notSupportedBySource(sourceId)
           case ErrorResult(message) =>
             message
         }
@@ -249,9 +250,9 @@ object Dtos {
       implicit val notFoundTestingErrorCodec: Codec[String, NotFoundTestingError, CodecFormat.TextPlain] = {
         BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NotFoundTestingError] {
           case NoScenario(scenarioName) => s"No scenario ${scenarioName.value} found"
-          case NoLiveDataAvailable      => TestingApiErrorMessages.fetchedLiveData.noLiveDataAvailable
+          case NoLiveDataAvailable      => TestingApiErrorMessages.liveDataFetching.noLiveDataAvailable
           case NoSourcesWithLiveDataFetchingSupport =>
-            TestingApiErrorMessages.fetchedLiveData.noSourcesWithTestDataGeneration
+            TestingApiErrorMessages.liveDataFetching.noSourcesWithLiveDataFetching
         }
       }
 

@@ -8,16 +8,18 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{ContextId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
 
 import java.util.UUID
 import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
+import scala.language.implicitConversions
 
 class FlinkDeploymentManagerScenarioTestingSpec
     extends AnyFlatSpec
@@ -64,11 +66,44 @@ class FlinkDeploymentManagerScenarioTestingSpec
     val process = SampleProcess.prepareProcess(processName)
 
     whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
-      r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) } shouldBe Map(
-        "startProcess" -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "nightFilter"  -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
-        "endSend"      -> List((s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+      r.nodeResults.map(r => (r._1, r._2.map(r => (r.id, r.variables)))) shouldBe Map(
+        "startProcess" -> List(
+          (
+            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
+            Map("input" -> variable("terefere"))
+          )
+        ),
+        "nightFilter" -> List(
+          (
+            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
+            Map("input" -> variable("terefere"))
+          )
+        ),
+        "endSend" -> List(
+          (
+            ContextId(scenarioId = processName.value, originatingNodeId = "startProcess", taskId = 0, index = 0),
+            Map("input" -> variable("terefere"))
+          )
+        )
       )
+    }
+  }
+
+  // this checks that we are setting timestamps in test if source timestampAssigner method returns None
+  it should "set timestamps even if no timestamp assigner is provided by source" in {
+    val processName    = ProcessName(UUID.randomUUID().toString)
+    val processVersion = ProcessVersion.empty.copy(processName = processName)
+
+    val process = SampleProcess.prepareProcessWithNoTimestampAssignerForTest(processName)
+
+    whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
+      val variablesInNodes = r.nodeResults.map { case (key, values) => (key, values.map(v => (v.id, v.variables))) }
+      val timestampAsJson =
+        variablesInNodes("endSend")(0)._2("eventTimeTimestampCopy")
+      val timestampReadAsObject = timestampAsJson.asObject
+      val firstValue            = timestampReadAsObject.get.values.toList(0)
+      val timestamp             = firstValue.asNumber.get.toLong.get
+      timestamp shouldBe System.currentTimeMillis() +- 1000 * 60
     }
   }
 

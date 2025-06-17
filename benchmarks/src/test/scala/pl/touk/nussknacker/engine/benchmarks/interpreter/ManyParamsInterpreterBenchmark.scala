@@ -38,7 +38,7 @@ class ManyParamsInterpreterBenchmark {
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSyncService(): AnyRef = {
     import SynchronousExecutionContextAndIORuntime.syncIoRuntime
-    interpreterIOSyncService(Context("")).unsafeRunSync()
+    interpreterIOSyncService(Context.dummy).unsafeRunSync()
   }
 
   @Benchmark
@@ -46,7 +46,7 @@ class ManyParamsInterpreterBenchmark {
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsyncService(): AnyRef = {
     import SynchronousExecutionContextAndIORuntime.syncIoRuntime
-    interpreterIOAsyncService(Context("")).unsafeRunSync()
+    interpreterIOAsyncService(Context.dummy).unsafeRunSync()
   }
 
   private def prepareIoInterpreter(serviceExecutionContext: ServiceExecutionContext) = {

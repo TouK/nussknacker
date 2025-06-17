@@ -175,8 +175,6 @@ protected trait ProcessCompilerBase {
   private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.PotentiallyStartPart] = {
-    implicit val nodeId: NodeId = new NodeId(source.id)
-
     source match {
       case SourcePart(splittednode.SourceNode(sourceData: SourceNodeData, _), _, _) =>
         compileSourcePart(source, sourceData)
@@ -219,8 +217,7 @@ protected trait ProcessCompilerBase {
       part: SourcePart,
       sourceData: SourceNodeData
   )(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.SourcePart] = {
     import scenarioCompilationDependencies._
     val NodeCompilationResult(typingInfo, parameters, initialCtx, compiledSource, _) =
@@ -250,8 +247,7 @@ protected trait ProcessCompilerBase {
       node: EndingNode[Sink],
       ctx: ValidationContext
   )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[part.SinkPart] = {
     val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
@@ -265,8 +261,7 @@ protected trait ProcessCompilerBase {
       data: CustomNodeData,
       ctx: ValidationContext
   )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
       nodeCompiler.compileCustomNodeObject(data, Left(ctx), ending = true)
@@ -295,8 +290,7 @@ protected trait ProcessCompilerBase {
       data: CustomNodeData,
       ctx: Either[ValidationContext, BranchEndContexts]
   )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     import scenarioCompilationDependencies._
 

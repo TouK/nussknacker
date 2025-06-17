@@ -134,7 +134,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val compiledNode =
       compilerData.subPartCompiler.compile(source.node, source.validationContext).result.value
 
-    val inputContext                = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
+    val inputContext                = Context.dummy.withVariable(VariableConstants.InputVariableName, inputValue)
     implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
     Validated
       .fromEither(

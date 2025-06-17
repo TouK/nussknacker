@@ -5,7 +5,6 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ProcessName, ServiceExecutionContext}
 
 import java.util.concurrent._
-import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 //TODO: this is somewhat experimental - how should we behave??

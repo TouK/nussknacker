@@ -60,6 +60,7 @@ export default function BranchParameters({
 
                                     const contextId = ProcessUtils.findContextForBranch(node, branchId);
                                     const variables = findAvailableVariables(contextId, param);
+                                    const fieldName = `${paramName} for branch ${branchId}`;
 
                                     if (!paramValue) {
                                         return null;
@@ -68,7 +69,7 @@ export default function BranchParameters({
                                     return (
                                         <ExpressionField
                                             key={`${paramName}-${branchId}`}
-                                            fieldName={`${paramName} for branch ${branchId}`}
+                                            fieldName={fieldName}
                                             fieldLabel={branchId}
                                             exprPath={expressionPath}
                                             isEditMode={isEditMode}
@@ -80,7 +81,7 @@ export default function BranchParameters({
                                             testResultsToShow={testResultsToShow}
                                             renderFieldLabel={(paramName) => <FormLabel>{paramName}</FormLabel>}
                                             variableTypes={variables}
-                                            fieldErrors={getValidationErrorsForField(errors, paramName)}
+                                            fieldErrors={getValidationErrorsForField(errors, fieldName)}
                                         />
                                     );
                                 })}

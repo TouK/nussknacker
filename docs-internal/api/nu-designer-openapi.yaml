@@ -930,7 +930,7 @@ paths:
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      filter: Failed to parse expression: Bad expression
+                      filter: Bad expression
                     Global errors: Empty scenario
                     Properties errors: Configured property parallelism is missing
                 Example3:
@@ -1607,8 +1607,7 @@ paths:
                       params: []
                     validationErrors:
                     - typ: ExpressionParserCompilationError
-                      message: 'Failed to parse expression: Bad expression type, expected:
-                        Boolean, found: String'
+                      message: 'Bad expression type, expected: Boolean, found: String'
                       description: There is problem with expression in field Some($expression)
                         - it could not be parsed.
                       fieldName: $expression
@@ -1908,8 +1907,7 @@ paths:
                   value:
                     validationErrors:
                     - typ: ExpressionParserCompilationError
-                      message: 'Failed to parse expression: Bad expression type, expected:
-                        Boolean, found: Long(5)'
+                      message: 'Bad expression type, expected: Boolean, found: Long(5)'
                       description: There is problem with expression in field Some(condition)
                         - it could not be parsed.
                       fieldName: condition
@@ -2280,15 +2278,15 @@ paths:
                   summary: Invalid node type
                   value: 'Expected Filter but got: Source'
                 Example3:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (100)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 100. Contact the system administrator to increase
+                    this limit.
                 Example4:
                   summary: Too many characters generated
-                  value: Too many characters were found in the generated test data
-                    (1000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (500)
+                  value: Too many characters were found in the fetched data (1000).
+                    The maximum numbers of permitted characters is 500. Contact the
+                    system administrator to increase this limit.
         '401':
           description: ''
           content:
@@ -4771,20 +4769,20 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -4824,7 +4822,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -4894,20 +4892,20 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -4947,7 +4945,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -5007,20 +5005,20 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -5060,7 +5058,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -5143,8 +5141,7 @@ paths:
                   value:
                     validationErrors:
                     - typ: ExpressionParserCompilationError
-                      message: 'Failed to parse expression: Bad expression type, expected:
-                        Boolean, found: Long(5)'
+                      message: 'Bad expression type, expected: Boolean, found: Long(5)'
                       description: There is problem with expression in field Some(condition)
                         - it could not be parsed.
                       fieldName: condition
@@ -5159,20 +5156,20 @@ paths:
               examples:
                 Example0:
                   summary: Too many characters were generated
-                  value: Too many characters were found in the generated test data
-                    (5000). Please try to decrease the number of requested samples
-                    or configure 'testDataSettings.testDataMaxLength' to increase
-                    the limit (2000)
+                  value: Too many characters were found in the fetched data (5000).
+                    The maximum numbers of permitted characters is 2000. Contact the
+                    system administrator to increase this limit.
                 Example1:
-                  summary: Too many samples requested
-                  value: Too many samples requested. Please configure 'testDataSettings.maxSamplesCount'
-                    to increase the limit (1000)
+                  summary: Too many records requested
+                  value: Too many records requested. The maximum number of records
+                    permitted is 1000. Contact the system administrator to increase
+                    this limit.
                 Example2:
                   summary: Scenario validation error
                   value: |-
                     Scenario is invalid.
                     Node errors:
-                      source: Failed to parse expression: Bad expression
+                      source: Bad expression
         '401':
           description: ''
           content:
@@ -5212,7 +5209,7 @@ paths:
                     used by source contains at least one data sample
                 Example2:
                   summary: No sources with test data generation available
-                  value: No sources with test data generation available
+                  value: No sources with live data fetching support available
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -5555,6 +5552,37 @@ components:
           format: date-time
         createdBy:
           type: string
+    ContextIdDto:
+      title: ContextIdDto
+      type: object
+      required:
+      - nid
+      - tid
+      - idx
+      properties:
+        nid:
+          type: string
+        tid:
+          type: integer
+          format: int64
+        idx:
+          type: integer
+          format: int64
+        path:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContextIdPathPartDto'
+    ContextIdPathPartDto:
+      title: ContextIdPathPartDto
+      type: object
+      required:
+      - n
+      - t
+      properties:
+        n:
+          type: string
+        t:
+          type: string
     CoordinatesBasedTextRange:
       title: CoordinatesBasedTextRange
       type: object
@@ -5747,7 +5775,7 @@ components:
       - value
       properties:
         contextId:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time
@@ -5808,7 +5836,7 @@ components:
       - value
       properties:
         contextId:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time
@@ -7095,7 +7123,7 @@ components:
       - variables
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/ContextIdDto'
         timestamp:
           type: string
           format: date-time
@@ -7541,6 +7569,7 @@ components:
       - CLICK_COLLAPSE_PANEL
       - CLICK_SCENARIO_ACTIVITIES_ADD_ATTACHMENT
       - CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT
+      - CLICK_LIVE_DATA
       - CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT_TO_ACTIVITY
       - CLICK_SCENARIO_ACTIVITIES_COMPARE
       - CLICK_SCENARIO_ACTIVITIES_DOWNLOAD_ATTACHMENT

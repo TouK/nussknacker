@@ -1,9 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.definition.UISourceParameters
+import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
@@ -14,26 +17,22 @@ import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.{ScenarioTest
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.{
   CapabilityStatus,
   NotAvailableReason,
-  ScenarioTestCapabilities,
-  TestCapabilityDetails
+  ScenarioTestCapabilities
 }
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.{
-  EmptyDetails,
-  TestWithParametersDetails
-}
+import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Capabilities.TestCapabilityDetails.TestWithParametersDetails
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.BadRequestTestingError._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.TestingError.NotFoundTestingError._
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
+import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioTestDataSerDe.SerializationError
+import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.SerializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService.FetchLiveDataError
-import pl.touk.nussknacker.ui.process.test.TestInfoProvider.{
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.{
+  FetchLiveDataError,
   ParametersDefinitionError,
-  SourcesLiveDataFetchingError,
   TestingCapabilitiesError
 }
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -81,7 +80,7 @@ class ScenarioTestingApiHttpService(
               case Left(TestingCapabilitiesError.NoSourcesError) =>
                 val noSourcesStatus = CapabilityStatus.NotAvailable(NotAvailableReason.NoSources)
                 ScenarioTestCapabilities(noSourcesStatus, noSourcesStatus, noSourcesStatus)
-              case Left(TestingCapabilitiesError.SourceCompilationError) =>
+              case Left(TestingCapabilitiesError.SourcesCompilationError(_)) =>
                 val invalidScenarioStatus = CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
                 ScenarioTestCapabilities(invalidScenarioStatus, invalidScenarioStatus, invalidScenarioStatus)
               case Right(capabilities) =>
@@ -102,15 +101,19 @@ class ScenarioTestingApiHttpService(
                       case (true, false) =>
                         CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
                       case (true, true) =>
-                        scenarioTestService.testUISourceParametersDefinition(
+                        scenarioTestService.validateAndGetTestParametersDefinition(
                           scenarioGraph,
                           scenarioWithDetails.processVersionUnsafe,
+                          scenarioWithDetails.isFragment
                         ) match {
                           case Right(parameters) =>
-                            CapabilityStatus.Available(TestWithParametersDetails(parameters))
-                          case Left(ParametersDefinitionError.NotSupportedBySource(_)) =>
+                            val uiParameters = parameters.map { case (id, params) =>
+                              UISourceParameters(id.id, params.map(DefinitionsService.createUIParameter))
+                            }.toList
+                            CapabilityStatus.Available(TestWithParametersDetails(uiParameters))
+                          case Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.NotSupportedBySources)
-                          case Left(ParametersDefinitionError.SourceValidationError(_)) =>
+                          case Left(ParametersDefinitionError.SourcesCompilationError(_)) =>
                             CapabilityStatus.NotAvailable(NotAvailableReason.InvalidScenario)
                         }
                     }
@@ -158,14 +161,14 @@ class ScenarioTestingApiHttpService(
                 ) match {
                   case Left(error) =>
                     EitherT.fromEither[Future](Left(toDto(error)))
-                  case Right(rawScenarioTestData) =>
+                  case Right(serializedLiveData) =>
                     EitherT(
                       scenarioTestService
                         .performTest(
                           request.scenarioGraph,
                           scenarioWithDetails.processVersionUnsafe,
                           scenarioWithDetails.isFragment,
-                          rawScenarioTestData
+                          serializedLiveData
                         )
                     ).leftMap[TestingError] { error =>
                       ErrorResult(TestingApiErrorMessages.from(error))
@@ -175,7 +178,7 @@ class ScenarioTestingApiHttpService(
           } yield ResultsWithCountsDto.from(
             resultWithCounts,
             skipResultsPerNode.getOrElse(SkipResultsPerNode(false)),
-            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false))
+            skipResultsPerTransition.getOrElse(SkipResultsPerTransition(false)),
           )
         }
       }
@@ -204,14 +207,14 @@ class ScenarioTestingApiHttpService(
                         scenarioWithDetails.isFragment
                       )
                       .left
-                      .map[TestingError](error => BadRequestTestingError.UnsupportedOperation(error.message))
+                      .map(toDto)
                   )
                   .map(validator.validate(sourceParameters, _)(metaData))
               case ScenarioTestData.WithLiveData(numberOfSamples) =>
                 EitherT
                   .fromEither[Future](
-                    scenarioTestService.validateSampleSize[TestingError](numberOfSamples)(
-                      BadRequestTestingError.TooManySamplesRequested(_)
+                    scenarioTestService.validateRecordsCount[TestingError](numberOfSamples)(
+                      BadRequestTestingError.TooManyRecordsRequested(_)
                     )
                   )
                   .map((_: Unit) => List.empty)
@@ -241,8 +244,8 @@ class ScenarioTestingApiHttpService(
                 case Left(error) =>
                   logger.error(s"Error during generation of test data: $error")
                   Future(Left(toDto(error)))
-                case Right(rawScenarioTestData) =>
-                  Future(Right(rawScenarioTestData.content))
+                case Right(serializedLiveData) =>
+                  Future(Right(serializedLiveData.content))
               }
             )
           } yield parametersDefinition
@@ -250,36 +253,54 @@ class ScenarioTestingApiHttpService(
       }
   }
 
+  private def toDto(error: ParametersDefinitionError): TestingError = {
+    error match {
+      case ParametersDefinitionError.SourcesCompilationError(nodesWithErrors) =>
+        SourcesCompilationError(
+          ValidationErrors(
+            invalidNodes = collectInvalidNodes(nodesWithErrors),
+            processPropertiesErrors = List.empty,
+            globalErrors = List.empty
+          )
+        )
+      case ParametersDefinitionError.TestingWithCustomInputNotSupportedError(nodeId) =>
+        BadRequestTestingError.TestingWithCustomInputNotSupportedError(nodeId)
+    }
+  }
+
   private def toDto(error: FetchLiveDataError): TestingError = {
     error match {
-      case FetchLiveDataError.SourcesLiveDataFetchingError(cause) =>
-        cause match {
-          case SourcesLiveDataFetchingError.ScenarioGraphValidationError(nodesWithErrors) =>
-            ScenarioGraphValidationError(
-              ValidationErrors(
-                invalidNodes = nodesWithErrors
-                  .map { case (nodeId, errors) =>
-                    (nodeId.id, errors.map(PrettyValidationErrors.formatErrorMessage).toList)
-                  }
-                  .toList
-                  .toMap,
-                processPropertiesErrors = List.empty,
-                globalErrors = List.empty
-              )
-            )
-          case SourcesLiveDataFetchingError.NoLiveDataAvailable =>
-            NoLiveDataAvailable
-          case SourcesLiveDataFetchingError.NoSourcesWithLiveDataFetchingSupport =>
-            NoSourcesWithLiveDataFetchingSupport
-        }
-      case FetchLiveDataError.ScenarioTestDataSerializationError(cause) =>
+      case FetchLiveDataError.SourcesCompilationError(nodesWithErrors) =>
+        SourcesCompilationError(
+          ValidationErrors(
+            invalidNodes = collectInvalidNodes(nodesWithErrors),
+            processPropertiesErrors = List.empty,
+            globalErrors = List.empty
+          )
+        )
+      case FetchLiveDataError.NoLiveDataAvailableError =>
+        NoLiveDataAvailable
+      case FetchLiveDataError.LiveDataFetchingNotSupportedError =>
+        NoSourcesWithLiveDataFetchingSupport
+      case FetchLiveDataError.ScenarioRecordsSerializationError(cause) =>
         cause match {
           case SerializationError.TooManyCharactersGenerated(length, limit) =>
             TooManyCharactersGenerated(length, limit)
         }
-      case FetchLiveDataError.TooManySamplesRequestedError(maxSamples) =>
-        TooManySamplesRequested(maxSamples)
+      case FetchLiveDataError.TooManyRecordsRequestedError(maxRecordsCount) =>
+        TooManyRecordsRequested(maxRecordsCount)
     }
+  }
+
+  private def collectInvalidNodes(
+      nodesWithErrors: NonEmptyList[(NodeId, NonEmptyList[ProcessCompilationError])]
+  ): Map[String, List[ValidationResults.NodeValidationError]] = {
+    nodesWithErrors
+      .map { case (nodeId, errors) =>
+        (nodeId.id, errors.map(PrettyValidationErrors.formatErrorMessage).toList)
+      }
+      .toList
+      .toMap
   }
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(

@@ -33,14 +33,16 @@ export function useErrorHighlights(fieldErrors: FieldError[], columns: DataColum
 
     const cellErrors = useMemo(
         () =>
-            fieldErrors.flatMap((e) =>
-                e.details?.cellErrors
-                    ?.map(({ rowIndex, ...e }) => ({
-                        ...e,
-                        x: columns.findIndex((c) => c.name === e.columnName),
-                        y: rowIndex,
-                    }))
-                    .filter((e) => e?.x >= 0),
+            fieldErrors.flatMap(
+                (e) =>
+                    e.details.type === "TabularDataDefinitionParserErrorDetails" &&
+                    e.details?.cellErrors
+                        ?.map(({ rowIndex, ...e }) => ({
+                            ...e,
+                            x: columns.findIndex((c) => c.name === e.columnName),
+                            y: rowIndex,
+                        }))
+                        .filter((e) => e?.x >= 0),
             ),
         [columns, fieldErrors],
     );

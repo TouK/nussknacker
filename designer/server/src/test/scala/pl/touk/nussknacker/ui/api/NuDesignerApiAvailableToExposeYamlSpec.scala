@@ -150,7 +150,8 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "KEYBOARD_UNDO_SCENARIO_CHANGES",
           "KEYBOARD_DELETE_NODES",
           "KEYBOARD_DESELECT_ALL_NODES",
-          "KEYBOARD_FOCUS_SEARCH_NODE_FIELD"
+          "KEYBOARD_FOCUS_SEARCH_NODE_FIELD",
+          "CLICK_LIVE_DATA",
         )
       ),
     )

@@ -179,7 +179,7 @@ trait ScenarioTestingApiHttpServiceSpec
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
         .equalsPlainBody(
-          "Too many samples requested. Please configure 'testDataSettings.maxSamplesCount' to increase the limit (20)"
+          "Too many records requested. The maximum number of records permitted is 20. Contact the system administrator to increase this limit."
         )
     }
   }
@@ -449,7 +449,9 @@ trait ScenarioTestingApiHttpServiceSpec
         .Then()
         .statusCode(400)
         .equalsPlainBody(
-          "Requested test parameters from source [missing source] that is not valid. Errors: MissingSourceFactory(missing source,missing source)"
+          """Scenario is invalid.
+            |Node errors:
+            |  missing source: Missing source: missing source""".stripMargin
         )
     }
   }

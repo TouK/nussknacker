@@ -139,6 +139,8 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-custom-hidevariables",
     "streaming-custom-lastvariablewithfilter",
     "streaming-custom-nonereturntypetransformer",
+    "streaming-custom-timestampreader",
+    "streaming-source-kafka-transaction-no-test-timestamp-assigner",
     "streaming-custom-sendcommunication",
     "streaming-custom-simpletypescustomnode",
     "streaming-custom-stateful",

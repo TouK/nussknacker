@@ -21,7 +21,7 @@ class ParameterEvaluator(
   private val compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private val runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
 
-  private val contextToUse: Context = Context("objectCreate")
+  private val contextToUse: Context = Context.dummy
 
   def evaluateParameterToRawValue(
       context: Context,

@@ -26,18 +26,20 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.ui.process.test.TestInfoProvider.TestDataPreparationError.{
-  MissingSource,
-  MultipleSourcesRequired
-}
-import pl.touk.nussknacker.ui.process.test.TestInfoProvider.TestingCapabilitiesError._
+import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-class ModelDataTestInfoProviderSpec
+class ScenarioTestServiceSpec
     extends AnyFunSuite
     with Matchers
     with OptionValues
     with EitherValuesDetailedMessage
     with TableDrivenPropertyChecks {
+
+  private implicit val user: LoggedUser = TestFactory.adminUser()
 
   private val modelData = LocalModelData(
     ConfigFactory.empty(),
@@ -91,19 +93,31 @@ class ModelDataTestInfoProviderSpec
 
   }
 
-  private val testInfoProvider: TestInfoProvider =
-    new ModelDataTestInfoProvider(modelData, Resource.pure(EngineScenarioCompilationDependencies.empty))
+  private val scenarioTestService: ScenarioTestService =
+    new ScenarioTestService(
+      TestDataSettings(
+        maxSamplesCount = None,
+        testDataMaxLength = None,
+        resultsMaxBytes = None
+      ),
+      modelData,
+      Resource.pure(EngineScenarioCompilationDependencies.empty),
+      TestFactory.processResolver(),
+      // These dependencies are needed for test execution which is not tested here
+      processCounter = null,
+      testExecutorService = null,
+    )
 
   test("should detect capabilities for empty scenario") {
     val scenario     = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Left(NoSourcesError)
   }
 
   test("should detect capabilities: can parse and generate test data") {
     val scenario     = createScenarioWithSingleSource()
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
       TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
@@ -112,7 +126,7 @@ class ModelDataTestInfoProviderSpec
 
   test("should detect capabilities: can only parse test data") {
     val scenario     = createScenarioWithSingleSource("genericSourceNoGenerate")
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
       TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = false)
@@ -121,7 +135,7 @@ class ModelDataTestInfoProviderSpec
 
   test("should detect capabilities: does not support testing") {
     val scenario     = createScenarioWithSingleSource("genericSourceNoSupport")
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
       TestingCapabilities(canBeTested = false, canFetchLiveData = false, canTestWithForm = false)
@@ -130,7 +144,7 @@ class ModelDataTestInfoProviderSpec
 
   test("should detect capabilities: can create test view") {
     val scenario     = createScenarioWithSingleSource("genericSourceWithTestParameters")
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
       TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = true)
@@ -139,7 +153,7 @@ class ModelDataTestInfoProviderSpec
 
   test("should detect capabilities for fragment with valid input") {
     val scenario     = createSimpleFragment()
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
     capabilities shouldBe Right(
       TestingCapabilities(canBeTested = false, canFetchLiveData = false, canTestWithForm = true)
     )
@@ -157,7 +171,7 @@ class ModelDataTestInfoProviderSpec
           .emptySink("end", "dead-end"),
       )
 
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
       TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
@@ -176,70 +190,100 @@ class ModelDataTestInfoProviderSpec
           .emptySink("end", "dead-end"),
       )
 
-    val capabilities = testInfoProvider.getTestingCapabilities(processVersionFor(scenario), scenario)
+    val capabilities = scenarioTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
       TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = false)
     )
   }
 
-  test("should generate data for a scenario with single source") {
-    val scenario         = createScenarioWithSingleSource()
-    val scenarioTestData = testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 3).rightValue
+  test("should fetch live data for a scenario with single source") {
+    val scenario = createScenarioWithSingleSource()
+    val liveData = PreliminaryScenarioRecordsSerDe.noLimit
+      .deserialize(
+        scenarioTestService
+          .fetchSourcesLiveData(scenario.toScenarioGraph, processVersionFor(scenario), isFragment = false, 3)
+          .rightValue
+      )
+      .rightValue
 
-    scenarioTestData.testRecords.toList shouldBe List(
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
+    liveData.records.toList shouldBe List(
+      PreliminaryScenarioRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
+      PreliminaryScenarioRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
+      PreliminaryScenarioRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
     )
   }
 
-  test("should generate data for a scenario with single source not providing record timestamps") {
+  test("should fetch live data for a scenario with single source not providing record timestamps") {
     val scenario = createScenarioWithSingleSource("sourceEmptyTimestamp")
-    val scenarioTestData =
-      testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 3).rightValue
+    val liveData =
+      PreliminaryScenarioRecordsSerDe.noLimit
+        .deserialize(
+          scenarioTestService
+            .fetchSourcesLiveData(scenario.toScenarioGraph, processVersionFor(scenario), isFragment = false, 3)
+            .rightValue
+        )
+        .rightValue
 
-    scenarioTestData.testRecords.toList shouldBe List(
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = None),
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 2"), timestamp = None),
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 3"), timestamp = None),
+    liveData.records.toList shouldBe List(
+      PreliminaryScenarioRecord("source1", Json.fromString("record 1"), timestamp = None),
+      PreliminaryScenarioRecord("source1", Json.fromString("record 2"), timestamp = None),
+      PreliminaryScenarioRecord("source1", Json.fromString("record 3"), timestamp = None),
     )
   }
 
-  test("should generate empty data for a source not supporting generating") {
+  test("should return error for a source not supporting live data fetching") {
     val scenario = createScenarioWithSingleSource("genericSourceNoGenerate")
-    val scenarioTestData =
-      testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 3)
+    val liveData =
+      scenarioTestService.fetchSourcesLiveData(
+        scenario.toScenarioGraph,
+        processVersionFor(scenario),
+        isFragment = false,
+        maxNumberOfRecords = 3
+      )
 
-    scenarioTestData shouldBe Symbol("left")
+    liveData shouldBe Symbol("left")
   }
 
-  test("should generate empty data for empty scenario") {
+  test("should return error for empty scenario") {
     val emptyScenario = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
 
-    val scenarioTestData = testInfoProvider.fetchSourcesLiveData(processVersionFor(emptyScenario), emptyScenario, 3)
+    val liveData =
+      scenarioTestService.fetchSourcesLiveData(
+        emptyScenario.toScenarioGraph,
+        processVersionFor(emptyScenario),
+        isFragment = false,
+        3
+      )
 
-    scenarioTestData shouldBe Symbol("left")
+    liveData shouldBe Symbol("left")
   }
 
-  test("should generate data for a scenario with multiple source") {
-    val scenario         = createScenarioWithMultipleSources()
-    val scenarioTestData = testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, 8).rightValue
+  test("should fetch live data for a scenario with multiple sources") {
+    val scenario = createScenarioWithMultipleSources()
+    val liveData =
+      PreliminaryScenarioRecordsSerDe.noLimit
+        .deserialize(
+          scenarioTestService
+            .fetchSourcesLiveData(scenario.toScenarioGraph, processVersionFor(scenario), isFragment = false, 8)
+            .rightValue
+        )
+        .rightValue
 
-    scenarioTestData.testRecords.toList shouldBe List(
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
-      PreliminaryScenarioTestRecord("source3", Json.fromString("record 1"), timestamp = Some(1)),
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
-      PreliminaryScenarioTestRecord("source3", Json.fromString("record 2"), timestamp = Some(2)),
-      PreliminaryScenarioTestRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
-      PreliminaryScenarioTestRecord("source2", Json.fromString("record 1"), timestamp = None),
-      PreliminaryScenarioTestRecord("source2", Json.fromString("record 2"), timestamp = None),
-      PreliminaryScenarioTestRecord("source2", Json.fromString("record 3"), timestamp = None),
+    liveData.records.toList shouldBe List(
+      PreliminaryScenarioRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
+      PreliminaryScenarioRecord("source3", Json.fromString("record 1"), timestamp = Some(1)),
+      PreliminaryScenarioRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
+      PreliminaryScenarioRecord("source3", Json.fromString("record 2"), timestamp = Some(2)),
+      PreliminaryScenarioRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
+      PreliminaryScenarioRecord("source2", Json.fromString("record 1"), timestamp = None),
+      PreliminaryScenarioRecord("source2", Json.fromString("record 2"), timestamp = None),
+      PreliminaryScenarioRecord("source2", Json.fromString("record 3"), timestamp = None),
     )
   }
 
-  test("should generate requested number of records") {
-    val testingData = Table(
+  test("should fetch requested number of records") {
+    val testCases = Table(
       ("scenario", "size", "expected size", "expected size by source id"),
       (createScenarioWithSingleSource(), 0, None, Map.empty),
       (createScenarioWithMultipleSources(), 0, None, Map.empty),
@@ -252,56 +296,72 @@ class ModelDataTestInfoProviderSpec
       (createScenarioWithMultipleSources(), 6, Some(6), Map("source1" -> 2, "source2" -> 2, "source3" -> 2)),
     )
 
-    forEvery(testingData) { (scenario, size, expectedSize, expectedSizeBySourceId) =>
-      val testData = testInfoProvider.fetchSourcesLiveData(processVersionFor(scenario), scenario, size)
+    forEvery(testCases) { (scenario, size, expectedSize, expectedSizeBySourceId) =>
+      val liveData =
+        scenarioTestService
+          .fetchSourcesLiveData(
+            scenario.toScenarioGraph,
+            processVersionFor(scenario),
+            isFragment = false,
+            size
+          )
+          .map(PreliminaryScenarioRecordsSerDe.noLimit.deserialize(_).rightValue)
 
-      testData.map(_.testRecords.size).toOption shouldBe expectedSize
+      liveData.map(_.records.size).toOption shouldBe expectedSize
       if (expectedSizeBySourceId.nonEmpty) {
-        val testRecords =
-          testData.rightValue.testRecords.asInstanceOf[NonEmptyList[PreliminaryScenarioTestRecord]]
+        val testRecords = liveData.rightValue.records
         testRecords.toList.groupBy(_.sourceId).mapValuesNow(_.size) shouldBe expectedSizeBySourceId
       }
     }
   }
 
-  test("should prepare scenario test data from standard test records") {
-    val preliminaryTestData = PreliminaryScenarioTestData(
+  test("should prepare scenario test data from records") {
+    val scenarioRecords = PreliminaryScenarioRecords(
       NonEmptyList(
-        PreliminaryScenarioTestRecord(sourceId = "source1", record = Json.fromString("record 1"), timestamp = Some(1)),
-        PreliminaryScenarioTestRecord(sourceId = "source2", record = Json.fromString("record 2")) :: Nil,
+        PreliminaryScenarioRecord(sourceId = "source1", record = Json.fromString("record 1"), timestamp = Some(1)),
+        PreliminaryScenarioRecord(
+          sourceId = "source2",
+          record = Json.fromString("record 2"),
+          timestamp = None
+        ) :: Nil,
       )
     )
 
     val scenarioTestData =
-      testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithMultipleSources()).rightValue
+      scenarioTestService.prepareTestData(scenarioRecords, createScenarioWithMultipleSources()).rightValue
 
-    scenarioTestData.testRecords shouldBe List(
+    scenarioTestData.inputRecords shouldBe List(
       ScenarioTestJsonRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
       ScenarioTestJsonRecord("source2", Json.fromString("record 2")),
     )
   }
 
   test("should reject record assigned to non-existing source") {
-    val preliminaryTestData = PreliminaryScenarioTestData(
+    val scenarioRecords = PreliminaryScenarioRecords(
       NonEmptyList(
-        PreliminaryScenarioTestRecord(sourceId = "source1", record = Json.fromString("record 1")),
-        PreliminaryScenarioTestRecord(sourceId = "non-existing source", record = Json.fromString("record 2")) ::
-          PreliminaryScenarioTestRecord(
+        PreliminaryScenarioRecord(sourceId = "source1", record = Json.fromString("record 1"), timestamp = None),
+        PreliminaryScenarioRecord(
+          sourceId = "non-existing source",
+          record = Json.fromString("record 2"),
+          timestamp = None
+        ) ::
+          PreliminaryScenarioRecord(
             sourceId = "non-existing source 2",
-            record = Json.fromString("record 3")
+            record = Json.fromString("record 3"),
+            timestamp = None
           ) :: Nil
       )
     )
-    val testingData = Table(
+    val testCases = Table(
       "scenario",
       createScenarioWithSingleSource(),
       createScenarioWithMultipleSources(),
     )
 
-    forEvery(testingData) { scenario =>
-      val error = testInfoProvider.prepareTestData(preliminaryTestData, scenario).leftValue
+    forEvery(testCases) { scenario =>
+      val error = scenarioTestService.prepareTestData(scenarioRecords, scenario).leftValue
 
-      error shouldBe MissingSource(NodeId("non-existing source"), 1)
+      error shouldBe MissingSourceError(NodeId("non-existing source"), 1)
     }
   }
 
@@ -317,10 +377,18 @@ class ModelDataTestInfoProviderSpec
       .emptySink("end", "dead-end")
     val processVersion = processVersionFor(scenarioWithMultipleParams)
 
-    val result = testInfoProvider.getTestParameters(processVersion, scenarioWithMultipleParams).toOption.get
+    val result = scenarioTestService
+      .validateAndGetTestParametersDefinition(
+        scenarioWithMultipleParams.toScenarioGraph,
+        processVersion,
+        isFragment = false
+      )
+      .rightValue
 
-    result.getOrElse("source1", Nil).find(_.name.value == "par1").value.defaultValue shouldBe Some("".spelTemplate)
-    result.getOrElse("source1", Nil).find(_.name.value == "a").value.defaultValue shouldBe Some("0".spel)
+    result.getOrElse(NodeId("source1"), Nil).find(_.name.value == "par1").value.defaultValue shouldBe Some(
+      "".spelTemplate
+    )
+    result.getOrElse(NodeId("source1"), Nil).find(_.name.value == "a").value.defaultValue shouldBe Some("0".spel)
   }
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {

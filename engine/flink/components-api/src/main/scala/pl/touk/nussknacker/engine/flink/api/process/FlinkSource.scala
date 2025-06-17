@@ -44,6 +44,7 @@ trait FlinkSourceTestSupport[Raw] extends SourceTestSupport[Raw] {
  */
 trait StandardFlinkSource[Raw]
     extends FlinkSource
+    with BaseFlinkSource
     with CustomizableContextInitializerSource[Raw]
     with CustomizableTimestampWatermarkHandlerSource[Raw]
     with ExplicitUidInOperatorsSupport {
@@ -59,19 +60,12 @@ trait StandardFlinkSource[Raw]
   ): DataStream[Context] = {
     val streamOfRaw = sourceStream(env, flinkNodeContext)
     // 1. set UID and override source name
-    val rawSourceWithUid = streamOfRaw match {
-      case singleOut: SingleOutputStreamOperator[_] =>
-        setUidToNodeIdIfNeed[Raw](
-          flinkNodeContext,
-          singleOut.name(flinkNodeContext.nodeId)
-        )
-      case _ => streamOfRaw
-    }
-
     // 2. assign timestamp and watermark policy
-    val rawSourceWithUidAndTimestamp = timestampAssigner
-      .map(_.assignTimestampAndWatermarks(rawSourceWithUid))
-      .getOrElse(rawSourceWithUid)
+    val rawSourceWithUidAndTimestamp = sourceWithUidAndTimestamp(
+      streamOfRaw,
+      flinkNodeContext,
+      timestampAssigner,
+    )
 
     // 3. initialize Context and spool Context to the stream
     rawSourceWithUidAndTimestamp
@@ -83,6 +77,28 @@ trait StandardFlinkSource[Raw]
         ),
         flinkNodeContext.contextTypeInfo
       )
+  }
+
+}
+
+trait BaseFlinkSource { this: ExplicitUidInOperatorsSupport =>
+
+  def sourceWithUidAndTimestamp[T](
+      streamOfRaw: DataStream[T],
+      flinkNodeContext: FlinkCustomNodeContext,
+      timestampAssigner: Option[TimestampWatermarkHandler[T]]
+  ): DataStream[T] = {
+    val rawSourceWithUid = streamOfRaw match {
+      case singleOut: SingleOutputStreamOperator[_] =>
+        setUidToNodeIdIfNeed[T](
+          flinkNodeContext,
+          singleOut.name(flinkNodeContext.nodeId)
+        )
+      case _ => streamOfRaw
+    }
+    timestampAssigner
+      .map(_.assignTimestampAndWatermarks(rawSourceWithUid))
+      .getOrElse(rawSourceWithUid)
   }
 
 }
