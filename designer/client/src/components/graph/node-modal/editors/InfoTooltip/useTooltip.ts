@@ -2,13 +2,20 @@ import type { Theme } from "@mui/material";
 import type { TooltipProps } from "@mui/material/Tooltip/Tooltip";
 import type { SystemStyleObject } from "@mui/system";
 import type { MouseEvent } from "react";
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 
 import { getBorderColor } from "../../../../../containers/theme/helpers";
 
-export const useTooltip = ({ customComponentsProps }: { customComponentsProps: TooltipProps["componentsProps"] }) => {
+export const useTooltip = ({
+    customComponentsProps,
+    enterDelay = 0,
+}: {
+    customComponentsProps: TooltipProps["componentsProps"];
+    enterDelay?: number;
+}) => {
     const [tooltipOpen, setTooltipOpen] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     const componentsProps: TooltipProps["componentsProps"] = useMemo(() => {
         const customTooltipSx: unknown = customComponentsProps?.tooltip?.sx;
@@ -45,11 +52,33 @@ export const useTooltip = ({ customComponentsProps }: { customComponentsProps: T
         };
     }, [customComponentsProps]);
 
-    const handleSetTooltipOpen = useCallback(() => {
-        setTooltipOpen(true);
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+        };
     }, []);
 
+    const handleSetTooltipOpen = useCallback(() => {
+        // Clear any existing timer
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
+
+        // Set timer for delayed opening
+        timerRef.current = setTimeout(() => {
+            setTooltipOpen(true);
+            timerRef.current = null;
+        }, enterDelay);
+    }, [enterDelay]);
+
     const handleSetTooltipClose = useCallback(() => {
+        // Clear timer if tooltip hasn't opened yet
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
         setTooltipOpen(false);
     }, []);
 
