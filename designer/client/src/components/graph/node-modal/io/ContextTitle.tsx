@@ -28,12 +28,14 @@ export function ContextTitle({ context, showNodes, reversed, locked }: ContextTi
         <Stack spacing={1} sx={{ flex: 1 }}>
             <Stack spacing={1} direction="row" sx={{ alignItems: "center" }}>
                 <Insights
-                    component={visibleDataType === VisibleDataType.test ? TestingIcon : null}
-                    sx={{
+                    component={context.error ? Warning : locked ? Lock : visibleDataType === VisibleDataType.test ? TestingIcon : null}
+                    sx={(theme) => ({
                         width: ".9em",
                         height: ".9em",
-                        opacity: 0.5,
-                    }}
+                        opacity: locked || context.error ? 1 : 0.5,
+                        color: context.error ? theme.palette.error.main : null,
+                        filter: context.error ? getShadow(alpha(theme.palette.error.dark, 0.2), 20, 10) : null,
+                    })}
                 />
                 <Typography noWrap sx={{ fontFamily: '"Roboto Mono", Monaco, monospace' }}>
                     {Moment(context.timestamp).format("HH:mm:ss.SSS") || label}
@@ -41,15 +43,6 @@ export function ContextTitle({ context, showNodes, reversed, locked }: ContextTi
                 <Typography noWrap sx={{ fontFamily: '"Roboto Mono", Monaco, monospace', opacity: 0.5 }}>
                     {Moment(context.timestamp).format("YYYY-MM-DD") || label}
                 </Typography>
-                {locked ? <Lock /> : null}
-                {context.error ? (
-                    <Warning
-                        sx={(theme) => ({
-                            color: theme.palette.error.main,
-                            filter: getShadow(alpha(theme.palette.error.dark, 0.2), 20, 10),
-                        })}
-                    />
-                ) : null}
             </Stack>
             {showNodes ? <RelatedNodes nodeIds={context.nodeIds} reversed={reversed} /> : null}
         </Stack>

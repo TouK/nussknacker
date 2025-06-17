@@ -42,7 +42,7 @@ function useVariableContext(direction: "input" | "output") {
         const pageSize = 30;
         if (contexts.length > pageSize) {
             const sliced = contexts.filter((r) => !r.disabled).slice(0, pageSize);
-            return [sliced, contexts.length - sliced.length];
+            return [sliced, r[1] - sliced.length];
         }
 
         return [contexts, r[1] - contexts.length];
@@ -153,7 +153,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 sx={{
                     position: "sticky",
                     top: 0,
-                    zIndex: -10,
+                    zIndex: -1,
                     padding: 1,
                 }}
             >
