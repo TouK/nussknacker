@@ -63,10 +63,13 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     }, NODE_UPDATE_DEBOUNCE_TIMEOUT);
 
     useEffect(() => {
-        setNodeId(node.id);
         setEditedNodeWithDebounce.cancel();
+
+        if (status === "processing") return;
+
+        setNodeId(node.id);
         setEditedNodeWithDebounce(node);
-    }, [node, setEditedNodeWithDebounce]);
+    }, [data.node, node, nodeFromGlobalStore, setEditedNodeWithDebounce, status]);
 
     useEffect(() => {
         mergeQuery(parseWindowsQueryParams({ nodeId: nodeId }));

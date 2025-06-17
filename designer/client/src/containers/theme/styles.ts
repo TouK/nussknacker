@@ -5,6 +5,20 @@ import { nodeInput, rowAceEditor } from "../../components/graph/node-modal/NodeD
 import { blendDarken, blendLighten, getBorderColor } from "./helpers";
 
 const aceEditorStyles = (theme: Theme) => ({
+    ".ace_tooltip.ace_dark": {
+        ...theme.typography.body2,
+        fontSize: "0.75rem",
+        padding: theme.spacing(1),
+        background: theme.palette.background.paper,
+        borderColor: getBorderColor(theme),
+        borderRadius: "6px",
+        minWidth: "400px",
+    },
+    ".ace-error-marker": {
+        position: "absolute",
+        borderBottom: `2px solid ${theme.palette.error.main}`,
+        borderRadius: 0,
+    },
     ".ace-nussknacker .ace_gutter": {
         background: blendLighten(theme.palette.background.paper, 0.1),
         color: theme.palette.text.secondary,

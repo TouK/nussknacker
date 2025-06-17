@@ -1997,6 +1997,8 @@ lazy val customHttpServiceApi = (project in file("designer/custom-http-service-a
       Seq(
         "org.apache.pekko"             %% "pekko-http" % pekkoHttpV,
         "com.softwaremill.sttp.shared" %% "pekko"      % sttpSharedV,
+        "com.typesafe.slick"           %% "slick"      % slickV,
+        "com.github.tminglei"          %% "slick-pg"   % slickPgV,
       )
     }
   )
