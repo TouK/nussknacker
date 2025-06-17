@@ -1,5 +1,5 @@
 import { GlobalStyles } from "@mui/material";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import { useGraph } from "../../components/graph/GraphContext";
