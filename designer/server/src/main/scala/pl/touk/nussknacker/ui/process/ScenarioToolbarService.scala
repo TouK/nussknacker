@@ -100,20 +100,18 @@ object ToolbarButton {
       scenario: ScenarioWithDetailsEntity[_],
       user: RealLoggedUser,
   ): ToolbarButton = {
-    val (title, titleOverride) = config.customTitleForUserRole match {
-      case Some(titleForUserRole) =>
-        user.roles.collectFirst { case role if titleForUserRole.contains(role) => titleForUserRole(role) } match {
-          case Some(title) => (Some(title), true)
-          case None        => (config.title, false)
-        }
-      case None =>
-        (config.title, false)
+    val (title, titleOverride) = config.customTitleForUserRole.flatMap { customTitleForUserRole =>
+      user.roles.collectFirst { case role if customTitleForUserRole.contains(role) => customTitleForUserRole(role) }
+    } match {
+      case Some(customTitle) => (Some(customTitle), Some(customTitle))
+      case None              => (config.title, None)
     }
+
     ToolbarButton(
       config.`type`,
       config.name.map(t => fillByScenarioData(t, scenario)),
       title.map(t => fillByScenarioData(t, scenario)),
-      titleOverride,
+      titleOverride.map(t => fillByScenarioData(t, scenario)),
       config.icon.map(i => fillByScenarioData(i, scenario, urlOption = true)),
       config.url.map(th => fillByScenarioData(th, scenario, urlOption = true)),
       disabled = verifyCondition(config.disabled, scenario, user),
@@ -134,7 +132,10 @@ final case class ToolbarButton(
     `type`: String,
     name: Option[String],
     title: Option[String],
-    titleOverride: Boolean,
+    // The FE by default treats the 'title' field in this DTO as a fallback.
+    // It shows the tooltips based on scenario status with higher priority for some scenario lifecycle related buttons.
+    // We have to set the titleOverride field in order to display the title returned by the BE (for example for tooltips based on user role)
+    titleOverride: Option[String],
     icon: Option[String],
     url: Option[String],
     disabled: Boolean,

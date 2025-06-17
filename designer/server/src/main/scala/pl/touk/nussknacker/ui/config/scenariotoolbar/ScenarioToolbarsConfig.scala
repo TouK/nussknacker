@@ -83,6 +83,8 @@ object ToolbarConditionType extends Enumeration {
 final case class ToolbarCondition(
     fragment: Option[Boolean],
     archived: Option[Boolean],
+    // This condition allows to create buttons, that are, for example, always disabled or always hidden
+    // (example: 'disabled: { always: true }')
     always: Option[Boolean],
     oneOfUserRoles: Option[Set[String]],
     `type`: Option[ToolbarConditionType]
