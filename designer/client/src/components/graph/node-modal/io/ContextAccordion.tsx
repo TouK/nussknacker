@@ -1,6 +1,7 @@
 import { ExpandMore } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import type { PropsWithChildren, ReactNode } from "react";
+import { useRef } from "react";
 import React, { useLayoutEffect } from "react";
 
 export const ContextAccordion = ({
