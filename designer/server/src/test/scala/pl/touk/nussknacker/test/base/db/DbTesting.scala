@@ -7,7 +7,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.scalatest.time.{Second, Seconds, Span}
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
+import pl.touk.nussknacker.ui.db.DbRefInstance
 
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}
@@ -17,7 +18,7 @@ trait WithTestDb extends BeforeAndAfterAll {
 
   def testDbConfig: Config
 
-  private lazy val (dbRef, releaseDbRefResources) = DbRef.create(testDbConfig).allocated.unsafeRunSync()
+  private lazy val (dbRef, releaseDbRefResources) = DbRefInstance.create(testDbConfig).allocated.unsafeRunSync()
 
   def testDbRef: DbRef = dbRef
 

@@ -104,7 +104,10 @@ describe("Process", () => {
             cy.get("#nk-graph-main").matchImage();
 
             cy.intercept("POST", "/api/processes/import/*").as("import");
-            cy.get("[title=import]").next("[type=file]").should("exist").selectFile("cypress/fixtures/testProcess.json", { force: true });
+            cy.get("[aria-label=import]")
+                .next("[type=file]")
+                .should("exist")
+                .selectFile("cypress/fixtures/testProcess.json", { force: true });
             cy.wait("@import").its("response.statusCode").should("eq", 200);
 
             cy.contains(/^save/i).should("be.enabled").click();

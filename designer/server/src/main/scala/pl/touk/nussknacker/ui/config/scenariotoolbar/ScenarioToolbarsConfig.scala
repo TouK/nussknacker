@@ -23,7 +23,11 @@ object ScenarioToolbarsConfig {
   }
 
   def parse(rawConfig: Config): ScenarioToolbarsConfig = {
-    val uuid             = rawConfig.getAs[UUID]("uuid")
+    implicit val toolbarConditionReader: ValueReader[ToolbarCondition]       = arbitraryTypeValueReader
+    implicit val docsButtonConfigReader: ValueReader[DocsButtonConfig]       = arbitraryTypeValueReader
+    implicit val toolbarButtonConfigReader: ValueReader[ToolbarButtonConfig] = arbitraryTypeValueReader
+    implicit val toolbarPanelConfigReader: ValueReader[ToolbarPanelConfig]   = arbitraryTypeValueReader
+    val uuid                                                                 = rawConfig.getAs[UUID]("uuid")
     val panelAreasConfig = rawConfig.withoutPath("uuid").rootAs[Map[PanelsAreaName, List[ToolbarPanelConfig]]]
     ScenarioToolbarsConfig(uuid, panelAreasConfig)
   }

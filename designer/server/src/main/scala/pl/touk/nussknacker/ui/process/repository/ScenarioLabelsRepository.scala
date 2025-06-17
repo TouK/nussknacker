@@ -4,7 +4,8 @@ import cats.data.NonEmptyList
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
+import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity.ScenarioLabelEntityData
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.security.api._
