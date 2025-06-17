@@ -116,7 +116,8 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const side = useContext(ToolbarSideContext);
 
     const tooltip: string =
-        titleOverride ?? disabled
+        titleOverride ??
+        (disabled
             ? t(
                   "panels.actions.scenarioTest.button.testing-not-available-in-current-state-title",
                   "Scenario testing is not supported for scenario in current state",
@@ -126,7 +127,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
                   "panels.actions.scenarioTest.button.testing-not-available-for-current-sources-title",
                   "Scenario testing is not supported for currently configured sources",
               )
-            : title;
+            : title);
 
     return (
         <ToolbarButton
