@@ -115,7 +115,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
             sx={{
                 width: "100%",
                 height: "100%",
-                minWidth: 260,
+                minWidth: 220,
             }}
             onMouseEnter={toggleRefresh}
             onMouseLeave={toggleRefresh}
@@ -153,7 +153,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                 sx={{
                     position: "sticky",
                     top: 0,
-                    zIndex: -1,
+                    zIndex: -10,
                     padding: 1,
                 }}
             >

@@ -144,8 +144,8 @@ export function LiveDataThroughputs() {
 
             const animation = el.getAnimations().find((a) => a.id === "dash");
             if (!enabled) return animation?.cancel();
-            if (animation) return animation.updatePlaybackRate(normalizedThroughput);
             if (!normalizedThroughput) return;
+            if (animation) return animation.updatePlaybackRate(normalizedThroughput);
             el.animate(DASH_KEYFRAMES, {
                 id: "dash",
                 iterations: Infinity,
