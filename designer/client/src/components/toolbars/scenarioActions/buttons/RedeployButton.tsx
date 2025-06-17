@@ -61,13 +61,14 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
     const deployToolTip =
-        titleOverride ?? !capabilities.deploy
+        titleOverride ??
+        (!capabilities.deploy
             ? t("panels.actions.redeploy.tooltips.forbidden", "Redeploy forbidden for current scenario.")
             : hasErrors
             ? t("panels.actions.redeploy.tooltips.error", "Cannot redeploy due to errors. Please look at the left panel for more details.")
             : !saveDisabled
             ? t("panels.actions.redeploy.tooltips.unsaved", "You have unsaved changes.")
-            : null;
+            : null);
     const deployMouseOver = hasErrors ? () => dispatch(enableToolTipsHighlight()) : null;
     const deployMouseOut = hasErrors ? () => dispatch(disableToolTipsHighlight()) : null;
 

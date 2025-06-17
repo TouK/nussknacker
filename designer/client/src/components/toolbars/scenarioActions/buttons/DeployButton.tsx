@@ -63,13 +63,14 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
     const deployToolTip =
-        titleOverride ?? !capabilities.deploy
+        titleOverride ??
+        (!capabilities.deploy
             ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
             : hasErrors
             ? t("panels.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.")
             : !saveDisabled
             ? t("panels.actions.deploy.tooltips.unsaved", "You have unsaved changes.")
-            : null;
+            : null);
     const deployMouseOver = hasErrors ? () => dispatch(enableToolTipsHighlight()) : null;
     const deployMouseOut = hasErrors ? () => dispatch(disableToolTipsHighlight()) : null;
 
