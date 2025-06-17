@@ -40,12 +40,11 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
         HttpService.runOffSchedule(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
+    const defaultTooltip = t("panels.actions.run-off-schedule.tooltip", "run now");
     const tooltip =
         titleOverride === true
             ? title
-            : ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.RunOffSchedule) ??
-              title ??
-              t("panels.actions.run-off-schedule.tooltip", "run now");
+            : ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.RunOffSchedule) ?? defaultTooltip;
 
     if (isVisible) {
         return (
