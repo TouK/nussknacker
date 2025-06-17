@@ -1,12 +1,13 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
+import ace from "ace-builds/src-noconflict/ace";
 import { isEmpty } from "lodash";
 import React, { useState } from "react";
 
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
-import AceEditor from "./ace";
+import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import { DEFAULT_OPTIONS } from "./AceWrapper";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
@@ -57,7 +58,10 @@ export const JsonEditor: SimpleEditor<Props> = ({
                 sx={{ position: "relative" }}
             >
                 <StyledAceEditor
-                    onLoad={setAnnotationsOnLoad}
+                    onLoad={(editor) => {
+                        setAnnotationsOnLoad();
+                        setupAceEditorSnippets(editor);
+                    }}
                     readOnly={readOnly}
                     mode={"json"}
                     width={"100%"}
@@ -78,6 +82,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
                         tabSize: 2,
                         // We don't want to check syntax correctness with ace
                         useWorker: false,
+                        enableSnippets: true,
                     }}
                     annotations={annotations}
                     markers={markers}
