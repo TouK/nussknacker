@@ -52,7 +52,7 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const isRedeploying = useSelector(getIsRedeploying);
     const scenarioGraphSource = useSelector(getScenarioGraphSource);
 
-    const { disabled, type } = props;
+    const { disabled, type, titleOverride } = props;
 
     const [isRedeployCallProcessing, setIsRedeployCallProcessing] = useState(false);
 
@@ -60,13 +60,15 @@ export default function RedeployButton(props: ToolbarButtonProps) {
 
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
-    const deployToolTip = !capabilities.deploy
-        ? t("panels.actions.redeploy.tooltips.forbidden", "Redeploy forbidden for current scenario.")
-        : hasErrors
-        ? t("panels.actions.redeploy.tooltips.error", "Cannot redeploy due to errors. Please look at the left panel for more details.")
-        : !saveDisabled
-        ? t("panels.actions.redeploy.tooltips.unsaved", "You have unsaved changes.")
-        : null;
+    const deployToolTip =
+        titleOverride ??
+        (!capabilities.deploy
+            ? t("panels.actions.redeploy.tooltips.forbidden", "Redeploy forbidden for current scenario.")
+            : hasErrors
+            ? t("panels.actions.redeploy.tooltips.error", "Cannot redeploy due to errors. Please look at the left panel for more details.")
+            : !saveDisabled
+            ? t("panels.actions.redeploy.tooltips.unsaved", "You have unsaved changes.")
+            : null);
     const deployMouseOver = hasErrors ? () => dispatch(enableToolTipsHighlight()) : null;
     const deployMouseOut = hasErrors ? () => dispatch(disableToolTipsHighlight()) : null;
 

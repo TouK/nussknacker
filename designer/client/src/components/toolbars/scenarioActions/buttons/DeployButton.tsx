@@ -54,7 +54,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const isDeploying = useSelector(getIsDeploying);
     const scenarioGraphSource = useSelector(getScenarioGraphSource);
 
-    const { disabled, type } = props;
+    const { disabled, type, titleOverride } = props;
 
     const [isDeployCallProcessing, setIsDeployCallProcessing] = useState(false);
 
@@ -62,13 +62,15 @@ export default function DeployButton(props: ToolbarButtonProps) {
 
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
     const { t } = useTranslation();
-    const deployToolTip = !capabilities.deploy
-        ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
-        : hasErrors
-        ? t("panels.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.")
-        : !saveDisabled
-        ? t("panels.actions.deploy.tooltips.unsaved", "You have unsaved changes.")
-        : null;
+    const deployToolTip =
+        titleOverride ??
+        (!capabilities.deploy
+            ? t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.")
+            : hasErrors
+            ? t("panels.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.")
+            : !saveDisabled
+            ? t("panels.actions.deploy.tooltips.unsaved", "You have unsaved changes.")
+            : null);
     const deployMouseOver = hasErrors ? () => dispatch(enableToolTipsHighlight()) : null;
     const deployMouseOut = hasErrors ? () => dispatch(disableToolTipsHighlight()) : null;
 

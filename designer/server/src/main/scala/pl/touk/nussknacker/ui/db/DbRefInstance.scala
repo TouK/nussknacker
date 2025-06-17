@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.ui.db
 
 import cats.effect.{IO, Resource}
-import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef, NuHsqldbProfile, NuJdbcProfile, NuPostgresProfile}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc._
 
-class DbRef private (val db: JdbcBackend.Database, val profile: NuJdbcProfile)
-
-object DbRef {
+object DbRefInstance {
 
   val defaultSchemaName = "public"
 
@@ -44,21 +42,3 @@ object DbRef {
   }
 
 }
-
-trait NuJdbcProfile extends JdbcProfile {
-  this: JdbcProfile =>
-
-  def schemaName: String
-
-  val apiWithEnforcedSchema: ApiWithEnforcedSchema = new ApiWithEnforcedSchema {}
-
-  trait ApiWithEnforcedSchema extends super.API {
-    abstract class TableWithSchema[T](tag: Tag, tableName: String)
-        extends super.Table[T](tag, Some(schemaName), tableName)
-  }
-
-}
-
-class NuPostgresProfile(override val schemaName: String)   extends PostgresProfile with NuJdbcProfile
-class NuExPostgresProfile(override val schemaName: String) extends NuPostgresProfile(schemaName) with ExPostgresProfile
-class NuHsqldbProfile(override val schemaName: String)     extends HsqldbProfile with NuJdbcProfile

@@ -29,7 +29,7 @@ export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonP
     const working = useSelector(getIsLiveDataWorking);
     const readyForLiveData = useSelector(isReadyForLiveData);
 
-    const { disabled, type } = props;
+    const { disabled, type, title } = props;
 
     const [percent, setPercent] = useState(0);
 
@@ -56,7 +56,7 @@ export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonP
                 loadingProgress={percent}
                 isActive={working}
                 name={t("panels.actions.live-data.name", "live data")}
-                title={t("panels.actions.live-data.button.title", "live data")}
+                title={title ?? t("panels.actions.live-data.button.title", "live data")}
                 icon={<Insights sx={{ width: "auto", padding: "5%" }} />}
                 disabled={!readyForLiveData || disabled}
                 onClick={() => dispatch(toggleLiveData())}
