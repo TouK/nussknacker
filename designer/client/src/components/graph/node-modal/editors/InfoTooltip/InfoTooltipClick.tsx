@@ -10,10 +10,14 @@ interface Props {
     title: string;
     className?: string;
     customComponentsProps?: TooltipProps["componentsProps"];
+    enterDelay?: number;
 }
 
-export const InfoTooltipClick = ({ title, className, customComponentsProps, children }: PropsWithChildren<Props>) => {
-    const { tooltipRef, tooltipOpen, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip({ customComponentsProps });
+export const InfoTooltipClick = ({ title, className, customComponentsProps, enterDelay, children }: PropsWithChildren<Props>) => {
+    const { tooltipRef, tooltipOpen, componentsProps, handleSetTooltipClose, handleToggleTooltip } = useTooltip({
+        customComponentsProps,
+        enterDelay,
+    });
 
     const handleIconClick = (e) => {
         handleToggleTooltip(e);

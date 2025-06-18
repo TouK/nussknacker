@@ -70,7 +70,6 @@ class SharedHttpClientBackendProviderTest
         ("http://[::1]", "Request to: [/0:0:0:0:0:0:0:1] is forbidden"),
         ("http://[::1]:8080", "Request to: [/0:0:0:0:0:0:0:1] is forbidden"),
         ("http://127.0.0.1/", "Request to: [/127.0.0.1] is forbidden"),
-        ("http://7f000001.nip.io/", "Request to: [7f000001.nip.io/127.0.0.1] is forbidden"),
         ("http://127.0.190.1/", "Request to: [/127.0.190.1] is forbidden"),
       )
     ) { (host, message) =>

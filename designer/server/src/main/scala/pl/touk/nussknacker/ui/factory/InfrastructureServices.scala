@@ -6,7 +6,8 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.util.{ExecutionContextWithIORuntime, ExecutionContextWithIORuntimeAdapter}
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
+import pl.touk.nussknacker.ui.db.DbRefInstance
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter
 import sttp.client3.SttpBackend
@@ -41,7 +42,7 @@ object InfrastructureServices {
       executionContextWithIORuntime <- ExecutionContextWithIORuntimeAdapter.createFrom(actorSystem.dispatcher)
       ioSttpBackend                 <- AsyncHttpClientCatsBackend.resource[IO]()
 
-      dbRef           <- DbRef.create(alreadyLoadedConfig.rawConfig)
+      dbRef           <- DbRefInstance.create(alreadyLoadedConfig.rawConfig)
       metricsRegistry <- createGeneralPurposeMetricsRegistry()
       dbioRunner = DBIOActionRunner(dbRef)(executionContextWithIORuntime)
     } yield new InfrastructureServices(

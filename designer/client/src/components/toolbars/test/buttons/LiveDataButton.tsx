@@ -21,7 +21,7 @@ export function LiveDataButton(props: ToolbarButtonProps) {
     const refresh = useSelector(getLiveDataRefresh);
     const readyForLiveData = useSelector(isReadyForLiveData);
 
-    const { disabled, type } = props;
+    const { disabled, type, title } = props;
 
     const [percent, setPercent] = useState(0);
 
@@ -49,7 +49,7 @@ export function LiveDataButton(props: ToolbarButtonProps) {
             loadingProgress={percent}
             isActive={enabled}
             name={t("panels.actions.live-data.name", "live data")}
-            title={t("panels.actions.live-data.button.title", "live data")}
+            title={title ?? t("panels.actions.live-data.button.title", "live data")}
             icon={<Insights sx={{ width: "auto", padding: "5%" }} />}
             disabled={!readyForLiveData || disabled}
             onClick={() => {

@@ -26,6 +26,7 @@ export type ScenarioTestButtonProps = {
     type: CustomButtonTypes.scenarioTest;
     name?: string;
     title?: string;
+    titleOverride?: string;
     docs?: TestingViewParams["docs"];
     markdownContent?: TestingViewParams["markdownContent"];
 };
@@ -39,7 +40,7 @@ type Preset = {
 };
 
 function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>) {
-    const { disabled, name, title, docs, markdownContent, type } = props;
+    const { disabled, name, title, titleOverride, docs, markdownContent, type } = props;
     const { t } = useTranslation();
     const { open } = useWindows();
 
@@ -114,17 +115,19 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const { variant } = useContext(ToolbarButtonsContext);
     const side = useContext(ToolbarSideContext);
 
-    const tooltip: string = disabled
-        ? t(
-              "panels.actions.scenarioTest.button.testing-not-available-in-current-state-title",
-              "Scenario testing is not supported for scenario in current state",
-          )
-        : !atLeastOneTypeOfTestIsAvailable
-        ? t(
-              "panels.actions.scenarioTest.button.testing-not-available-for-current-sources-title",
-              "Scenario testing is not supported for currently configured sources",
-          )
-        : title;
+    const tooltip: string =
+        titleOverride ??
+        (disabled
+            ? t(
+                  "panels.actions.scenarioTest.button.testing-not-available-in-current-state-title",
+                  "Scenario testing is not supported for scenario in current state",
+              )
+            : !atLeastOneTypeOfTestIsAvailable
+            ? t(
+                  "panels.actions.scenarioTest.button.testing-not-available-for-current-sources-title",
+                  "Scenario testing is not supported for currently configured sources",
+              )
+            : title);
 
     return (
         <ToolbarButton
