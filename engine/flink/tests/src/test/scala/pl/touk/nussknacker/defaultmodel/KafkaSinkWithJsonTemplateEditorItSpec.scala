@@ -2,6 +2,7 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -15,10 +16,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.UUID
 
-class KafkaAvroSchemaWithJsonTemplateEditorItSpec
-    extends FlinkWithKafkaSuite
-    with PatientScalaFutures
-    with LazyLogging {
+class KafkaSinkWithJsonTemplateEditorItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
@@ -27,7 +25,7 @@ class KafkaAvroSchemaWithJsonTemplateEditorItSpec
   override def resolveConfig(config: Config): Config = {
     super
       .resolveConfig(config)
-      .withValue("enableSingleParameterWithTemplateInsteadOfDynamicForm", ConfigValueFactory.fromAnyRef(true))
+      .withValue("jsonLikeValuesEnteringMode", ConfigValueFactory.fromAnyRef("SingleJsonTemplateParameter"))
   }
 
   private def scenarioWithDefaultSinkValue(
@@ -57,7 +55,7 @@ class KafkaAvroSchemaWithJsonTemplateEditorItSpec
       inputTopic: String,
       outputTopic: String,
       sinkValue: Expression,
-      validationMode: ValidationMode = ValidationMode.strict
+      validationMode: ValidationMode
   ) =
     ScenarioBuilder
       .streaming("test-scenario")
@@ -78,13 +76,13 @@ class KafkaAvroSchemaWithJsonTemplateEditorItSpec
         KafkaUniversalComponentTransformer.sinkValueParamName.value          -> sinkValue,
       )
 
-  test("should produce a record with a default value taken from schema for kafka sink") {
+  test("should produce an Avro record using default values defined in the Avro schema for the Kafka sink") {
     val inputTopic  = TopicName.ForSource(newTopicName("input"))
     val outputTopic = TopicName.ForSink(newTopicName("output"))
 
     kafkaClient.createTopic(inputTopic.name, 1)
     val outputSubject = ConfluentUtils.topicSubject(outputTopic.toUnspecialized, isKey = false)
-    schemaRegistryMockClient.register(outputSubject, ConfluentUtils.convertToAvroSchema(ThirdRecordSchema))
+    schemaRegistryMockClient.register(outputSubject, ConfluentUtils.convertToAvroSchema(ThirdRecordSchema, Some(1)))
 
     sendAsJson("""{ "any": "schema" }""", inputTopic).futureValue
 
@@ -112,7 +110,7 @@ class KafkaAvroSchemaWithJsonTemplateEditorItSpec
     }
   }
 
-  test("should produce a record with schema from json template value for kafka sink") {
+  test("should produce an Avro record with value taken from json template for kafka sink") {
     val inputTopic  = TopicName.ForSource(newTopicName("input"))
     val outputTopic = TopicName.ForSink(newTopicName("output"))
 
@@ -171,12 +169,163 @@ class KafkaAvroSchemaWithJsonTemplateEditorItSpec
     }
   }
 
+  test("should produce a JSON record with a default value taken from JSON schema for kafka sink") {
+    val inputTopic  = TopicName.ForSource(newTopicName("input"))
+    val outputTopic = TopicName.ForSink(newTopicName("output"))
+
+    kafkaClient.createTopic(inputTopic.name, 1)
+    val outputSubject = ConfluentUtils.topicSubject(outputTopic.toUnspecialized, isKey = false)
+    schemaRegistryMockClient.register(outputSubject, jsonSchema)
+
+    sendAsJson("""{ "any": "schema" }""", inputTopic).futureValue
+
+    run(
+      scenarioWithDefaultSinkValue(
+        inputTopic = inputTopic.name,
+        outputTopic = outputTopic.name,
+        validationMode = ValidationMode.strict
+      )
+    ) {
+      val expectedMessage =
+        io.circe.parser
+          .parse(
+            s"""
+               |{
+               |  "first": "Jan",
+               |  "middle": null,
+               |  "last": "Kowalski",
+               |  "age": 18,
+               |  "height": 1.80,
+               |  "weight": 70.5,
+               |  "lastLogin": 0
+               |}
+               |""".stripMargin
+          )
+          .toOption
+          .get
+
+      val rawMessage = new String(consumeOneMessage(outputTopic))
+      val processed  = io.circe.parser.parse(rawMessage)
+      processed shouldEqual Right(expectedMessage)
+    }
+  }
+
+  test("should produce a JSON record with value taken from json template for kafka sink") {
+    val inputTopic  = TopicName.ForSource(newTopicName("input"))
+    val outputTopic = TopicName.ForSink(newTopicName("output"))
+
+    kafkaClient.createTopic(inputTopic.name, partitions = 1)
+
+    val outputSubject = ConfluentUtils.topicSubject(outputTopic.toUnspecialized, isKey = false)
+    schemaRegistryMockClient.register(outputSubject, jsonSchema)
+
+    val message =
+      s"""
+         |{
+         |  "first": "Jan",
+         |  "middle": "Tomek",
+         |  "last": "Kowalski"
+         |}
+         |""".stripMargin
+    sendAsJson(message, inputTopic).futureValue
+
+    val sinkValue =
+      Expression.jsonTemplate {
+        s"""
+           |{
+           |  "first": "#{ #input["first"] }",
+           |  "middle": "#{ #input["middle"] }",
+           |  "last": "#{ #input["last"] }",
+           |  "age": 50,
+           |  "height": 2.01,
+           |  "weight": 110.11,
+           |  "lastLogin": 1234567890
+           |}
+           |""".stripMargin
+      }
+
+    run(
+      scenario(
+        inputTopic = inputTopic.name,
+        outputTopic = outputTopic.name,
+        sinkValue = sinkValue,
+        validationMode = ValidationMode.strict
+      )
+    ) {
+      val expectedMessage =
+        io.circe.parser
+          .parse(
+            s"""
+             |{
+             |  "first": "Jan",
+             |  "middle": "Tomek",
+             |  "last": "Kowalski",
+             |  "age": 50,
+             |  "height": 2.01,
+             |  "weight": 110.11,
+             |  "lastLogin": 1234567890
+             |}
+             |""".stripMargin
+          )
+          .toOption
+          .get
+
+      val rawMessage = new String(consumeOneMessage(outputTopic))
+      val processed  = io.circe.parser.parse(rawMessage)
+      processed shouldEqual Right(expectedMessage)
+    }
+  }
+
   private def newTopicName(prefix: String) = s"$prefix-${UUID.randomUUID().toString}"
 
   private def consumeOneAvroMessage(topic: TopicName.ForSink) =
     valueDeserializer.deserialize(
       topic.name,
-      kafkaClient.createConsumer().consumeWithConsumerRecord(topic.name).take(1).head.value()
+      consumeOneMessage(topic)
     )
+
+  private def consumeOneMessage(topic: TopicName.ForSink) = {
+    kafkaClient.createConsumer().consumeWithConsumerRecord(topic.name).take(1).head.value()
+  }
+
+  private val jsonSchema = new JsonSchema(
+    s"""
+       |{
+       |  "$$schema": "http://json-schema.org/draft-07/schema#",
+       |  "title": "UserProfile",
+       |  "type": "object",
+       |  "properties": {
+       |    "first": {
+       |      "type": "string",
+       |      "default": "Jan"
+       |    },
+       |    "middle": {
+       |      "type": ["string", "null"],
+       |      "default": null
+       |    },
+       |    "last": {
+       |      "type": "string",
+       |      "default": "Kowalski"
+       |    },
+       |    "age": {
+       |      "type": "integer",
+       |      "default": 18
+       |    },
+       |    "height": {
+       |      "type": "number",
+       |      "default": 1.8
+       |    },
+       |    "weight": {
+       |      "type": "number",
+       |      "default": 70.5
+       |    },
+       |    "lastLogin": {
+       |      "type": "integer"
+       |    }
+       |  },
+       |  "required": ["first", "middle", "last", "age", "height", "weight", "lastLogin"]
+       |}
+       |""".stripMargin
+  )
 
 }

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.avro.Schema
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -10,6 +11,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForIn
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockConfluentSchemaRegistryClientBuilder,
   MockSchemaRegistryClient
@@ -77,20 +79,22 @@ object KafkaAvroNamespacedMockSchemaRegistry {
   final val InputPaymentWithNamespaced  = TopicName.ForSource(s"${namespace}_input_payment")
   final val OutputPaymentWithNamespaced = TopicName.ForSink(s"${namespace}_output_payment")
 
-  private val IntSchema: Schema = AvroUtils.parseSchema(
-    """{
+  private val IntSchema = ConfluentUtils.convertToAvroSchema(
+    AvroUtils.parseSchema(
+      """{
       |  "type": "int"
       |}
     """.stripMargin
+    )
   )
 
   val schemaRegistryMockClient: MockSchemaRegistryClient =
     new MockConfluentSchemaRegistryClientBuilder()
-      .register(TestTopic, IntSchema, 1, isKey = true)         // key subject should be ignored
-      .register(TestTopic, PaymentV1.schema, 1, isKey = false) // topic with bad namespace should be ignored
-      .register(SomeTopic, PaymentV1.schema, 1, isKey = false) // topic without namespace should be ignored
-      .register(InputPaymentWithNamespaced.name, PaymentV1.schema, 1, isKey = false)
-      .register(OutputPaymentWithNamespaced.name, PaymentV1.schema, 1, isKey = false)
+      .register(TestTopic, IntSchema, 1, isKey = true)                  // key subject should be ignored
+      .register(TestTopic, PaymentV1.confluentSchema, 1, isKey = false) // topic with bad namespace should be ignored
+      .register(SomeTopic, PaymentV1.confluentSchema, 1, isKey = false) // topic without namespace should be ignored
+      .register(InputPaymentWithNamespaced.name, PaymentV1.confluentSchema, 1, isKey = false)
+      .register(OutputPaymentWithNamespaced.name, PaymentV1.confluentSchema, 1, isKey = false)
       .build
 
 }

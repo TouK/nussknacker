@@ -56,7 +56,7 @@ trait UniversalSchemaSupport {
       rawParameter: Parameter
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter]
 
-  def extractParametersForSink(
+  def extractDynamicParametersForSink(
       schema: ParsedSchema,
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]

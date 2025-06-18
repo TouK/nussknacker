@@ -4,6 +4,8 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
+import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode.{DynamicForms, SingleJsonTemplateParameter}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -108,7 +110,7 @@ class UniversalKafkaSinkFactory(
 
   override protected def topicFrom(value: String): TopicName.ForSink = TopicName.ForSink(value)
 
-  protected def handleTopicWithoutSchema(
+  protected def handleSinkValueForSchemalessTopic(
       context: ValidationContext
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
@@ -151,9 +153,16 @@ class UniversalKafkaSinkFactory(
       )
   }
 
-  protected def handleTopicWithSchemaWithJsonTemplateEditor(
+  private def handleInvalidTopicParam(
       context: ValidationContext
-  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
+  ): ContextTransformationDefinition = {
+    case TransformationStep(
+          (`topicParamName`, FailedToDefineParameter(errors)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`sinkKeyParamName`, _) :: Nil,
+          _
+        ) =>
+      FinalResults(context, errors.toList)
     case TransformationStep(
           (`topicParamName`, FailedToDefineParameter(errors)) ::
           (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
@@ -161,12 +170,28 @@ class UniversalKafkaSinkFactory(
           _
         ) =>
       FinalResults(context, errors.toList)
+  }
+
+  private def handleSinkValueForSchemedTopic(
+      context: ValidationContext,
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
+    modelConfig.jsonLikeValuesEnteringMode match {
+      case JsonLikeValuesEnteringMode.DynamicForms =>
+        handleDynamicFormParameters(context)
+      case JsonLikeValuesEnteringMode.SingleJsonTemplateParameter =>
+        handleSingleJsonTemplateParameter(context)
+    }
+  }
+
+  private def handleSingleJsonTemplateParameter(
+      context: ValidationContext
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
           (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
           (`sinkKeyParamName`, _) :: Nil,
           _
-        ) if modelConfig.enableSingleParameterWithTemplateInsteadOfDynamicForm =>
+        ) =>
       NextParameters(validationModeParamDeclaration.createParameter() :: Nil)
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
@@ -200,7 +225,7 @@ class UniversalKafkaSinkFactory(
       FinalResults(context, errors, Some(state))
   }
 
-  protected def handleTopicWithSchemaWithRawEditor(
+  private def handleDynamicFormParameters(
       context: ValidationContext
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
@@ -219,7 +244,7 @@ class UniversalKafkaSinkFactory(
         ) =>
       getSchema(topic, version)
         .andThen { schemaData =>
-          extractParametersForSchema(schemaData)
+          extractDynamicParametersForSchema(schemaData)
             .map { valueParam =>
               val state = TransformationState(schemaData, valueParam)
               // shouldn't happen except for empty schema, but it can lead to infinite loop...
@@ -302,12 +327,12 @@ class UniversalKafkaSinkFactory(
       )
   }
 
-  private def extractParametersForSchema(
+  private def extractDynamicParametersForSchema(
       schemaData: RuntimeSchemaData[ParsedSchema],
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     schemaSupportDispatcher
       .forSchemaType(schemaData.schema.schemaType())
-      .extractParametersForSink(
+      .extractDynamicParametersForSink(
         schema = schemaData.schema,
         restrictedParamNames = restrictedParamNames
       )
@@ -340,9 +365,9 @@ class UniversalKafkaSinkFactory(
   ): ContextTransformationDefinition =
     topicParamStep orElse
       schemaParamStep(paramsDeterminedAfterSchema) orElse
-      handleTopicWithoutSchema(context) orElse
-      handleTopicWithSchemaWithJsonTemplateEditor(context) orElse
-      handleTopicWithSchemaWithRawEditor(context)
+      handleInvalidTopicParam(context) orElse
+      handleSinkValueForSchemalessTopic(context) orElse
+      handleSinkValueForSchemedTopic(context)
 
   override def implementation(
       params: Params,

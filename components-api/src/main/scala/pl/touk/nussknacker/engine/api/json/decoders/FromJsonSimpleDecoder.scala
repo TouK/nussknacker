@@ -14,19 +14,10 @@ object FromJsonSimpleDecoder {
     jsonNumber = toNumber,
     jsonString = identity[String],
     jsonArray = _.map(jsonToAny).asJava,
-    jsonObject = _.toMap.mapValuesNow(jsonToAny).asJava
-  )
-
-  def jsonToAnyWithOrderKeeping(json: Json): Any = json.fold(
-    jsonNull = null,
-    jsonBoolean = identity[Boolean],
-    jsonNumber = toNumber,
-    jsonString = identity[String],
-    jsonArray = _.map(jsonToAny).asJava,
     jsonObject = obj =>
       ListMap(
         obj.toIterable.toList.map { case (key, value) =>
-          key -> jsonToAnyWithOrderKeeping(value)
+          key -> jsonToAny(value)
         }: _*
       ).asJava
   )

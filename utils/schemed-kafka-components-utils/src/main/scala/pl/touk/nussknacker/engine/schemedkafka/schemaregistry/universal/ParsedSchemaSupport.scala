@@ -127,7 +127,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     )
   }
 
-  override def extractParametersForSink(schema: ParsedSchema, restrictedParamNames: Set[ParameterName])(
+  override def extractDynamicParametersForSink(schema: ParsedSchema, restrictedParamNames: Set[ParameterName])(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     AvroSchemaBasedParameter(
@@ -142,7 +142,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
   override def extractParameterForTests(schema: ParsedSchema)(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParametersForSink(
+    extractDynamicParametersForSink(
       schema,
       restrictedParamNames = Set.empty
     )
@@ -194,7 +194,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     )
   }
 
-  override def extractParametersForSink(
+  override def extractDynamicParametersForSink(
       schema: ParsedSchema,
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
@@ -206,7 +206,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def extractParameterForTests(schema: ParsedSchema)(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParametersForSink(
+    extractDynamicParametersForSink(
       schema,
       restrictedParamNames = Set.empty
     )
@@ -263,11 +263,11 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     jsonSupport.extractSingleParameterForSink(schema, validationMode, rawParameter)
   }
 
-  override def extractParametersForSink(
+  override def extractDynamicParametersForSink(
       schema: ParsedSchema,
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    jsonSupport.extractParametersForSink(
+    jsonSupport.extractDynamicParametersForSink(
       schema,
       restrictedParamNames
     )

@@ -24,7 +24,7 @@ object JsonTemplateFromAvroSchemaDeterminer {
             .orElse(jsonBasedOnSchema(field.schema()))
             .getOrElse(Json.Null)
         }
-        Some(Json.fromFields(jsonFields.sortBy(_._1)))
+        Some(Json.fromFields(jsonFields))
       case other => // only record fields can have defaults
         jsonBasedOnSchema(schema)
     }
@@ -36,8 +36,8 @@ object JsonTemplateFromAvroSchemaDeterminer {
       case Schema.Type.RECORD =>
         val fields = schema.getFields.asScala.flatMap { field =>
           defaultJsonFor(field.schema()).map(fieldJson => field.name() -> fieldJson)
-        }.toMap
-        Some(Json.obj(fields.toSeq: _*))
+        }
+        Some(Json.fromFields(fields))
       case Schema.Type.ENUM =>
         withDefaultValueAs[String](fieldSchema)
       case Schema.Type.ARRAY =>
@@ -87,7 +87,7 @@ object JsonTemplateFromAvroSchemaDeterminer {
         val fields = schema.getFields.asScala.flatMap { field =>
           jsonBasedOnSchema(field.schema()).map(defaultValue => field.name() -> defaultValue)
         }
-        Some(Json.fromFields(fields.sortBy(_._1)))
+        Some(Json.fromFields(fields))
       case Schema.Type.ENUM =>
         Option(schema.getEnumDefault).orElse(schema.getEnumSymbols.asScala.headOption).map(Json.fromString)
       case Schema.Type.ARRAY =>
@@ -100,7 +100,7 @@ object JsonTemplateFromAvroSchemaDeterminer {
       case Schema.Type.BYTES   => Some(Json.fromString(""))
       case Schema.Type.INT     => Some(Json.fromInt(0))
       case Schema.Type.LONG    => Some(Json.fromLong(0L))
-      case Schema.Type.BOOLEAN => Some(Json.fromBoolean(true))
+      case Schema.Type.BOOLEAN => Some(Json.fromBoolean(false))
       case Schema.Type.FLOAT   => Some(Json.fromFloatOrNull(0.0f))
       case Schema.Type.DOUBLE  => Some(Json.fromDoubleOrNull(0.0))
       case Schema.Type.NULL    => Some(Json.Null)

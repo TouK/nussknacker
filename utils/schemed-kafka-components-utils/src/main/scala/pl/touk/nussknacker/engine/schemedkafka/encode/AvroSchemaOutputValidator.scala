@@ -119,7 +119,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       schema: Schema,
       path: Option[String]
   ): Validated[NonEmptyList[OutputValidatorError], Unit] = {
-    val schemaFields = ListMap(schema.getFields.asScala.toList.map(field => field.name() -> field).sortBy(_._1): _*)
+    val schemaFields = ListMap(schema.getFields.asScala.toList.map(field => field.name() -> field): _*)
 
     val requiredFieldNames = if (validationMode == ValidationMode.strict) {
       schemaFields.values.map(_.name())

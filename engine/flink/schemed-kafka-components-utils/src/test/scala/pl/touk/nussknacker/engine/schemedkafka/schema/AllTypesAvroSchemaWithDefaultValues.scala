@@ -55,7 +55,7 @@ object AllTypesAvroSchemaWithDefaultValues extends TestSchema {
        |          "BLUE"
        |        ]
        |      },
-       |      "default": "RED"
+       |      "default": "BLUE"
        |    },
        |    {
        |      "name": "arrayField",

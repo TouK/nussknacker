@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.scalatest.OptionValues.convertOptionToValuable
+import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
@@ -40,10 +41,10 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
 
   private lazy val defaultUniversalSinkFactory: UniversalKafkaSinkFactory =
-    universalSinkFactory(enableSingleParameterWithTemplateInsteadOfDynamicForm = false)
+    universalSinkFactory(jsonLikeValuesEnteringMode = JsonLikeValuesEnteringMode.DynamicForms)
 
   private lazy val universalKafkaSinkFactoryWithTemplateParam: UniversalKafkaSinkFactory =
-    universalSinkFactory(enableSingleParameterWithTemplateInsteadOfDynamicForm = true)
+    universalSinkFactory(jsonLikeValuesEnteringMode = JsonLikeValuesEnteringMode.SingleJsonTemplateParameter)
 
   private implicit val sinkNodeId: NodeId = NodeId("id")
 
@@ -193,28 +194,28 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val expectedDefaultValue =
       Expression.jsonTemplate(
         s"""{
+           |  "stringField" : "example",
+           |  "intField" : 42,
+           |  "longField" : 1234567890,
+           |  "floatField" : 3.14,
+           |  "doubleField" : 2.71828,
+           |  "booleanField" : true,
+           |  "nullField" : null,
+           |  "enumField" : "BLUE",
            |  "arrayField" : [
            |    ""
            |  ],
-           |  "booleanField" : true,
-           |  "bytesField" : "",
-           |  "doubleField" : 2.71828,
-           |  "enumField" : "RED",
-           |  "fixedField" : "\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000",
-           |  "floatField" : 3.14,
-           |  "intField" : 42,
-           |  "logicalDate" : 0,
-           |  "logicalTimestamp" : 1680000000000,
-           |  "longField" : 1234567890,
            |  "mapField" : {
            |    
            |  },
-           |  "nullField" : null,
+           |  "fixedField" : "\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000",
+           |  "bytesField" : "",
+           |  "unionField" : null,
            |  "recordField" : {
            |    "nestedString" : ""
            |  },
-           |  "stringField" : "example",
-           |  "unionField" : null
+           |  "logicalDate" : 0,
+           |  "logicalTimestamp" : 1680000000000
            |}""".stripMargin
       )
 
@@ -260,28 +261,28 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val expectedDefaultValue =
       Expression.jsonTemplate(
         s"""{
+           |  "stringField" : "",
+           |  "intField" : 0,
+           |  "longField" : 0,
+           |  "floatField" : 0.0,
+           |  "doubleField" : 0.0,
+           |  "booleanField" : false,
+           |  "nullField" : null,
+           |  "enumField" : "RED",
            |  "arrayField" : [
            |    ""
            |  ],
-           |  "booleanField" : true,
-           |  "bytesField" : "",
-           |  "doubleField" : 0.0,
-           |  "enumField" : "RED",
-           |  "fixedField" : "\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000",
-           |  "floatField" : 0.0,
-           |  "intField" : 0,
-           |  "logicalDate" : 0,
-           |  "logicalTimestamp" : 0,
-           |  "longField" : 0,
            |  "mapField" : {
            |    
            |  },
-           |  "nullField" : null,
+           |  "fixedField" : "\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000",
+           |  "bytesField" : "",
+           |  "unionField" : null,
            |  "recordField" : {
            |    "nestedString" : ""
            |  },
-           |  "stringField" : "",
-           |  "unionField" : null
+           |  "logicalDate" : 0,
+           |  "logicalTimestamp" : 0
            |}""".stripMargin
       )
 
@@ -409,7 +410,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
            |  "arrayField" : [
            |    ""
            |  ],
-           |  "booleanField" : true,
+           |  "booleanField" : false,
            |  "bytesField" : "",
            |  "doubleField" : 0.0,
            |  "enumField" : "RED",

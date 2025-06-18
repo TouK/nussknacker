@@ -319,7 +319,7 @@ object SampleSchemas {
   val ThirdRecordSchemaStringV1: String =
     """{
       |  "type": "record",
-      |  "namespace": "pl.touk.nussknacker.engine.schemedkafka",
+      |  "namespace": "",
       |  "name": "UserProfile",
       |  "fields": [
       |    { "name": "first", "type": "string", "default": "Jan" },

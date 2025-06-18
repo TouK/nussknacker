@@ -37,8 +37,9 @@ object JsonTemplateFromJsonSchemaDeterminer {
   }
 
   private def defaultValueBasedOnSchema(schema: Schema): Option[Json] = schema match {
-    case _: EmptySchema => Some(Json.obj())
+    case _: EmptySchema          => Some(Json.obj())
     case objSchema: ObjectSchema =>
+      // ObjectSchema from Everit doesn't retain field order — added sorting for deterministic behavior
       val props    = ListMap(objSchema.getPropertySchemas.asScala.toList.sortBy(_._1): _*)
       val required = objSchema.getRequiredProperties.asScala.toSet
       val fields = props.flatMap { case (key, subSchema) =>
@@ -48,7 +49,7 @@ object JsonTemplateFromJsonSchemaDeterminer {
           case _                              => None
         }
       }
-      Some(Json.obj(fields.toSeq: _*))
+      Some(Json.fromFields(fields))
     case arraySchema: ArraySchema =>
       Option(arraySchema.getAllItemSchema)
         .flatMap(defaultValueBasedOnSchema)
@@ -84,9 +85,9 @@ object JsonTemplateFromJsonSchemaDeterminer {
     case _: StringSchema                        => Some(Json.fromString(""))
     case s: NumberSchema if s.requiresInteger() => Some(Json.fromInt(0))
     case _: NumberSchema                        => Some(Json.fromDoubleOrNull(0.0))
-    case _: BooleanSchema                       => Some(Json.fromBoolean(true))
+    case _: BooleanSchema                       => Some(Json.fromBoolean(false))
     case s: EnumSchema                          => s.getPossibleValuesAsList.asScala.headOption.map(jsonToCirce)
-    case s: NullSchema                          => Some(Json.Null)
+    case _: NullSchema                          => Some(Json.Null)
   }
 
 }
