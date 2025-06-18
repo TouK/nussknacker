@@ -111,8 +111,8 @@ export function setPerformedTestType(performedTestType: PerformedTestType): Acti
 
 function displayTestResults({ counts, results }: ResultsWithCountsDto, testData?: SourceWithParametersTest): ThunkAction {
     return (dispatch) => {
-        dispatch(displayTestResultsDetails(results, testData));
         dispatch(displayProcessCounts(counts));
+        dispatch(displayTestResultsDetails(results, testData));
         dispatch(setPerformedTestType("rerunPrevious"));
     };
 }

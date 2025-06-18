@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
-import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
+import { memo, useReducer } from "react";
+import React, { createContext, useCallback, useContext, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import TestResultUtils from "../../../../common/TestResultUtils";
@@ -30,7 +31,7 @@ type Created = NodeTransitionResult & { id: string };
 type ContextType = {
     state: InputOutputState;
     dispatch: React.Dispatch<Action>;
-    getAvailableContexts: (direction?: "input" | "output") => VariableContextType[];
+    getAvailableContexts: (direction?: "input" | "output") => [VariableContextType[], number];
     inputNodesIds: Created[];
     outputNodesIds: Created[];
 };
@@ -123,7 +124,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
     );
 
     const getAvailableContexts = useCallback(
-        (direction: "input" | "output" = "input") => {
+        (direction: "input" | "output" = "input"): [VariableContextType[], number] => {
             const transitionResults = direction === "input" ? inputs : outputs;
             const contexts: VariableContextType[] = [];
             transitionResults.forEach(({ id: contextNodeId, destinationNodeId, results }) => {
@@ -146,7 +147,8 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
                     });
                 });
             });
-            return contexts;
+            const count = transitionResults.reduce((sum, { totalCount = 0 }) => sum + totalCount, 0);
+            return [contexts, count];
         },
         [inputs, outputs, getError, isContextDisabled],
     );

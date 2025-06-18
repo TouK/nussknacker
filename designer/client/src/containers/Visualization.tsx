@@ -1,7 +1,7 @@
 import { useWindowManager } from "@touk/window-manager";
 import { isEmpty } from "lodash";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DndProvider } from "react-dnd-multi-backend";
 import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
@@ -21,10 +21,10 @@ import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
 import {
-    getGraph,
     getProcessVersionId,
     getScenario,
     getScenarioGraph,
+    getScenarioLoading,
     getVersions,
     isLatestProcessVersion,
     isPristine,
@@ -158,7 +158,7 @@ function Visualization() {
         [dispatch, showBoundary],
     );
 
-    const { scenarioLoading } = useSelector(getGraph);
+    const scenarioLoading = useSelector(getScenarioLoading);
     const scenario = useSelector(getScenario);
     const graphNotReady = useMemo(() => !dataResolved || isEmpty(scenario) || scenarioLoading, [dataResolved, scenario, scenarioLoading]);
 
@@ -229,4 +229,4 @@ function Visualization() {
     );
 }
 
-export default Visualization;
+export default memo(Visualization);
