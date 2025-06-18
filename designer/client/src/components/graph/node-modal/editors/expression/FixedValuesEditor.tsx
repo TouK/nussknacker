@@ -106,10 +106,10 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                     option.icon ? (
                         <Stack direction={"row"} alignItems={"center"} spacing={1}>
                             <NodeIcon src={option.icon} />
-                            <StyledOptionLabel>{truncateOptionLabel(option.label)}</StyledOptionLabel>
+                            <StyledOptionLabel role="option">{truncateOptionLabel(option.label)}</StyledOptionLabel>
                         </Stack>
                     ) : (
-                        <StyledOptionLabel>{truncateOptionLabel(option.label)}</StyledOptionLabel>
+                        <StyledOptionLabel role="option">{truncateOptionLabel(option.label)}</StyledOptionLabel>
                     )
                 }
                 isDisabled={readOnly}
