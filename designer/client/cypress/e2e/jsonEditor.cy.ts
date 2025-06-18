@@ -61,7 +61,7 @@ describe("JSON editor", () => {
         });
 
         // Verify open bracket { case
-        cy.realPress(["Meta", "a"]); // Select all (Cmd+A)
+        cy.realPress([Cypress.platform === "darwin" ? "Meta" : "Control", "a"]); // Select all (Cmd+A)
         cy.realPress("Backspace"); // Delete selection
         cy.realType("{");
         cy.realPress("Enter");
