@@ -48,19 +48,44 @@ const getEditorContext = (session: Ace.EditSession, pos: Ace.Position, beforeCur
         (beforeCursor.trimRight().endsWith("{") && afterCursor.trimLeft().startsWith("}")) ||
         (beforeCursor.endsWith("{") && afterCursor.startsWith("}"));
 
-    // Empty object across lines
-    const isLineEmpty = session.getLine(pos.row).trim() === "";
-    const prevLineEndsWithBrace =
-        pos.row > 0 &&
-        session
-            .getLine(pos.row - 1)
-            .trimRight()
-            .endsWith("{");
-    const currentLineStartsWithBrace = session.getLine(pos.row).trimLeft().startsWith("}");
-    const hasEmptyObjectAcrossLines = (isLineEmpty && prevLineEndsWithBrace) || (prevLineEndsWithBrace && currentLineStartsWithBrace);
+    // Find first non-whitespace character before cursor
+    let previousFirstChar = "";
+    const beforeCursorTrimmed = beforeCursor.trim();
+    if (beforeCursorTrimmed.length > 0) {
+        // First check current line before cursor
+        previousFirstChar = beforeCursorTrimmed.charAt(beforeCursorTrimmed.length - 1);
+    } else {
+        // Then check previous lines
+        for (let row = pos.row - 1; row >= 0; row--) {
+            const line = session.getLine(row).trim();
+            if (line.length > 0) {
+                previousFirstChar = line.charAt(line.length - 1);
+                break;
+            }
+        }
+    }
+
+    // Find first non-whitespace character after cursor
+    let nextFirstChar = "";
+    const afterCursorTrimmed = afterCursor.trim();
+    if (afterCursorTrimmed.length > 0) {
+        // First check current line after cursor
+        nextFirstChar = afterCursorTrimmed.charAt(0);
+    } else {
+        // Then check next lines
+        for (let row = pos.row + 1; row < session.getLength(); row++) {
+            const line = session.getLine(row).trim();
+            if (line.length > 0) {
+                nextFirstChar = line.charAt(0);
+                break;
+            }
+        }
+    }
+
+    const hasEmptyObjectAcrossLines = previousFirstChar === "{" && nextFirstChar === "}";
 
     // Just an opening brace (need to add closing brace)
-    const hasOpeningBraceOnly = beforeCursor.trimRight().endsWith("{") && !afterCursor.includes("}");
+    const hasOpeningBraceOnly = beforeCursor.trimRight().endsWith("{") && !(nextFirstChar === "}" || afterCursor.includes("}"));
 
     // Between properties (line ends with comma)
     const isAfterComma = session.getLine(pos.row).trim().endsWith(",");

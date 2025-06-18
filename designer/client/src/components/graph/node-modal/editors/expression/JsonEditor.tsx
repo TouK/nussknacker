@@ -1,6 +1,5 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
-import ace from "ace-builds/src-noconflict/ace";
 import { isEmpty } from "lodash";
 import React, { useState } from "react";
 
@@ -82,7 +81,6 @@ export const JsonEditor: SimpleEditor<Props> = ({
                         tabSize: 2,
                         // We don't want to check syntax correctness with ace
                         useWorker: false,
-                        enableSnippets: true,
                     }}
                     annotations={annotations}
                     markers={markers}

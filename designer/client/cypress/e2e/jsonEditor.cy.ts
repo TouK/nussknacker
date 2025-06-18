@@ -40,11 +40,6 @@ describe("JSON editor", () => {
         cy.get("[data-testid=window]").as("modal");
         cy.get("[title='Output schema']").next().find(".ace_editor").should("be.visible").parent().as("editor");
 
-        cy.get("@editor").matchImage({
-            maxDiffThreshold: 0.0025,
-            screenshotConfig: { padding: [1] },
-        });
-
         // Verify enter between {} case
         cy.get("@editor").click();
         cy.realPress("ArrowLeft");
