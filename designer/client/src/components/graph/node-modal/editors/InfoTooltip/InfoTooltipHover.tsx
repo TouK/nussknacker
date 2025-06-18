@@ -43,11 +43,10 @@ export const InfoTooltipHover = ({ title, className, children, customComponentsP
                         handleSetTooltipOpen();
                     }
                 }}
-                onPointerLeave={(e) => {
-                    if (e.pointerType === "mouse") {
-                        handleSetTooltipClose();
-                    }
+                onPointerLeave={() => {
+                    handleSetTooltipClose();
                 }}
+                onBlur={handleSetTooltipClose}
             >
                 {children}
             </StyledInfoChildrenWrapper>
