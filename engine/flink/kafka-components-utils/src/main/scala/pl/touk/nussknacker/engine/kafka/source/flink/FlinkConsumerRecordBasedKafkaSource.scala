@@ -34,6 +34,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
@@ -54,9 +55,6 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
-    overridingTimestampAssigner: Option[
-      TimestampWatermarkHandler[ConsumerRecord[K, V]]
-    ],
     val formatter: UniversalToJsonFormatter[K, V],
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
@@ -184,16 +182,18 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
-    timestampAssigner
+    Some(
+      StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
+        (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
+      )
+    )
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
-    overridingTimestampAssigner.orElse(
-      Some(
-        StandardTimestampWatermarkHandler.boundedOutOfOrderness(
-          extract = None,
-          maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
-          idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
-        )
+    Some(
+      StandardTimestampWatermarkHandler.boundedOutOfOrderness(
+        extract = None,
+        maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
+        idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
       )
     )
 

@@ -13,10 +13,7 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.schemedkafka.source.KafkaSourceImplFactory
 
-class FlinkKafkaSourceImplFactory[K, V](
-    protected val timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]]
-) extends KafkaSourceImplFactory[K, V]
-    with Serializable {
+class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] with Serializable {
 
   override def createSource(
       params: Params,
@@ -34,7 +31,6 @@ class FlinkKafkaSourceImplFactory[K, V](
       preparedTopics,
       kafkaConfig,
       deserializationSchema,
-      timestampAssigner,
       formatter,
       contextInitializer,
       testParametersInfo,

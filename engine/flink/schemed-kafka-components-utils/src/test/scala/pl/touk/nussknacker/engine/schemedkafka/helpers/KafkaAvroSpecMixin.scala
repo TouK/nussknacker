@@ -101,7 +101,7 @@ trait KafkaAvroSpecMixin
       universalPayload,
       testModelConfig,
       kafkaConfig.copy(useStringForKey = useStringForKey),
-      new FlinkKafkaSourceImplFactory(None)
+      new FlinkKafkaSourceImplFactory
     )
   }
 

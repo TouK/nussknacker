@@ -51,7 +51,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
           universalSerdeProvider,
           finalModelConfig,
           kafkaConfig,
-          new FlinkKafkaSourceImplFactory(None)
+          new FlinkKafkaSourceImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
       ComponentDefinition(
