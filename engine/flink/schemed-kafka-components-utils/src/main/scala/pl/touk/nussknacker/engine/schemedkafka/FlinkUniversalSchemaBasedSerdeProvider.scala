@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeP
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.KafkaSchemaRegistryBasedValueSerializationSchemaFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalKafkaDeserializerFactory,
-  UniversalSchemaValidator,
   UniversalSerializerFactory,
   UniversalToJsonFormatterFactory
 }
@@ -24,7 +23,6 @@ object FlinkUniversalSchemaBasedSerdeProvider {
         new UniversalKafkaDeserializerFactory(createSchemaIdFromMessageExtractor)
       ),
       new UniversalToJsonFormatterFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
-      UniversalSchemaValidator
     )
   }
 
