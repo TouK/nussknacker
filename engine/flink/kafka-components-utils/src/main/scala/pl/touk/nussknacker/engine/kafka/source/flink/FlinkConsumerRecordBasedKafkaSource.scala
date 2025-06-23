@@ -47,21 +47,22 @@ import java.util
 import java.util.Properties
 import scala.jdk.CollectionConverters._
 
-class FlinkKafkaSource[T](
+class FlinkConsumerRecordBasedKafkaSource[K, V](
     preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     val kafkaConfig: KafkaConfig,
-    deserializationSchema: serialization.KafkaDeserializationSchema[T],
-    passedAssigner: Option[TimestampWatermarkHandler[T]], // TODO: rename to smth like overridingTimestampAssigner
+    deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
+    passedAssigner: Option[
+      TimestampWatermarkHandler[ConsumerRecord[K, V]]
+    ], // TODO: rename to smth like overridingTimestampAssigner
     val formatter: RecordFormatter,
-    override val contextInitializer: ContextInitializer[T],
+    override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
-    overriddenConsumerGroup: Option[String] = None,
     namingStrategy: NamingStrategy
-) extends StandardFlinkSource[T]
+) extends StandardFlinkSource[ConsumerRecord[K, V]]
     with Serializable
-    with FlinkSourceTestSupport[T]
+    with FlinkSourceTestSupport[ConsumerRecord[K, V]]
     with RecordFormatterBaseTestDataGenerator
-    with TestWithParametersSupport[T]
+    with TestWithParametersSupport[ConsumerRecord[K, V]]
     with WithActionParametersSupport
     with LazyLogging {
 
@@ -69,7 +70,7 @@ class FlinkKafkaSource[T](
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[T] = {
+  ): DataStreamSource[ConsumerRecord[K, V]] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
     val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
     StandardFlinkSourceFunctionUtils.createSourceStream(
@@ -132,7 +133,7 @@ class FlinkKafkaSource[T](
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
-  ): SourceFunction[T] = {
+  ): SourceFunction[ConsumerRecord[K, V]] = {
     val offsetResetStrategy =
       flinkNodeContext.componentUseContext.deploymentData
         .flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME.value))
@@ -158,8 +159,8 @@ class FlinkKafkaSource[T](
   protected def createFlinkSource(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
-  ): SourceFunction[T] = {
-    new FlinkKafkaConsumerHandlingExceptions[T](
+  ): SourceFunction[ConsumerRecord[K, V]] = {
+    new FlinkKafkaConsumerHandlingExceptions[ConsumerRecord[K, V]](
       topics.map(_.name).toList.asJava,
       wrapToFlinkDeserializationSchema(deserializationSchema),
       KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)),
@@ -170,16 +171,23 @@ class FlinkKafkaSource[T](
   }
 
   // Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
-  override def testRecordParser: TestRecordParser[T] = (testRecords: List[TestRecord]) =>
+  override def testRecordParser: TestRecordParser[ConsumerRecord[K, V]] = (testRecords: List[TestRecord]) =>
     testRecords.map { testRecord =>
       // TODO: we assume parsing for all topics is the same
       val topic = topics.head
       deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
     }
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
+    timestampAssigner.orElse(
+      Some(
+        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
+          (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
+        )
+      )
+    )
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = passedAssigner.orElse(
+  override def timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = passedAssigner.orElse(
     Some(
       StandardTimestampWatermarkHandler.boundedOutOfOrderness(
         extract = None,
@@ -189,13 +197,13 @@ class FlinkKafkaSource[T](
     )
   )
 
-  protected def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
+  protected def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
     deserializationSchema.deserialize(record)
   }
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
-  override def parametersToTestData(params: Map[ParameterName, AnyRef]): T = {
+  override def parametersToTestData(params: Map[ParameterName, AnyRef]): ConsumerRecord[K, V] = {
     val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
     val removedValue = if (unflattenedParams.size == 1) {
       unflattenedParams.head match {
@@ -212,7 +220,7 @@ class FlinkKafkaSource[T](
   }
 
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
-    val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
+    val baseName = ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext)
     namingStrategy.prepareName(baseName)
   }
 
@@ -298,36 +306,5 @@ class FlinkKafkaConsumerHandlingExceptions[T](
         )
     }
   }
-
-}
-
-class FlinkConsumerRecordBasedKafkaSource[K, V](
-    preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
-    kafkaConfig: KafkaConfig,
-    deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
-    timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
-    formatter: RecordFormatter,
-    override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-    testParametersInfo: KafkaTestParametersInfo,
-    namingStrategy: NamingStrategy
-) extends FlinkKafkaSource[ConsumerRecord[K, V]](
-      preparedTopics,
-      kafkaConfig,
-      deserializationSchema,
-      timestampAssigner,
-      formatter,
-      contextInitializer,
-      testParametersInfo,
-      namingStrategy = namingStrategy
-    ) {
-
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
-    timestampAssigner.orElse(
-      Some(
-        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
-          (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
-        )
-      )
-    )
 
 }
