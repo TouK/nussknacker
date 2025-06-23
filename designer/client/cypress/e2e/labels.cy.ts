@@ -29,6 +29,7 @@ describe("Scenario labels", () => {
 
             cy.wait("@labelvalidation");
 
+            cy.get(".MuiAutocomplete-loading").should("not.exist");
             cy.get('.MuiAutocomplete-popper li[data-option-index="0"]').contains('Add label "tagX"').click();
 
             cy.get("[data-testid=scenario-label-0]").should("be.visible").contains("tagX");
