@@ -20,7 +20,7 @@ class UniversalSchemaBasedSerdeProvider(
     val serializationSchemaFactory: UniversalKafkaSerializationSchemaFactory,
     val deserializationSchemaFactory: KafkaSchemaBasedKeyValueDeserializationSchemaFactory,
     val recordFormatterFactory: UniversalToJsonFormatterFactory,
-)
+) extends Serializable
 
 object UniversalSchemaBasedSerdeProvider {
 
