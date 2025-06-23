@@ -15,9 +15,14 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
+import pl.touk.nussknacker.engine.api.process.{
+  ContextInitializer,
+  TestDataGenerator,
+  TestWithParametersSupport,
+  TopicName
+}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -51,9 +56,9 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
-    passedAssigner: Option[
+    overridingTimestampAssigner: Option[
       TimestampWatermarkHandler[ConsumerRecord[K, V]]
-    ], // TODO: rename to smth like overridingTimestampAssigner
+    ],
     val formatter: RecordFormatter,
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
@@ -61,7 +66,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
 ) extends StandardFlinkSource[ConsumerRecord[K, V]]
     with Serializable
     with FlinkSourceTestSupport[ConsumerRecord[K, V]]
-    with RecordFormatterBaseTestDataGenerator
+    with TestDataGenerator
     with TestWithParametersSupport[ConsumerRecord[K, V]]
     with WithActionParametersSupport
     with LazyLogging {
@@ -187,17 +192,20 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
       )
     )
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = passedAssigner.orElse(
-    Some(
-      StandardTimestampWatermarkHandler.boundedOutOfOrderness(
-        extract = None,
-        maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
-        idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
+  override def timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
+    overridingTimestampAssigner.orElse(
+      Some(
+        StandardTimestampWatermarkHandler.boundedOutOfOrderness(
+          extract = None,
+          maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
+          idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
+        )
       )
     )
-  )
 
-  protected def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
+  override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)
+
+  private def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
     deserializationSchema.deserialize(record)
   }
 
