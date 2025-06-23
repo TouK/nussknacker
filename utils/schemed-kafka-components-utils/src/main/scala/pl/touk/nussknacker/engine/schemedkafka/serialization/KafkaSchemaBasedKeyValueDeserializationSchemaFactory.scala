@@ -8,13 +8,7 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordKafkaDeseri
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 
-/**
-  * Abstract base implementation of [[KafkaSchemaBasedDeserializationSchemaFactory]]
-  * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes both key and value
-  * and wrap it in ConsumerRecord object (transforms raw event represented as ConsumerRecord from Array[Byte] domain to Key-Value-type domain).
-  */
-abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
-    extends KafkaSchemaBasedDeserializationSchemaFactory {
+abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
 
   protected def createKeyOrUseStringDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
@@ -39,7 +33,7 @@ abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
   protected def createStringKeyDeserializer: Deserializer[_] = new StringDeserializer
 
-  override def create[K, V](
+  def create[K, V](
       kafkaConfig: KafkaConfig,
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]]
