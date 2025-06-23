@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 
 abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory extends Serializable {
 
-  protected def createKeyOrUseStringDeserializer[K](
+  private def createKeyOrUseStringDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       kafkaConfig: KafkaConfig
   ): Deserializer[K] = {

@@ -4,13 +4,13 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalKafkaDeserializerFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalKafkaDeserializer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ChainedSchemaIdFromMessageExtractor, SchemaRegistryClient, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
-class KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
-    protected val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    protected val deserializerFactory: UniversalKafkaDeserializerFactory
+class UniversalKafkaDeserializationSchemaFactory(
+    schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor
 ) extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
 
   override protected def createKeyDeserializer[K](
@@ -31,7 +31,13 @@ class KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
       isKey: Boolean
   ): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
-    deserializerFactory.createDeserializer[T](schemaRegistryClient, kafkaConfig, schemaDataOpt, isKey)
+    new UniversalKafkaDeserializer[T](
+      schemaRegistryClient,
+      kafkaConfig,
+      createSchemaIdFromMessageExtractor(schemaRegistryClient),
+      schemaDataOpt,
+      isKey
+    )
   }
 
 }

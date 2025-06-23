@@ -77,24 +77,3 @@ class MismatchReaderWriterSchemaException(expectedType: String, actualType: Stri
     extends IllegalArgumentException(
       s"Expecting schema of type $expectedType. but got payload with $actualType schema type"
     )
-
-class UniversalKafkaDeserializerFactory(
-    createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor
-) extends Serializable {
-
-  def createDeserializer[T](
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig,
-      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      isKey: Boolean
-  ): Deserializer[T] = {
-    new UniversalKafkaDeserializer[T](
-      schemaRegistryClient,
-      kafkaConfig,
-      createSchemaIdFromMessageExtractor(schemaRegistryClient),
-      schemaDataOpt,
-      isKey
-    )
-  }
-
-}
