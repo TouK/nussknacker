@@ -1,58 +1,81 @@
-import moment from "moment/moment";
-
 import HttpService from "../../http/HttpService";
 import type { ResultsWithCountsDto } from "../../http/resultsWithCountsDto";
-import { isReadyForLiveData } from "../../reducers/selectors/getLiveData";
+import { VisibleDataType } from "../../reducers/graph";
+import { getHasPauseReasons, getIsLiveDataWorking, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
-import type { Action, ThunkAction } from "../reduxTypes";
-import type { RefreshData } from "./displayProcessCounts";
+import type { ThunkAction } from "../reduxTypes";
+
+export enum Initiator {
+    tests = "tests",
+    button = "button",
+    list = "list",
+    inputAccordion = "input_accordion",
+    outputAccordion = "output_accordion",
+}
 
 export type LiveDataActions =
-    | { type: "LIVE_DATA_STOP" }
+    | { type: "LIVE_DATA_START"; initiator: Initiator | null }
+    | { type: "LIVE_DATA_STARTED" }
+    | { type: "FETCH_LIVE_DATA" }
     | {
           type: "DISPLAY_LIVE_DATA";
           results: ResultsWithCountsDto;
-          refresh?: RefreshData;
-      };
+          nextIn: number;
+      }
+    | { type: "LIVE_DATA_STOP"; initiator: Initiator | null };
 
-function displayLiveData(results: ResultsWithCountsDto, refresh?: RefreshData): Action {
-    return {
-        type: "DISPLAY_LIVE_DATA",
-        results,
-        refresh,
+const REFRESH_TIME = 1000;
+
+let intervalId: number;
+
+function fetchAndDisplayLiveData(showErrors = false): ThunkAction {
+    return (dispatch, getState) => {
+        async function perform(showErrors = false) {
+            dispatch({ type: "FETCH_LIVE_DATA" });
+            const scenario = getScenario(getState());
+            const { data: results } = await HttpService.fetchProcessLiveData(scenario.name, showErrors);
+
+            const state = getState();
+            if (!(isReadyForLiveData(state) && getIsLiveDataWorking(state))) {
+                dispatch(stopLiveData());
+                return;
+            }
+
+            if (intervalId && [VisibleDataType.test, VisibleDataType.counts].includes(getVisibleDataType(state))) {
+                dispatch(stopLiveData(Initiator.tests));
+                return;
+            }
+
+            dispatch({
+                type: "DISPLAY_LIVE_DATA",
+                results,
+                nextIn: REFRESH_TIME,
+            });
+        }
+
+        perform(showErrors);
+
+        if (!intervalId) {
+            dispatch({ type: "LIVE_DATA_STARTED" });
+            intervalId = window.setInterval(perform, REFRESH_TIME);
+        }
     };
 }
 
-const MIN_REFRESH_TIME = 500;
-let refreshTimeout;
-
-export const stopLiveData = (): ThunkAction => (dispatch) => {
-    dispatch({ type: "LIVE_DATA_STOP" });
-    clearTimeout(refreshTimeout);
-};
-
-export function fetchAndDisplayLiveData(refreshIn: number | false = 1, showErrors = false): ThunkAction {
+export function startLiveData(initiator: Initiator = null, showErrors = false): ThunkAction {
     return async (dispatch, getState) => {
-        clearTimeout(refreshTimeout);
-        if (!isReadyForLiveData(getState())) {
-            return dispatch(stopLiveData());
+        await dispatch({ type: "LIVE_DATA_START", initiator });
+
+        if (!getHasPauseReasons(getState())) {
+            dispatch(fetchAndDisplayLiveData(showErrors));
         }
+    };
+}
 
-        const scenario = getScenario(getState());
-        const { data: results } = await HttpService.fetchProcessLiveData(scenario.name, showErrors);
-
-        const now = moment();
-        if (refreshIn) {
-            const last = now.valueOf();
-            const nextIn = Math.max(MIN_REFRESH_TIME, refreshIn * 1000);
-
-            refreshTimeout = setTimeout(() => {
-                dispatch(fetchAndDisplayLiveData(refreshIn));
-            }, nextIn);
-
-            dispatch(displayLiveData(results, { last, nextIn }));
-        } else {
-            dispatch(displayLiveData(results));
-        }
+export function stopLiveData(initiator: Initiator = null): ThunkAction {
+    return (dispatch) => {
+        dispatch({ type: "LIVE_DATA_STOP", initiator });
+        window.clearInterval(intervalId);
+        intervalId = null;
     };
 }

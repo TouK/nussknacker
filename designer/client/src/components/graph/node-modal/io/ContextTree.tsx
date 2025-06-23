@@ -47,7 +47,7 @@ const ValueWrapper = styled("span")({
 
 const getNodeRenderer = (oldFields: string[]) => {
     return function renderer({ name, data, isNonenumerable, expanded, depth }: InspectorNodeParams) {
-        const Wrapper = depth !== 1 || oldFields.includes(name) ? React.Fragment : ValueWrapper;
+        const Wrapper = depth !== 1 || oldFields.length < 1 || oldFields.includes(name) ? React.Fragment : ValueWrapper;
         return (
             <Wrapper>
                 {expanded ? <ObjectName name={name} /> : <ObjectLabel name={name} data={data} isNonenumerable={isNonenumerable} />}

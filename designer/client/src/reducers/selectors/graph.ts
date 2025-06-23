@@ -18,6 +18,7 @@ import { getProcessState } from "./scenarioState";
 import { getUserSettings } from "./userSettings";
 
 export const getGraph = (state: RootState) => state.graphReducer.present;
+export const getScenarioLoading = createSelector(getGraph, (g) => g.scenarioLoading);
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getSavedScenario = createSelector(getHistoryPast, getScenario, (past, scenario): Scenario => past?.[0]?.scenario || scenario);
@@ -108,11 +109,6 @@ export const getIsTestingMode = createSelector(
     getTestResults,
     getProcessCounts,
     (results, counts) => !isEmpty(results) || !isEmpty(counts),
-);
-
-export const getShowRunProcessDetails = createSelector(
-    [getTestResults, getProcessCounts],
-    (testResults, processCounts) => testResults || processCounts,
 );
 
 export const getVersions = createSelector(getScenario, (details) => details?.history || []);

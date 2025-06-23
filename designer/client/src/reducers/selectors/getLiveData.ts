@@ -1,25 +1,27 @@
 import { createSelector } from "reselect";
 
+import type { Initiator } from "../../actions/nk/liveData";
 import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
-import { getGraph, getSavedScenario, getScenario, isDeployed } from "./graph";
+import type { RootState } from "../index";
+import { getGraph, getSavedScenario, getScenario, getTestResults, isDeployed } from "./graph";
 import { isGraphUpdated } from "./helpers";
 
-export const getLiveData = createSelector(getGraph, (graph) => graph.liveData);
+const EMPTY = [];
+const getLiveData = (state: RootState) => state.liveData;
 
+export const getVisibleDataType = createSelector(getGraph, (graph) => graph.visibleDataType || null);
 export const isReadyForLiveData = createSelector(getScenario, getSavedScenario, isDeployed, (scenario, savedScenario, isDeployed) => {
     if (!scenario?.name || scenario.isFragment || scenario.isArchived) return false;
     if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph, true)) return false;
     return isDeployed;
 });
 
-export const getLiveDataRefresh = createSelector(getGraph, isReadyForLiveData, (g, readyForLiveData) => {
-    if (!readyForLiveData) return null;
-    return g.liveDataRefresh || null;
-});
+export const getIsLiveDataWorking = createSelector(getLiveData, ({ working }) => working || false);
+export const getLiveDataLastUpdate = createSelector(getLiveData, ({ last }) => last || null);
+export const getLiveDataNextUpdate = createSelector(getLiveData, ({ nextIn }) => nextIn || null);
+export const getPauseReasons = createSelector(getLiveData, (data): Initiator[] => data.pauseReasons || EMPTY);
+export const getHasPauseReasons = createSelector(getPauseReasons, (pauseReasons) => pauseReasons.length);
 
-const EMPTY = [];
-export const getNodeTransitionResults = createSelector(getLiveData, (liveData): NodeTransitionResult[] => {
-    return liveData?.results.nodeTransitionResults || EMPTY;
+export const getNodeTransitionResults = createSelector(getTestResults, (testResults): NodeTransitionResult[] => {
+    return testResults?.nodeTransitionResults || EMPTY;
 });
-
-export const getLiveDataWasEnabled = createSelector(getGraph, (graph) => graph.liveDataWasEnabled);

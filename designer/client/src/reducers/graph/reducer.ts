@@ -18,6 +18,7 @@ import type { NestedKeyOf } from "./lodashWrappers";
 import { omit, pick } from "./lodashWrappers";
 import { selectionState } from "./selectionState";
 import type { GraphState } from "./types";
+import { VisibleDataType } from "./types";
 import {
     addNodesWithLayout,
     adjustBranchParametersAfterDisconnect,
@@ -45,7 +46,6 @@ const emptyGraphState: GraphState = {
     selectionState: [],
     processCounts: {},
     testResults: null,
-    liveData: null,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -340,31 +340,31 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "DISPLAY_PROCESS_COUNTS": {
             return {
                 ...state,
+                visibleDataType: VisibleDataType.counts,
+                testResults: null,
                 processCounts: action.processCounts,
                 processCountsRefresh: action.refresh,
+            };
+        }
+        case "FETCH_LIVE_DATA": {
+            return {
+                ...state,
+                visibleDataType: VisibleDataType.live,
             };
         }
         case "DISPLAY_LIVE_DATA": {
             return {
                 ...state,
-                liveData: action.results || null,
-                liveDataRefresh: action.refresh,
+                visibleDataType: VisibleDataType.live,
                 testResults: action.results?.results || null,
                 processCounts: action.results?.counts || {},
                 processCountsRefresh: null,
-                liveDataWasEnabled: true,
-            };
-        }
-        case "NODE_DETAILS_OPENED":
-        case "LIVE_DATA_STOP": {
-            return {
-                ...state,
-                liveDataRefresh: null,
             };
         }
         case "DISPLAY_TEST_RESULTS_DETAILS": {
             return {
                 ...state,
+                visibleDataType: VisibleDataType.test,
                 testResults: action.testResults,
                 testData: {
                     ...state.testData,
@@ -386,11 +386,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "HIDE_RUN_PROCESS_DETAILS": {
             return {
                 ...state,
+                visibleDataType: null,
                 testResults: null,
                 processCounts: null,
                 processCountsRefresh: null,
-                liveData: null,
-                liveDataRefresh: null,
             };
         }
         default:

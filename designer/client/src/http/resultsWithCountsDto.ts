@@ -54,4 +54,5 @@ export type ProcessCounts = Record<string, NodeCounts>;
 export interface ResultsWithCountsDto {
     results: TestResultsDto;
     counts: ProcessCounts;
+    timestamp: string; // ISO
 }
