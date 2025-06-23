@@ -56,7 +56,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
 
     const [editedNode, setEditedNode] = useState<EditedNode>(node);
     const [outputEdges, setOutputEdges] = useState<Edge[]>(() => getEdgesForNode(scenario, node));
-    const [status, setStatus] = useEditState();
+    const [status, setStatus, editStateRef] = useEditState();
 
     const setEditedNodeWithDebounce = useDebounce((node) => {
         setEditedNode((currentNode) => (isEqual(currentNode, node) ? currentNode : node));
@@ -65,11 +65,11 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     useEffect(() => {
         setEditedNodeWithDebounce.cancel();
 
-        if (status === "processing") return;
+        if (editStateRef.current === "processing") return;
 
         setNodeId(node.id);
         setEditedNodeWithDebounce(node);
-    }, [data.node, node, nodeFromGlobalStore, setEditedNodeWithDebounce, status]);
+    }, [editStateRef, node, setEditedNodeWithDebounce]);
 
     useEffect(() => {
         mergeQuery(parseWindowsQueryParams({ nodeId: nodeId }));

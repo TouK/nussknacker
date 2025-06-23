@@ -120,6 +120,7 @@ function addLabelsToNewProcess(name?: string, labels?: string[]) {
         labels.forEach((label) => {
             cy.get("@labelInput").type(label);
             cy.wait("@labelValidation");
+            cy.get(".MuiAutocomplete-loading").should("not.exist");
             cy.get('.MuiAutocomplete-popper li[data-option-index="0"]').contains(label).click();
         });
 
