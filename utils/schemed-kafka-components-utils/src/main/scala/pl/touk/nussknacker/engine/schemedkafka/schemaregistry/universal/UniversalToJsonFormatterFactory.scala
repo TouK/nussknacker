@@ -13,27 +13,32 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json.KafkaJsonKeyValueDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.util.ListUtil
 
 import java.nio.charset.StandardCharsets
 
 class UniversalToJsonFormatterFactory(
     kafkaConfig: KafkaConfig,
-    schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    createSchemaIdFromMessageExtractor: SchemaRegistryClient => SchemaIdFromMessageExtractor
+    createSchemaIdFromMessageExtractor: SchemaRegistryClient => SchemaIdFromMessageExtractor,
+    deserializationSchemaFactory: KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 ) extends Serializable {
 
-  def create[K, V](
-      kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]
-  ): UniversalToJsonFormatter[K, V] = {
-    val schemaRegistryClient         = schemaRegistryClientFactory.create(kafkaConfig)
+  def create(schemaRegistryClient: SchemaRegistryClient): UniversalToJsonFormatter[Any, Any] = {
     val formatterSupportDispatcher   = new RecordFormatterSupportDispatcher(kafkaConfig, schemaRegistryClient)
     val schemaIdFromMessageExtractor = createSchemaIdFromMessageExtractor(schemaRegistryClient)
+    // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
+    val kafkaSourceDeserializationSchema =
+      deserializationSchemaFactory.create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None)
+    val jsonPayloadToJsonDeserializationSchema =
+      new KafkaJsonKeyValueDeserializationSchemaFactory(kafkaConfig)
+        .create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None)
     new UniversalToJsonFormatter(
       kafkaConfig,
       schemaRegistryClient,
       formatterSupportDispatcher,
       kafkaSourceDeserializationSchema,
+      jsonPayloadToJsonDeserializationSchema,
       schemaIdFromMessageExtractor
     )
   }
@@ -49,13 +54,10 @@ class UniversalToJsonFormatter[K, V](
     kafkaConfig: KafkaConfig,
     schemaRegistryClient: SchemaRegistryClient,
     recordFormatterSupportDispatcher: RecordFormatterSupportDispatcher,
-    deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+    schemaBasedDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+    jsonPayloadToJsonDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
     schemaIdFromMessageExtractor: SchemaIdFromMessageExtractor
 ) extends Serializable {
-
-  private lazy val jsonPayloadToJsonDeserializer =
-    new KafkaJsonKeyValueDeserializationSchemaFactory(kafkaConfig)
-      .create[K, V](keySchemaDataOpt = None, valueSchemaDataOpt = None)
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
@@ -198,9 +200,9 @@ class UniversalToJsonFormatter[K, V](
       valueSchemaIdOpt: Option[SchemaId]
   ): ConsumerRecord[K, V] = {
     if (valueSchemaIdOpt.isDefined) {
-      deserializationSchema.deserialize(record)
+      schemaBasedDeserializationSchema.deserialize(record)
     } else {
-      jsonPayloadToJsonDeserializer.deserialize(record)
+      jsonPayloadToJsonDeserializationSchema.deserialize(record)
     }
   }
 

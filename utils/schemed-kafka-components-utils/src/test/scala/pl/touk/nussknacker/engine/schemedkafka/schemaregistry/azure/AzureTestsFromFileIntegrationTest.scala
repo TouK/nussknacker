@@ -45,8 +45,8 @@ class AzureTestsFromFileIntegrationTest
   test("test from file round-trip") {
     val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(kafkaConfig.schemaRegistryClientKafkaConfig)
     val serdeProvider = UniversalSchemaBasedSerdeProvider.create(UniversalSchemaRegistryClientFactory, kafkaConfig)
-    val factory       = serdeProvider.deserializationSchemaFactory.create[String, GenericRecord](None, None)
-    val formatter     = serdeProvider.recordFormatterFactory.create[String, GenericRecord](factory)
+    val formatter =
+      serdeProvider.recordFormatterFactory.create(UniversalSchemaRegistryClientFactory.create(kafkaConfig))
 
     val topic         = TopicName.ForSource("avro-testfromfile")
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
