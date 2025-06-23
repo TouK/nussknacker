@@ -9,13 +9,8 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.kafka.{
-  KafkaConfig,
-  PreparedKafkaTopic,
-  RecordFormatter,
-  RecordFormatterBaseTestDataGenerator
-}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
@@ -58,7 +53,7 @@ class LiteKafkaSourceImpl[K, V](
     testParametersInfo: KafkaTestParametersInfo
 ) extends LiteKafkaSource
     with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]]
-    with RecordFormatterBaseTestDataGenerator
+    with TestDataGenerator
     with TestWithParametersSupport[ConsumerRecord[Array[Byte], Array[Byte]]] {
 
   private var initializerFun: ContextInitializingFunction[ConsumerRecord[K, V]] = _
@@ -76,6 +71,8 @@ class LiteKafkaSourceImpl[K, V](
     initializerFun(deserialized)
       .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
   }
+
+  override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)
 
   // We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
   // (see difference with Flink implementation)

@@ -1,14 +1,10 @@
 package pl.touk.nussknacker.engine.kafka
 
 import cats.data.NonEmptyList
-import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator, TopicName}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.util.ListUtil
-
-import java.nio.charset.StandardCharsets
 
 /**
   * It is interface for bi-directional conversion between Kafka record and [[TestRecord]]. It is used when data
@@ -48,17 +44,5 @@ trait RecordFormatter extends Serializable {
   private def getConsumerRecordTimestamp(consumerRecord: ConsumerRecord[_, _]): Option[Long] = {
     Option(consumerRecord.timestamp()).filterNot(_ == ConsumerRecord.NO_TIMESTAMP)
   }
-
-}
-
-trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Source with SourceTestSupport[_] =>
-
-  protected def kafkaConfig: KafkaConfig
-
-  protected def topics: NonEmptyList[TopicName.ForSource]
-
-  protected def formatter: RecordFormatter
-
-  override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)
 
 }
