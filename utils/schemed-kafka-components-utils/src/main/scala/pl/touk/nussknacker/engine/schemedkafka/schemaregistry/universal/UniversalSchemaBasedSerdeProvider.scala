@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ChainedSchemaIdFromMessageExtractor,
-  SchemaBasedSerdeProvider,
   SchemaRegistryClient,
   SchemaRegistryClientFactory
 }
@@ -14,11 +13,18 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid
   SchemaIdFromPayloadInConfluentFormat
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.UniversalKafkaDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
+
+case class UniversalSchemaBasedSerdeProvider(
+    serializationSchemaFactory: UniversalKafkaSerializationSchemaFactory,
+    deserializationSchemaFactory: KafkaSchemaBasedKeyValueDeserializationSchemaFactory,
+    recordFormatterFactory: UniversalToJsonFormatterFactory,
+)
 
 object UniversalSchemaBasedSerdeProvider {
 
-  def create(schemaRegistryClientFactory: SchemaRegistryClientFactory): SchemaBasedSerdeProvider = {
-    SchemaBasedSerdeProvider(
+  def create(schemaRegistryClientFactory: SchemaRegistryClientFactory): UniversalSchemaBasedSerdeProvider = {
+    UniversalSchemaBasedSerdeProvider(
       new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory),
       new UniversalKafkaDeserializationSchemaFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
       new UniversalToJsonFormatterFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),

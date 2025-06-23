@@ -32,7 +32,10 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
+  UniversalSchemaBasedSerdeProvider,
+  UniversalSchemaSupport
+}
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleTypeDeterminer
 
@@ -42,7 +45,7 @@ import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleT
   */
 class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+    val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
     val modelConfig: ModelConfig,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
