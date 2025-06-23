@@ -14,14 +14,13 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBa
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json.KafkaJsonKeyValueDeserializationSchemaFactory
 
 import java.nio.charset.StandardCharsets
-import scala.reflect.ClassTag
 
 class UniversalToJsonFormatterFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     createSchemaIdFromMessageExtractor: SchemaRegistryClient => SchemaIdFromMessageExtractor
 ) extends Serializable {
 
-  def create[K: ClassTag, V: ClassTag](
+  def create[K, V](
       kafkaConfig: KafkaConfig,
       kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]
   ): RecordFormatter = {
@@ -39,7 +38,7 @@ class UniversalToJsonFormatterFactory(
 
 }
 
-class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
+class UniversalToJsonFormatter[K, V](
     protected val kafkaConfig: KafkaConfig,
     protected val schemaRegistryClient: SchemaRegistryClient,
     recordFormatterSupportDispatcher: RecordFormatterSupportDispatcher,
