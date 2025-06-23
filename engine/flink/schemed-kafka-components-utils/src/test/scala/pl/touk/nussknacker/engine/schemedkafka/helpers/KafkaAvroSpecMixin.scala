@@ -100,12 +100,9 @@ trait KafkaAvroSpecMixin
       schemaRegistryClientFactory,
       universalPayload,
       testModelConfig,
+      kafkaConfig.copy(useStringForKey = useStringForKey),
       new FlinkKafkaSourceImplFactory(None)
-    ) {
-      override protected def prepareKafkaConfig: KafkaConfig =
-        super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
-
-    }
+    )
   }
 
   protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
@@ -113,6 +110,7 @@ trait KafkaAvroSpecMixin
       schemaRegistryClientFactory,
       universalPayload,
       testModelConfig,
+      kafkaConfig,
       FlinkKafkaUniversalSinkImplFactory
     )
   }

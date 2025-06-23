@@ -47,6 +47,7 @@ class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
     val modelConfig: ModelConfig,
+    val kafkaConfig: KafkaConfig,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
     with SourceFactory

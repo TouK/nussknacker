@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.{
   TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
@@ -48,10 +49,12 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("show how to override topic selection strategy") {
+    val kafkaConfig = KafkaConfig.parseConfig(testModelConfig.underlyingConfig)
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
       testModelConfig,
+      kafkaConfig,
       new FlinkKafkaSourceImplFactory(None)
     ) {
       override lazy val topicSelectionStrategy =

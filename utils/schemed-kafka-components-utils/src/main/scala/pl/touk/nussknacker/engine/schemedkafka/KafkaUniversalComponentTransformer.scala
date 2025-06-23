@@ -46,6 +46,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   def modelConfig: ModelConfig
 
+  def kafkaConfig: KafkaConfig
+
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
@@ -59,16 +61,10 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     }
   }
 
-  @transient protected lazy val kafkaConfig: KafkaConfig = prepareKafkaConfig
-
   @transient protected lazy val schemaSupportDispatcher: UniversalSchemaSupportDispatcher =
     UniversalSchemaSupportDispatcher(
       kafkaConfig
     )
-
-  protected def prepareKafkaConfig: KafkaConfig = {
-    KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-  }
 
   protected def getTopicParam(
       implicit nodeId: NodeId
