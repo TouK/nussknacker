@@ -12,14 +12,12 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo.ConsumerRecordTypeInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.{
-  KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory,
-  SchemaRegistryBasedDeserializerFactory
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalKafkaDeserializerFactory
 
 class FlinkKafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    deserializerFactory: SchemaRegistryBasedDeserializerFactory
+    deserializerFactory: UniversalKafkaDeserializerFactory
 ) extends KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
       schemaRegistryClientFactory,
       deserializerFactory
