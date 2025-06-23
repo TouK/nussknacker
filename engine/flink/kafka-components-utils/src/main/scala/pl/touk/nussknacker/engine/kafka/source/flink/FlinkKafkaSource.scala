@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   wrapToFlinkDeserializationSchema,
   FlinkDeserializationSchemaWrapper
 }
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
+import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
   OFFSET_RESET_STRATEGY_LABEL,
   OFFSET_RESET_STRATEGY_PARAM_NAME

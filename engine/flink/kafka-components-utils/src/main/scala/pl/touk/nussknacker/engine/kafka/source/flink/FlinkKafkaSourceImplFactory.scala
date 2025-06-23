@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source, Topic
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
+import pl.touk.nussknacker.engine.kafka.source.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 
 class FlinkKafkaSourceImplFactory[K, V](
     protected val timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]]
