@@ -7,7 +7,6 @@ import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
 
 class UniversalKafkaDeserializer[T](
     schemaRegistryClient: SchemaRegistryClient,
@@ -81,7 +80,7 @@ class MismatchReaderWriterSchemaException(expectedType: String, actualType: Stri
 
 class UniversalKafkaDeserializerFactory(
     createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor
-) extends SchemaRegistryBasedDeserializerFactory {
+) {
 
   def createDeserializer[T](
       schemaRegistryClient: SchemaRegistryClient,
