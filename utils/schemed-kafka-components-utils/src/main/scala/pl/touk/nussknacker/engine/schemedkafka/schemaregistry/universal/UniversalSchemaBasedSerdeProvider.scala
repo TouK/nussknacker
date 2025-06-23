@@ -13,17 +13,14 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid
   SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload,
   SchemaIdFromPayloadInConfluentFormat
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.UniversalKafkaDeserializationSchemaFactory
 
 object UniversalSchemaBasedSerdeProvider {
 
   def create(schemaRegistryClientFactory: SchemaRegistryClientFactory): SchemaBasedSerdeProvider = {
     SchemaBasedSerdeProvider(
       new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory),
-      new KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
-        schemaRegistryClientFactory,
-        new UniversalKafkaDeserializerFactory(createSchemaIdFromMessageExtractor)
-      ),
+      new UniversalKafkaDeserializationSchemaFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
       new UniversalToJsonFormatterFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
     )
   }
