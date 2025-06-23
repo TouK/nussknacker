@@ -1,12 +1,13 @@
-package pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo
+package pl.touk.nussknacker.engine.kafka.source.flink
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import java.util.{Objects, Optional}
 
@@ -200,5 +201,22 @@ class ConsumerRecordSerializer[K, V](val keySerializer: TypeSerializer[K], val v
 
   override def hashCode(): Int =
     Objects.hashCode(keySerializer, valueSerializer)
+
+}
+
+object ConsumerRecordTypeInfo {
+
+  // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
+  def apply[K, V](config: KafkaConfig): TypeInformation[ConsumerRecord[K, V]] = {
+    val keyTypeInfo =
+      if (config.useStringForKey) {
+        Types.STRING.asInstanceOf[TypeInformation[K]]
+      } else {
+        Types.GENERIC(classOf[Any]).asInstanceOf[TypeInformation[K]]
+      }
+
+    val valueTypeInfo = Types.GENERIC(classOf[Any]).asInstanceOf[TypeInformation[V]]
+    new ConsumerRecordTypeInfo[K, V](keyTypeInfo, valueTypeInfo)
+  }
 
 }

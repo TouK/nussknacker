@@ -20,13 +20,16 @@ import scala.reflect.classTag
 object FlinkSerializationSchemaConversions extends LazyLogging {
 
   def wrapToFlinkDeserializationSchema[T](
-      deserializationSchema: serialization.KafkaDeserializationSchema[T]
+      deserializationSchema: serialization.KafkaDeserializationSchema[T],
+      typeInformation: TypeInformation[T]
   ): FlinkDeserializationSchemaWrapper[T] =
-    new FlinkDeserializationSchemaWrapper[T](deserializationSchema)
+    new FlinkDeserializationSchemaWrapper[T](deserializationSchema, typeInformation)
 
   @silent("deprecated")
-  class FlinkDeserializationSchemaWrapper[T](deserializationSchema: serialization.KafkaDeserializationSchema[T])
-      extends kafka.KafkaDeserializationSchema[T] {
+  class FlinkDeserializationSchemaWrapper[T](
+      deserializationSchema: serialization.KafkaDeserializationSchema[T],
+      typeInformation: TypeInformation[T]
+  ) extends kafka.KafkaDeserializationSchema[T] {
 
     protected var exceptionHandlingData: (ExceptionHandler, ContextIdGenerator, NodeId) = _
 
@@ -39,19 +42,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
       this.exceptionHandlingData = (exceptionHandler, contextIdGenerator, nodeId)
     }
 
-    override def getProducedType: TypeInformation[T] = {
-      Option(deserializationSchema)
-        .collect { case withProducedType: ResultTypeQueryable[T @unchecked] =>
-          withProducedType.getProducedType
-        }
-        .getOrElse {
-          logger.debug(
-            s"Used KafkaDeserializationSchema: ${deserializationSchema.getClass} not implementing ResultTypeQueryable - will be used class tag based produced type"
-          )
-          val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
-          TypeInformation.of(clazz)
-        }
-    }
+    override def getProducedType: TypeInformation[T] = typeInformation
 
     override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
 
@@ -78,19 +69,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
   @silent("deprecated")
   def wrapToFlinkSerializationSchema[T](
       serializationSchema: serialization.KafkaSerializationSchema[T]
-  ): kafka.KafkaSerializationSchema[T] = new kafka.KafkaSerializationSchema[T] {
-    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] =
-      serializationSchema.serialize(element, timestamp)
-  }
-
-  def wrapToNuDeserializationSchema[T](deserializationSchema: DeserializationSchema[T]): KafkaDeserializationSchema[T] =
-    new KafkaDeserializationSchema[T] with ResultTypeQueryable[T] {
-      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
-
-      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T =
-        deserializationSchema.deserialize(record.value())
-
-      override def getProducedType: TypeInformation[T] = deserializationSchema.getProducedType
-    }
+  ): kafka.KafkaSerializationSchema[T] = (element: T, timestamp: lang.Long) =>
+    serializationSchema.serialize(element, timestamp)
 
 }
