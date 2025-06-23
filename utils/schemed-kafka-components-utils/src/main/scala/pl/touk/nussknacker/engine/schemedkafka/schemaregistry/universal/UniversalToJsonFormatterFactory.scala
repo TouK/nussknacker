@@ -46,11 +46,11 @@ class UniversalToJsonFormatterFactory(
  * and in reading of these data.
  */
 class UniversalToJsonFormatter[K, V](
-    protected val kafkaConfig: KafkaConfig,
-    protected val schemaRegistryClient: SchemaRegistryClient,
+    kafkaConfig: KafkaConfig,
+    schemaRegistryClient: SchemaRegistryClient,
     recordFormatterSupportDispatcher: RecordFormatterSupportDispatcher,
-    protected val deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-    protected val schemaIdFromMessageExtractor: SchemaIdFromMessageExtractor
+    deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+    schemaIdFromMessageExtractor: SchemaIdFromMessageExtractor
 ) extends Serializable {
 
   private lazy val jsonPayloadToJsonDeserializer =

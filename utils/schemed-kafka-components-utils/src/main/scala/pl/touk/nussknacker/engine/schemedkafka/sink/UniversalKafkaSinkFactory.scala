@@ -27,9 +27,9 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ContentTypes,
   ContentTypesSchemas,
-  SchemaBasedSerdeProvider,
   SchemaRegistryClientFactory
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
@@ -54,7 +54,7 @@ object UniversalKafkaSinkFactory {
 
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+    val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
     val modelConfig: ModelConfig,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
