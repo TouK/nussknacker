@@ -46,6 +46,7 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
   OFFSET_RESET_STRATEGY_PARAM_NAME
 }
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.util
@@ -59,7 +60,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     overridingTimestampAssigner: Option[
       TimestampWatermarkHandler[ConsumerRecord[K, V]]
     ],
-    val formatter: RecordFormatter,
+    val formatter: UniversalToJsonFormatter[K, V],
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo,
     namingStrategy: NamingStrategy
