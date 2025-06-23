@@ -17,8 +17,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.{
   SchemaRegistryBasedDeserializerFactory
 }
 
-import scala.reflect.ClassTag
-
 class FlinkKafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     deserializerFactory: SchemaRegistryBasedDeserializerFactory
@@ -27,7 +25,7 @@ class FlinkKafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
       deserializerFactory
     ) {
 
-  override def create[K: ClassTag, V: ClassTag](
+  override def create[K, V](
       kafkaConfig: KafkaConfig,
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]]
@@ -51,13 +49,13 @@ class FlinkKafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
           Types.STRING.asInstanceOf[TypeInformation[K]]
         } else {
           // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
-          typeInformationDetector.forClass[K]
+          typeInformationDetector.forClass[Any].asInstanceOf[TypeInformation[K]]
         }
       }
 
       private lazy val valueTypeInfo: TypeInformation[V] =
         // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
-        typeInformationDetector.forClass[V]
+        typeInformationDetector.forClass[Any].asInstanceOf[TypeInformation[V]]
 
       override def getProducedType: TypeInformation[ConsumerRecord[K, V]] =
         new ConsumerRecordTypeInfo(keyTypeInfo, valueTypeInfo)

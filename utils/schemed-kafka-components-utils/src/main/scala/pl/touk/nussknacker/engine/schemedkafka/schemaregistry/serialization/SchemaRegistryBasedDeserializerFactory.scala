@@ -7,11 +7,9 @@ import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
-import scala.reflect.ClassTag
-
 trait SchemaRegistryBasedDeserializerFactory extends Serializable {
 
-  def createDeserializer[T: ClassTag](
+  def createDeserializer[T](
       schemaRegistryClient: SchemaRegistryClient,
       kafkaConfig: KafkaConfig,
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
@@ -26,7 +24,7 @@ trait AbstractSchemaRegistryBasedDeserializerFactory {
 
   protected val deserializerFactory: SchemaRegistryBasedDeserializerFactory
 
-  protected final def createDeserializer[T: ClassTag](
+  protected final def createDeserializer[T](
       kafkaConfig: KafkaConfig,
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       isKey: Boolean
@@ -43,13 +41,13 @@ class KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
 ) extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory
     with AbstractSchemaRegistryBasedDeserializerFactory {
 
-  override protected def createKeyDeserializer[K: ClassTag](
+  override protected def createKeyDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       kafkaConfig: KafkaConfig
   ): Deserializer[K] =
     createDeserializer[K](kafkaConfig, schemaDataOpt, isKey = true)
 
-  override protected def createValueDeserializer[V: ClassTag](
+  override protected def createValueDeserializer[V](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       kafkaConfig: KafkaConfig
   ): Deserializer[V] =
