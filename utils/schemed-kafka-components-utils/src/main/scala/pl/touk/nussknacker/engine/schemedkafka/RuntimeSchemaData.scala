@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
-import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.json.JsonSchema
@@ -8,23 +7,6 @@ import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.everit.json
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
-
-trait AvroSchemaDeterminer {
-
-  def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData[AvroSchema]]
-
-  /**
-   * This method should provide schema that will be used in runtime. In some cases it can be other than schema used
-   * in typing. For example:
-   * - I have #input of type schemaA
-   * - I want to to typed filtering on #input.field1
-   * - I want to pass #input to sink, with all (possibly unknown at deployment time) fields
-   */
-  def toRuntimeSchema(schemaUsedInTyping: RuntimeSchemaData[AvroSchema]): Option[RuntimeSchemaData[AvroSchema]] = Some(
-    schemaUsedInTyping
-  )
-
-}
 
 /**
  * This class holds data that will be passed to Flink's tasks for records processing in runtime.
