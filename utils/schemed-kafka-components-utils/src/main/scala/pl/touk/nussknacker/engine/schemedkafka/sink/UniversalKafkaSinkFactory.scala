@@ -318,7 +318,7 @@ class UniversalKafkaSinkFactory(
 
     val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(
       preparedTopic.prepared,
-      Option(finalState.schema),
+      finalState.schema,
       kafkaConfig
     )
 
