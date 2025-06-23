@@ -70,7 +70,7 @@ trait KafkaAvroSpecMixin
 
   protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
-  private lazy val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
+  private lazy val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
     ExecutionConfigPreparer.chain(

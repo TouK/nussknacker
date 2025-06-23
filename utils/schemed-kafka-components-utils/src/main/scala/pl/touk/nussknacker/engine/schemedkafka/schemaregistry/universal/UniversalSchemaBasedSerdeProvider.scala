@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ChainedSchemaIdFromMessageExtractor,
   SchemaRegistryClient,
@@ -15,19 +16,26 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.UniversalKafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
-case class UniversalSchemaBasedSerdeProvider(
-    serializationSchemaFactory: UniversalKafkaSerializationSchemaFactory,
-    deserializationSchemaFactory: KafkaSchemaBasedKeyValueDeserializationSchemaFactory,
-    recordFormatterFactory: UniversalToJsonFormatterFactory,
+class UniversalSchemaBasedSerdeProvider(
+    val serializationSchemaFactory: UniversalKafkaSerializationSchemaFactory,
+    val deserializationSchemaFactory: KafkaSchemaBasedKeyValueDeserializationSchemaFactory,
+    val recordFormatterFactory: UniversalToJsonFormatterFactory,
 )
 
 object UniversalSchemaBasedSerdeProvider {
 
-  def create(schemaRegistryClientFactory: SchemaRegistryClientFactory): UniversalSchemaBasedSerdeProvider = {
-    UniversalSchemaBasedSerdeProvider(
-      new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory),
-      new UniversalKafkaDeserializationSchemaFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
-      new UniversalToJsonFormatterFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
+  def create(
+      schemaRegistryClientFactory: SchemaRegistryClientFactory,
+      kafkaConfig: KafkaConfig
+  ): UniversalSchemaBasedSerdeProvider = {
+    new UniversalSchemaBasedSerdeProvider(
+      new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory, kafkaConfig),
+      new UniversalKafkaDeserializationSchemaFactory(
+        kafkaConfig,
+        schemaRegistryClientFactory,
+        createSchemaIdFromMessageExtractor
+      ),
+      new UniversalToJsonFormatterFactory(kafkaConfig, schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
     )
   }
 

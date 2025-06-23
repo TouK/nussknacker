@@ -52,7 +52,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val kafkaConfig = KafkaConfig.parseConfig(testModelConfig.underlyingConfig)
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
       testModelConfig,
       kafkaConfig,
       new FlinkKafkaSourceImplFactory

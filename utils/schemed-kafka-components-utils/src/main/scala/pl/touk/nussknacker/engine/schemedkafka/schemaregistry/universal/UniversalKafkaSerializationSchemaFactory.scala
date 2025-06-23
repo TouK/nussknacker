@@ -16,13 +16,13 @@ import java.lang
 import java.nio.charset.StandardCharsets
 
 class UniversalKafkaSerializationSchemaFactory(
-    protected val schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    kafkaConfig: KafkaConfig
 ) extends Serializable {
 
   def create(
       topic: TopicName.ForSink,
-      valueSchemaData: RuntimeSchemaData[ParsedSchema],
-      kafkaConfig: KafkaConfig
+      valueSchemaData: RuntimeSchemaData[ParsedSchema]
   ): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer   = new CharSequenceSerializer

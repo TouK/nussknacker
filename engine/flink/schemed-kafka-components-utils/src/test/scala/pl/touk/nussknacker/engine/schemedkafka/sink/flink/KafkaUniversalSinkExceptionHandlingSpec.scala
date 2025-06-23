@@ -49,8 +49,8 @@ class KafkaUniversalSinkExceptionHandlingSpec
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)
 
     val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-    val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
     val kafkaConfig                 = KafkaConfig.parseConfig(config)
+    val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
     val kafkaComponent = new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalProvider,
