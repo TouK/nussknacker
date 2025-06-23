@@ -29,14 +29,14 @@ abstract class KafkaAvroTestProcessConfigCreator(
       universalPayload,
       modelConfig,
       kafkaConfig,
-      new FlinkKafkaSourceImplFactory(None)
+      new FlinkKafkaSourceImplFactory
     )
     val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       modelConfig,
       kafkaConfig.copy(useStringForKey = false),
-      new FlinkKafkaSourceImplFactory(None)
+      new FlinkKafkaSourceImplFactory
     )
 
     Map(
