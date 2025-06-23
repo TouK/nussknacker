@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.source
+package pl.touk.nussknacker.engine.schemedkafka.source
 
 import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -8,6 +8,8 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
 
 trait KafkaSourceImplFactory[K, V] {
 
@@ -18,7 +20,7 @@ trait KafkaSourceImplFactory[K, V] {
       preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-      formatter: RecordFormatter,
+      formatter: UniversalToJsonFormatter[K, V],
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy

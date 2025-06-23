@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
+import cats.data.NonEmptyList
 import io.circe.{Encoder, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.api.test.TestRecord
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json.KafkaJsonKeyValueDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.util.ListUtil
 
 import java.nio.charset.StandardCharsets
 
@@ -23,7 +25,7 @@ class UniversalToJsonFormatterFactory(
   def create[K, V](
       kafkaConfig: KafkaConfig,
       kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]
-  ): RecordFormatter = {
+  ): UniversalToJsonFormatter[K, V] = {
     val schemaRegistryClient         = schemaRegistryClientFactory.create(kafkaConfig)
     val formatterSupportDispatcher   = new RecordFormatterSupportDispatcher(kafkaConfig, schemaRegistryClient)
     val schemaIdFromMessageExtractor = createSchemaIdFromMessageExtractor(schemaRegistryClient)
@@ -38,13 +40,18 @@ class UniversalToJsonFormatterFactory(
 
 }
 
+/**
+ * It is a class for bi-directional conversion between Kafka record and [[TestRecord]]. It is used when data
+ * stored on topic aren't in human readable format and you need to add extra step in generation of test data
+ * and in reading of these data.
+ */
 class UniversalToJsonFormatter[K, V](
     protected val kafkaConfig: KafkaConfig,
     protected val schemaRegistryClient: SchemaRegistryClient,
     recordFormatterSupportDispatcher: RecordFormatterSupportDispatcher,
     protected val deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
     protected val schemaIdFromMessageExtractor: SchemaIdFromMessageExtractor
-) extends RecordFormatter {
+) extends Serializable {
 
   private lazy val jsonPayloadToJsonDeserializer =
     new KafkaJsonKeyValueDeserializationSchemaFactory().create[K, V](kafkaConfig, None, None)
@@ -53,12 +60,40 @@ class UniversalToJsonFormatter[K, V](
 
   import SchemaBasedSerializableConsumerRecord._
 
+  def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
+    val testRecords = records.map { consumerRecord =>
+      val testRecord = formatRecord(consumerRecord)
+      fillEmptyTimestampFromConsumerRecord(testRecord, consumerRecord)
+    }
+    TestData(testRecords)
+  }
+
+  def generateTestData(topics: NonEmptyList[TopicName.ForSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
+    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
+    val merged             = ListUtil.mergeLists(listsFromAllTopics.toList, size)
+    prepareGeneratedTestData(merged)
+  }
+
+  private def fillEmptyTimestampFromConsumerRecord(
+      testRecord: TestRecord,
+      consumerRecord: ConsumerRecord[_, _]
+  ): TestRecord = {
+    testRecord.timestamp match {
+      case Some(_) => testRecord
+      case None    => testRecord.copy(timestamp = getConsumerRecordTimestamp(consumerRecord))
+    }
+  }
+
+  private def getConsumerRecordTimestamp(consumerRecord: ConsumerRecord[_, _]): Option[Long] = {
+    Option(consumerRecord.timestamp()).filterNot(_ == ConsumerRecord.NO_TIMESTAMP)
+  }
+
   /**
    * Step 1: Deserialize raw kafka event to record domain (e.g. GenericRecord).
    * Step 2: Create Encoders that convert record to json
    * Step 3: Encode event's data with schema id's with derived encoder.
    */
-  override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = {
+  private def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = {
     val keySchemaIdOpt = if (kafkaConfig.useStringForKey) {
       None
     } else {
@@ -100,7 +135,7 @@ class UniversalToJsonFormatter[K, V](
    * Step 2: Create key and value json-to-record interpreter based on schema id's provided in json.
    * Step 3: Use interpreter to create raw kafka ConsumerRecord
    */
-  override def parseRecord(
+  def parseRecord(
       topic: TopicName.ForSource,
       testRecord: TestRecord
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
