@@ -144,7 +144,7 @@ class SchemedKafkaScenarioTestingSpec
         _.add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa")))
       )
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
-    val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson) :: Nil)
+    val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson, timestamp = None) :: Nil)
 
     val results = testRunner.runTests(process, scenarioTestData).futureValue
 

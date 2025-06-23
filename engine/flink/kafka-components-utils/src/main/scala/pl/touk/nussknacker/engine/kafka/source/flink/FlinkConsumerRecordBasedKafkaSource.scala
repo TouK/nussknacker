@@ -34,7 +34,6 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
@@ -185,13 +184,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
-    timestampAssigner.orElse(
-      Some(
-        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
-          (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
-        )
-      )
-    )
+    timestampAssigner
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
     overridingTimestampAssigner.orElse(

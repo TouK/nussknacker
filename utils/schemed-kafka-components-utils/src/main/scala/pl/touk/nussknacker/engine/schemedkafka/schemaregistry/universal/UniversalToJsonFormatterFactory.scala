@@ -60,18 +60,20 @@ class UniversalToJsonFormatter[K, V](
 
   import SchemaBasedSerializableConsumerRecord._
 
-  def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
+  def generateTestData(topics: NonEmptyList[TopicName.ForSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
+    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
+    val merged             = ListUtil.mergeLists(listsFromAllTopics.toList, size)
+    prepareGeneratedTestData(merged)
+  }
+
+  private[schemaregistry] def prepareGeneratedTestData(
+      records: List[ConsumerRecord[Array[Byte], Array[Byte]]]
+  ): TestData = {
     val testRecords = records.map { consumerRecord =>
       val testRecord = formatRecord(consumerRecord)
       fillEmptyTimestampFromConsumerRecord(testRecord, consumerRecord)
     }
     TestData(testRecords)
-  }
-
-  def generateTestData(topics: NonEmptyList[TopicName.ForSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
-    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
-    val merged             = ListUtil.mergeLists(listsFromAllTopics.toList, size)
-    prepareGeneratedTestData(merged)
   }
 
   private def fillEmptyTimestampFromConsumerRecord(
