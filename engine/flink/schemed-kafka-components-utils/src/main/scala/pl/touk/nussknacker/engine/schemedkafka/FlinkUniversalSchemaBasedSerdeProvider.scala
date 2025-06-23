@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.KafkaSchemaRegistryBasedValueSerializationSchemaFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalKafkaDeserializerFactory,
-  UniversalSerializerFactory,
+  UniversalKafkaSerializationSchemaFactory,
   UniversalToJsonFormatterFactory
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor
@@ -14,10 +13,7 @@ object FlinkUniversalSchemaBasedSerdeProvider {
 
   def create(schemaRegistryClientFactory: SchemaRegistryClientFactory): SchemaBasedSerdeProvider = {
     SchemaBasedSerdeProvider(
-      new KafkaSchemaRegistryBasedValueSerializationSchemaFactory(
-        schemaRegistryClientFactory,
-        UniversalSerializerFactory
-      ),
+      new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory),
       new FlinkKafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
         schemaRegistryClientFactory,
         new UniversalKafkaDeserializerFactory(createSchemaIdFromMessageExtractor)
