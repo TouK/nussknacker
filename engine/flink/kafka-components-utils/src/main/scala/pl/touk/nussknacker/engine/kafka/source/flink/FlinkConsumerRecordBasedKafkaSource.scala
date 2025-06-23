@@ -36,10 +36,8 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{
-  wrapToFlinkDeserializationSchema,
-  FlinkDeserializationSchemaWrapper
-}
+import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions
+import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.FlinkDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
   OFFSET_RESET_STRATEGY_LABEL,
@@ -72,6 +70,8 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     with WithActionParametersSupport
     with LazyLogging {
 
+  private val typeInformation = ConsumerRecordTypeInfo[K, V](kafkaConfig)
+
   @silent("deprecated")
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -82,7 +82,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     StandardFlinkSourceFunctionUtils.createSourceStream(
       env = env,
       sourceFunction = sourceFunction,
-      typeInformation = wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
+      typeInformation = typeInformation
     )
   }
 
@@ -168,7 +168,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
   ): SourceFunction[ConsumerRecord[K, V]] = {
     new FlinkKafkaConsumerHandlingExceptions[ConsumerRecord[K, V]](
       topics.map(_.name).toList.asJava,
-      wrapToFlinkDeserializationSchema(deserializationSchema),
+      FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema(deserializationSchema, typeInformation),
       KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)),
       flinkNodeContext.exceptionHandlerPreparer,
       flinkNodeContext.convertToEngineRuntimeContext,

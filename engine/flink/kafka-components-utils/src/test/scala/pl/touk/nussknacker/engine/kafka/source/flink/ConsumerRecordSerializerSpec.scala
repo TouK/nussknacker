@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo
+package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.serialization.SerializerConfigImpl
@@ -19,7 +19,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.util.Optional
-import scala.reflect.{classTag, ClassTag}
+import scala.reflect.{ClassTag, classTag}
 import scala.util.Random
 
 class ConsumerRecordSerializerSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo;
+package pl.touk.nussknacker.engine.kafka.source.flink;
 
 import org.apache.flink.api.common.typeutils.CompositeTypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
