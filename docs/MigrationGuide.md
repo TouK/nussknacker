@@ -151,6 +151,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * There is `Unknown` object which extends the case class with `DefaultDisplayStrategy` for compatibility.
   * When introducing new pattern matches regarding types `Unknown(_)` should be used so all display strategies are targeted.
 * [#8054](https://github.com/TouK/nussknacker/pull/8054) `ProcessObjectDependencies` class was replaced by `ModelConfig`
+* [#8256](https://github.com/TouK/nussknacker/pull/8256) The support for kafka source generating custom classes (`KafkaSourceFactory`) was removed
+  We recommend a migration to more generic approach: `UniversalKafkaSourceFactory`
 
 ### Other changes
 

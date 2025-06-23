@@ -21,16 +21,8 @@
         {
             "id": "real-kafka",
             "ref": {
-                "typ": "real-kafka",
-                "parameters": [
-                    {
-                        "name": "Topic",
-                        "expression": {
-                            "language": "spel",
-                            "expression": "'input'"
-                        }
-                    }
-                ]
+                "typ": "kafka-transaction",
+                "parameters": []
             },
             "additionalFields": {
                 "description": null,

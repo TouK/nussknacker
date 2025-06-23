@@ -19,9 +19,9 @@ import scala.reflect.ClassTag
 class UniversalToJsonFormatterFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     createSchemaIdFromMessageExtractor: SchemaRegistryClient => SchemaIdFromMessageExtractor
-) extends RecordFormatterFactory {
+) {
 
-  override def create[K: ClassTag, V: ClassTag](
+  def create[K: ClassTag, V: ClassTag](
       kafkaConfig: KafkaConfig,
       kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
   ): RecordFormatter = {

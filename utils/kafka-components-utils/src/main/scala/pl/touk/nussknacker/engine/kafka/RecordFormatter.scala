@@ -51,27 +51,6 @@ trait RecordFormatter extends Serializable {
 
 }
 
-object BasicRecordFormatter extends RecordFormatter {
-
-  override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
-    TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
-
-  override def parseRecord(
-      topic: TopicName.ForSource,
-      testRecord: TestRecord
-  ): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val stringRecord = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
-    new ConsumerRecord[Array[Byte], Array[Byte]](
-      topic.name,
-      0,
-      0L,
-      Array[Byte](),
-      stringRecord.getBytes(StandardCharsets.UTF_8)
-    )
-  }
-
-}
-
 trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Source with SourceTestSupport[_] =>
 
   protected def kafkaConfig: KafkaConfig

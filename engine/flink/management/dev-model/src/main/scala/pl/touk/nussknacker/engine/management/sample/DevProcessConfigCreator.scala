@@ -4,9 +4,7 @@ import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
 import com.github.ghik.silencer.silent
-import io.circe.{Decoder, Encoder}
-import io.circe.parser.decode
-import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
+import io.circe.Encoder
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import pl.touk.nussknacker.engine.ModelConfig
@@ -18,22 +16,12 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
-import pl.touk.nussknacker.engine.flink.util.source.{
-  EspDeserializationSchema,
-  ReturningClassInstanceSource,
-  ReturningTestCaseClass
-}
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{
-  ConsumerRecordToJsonFormatterFactory,
-  FixedValueDeserializationSchemaFactory
-}
+import pl.touk.nussknacker.engine.flink.util.source.{ReturningClassInstanceSource, ReturningTestCaseClass}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.management.sample.dict._
-import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
+import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord}
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
@@ -52,9 +40,7 @@ import pl.touk.nussknacker.engine.util.functions.{
   util
 }
 
-import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
-import scala.reflect.ClassTag
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -97,15 +83,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "real-kafka" -> all(fixedValueKafkaSource[String](modelConfig, new SimpleStringSchema())),
-      "real-kafka-json-SampleProduct" -> all(
-        fixedValueKafkaSource(
-          modelConfig,
-          new EspDeserializationSchema(bytes =>
-            decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).toOption.get
-          )(TypeInformation.of(classOf[SampleProduct]))
-        )
-      ),
       "kafka-transaction" -> all(SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource(true))),
       "kafka-transaction-no-test-timestamp-assigner" -> all(
         SourceFactory.noParamUnboundedStreamFactory[String](new NoEndingSource(false))
@@ -300,20 +277,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         "engine-version"  -> "0.1",
         "generation-time" -> LocalDateTime.now().toString
       )
-    )
-  }
-
-  private def fixedValueKafkaSource[T: ClassTag: Encoder: Decoder](
-      modelConfig: ModelConfig,
-      schema: DeserializationSchema[T]
-  ): KafkaSourceFactory[String, T] = {
-    val schemaFactory    = new FixedValueDeserializationSchemaFactory(schema)
-    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, T]
-    new KafkaSourceFactory[String, T](
-      schemaFactory,
-      formatterFactory,
-      modelConfig,
-      new FlinkKafkaSourceImplFactory(None)
     )
   }
 

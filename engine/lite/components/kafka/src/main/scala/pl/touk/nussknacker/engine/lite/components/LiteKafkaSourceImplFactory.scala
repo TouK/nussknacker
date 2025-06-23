@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.kafka.{
   RecordFormatterBaseTestDataGenerator
 }
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
+import pl.touk.nussknacker.engine.kafka.source.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 

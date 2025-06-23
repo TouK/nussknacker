@@ -1,0 +1,27 @@
+package pl.touk.nussknacker.engine.kafka.source
+
+import cats.data.NonEmptyList
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.Params
+import pl.touk.nussknacker.engine.api.context.transformation._
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+
+trait KafkaSourceImplFactory[K, V] {
+
+  def createSource(
+      params: Params,
+      dependencies: List[NodeDependencyValue],
+      finalState: Any,
+      preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
+      kafkaConfig: KafkaConfig,
+      deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+      formatter: RecordFormatter,
+      contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
+      testParametersInfo: KafkaTestParametersInfo,
+      namingStrategy: NamingStrategy
+  ): Source
+
+}
