@@ -28,14 +28,19 @@ object UniversalSchemaBasedSerdeProvider {
       schemaRegistryClientFactory: SchemaRegistryClientFactory,
       kafkaConfig: KafkaConfig
   ): UniversalSchemaBasedSerdeProvider = {
+    val deserializationSchemaFactory = new UniversalKafkaDeserializationSchemaFactory(
+      kafkaConfig,
+      schemaRegistryClientFactory,
+      createSchemaIdFromMessageExtractor
+    )
     new UniversalSchemaBasedSerdeProvider(
       new UniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory, kafkaConfig),
-      new UniversalKafkaDeserializationSchemaFactory(
+      deserializationSchemaFactory,
+      new UniversalToJsonFormatterFactory(
         kafkaConfig,
-        schemaRegistryClientFactory,
-        createSchemaIdFromMessageExtractor
+        createSchemaIdFromMessageExtractor,
+        deserializationSchemaFactory
       ),
-      new UniversalToJsonFormatterFactory(kafkaConfig, schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
     )
   }
 
