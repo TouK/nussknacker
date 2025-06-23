@@ -29,12 +29,14 @@ trait SchemaRegistryClient extends Serializable {
 
   def getFreshSchema(
       topic: UnspecializedTopicName,
-      version: Option[Int],
+      versionOption: SchemaVersionOption,
       isKey: Boolean
-  ): Validated[SchemaRegistryError, SchemaWithMetadata] =
-    version
-      .map(ver => getByTopicAndVersion(topic, ver, isKey))
-      .getOrElse(getLatestFreshSchema(topic, isKey))
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
+    versionOption match {
+      case ExistingSchemaVersion(version) => getByTopicAndVersion(topic, version, isKey)
+      case LatestSchemaVersion            => getLatestFreshSchema(topic, isKey)
+    }
+  }
 
   def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 

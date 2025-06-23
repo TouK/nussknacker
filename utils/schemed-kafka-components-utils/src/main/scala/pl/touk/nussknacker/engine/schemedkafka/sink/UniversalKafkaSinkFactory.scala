@@ -19,10 +19,11 @@ import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{
   KafkaUniversalComponentTransformer,
   RuntimeSchemaData,
-  SchemaDeterminerErrorHandler
+  SchemaRegistryErrorHandler
 }
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
@@ -288,11 +289,14 @@ class UniversalKafkaSinkFactory(
   }
 
   private def getSchema(topic: String, version: String)(implicit nodeId: NodeId) = {
-    val preparedTopic    = prepareTopic(topic)
-    val versionOption    = parseVersionOption(version)
-    val schemaDeterminer = prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption)
-    schemaDeterminer.determineSchemaUsedInTyping
-      .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
+    val preparedTopic = prepareTopic(topic)
+    val versionOption = parseVersionOption(version)
+    schemaRegistryClient
+      .getFreshSchema(preparedTopic.prepared.toUnspecialized, versionOption, isKey = false)
+      .map(withMetadata =>
+        RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))
+      )
+      .leftMap(SchemaRegistryErrorHandler.handleSchemaRegistryError(_))
       .leftMap(NonEmptyList.one)
   }
 

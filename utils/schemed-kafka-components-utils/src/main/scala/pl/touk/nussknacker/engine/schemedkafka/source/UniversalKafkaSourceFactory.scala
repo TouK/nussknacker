@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
@@ -120,7 +121,9 @@ class UniversalKafkaSourceFactory(
           case Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(results)) => results
           case _ =>
             determineSchemaAndType(
-              prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
+              preparedTopic,
+              versionOption,
+              isKey = false,
               Some(schemaVersionParamName)
             )
         }
@@ -134,11 +137,19 @@ class UniversalKafkaSourceFactory(
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[ParameterName])(
+  protected def determineSchemaAndType(
+      preparedKafkaTopic: PreparedKafkaTopic[TopicName.ForSource],
+      versionOption: SchemaVersionOption,
+      isKey: Boolean,
+      paramName: Option[ParameterName]
+  )(
       implicit nodeId: NodeId
   ): Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
-    schemaDeterminer.determineSchemaUsedInTyping
-      .map { schemaData =>
+    schemaRegistryClient
+      .getFreshSchema(preparedKafkaTopic.prepared.toUnspecialized, versionOption, isKey = isKey)
+      .map { withMetadata =>
+        val schemaData =
+          RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))
         val schema = schemaData.schema
         (Some(schemaData), schemaSupportDispatcher.forSchemaType(schema.schemaType()).typeDefinition(schema))
       }
@@ -160,7 +171,12 @@ class UniversalKafkaSourceFactory(
     val keyValidationResult = if (kafkaConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
-      determineSchemaAndType(prepareUniversalKeySchemaDeterminer(preparedTopic), Some(topicParamName))
+      determineSchemaAndType(
+        preparedTopic,
+        LatestSchemaVersion,
+        isKey = true,
+        Some(topicParamName)
+      )
     }
 
     (keyValidationResult, valueValidationResult) match {
