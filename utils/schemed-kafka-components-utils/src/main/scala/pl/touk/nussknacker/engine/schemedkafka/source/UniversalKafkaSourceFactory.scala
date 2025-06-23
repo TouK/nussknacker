@@ -224,13 +224,14 @@ class UniversalKafkaSourceFactory(
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
     val deserializationSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
-      .create[Any, Any](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+      .create[Any, Any](keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
 
     // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
     val formatterSchema =
-      schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[Any, Any](kafkaConfig, None, None)
+      schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
+        .create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None)
     val recordFormatter =
-      schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[Any, Any](kafkaConfig, formatterSchema)
+      schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[Any, Any](formatterSchema)
 
     val defaultValuesForTestParameters: Map[ParameterName, Expression] =
       if (params.isPresent(dataSampleParamName)) {

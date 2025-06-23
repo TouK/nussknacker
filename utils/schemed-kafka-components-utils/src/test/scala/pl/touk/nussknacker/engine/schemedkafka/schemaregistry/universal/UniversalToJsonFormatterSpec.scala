@@ -36,10 +36,14 @@ class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with Option
 
   private val formatter = {
     val serdeProvider =
-      UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient))
+      UniversalSchemaBasedSerdeProvider.create(
+        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient),
+        kafkaConfig
+      )
     val formatterSchema =
-      serdeProvider.deserializationSchemaFactory.create[String, GenericRecord](kafkaConfig, None, None)
-    serdeProvider.recordFormatterFactory.create[String, GenericRecord](kafkaConfig, formatterSchema)
+      serdeProvider.deserializationSchemaFactory
+        .create[String, GenericRecord](keySchemaDataOpt = None, valueSchemaDataOpt = None)
+    serdeProvider.recordFormatterFactory.create[String, GenericRecord](formatterSchema)
   }
 
   test("json record formatting should work without schema") {

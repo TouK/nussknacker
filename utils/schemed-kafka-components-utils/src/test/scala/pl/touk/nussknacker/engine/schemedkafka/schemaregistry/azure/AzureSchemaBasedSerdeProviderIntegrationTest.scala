@@ -51,11 +51,11 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
       .set("a", "aValue")
       .build()
     val key             = "sample-key"
-    val serdeProvider   = UniversalSchemaBasedSerdeProvider.create(UniversalSchemaRegistryClientFactory)
+    val serdeProvider   = UniversalSchemaBasedSerdeProvider.create(UniversalSchemaRegistryClientFactory, kafkaConfig)
     val valueSchemaData = RuntimeSchemaData(schema, None).toParsedSchemaData
     val pr = serdeProvider.serializationSchemaFactory
       // TODO: we should check if schema name matches our topic-schema name matching convention in the serializer
-      .create(TopicName.ForSink("notImportantTopicNme"), valueSchemaData, kafkaConfig)
+      .create(TopicName.ForSink("notImportantTopicNme"), valueSchemaData)
       .serialize(new KeyedValue[AnyRef, AnyRef](key, record), timestamp = 0L)
 
     val contentTypeHeader      = Option(pr.headers().lastHeader("content-type")).value
@@ -76,7 +76,7 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
       Optional.empty[Integer]()
     )
     val deserialized = serdeProvider.deserializationSchemaFactory
-      .create[String, IndexedRecord](kafkaConfig, None, Some(valueSchemaData))
+      .create[String, IndexedRecord](keySchemaDataOpt = None, Some(valueSchemaData))
       .deserialize(cr)
 
     deserialized.key() shouldEqual key

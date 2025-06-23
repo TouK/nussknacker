@@ -17,12 +17,11 @@ abstract class KafkaAvroTestProcessConfigCreator(
     sinkForInputMetaResultsHolder: => TestResultsHolder[java.util.Map[String @unchecked, _]]
 ) extends EmptyProcessConfigCreator {
 
-  private val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
-
   override def sourceFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
-    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 
     val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
@@ -54,7 +53,9 @@ abstract class KafkaAvroTestProcessConfigCreator(
   override def sinkFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
-    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
+
     Map(
       "kafka" -> defaultCategory(
         new UniversalKafkaSinkFactory(

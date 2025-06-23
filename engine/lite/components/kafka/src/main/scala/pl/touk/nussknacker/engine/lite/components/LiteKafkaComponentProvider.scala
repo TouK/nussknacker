@@ -38,11 +38,9 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
-    val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
-
-    validateConfiguration(modelConfig.underlyingConfig)
-
     val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    validateConfiguration(kafkaConfig)
+    val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 
     List(
       ComponentDefinition(
@@ -72,8 +70,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
   override def isAutoLoaded: Boolean = true
 
-  private def validateConfiguration(config: Config): Unit = {
-    val kafkaConfig = KafkaConfig.parseConfig(config)
+  private def validateConfiguration(kafkaConfig: KafkaConfig): Unit = {
     if (kafkaConfig.idleTimeout.isDefined) {
       throw new IllegalArgumentException(
         "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +

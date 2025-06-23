@@ -18,12 +18,12 @@ import pl.touk.nussknacker.engine.util.ListUtil
 import java.nio.charset.StandardCharsets
 
 class UniversalToJsonFormatterFactory(
+    kafkaConfig: KafkaConfig,
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     createSchemaIdFromMessageExtractor: SchemaRegistryClient => SchemaIdFromMessageExtractor
 ) extends Serializable {
 
   def create[K, V](
-      kafkaConfig: KafkaConfig,
       kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]
   ): UniversalToJsonFormatter[K, V] = {
     val schemaRegistryClient         = schemaRegistryClientFactory.create(kafkaConfig)
@@ -54,7 +54,8 @@ class UniversalToJsonFormatter[K, V](
 ) extends Serializable {
 
   private lazy val jsonPayloadToJsonDeserializer =
-    new KafkaJsonKeyValueDeserializationSchemaFactory().create[K, V](kafkaConfig, None, None)
+    new KafkaJsonKeyValueDeserializationSchemaFactory(kafkaConfig)
+      .create[K, V](keySchemaDataOpt = None, valueSchemaDataOpt = None)
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 

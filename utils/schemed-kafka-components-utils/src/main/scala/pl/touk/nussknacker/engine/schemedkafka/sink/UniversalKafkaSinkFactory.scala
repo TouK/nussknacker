@@ -321,7 +321,6 @@ class UniversalKafkaSinkFactory(
     val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(
       preparedTopic.prepared,
       finalState.schema,
-      kafkaConfig
     )
 
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"

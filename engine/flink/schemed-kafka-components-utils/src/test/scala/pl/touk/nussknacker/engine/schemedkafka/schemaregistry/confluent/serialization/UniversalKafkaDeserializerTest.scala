@@ -45,7 +45,7 @@ class UniversalKafkaDeserializerTest
   lazy val payloadWithSchemaIdSetup: CreateSetup = readerSchema =>
     SchemaRegistryProviderSetup(
       SchemaRegistryProviderSetupType.avro,
-      UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory),
+      UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory, kafkaConfig),
       new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
       new UniversalKafkaDeserializer(
         confluentSchemaRegistryClient,
@@ -157,7 +157,8 @@ class UniversalKafkaDeserializerTest
         }
         val setup = createSetup(expectedRuntimeSchemaData.toParsedSchemaData)
         val deserializer =
-          setup.provider.deserializationSchemaFactory.create(kafkaConfig, None, schemaDataOpt.map(_.toParsedSchemaData))
+          setup.provider.deserializationSchemaFactory
+            .create(keySchemaDataOpt = None, schemaDataOpt.map(_.toParsedSchemaData))
 
         val headers = if (shouldSendHeaders) {
           val givenObjSchemaId =
