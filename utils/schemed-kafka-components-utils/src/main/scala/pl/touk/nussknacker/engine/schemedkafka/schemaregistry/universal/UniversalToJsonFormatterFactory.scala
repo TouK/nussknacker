@@ -73,20 +73,10 @@ class UniversalToJsonFormatter[K, V](
       records: List[ConsumerRecord[Array[Byte], Array[Byte]]]
   ): TestData = {
     val testRecords = records.map { consumerRecord =>
-      val testRecord = formatRecord(consumerRecord)
-      fillEmptyTimestampFromConsumerRecord(testRecord, consumerRecord)
+      val testRecordJson = formatRecord(consumerRecord)
+      TestRecord(testRecordJson, getConsumerRecordTimestamp(consumerRecord))
     }
     TestData(testRecords)
-  }
-
-  private def fillEmptyTimestampFromConsumerRecord(
-      testRecord: TestRecord,
-      consumerRecord: ConsumerRecord[_, _]
-  ): TestRecord = {
-    testRecord.timestamp match {
-      case Some(_) => testRecord
-      case None    => testRecord.copy(timestamp = getConsumerRecordTimestamp(consumerRecord))
-    }
   }
 
   private def getConsumerRecordTimestamp(consumerRecord: ConsumerRecord[_, _]): Option[Long] = {
@@ -98,7 +88,7 @@ class UniversalToJsonFormatter[K, V](
    * Step 2: Create Encoders that convert record to json
    * Step 3: Encode event's data with schema id's with derived encoder.
    */
-  private def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = {
+  private def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Json = {
     val keySchemaIdOpt = if (kafkaConfig.useStringForKey) {
       None
     } else {
@@ -113,7 +103,7 @@ class UniversalToJsonFormatter[K, V](
       valueSchemaIdOpt,
       SerializableConsumerRecord(deserializedRecord)
     )
-    TestRecord(consumerRecordEncoder(keySchemaIdOpt, valueSchemaIdOpt)(serializableRecord))
+    consumerRecordEncoder(keySchemaIdOpt, valueSchemaIdOpt)(serializableRecord)
   }
 
   private def consumerRecordEncoder(
