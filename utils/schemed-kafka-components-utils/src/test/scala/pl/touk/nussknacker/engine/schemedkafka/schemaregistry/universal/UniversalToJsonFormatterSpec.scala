@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.formatter
+package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -14,16 +14,12 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, Unspecia
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
-  MockSchemaRegistryClientFactory,
-  UniversalSchemaBasedSerdeProvider
-}
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 
-class UniversalRecordFormatterSpec extends AnyFunSuite with Matchers with OptionValues {
+class UniversalToJsonFormatterSpec extends AnyFunSuite with Matchers with OptionValues {
 
   private lazy val config = ConfigFactory
     .empty()
