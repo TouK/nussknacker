@@ -6,7 +6,11 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   schemaVersionParamName,
   topicParamName
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaTopicError, SchemaVersionError}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaDeterminerError,
+  SchemaTopicError,
+  SchemaVersionError
+}
 
 object SchemaDeterminerErrorHandler {
 

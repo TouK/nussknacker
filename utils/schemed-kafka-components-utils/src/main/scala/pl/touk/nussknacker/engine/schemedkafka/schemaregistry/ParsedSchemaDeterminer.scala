@@ -4,7 +4,7 @@ import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
-import pl.touk.nussknacker.engine.schemedkafka.{RuntimeSchemaData, SchemaDeterminerError}
+import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 
 class ParsedSchemaDeterminer(
     schemaRegistryClient: SchemaRegistryClient,
@@ -29,3 +29,5 @@ class ParsedSchemaDeterminer(
   }
 
 }
+
+class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)
