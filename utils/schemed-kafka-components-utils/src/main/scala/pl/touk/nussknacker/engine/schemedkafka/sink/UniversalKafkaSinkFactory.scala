@@ -114,13 +114,6 @@ class UniversalKafkaSinkFactory(
       context: ValidationContext
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
-          (`topicParamName`, FailedToDefineParameter(errors)) ::
-          (`contentTypeParamName`, DefinedEagerParameter(_: String, _)) ::
-          (`sinkKeyParamName`, _) :: Nil,
-          _
-        ) =>
-      FinalResults(context, errors.toList)
-    case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) ::
           (`sinkKeyParamName`, _) :: Nil,

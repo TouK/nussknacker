@@ -374,7 +374,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     )
     result.errors shouldBe CustomNodeError(
       sinkNodeId.id,
-      "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime', path 'nullField' actual: 'Unknown' expected: 'Null', path 'unionField' actual: 'Unknown' expected: 'Long | String'.",
+      "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime'.",
       Some(sinkValueParamName)
     ) :: Nil
 
@@ -448,7 +448,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
     result.errors shouldBe CustomNodeError(
       sinkNodeId.id,
-      "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime', path 'nullField' actual: 'Unknown' expected: 'Null'.",
+      "Provided value does not match scenario output - errors:\nIncorrect type: path 'logicalDate' actual: 'String' expected: 'LocalDate | LocalDate', path 'logicalTimestamp' actual: 'String' expected: 'ZonedDateTime | LocalDateTime'.",
       Some(sinkValueParamName)
     ) :: Nil
 
