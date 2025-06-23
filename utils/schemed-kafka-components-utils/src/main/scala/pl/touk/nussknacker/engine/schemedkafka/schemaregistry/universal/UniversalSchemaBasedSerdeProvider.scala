@@ -31,7 +31,6 @@ object UniversalSchemaBasedSerdeProvider {
         new UniversalKafkaDeserializerFactory(createSchemaIdFromMessageExtractor)
       ),
       new UniversalToJsonFormatterFactory(schemaRegistryClientFactory, createSchemaIdFromMessageExtractor),
-      UniversalSchemaValidator
     )
   }
 

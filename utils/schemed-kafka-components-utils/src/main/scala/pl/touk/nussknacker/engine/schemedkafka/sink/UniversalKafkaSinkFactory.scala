@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   BaseDefinedParameter,
@@ -132,12 +131,6 @@ class UniversalKafkaSinkFactory(
       // edge case - for some reason Topic/Version is not defined
       getSchema(topic, version)
         .andThen { runtimeSchemaData =>
-          schemaBasedMessagesSerdeProvider.schemaValidator
-            .validateSchema(runtimeSchemaData.schema)
-            .map(_ => runtimeSchemaData)
-            .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
-        }
-        .andThen { runtimeSchemaData =>
           schemaSupportDispatcher
             .forSchemaType(runtimeSchemaData.schema.schemaType())
             .extractParameterForSink(
@@ -219,14 +212,7 @@ class UniversalKafkaSinkFactory(
           (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) :: Nil,
           _
         ) =>
-      val determinedSchema = getSchema(topic, version)
-      val validatedSchema = determinedSchema.andThen { schema =>
-        schemaBasedMessagesSerdeProvider.schemaValidator
-          .validateSchema(schema.schema)
-          .map(_ => schema)
-          .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
-      }
-      validatedSchema
+      getSchema(topic, version)
         .andThen { schemaData =>
           schemaSupportDispatcher
             .forSchemaType(schemaData.schema.schemaType())
