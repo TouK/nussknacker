@@ -1,8 +1,6 @@
 import { useWindowManager } from "@touk/window-manager";
 import { isEmpty } from "lodash";
-import { HTML5toTouch } from "rdndmb-html5-to-touch";
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DndProvider } from "react-dnd-multi-backend";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -208,7 +206,7 @@ function Visualization() {
     const [Portal, portalRef] = usePortal();
 
     return (
-        <DndProvider options={HTML5toTouch}>
+        <>
             <GraphPage data-testid="graphPage">
                 <SpinnerWrapper isReady={!graphNotReady}>
                     {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
@@ -225,7 +223,7 @@ function Visualization() {
                 </GraphProvider>
             </GraphPage>
             <div data-testid="toolbar-portal" ref={portalRef} />
-        </DndProvider>
+        </>
     );
 }
 
