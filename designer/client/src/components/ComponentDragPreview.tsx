@@ -7,9 +7,9 @@ import { useDebouncedValue } from "rooks";
 import type { NodeType } from "../types";
 import type { ComponentPreviewProps } from "./ComponentPreview";
 import { ComponentPreview } from "./ComponentPreview";
+import { DndTypes } from "./DndTypes";
 import { StickyNoteType } from "./graph/utils/stickyNotesUtils";
 import { StickyNotePreview } from "./StickyNotePreview";
-import { DndTypes } from "./toolbars/creator/Tool";
 
 function useNotNull<T>(value: T) {
     const [current, setCurrent] = useState(() => value);
