@@ -80,7 +80,7 @@ class MismatchReaderWriterSchemaException(expectedType: String, actualType: Stri
 
 class UniversalKafkaDeserializerFactory(
     createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor
-) {
+) extends Serializable {
 
   def createDeserializer[T](
       schemaRegistryClient: SchemaRegistryClient,

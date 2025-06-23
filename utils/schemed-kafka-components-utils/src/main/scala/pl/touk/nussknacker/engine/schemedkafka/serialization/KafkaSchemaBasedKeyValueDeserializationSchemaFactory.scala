@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordKafkaDeseri
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 
-abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
+abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory extends Serializable {
 
   protected def createKeyOrUseStringDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
