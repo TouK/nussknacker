@@ -14,6 +14,8 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
+//provoke ci
+
 // Warning: Flink doesn't work correctly with Scala 2.12.11 and higher.
 // Upgrading to a newer version of Scala 2.12 causes the JavaCollectionsSerializationTest to fail
 // because these versions switched to the same Java collection wrappers used in Scala 2.13.
