@@ -70,8 +70,6 @@ trait KafkaAvroSpecMixin
 
   protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
-  private lazy val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
-
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
     ExecutionConfigPreparer.chain(
       ProcessSettingsPreparer(modelData),
@@ -96,16 +94,20 @@ trait KafkaAvroSpecMixin
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
   protected def universalSourceFactory(useStringForKey: Boolean): KafkaSource = {
+    val kafkaConfigWithCorrectUseStringForKey = kafkaConfig.copy(useStringForKey = useStringForKey)
+    val universalPayload =
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfigWithCorrectUseStringForKey)
     new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       testModelConfig,
-      kafkaConfig.copy(useStringForKey = useStringForKey),
+      kafkaConfigWithCorrectUseStringForKey,
       new FlinkKafkaSourceImplFactory
     )
   }
 
   protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
+    val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
     new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalPayload,

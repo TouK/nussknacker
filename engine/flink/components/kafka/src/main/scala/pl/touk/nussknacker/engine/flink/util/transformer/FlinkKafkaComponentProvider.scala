@@ -39,7 +39,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
-    val kafkaConfig            = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val kafkaConfig            = KafkaConfig.parseConfig(overriddenModelConfig.underlyingConfig)
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 
     List(
