@@ -19,7 +19,7 @@ import scala.reflect.ClassTag
 class UniversalToJsonFormatterFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     createSchemaIdFromMessageExtractor: SchemaRegistryClient => SchemaIdFromMessageExtractor
-) {
+) extends Serializable {
 
   def create[K: ClassTag, V: ClassTag](
       kafkaConfig: KafkaConfig,
