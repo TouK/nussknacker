@@ -39,6 +39,8 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
+    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
     List(
@@ -48,6 +50,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
           schemaRegistryClientFactory,
           universalSerdeProvider,
           finalModelConfig,
+          kafkaConfig,
           new FlinkKafkaSourceImplFactory(None)
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
@@ -57,6 +60,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
           schemaRegistryClientFactory,
           universalSerdeProvider,
           finalModelConfig,
+          kafkaConfig,
           FlinkKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))

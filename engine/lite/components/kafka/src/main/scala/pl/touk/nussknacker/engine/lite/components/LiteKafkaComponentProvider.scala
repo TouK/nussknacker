@@ -42,6 +42,8 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
     validateConfiguration(modelConfig.underlyingConfig)
 
+    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+
     List(
       ComponentDefinition(
         KafkaUniversalName,
@@ -49,6 +51,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
           schemaRegistryClientFactory,
           universalSerdeProvider,
           modelConfig,
+          kafkaConfig,
           new LiteKafkaSourceImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
@@ -58,6 +61,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
           schemaRegistryClientFactory,
           universalSerdeProvider,
           modelConfig,
+          kafkaConfig,
           LiteKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))

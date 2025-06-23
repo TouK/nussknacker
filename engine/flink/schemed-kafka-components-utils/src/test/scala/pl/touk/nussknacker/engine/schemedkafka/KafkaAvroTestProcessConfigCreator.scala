@@ -22,20 +22,22 @@ abstract class KafkaAvroTestProcessConfigCreator(
   override def sourceFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
+    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+
     val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       modelConfig,
+      kafkaConfig,
       new FlinkKafkaSourceImplFactory(None)
     )
     val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       modelConfig,
+      kafkaConfig.copy(useStringForKey = false),
       new FlinkKafkaSourceImplFactory(None)
-    ) {
-      override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
-    }
+    )
 
     Map(
       "kafka"           -> defaultCategory(universalSourceFactory),
@@ -52,12 +54,14 @@ abstract class KafkaAvroTestProcessConfigCreator(
   override def sinkFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
+    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
     Map(
       "kafka" -> defaultCategory(
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalPayload,
           modelConfig,
+          kafkaConfig,
           FlinkKafkaUniversalSinkImplFactory
         )
       ),
