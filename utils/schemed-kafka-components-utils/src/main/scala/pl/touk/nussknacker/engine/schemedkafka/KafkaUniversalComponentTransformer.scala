@@ -159,28 +159,6 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)
 
-  protected def prepareUniversalValueSchemaDeterminer(
-      preparedTopic: PreparedKafkaTopic[TN],
-      version: SchemaVersionOption
-  ): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      version,
-      isKey = false
-    )
-  }
-
-  // TODO: add schema versioning for key schemas
-  protected def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      LatestSchemaVersion,
-      isKey = true
-    )
-  }
-
   protected def topicParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val topicParam = getTopicParam.map(List(_))
