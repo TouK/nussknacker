@@ -5,7 +5,6 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
-import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode.{DynamicForms, SingleJsonTemplateParameter}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -110,6 +109,25 @@ class UniversalKafkaSinkFactory(
 
   override protected def topicFrom(value: String): TopicName.ForSink = TopicName.ForSink(value)
 
+  private def handleInvalidTopicParam(
+      context: ValidationContext
+  ): ContextTransformationDefinition = {
+    case TransformationStep(
+          (`topicParamName`, FailedToDefineParameter(errors)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`sinkKeyParamName`, _) :: Nil,
+          _
+        ) =>
+      FinalResults(context, errors.toList)
+    case TransformationStep(
+          (`topicParamName`, FailedToDefineParameter(errors)) ::
+          (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`sinkKeyParamName`, _) :: Nil,
+          _
+        ) =>
+      FinalResults(context, errors.toList)
+  }
+
   protected def handleSinkValueForSchemalessTopic(
       context: ValidationContext
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
@@ -146,25 +164,6 @@ class UniversalKafkaSinkFactory(
       )
   }
 
-  private def handleInvalidTopicParam(
-      context: ValidationContext
-  ): ContextTransformationDefinition = {
-    case TransformationStep(
-          (`topicParamName`, FailedToDefineParameter(errors)) ::
-          (`contentTypeParamName`, DefinedEagerParameter(_: String, _)) ::
-          (`sinkKeyParamName`, _) :: Nil,
-          _
-        ) =>
-      FinalResults(context, errors.toList)
-    case TransformationStep(
-          (`topicParamName`, FailedToDefineParameter(errors)) ::
-          (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
-          (`sinkKeyParamName`, _) :: Nil,
-          _
-        ) =>
-      FinalResults(context, errors.toList)
-  }
-
   private def handleSinkValueForSchemedTopic(
       context: ValidationContext,
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
@@ -174,48 +173,6 @@ class UniversalKafkaSinkFactory(
       case JsonLikeValuesEnteringMode.SingleJsonTemplateParameter =>
         handleSingleJsonTemplateParameter(context)
     }
-  }
-
-  private def handleSingleJsonTemplateParameter(
-      context: ValidationContext
-  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
-    case TransformationStep(
-          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
-          (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
-          (`sinkKeyParamName`, _) :: Nil,
-          _
-        ) =>
-      NextParameters(validationModeParamDeclaration.createParameter() :: Nil)
-    case TransformationStep(
-          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) ::
-          (`sinkKeyParamName`, _) ::
-          (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) :: Nil,
-          _
-        ) =>
-      validateSchema(topic, version)
-        .andThen(schema =>
-          extractSingleParameterForSchema(
-            schemaData = schema,
-            validationMode = extractValidationMode(mode),
-          )
-            .map { param =>
-              NextParameters(param.value :: Nil, state = Some(TransformationState(schema, param)))
-            }
-        )
-        .valueOr { errors =>
-          FinalResults(context, errors.toList)
-        }
-    case TransformationStep(
-          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
-          (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
-          (`sinkKeyParamName`, _) ::
-          (`sinkValidationModeParamName`, _) ::
-          (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
-          Some(state)
-        ) =>
-      val errors = state.validateParams(Map(sinkValueParamName -> value))
-      FinalResults(context, errors, Some(state))
   }
 
   private def handleDynamicFormParameters(
@@ -305,6 +262,48 @@ class UniversalKafkaSinkFactory(
         validationAgainstSchemaErrors,
         Some(state)
       )
+  }
+
+  private def handleSingleJsonTemplateParameter(
+      context: ValidationContext
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`sinkKeyParamName`, _) :: Nil,
+          _
+        ) =>
+      NextParameters(validationModeParamDeclaration.createParameter() :: Nil)
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) :: Nil,
+          _
+        ) =>
+      validateSchema(topic, version)
+        .andThen(schema =>
+          extractSingleParameterForSchema(
+            schemaData = schema,
+            validationMode = extractValidationMode(mode),
+          )
+            .map { param =>
+              NextParameters(param.value :: Nil, state = Some(TransformationState(schema, param)))
+            }
+        )
+        .valueOr { errors =>
+          FinalResults(context, errors.toList)
+        }
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`schemaVersionParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkValidationModeParamName`, _) ::
+          (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
+          Some(state)
+        ) =>
+      val errors = state.validateParams(Map(sinkValueParamName -> value))
+      FinalResults(context, errors, Some(state))
   }
 
   private def extractSingleParameterForSchema(
