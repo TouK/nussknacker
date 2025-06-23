@@ -67,7 +67,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
 
         if (editStateRef.current === "processing") return;
 
-        console.log("node", node);
         setNodeId(node.id);
         setEditedNodeWithDebounce(node);
     }, [editStateRef, node, setEditedNodeWithDebounce]);
