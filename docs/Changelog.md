@@ -208,6 +208,7 @@ description: Stay informed with detailed changelogs covering new features, impro
             disabled: { oneOfUserRoles: ["AllPermissions"], type: "allof" } // Disabled, when user has role `AllPermissions` 
          }
       ```
+* [#8209](https://github.com/TouK/nussknacker/pull/8209) Support for jdk 1.17. Scala 2.12.10 version upgraded to 2.12.15. Using the own flink-scala library for 2.12 builds.  
 
 ## 1.18
 
