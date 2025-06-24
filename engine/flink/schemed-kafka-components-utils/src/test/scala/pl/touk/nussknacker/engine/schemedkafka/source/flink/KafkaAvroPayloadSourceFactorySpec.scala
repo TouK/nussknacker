@@ -143,7 +143,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
             NonEmptyList(
               CustomNodeError(
                 _,
-                "Schema subject doesn't exist.",
+                "Schema version doesn't exist.",
                 _
               ),
               _
