@@ -189,8 +189,6 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-source-genericsourcewithcustomvariables",
     "streaming-source-kafka-transaction",
     "streaming-source-onesource",
-    "streaming-source-real-kafka",
-    "streaming-source-real-kafka-json-sampleproduct",
     "streaming-source-sql-source"
   )
 

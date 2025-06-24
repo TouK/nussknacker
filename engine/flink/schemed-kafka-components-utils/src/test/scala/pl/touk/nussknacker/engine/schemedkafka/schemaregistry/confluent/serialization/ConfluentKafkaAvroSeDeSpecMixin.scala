@@ -8,9 +8,12 @@ import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.kafka.{serialization, KafkaClient}
 import pl.touk.nussknacker.engine.schemedkafka.helpers._
 import pl.touk.nussknacker.engine.schemedkafka.schema.FullNameV1
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientBuilder
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
+  MockSchemaRegistryClientFactory,
+  UniversalSchemaBasedSerdeProvider
+}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDrivenPropertyChecks {
@@ -31,7 +34,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
 
   case class SchemaRegistryProviderSetup(
       `type`: SchemaRegistryProviderSetupType.Value,
-      provider: SchemaBasedSerdeProvider,
+      provider: UniversalSchemaBasedSerdeProvider,
       override val valueSerializer: Serializer[Any],
       valueDeserializer: Deserializer[Any]
   ) extends KafkaWithSchemaRegistryOperations {

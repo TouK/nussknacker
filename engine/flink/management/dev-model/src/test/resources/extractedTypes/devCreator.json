@@ -977,20 +977,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -1116,26 +1116,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -1153,6 +1133,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -1452,6 +1452,73 @@
     }
   },
   {
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.lang.Comparable"
+    },
+    "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "java.lang.Double"},
     "methods": {
       "byteValue": [
@@ -1487,20 +1554,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -1642,26 +1709,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -1679,6 +1726,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -2012,20 +2079,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -2187,26 +2254,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -2224,6 +2271,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -3882,20 +3949,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4001,26 +4068,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -4038,6 +4085,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -4114,6 +4181,16 @@
           }
         }
       ],
+      "canBeInteger": [
+        {
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "canBeList": [
         {
           "description": "Check whether can be convert to a list",
@@ -4130,16 +4207,6 @@
         {
           "description": "Check whether the value can be convert to a Long",
           "name": "canBeLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "canBeInteger": [
-        {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4232,6 +4299,26 @@
           }
         }
       ],
+      "toInteger": [
+        {
+          "description": "Convert the value to Integer or throw exception in case of failure",
+          "name": "toInteger",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toIntegerOrNull": [
+        {
+          "description": "Convert the value to Integer or null in case of failure",
+          "name": "toIntegerOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
       "toList": [
         {
           "description": "Convert to a list or throw exception in case of failure",
@@ -4293,26 +4380,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toInteger": [
-        {
-          "description": "Convert the value to Integer or throw exception in case of failure",
-          "name": "toInteger",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "toIntegerOrNull": [
-        {
-          "description": "Convert the value to Integer or null in case of failure",
-          "name": "toIntegerOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
           }
         }
       ],
@@ -4444,20 +4511,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4583,26 +4650,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -4620,6 +4667,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -4872,20 +4939,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -5335,26 +5402,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -5372,6 +5419,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -5589,20 +5656,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -6151,26 +6218,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -6188,6 +6235,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -6489,20 +6556,20 @@
           }
         }
       ],
-      "canBeLong": [
+      "canBeInteger": [
         {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "canBeLong",
+          "description": "Check whether the value can be convert to a Integer",
+          "name": "canBeInteger",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "canBeInteger": [
+      "canBeLong": [
         {
-          "description": "Check whether the value can be convert to a Integer",
-          "name": "canBeInteger",
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -6987,26 +7054,6 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert the value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert the value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toInteger": [
         {
           "description": "Convert the value to Integer or throw exception in case of failure",
@@ -7024,6 +7071,26 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
           }
         }
       ],
@@ -7132,6 +7199,21 @@
         }
       ]
     }
+  },
+  {
+    "clazzName": {"refClazzName": "java.text.Format"},
+    "methods": {
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
   },
   {
     "clazzName": {"refClazzName": "java.time.DayOfWeek"},
@@ -13328,7 +13410,782 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "java.time.format.DateTimeFormatter"},
+    "methods": {
+      "decimalStyle": [
+        {
+          "name": "decimalStyle",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "format": [
+        {
+          "name": "format",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "getDecimalStyle": [
+        {
+          "name": "getDecimalStyle",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "getLocale": [
+        {
+          "name": "getLocale",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "getResolverStyle": [
+        {
+          "name": "getResolverStyle",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.ResolverStyle"}
+          }
+        }
+      ],
+      "getZone": [
+        {
+          "name": "getZone",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.ZoneId"}
+          }
+        }
+      ],
+      "locale": [
+        {
+          "name": "locale",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "localizedBy": [
+        {
+          "name": "localizedBy",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "parse": [
+        {
+          "name": "parse",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}}
+            ],
+            "result": {"refClazzName": "java.time.temporal.TemporalAccessor"}
+          }
+        },
+        {
+          "name": "parse",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.text.ParsePosition"}}
+            ],
+            "result": {"refClazzName": "java.time.temporal.TemporalAccessor"}
+          }
+        }
+      ],
+      "parseUnresolved": [
+        {
+          "name": "parseUnresolved",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.text.ParsePosition"}}
+            ],
+            "result": {"refClazzName": "java.time.temporal.TemporalAccessor"}
+          }
+        }
+      ],
+      "resolverStyle": [
+        {
+          "name": "resolverStyle",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.ResolverStyle"}
+          }
+        }
+      ],
+      "toFormat": [
+        {
+          "name": "toFormat",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.text.Format"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "withDecimalStyle": [
+        {
+          "name": "withDecimalStyle",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.DecimalStyle"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "withLocale": [
+        {
+          "name": "withLocale",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "withResolverStyle": [
+        {
+          "name": "withResolverStyle",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.ResolverStyle"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "withZone": [
+        {
+          "name": "withZone",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.ZoneId"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "zone": [
+        {
+          "name": "zone",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.ZoneId"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "BASIC_ISO_DATE": [
+        {
+          "name": "BASIC_ISO_DATE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_DATE": [
+        {
+          "name": "ISO_DATE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_DATE_TIME": [
+        {
+          "name": "ISO_DATE_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_INSTANT": [
+        {
+          "name": "ISO_INSTANT",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_LOCAL_DATE": [
+        {
+          "name": "ISO_LOCAL_DATE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_LOCAL_DATE_TIME": [
+        {
+          "name": "ISO_LOCAL_DATE_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_LOCAL_TIME": [
+        {
+          "name": "ISO_LOCAL_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_OFFSET_DATE": [
+        {
+          "name": "ISO_OFFSET_DATE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_OFFSET_DATE_TIME": [
+        {
+          "name": "ISO_OFFSET_DATE_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_OFFSET_TIME": [
+        {
+          "name": "ISO_OFFSET_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_ORDINAL_DATE": [
+        {
+          "name": "ISO_ORDINAL_DATE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_TIME": [
+        {
+          "name": "ISO_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_WEEK_DATE": [
+        {
+          "name": "ISO_WEEK_DATE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ISO_ZONED_DATE_TIME": [
+        {
+          "name": "ISO_ZONED_DATE_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "RFC_1123_DATE_TIME": [
+        {
+          "name": "RFC_1123_DATE_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ofLocalizedDate": [
+        {
+          "name": "ofLocalizedDate",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ofLocalizedDateTime": [
+        {
+          "name": "ofLocalizedDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        },
+        {
+          "name": "ofLocalizedDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ofLocalizedTime": [
+        {
+          "name": "ofLocalizedTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ],
+      "ofPattern": [
+        {
+          "name": "ofPattern",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        },
+        {
+          "name": "ofPattern",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.util.Locale"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
+          }
+        }
+      ]
+    }
+  },
+  {
+    "clazzName": {"refClazzName": "java.time.format.DecimalStyle"},
+    "methods": {
+      "decimalSeparator": [
+        {
+          "name": "decimalSeparator",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ],
+      "getDecimalSeparator": [
+        {
+          "name": "getDecimalSeparator",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ],
+      "getNegativeSign": [
+        {
+          "name": "getNegativeSign",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ],
+      "getPositiveSign": [
+        {
+          "name": "getPositiveSign",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ],
+      "getZeroDigit": [
+        {
+          "name": "getZeroDigit",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ],
+      "negativeSign": [
+        {
+          "name": "negativeSign",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ],
+      "positiveSign": [
+        {
+          "name": "positiveSign",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "withDecimalSeparator": [
+        {
+          "name": "withDecimalSeparator",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "withNegativeSign": [
+        {
+          "name": "withNegativeSign",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "withPositiveSign": [
+        {
+          "name": "withPositiveSign",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "withZeroDigit": [
+        {
+          "name": "withZeroDigit",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "zeroDigit": [
+        {
+          "name": "zeroDigit",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Character"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "STANDARD": [
+        {
+          "name": "STANDARD",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "availableLocales": [
+        {
+          "name": "availableLocales",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "Locale",
+                  "params": [],
+                  "refClazzName": "java.util.Locale",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.Set"
+            }
+          }
+        }
+      ],
+      "getAvailableLocales": [
+        {
+          "name": "getAvailableLocales",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "Locale",
+                  "params": [],
+                  "refClazzName": "java.util.Locale",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.Set"
+            }
+          }
+        }
+      ],
+      "of": [
+        {
+          "name": "of",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
+            ],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ],
+      "ofDefaultLocale": [
+        {
+          "name": "ofDefaultLocale",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.DecimalStyle"}
+          }
+        }
+      ]
+    }
+  },
+  {
+    "clazzName": {"refClazzName": "java.time.format.ResolverStyle"},
+    "methods": {
+      "compareTo": [
+        {
+          "name": "compareTo",
+          "signature": {
+            "noVarArgs": [
+              {
+                "name": "arg0",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.lang.Enum"
+                }
+              }
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        },
+        {
+          "name": "compareTo",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "name": [
+        {
+          "name": "name",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "ordinal": [
+        {
+          "name": "ordinal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "LENIENT": [
+        {
+          "name": "LENIENT",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.ResolverStyle"}
+          }
+        }
+      ],
+      "SMART": [
+        {
+          "name": "SMART",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.ResolverStyle"}
+          }
+        }
+      ],
+      "STRICT": [
+        {
+          "name": "STRICT",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.time.format.ResolverStyle"}
+          }
+        }
+      ],
+      "valueOf": [
+        {
+          "name": "valueOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.format.ResolverStyle"}
+          }
+        }
+      ],
+      "values": [
+        {
+          "name": "values",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "ResolverStyle",
+                  "params": [],
+                  "refClazzName": "java.time.format.ResolverStyle",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "clazzName": {"refClazzName": "java.time.temporal.Temporal"},
+    "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "java.time.temporal.TemporalAccessor"},
     "methods": {
       "canBe": [
         {
@@ -13882,6 +14739,21 @@
           ]
         }
       ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "java.util.Locale"},
+    "methods": {
       "toString": [
         {
           "name": "toString",
@@ -14579,150 +15451,6 @@
     }
   },
   {
-    "clazzName": {"refClazzName": "org.apache.kafka.common.record.TimestampType"},
-    "methods": {
-      "compareTo": [
-        {
-          "name": "compareTo",
-          "signature": {
-            "noVarArgs": [
-              {
-                "name": "arg0",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.lang.Enum"
-                }
-              }
-            ],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        },
-        {
-          "name": "compareTo",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "id": [
-        {
-          "name": "id",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "name": [
-        {
-          "name": "name",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "ordinal": [
-        {
-          "name": "ordinal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {
-      "CREATE_TIME": [
-        {
-          "name": "CREATE_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
-          }
-        }
-      ],
-      "LOG_APPEND_TIME": [
-        {
-          "name": "LOG_APPEND_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
-          }
-        }
-      ],
-      "NO_TIMESTAMP_TYPE": [
-        {
-          "name": "NO_TIMESTAMP_TYPE",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
-          }
-        }
-      ],
-      "forName": [
-        {
-          "name": "forName",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
-          }
-        }
-      ],
-      "valueOf": [
-        {
-          "name": "valueOf",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
-          }
-        }
-      ],
-      "values": [
-        {
-          "name": "values",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "TimestampType",
-                  "params": [],
-                  "refClazzName": "org.apache.kafka.common.record.TimestampType",
-                  "type": "TypedClass"
-                }
-              ],
-              "refClazzName": "[Ljava.lang.Object;"
-            }
-          }
-        }
-      ]
-    }
-  },
-  {
     "clazzName": {"refClazzName": "org.slf4j.event.Level"},
     "methods": {
       "compareTo": [
@@ -15327,80 +16055,6 @@
     }
   },
   {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.SampleProduct"},
-    "methods": {
-      "asJson": [
-        {
-          "name": "asJson",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "io.circe.Json"}
-          }
-        }
-      ],
-      "id": [
-        {
-          "name": "id",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "name": [
-        {
-          "name": "name",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "originalDisplay": [
-        {
-          "name": "originalDisplay",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "someProperty": [
-        {
-          "name": "someProperty",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {
-      "apply": [
-        {
-          "name": "apply",
-          "signature": {
-            "noVarArgs": [
-              {"name": "id", "refClazz": {"refClazzName": "java.lang.Long"}},
-              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "someProperty", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.SampleProduct"}
-          }
-        }
-      ]
-    }
-  },
-  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.DocumentationFunctions$"},
     "methods": {
       "getField": [
@@ -15782,105 +16436,905 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.random$"},
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.base64$"},
     "methods": {
-      "nextBoolean": [
+      "decode": [
         {
-          "description": "Returns an uniformly distributed boolean value",
-          "name": "nextBoolean",
+          "description": "Decode Base64 value to String",
+          "name": "decode",
           "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],
-      "nextBooleanWithSuccessRate": [
+      "encode": [
         {
-          "description": "Returns a boolean value with a success rate determined by the given parameter. Success rate should be between 0.0 and 1.0. For 0.0 always returns false and for 1.0 always returns true",
-          "name": "nextBooleanWithSuccessRate",
+          "description": "Encode String value to Base64",
+          "name": "encode",
           "signature": {
             "noVarArgs": [
-              {"name": "successRate", "refClazz": {"refClazzName": "java.lang.Double"}}
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
-            "result": {"refClazzName": "java.lang.Boolean"}
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],
-      "nextDouble": [
+      "urlSafeDecode": [
         {
-          "description": "Returns an uniformly distributed double value between 0.0 (inclusive) and 1.0 (exclusive)",
-          "name": "nextDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Double"}
-          }
-        },
-        {
-          "description": "Returns an uniformly distributed double value between fromInclusive and toExclusive",
-          "name": "nextDouble",
+          "description": "Decode URL-safe Base64 value to String",
+          "name": "urlSafeDecode",
           "signature": {
             "noVarArgs": [
-              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Double"}},
-              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Double"}}
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
-            "result": {"refClazzName": "java.lang.Double"}
-          }
-        },
-        {
-          "description": "Returns an uniformly distributed double value between 0.0 and toExclusive",
-          "name": "nextDouble",
-          "signature": {
-            "noVarArgs": [
-              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Double"}}
-            ],
-            "result": {"refClazzName": "java.lang.Double"}
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],
-      "nextInt": [
+      "urlSafeEncode": [
         {
-          "description": "Returns an uniformly distributed integer value between fromInclusive and toExclusive",
-          "name": "nextInt",
+          "description": "Encode String value to URL-safe Base64",
+          "name": "urlSafeEncode",
           "signature": {
             "noVarArgs": [
-              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Integer"}},
-              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
-            "result": {"refClazzName": "java.lang.Integer"}
+            "result": {"refClazzName": "java.lang.String"}
           }
-        },
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.collection$"},
+    "methods": {
+      "concat": [
         {
-          "description": "Returns an uniformly distributed integer value between 0 and toExclusive",
-          "name": "nextInt",
+          "description": "Concatenates lists",
+          "name": "concat",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              },
+              "varArg": {
+                "name": "lists",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "diff": [
+        {
+          "description": "Returns a list that contains all elements contained in list1, that don't appear in list2",
+          "name": "diff",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list1",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {
+                  "name": "list2",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "distinct": [
+        {
+          "description": "Returns a list that contains unique elements from the given list",
+          "name": "distinct",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "flatten": [
+        {
+          "description": "Returns a list of all elements from all lists in the given list",
+          "name": "flatten",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Collection[Unknown]",
+                        "params": [
+                          {
+                            "display": "Unknown",
+                            "params": [],
+                            "refClazzName": "java.lang.Object",
+                            "type": "Unknown"
+                          }
+                        ],
+                        "refClazzName": "java.util.Collection",
+                        "type": "TypedClass"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "intersect": [
+        {
+          "description": "Returns a list that contains all unique elements that are contained by both list1 and list2",
+          "name": "intersect",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list1",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {
+                  "name": "list2",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "join": [
+        {
+          "description": "Creates a string made of all elements of the list separated with the given separator",
+          "name": "join",
           "signature": {
             "noVarArgs": [
-              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              {
+                "name": "list",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
+              },
+              {"name": "separator", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
-            "result": {"refClazzName": "java.lang.Integer"}
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],
-      "nextLong": [
+      "max": [
         {
-          "description": "Returns an uniformly distributed long value between fromInclusive and toExclusive",
-          "name": "nextLong",
+          "description": "Returns the largest element (elements must be comparable)",
+          "name": "max",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Comparable"
+              }
+            }
+          ]
+        }
+      ],
+      "merge": [
+        {
+          "description": "Merges maps. Values in the first map will be overwritten with values from the other one if keys are the same",
+          "name": "merge",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "map",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              },
+              "varArg": {
+                "name": "maps",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    },
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.Map"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "min": [
+        {
+          "description": "Returns the smallest element (elements must be comparable)",
+          "name": "min",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Comparable"
+              }
+            }
+          ]
+        }
+      ],
+      "product": [
+        {
+          "description": "Cross joins two lists of maps: eg. product({{a: 'a'},{b: 'b'}}, {{c: 'c'},{d: 'd'}}) => {{a: 'a',c: 'c'},{b: 'b',c: 'c'},{a: 'a',d: 'd'},{b: 'b',d: 'd'}}",
+          "name": "product",
           "signature": {
             "noVarArgs": [
-              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Long"}},
-              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Long"}}
+              {
+                "name": "list1",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Map[Unknown,Unknown]",
+                      "params": [
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        },
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        }
+                      ],
+                      "refClazzName": "java.util.Map",
+                      "type": "TypedClass"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
+              },
+              {
+                "name": "list2",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Map[Unknown,Unknown]",
+                      "params": [
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        },
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        }
+                      ],
+                      "refClazzName": "java.util.Map",
+                      "type": "TypedClass"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
+              }
             ],
-            "result": {"refClazzName": "java.lang.Long"}
+            "result": {
+              "params": [
+                {
+                  "display": "Map[Unknown,Unknown]",
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    },
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.Map",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.List"
+            }
           }
-        },
+        }
+      ],
+      "reverse": [
         {
-          "description": "Returns an uniformly distributed long value between 0 and toExclusive",
-          "name": "nextLong",
-          "signature": {
-            "noVarArgs": [
-              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Long"}}
-            ],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
+          "description": "Returns a list that contains elements in reversed order from the given list",
+          "name": "reverse",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "shuffle": [
+        {
+          "description": "Returns a copy of the list with its elements shuffled",
+          "name": "shuffle",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "slice": [
+        {
+          "description": "Returns a slice of the list starting with start index (inclusive) and ending at stop index (exclusive)",
+          "name": "slice",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                },
+                {"name": "start", "refClazz": {"refClazzName": "java.lang.Integer"}},
+                {"name": "stop", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sortedAsc": [
+        {
+          "description": "Returns a list of all elements sorted in ascending order (elements must be comparable)",
+          "name": "sortedAsc",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sortedAscBy": [
+        {
+          "description": "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)",
+          "name": "sortedAscBy",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Map[String,Unknown]",
+                        "params": [
+                          {
+                            "display": "String",
+                            "params": [],
+                            "refClazzName": "java.lang.String",
+                            "type": "TypedClass"
+                          },
+                          {
+                            "display": "Unknown",
+                            "params": [],
+                            "refClazzName": "java.lang.Object",
+                            "type": "Unknown"
+                          }
+                        ],
+                        "refClazzName": "java.util.Map",
+                        "type": "TypedClass"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                },
+                {"name": "fieldName", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Map[String,Unknown]",
+                    "params": [
+                      {
+                        "display": "String",
+                        "params": [],
+                        "refClazzName": "java.lang.String",
+                        "type": "TypedClass"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map",
+                    "type": "TypedClass"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sortedDesc": [
+        {
+          "description": "Returns a list of all elements sorted in descending order (elements must be comparable)",
+          "name": "sortedDesc",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sum": [
+        {
+          "description": "Returns a sum of all elements",
+          "name": "sum",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "listOfNumbers",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "take": [
+        {
+          "description": "Returns a list made of first n elements of the given list",
+          "name": "take",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "takeLast": [
+        {
+          "description": "Returns a list made of last n elements of the given list",
+          "name": "takeLast",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
         }
       ]
     },
@@ -15971,1969 +17425,6 @@
         }
       ]
     },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.collection$"},
-    "methods": {
-      "concat": [
-        {
-          "description": "Concatenates lists",
-          "name": "concat",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              },
-              "varArg": {
-                "name": "lists",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "diff": [
-        {
-          "description": "Returns a list that contains all elements contained in list1, that don't appear in list2",
-          "name": "diff",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list1",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {
-                  "name": "list2",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "distinct": [
-        {
-          "description": "Returns a list that contains unique elements from the given list",
-          "name": "distinct",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "flatten": [
-        {
-          "description": "Returns a list of all elements from all lists in the given list",
-          "name": "flatten",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Collection[Unknown]",
-                        "params": [
-                          {
-                            "display": "Unknown",
-                            "params": [],
-                            "refClazzName": "java.lang.Object",
-                            "type": "Unknown"
-                          }
-                        ],
-                        "refClazzName": "java.util.Collection",
-                        "type": "TypedClass"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "intersect": [
-        {
-          "description": "Returns a list that contains all unique elements that are contained by both list1 and list2",
-          "name": "intersect",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list1",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {
-                  "name": "list2",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "join": [
-        {
-          "description": "Creates a string made of all elements of the list separated with the given separator",
-          "name": "join",
-          "signature": {
-            "noVarArgs": [
-              {
-                "name": "list",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              },
-              {"name": "separator", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "max": [
-        {
-          "description": "Returns the largest element (elements must be comparable)",
-          "name": "max",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.lang.Comparable"
-              }
-            }
-          ]
-        }
-      ],
-      "merge": [
-        {
-          "description": "Merges maps. Values in the first map will be overwritten with values from the other one if keys are the same",
-          "name": "merge",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "map",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      },
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Map"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  },
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.Map"
-              },
-              "varArg": {
-                "name": "maps",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    },
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.Map"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "min": [
-        {
-          "description": "Returns the smallest element (elements must be comparable)",
-          "name": "min",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.lang.Comparable"
-              }
-            }
-          ]
-        }
-      ],
-      "product": [
-        {
-          "description": "Cross joins two lists of maps: eg. product({{a: 'a'},{b: 'b'}}, {{c: 'c'},{d: 'd'}}) => {{a: 'a',c: 'c'},{b: 'b',c: 'c'},{a: 'a',d: 'd'},{b: 'b',d: 'd'}}",
-          "name": "product",
-          "signature": {
-            "noVarArgs": [
-              {
-                "name": "list1",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Map[Unknown,Unknown]",
-                      "params": [
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        },
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        }
-                      ],
-                      "refClazzName": "java.util.Map",
-                      "type": "TypedClass"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              },
-              {
-                "name": "list2",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Map[Unknown,Unknown]",
-                      "params": [
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        },
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        }
-                      ],
-                      "refClazzName": "java.util.Map",
-                      "type": "TypedClass"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              }
-            ],
-            "result": {
-              "params": [
-                {
-                  "display": "Map[Unknown,Unknown]",
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    },
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.Map",
-                  "type": "TypedClass"
-                }
-              ],
-              "refClazzName": "java.util.List"
-            }
-          }
-        }
-      ],
-      "reverse": [
-        {
-          "description": "Returns a list that contains elements in reversed order from the given list",
-          "name": "reverse",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "shuffle": [
-        {
-          "description": "Returns a copy of the list with its elements shuffled",
-          "name": "shuffle",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "slice": [
-        {
-          "description": "Returns a slice of the list starting with start index (inclusive) and ending at stop index (exclusive)",
-          "name": "slice",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                },
-                {"name": "start", "refClazz": {"refClazzName": "java.lang.Integer"}},
-                {"name": "stop", "refClazz": {"refClazzName": "java.lang.Integer"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sortedAsc": [
-        {
-          "description": "Returns a list of all elements sorted in ascending order (elements must be comparable)",
-          "name": "sortedAsc",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sortedAscBy": [
-        {
-          "description": "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)",
-          "name": "sortedAscBy",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Map[String,Unknown]",
-                        "params": [
-                          {
-                            "display": "String",
-                            "params": [],
-                            "refClazzName": "java.lang.String",
-                            "type": "TypedClass"
-                          },
-                          {
-                            "display": "Unknown",
-                            "params": [],
-                            "refClazzName": "java.lang.Object",
-                            "type": "Unknown"
-                          }
-                        ],
-                        "refClazzName": "java.util.Map",
-                        "type": "TypedClass"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                },
-                {"name": "fieldName", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Map[String,Unknown]",
-                    "params": [
-                      {
-                        "display": "String",
-                        "params": [],
-                        "refClazzName": "java.lang.String",
-                        "type": "TypedClass"
-                      },
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Map",
-                    "type": "TypedClass"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sortedDesc": [
-        {
-          "description": "Returns a list of all elements sorted in descending order (elements must be comparable)",
-          "name": "sortedDesc",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sum": [
-        {
-          "description": "Returns a sum of all elements",
-          "name": "sum",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "listOfNumbers",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {"refClazzName": "java.lang.Number"}
-            }
-          ]
-        }
-      ],
-      "take": [
-        {
-          "description": "Returns a list made of first n elements of the given list",
-          "name": "take",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "takeLast": [
-        {
-          "description": "Returns a list made of last n elements of the given list",
-          "name": "takeLast",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.collection$"},
-    "methods": {
-      "concat": [
-        {
-          "description": "Concatenates lists",
-          "name": "concat",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              },
-              "varArg": {
-                "name": "lists",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "diff": [
-        {
-          "description": "Returns a list that contains all elements contained in list1, that don't appear in list2",
-          "name": "diff",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list1",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {
-                  "name": "list2",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "distinct": [
-        {
-          "description": "Returns a list that contains unique elements from the given list",
-          "name": "distinct",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "flatten": [
-        {
-          "description": "Returns a list of all elements from all lists in the given list",
-          "name": "flatten",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Collection[Unknown]",
-                        "params": [
-                          {
-                            "display": "Unknown",
-                            "params": [],
-                            "refClazzName": "java.lang.Object",
-                            "type": "Unknown"
-                          }
-                        ],
-                        "refClazzName": "java.util.Collection",
-                        "type": "TypedClass"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "intersect": [
-        {
-          "description": "Returns a list that contains all unique elements that are contained by both list1 and list2",
-          "name": "intersect",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list1",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {
-                  "name": "list2",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "join": [
-        {
-          "description": "Creates a string made of all elements of the list separated with the given separator",
-          "name": "join",
-          "signature": {
-            "noVarArgs": [
-              {
-                "name": "list",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              },
-              {"name": "separator", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "max": [
-        {
-          "description": "Returns the largest element (elements must be comparable)",
-          "name": "max",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.lang.Comparable"
-              }
-            }
-          ]
-        }
-      ],
-      "merge": [
-        {
-          "description": "Merges maps. Values in the first map will be overwritten with values from the other one if keys are the same",
-          "name": "merge",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "map",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      },
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Map"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  },
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.Map"
-              },
-              "varArg": {
-                "name": "maps",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    },
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.Map"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "min": [
-        {
-          "description": "Returns the smallest element (elements must be comparable)",
-          "name": "min",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.lang.Comparable"
-              }
-            }
-          ]
-        }
-      ],
-      "product": [
-        {
-          "description": "Cross joins two lists of maps: eg. product({{a: 'a'},{b: 'b'}}, {{c: 'c'},{d: 'd'}}) => {{a: 'a',c: 'c'},{b: 'b',c: 'c'},{a: 'a',d: 'd'},{b: 'b',d: 'd'}}",
-          "name": "product",
-          "signature": {
-            "noVarArgs": [
-              {
-                "name": "list1",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Map[Unknown,Unknown]",
-                      "params": [
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        },
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        }
-                      ],
-                      "refClazzName": "java.util.Map",
-                      "type": "TypedClass"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              },
-              {
-                "name": "list2",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Map[Unknown,Unknown]",
-                      "params": [
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        },
-                        {
-                          "display": "Unknown",
-                          "params": [],
-                          "refClazzName": "java.lang.Object",
-                          "type": "Unknown"
-                        }
-                      ],
-                      "refClazzName": "java.util.Map",
-                      "type": "TypedClass"
-                    }
-                  ],
-                  "refClazzName": "java.util.List"
-                }
-              }
-            ],
-            "result": {
-              "params": [
-                {
-                  "display": "Map[Unknown,Unknown]",
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    },
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.util.Map",
-                  "type": "TypedClass"
-                }
-              ],
-              "refClazzName": "java.util.List"
-            }
-          }
-        }
-      ],
-      "reverse": [
-        {
-          "description": "Returns a list that contains elements in reversed order from the given list",
-          "name": "reverse",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "shuffle": [
-        {
-          "description": "Returns a copy of the list with its elements shuffled",
-          "name": "shuffle",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "slice": [
-        {
-          "description": "Returns a slice of the list starting with start index (inclusive) and ending at stop index (exclusive)",
-          "name": "slice",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                },
-                {"name": "start", "refClazz": {"refClazzName": "java.lang.Integer"}},
-                {"name": "stop", "refClazz": {"refClazzName": "java.lang.Integer"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sortedAsc": [
-        {
-          "description": "Returns a list of all elements sorted in ascending order (elements must be comparable)",
-          "name": "sortedAsc",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sortedAscBy": [
-        {
-          "description": "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)",
-          "name": "sortedAscBy",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Map[String,Unknown]",
-                        "params": [
-                          {
-                            "display": "String",
-                            "params": [],
-                            "refClazzName": "java.lang.String",
-                            "type": "TypedClass"
-                          },
-                          {
-                            "display": "Unknown",
-                            "params": [],
-                            "refClazzName": "java.lang.Object",
-                            "type": "Unknown"
-                          }
-                        ],
-                        "refClazzName": "java.util.Map",
-                        "type": "TypedClass"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                },
-                {"name": "fieldName", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Map[String,Unknown]",
-                    "params": [
-                      {
-                        "display": "String",
-                        "params": [],
-                        "refClazzName": "java.lang.String",
-                        "type": "TypedClass"
-                      },
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Map",
-                    "type": "TypedClass"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sortedDesc": [
-        {
-          "description": "Returns a list of all elements sorted in descending order (elements must be comparable)",
-          "name": "sortedDesc",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "sum": [
-        {
-          "description": "Returns a sum of all elements",
-          "name": "sum",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "listOfNumbers",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Collection"
-                  }
-                }
-              ],
-              "result": {"refClazzName": "java.lang.Number"}
-            }
-          ]
-        }
-      ],
-      "take": [
-        {
-          "description": "Returns a list made of first n elements of the given list",
-          "name": "take",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ],
-      "takeLast": [
-        {
-          "description": "Returns a list made of last n elements of the given list",
-          "name": "takeLast",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {
-                  "name": "list",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
-              ],
-              "result": {
-                "params": [
-                  {
-                    "display": "Unknown",
-                    "params": [],
-                    "refClazzName": "java.lang.Object",
-                    "type": "Unknown"
-                  }
-                ],
-                "refClazzName": "java.util.List"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.dateFormat$"},
-    "methods": {
-      "format": [
-        {
-          "description": "Render LocalTime, LocalDate, LocalDateTime, OffsetDateTime or ZonedDateTime in ISO-8601 format",
-          "name": "format",
-          "signature": {
-            "noVarArgs": [
-              {"name": "temporal", "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "formatter": [
-        {
-          "description": "Creates DateTimeFormatter using given pattern",
-          "name": "formatter",
-          "signature": {
-            "noVarArgs": [
-              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        },
-        {
-          "description": "Creates DateTimeFormatter using given pattern and locale",
-          "name": "formatter",
-          "signature": {
-            "noVarArgs": [
-              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "locale", "refClazz": {"refClazzName": "java.util.Locale"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "lenientFormatter": [
-        {
-          "description": "Creates lenient version of DateTimeFormatter using given pattern",
-          "name": "lenientFormatter",
-          "signature": {
-            "noVarArgs": [
-              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        },
-        {
-          "description": "Creates lenient version of DateTimeFormatter using given pattern and locale",
-          "name": "lenientFormatter",
-          "signature": {
-            "noVarArgs": [
-              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "locale", "refClazz": {"refClazzName": "java.util.Locale"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "parseInstant": [
-        {
-          "description": "Parse Instant in ISO-8601 format e.g. '2011-12-03T10:15:30Z'",
-          "name": "parseInstant",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.Instant"}
-          }
-        }
-      ],
-      "parseLocalDate": [
-        {
-          "description": "Parse LocalDate in ISO-8601 format e.g. '2011-12-03'",
-          "name": "parseLocalDate",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalDate"}
-          }
-        },
-        {
-          "description": "Parse LocalDate in DateTimeFormatter format",
-          "name": "parseLocalDate",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalDate"}
-          }
-        },
-        {
-          "description": "Parse LocalDate using given formatter",
-          "name": "parseLocalDate",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalDate"}
-          }
-        }
-      ],
-      "parseLocalDateTime": [
-        {
-          "description": "Parse LocalDateTime in ISO-8601 format e.g. '2011-12-03T10:15:30'",
-          "name": "parseLocalDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalDateTime"}
-          }
-        },
-        {
-          "description": "Parse LocalDateTime in DateTimeFormatter format",
-          "name": "parseLocalDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalDateTime"}
-          }
-        },
-        {
-          "description": "Parse LocalDateTime using given formatter",
-          "name": "parseLocalDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalDateTime"}
-          }
-        }
-      ],
-      "parseLocalTime": [
-        {
-          "description": "Parse LocalTime in ISO-8601 format e.g. '10:15' or '10:15:30'",
-          "name": "parseLocalTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalTime"}
-          }
-        },
-        {
-          "description": "Parse LocalTime in DateTimeFormatter format",
-          "name": "parseLocalTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalTime"}
-          }
-        },
-        {
-          "description": "Parse LocalTime using given formatter",
-          "name": "parseLocalTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
-            ],
-            "result": {"refClazzName": "java.time.LocalTime"}
-          }
-        }
-      ],
-      "parseOffsetDateTime": [
-        {
-          "description": "Parse OffsetDateTime in ISO-8601 format e.g. '2011-12-03T10:15:30+01:00'",
-          "name": "parseOffsetDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.OffsetDateTime"}
-          }
-        },
-        {
-          "description": "Parse OffsetDateTime in DateTimeFormatter format",
-          "name": "parseOffsetDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.OffsetDateTime"}
-          }
-        },
-        {
-          "description": "Parse OffsetDateTime using given formatter",
-          "name": "parseOffsetDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
-            ],
-            "result": {"refClazzName": "java.time.OffsetDateTime"}
-          }
-        }
-      ],
-      "parseZonedDateTime": [
-        {
-          "description": "Parse ZonedDateTime in ISO-8601 format e.g. '2011-12-03T10:15:30+01:00[Europe/Paris]'",
-          "name": "parseZonedDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.ZonedDateTime"}
-          }
-        },
-        {
-          "description": "Parse ZonedDateTime in DateTimeFormatter format",
-          "name": "parseZonedDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.ZonedDateTime"}
-          }
-        },
-        {
-          "description": "Parse ZonedDateTime using given formatter",
-          "name": "parseZonedDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
-            ],
-            "result": {"refClazzName": "java.time.ZonedDateTime"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {"refClazzName": "java.text.Format"},
-    "methods": {
-    "toString": [
-      {
-        "name": "toString",
-        "signature": {
-          "noVarArgs": [],
-          "result": {"refClazzName": "java.lang.String"}
-        }
-      }
-    ]
-  },
     "staticMethods": {}
   },
   {
@@ -18403,409 +17894,245 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "java.time.format.DateTimeFormatter"},
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.dateFormat$"},
     "methods": {
-      "decimalStyle": [
-        {
-          "name": "decimalStyle",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
       "format": [
         {
+          "description": "Render LocalTime, LocalDate, LocalDateTime, OffsetDateTime or ZonedDateTime in ISO-8601 format",
           "name": "format",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"}}
+              {"name": "temporal", "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"}}
             ],
             "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],
-      "getDecimalStyle": [
+      "formatter": [
         {
-          "name": "getDecimalStyle",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
-      "getLocale": [
-        {
-          "name": "getLocale",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.util.Locale"}
-          }
-        }
-      ],
-      "getResolverStyle": [
-        {
-          "name": "getResolverStyle",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.ResolverStyle"}
-          }
-        }
-      ],
-      "getZone": [
-        {
-          "name": "getZone",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.ZoneId"}
-          }
-        }
-      ],
-      "locale": [
-        {
-          "name": "locale",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.util.Locale"}
-          }
-        }
-      ],
-      "localizedBy": [
-        {
-          "name": "localizedBy",
+          "description": "Creates DateTimeFormatter using given pattern",
+          "name": "formatter",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "parse": [
-        {
-          "name": "parse",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}}
-            ],
-            "result": {"refClazzName": "java.time.temporal.TemporalAccessor"}
-          }
-        },
-        {
-          "name": "parse",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}},
-              {"name": "arg1", "refClazz": {"refClazzName": "java.text.ParsePosition"}}
-            ],
-            "result": {"refClazzName": "java.time.temporal.TemporalAccessor"}
-          }
-        }
-      ],
-      "parseUnresolved": [
-        {
-          "name": "parseUnresolved",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}},
-              {"name": "arg1", "refClazz": {"refClazzName": "java.text.ParsePosition"}}
-            ],
-            "result": {"refClazzName": "java.time.temporal.TemporalAccessor"}
-          }
-        }
-      ],
-      "resolverStyle": [
-        {
-          "name": "resolverStyle",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.ResolverStyle"}
-          }
-        }
-      ],
-      "toFormat": [
-        {
-          "name": "toFormat",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.text.Format"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "withDecimalStyle": [
-        {
-          "name": "withDecimalStyle",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.DecimalStyle"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "withLocale": [
-        {
-          "name": "withLocale",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "withResolverStyle": [
-        {
-          "name": "withResolverStyle",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.ResolverStyle"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "withZone": [
-        {
-          "name": "withZone",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.ZoneId"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "zone": [
-        {
-          "name": "zone",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.ZoneId"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {
-      "BASIC_ISO_DATE": [
-        {
-          "name": "BASIC_ISO_DATE",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_DATE": [
-        {
-          "name": "ISO_DATE",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_DATE_TIME": [
-        {
-          "name": "ISO_DATE_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_INSTANT": [
-        {
-          "name": "ISO_INSTANT",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_LOCAL_DATE": [
-        {
-          "name": "ISO_LOCAL_DATE",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_LOCAL_DATE_TIME": [
-        {
-          "name": "ISO_LOCAL_DATE_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_LOCAL_TIME": [
-        {
-          "name": "ISO_LOCAL_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_OFFSET_DATE": [
-        {
-          "name": "ISO_OFFSET_DATE",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_OFFSET_DATE_TIME": [
-        {
-          "name": "ISO_OFFSET_DATE_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_OFFSET_TIME": [
-        {
-          "name": "ISO_OFFSET_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_ORDINAL_DATE": [
-        {
-          "name": "ISO_ORDINAL_DATE",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_TIME": [
-        {
-          "name": "ISO_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_WEEK_DATE": [
-        {
-          "name": "ISO_WEEK_DATE",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ISO_ZONED_DATE_TIME": [
-        {
-          "name": "ISO_ZONED_DATE_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "RFC_1123_DATE_TIME": [
-        {
-          "name": "RFC_1123_DATE_TIME",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ofLocalizedDate": [
-        {
-          "name": "ofLocalizedDate",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ofLocalizedDateTime": [
-        {
-          "name": "ofLocalizedDateTime",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
+              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
           }
         },
         {
-          "name": "ofLocalizedDateTime",
+          "description": "Creates DateTimeFormatter using given pattern and locale",
+          "name": "formatter",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}},
-              {"name": "arg1", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
+              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "locale", "refClazz": {"refClazzName": "java.util.Locale"}}
             ],
             "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
           }
         }
       ],
-      "ofLocalizedTime": [
+      "lenientFormatter": [
         {
-          "name": "ofLocalizedTime",
+          "description": "Creates lenient version of DateTimeFormatter using given pattern",
+          "name": "lenientFormatter",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.time.format.FormatStyle"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
-          }
-        }
-      ],
-      "ofPattern": [
-        {
-          "name": "ofPattern",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
           }
         },
         {
-          "name": "ofPattern",
+          "description": "Creates lenient version of DateTimeFormatter using given pattern and locale",
+          "name": "lenientFormatter",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "arg1", "refClazz": {"refClazzName": "java.util.Locale"}}
+              {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "locale", "refClazz": {"refClazzName": "java.util.Locale"}}
             ],
             "result": {"refClazzName": "java.time.format.DateTimeFormatter"}
           }
         }
-      ]
-    }
-  },
-  {
-    "clazzName": {"refClazzName": "java.util.Locale"},
-    "methods": {
-      "toString": [
+      ],
+      "parseInstant": [
         {
-          "name": "toString",
+          "description": "Parse Instant in ISO-8601 format e.g. '2011-12-03T10:15:30Z'",
+          "name": "parseInstant",
           "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.Instant"}
+          }
+        }
+      ],
+      "parseLocalDate": [
+        {
+          "description": "Parse LocalDate in ISO-8601 format e.g. '2011-12-03'",
+          "name": "parseLocalDate",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalDate"}
+          }
+        },
+        {
+          "description": "Parse LocalDate in DateTimeFormatter format",
+          "name": "parseLocalDate",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalDate"}
+          }
+        },
+        {
+          "description": "Parse LocalDate using given formatter",
+          "name": "parseLocalDate",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalDate"}
+          }
+        }
+      ],
+      "parseLocalDateTime": [
+        {
+          "description": "Parse LocalDateTime in ISO-8601 format e.g. '2011-12-03T10:15:30'",
+          "name": "parseLocalDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalDateTime"}
+          }
+        },
+        {
+          "description": "Parse LocalDateTime in DateTimeFormatter format",
+          "name": "parseLocalDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalDateTime"}
+          }
+        },
+        {
+          "description": "Parse LocalDateTime using given formatter",
+          "name": "parseLocalDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalDateTime"}
+          }
+        }
+      ],
+      "parseLocalTime": [
+        {
+          "description": "Parse LocalTime in ISO-8601 format e.g. '10:15' or '10:15:30'",
+          "name": "parseLocalTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalTime"}
+          }
+        },
+        {
+          "description": "Parse LocalTime in DateTimeFormatter format",
+          "name": "parseLocalTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalTime"}
+          }
+        },
+        {
+          "description": "Parse LocalTime using given formatter",
+          "name": "parseLocalTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
+            ],
+            "result": {"refClazzName": "java.time.LocalTime"}
+          }
+        }
+      ],
+      "parseOffsetDateTime": [
+        {
+          "description": "Parse OffsetDateTime in ISO-8601 format e.g. '2011-12-03T10:15:30+01:00'",
+          "name": "parseOffsetDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.OffsetDateTime"}
+          }
+        },
+        {
+          "description": "Parse OffsetDateTime in DateTimeFormatter format",
+          "name": "parseOffsetDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.OffsetDateTime"}
+          }
+        },
+        {
+          "description": "Parse OffsetDateTime using given formatter",
+          "name": "parseOffsetDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
+            ],
+            "result": {"refClazzName": "java.time.OffsetDateTime"}
+          }
+        }
+      ],
+      "parseZonedDateTime": [
+        {
+          "description": "Parse ZonedDateTime in ISO-8601 format e.g. '2011-12-03T10:15:30+01:00[Europe/Paris]'",
+          "name": "parseZonedDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.ZonedDateTime"}
+          }
+        },
+        {
+          "description": "Parse ZonedDateTime in DateTimeFormatter format",
+          "name": "parseZonedDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.time.ZonedDateTime"}
+          }
+        },
+        {
+          "description": "Parse ZonedDateTime using given formatter",
+          "name": "parseZonedDateTime",
+          "signature": {
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "format", "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"}}
+            ],
+            "result": {"refClazzName": "java.time.ZonedDateTime"}
           }
         }
       ]
@@ -19147,6 +18474,111 @@
     "staticMethods": {}
   },
   {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.random$"},
+    "methods": {
+      "nextBoolean": [
+        {
+          "description": "Returns an uniformly distributed boolean value",
+          "name": "nextBoolean",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "nextBooleanWithSuccessRate": [
+        {
+          "description": "Returns a boolean value with a success rate determined by the given parameter. Success rate should be between 0.0 and 1.0. For 0.0 always returns false and for 1.0 always returns true",
+          "name": "nextBooleanWithSuccessRate",
+          "signature": {
+            "noVarArgs": [
+              {"name": "successRate", "refClazz": {"refClazzName": "java.lang.Double"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "nextDouble": [
+        {
+          "description": "Returns an uniformly distributed double value between 0.0 (inclusive) and 1.0 (exclusive)",
+          "name": "nextDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed double value between fromInclusive and toExclusive",
+          "name": "nextDouble",
+          "signature": {
+            "noVarArgs": [
+              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Double"}},
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Double"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed double value between 0.0 and toExclusive",
+          "name": "nextDouble",
+          "signature": {
+            "noVarArgs": [
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Double"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "nextInt": [
+        {
+          "description": "Returns an uniformly distributed integer value between fromInclusive and toExclusive",
+          "name": "nextInt",
+          "signature": {
+            "noVarArgs": [
+              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Integer"}},
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Integer"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed integer value between 0 and toExclusive",
+          "name": "nextInt",
+          "signature": {
+            "noVarArgs": [
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Integer"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "nextLong": [
+        {
+          "description": "Returns an uniformly distributed long value between fromInclusive and toExclusive",
+          "name": "nextLong",
+          "signature": {
+            "noVarArgs": [
+              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Long"}},
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Long"}}
+            ],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed long value between 0 and toExclusive",
+          "name": "nextLong",
+          "signature": {
+            "noVarArgs": [
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Long"}}
+            ],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.util$"},
     "methods": {
       "split": [
@@ -19176,507 +18608,6 @@
         {
           "description": "Generate unique identifier (https://en.wikipedia.org/wiki/Universally_unique_identifier)",
           "name": "uuid",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {"refClazzName": "java.time.format.ResolverStyle"},
-    "methods": {
-      "compareTo": [
-        {
-          "name": "compareTo",
-          "signature": {
-            "noVarArgs": [
-              {
-                "name": "arg0",
-                "refClazz": {
-                  "params": [
-                    {
-                      "display": "Unknown",
-                      "params": [],
-                      "refClazzName": "java.lang.Object",
-                      "type": "Unknown"
-                    }
-                  ],
-                  "refClazzName": "java.lang.Enum"
-                }
-              }
-            ],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        },
-        {
-          "name": "compareTo",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "name": [
-        {
-          "name": "name",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "ordinal": [
-        {
-          "name": "ordinal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {
-      "LENIENT": [
-        {
-          "name": "LENIENT",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.ResolverStyle"}
-          }
-        }
-      ],
-      "SMART": [
-        {
-          "name": "SMART",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.ResolverStyle"}
-          }
-        }
-      ],
-      "STRICT": [
-        {
-          "name": "STRICT",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.ResolverStyle"}
-          }
-        }
-      ],
-      "valueOf": [
-        {
-          "name": "valueOf",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.time.format.ResolverStyle"}
-          }
-        }
-      ],
-      "values": [
-        {
-          "name": "values",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "ResolverStyle",
-                  "params": [],
-                  "refClazzName": "java.time.format.ResolverStyle",
-                  "type": "TypedClass"
-                }
-              ],
-              "refClazzName": "[Ljava.lang.Object;"
-            }
-          }
-        }
-      ]
-    }
-  },
-  {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.base64$"},
-    "methods": {
-      "decode": [
-        {
-          "description": "Decode Base64 value to String",
-          "name": "decode",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "encode": [
-        {
-          "description": "Encode String value to Base64",
-          "name": "encode",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "urlSafeDecode": [
-        {
-          "description": "Decode URL-safe Base64 value to String",
-          "name": "urlSafeDecode",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "urlSafeEncode": [
-        {
-          "description": "Encode String value to URL-safe Base64",
-          "name": "urlSafeEncode",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {"refClazzName": "java.time.format.DecimalStyle"},
-    "methods": {
-      "decimalSeparator": [
-        {
-          "name": "decimalSeparator",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ],
-      "getDecimalSeparator": [
-        {
-          "name": "getDecimalSeparator",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ],
-      "getNegativeSign": [
-        {
-          "name": "getNegativeSign",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ],
-      "getPositiveSign": [
-        {
-          "name": "getPositiveSign",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ],
-      "getZeroDigit": [
-        {
-          "name": "getZeroDigit",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ],
-      "negativeSign": [
-        {
-          "name": "negativeSign",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ],
-      "positiveSign": [
-        {
-          "name": "positiveSign",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "withDecimalSeparator": [
-        {
-          "name": "withDecimalSeparator",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
-      "withNegativeSign": [
-        {
-          "name": "withNegativeSign",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
-      "withPositiveSign": [
-        {
-          "name": "withPositiveSign",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
-      "withZeroDigit": [
-        {
-          "name": "withZeroDigit",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
-      "zeroDigit": [
-        {
-          "name": "zeroDigit",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Character"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {
-      "STANDARD": [
-        {
-          "name": "STANDARD",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
-      "availableLocales": [
-        {
-          "name": "availableLocales",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Locale",
-                  "params": [],
-                  "refClazzName": "java.util.Locale",
-                  "type": "TypedClass"
-                }
-              ],
-              "refClazzName": "java.util.Set"
-            }
-          }
-        }
-      ],
-      "getAvailableLocales": [
-        {
-          "name": "getAvailableLocales",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Locale",
-                  "params": [],
-                  "refClazzName": "java.util.Locale",
-                  "type": "TypedClass"
-                }
-              ],
-              "refClazzName": "java.util.Set"
-            }
-          }
-        }
-      ],
-      "of": [
-        {
-          "name": "of",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
-            ],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ],
-      "ofDefaultLocale": [
-        {
-          "name": "ofDefaultLocale",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.time.format.DecimalStyle"}
-          }
-        }
-      ]
-    }
-  },
-  {
-    "clazzName": {"refClazzName": "java.time.temporal.TemporalAccessor"},
-    "methods": {
-      "canBe": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "canBe",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {
-      "params": [
-        {
-          "display": "Unknown",
-          "params": [],
-          "refClazzName": "java.lang.Object",
-          "type": "Unknown"
-        }
-      ],
-      "refClazzName": "java.lang.Comparable"
-    },
-    "methods": {
-      "canBe": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "canBe",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}

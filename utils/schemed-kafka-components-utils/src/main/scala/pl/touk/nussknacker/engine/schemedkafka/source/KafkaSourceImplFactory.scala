@@ -1,21 +1,19 @@
-package pl.touk.nussknacker.engine.kafka.source.flink
+package pl.touk.nussknacker.engine.schemedkafka.source
 
 import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Params
-import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source, TopicName}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalToJsonFormatter
-import pl.touk.nussknacker.engine.schemedkafka.source.KafkaSourceImplFactory
 
-class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] with Serializable {
+trait KafkaSourceImplFactory[K, V] {
 
-  override def createSource(
+  def createSource(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
@@ -26,15 +24,6 @@ class FlinkKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] wit
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
       namingStrategy: NamingStrategy
-  ): Source =
-    new FlinkConsumerRecordBasedKafkaSource[K, V](
-      preparedTopics,
-      kafkaConfig,
-      deserializationSchema,
-      formatter,
-      contextInitializer,
-      testParametersInfo,
-      namingStrategy
-    )
+  ): Source
 
 }

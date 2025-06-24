@@ -17,25 +17,26 @@ abstract class KafkaAvroTestProcessConfigCreator(
     sinkForInputMetaResultsHolder: => TestResultsHolder[java.util.Map[String @unchecked, _]]
 ) extends EmptyProcessConfigCreator {
 
-  private val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
-
   override def sourceFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
+    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
     val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      universalPayload,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
       modelConfig,
-      new FlinkKafkaSourceImplFactory(None)
+      kafkaConfig,
+      new FlinkKafkaSourceImplFactory
     )
+
+    val kafkaConfigWithKeySchemaSupport = kafkaConfig.copy(useStringForKey = false)
     val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      universalPayload,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfigWithKeySchemaSupport),
       modelConfig,
-      new FlinkKafkaSourceImplFactory(None)
-    ) {
-      override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
-    }
+      kafkaConfigWithKeySchemaSupport,
+      new FlinkKafkaSourceImplFactory
+    )
 
     Map(
       "kafka"           -> defaultCategory(universalSourceFactory),
@@ -52,12 +53,16 @@ abstract class KafkaAvroTestProcessConfigCreator(
   override def sinkFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
+    val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
+
     Map(
       "kafka" -> defaultCategory(
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalPayload,
           modelConfig,
+          kafkaConfig,
           FlinkKafkaUniversalSinkImplFactory
         )
       ),

@@ -2,13 +2,11 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import org.apache.avro.generic.GenericRecord
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   BaseDefinedParameter,
@@ -20,18 +18,20 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{
   KafkaUniversalComponentTransformer,
   RuntimeSchemaData,
-  SchemaDeterminerErrorHandler
+  SchemaRegistryErrorHandler
 }
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ContentTypes,
   ContentTypesSchemas,
-  SchemaBasedSerdeProvider,
   SchemaRegistryClientFactory
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
@@ -41,8 +41,6 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
  * TODO: Move it to some other module when json schema handling will be available
  */
 object UniversalKafkaSinkFactory {
-
-  private val genericRecordClass = classOf[GenericRecord]
 
   private val paramsDeterminedAfterSchema = List(
     Parameter.optional[CharSequence](sinkKeyParamName).copy(isLazyParameter = true),
@@ -58,8 +56,9 @@ object UniversalKafkaSinkFactory {
 
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+    val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
     val modelConfig: ModelConfig,
+    val kafkaConfig: KafkaConfig,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
     with SinkFactory {
@@ -131,12 +130,6 @@ class UniversalKafkaSinkFactory(
         ) =>
       // edge case - for some reason Topic/Version is not defined
       getSchema(topic, version)
-        .andThen { runtimeSchemaData =>
-          schemaBasedMessagesSerdeProvider.schemaValidator
-            .validateSchema(runtimeSchemaData.schema)
-            .map(_ => runtimeSchemaData)
-            .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
-        }
         .andThen { runtimeSchemaData =>
           schemaSupportDispatcher
             .forSchemaType(runtimeSchemaData.schema.schemaType())
@@ -219,14 +212,7 @@ class UniversalKafkaSinkFactory(
           (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) :: Nil,
           _
         ) =>
-      val determinedSchema = getSchema(topic, version)
-      val validatedSchema = determinedSchema.andThen { schema =>
-        schemaBasedMessagesSerdeProvider.schemaValidator
-          .validateSchema(schema.schema)
-          .map(_ => schema)
-          .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
-      }
-      validatedSchema
+      getSchema(topic, version)
         .andThen { schemaData =>
           schemaSupportDispatcher
             .forSchemaType(schemaData.schema.schemaType())
@@ -303,11 +289,14 @@ class UniversalKafkaSinkFactory(
   }
 
   private def getSchema(topic: String, version: String)(implicit nodeId: NodeId) = {
-    val preparedTopic    = prepareTopic(topic)
-    val versionOption    = parseVersionOption(version)
-    val schemaDeterminer = prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption)
-    schemaDeterminer.determineSchemaUsedInTyping
-      .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
+    val preparedTopic = prepareTopic(topic)
+    val versionOption = parseVersionOption(version)
+    schemaRegistryClient
+      .getFreshSchema(preparedTopic.prepared.toUnspecialized, versionOption, isKey = false)
+      .map(withMetadata =>
+        RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))
+      )
+      .leftMap(SchemaRegistryErrorHandler.handleSchemaRegistryError(_))
       .leftMap(NonEmptyList.one)
   }
 
@@ -335,8 +324,7 @@ class UniversalKafkaSinkFactory(
 
     val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(
       preparedTopic.prepared,
-      Option(finalState.schema),
-      kafkaConfig
+      finalState.schema,
     )
 
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
