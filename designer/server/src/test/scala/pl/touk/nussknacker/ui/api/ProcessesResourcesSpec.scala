@@ -660,7 +660,7 @@ class ProcessesResourcesSpec
   test("save correct process json with ok status") {
     val validProcess = ScenarioBuilder
       .streaming("valid")
-      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'".spel)
+      .source("startProcess", "kafka-transaction")
       .emptySink("end", "kafka-string", "Topic" -> s"'output'".spel, "Value" -> "#input".spel)
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK

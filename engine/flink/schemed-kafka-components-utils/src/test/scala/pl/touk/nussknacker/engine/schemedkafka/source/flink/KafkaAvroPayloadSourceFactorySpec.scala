@@ -121,7 +121,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     ) should matchPattern {
       case Invalid(
             NonEmptyList(
-              CustomNodeError(_, "Fetching schema error for topic: fake-topic, version: ExistingSchemaVersion(1)", _),
+              CustomNodeError(_, "Schema subject doesn't exist.", _),
               _
             )
           ) =>
@@ -143,7 +143,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
             NonEmptyList(
               CustomNodeError(
                 _,
-                "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(3)",
+                "Schema version doesn't exist.",
                 _
               ),
               _

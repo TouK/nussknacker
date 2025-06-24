@@ -8,41 +8,31 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordKafkaDeseri
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 
-import scala.reflect.ClassTag
+abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory extends Serializable {
 
-/**
-  * Abstract base implementation of [[KafkaSchemaBasedDeserializationSchemaFactory]]
-  * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes both key and value
-  * and wrap it in ConsumerRecord object (transforms raw event represented as ConsumerRecord from Array[Byte] domain to Key-Value-type domain).
-  */
-abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
-    extends KafkaSchemaBasedDeserializationSchemaFactory {
+  protected def kafkaConfig: KafkaConfig
 
-  protected def createKeyOrUseStringDeserializer[K: ClassTag](
+  private def createKeyOrUseStringDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      kafkaConfig: KafkaConfig
   ): Deserializer[K] = {
     if (kafkaConfig.useStringForKey) {
       createStringKeyDeserializer.asInstanceOf[Deserializer[K]]
     } else {
-      createKeyDeserializer[K](schemaDataOpt, kafkaConfig)
+      createKeyDeserializer[K](schemaDataOpt)
     }
   }
 
-  protected def createKeyDeserializer[K: ClassTag](
+  protected def createKeyDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      kafkaConfig: KafkaConfig
   ): Deserializer[K]
 
-  protected def createValueDeserializer[V: ClassTag](
+  protected def createValueDeserializer[V](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      kafkaConfig: KafkaConfig
   ): Deserializer[V]
 
   protected def createStringKeyDeserializer: Deserializer[_] = new StringDeserializer
 
-  override def create[K: ClassTag, V: ClassTag](
-      kafkaConfig: KafkaConfig,
+  def create[K, V](
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]]
   ): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
@@ -51,11 +41,11 @@ abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
       @transient
       override protected lazy val keyDeserializer: Deserializer[K] =
-        createKeyOrUseStringDeserializer[K](keySchemaDataOpt, kafkaConfig)
+        createKeyOrUseStringDeserializer[K](keySchemaDataOpt)
 
       @transient
       override protected lazy val valueDeserializer: Deserializer[V] =
-        createValueDeserializer[V](valueSchemaDataOpt, kafkaConfig)
+        createValueDeserializer[V](valueSchemaDataOpt)
 
     }
 

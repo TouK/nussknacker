@@ -272,8 +272,6 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-source-genericsourcewithcustomvariables",
     "streaming1-source-kafka-transaction",
     "streaming1-source-onesource",
-    "streaming1-source-real-kafka",
-    "streaming1-source-real-kafka-json-sampleproduct",
     "streaming1-source-sql-source"
   )
 
@@ -342,8 +340,6 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-source-genericsourcewithcustomvariables",
     "streaming2-source-kafka-transaction",
     "streaming2-source-onesource",
-    "streaming2-source-real-kafka",
-    "streaming2-source-real-kafka-json-sampleproduct",
     "streaming2-source-sql-source"
   )
 
@@ -411,8 +407,6 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-source-genericsourcewithcustomvariables",
     "streaming1-source-kafka-transaction",
     "streaming1-source-onesource",
-    "streaming1-source-real-kafka",
-    "streaming1-source-real-kafka-json-sampleproduct",
     "streaming1-source-sql-source",
     "streaming2-custom-additionalvariable",
     "streaming2-custom-constantstatetransformer",
@@ -473,8 +467,6 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-source-genericsourcewithcustomvariables",
     "streaming2-source-kafka-transaction",
     "streaming2-source-onesource",
-    "streaming2-source-real-kafka",
-    "streaming2-source-real-kafka-json-sampleproduct",
     "streaming2-source-sql-source"
   )
 
