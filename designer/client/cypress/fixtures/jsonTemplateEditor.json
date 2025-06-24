@@ -1,0 +1,73 @@
+{
+    "metaData": {
+        "id": "json-template-editor",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "inputSchema": "{}",
+                "outputSchema": "{}",
+                "slug": "sticky"
+            },
+            "metaDataType": "RequestResponseMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Event Generator",
+            "ref": {
+                "typ": "event-generator",
+                "parameters": [
+                    {
+                        "name": "schedule",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "jsonTemplate",
+                            "expression": "{\n\t\"sampleField\": \"#{#UTIL.uuid()}\",\n\t\"dateTime\": \"#{#DATE_FORMAT.format(#DATE.now)}\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -94,
+                    "y": -160
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "Dead End",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -79,
+                    "y": 45
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": []
+}
