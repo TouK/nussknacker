@@ -312,7 +312,6 @@ function openNodeWindow(nameOrAlias: string, end?: boolean) {
 
     cy.wait("@nodeValidation");
     cy.wait("@additionalInfo");
-    cy.wait("@nodeValidation");
     return cy.get("[data-testid=window]").should("be.visible");
 }
 
@@ -339,7 +338,10 @@ function dragNode(
 function layoutScenario(waitTime = 600) {
     // prevents random clicks on metrics
     // lazy loaded panel moves layout button just before click
-    cy.contains(/^layout$/).click();
+    // Cypress keep focus on element and display tooltip forever, let's remove it via blur()
+    cy.contains(/^layout$/)
+        .click()
+        .blur();
     //wait for graph view (zoom, pan) to settle
     cy.wait(waitTime);
 }
