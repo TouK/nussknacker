@@ -75,23 +75,25 @@ ThisBuild / isSnapshot := version(_ contains "-SNAPSHOT").value
 lazy val publishSettings = Seq(
   publishMavenStyle             := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-  publishTo                     := {
+  sonatypeCredentialHost        := nexusHostFromProps.getOrElse(
+    "central.sonatype.com"
+  ), // can be removed after sbt 1.11.x+ migration
+  publishTo              := {
     nexusUrlFromProps
       .map { url =>
         (if (isSnapshot.value) "snapshots" else "releases") at url
       }
       .orElse {
-        val defaultNexusUrl = "https://oss.sonatype.org/"
         if (isSnapshot.value)
-          Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
+          Some("snapshots" at "https://central.sonatype.com/repository/maven-snapshots/")
         else
           sonatypePublishToBundle.value
       }
   },
-  Test / publishArtifact        := false,
+  Test / publishArtifact := false,
   // We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
   // we'll end up with two scm sections and invalid pom...
-  pomExtra in Global            := {
+  pomExtra in Global     := {
     <developers>
       <developer>
         <id>TouK</id>
@@ -100,8 +102,8 @@ lazy val publishSettings = Seq(
       </developer>
     </developers>
   },
-  organization                  := "pl.touk.nussknacker",
-  homepage                      := Some(url(s"https://github.com/touk/nussknacker")),
+  organization           := "pl.touk.nussknacker",
+  homepage               := Some(url(s"https://github.com/touk/nussknacker")),
 )
 
 def defaultMergeStrategy: String => MergeStrategy = {
