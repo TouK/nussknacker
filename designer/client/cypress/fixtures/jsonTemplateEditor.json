@@ -6,7 +6,7 @@
             "properties": {
                 "inputSchema": "{}",
                 "outputSchema": "{}",
-                "slug": "sticky"
+                "slug": "json-template-editor"
             },
             "metaDataType": "RequestResponseMetaData",
             "showDescription": false
