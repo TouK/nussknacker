@@ -5,7 +5,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 
-trait SchemaRegistryClient extends Serializable {
+trait SchemaRegistryClient {
 
   def getSchemaById(id: SchemaId): SchemaWithMetadata
 

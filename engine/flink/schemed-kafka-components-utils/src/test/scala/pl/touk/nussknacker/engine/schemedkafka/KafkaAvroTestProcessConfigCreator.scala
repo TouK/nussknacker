@@ -20,21 +20,21 @@ abstract class KafkaAvroTestProcessConfigCreator(
   override def sourceFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SourceFactory]] = {
-    val kafkaConfig      = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-    val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
-
+    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
     val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      universalPayload,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig),
       modelConfig,
       kafkaConfig,
       new FlinkKafkaSourceImplFactory
     )
+
+    val kafkaConfigWithKeySchemaSupport = kafkaConfig.copy(useStringForKey = false)
     val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
-      universalPayload,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfigWithKeySchemaSupport),
       modelConfig,
-      kafkaConfig.copy(useStringForKey = false),
+      kafkaConfigWithKeySchemaSupport,
       new FlinkKafkaSourceImplFactory
     )
 
