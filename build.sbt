@@ -40,10 +40,6 @@ lazy val scalaFixV = "0.14.2"
 def propOrEnv(name: String, default: String): String = propOrEnv(name).getOrElse(default)
 def propOrEnv(name: String): Option[String]          = Option(System.getProperty(name)).orElse(sys.env.get(name))
 
-val nexusUrlFromProps  = propOrEnv("nexusUrl")
-//TODO: this is pretty clunky, but works so far for our case...
-val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
-
 //Docker release configuration
 val dockerTagName                = propOrEnv("dockerTagName")
 val dockerPort                   = propOrEnv("dockerPort", "8080").toInt
@@ -71,18 +67,13 @@ ThisBuild / isSnapshot := version(_ contains "-SNAPSHOT").value
 lazy val publishSettings = Seq(
   publishMavenStyle             := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  sonatypeCredentialHost        := "central.sonatype.com", // can be removed after sbt 1.11.x+ migration
   publishTo                     := {
-    nexusUrlFromProps
-      .map { url =>
-        (if (isSnapshot.value) "snapshots" else "releases") at url
-      }
-      .orElse {
-        val defaultNexusUrl = "https://oss.sonatype.org/"
-        if (isSnapshot.value)
-          Some("snapshots" at defaultNexusUrl + "content/repositories/snapshots")
-        else
-          sonatypePublishToBundle.value
-      }
+    if (isSnapshot.value) {
+      Some("snapshots" at "https://central.sonatype.com/repository/maven-snapshots/")
+    } else {
+      sonatypePublishToBundle.value
+    }
   },
   Test / publishArtifact        := false,
   // We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm

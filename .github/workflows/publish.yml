@@ -31,7 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ inputs.should_run }}
     env:
-      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
       addDevArtifacts: true
       NUSSKNACKER_VERSION: ${{ inputs.nussknacker_version }}
       GIT_SOURCE_BRANCH: ${{ inputs.git_source_branch }}
