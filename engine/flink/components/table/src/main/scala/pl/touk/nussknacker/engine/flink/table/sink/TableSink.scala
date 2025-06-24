@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
@@ -21,6 +20,8 @@ import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
 
+import scala.annotation.nowarn
+
 class TableSink(
     tableDefinition: TableDefinition,
     flinkDataDefinition: FlinkDataDefinition,
@@ -39,7 +40,7 @@ class TableSink(
     )
   }
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext

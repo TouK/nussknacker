@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import com.github.ghik.silencer.silent
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -48,6 +47,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import java.util.{Date, Optional, UUID}
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.Nullable
+import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -517,7 +517,7 @@ object SampleNodes {
 
   object TransformerWithTime extends CustomStreamTransformer with Serializable {
 
-    @silent("deprecated")
+    @nowarn("cat=deprecation")
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(
         implicit nodeId: NodeId
@@ -593,7 +593,7 @@ object SampleNodes {
 
     override def canBeEnding: Boolean = true
 
-    @silent("deprecated")
+    @nowarn("cat=deprecation")
     @MethodToInvoke(returnType = classOf[String])
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
@@ -622,7 +622,7 @@ object SampleNodes {
       ): FlatMapFunction[Context, ValueWithContext[String]] =
         (ctx, collector) => collector.collect(ValueWithContext(serializableValue, ctx))
 
-      @silent("deprecated")
+      @nowarn("cat=deprecation")
       override def toFlinkFunction(flinkCustomNodeContext: FlinkCustomNodeContext): SinkFunction[String] =
         new SinkFunction[String] {
           override def invoke(value: String, context: SinkFunction.Context): Unit = resultsHolder.add(value)

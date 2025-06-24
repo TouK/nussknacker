@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import cats.data.NonEmptyList
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api._
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.TestResu
 import pl.touk.nussknacker.engine.testmode.TestRunId
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.nowarn
 
 // `TestResultSinkFactory` is closely related to the ID of the running test. We use the ID to extract results from
 // the shared map with results collected from all instances of TestResultSink (see `TestResultSinkFactory.sinksOutputs`)
@@ -50,7 +50,7 @@ object TestResultSinkFactory {
     ): FlatMapFunction[Context, ValueWithContext[Value]] =
       helper.lazyMapFunction(value)
 
-    @silent("deprecated")
+    @nowarn("cat=deprecation")
     override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value] =
       new SinkFunction[Value] {
 
