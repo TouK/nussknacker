@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
-import AceEditor from "./ace";
+import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import { DEFAULT_OPTIONS } from "./AceWrapper";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
@@ -57,7 +57,10 @@ export const JsonEditor: SimpleEditor<Props> = ({
                 sx={{ position: "relative" }}
             >
                 <StyledAceEditor
-                    onLoad={setAnnotationsOnLoad}
+                    onLoad={(editor) => {
+                        setAnnotationsOnLoad();
+                        setupAceEditorSnippets(editor);
+                    }}
                     readOnly={readOnly}
                     mode={"json"}
                     width={"100%"}
