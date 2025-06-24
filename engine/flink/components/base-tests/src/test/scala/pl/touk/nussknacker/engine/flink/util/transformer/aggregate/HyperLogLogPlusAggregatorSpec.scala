@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.Validated.Valid
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -15,9 +14,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import scala.annotation.nowarn
 import scala.util.Random
 
-@silent("deprecated")
+@nowarn("cat=deprecation")
 class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
 
   // the aim of this test is to be able to test different parameters easily

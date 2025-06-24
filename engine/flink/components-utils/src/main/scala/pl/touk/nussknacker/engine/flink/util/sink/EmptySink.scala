@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.sink
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
@@ -9,6 +8,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper
 }
+
+import scala.annotation.nowarn
 
 object EmptySink extends EmptySink
 
@@ -21,7 +22,7 @@ trait EmptySink extends BasicFlinkSink {
   ): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
     (_, _) => {}
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] =
     new DiscardingSink[AnyRef]
 
