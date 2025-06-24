@@ -212,7 +212,7 @@ description: Stay informed with detailed changelogs covering new features, impro
     * set `modelConfig.jsonLikeValuesEnteringMode` of the scenarioType in the `scenarioTypes` config section to `SingleJsonTemplateParameter` in order to enable single param editor
     * the flag is optional, the default value of the flag is `DynamicForms` (no changes in behavior)
     * currently supported for Kafka Sinks only.
-* [#8209](https://github.com/TouK/nussknacker/pull/8209) Support for jdk 1.17. Scala 2.12.10 version upgraded to 2.12.15. Using the own flink-scala library for 2.12 builds.  
+* [#8209](https://github.com/TouK/nussknacker/pull/8209) Support for jdk 1.17. Scala 2.12.10 -> 2.12.20 and 2.13.15 -> 2.13.16 migration. Using the own flink-scala library also for 2.12 builds.  
 
 ## 1.18
 
