@@ -46,6 +46,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   def modelConfig: ModelConfig
 
+  def kafkaConfig: KafkaConfig
+
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
@@ -59,16 +61,10 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     }
   }
 
-  @transient protected lazy val kafkaConfig: KafkaConfig = prepareKafkaConfig
-
   @transient protected lazy val schemaSupportDispatcher: UniversalSchemaSupportDispatcher =
     UniversalSchemaSupportDispatcher(
       kafkaConfig
     )
-
-  protected def prepareKafkaConfig: KafkaConfig = {
-    KafkaConfig.parseConfig(modelConfig.underlyingConfig)
-  }
 
   protected def getTopicParam(
       implicit nodeId: NodeId
@@ -162,28 +158,6 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)
-
-  protected def prepareUniversalValueSchemaDeterminer(
-      preparedTopic: PreparedKafkaTopic[TN],
-      version: SchemaVersionOption
-  ): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      version,
-      isKey = false
-    )
-  }
-
-  // TODO: add schema versioning for key schemas
-  protected def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(
-      schemaRegistryClient,
-      preparedTopic.prepared.toUnspecialized,
-      LatestSchemaVersion,
-      isKey = true
-    )
-  }
 
   protected def topicParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>

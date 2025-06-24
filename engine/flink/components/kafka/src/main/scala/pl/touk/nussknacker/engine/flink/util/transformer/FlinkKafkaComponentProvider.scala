@@ -13,9 +13,11 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.schemedkafka.FlinkUniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
+  UniversalSchemaBasedSerdeProvider,
+  UniversalSchemaRegistryClientFactory
+}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
@@ -37,7 +39,8 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
-    val universalSerdeProvider = FlinkUniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
+    val kafkaConfig            = KafkaConfig.parseConfig(overriddenModelConfig.underlyingConfig)
+    val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 
     List(
       ComponentDefinition(
@@ -46,7 +49,8 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
           schemaRegistryClientFactory,
           universalSerdeProvider,
           finalModelConfig,
-          new FlinkKafkaSourceImplFactory(None)
+          kafkaConfig,
+          new FlinkKafkaSourceImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Source)),
       ComponentDefinition(
@@ -55,6 +59,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
           schemaRegistryClientFactory,
           universalSerdeProvider,
           finalModelConfig,
+          kafkaConfig,
           FlinkKafkaUniversalSinkImplFactory
         )
       ).withRelativeDocs(universal(ComponentType.Sink))
