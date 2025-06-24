@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.runtime.state.StateBackend
@@ -16,6 +15,8 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.util.StateConfiguration
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
+
+import scala.annotation.nowarn
 
 /*
   This trait is meant to be the place to configure StreamExecutionEnvironment. Here (e.g. in DefaultStreamExecutionEnvPreparer)
@@ -49,7 +50,7 @@ class DefaultStreamExecutionEnvPreparer(
 ) extends StreamExecutionEnvPreparer
     with LazyLogging {
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def preRegistration(
       env: StreamExecutionEnvironment,
       compilerData: FlinkProcessCompilerData,
@@ -81,7 +82,7 @@ class DefaultStreamExecutionEnvPreparer(
     }
   }
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   private def configureRocksDBBackend(env: StreamExecutionEnvironment, config: RocksDBStateBackendConfig): Unit = {
     env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }

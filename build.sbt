@@ -14,13 +14,8 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-// Warning: Flink doesn't work correctly with Scala 2.12.11 and higher.
-// Upgrading to a newer version of Scala 2.12 causes the JavaCollectionsSerializationTest to fail
-// because these versions switched to the same Java collection wrappers used in Scala 2.13.
-// These wrappers lack dedicated Kryo serializers, which we added in flink-scala-2.13 library https://github.com/TouK/flink-scala-2.13.
-// To bump Scala 2.12 we would need to do flink-scala-2.12 similar to flink-scala-2.13.
-val scala212 = "2.12.15"
-val scala213 = "2.13.15"
+val scala212 = "2.12.20"
+val scala213 = "2.13.16"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -30,10 +25,6 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 
 lazy val supportedScalaVersions = List(scala212, scala213)
 
-// Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
-// Silencer 1.7.x requires Scala 2.12.11+
-// Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
-// https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
 lazy val silencerV = "1.7.19"
 
 lazy val scalaFixV = "0.14.2"
@@ -178,10 +169,7 @@ lazy val commonSettings =
         case _       => Seq()
       },
       semanticdbEnabled                := true,
-      semanticdbVersion                := forScalaVersion(scalaVersion.value) {
-        case (2, 12) => "4.8.4"
-        case _       => "4.13.2"
-      },
+      semanticdbVersion                := "4.13.2",
       scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",

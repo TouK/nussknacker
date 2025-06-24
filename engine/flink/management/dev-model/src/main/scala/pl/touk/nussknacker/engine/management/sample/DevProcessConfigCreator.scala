@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management.sample
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
-import com.github.ghik.silencer.silent
 import io.circe.Encoder
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
@@ -41,6 +40,7 @@ import pl.touk.nussknacker.engine.util.functions.{
 }
 
 import java.time.LocalDateTime
+import scala.annotation.nowarn
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -58,7 +58,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def all[T](value: T): WithCategories[T] =
     WithCategories(value, "Category1", "Category2", "DevelopmentTests", "Periodic")
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def sinkFactories(
       modelConfig: ModelConfig
   ): Map[String, WithCategories[SinkFactory]] = {
