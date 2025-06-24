@@ -22,7 +22,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
     final val fullNameTopic = "full-name"
 
     val schemaRegistryMockClient: SchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
-      .register(fullNameTopic, FullNameV1.confluentSchema, 1, isKey = false)
+      .register(fullNameTopic, FullNameV1.schema, 1, isKey = false)
       .build
 
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)

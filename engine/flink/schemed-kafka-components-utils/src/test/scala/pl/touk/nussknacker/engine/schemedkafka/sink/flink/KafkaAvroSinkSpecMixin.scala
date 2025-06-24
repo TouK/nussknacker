@@ -16,12 +16,12 @@ trait KafkaAvroSinkSpecMixin {
     val generatedNewSchemaVersion: Int = 3
 
     val schemaRegistryMockClient: CSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
-      .register(fullnameTopic, FullNameV1.confluentSchema, 1, isKey = false)
-      .register(fullnameTopic, FullNameV2.confluentSchema, 2, isKey = false)
-      .register(fullnameTopic, PaymentV1.confluentSchema, 3, isKey = false)
-      .register(fullnameTopic, NestedRecord.confluentSchema, 4, isKey = false)
-      .register(exampleAvroTopic, AllTypesAvroSchemaWithDefaultValues.confluentSchema, 1, isKey = false)
-      .register(exampleAvroTopic, AllTypesAvroSchemaWithoutDefaultValues.confluentSchema, 2, isKey = false)
+      .register(fullnameTopic, FullNameV1.schema, 1, isKey = false)
+      .register(fullnameTopic, FullNameV2.schema, 2, isKey = false)
+      .register(fullnameTopic, PaymentV1.schema, 3, isKey = false)
+      .register(fullnameTopic, NestedRecord.schema, 4, isKey = false)
+      .register(exampleAvroTopic, AllTypesAvroSchemaWithDefaultValues.schema, 1, isKey = false)
+      .register(exampleAvroTopic, AllTypesAvroSchemaWithoutDefaultValues.schema, 2, isKey = false)
       .register(exampleJsonTopic, AllTypesJsonSchemaWithDefaultValues.schema, 1, isKey = false)
       .register(exampleJsonTopic, AllTypesJsonSchemaWithoutDefaultValues.schema, 2, isKey = false)
       .build

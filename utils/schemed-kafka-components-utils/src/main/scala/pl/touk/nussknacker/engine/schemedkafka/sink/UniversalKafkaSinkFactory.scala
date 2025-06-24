@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   BaseDefinedParameter,
   DefinedEagerParameter,
@@ -36,7 +34,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClientFactory
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport.ParameterExtractionMode
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
@@ -234,7 +231,7 @@ class UniversalKafkaSinkFactory(
           (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) :: Nil,
           _
         ) =>
-      validateSchema(topic, version)
+      getSchema(topic, version)
         .andThen(schema =>
           extractSingleParameterForSchema(
             schemaData = schema,
@@ -281,7 +278,7 @@ class UniversalKafkaSinkFactory(
           (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) :: Nil,
           _
         ) =>
-      validateSchema(topic, version)
+      getSchema(topic, version)
         .andThen(schema =>
           extractSingleParameterForSchema(
             schemaData = schema,
@@ -330,16 +327,6 @@ class UniversalKafkaSinkFactory(
       )
   }
 
-  private def validateSchema(topic: String, version: String)(implicit nodeId: NodeId) = {
-    val determinedSchema = getSchema(topic, version)
-    determinedSchema.andThen { schema =>
-      schemaBasedMessagesSerdeProvider.schemaValidator
-        .validateSchema(schema.schema)
-        .map(_ => schema)
-        .leftMap(_.map(e => CustomNodeError(e.getMessage, None)))
-    }
-  }
-
   private def getSchema(topic: String, version: String)(implicit nodeId: NodeId) = {
     val preparedTopic = prepareTopic(topic)
     val versionOption = parseVersionOption(version)
@@ -381,24 +368,22 @@ class UniversalKafkaSinkFactory(
     )
 
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
-    val validationMode = {
-      if (params.isPresent(sinkRawEditorParamName)) {
+    val validationMode = modelConfig.jsonLikeValuesEnteringMode match {
+      case JsonLikeValuesEnteringMode.DynamicForms =>
         if (params.extractUnsafe[Boolean](sinkRawEditorParamName)) {
-          validationModeParamDeclaration.extractValue(params) match {
-            case Some(validationModeString) => extractValidationMode(validationModeString)
-            case None                       => ValidationMode.strict
-          }
+          val validationModeString = validationModeParamDeclaration.extractValueUnsafe(params)
+          extractValidationMode(validationModeString)
         } else {
           ValidationMode.strict
         }
-      } else if (params.isPresent(sinkValidationModeParamName)) {
-        validationModeParamDeclaration.extractValue(params) match {
-          case Some(validationModeString) => extractValidationMode(validationModeString)
-          case None                       => ValidationMode.strict
+      case JsonLikeValuesEnteringMode.SingleJsonTemplateParameter =>
+        if (params.isPresent(sinkValidationModeParamName)) {
+          val validationModeString = validationModeParamDeclaration.extractValueUnsafe(params)
+          extractValidationMode(validationModeString)
+        } else {
+          // Sink validation mode does not apply to schemaless topics; in this case, lax validation for an empty schema is sufficient
+          ValidationMode.lax
         }
-      } else {
-        ValidationMode.lax
-      }
     }
 
     implProvider.createSink(

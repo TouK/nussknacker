@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
@@ -15,6 +16,16 @@ class MockConfluentSchemaRegistryClientBuilder {
 
   // Default value for autoincrement mock id
   private val AutoIncId = -1
+
+  def register(
+      topic: String,
+      schema: Schema,
+      version: Int,
+      isKey: Boolean
+  ): MockConfluentSchemaRegistryClientBuilder = {
+    val avroSchema = ConfluentUtils.convertToAvroSchema(schema)
+    register(topic, avroSchema, version, isKey)
+  }
 
   def register(
       topic: String,

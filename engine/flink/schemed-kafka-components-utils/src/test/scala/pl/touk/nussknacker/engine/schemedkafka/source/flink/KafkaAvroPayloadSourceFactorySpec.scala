@@ -196,7 +196,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   }
 
   test("should read object with invalid defaults") {
-    val givenObj = new GenericData.Record(InvalidDefaultsSchema.rawSchema())
+    val givenObj = new GenericData.Record(InvalidDefaultsSchema)
     givenObj.put("field1", "foo")
 
     roundTripKeyValueObject(
@@ -213,7 +213,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val topic        = ArrayOfNumbersTopic
     val arrayOfInts  = List(123).asJava
     val arrayOfLongs = List(123L).asJava
-    val wrappedObj   = new NonRecordContainer(ArrayOfIntsSchema.rawSchema(), arrayOfInts)
+    val wrappedObj   = new NonRecordContainer(ArrayOfIntsSchema, arrayOfInts)
     pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
     readLastMessageAndVerify(
@@ -231,7 +231,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val arrayOfRecordsV1 = List(recordV1).asJava
     val recordV2         = FullNameV2.createRecord("Jan", null, "Kowalski")
     val arrayOfRecordsV2 = List(recordV2).asJava
-    val wrappedObj       = new NonRecordContainer(ArrayOfRecordsV1Schema.rawSchema(), arrayOfRecordsV1)
+    val wrappedObj       = new NonRecordContainer(ArrayOfRecordsV1Schema, arrayOfRecordsV1)
     pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
     readLastMessageAndVerify(
