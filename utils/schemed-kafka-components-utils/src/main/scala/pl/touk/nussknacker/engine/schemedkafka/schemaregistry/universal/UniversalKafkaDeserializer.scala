@@ -6,18 +6,7 @@ import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  ChainedSchemaIdFromMessageExtractor,
-  ContentTypes,
-  ContentTypesSchemas,
-  SchemaId,
-  SchemaRegistryClient,
-  SchemaWithMetadata,
-  StringSchemaId
-}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
-
-import scala.reflect.ClassTag
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 
 class UniversalKafkaDeserializer[T](
     schemaRegistryClient: SchemaRegistryClient,
@@ -88,24 +77,3 @@ class MismatchReaderWriterSchemaException(expectedType: String, actualType: Stri
     extends IllegalArgumentException(
       s"Expecting schema of type $expectedType. but got payload with $actualType schema type"
     )
-
-class UniversalKafkaDeserializerFactory(
-    createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor
-) extends SchemaRegistryBasedDeserializerFactory {
-
-  def createDeserializer[T: ClassTag](
-      schemaRegistryClient: SchemaRegistryClient,
-      kafkaConfig: KafkaConfig,
-      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      isKey: Boolean
-  ): Deserializer[T] = {
-    new UniversalKafkaDeserializer[T](
-      schemaRegistryClient,
-      kafkaConfig,
-      createSchemaIdFromMessageExtractor(schemaRegistryClient),
-      schemaDataOpt,
-      isKey
-    )
-  }
-
-}

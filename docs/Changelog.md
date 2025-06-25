@@ -213,6 +213,20 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
 * [#7137](https://github.com/TouK/nussknacker/pull/7137) Updated Flink dependency to 1.20.1
 * [#8239](https://github.com/TouK/nussknacker/pull/8239) Added a DB reference to the set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
+* [#8242](https://github.com/TouK/nussknacker/pull/8242) Toolbar buttons can be disabled and their tooltip can be customized based on user roles
+    * Example of button configuration, using new settings:
+      ```hocon
+         {
+            type: "custom-link",
+            url: "/test/$processId",
+            title: "Custom link for $processName",
+            customTitleForUserRole: { // Optional setting, custom button title overrides based on user roles
+              "AllPermissions": "Custom link for user with all permissions for $processName"
+            }
+            name: "custom",
+            disabled: { oneOfUserRoles: ["AllPermissions"], type: "allof" } // Disabled, when user has role `AllPermissions` 
+         }
+      ```
 
 ## 1.18
 

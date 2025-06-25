@@ -22,9 +22,10 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
+import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
   inputParamName,
@@ -32,7 +33,10 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
+  UniversalSchemaBasedSerdeProvider,
+  UniversalSchemaSupport
+}
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleTypeDeterminer
 
@@ -42,8 +46,9 @@ import pl.touk.nussknacker.engine.schemedkafka.typed.TypingResultFromJsonSampleT
   */
 class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+    val schemaBasedMessagesSerdeProvider: UniversalSchemaBasedSerdeProvider,
     val modelConfig: ModelConfig,
+    val kafkaConfig: KafkaConfig,
     protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
     with SourceFactory
@@ -116,7 +121,9 @@ class UniversalKafkaSourceFactory(
           case Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(results)) => results
           case _ =>
             determineSchemaAndType(
-              prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
+              preparedTopic,
+              versionOption,
+              isKey = false,
               Some(schemaVersionParamName)
             )
         }
@@ -130,11 +137,19 @@ class UniversalKafkaSourceFactory(
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[ParameterName])(
+  protected def determineSchemaAndType(
+      preparedKafkaTopic: PreparedKafkaTopic[TopicName.ForSource],
+      versionOption: SchemaVersionOption,
+      isKey: Boolean,
+      paramName: Option[ParameterName]
+  )(
       implicit nodeId: NodeId
   ): Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
-    schemaDeterminer.determineSchemaUsedInTyping
-      .map { schemaData =>
+    schemaRegistryClient
+      .getFreshSchema(preparedKafkaTopic.prepared.toUnspecialized, versionOption, isKey = isKey)
+      .map { withMetadata =>
+        val schemaData =
+          RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))
         val schema = schemaData.schema
         (Some(schemaData), schemaSupportDispatcher.forSchemaType(schema.schemaType()).typeDefinition(schema))
       }
@@ -156,7 +171,12 @@ class UniversalKafkaSourceFactory(
     val keyValidationResult = if (kafkaConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
-      determineSchemaAndType(prepareUniversalKeySchemaDeterminer(preparedTopic), Some(topicParamName))
+      determineSchemaAndType(
+        preparedTopic,
+        LatestSchemaVersion,
+        isKey = true,
+        Some(topicParamName)
+      )
     }
 
     (keyValidationResult, valueValidationResult) match {
@@ -220,13 +240,9 @@ class UniversalKafkaSourceFactory(
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
     val deserializationSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
-      .create[Any, Any](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+      .create[Any, Any](keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
 
-    // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
-    val formatterSchema =
-      schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[Any, Any](kafkaConfig, None, None)
-    val recordFormatter =
-      schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[Any, Any](kafkaConfig, formatterSchema)
+    val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create(schemaRegistryClient)
 
     val defaultValuesForTestParameters: Map[ParameterName, Expression] =
       if (params.isPresent(dataSampleParamName)) {

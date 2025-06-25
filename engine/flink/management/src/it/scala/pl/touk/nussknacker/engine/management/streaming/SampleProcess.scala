@@ -42,13 +42,6 @@ object SampleProcess {
       .emptySink("endSend", "sendSms", "Value" -> "'message'".spel)
   }
 
-  def kafkaProcess(name: ProcessName, topic: String): CanonicalProcess = {
-    ScenarioBuilder
-      .streaming(name.value)
-      .source("startProcess", "real-kafka", "Topic" -> s"'$topic'".spel)
-      .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'".spel, "Value" -> "#input".spel)
-  }
-
   private def endWithMessage(idSuffix: String, message: String): Option[SubsequentNode] = {
     GraphBuilder
       .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'".spel)

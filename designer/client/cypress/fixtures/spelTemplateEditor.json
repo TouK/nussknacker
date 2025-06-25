@@ -1,0 +1,81 @@
+{
+    "metaData": {
+        "id": "spel-template",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "inputSchema": "{}",
+                "outputSchema": "{}",
+                "slug": "spel-template",
+                "environment": "Environment"
+            },
+            "metaDataType": "RequestResponseMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "Onesource",
+            "ref": {
+                "typ": "oneSource",
+                "parameters": []
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 7,
+                    "y": -14
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "Delay",
+            "outputVar": "delay_null",
+            "nodeType": "delay",
+            "parameters": [
+                {
+                    "name": "key",
+                    "expression": {
+                        "language": "spelTemplate",
+                        "expression": ""
+                    }
+                },
+                {
+                    "name": "delay",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "T(java.time.Duration).parse('PT1M')"
+                    }
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 3,
+                    "y": 118
+                }
+            },
+            "type": "CustomNode"
+        },
+        {
+            "id": "Dead End",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": -18,
+                    "y": 267
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [],
+    "stickyNotes": []
+}

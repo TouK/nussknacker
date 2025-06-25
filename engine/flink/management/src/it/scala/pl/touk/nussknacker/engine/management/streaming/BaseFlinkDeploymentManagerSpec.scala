@@ -220,30 +220,6 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       .futureValue shouldBe (())
   }
 
-  test("be able verify&redeploy kafka scenario") {
-    val processName  = ProcessName("verifyAndRedeploy")
-    val outTopic     = s"output-$processName"
-    val inTopic      = s"input-$processName"
-    val kafkaProcess = SampleProcess.kafkaProcess(processName, inTopic)
-
-    kafkaClient.createTopic(outTopic, 1)
-    kafkaClient.createTopic(inTopic, 1)
-    logger.info("Kafka topics created, deploying scenario")
-
-    deployProcessAndWaitIfRunning(kafkaProcess, empty(processName))
-    try {
-      kafkaClient.sendMessage(inTopic, "1").futureValue
-      messagesFromTopic(outTopic, 1).head shouldBe "1"
-
-      deployProcessAndWaitIfRunning(kafkaProcess, empty(processName))
-
-      kafkaClient.sendMessage(inTopic, "2").futureValue
-      messagesFromTopic(outTopic, 2).last shouldBe "2"
-    } finally {
-      cancelProcess(kafkaProcess.name)
-    }
-  }
-
   test("save state when redeploying") {
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(ProcessName("redeploy"))
     testRedeployWithStatefulSampleProcess(processEmittingOneElementAfterStart)

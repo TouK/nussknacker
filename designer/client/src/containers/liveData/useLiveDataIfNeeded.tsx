@@ -1,25 +1,30 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { fetchAndDisplayLiveData, stopLiveData } from "../../actions/nk/liveData";
+import { Initiator, startLiveData, stopLiveData } from "../../actions/nk/liveData";
 import { useUserSettings } from "../../common/userSettings";
-import { getLiveDataWasEnabled, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
+import { VisibleDataType } from "../../reducers/graph";
+import { getHasPauseReasons, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getHasOpenedNodeWindows } from "../../reducers/selectors/getWindowsIdMapping";
 
 export function useLiveDataIfNeeded() {
     const dispatch = useDispatch();
+
+    const visibleDataType = useSelector(getVisibleDataType);
+    useEffect(() => {
+        if (visibleDataType === VisibleDataType.test || visibleDataType === VisibleDataType.counts) {
+            dispatch(stopLiveData(Initiator.tests));
+        }
+    }, [dispatch, visibleDataType]);
+
     const [settings] = useUserSettings();
+    const autoEnableLiveData = settings["scenario.autoEnableLiveData"];
     const readyForResults = useSelector(isReadyForLiveData);
     const hasOpenedNodeWindow = useSelector(getHasOpenedNodeWindows);
-    const autoEnableLiveData = settings["scenario.autoEnableLiveData"];
-    const liveDataWasEnabled = useSelector(getLiveDataWasEnabled);
-    const liveDataIsAutoEnabledOrWasManuallyEnabled = autoEnableLiveData || (!!autoEnableLiveData && liveDataWasEnabled);
-
+    const hasPauseReasons = useSelector(getHasPauseReasons);
     useEffect(() => {
-        if (hasOpenedNodeWindow) {
-            dispatch(stopLiveData());
-        } else if (readyForResults && liveDataIsAutoEnabledOrWasManuallyEnabled) {
-            dispatch(fetchAndDisplayLiveData());
+        if (autoEnableLiveData && readyForResults && !hasOpenedNodeWindow && !hasPauseReasons) {
+            dispatch(startLiveData());
         }
-    }, [dispatch, hasOpenedNodeWindow, readyForResults, liveDataWasEnabled, liveDataIsAutoEnabledOrWasManuallyEnabled]);
+    }, [dispatch, autoEnableLiveData, hasOpenedNodeWindow, readyForResults, hasPauseReasons]);
 }

@@ -25,6 +25,7 @@ type SettingsNames =
     | "scenario.allowQuickCancelDeploy"
     | "scenario.showBreadcrumbs"
     | "scenario.autoEnableLiveData"
+    | "scenario.showLiveDataAnimations"
     | "editor.showRangeMessages"
     | "toolbar.autoSaveDuringDeployRedeploy";
 
@@ -53,6 +54,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "scenario.allowQuickCancelDeploy": getInitialUserFlag("scenario.allowQuickCancelDeploy"),
     "scenario.showBreadcrumbs": getInitialUserFlag("scenario.showBreadcrumbs"),
     "scenario.autoEnableLiveData": getInitialUserFlag("scenario.autoEnableLiveData", false),
+    "scenario.showLiveDataAnimations": getInitialUserFlag("scenario.showLiveDataAnimations", true),
     "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
     "editor.showRangeMessages": getInitialUserFlag("editor.showRangeMessages"),
 });

@@ -5,7 +5,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 
-trait SchemaRegistryClient extends Serializable {
+trait SchemaRegistryClient {
 
   def getSchemaById(id: SchemaId): SchemaWithMetadata
 
@@ -29,12 +29,14 @@ trait SchemaRegistryClient extends Serializable {
 
   def getFreshSchema(
       topic: UnspecializedTopicName,
-      version: Option[Int],
+      versionOption: SchemaVersionOption,
       isKey: Boolean
-  ): Validated[SchemaRegistryError, SchemaWithMetadata] =
-    version
-      .map(ver => getByTopicAndVersion(topic, ver, isKey))
-      .getOrElse(getLatestFreshSchema(topic, isKey))
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
+    versionOption match {
+      case ExistingSchemaVersion(version) => getByTopicAndVersion(topic, version, isKey)
+      case LatestSchemaVersion            => getLatestFreshSchema(topic, isKey)
+    }
+  }
 
   def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 

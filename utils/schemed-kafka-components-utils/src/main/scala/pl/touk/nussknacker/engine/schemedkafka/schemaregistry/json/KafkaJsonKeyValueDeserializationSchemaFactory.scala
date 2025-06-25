@@ -9,31 +9,25 @@ import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
 import java.nio.charset.StandardCharsets
-import scala.reflect.ClassTag
 
-class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
+class KafkaJsonKeyValueDeserializationSchemaFactory(override protected val kafkaConfig: KafkaConfig)
+    extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
 
-  override protected def createKeyDeserializer[K: ClassTag](
+  override protected def createKeyDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      kafkaConfig: KafkaConfig
   ): Deserializer[K] =
     toJsonDeserializer.asInstanceOf[Deserializer[K]]
 
-  override protected def createValueDeserializer[V: ClassTag](
+  override protected def createValueDeserializer[V](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      kafkaConfig: KafkaConfig
   ): Deserializer[V] =
     toJsonDeserializer.asInstanceOf[Deserializer[V]]
 
   // always deserialize key to valid Json
-  override protected def createStringKeyDeserializer: Deserializer[_] = new Deserializer[Json] {
-    override def deserialize(topic: String, data: Array[Byte]): Json =
-      Option(data).map(data => Json.fromString(new String(data, StandardCharsets.UTF_8))).orNull
-  }
+  override protected def createStringKeyDeserializer: Deserializer[_] = (_: String, data: Array[Byte]) =>
+    Option(data).map(data => Json.fromString(new String(data, StandardCharsets.UTF_8))).orNull
 
-  private def toJsonDeserializer: Deserializer[Json] = new Deserializer[Json] {
-    override def deserialize(topic: String, data: Array[Byte]): Json =
-      CirceUtil.decodeJsonUnsafe[Json](data)
-  }
+  private def toJsonDeserializer: Deserializer[Json] = (_: String, data: Array[Byte]) =>
+    CirceUtil.decodeJsonUnsafe[Json](data)
 
 }

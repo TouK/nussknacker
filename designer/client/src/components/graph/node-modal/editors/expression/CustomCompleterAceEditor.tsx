@@ -11,6 +11,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import type { FieldError } from "../Validators";
+import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import AceEditor from "./AceWithSettings";
 import type { AceWrapperInputProps } from "./AceWrapper";
 import type { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
@@ -64,7 +65,10 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                     sx={{ position: "relative" }}
                 >
                     <AceEditor
-                        onLoad={setAnnotationsOnLoad}
+                        onLoad={(editor) => {
+                            setAnnotationsOnLoad();
+                            setupAceEditorSnippets(editor);
+                        }}
                         ref={ref}
                         value={value}
                         onChange={onChange}

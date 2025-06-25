@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.kafka.{
   SchemaRegistryClientKafkaConfig,
   UnspecializedTopicName
 }
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.util.Collections
@@ -84,9 +85,13 @@ class AzureSchemaRegistryClientIntegrationTest
     val abFieldsSchemaProps   = schemaRegistryClient.registerSchemaVersionIfNotExists(abFieldsSchema)
 
     val resultForAFieldOnlySchema =
-      schemaRegistryClient.getFreshSchema(givenTopic, Some(aFieldOnlySchemaProps.getVersion), isKey = false).validValue
+      schemaRegistryClient
+        .getFreshSchema(givenTopic, ExistingSchemaVersion(aFieldOnlySchemaProps.getVersion), isKey = false)
+        .validValue
     val resultForABFieldsSchema =
-      schemaRegistryClient.getFreshSchema(givenTopic, Some(abFieldsSchemaProps.getVersion), isKey = false).validValue
+      schemaRegistryClient
+        .getFreshSchema(givenTopic, ExistingSchemaVersion(abFieldsSchemaProps.getVersion), isKey = false)
+        .validValue
 
     resultForAFieldOnlySchema.schema shouldEqual aFieldOnlySchema
     resultForAFieldOnlySchema.id.asString shouldEqual aFieldOnlySchemaProps.getId
