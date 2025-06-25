@@ -195,14 +195,15 @@ description: Stay informed with detailed changelogs covering new features, impro
         enabled: true               
         maxNumberOfSamples: 20      
         throughputTimeWindowInSeconds: 60
-        dbUploader {  // This section must be configured for standalone FLink
+        storage {  // This section must be configured for standalone FLink
+          type: "DESIGNER_DB" // The only storage type available for now
            // Small `uploadIntervalInSeconds` values make the live data preview look more smooth and similar to the Flink MiniCluster version, bigger values are easier on the db
           uploadIntervalInSeconds: 3 
            // Designer db url, the same as the one provided for the Nussknacker app
-          dbUrl: "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF"  
-          dbUser: "NU"       // db user
-          dbPassword: "NU"   // db password
-          dbSchema: "public" // db schema must be always provided, even if it is "public"
+          url: "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF"  
+          user: "NU"       // db user
+          password: "NU"   // db password
+          schema: "public" // db schema must be always provided, even if it is "public"
         }
       }
       ```

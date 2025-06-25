@@ -5,6 +5,7 @@ import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
@@ -60,6 +61,9 @@ class FlinkMiniClusterScenarioJobRunner(
 
   override def liveDataPreviewSupport: LiveDataPreviewSupport = {
     modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
+      // todo
+      case LiveDataPreviewMode.Enabled(maxSamples, _, storage: LiveDataStorage.DesignerDb) =>
+        LiveDataPreviewStoredInDesignerDb(maxSamples, storage.uploadIntervalInSeconds)
       case LiveDataPreviewMode.Enabled(_, _, _) =>
         LiveDataPreviewStoredInDesignerJvm
       case LiveDataPreviewMode.Disabled =>

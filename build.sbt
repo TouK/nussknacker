@@ -23,7 +23,7 @@ val scala212 = "2.12.10"
 val scala213 = "2.13.15"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
-  case None | Some("2.13") => scala213
+  case None | Some("2.13") => scala212
   case Some("2.12")        => scala212
   case Some(unsupported)   => throw new IllegalArgumentException(s"Nu doesn't support $unsupported Scala version")
 }
@@ -2033,7 +2033,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
   )
   .dependsOn(extensionsApi, testUtils % Test)
 
-lazy val liveDataCollector = (project in file("designer/live-data-collector"))
+lazy val liveDataCollector = (project in file("live-data-collector"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-live-data-collector",

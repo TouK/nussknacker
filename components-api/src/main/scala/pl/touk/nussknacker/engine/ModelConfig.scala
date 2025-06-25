@@ -5,7 +5,7 @@ import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
-import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.DbUploader
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
@@ -40,16 +40,25 @@ object ModelConfig {
     final case class Enabled(
         maxNumberOfRecords: Int,
         throughputTimeWindowInSeconds: Int,
-        dbUploader: Option[DbUploader],
+        liveDataStorage: LiveDataStorage,
     ) extends LiveDataPreviewMode
 
-    final case class DbUploader(
-        uploadIntervalInSeconds: Int,
-        dbUrl: String,
-        dbUser: String,
-        dbPassword: String,
-        dbSchema: String,
-    )
+    sealed trait LiveDataStorage
+
+    object LiveDataStorage {
+
+      object DesignerJvm extends LiveDataStorage
+
+      final case class DesignerDb(
+          uploadIntervalInSeconds: Int,
+          driverClassName: String,
+          url: String,
+          user: String,
+          password: String,
+          schema: String,
+      ) extends LiveDataStorage
+
+    }
 
   }
 
@@ -61,17 +70,21 @@ object ModelConfig {
           config.getAs[Int]("liveDataPreview.maxNumberOfSamples") getOrElse
           10,
         throughputTimeWindowInSeconds = config.getOrElse("liveDataPreview.throughputTimeWindowInSeconds", 60),
-        dbUploader = if (config.hasPath("liveDataPreview.dbUploader")) {
-          Some(
-            DbUploader(
-              uploadIntervalInSeconds = config.getInt("liveDataPreview.dbUploader.uploadIntervalInSeconds"),
-              dbUrl = config.getString("liveDataPreview.dbUploader.dbUrl"),
-              dbUser = config.getString("liveDataPreview.dbUploader.dbUser"),
-              dbPassword = config.getString("liveDataPreview.dbUploader.dbPassword"),
-              dbSchema = config.getString("liveDataPreview.dbUploader.dbSchema"),
-            )
-          )
-        } else None
+        liveDataStorage = if (config.hasPath("liveDataPreview.storage")) {
+          config.getString("liveDataPreview.storage.type").toUpperCase match {
+            case "DESIGNER_DB" =>
+              LiveDataStorage.DesignerDb(
+                uploadIntervalInSeconds = config.getInt("liveDataPreview.storage.uploadIntervalInSeconds"),
+                driverClassName = config.getString("liveDataPreview.storage.driverClassName"),
+                url = config.getString("liveDataPreview.storage.url"),
+                user = config.getString("liveDataPreview.storage.user"),
+                password = config.getString("liveDataPreview.storage.password"),
+                schema = config.getString("liveDataPreview.storage.schema"),
+              )
+            case other =>
+              throw new IllegalStateException(s"Unknown live data storage type [$other]")
+          }
+        } else LiveDataStorage.DesignerJvm
       )
     } else {
       LiveDataPreviewMode.Disabled
