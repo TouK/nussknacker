@@ -370,11 +370,16 @@ class UniversalKafkaSinkFactory(
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = modelConfig.jsonLikeValuesEnteringMode match {
       case JsonLikeValuesEnteringMode.DynamicForms =>
-        if (params.extractUnsafe[Boolean](sinkRawEditorParamName)) {
-          val validationModeString = validationModeParamDeclaration.extractValueUnsafe(params)
-          extractValidationMode(validationModeString)
+        if (params.isPresent(sinkRawEditorParamName)) {
+          if (params.extractUnsafe[Boolean](sinkRawEditorParamName)) {
+            val validationModeString = validationModeParamDeclaration.extractValueUnsafe(params)
+            extractValidationMode(validationModeString)
+          } else {
+            ValidationMode.strict
+          }
         } else {
-          ValidationMode.strict
+          // Sink validation mode does not apply to schemaless topics; in this case, lax validation for an empty schema is sufficient
+          ValidationMode.lax
         }
       case JsonLikeValuesEnteringMode.SingleJsonTemplateParameter =>
         if (params.isPresent(sinkValidationModeParamName)) {
