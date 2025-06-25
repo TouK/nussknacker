@@ -1,4 +1,5 @@
 import type { Ace } from "ace-builds";
+import { Range } from "ace-builds";
 import ace from "ace-builds/src-noconflict/ace";
 
 interface EditorContext {
@@ -11,9 +12,14 @@ export const setupAceEditorSnippets = (editor: Ace.Editor): void => {
     const editorMode = (editor.session.getMode() as any).$id;
     const isJsonEditor = editorMode.includes("json");
     const isJsonTemplateEditor = editorMode.includes("jsonTemplate");
+    const isSpelTemplateEditor = editorMode.includes("spelTemplate");
 
     if (isJsonEditor || isJsonTemplateEditor) {
         setupJsonBasedSnippets(editor);
+    }
+
+    if (isJsonTemplateEditor || isSpelTemplateEditor) {
+        setupSpelTemplateBasedSnippets(editor);
     }
 };
 
@@ -38,6 +44,26 @@ const setupJsonBasedSnippets = (editor: Ace.Editor): void => {
             // Handle different contexts with appropriate snippets
             handleSnippetInsertion(editor, context, currentIndent, indent);
         },
+    });
+};
+
+const setupSpelTemplateBasedSnippets = (editor: Ace.Editor): void => {
+    editor.on("change", (delta) => {
+        if (delta.action === "insert" && delta.lines.length === 1 && delta.lines[0] === "{" && editor.getSelectedText() === "") {
+            const pos = editor.getCursorPosition();
+            const line = editor.session.getLine(pos.row);
+            const prevChar = line[pos.column - 1]; // Character before '#'
+            const nextChar = line[pos.column]; // Character after '{'
+            if (prevChar === "#" && nextChar === "{") {
+                // Remove the old #{ ...
+                const range = new Range(pos.row, pos.column - 1, pos.row, pos.column + 1);
+                editor.session.replace(range, "");
+
+                // ... And replace it with #{ #<CURSOR> }
+                const snippetManager = ace.require("ace/snippets").snippetManager;
+                snippetManager.insertSnippet(editor, "#{ ${1}# }");
+            }
+        }
     });
 };
 
