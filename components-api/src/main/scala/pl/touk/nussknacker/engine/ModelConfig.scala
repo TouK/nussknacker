@@ -51,7 +51,6 @@ object ModelConfig {
 
       final case class DesignerDb(
           uploadIntervalInSeconds: Int,
-          driverClassName: String,
           url: String,
           user: String,
           password: String,
@@ -78,7 +77,6 @@ object ModelConfig {
             case "DESIGNER_DB" =>
               LiveDataStorage.DesignerDb(
                 uploadIntervalInSeconds = config.getInt("liveDataPreview.storage.uploadIntervalInSeconds"),
-                driverClassName = config.getString("liveDataPreview.storage.driverClassName"),
                 url = config.getString("liveDataPreview.storage.url"),
                 user = config.getString("liveDataPreview.storage.user"),
                 password = config.getString("liveDataPreview.storage.password"),
