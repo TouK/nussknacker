@@ -1,22 +1,38 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final class Params private (val nameToRawValueMap: Map[ParameterName, Any]) extends Serializable {
 
-  def isPresent(name: ParameterName): Boolean = nameToRawValueMap.contains(name)
-
-  def extract[T](name: ParameterName): Option[T] = {
-    extractValue(name).map(cast[T])
+  def extractParam[T](name: ParameterName): ParamExtractionResult[T] = {
+    extractValue(name) match {
+      case ParamExtractionResult.Value(value)     => ParamExtractionResult.Value(cast(value))
+      case ParamExtractionResult.ParamValueIsNone => ParamExtractionResult.ParamValueIsNone
+      case ParamExtractionResult.MissingParam     => ParamExtractionResult.MissingParam
+    }
   }
 
-  def extractUnsafe[T](name: ParameterName): T =
-    extract[T](name)
-      .getOrElse(throw new IllegalArgumentException(paramValueIsNoneMessage(name)))
+  def extractRequiredParam[T](name: ParameterName): Option[T] = {
+    extractParam[T](name) match {
+      case ParamExtractionResult.MissingParam =>
+        throw new IllegalArgumentException(cannotFindParamNameMessage(name))
+      case ParamExtractionResult.ParamValueIsNone => None
+      case ParamExtractionResult.Value(value)     => Some(value)
+    }
+  }
+
+  def extractRequiredParamUnsafe[T](name: ParameterName): T =
+    extractParam[T](name) match {
+      case ParamExtractionResult.MissingParam =>
+        throw new IllegalArgumentException(cannotFindParamNameMessage(name))
+      case ParamExtractionResult.ParamValueIsNone => throw new IllegalArgumentException(paramValueIsNoneMessage(name))
+      case ParamExtractionResult.Value(value)     => value
+    }
 
   def extractOrEvaluateLazyParam[T](name: ParameterName, context: Context): Option[T] = {
-    extractValue(name)
+    extractRequiredParam[T](name)
       .map {
         case lazyParameter: LazyParameter[_] => lazyParameter.evaluate(context)
         case other                           => other
@@ -29,11 +45,11 @@ final class Params private (val nameToRawValueMap: Map[ParameterName, Any]) exte
       .getOrElse(throw new IllegalArgumentException(paramValueIsNoneMessage(name)))
   }
 
-  private def extractValue(paramName: ParameterName) = {
+  private def extractValue(paramName: ParameterName): ParamExtractionResult[Any] = {
     nameToRawValueMap.get(paramName) match {
-      case None        => throw new IllegalStateException(cannotFindParamNameMessage(paramName))
-      case Some(null)  => None
-      case Some(value) => Some(value)
+      case None        => ParamExtractionResult.MissingParam
+      case Some(null)  => ParamExtractionResult.ParamValueIsNone
+      case Some(value) => ParamExtractionResult.Value(value)
     }
   }
 
@@ -66,5 +82,13 @@ object Params {
   }
 
   lazy val empty: Params = new Params(Map.empty)
+
+  sealed trait ParamExtractionResult[+T]
+
+  object ParamExtractionResult {
+    final case class Value[+T](value: T) extends ParamExtractionResult[T]
+    case object ParamValueIsNone         extends ParamExtractionResult[Nothing]
+    case object MissingParam             extends ParamExtractionResult[Nothing]
+  }
 
 }

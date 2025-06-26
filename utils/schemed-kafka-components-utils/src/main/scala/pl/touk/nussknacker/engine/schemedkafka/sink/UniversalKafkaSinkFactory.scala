@@ -6,6 +6,7 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
+import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -354,7 +355,7 @@ class UniversalKafkaSinkFactory(
       finalStateOpt: Option[State]
   ): Sink = {
     val preparedTopic = extractPreparedTopic(params)
-    val key           = params.extractUnsafe[LazyParameter[CharSequence]](sinkKeyParamName)
+    val key           = params.extractRequiredParamUnsafe[LazyParameter[CharSequence]](sinkKeyParamName)
     val finalState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
@@ -370,24 +371,31 @@ class UniversalKafkaSinkFactory(
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = modelConfig.jsonLikeValuesEnteringMode match {
       case JsonLikeValuesEnteringMode.DynamicForms =>
-        if (params.isPresent(sinkRawEditorParamName)) {
-          if (params.extractUnsafe[Boolean](sinkRawEditorParamName)) {
+        params.extractParam[Boolean](sinkRawEditorParamName) match {
+          case ParamExtractionResult.Value(true) =>
             val validationModeString = validationModeParamDeclaration.extractValueUnsafe(params)
             extractValidationMode(validationModeString)
-          } else {
+          case ParamExtractionResult.Value(false) =>
             ValidationMode.strict
-          }
-        } else {
-          // Sink validation mode does not apply to schemaless topics; in this case, lax validation for an empty schema is sufficient
-          ValidationMode.lax
+          case ParamExtractionResult.MissingParam =>
+            // Sink validation mode does not apply to schemaless topics; in this case, lax validation for an empty schema is sufficient
+            ValidationMode.lax
+          case ParamExtractionResult.ParamValueIsNone =>
+            throw new IllegalArgumentException(
+              s"Parameter [${sinkRawEditorParamName.value}] doesn't expect to be null!"
+            )
         }
       case JsonLikeValuesEnteringMode.SingleJsonTemplateParameter =>
-        if (params.isPresent(sinkValidationModeParamName)) {
-          val validationModeString = validationModeParamDeclaration.extractValueUnsafe(params)
-          extractValidationMode(validationModeString)
-        } else {
-          // Sink validation mode does not apply to schemaless topics; in this case, lax validation for an empty schema is sufficient
-          ValidationMode.lax
+        params.extractParam[String](sinkValidationModeParamName) match {
+          case ParamExtractionResult.Value(validationModeString) =>
+            extractValidationMode(validationModeString)
+          case ParamExtractionResult.ParamValueIsNone =>
+            throw new IllegalArgumentException(
+              s"Parameter [${sinkValidationModeParamName.value}] doesn't expect to be null!"
+            )
+          case ParamExtractionResult.MissingParam =>
+            // Sink validation mode does not apply to schemaless topics; in this case, lax validation for an empty schema is sufficient
+            ValidationMode.lax
         }
     }
 
