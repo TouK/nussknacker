@@ -1,8 +1,10 @@
+import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import * as React from "react";
 import "ace-builds/src-noconflict/ace";
 
 import { render, screen } from "@testing-library/react";
 import "ace-builds/src-noconflict/ext-language_tools";
+import { DndProvider } from "react-dnd-multi-backend";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
 import { SpelTemplateEditor } from "../../src/components/graph/node-modal/editors/expression/SpelTemplateEditor";
@@ -30,16 +32,18 @@ describe("SpelTemplateEditor", () => {
         render(
             <NuThemeProvider>
                 <Provider store={store}>
-                    <SpelTemplateEditor
-                        readOnly={false}
-                        isMarked={false}
-                        onValueChange={mockValueChange}
-                        fieldErrors={mockFieldErrors}
-                        expressionObj={{ language: "spel", expression: "" }}
-                        showValidation={true}
-                        className={""}
-                        variableTypes={{}}
-                    />
+                    <DndProvider options={HTML5toTouch}>
+                        <SpelTemplateEditor
+                            readOnly={false}
+                            isMarked={false}
+                            onValueChange={mockValueChange}
+                            fieldErrors={mockFieldErrors}
+                            expressionObj={{ language: "spel", expression: "" }}
+                            showValidation={true}
+                            className={""}
+                            variableTypes={{}}
+                        />
+                    </DndProvider>
                 </Provider>
             </NuThemeProvider>,
         );

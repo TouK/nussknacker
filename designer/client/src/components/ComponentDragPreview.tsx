@@ -19,7 +19,6 @@ export function useNotNull<T>(value: T) {
     }, [value]);
     return current;
 }
-
 function PreviewElement(props: ComponentPreviewProps) {
     if (props.node.type === StickyNoteType) {
         return <StickyNotePreview isActive={props.isActive} isOver={props.isOver} />;

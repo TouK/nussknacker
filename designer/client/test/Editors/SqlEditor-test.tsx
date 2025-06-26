@@ -1,13 +1,15 @@
-import * as React from "react";
-import "ace-builds/src-noconflict/ace";
-
 import { render, screen } from "@testing-library/react";
 import "ace-builds/src-noconflict/ext-language_tools";
-import { SqlEditor } from "../../src/components/graph/node-modal/editors/expression/SqlEditor";
+import { HTML5toTouch } from "rdndmb-html5-to-touch";
+import * as React from "react";
+import "ace-builds/src-noconflict/ace";
+import { DndProvider } from "react-dnd-multi-backend";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
-import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
+
+import { SqlEditor } from "../../src/components/graph/node-modal/editors/expression/SqlEditor";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
 
 const mockStore = configureMockStore();
 
@@ -30,17 +32,19 @@ describe("SqlEditor", () => {
         render(
             <NuThemeProvider>
                 <Provider store={store}>
-                    <SqlEditor
-                        readOnly={false}
-                        isMarked={false}
-                        onValueChange={mockValueChange}
-                        fieldErrors={mockFieldErrors}
-                        expressionObj={{ language: "spel", expression: "" }}
-                        showValidation={true}
-                        className={""}
-                        formatter={mockFormatter}
-                        variableTypes={{}}
-                    />
+                    <DndProvider options={HTML5toTouch}>
+                        <SqlEditor
+                            readOnly={false}
+                            isMarked={false}
+                            onValueChange={mockValueChange}
+                            fieldErrors={mockFieldErrors}
+                            expressionObj={{ language: "spel", expression: "" }}
+                            showValidation={true}
+                            className={""}
+                            formatter={mockFormatter}
+                            variableTypes={{}}
+                        />
+                    </DndProvider>
                 </Provider>
             </NuThemeProvider>,
         );
