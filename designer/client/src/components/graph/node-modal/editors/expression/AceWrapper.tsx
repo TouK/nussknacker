@@ -5,7 +5,8 @@ import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
 import type { ForwardedRef, ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
-import type ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
+import type ReactAce from "react-ace/lib/ace";
+import type { IAceEditorProps } from "react-ace/lib/ace";
 import type { ICommand } from "react-ace/lib/types";
 import type { IAceOptions, IEditorProps } from "react-ace/src/types";
 
