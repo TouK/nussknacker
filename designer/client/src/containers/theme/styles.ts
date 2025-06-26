@@ -55,7 +55,12 @@ const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_marker-layer .ace_step": {
         background: "rgb(102, 82, 0)",
     },
+
     ".ace-nussknacker .ace_marker-layer .ace_bracket": {
+        display: "none",
+    },
+    ".ace-nussknacker.ace_focus .ace_marker-layer .ace_bracket": {
+        display: "block",
         margin: 0,
         border: "1px solid #FFC66D",
     },

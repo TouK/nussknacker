@@ -40,6 +40,6 @@ export function toXml(node: Node) {
     return window.XMLSerializer ? new XMLSerializer().serializeToString(node) : xmlSerializerForIE(node);
 }
 
-export function svgTowDataURL(svgStr: string) {
+export function svgToDataURL(svgStr: string) {
     return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgStr)))}`;
 }
