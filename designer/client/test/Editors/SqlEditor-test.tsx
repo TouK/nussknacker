@@ -1,15 +1,15 @@
-import { render, screen } from "@testing-library/react";
-import "ace-builds/src-noconflict/ext-language_tools";
-import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import * as React from "react";
 import "ace-builds/src-noconflict/ace";
+import "ace-builds/src-noconflict/ext-language_tools";
+import { render, screen } from "@testing-library/react";
+import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { DndProvider } from "react-dnd-multi-backend";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
 
 import { SqlEditor } from "../../src/components/graph/node-modal/editors/expression/SqlEditor";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
+import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 
 const mockStore = configureMockStore();
 
