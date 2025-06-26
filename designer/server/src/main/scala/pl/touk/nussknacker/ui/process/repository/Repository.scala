@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef, NuJdbcProfile}
+import pl.touk.nussknacker.engine.api.db.{DbRef, NuJdbcProfile}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds

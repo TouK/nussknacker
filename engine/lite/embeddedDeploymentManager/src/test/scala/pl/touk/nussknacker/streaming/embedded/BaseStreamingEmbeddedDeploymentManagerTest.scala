@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.ComponentDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -117,7 +118,8 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       )
 
     val kafkaComponents =
-      new MockLiteKafkaComponentProvider().create(kafkaComponentProviderConfig, ModelConfig.parse(config))
+      new MockLiteKafkaComponentProvider()
+        .create(kafkaComponentProviderConfig, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
 
     val modelData = LocalModelData(configToUse, kafkaComponents)
     wrapInFailingLoader {

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.db
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef, NuHsqldbProfile, NuJdbcProfile, NuPostgresProfile}
+import pl.touk.nussknacker.engine.api.db.{DbRef, NuHsqldbProfile, NuJdbcProfile, NuPostgresProfile}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc._
 

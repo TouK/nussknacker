@@ -8,7 +8,6 @@ import org.apache.flink.table.api.DataTypes
 import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -220,10 +219,8 @@ class TableFileSinkTest
        |}
        |""".stripMargin)
 
-  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
-    tableComponentsConfig,
-    ModelConfig.parse(tableComponentsConfig)
-  )
+  private lazy val tableComponents: List[ComponentDefinition] =
+    new FlinkTableDataSourceComponentProvider().create(tableComponentsConfig)
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 

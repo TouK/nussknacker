@@ -4,9 +4,9 @@ import cats.effect.{IO, Resource}
 import cats.effect.unsafe.IORuntime
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.pekko.actor.ActorSystem
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.util.{ExecutionContextWithIORuntime, ExecutionContextWithIORuntimeAdapter}
 import pl.touk.nussknacker.ui.config.DesignerConfig
-import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.db.DbRefInstance
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.util.IOToFutureSttpBackendConverter

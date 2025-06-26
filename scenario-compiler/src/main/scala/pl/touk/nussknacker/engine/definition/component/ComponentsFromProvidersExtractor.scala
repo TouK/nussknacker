@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.componentConfigPath
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -32,21 +33,21 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
   }
 
   def extractComponents(
-      modelConfig: ModelConfig,
+      componentDependencies: ComponentDependencies,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
   ): Components = {
     Components
       .fold(
         componentDefinitionExtractionMode,
-        loadCorrectProviders(modelConfig.underlyingConfig).toList
+        loadCorrectProviders(componentDependencies.modelConfig.underlyingConfig).toList
           .map { case (_, (config, provider)) =>
             extract(
               config,
               provider,
-              modelConfig,
+              componentDependencies,
               componentsUiConfig,
               determineDesignerWideId,
               additionalConfigsFromProvider,
@@ -138,13 +139,13 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
   private def extract(
       config: ComponentProviderConfig,
       provider: ComponentProvider,
-      modelConfig: ModelConfig,
+      componentDependencies: ComponentDependencies,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
-    val components = provider.create(config.config, modelConfig).map { inputComponentDefinition =>
+    val components = provider.create(config.config, componentDependencies).map { inputComponentDefinition =>
       config.componentPrefix
         .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
         .getOrElse(inputComponentDefinition)

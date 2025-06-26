@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentDependencies,
+  ComponentId,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor
@@ -12,19 +16,19 @@ object ModelDefinitionExtractor {
   def extractModelDefinition(
       creator: ProcessConfigCreator,
       classLoader: ClassLoader,
-      modelConfig: ModelConfig,
+      componentDependencies: ComponentDependencies,
       // It won't be needed to pass category after we get rid of ProcessConfigCreator API
       category: Option[String],
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ModelDefinition = {
-    val componentsUiConfig = ComponentsUiConfigParser.parse(modelConfig.underlyingConfig)
+    val componentsUiConfig = ComponentsUiConfigParser.parse(componentDependencies.modelConfig.underlyingConfig)
     val modelDefinitionBasedOnConfigCreator =
       ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
         creator,
         category,
-        modelConfig,
+        componentDependencies.modelConfig,
         componentsUiConfig,
         determineDesignerWideId,
         additionalConfigsFromProvider,
@@ -32,7 +36,7 @@ object ModelDefinitionExtractor {
       )
     val componentsFromProviders =
       ComponentsFromProvidersExtractor(classLoader).extractComponents(
-        modelConfig,
+        componentDependencies,
         componentsUiConfig,
         determineDesignerWideId,
         additionalConfigsFromProvider,

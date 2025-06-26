@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.periodic
 
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.process.deployment.ActionService
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 

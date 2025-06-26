@@ -9,6 +9,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.server.Route
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, FixedExpressionValue}
 import pl.touk.nussknacker.engine.definition.action.ModelDataActionInfoProvider
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithoutUser, RouteWithUser, ScenarioStatusPresenter}
-import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.db.DbRefInstance
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ProcessService}
@@ -147,7 +147,8 @@ object TestFactory {
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
-      ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
+      ComponentDefinitionExtractionMode.FinalAndBasicDefinitions,
+      designerDbRef = None
     )
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {

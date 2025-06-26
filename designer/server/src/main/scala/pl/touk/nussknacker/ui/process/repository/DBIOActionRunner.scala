@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef, NuJdbcProfile}
+import pl.touk.nussknacker.engine.api.db.{DbRef, NuJdbcProfile}
 import pl.touk.nussknacker.ui.db.SqlStates
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner.TransactionsRunAttemptsExceedException
 import slick.jdbc.TransactionIsolation

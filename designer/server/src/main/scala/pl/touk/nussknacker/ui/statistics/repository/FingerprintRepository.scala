@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.statistics.repository
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.{FingerprintEntityData, FingerprintEntityFactory}
 import pl.touk.nussknacker.ui.statistics.Fingerprint
 import pl.touk.nussknacker.ui.statistics.repository.Error.SaveError

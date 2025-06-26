@@ -40,7 +40,8 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
       category = None,
       componentId => DesignerWideComponentId(componentId.toString),
       additionalConfigsFromProvider = Map.empty,
-      ComponentDefinitionExtractionMode.FinalDefinition
+      componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition,
+      designerDbRef = None
     )
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {

@@ -1629,7 +1629,9 @@ lazy val componentsApi = (project in file("components-api"))
         "org.springframework"            % "spring-expression"             % springV        % Test,
         "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
         "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
-        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
+        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
+        "com.typesafe.slick"            %% "slick"                         % slickV,
+        "com.github.tminglei"           %% "slick-pg"                      % slickPgV,
       )
     }
   )
@@ -1987,8 +1989,6 @@ lazy val customHttpServiceApi = (project in file("designer/custom-http-service-a
       Seq(
         "org.apache.pekko"             %% "pekko-http" % pekkoHttpV,
         "com.softwaremill.sttp.shared" %% "pekko"      % sttpSharedV,
-        "com.typesafe.slick"           %% "slick"      % slickV,
-        "com.github.tminglei"          %% "slick-pg"   % slickPgV,
       )
     }
   )
