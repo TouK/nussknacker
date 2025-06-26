@@ -1,57 +1,178 @@
-import { Box, styled } from "@mui/material";
-import { mapValues } from "lodash";
-import React from "react";
-import type { InspectorNodeParams } from "react-inspector";
-import Inspector, { chromeDark, ObjectLabel, ObjectName } from "react-inspector";
+import { Box } from "@mui/material";
+import { get, mapValues } from "lodash";
+import type { PropsWithChildren } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
+import type { Styling } from "react-base16-styling/src/types";
+import { useDrag } from "react-dnd";
+import { getEmptyImage } from "react-dnd-html5-backend";
+import type { KeyPath } from "react-json-tree";
+import { JSONTree } from "react-json-tree";
 
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
+import { DndTypes } from "../../../DndTypes";
 
-export function ContextTree({ context, oldFields = [] }: { context: ResultContextJson; oldFields?: string[] }): JSX.Element {
-    const data = mapValues(context?.variables, (v) => v?.pretty);
-    const keys = Object.keys(data);
-    const expandedFields = keys.filter((k) => !oldFields.includes(k) || (k !== "inputMeta" && keys.length === oldFields.length));
+function generateTransparentPngDataURL() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, 1, 1);
+
+    return canvas.toDataURL("image/png");
+}
+
+const emptyImage = generateTransparentPngDataURL();
+const getEmptyDragImage = () => {
+    const dragImage = document.createElement("img");
+    dragImage.classList.add(
+        css({
+            position: "absolute",
+            top: -1000,
+            left: -1000,
+        }),
+    );
+    dragImage.src = emptyImage;
+    return dragImage;
+};
+
+class NotChanged {
+    constructor(private value) {}
+    get [Symbol.toStringTag]() {
+        return "same as input";
+    }
+}
+
+function normalizePath(keyPath: KeyPath | (string | number)[]) {
+    return [...keyPath].reverse();
+}
+
+export type SpelDndContext = {
+    value: any;
+    path: KeyPath;
+    type: "key" | "value";
+};
+
+function DraggableValue({
+    disabled,
+    path,
+    value,
+    type = "key",
+    children,
+}: PropsWithChildren<{
+    disabled?: boolean;
+    path: SpelDndContext["path"];
+    value: unknown;
+    type?: SpelDndContext["type"];
+}>) {
+    const [{ isActive }, drag, preview] = useDrag<SpelDndContext, void, { isActive: boolean }>(() => ({
+        type: DndTypes.VALUE,
+        item: { path, type, value },
+        options: { dropEffect: "copy" },
+        canDrag: !disabled,
+        collect: (monitor) => ({ isActive: monitor.isDragging() }),
+    }));
+
+    useEffect(() => {
+        preview(getEmptyImage());
+        return () => {
+            preview(null);
+        };
+    }, [preview]);
+
+    console.log(isActive);
     return (
         <Box
-            sx={(theme) => ({
-                "--objectNameColor": theme.palette.primary.main,
-                zoom: 1.5,
-                background: "rgba(0,0,0,0.5)",
-                "&> ol > li": {
-                    "&> div:first-of-type": {
-                        display: "none",
-                    },
-                    "&> ol:first-of-type": {
-                        paddingLeft: "6px !important",
-                    },
+            component="span"
+            ref={drag}
+            sx={{
+                cursor: disabled ? "default" : "grab",
+                "&:active": {
+                    cursor: "grabbing",
                 },
-            })}
+            }}
         >
-            <Inspector
-                theme={{
-                    ...chromeDark,
-                    BASE_BACKGROUND_COLOR: "transparent",
-                    OBJECT_NAME_COLOR: "var(--objectNameColor, inherit)",
-                }}
-                expandPaths={["$", ...expandedFields.map((k) => `$.${k}`)]}
-                data={data}
-                sortObjectKeys
-                nodeRenderer={getNodeRenderer(oldFields)}
-            />
+            {children}
         </Box>
     );
 }
 
-const ValueWrapper = styled("span")({
-    "--objectNameColor": "lime",
-});
+export function ContextTree({ context, oldFields = [] }: { context: ResultContextJson; oldFields?: string[] }): JSX.Element {
+    const data = useMemo(() => mapValues(context?.variables, (v) => v?.pretty), [context?.variables]);
+    const keys = useMemo(() => Object.keys(data), [data]);
 
-const getNodeRenderer = (oldFields: string[]) => {
-    return function renderer({ name, data, isNonenumerable, expanded, depth }: InspectorNodeParams) {
-        const Wrapper = depth !== 1 || oldFields.length < 1 || oldFields.includes(name) ? React.Fragment : ValueWrapper;
-        return (
-            <Wrapper>
-                {expanded ? <ObjectName name={name} /> : <ObjectLabel name={name} data={data} isNonenumerable={isNonenumerable} />}
-            </Wrapper>
-        );
-    };
-};
+    const expandedFields = useMemo(
+        () => keys.filter((key) => !oldFields.includes(key) || (key !== "inputMeta" && keys.length === oldFields.length)),
+        [keys, oldFields],
+    );
+
+    const isOldField = useCallback(
+        (keyPath: KeyPath) => keyPath.length === 1 && oldFields.length >= 1 && oldFields.includes(keyPath[0].toString()),
+        [oldFields],
+    );
+
+    return (
+        <JSONTree
+            data={data}
+            hideRoot
+            sortObjectKeys
+            theme={{
+                extend: "monokai",
+                tree: {
+                    margin: 0,
+                    padding: ".25em .5em",
+                },
+                nestedNode: ({ style }: Styling, keyPath: string[], nodeType: string) => ({
+                    style: {
+                        ...style,
+                        opacity: isOldField(keyPath) ? 0.5 : null,
+                    },
+                }),
+                value: ({ style }: Styling, nodeType: string, keyPath: string[]) => ({
+                    style: {
+                        ...style,
+                        opacity: isOldField(keyPath) ? 0.5 : null,
+                    },
+                }),
+            }}
+            shouldExpandNodeInitially={([key], data, level) => {
+                return level < 2 && expandedFields.includes(key?.toString());
+            }}
+            getItemString={(nodeType, data, itemType, itemString, keyPath) => {
+                const path = normalizePath(keyPath);
+                return (
+                    <>
+                        <DraggableValue path={path} value={data} type="value">
+                            {nodeType === "Array" ? "List" : nodeType === "Object" ? "Record" : itemType} ({itemString})
+                        </DraggableValue>
+                    </>
+                );
+            }}
+            labelRenderer={(keyPath, nodeType, expanded, expandable) => {
+                const path = normalizePath(keyPath);
+                return (
+                    <>
+                        <DraggableValue path={path} value={get(data, path)} type="key">
+                            {keyPath[0]}
+                        </DraggableValue>
+                        :
+                    </>
+                );
+            }}
+            valueRenderer={(valueAsString: string, value, ...keyPath) => {
+                const path = normalizePath(keyPath);
+                return (
+                    <DraggableValue path={path} value={get(data, path)} type="value">
+                        {valueAsString}
+                    </DraggableValue>
+                );
+            }}
+            postprocessValue={(value) => {
+                if (oldFields.map((f) => data[f]).includes(value)) {
+                    return new NotChanged(value);
+                }
+                return value;
+            }}
+        />
+    );
+}

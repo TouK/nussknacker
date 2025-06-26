@@ -1,7 +1,7 @@
 import { CloudOff } from "@mui/icons-material";
 import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
 import type { MouseEvent } from "react";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -187,7 +187,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                         showNodes={showNodes}
                     >
                         {direction === "output" ? <>{r.error}</> : null}
-                        <ContextTree context={r} oldFields={inputVariables} />
+                        <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />
                     </ContextAccordion>
                 ))}
             </Box>

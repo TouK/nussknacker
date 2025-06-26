@@ -1,7 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
+import { GlobalStyles } from "@mui/material";
 import { throttle } from "lodash";
 import type { ForwardedRef } from "react";
-import React, { forwardRef, useEffect, useMemo, useRef } from "react";
+import React, { forwardRef, useEffect, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useMergeRefs } from "rooks";
 
@@ -9,6 +10,7 @@ import { useUserSettings } from "../../../../../common/userSettings";
 import type { UserSettings } from "../../../../../reducers/userSettings";
 import type { AceKeyCommand, AceWrapperProps } from "./AceWrapper";
 import AceWrapper from "./AceWrapper";
+import { useAceDndTarget } from "./useAceDndTarget";
 
 export default forwardRef(function AceWithSettings(
     props: Omit<AceWrapperProps, "noWrap" | "showLines">,
@@ -64,13 +66,31 @@ export default forwardRef(function AceWithSettings(
 
     const mergedRefs = useMergeRefs(editorRef, ref);
 
+    const { isOver } = useAceDndTarget(editorRef, props.inputProps.language);
+
     return (
-        <AceWrapper
-            {...props}
-            ref={mergedRefs}
-            commands={commands}
-            showLineNumbers={userSettings[showLinesName]}
-            wrapEnabled={!userSettings[noWrapName]}
-        />
+        <>
+            {isOver ? (
+                <GlobalStyles
+                    styles={(theme) => ({
+                        ".ace_ghost_text": {
+                            color: theme.palette.info.main,
+                            fontStyle: "normal",
+                            opacity: 1,
+                            borderBottom: "2px dashed",
+                        },
+                    })}
+                />
+            ) : null}
+
+            <AceWrapper
+                {...props}
+                inputProps={{ ...props.inputProps, placeholder: isOver ? null : props.inputProps.placeholder }}
+                ref={mergedRefs}
+                commands={commands}
+                showLineNumbers={userSettings[showLinesName]}
+                wrapEnabled={!userSettings[noWrapName]}
+            />
+        </>
     );
 });
