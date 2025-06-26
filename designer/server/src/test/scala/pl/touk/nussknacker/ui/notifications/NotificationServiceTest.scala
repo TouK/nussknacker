@@ -123,6 +123,7 @@ class NotificationServiceTest
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
+      when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
@@ -181,6 +182,7 @@ class NotificationServiceTest
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
     ): RunDeploymentResult = {
+      when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
@@ -250,6 +252,7 @@ class NotificationServiceTest
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
     ): RunDeploymentResult = {
+      when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenAnswer { invocation =>
