@@ -11,31 +11,6 @@ import { JSONTree } from "react-json-tree";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { DndTypes } from "../../../DndTypes";
 
-function generateTransparentPngDataURL() {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1;
-    canvas.height = 1;
-
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, 1, 1);
-
-    return canvas.toDataURL("image/png");
-}
-
-const emptyImage = generateTransparentPngDataURL();
-const getEmptyDragImage = () => {
-    const dragImage = document.createElement("img");
-    dragImage.classList.add(
-        css({
-            position: "absolute",
-            top: -1000,
-            left: -1000,
-        }),
-    );
-    dragImage.src = emptyImage;
-    return dragImage;
-};
-
 class NotChanged {
     constructor(private value) {}
     get [Symbol.toStringTag]() {

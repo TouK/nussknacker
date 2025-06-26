@@ -2,7 +2,7 @@
 import { GlobalStyles } from "@mui/material";
 import { throttle } from "lodash";
 import type { ForwardedRef } from "react";
-import React, { forwardRef, useEffect, useMemo } from "react";
+import React, { forwardRef, useEffect, useMemo, useRef } from "react";
 import type ReactAce from "react-ace/lib/ace";
 import { useMergeRefs } from "rooks";
 
