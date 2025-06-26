@@ -25,8 +25,6 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 
 lazy val supportedScalaVersions = List(scala212, scala213)
 
-lazy val silencerV = "1.7.19"
-
 lazy val scalaFixV = "0.14.2"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
@@ -161,9 +159,6 @@ lazy val commonSettings =
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
-      libraryDependencies += compilerPlugin(
-        "com.github.ghik" % "silencer-plugin" % silencerV cross CrossVersion.full
-      ),
       libraryDependencies ++= forScalaVersion(scalaVersion.value) {
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
         case _       => Seq()
@@ -189,7 +184,6 @@ lazy val commonSettings =
             // -release option has no influence on class version so we at least setup target to 8 and check java version
             // at the begining of our Apps
             "-target:jvm-1.8",
-            "-P:silencer:globalFilters=deprecated"
           )
         case (2, 13) =>
           Seq(
@@ -208,9 +202,6 @@ lazy val commonSettings =
       ),
       // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
-      libraryDependencies ++= Seq(
-        "com.github.ghik" % "silencer-lib" % silencerV % Provided cross CrossVersion.full
-      ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
         "org.apache.avro"    % "avro"             % avroV,
