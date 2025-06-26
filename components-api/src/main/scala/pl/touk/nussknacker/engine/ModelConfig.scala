@@ -47,7 +47,7 @@ object ModelConfig {
 
     object LiveDataStorage {
 
-      object DesignerJvm extends LiveDataStorage
+      case object DesignerJvm extends LiveDataStorage
 
       final case class DesignerDb(
           uploadIntervalInSeconds: Int,
