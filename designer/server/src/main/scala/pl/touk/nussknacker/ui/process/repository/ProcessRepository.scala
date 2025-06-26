@@ -4,11 +4,11 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
-import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel

@@ -6,8 +6,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.scalatest.time.{Second, Seconds, Span}
 import org.testcontainers.utility.DockerImageName
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.db.DbRefInstance
 
 import scala.jdk.CollectionConverters._

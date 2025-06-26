@@ -164,11 +164,11 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(componentsConfig.toSeq: _*)), cl)
       extractor.extractComponents(
-        ModelConfig.parse(resolved.config),
+        ComponentDependencies(ModelConfig.parse(resolved.config), designerDbRef = None),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
-        ComponentDefinitionExtractionMode.FinalDefinition
+        ComponentDefinitionExtractionMode.FinalDefinition,
       )
     }
   }
@@ -179,7 +179,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(
-        ModelConfig.parse(resolved.config),
+        ComponentDependencies(ModelConfig.parse(resolved.config), designerDbRef = None),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
@@ -205,7 +205,10 @@ class DynamicProvider extends ComponentProvider {
     config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
   }
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = {
     componentProviderConfig.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
       ComponentDefinition(s"component-$value", DynamicService(value))
     }
@@ -232,7 +235,10 @@ class SameNameSameComponentTypeProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = {
     List(
       ComponentDefinition(s"component", DynamicService("component")),
       ComponentDefinition(s"component", DynamicService("component"))
@@ -250,7 +256,10 @@ class SameNameDifferentComponentTypeProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = {
     List(
       ComponentDefinition(s"component", DynamicService("component")),
       ComponentDefinition(s"component", SinkFactory.noParam(new Sink {}))
@@ -276,7 +285,10 @@ class AutoLoadedProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = List(
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = List(
     ComponentDefinition("auto-component", AutoService)
   )
 

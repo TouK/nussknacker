@@ -6,7 +6,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.configuration.FluentConfiguration
 import org.flywaydb.core.internal.database.postgresql.PostgreSQLDatabaseType
-import pl.touk.nussknacker.ui.customhttpservice.services.{NuExPostgresProfile, NuHsqldbProfile, NuJdbcProfile}
+import pl.touk.nussknacker.engine.api.db.{NuExPostgresProfile, NuHsqldbProfile, NuJdbcProfile}
 import pl.touk.nussknacker.ui.db.DbRefInstance
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 

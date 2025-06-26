@@ -397,7 +397,8 @@ object DomainServices extends LazyLogging {
                 getModelDependencies(
                   additionalUIConfigProvider,
                   _,
-                  alreadyLoadedConfig.componentDefinitionExtractionMode
+                  alreadyLoadedConfig.componentDefinitionExtractionMode,
+                  infrastructureServices,
                 ),
                 modelClassLoaderProvider,
               )
@@ -433,7 +434,8 @@ object DomainServices extends LazyLogging {
   private def getModelDependencies(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       processingType: ProcessingType,
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+      infrastructureServices: InfrastructureServices
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     ModelDependencies(
@@ -441,6 +443,7 @@ object DomainServices extends LazyLogging {
       DesignerWideComponentId.default(processingType, _),
       workingDirectoryOpt = None, // we use the default working directory
       componentDefinitionExtractionMode,
+      Some(infrastructureServices.dbRef)
     )
   }
 

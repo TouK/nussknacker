@@ -406,7 +406,8 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        ComponentDefinitionExtractionMode.FinalDefinition
+        componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition,
+        designerDbRef = None
       ),
       ModelClassLoaderFactory.create(processingTypeConfig.classPath, None, deploymentManagerClassLoader)
     )

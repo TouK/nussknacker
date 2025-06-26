@@ -294,10 +294,11 @@ class ScenarioParametersServiceTest
           )
         )
       modelConfig = ModelDependencies(
-        Map.empty,
-        componentId => DesignerWideComponentId(componentId.toString),
-        Some(workPath),
-        ComponentDefinitionExtractionMode.FinalDefinition
+        additionalConfigsFromProvider = Map.empty,
+        determineDesignerWideId = componentId => DesignerWideComponentId(componentId.toString),
+        workingDirectoryOpt = Some(workPath),
+        componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition,
+        designerDbRef = None
       )
       processingTypeData <- TestProcessingTypeDataProviderFactory.create(
         designerConfig.processingTypeConfigs(),

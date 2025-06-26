@@ -8,7 +8,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer, ModelConfig, ModelData}
+import pl.touk.nussknacker.engine.{JobsRecoverySettings, MetaDataInitializer, ModelData}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.{DeploymentManagerType, LimitsConfig}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
@@ -555,9 +555,7 @@ class DefaultComponentServiceSpec
     globalPermissions = List(invokePermission)
   )
 
-  private val providerComponents =
-    new DynamicComponentProvider()
-      .create(ConfigFactory.empty, ModelConfig.parse(ConfigFactory.empty()))
+  private val providerComponents = new DynamicComponentProvider().components
 
   private val modelDataMap: Map[ProcessingType, (ModelData, String)] = Map(
     ProcessingTypeStreaming -> (

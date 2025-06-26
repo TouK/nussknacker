@@ -92,10 +92,8 @@ class TableSinkParametersTest
        |""".stripMargin
   )
 
-  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
-    tableComponentsConfig,
-    ModelConfig.parse(tableComponentsConfig)
-  )
+  private lazy val tableComponents: List[ComponentDefinition] =
+    new FlinkTableDataSourceComponentProvider().create(tableComponentsConfig)
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 

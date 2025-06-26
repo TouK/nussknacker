@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.db
 
-import pl.touk.nussknacker.ui.customhttpservice.services.NuJdbcProfile
+import pl.touk.nussknacker.engine.api.db.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory
 

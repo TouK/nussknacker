@@ -12,8 +12,8 @@ import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
-import pl.touk.nussknacker.engine.{ModelConfig, RuntimeMode}
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.{ModelConfig, ModelDependencies, RuntimeMode}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentDependencies}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
@@ -96,8 +96,9 @@ case class LiteKafkaTestScenarioRunnerBuilder(
   override def build(): LiteKafkaTestScenarioRunner = {
     val modelConfig                   = ModelConfig.parse(config)
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
-    val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelConfig)
-    val schemaRegistryClient          = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))
+    val mockedKafkaComponents =
+      mockedKafkaComponentsProvider.create(config, ComponentDependencies(modelConfig, designerDbRef = None))
+    val schemaRegistryClient = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde
       case _: AzureSchemaRegistryClient     => AzureKafkaAvroElementSerde

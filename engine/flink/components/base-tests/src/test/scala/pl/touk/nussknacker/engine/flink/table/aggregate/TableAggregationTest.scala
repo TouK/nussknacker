@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentDependencies}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -40,10 +40,7 @@ class TableAggregationTest
     with Inside
     with BeforeAndAfterAll {
 
-  private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableOpsComponentProvider().create(
-    ConfigFactory.empty(),
-    ModelConfig.parse(ConfigFactory.empty())
-  )
+  private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableOpsComponentProvider().components
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 

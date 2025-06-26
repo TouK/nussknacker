@@ -16,7 +16,7 @@ import pl.touk.nussknacker.defaultmodel.MockSchemaRegistryClientHolder.MockSchem
 import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemaV1
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentDependencies}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -82,7 +82,7 @@ abstract class FlinkWithKafkaSuite
     valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
       createFinkKafkaComponentProvider(schemaRegistryClientProvider)
-        .create(kafkaComponentsConfig, ModelConfig.parse(config)) :::
+        .create(kafkaComponentsConfig, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None)) :::
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         additionalComponents
     val modelData =

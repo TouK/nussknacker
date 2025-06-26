@@ -6,11 +6,11 @@ import db.util.DBIOActionInstances
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.db.NuJdbcProfile
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.DeploymentWithRuntimeParams
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.customhttpservice.services.NuJdbcProfile
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.periodic.ScheduleProperty
 import pl.touk.nussknacker.ui.process.periodic.model._
