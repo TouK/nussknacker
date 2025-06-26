@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.test.utils.domain
 
+import cats.effect.kernel.Resource
 import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.server.Route
-import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ProcessingMode}
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, FixedExpressionValue}
+import pl.touk.nussknacker.engine.definition.action.ModelDataActionInfoProvider
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
@@ -25,7 +27,7 @@ import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.db.DbRefInstance
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ProcessService}
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, ScenarioResolver}
+import pl.touk.nussknacker.ui.process.deployment.{ActionInfoService, DeploymentManagerDispatcher, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
@@ -286,5 +288,15 @@ object TestFactory {
     newActionProcessRepository(dbRef),
     newWriteProcessRepository(dbRef, clock, processingTypes),
   )
+
+  def newActionInfoService(modelData: ModelData): ActionInfoService =
+    new ActionInfoService(
+      new ModelDataActionInfoProvider(
+        modelData,
+        Resource.pure(EngineScenarioCompilationDependencies.empty)
+      ),
+      processResolver(),
+      scenarioResolver()
+    )
 
 }

@@ -140,7 +140,7 @@ class PeriodicDeploymentManagerTest
         RunDeploymentCommand(
           CommonCommandData(ProcessIdWithName(id, processName), None, user),
           RestoreStateFromReplacedJobSavepoint,
-          NodesDeploymentData.empty,
+          Some(NodesDeploymentData.empty),
           scenarioSource = LatestVersion,
         )
       )
@@ -153,7 +153,7 @@ class PeriodicDeploymentManagerTest
         RunRedeploymentCommand(
           CommonCommandData(ProcessIdWithName(id, processName), None, user),
           RestoreStateFromReplacedJobSavepoint,
-          NodesDeploymentData.empty,
+          Some(NodesDeploymentData.empty),
           LatestVersion
         )
       )
