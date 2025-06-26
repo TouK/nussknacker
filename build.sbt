@@ -154,7 +154,6 @@ lazy val commonSettings =
       scalaVersion                     := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
-        "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/" // todo: temporary for pl.touk:flink-scala snapshot version
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
@@ -348,7 +347,7 @@ val retryV                    = "0.3.6"
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
   Seq(
-    "pl.touk" %% "flink-scala" % "1.1.3-SNAPSHOT" // todo: to be replaced with release version after merging PR in our flink-scala repo
+    "pl.touk" %% "flink-scala" % "1.1.3"
   ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
