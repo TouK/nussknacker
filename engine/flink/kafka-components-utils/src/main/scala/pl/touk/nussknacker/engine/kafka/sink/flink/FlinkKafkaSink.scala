@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.sink.flink
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
@@ -32,7 +31,6 @@ class FlinkKafkaSink(
   ): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
     helper.lazyMapFunction(value)
 
-  @silent("deprecated")
   override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] =
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic.prepared, serializationSchema, clientId)
 

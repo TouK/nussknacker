@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.helpers
 
-import com.github.ghik.silencer.silent
 import com.typesafe.config.Config
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.scalatest.Suite
@@ -130,7 +129,6 @@ case object SinkAccessingNodeContext extends EmptySink with Serializable {
 
   def nodeId: String = _nodeId
 
-  @silent("deprecated")
   override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] = {
     _nodeId = flinkNodeContext.nodeId
     super.toFlinkFunction(flinkNodeContext)

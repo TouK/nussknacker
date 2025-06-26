@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
@@ -39,7 +38,6 @@ class TableSink(
     )
   }
 
-  @silent("deprecated")
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext

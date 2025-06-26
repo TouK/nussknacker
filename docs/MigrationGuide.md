@@ -211,7 +211,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Also, if you provide one element in `groupBy` expression, it will be presented as one element list instead of scalar.
 * [#8011](https://github.com/TouK/nussknacker/pull/8011) During scenario compilation, redundant parameters used in node are treated only as warning now. They are skipped and compilation passes.
 * [#8198](https://github.com/TouK/nussknacker/pull/8198) Support for test data without `sourceId` specified is removed - now, you always have to specify it
-* [#7137](https://github.com/TouK/nussknacker/pull/7137) Updated Flink 1.19.2 -> 1.20.1.
 
 ## In version 1.18.0
 

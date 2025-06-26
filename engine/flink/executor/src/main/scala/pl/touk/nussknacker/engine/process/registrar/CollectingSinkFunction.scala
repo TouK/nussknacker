@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
 import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
@@ -8,7 +7,6 @@ import pl.touk.nussknacker.engine.process.ExceptionHandlerFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
 
-@silent("deprecated")
 private[registrar] class CollectingSinkFunction[T](
     val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     collectingSink: SinkInvocationCollector,

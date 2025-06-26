@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -24,7 +23,6 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
   ): FlinkDeserializationSchemaWrapper[T] =
     new FlinkDeserializationSchemaWrapper[T](deserializationSchema)
 
-  @silent("deprecated")
   class FlinkDeserializationSchemaWrapper[T](deserializationSchema: serialization.KafkaDeserializationSchema[T])
       extends kafka.KafkaDeserializationSchema[T] {
 
@@ -75,7 +73,6 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
 
   }
 
-  @silent("deprecated")
   def wrapToFlinkSerializationSchema[T](
       serializationSchema: serialization.KafkaSerializationSchema[T]
   ): kafka.KafkaSerializationSchema[T] = new kafka.KafkaSerializationSchema[T] {

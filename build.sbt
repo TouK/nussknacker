@@ -299,34 +299,34 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                  = "1.20.1"
-val flinkConnectorKafkaV    = "3.3.0-1.20" // 3.4.0-1.20 breaks compilation with Scala 2.12
-val jdbcFlinkConnectorV     = "3.3.0-1.20"
-val flinkCommonsCompressV   = "1.26.0"
-val flinkCommonsLang3V      = "3.12.0"
-val flinkCommonsTextV       = "1.10.0"
-val flinkCommonsIOV         = "2.15.1"
-val filnkInfluxdbJavaV      = "2.17"
+val flinkV                = "1.19.2"
+val flinkConnectorKafkaV  = "3.2.0-1.19"
+val jdbcFlinkConnectorV   = "3.2.0-1.19"
+val flinkCommonsCompressV = "1.26.0"
+val flinkCommonsLang3V    = "3.12.0"
+val flinkCommonsTextV     = "1.10.0"
+val flinkCommonsIOV       = "2.15.1"
+val filnkInfluxdbJavaV    = "2.17"
 // keep calcite synchronized with version used by current flink-sql-parser
-val calciteV                = "1.32.0"
-val avroV                   = "1.11.4"
+val calciteV              = "1.32.0"
+val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV                  = "3.8.1"
+val kafkaV                = "3.8.1"
 // to update we need configurable SpEL length limit from 6.0.9, but 6.x requires JDK 17
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
-val springV                 = "5.2.23.RELEASE"
-val scalaTestV              = "3.2.18"
-val scalaCheckV             = "1.17.1"
-val scalaCheckVshort        = scalaCheckV.take(4).replace(".", "-")
-val scalaTestPlusV          =
+val springV               = "5.2.23.RELEASE"
+val scalaTestV            = "3.2.18"
+val scalaCheckV           = "1.17.1"
+val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.13"
 val betterFilesV            = "3.9.2"
 val circeV                  = "0.14.10"
 val circeGenericExtrasV     = "0.14.4"
-val circeYamlV              = "0.15.2"     // 0.15.3 drops Scala 2.12
+val circeYamlV              = "0.15.2" // 0.15.3 drops Scala 2.12
 val jwtCirceV               = "10.0.1"
 val jacksonV                = "2.17.2"
 val catsV                   = "2.12.0"
@@ -1898,7 +1898,7 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   .settings(
     name := "nussknacker-flink-base-components-tests",
     libraryDependencies ++= Seq(
-      "org.apache.flink" % "flink-connector-jdbc-postgres" % jdbcFlinkConnectorV % Test,
+      "org.apache.flink" % "flink-connector-jdbc" % jdbcFlinkConnectorV % Test,
     )
   )
   .dependsOn(
@@ -1926,23 +1926,17 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
   .settings(assemblyNoScala("flinkTable.jar"): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
-    name                             := "nussknacker-flink-table-components",
+    name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink"   % "flink-sql-parser"              % flinkV,
-        "org.apache.calcite" % "calcite-linq4j"                % calciteV, // required by fliink-sql-parser
-        "org.apache.flink"   % "flink-streaming-java"          % flinkV              % Provided,
-        "org.apache.flink"   % "flink-table-api-java"          % flinkV              % Provided,
-        "org.apache.flink"   % "flink-table-api-java-bridge"   % flinkV              % Provided,
-        "org.apache.flink"   % "flink-connector-jdbc-postgres" % jdbcFlinkConnectorV % Test,
+        "org.apache.flink"   % "flink-sql-parser"            % flinkV,
+        "org.apache.calcite" % "calcite-linq4j"              % calciteV, // required by fliink-sql-parser
+        "org.apache.flink"   % "flink-streaming-java"        % flinkV              % Provided,
+        "org.apache.flink"   % "flink-table-api-java"        % flinkV              % Provided,
+        "org.apache.flink"   % "flink-table-api-java-bridge" % flinkV              % Provided,
+        "org.apache.flink"   % "flink-connector-jdbc"        % jdbcFlinkConnectorV % Test,
       )
-    },
-    assembly / assemblyMergeStrategy := {
-      case PathList("org", "apache", "calcite", "sql", "fun", _) =>
-        MergeStrategy.last // taking version from flink-sql-parser instead of calcite-core
-      case x =>
-        defaultMergeStrategy(x)
-    },
+    }
   )
   .dependsOn(
     flinkComponentsApi     % Provided,
