@@ -142,7 +142,7 @@ class DeploymentServiceSpec
           RunDeploymentCommand(
             CommonCommandData(scenario, None, user),
             StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-            NodesDeploymentData.empty,
+            Some(NodesDeploymentData.empty),
             scenarioSource = LatestVersion,
           )
         )
@@ -167,7 +167,7 @@ class DeploymentServiceSpec
       RunDeploymentCommand(
         CommonCommandData(scenario, None, user),
         StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-        NodesDeploymentData.empty,
+        Some(NodesDeploymentData.empty),
         scenarioSource = LatestVersion,
       )
     )
@@ -198,7 +198,7 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, Comment.from("samplePattern"), user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty,
+              Some(NodesDeploymentData.empty),
               scenarioSource = LatestVersion,
             )
           )
@@ -246,7 +246,7 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty,
+              Some(NodesDeploymentData.empty),
               scenarioSource = LatestVersion,
             )
           )
@@ -349,7 +349,7 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty,
+              Some(NodesDeploymentData.empty),
               scenarioSource = LatestVersion,
             )
           )
@@ -392,7 +392,7 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty,
+              Some(NodesDeploymentData.empty),
               scenarioSource = LatestVersion,
             )
           )
@@ -786,7 +786,7 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty,
+              Some(NodesDeploymentData.empty),
               scenarioSource = LatestVersion,
             )
           )
@@ -1360,7 +1360,7 @@ class DeploymentServiceSpec
             RunDeploymentCommand(
               CommonCommandData(scenario, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty,
+              Some(NodesDeploymentData.empty),
               scenarioSource = scenarioGraphSource,
             )
           )
@@ -1378,7 +1378,7 @@ class DeploymentServiceSpec
             RunRedeploymentCommand(
               CommonCommandData(scenarioId, None, user),
               StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
-              NodesDeploymentData.empty,
+              Some(NodesDeploymentData.empty),
               scenarioSource = LatestVersion,
             )
           )

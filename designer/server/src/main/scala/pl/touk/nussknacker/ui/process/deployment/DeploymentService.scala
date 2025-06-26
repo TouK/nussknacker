@@ -3,7 +3,11 @@ package pl.touk.nussknacker.ui.process.deployment
 import cats.data.Validated
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -11,6 +15,7 @@ import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.util.{AdditionalComponentConfigsForRuntimeExtractor, ExecutionContextWithIORuntime}
 import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.MaxActiveScenariosCountExceededError
+import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.UiActionParameterConfig
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.DeployingInvalidScenarioError
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -32,7 +37,8 @@ class DeploymentService(
       Map[DesignerWideComponentId, ComponentAdditionalConfig],
       _
     ],
-    limitsService: LimitsService
+    limitsService: LimitsService,
+    processingTypeToActionInfoService: ProcessingTypeDataProvider[ActionInfoService, _],
 )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime)
     extends LazyLogging {
 
@@ -92,13 +98,14 @@ class DeploymentService(
       case LatestVersion     => actionService.actionProcessorForLatestVersion[CanonicalProcess]
       case source: FromGraph => actionService.actionProcessorForScenarioGraph[CanonicalProcess](source)
     }
+    val actionName = command match {
+      case _: RunDeploymentCommand   => ScenarioActionName.Deploy
+      case _: RunRedeploymentCommand => ScenarioActionName.Redeploy
+    }
     actionProcessor
       .processActionWithCustomFinalization[T, RunDeploymentResult](
         command = command,
-        actionName = command match {
-          case _: RunDeploymentCommand   => ScenarioActionName.Deploy
-          case _: RunRedeploymentCommand => ScenarioActionName.Redeploy
-        }
+        actionName = actionName
       ) { case (ctx, actionFinalizer) =>
         implicit class FinalizerExt[T](val future: Future[T]) {
           def removeInvalidActionOnFailure(): Future[T] = {
@@ -115,7 +122,8 @@ class DeploymentService(
             ctx.actionId,
             // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
             //       references to existing fields and uses correct types. We should also protect from sql injection attacks
-            command
+            command,
+            actionName,
           ).removeInvalidActionOnFailure()
           _ <- validateScenario(ctx.latestScenarioDetails).removeInvalidActionOnFailure()
           actionResult <- checkActiveScenariosLimits(ctx.latestScenarioDetails, dmCommand.updateStrategy) {
@@ -197,6 +205,7 @@ class DeploymentService(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
       command: CommonDeploymentCommand,
+      actionName: ScenarioActionName,
   )(implicit user: LoggedUser): Future[DMRunDeploymentCommand] = {
     for {
       resolvedCanonicalProcess <- scenarioResolver
@@ -206,11 +215,12 @@ class DeploymentService(
           case Validated.Valid(scenario) => Future.successful(scenario)
           case Validated.Invalid(e)      => Future.failed(new RuntimeException(e.head.toString))
         }
+      nodesDeploymentData <- prepareNodesDeploymentData(command, processDetails, resolvedCanonicalProcess, actionName)
       deploymentData = DeploymentData(
         DeploymentId.fromActionId(actionId),
         user.toManagerUser,
         additionalDeploymentData = Map.empty,
-        command.nodesDeploymentData,
+        nodesDeploymentData,
         getAdditionalModelConfigsRequiredForRuntime(processDetails.processingType)
       )
       updateStrategy = DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
@@ -223,6 +233,44 @@ class DeploymentService(
         updateStrategy
       )
     } yield dmCommand
+  }
+
+  private def prepareNodesDeploymentData(
+      command: CommonDeploymentCommand,
+      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+      canonicalProcess: CanonicalProcess,
+      actionName: ScenarioActionName
+  )(implicit user: LoggedUser): Future[NodesDeploymentData] = command.nodesDeploymentData match {
+    case Some(data) => Future.successful(data)
+    case None =>
+      processingTypeToActionInfoService
+        .forProcessingTypeUnsafe(processDetails.processingType)
+        .getActionParameters(
+          canonicalProcess.toScenarioGraph,
+          processDetails.toEngineProcessVersion,
+          processDetails.isFragment
+        )
+        .map {
+          case Left(_) => NodesDeploymentData.empty
+          case Right(uiParams) =>
+            uiParams.actionNameToParameters.get(actionName) match {
+              case Some(params) =>
+                val paramsMap = params
+                  .map { param =>
+                    param.nodeId -> param.parameters
+                      // Important NOTICE! If the user hasn't provided any (quick deploy/redeploy action) deploy parameters,
+                      // we take parameters with defined default values.
+                      // Parameters without default values (even required ones) are skipped.
+                      .collect { case (paramName, UiActionParameterConfig(Some(defaultValue), _, _, _)) =>
+                        paramName -> defaultValue
+                      }
+                  }
+                  .filterNot(_._2.isEmpty)
+                  .toMap
+                NodesDeploymentData(paramsMap)
+              case None => NodesDeploymentData.empty
+            }
+        }
   }
 
   private def getAdditionalModelConfigsRequiredForRuntime(processingType: ProcessingType)(implicit user: LoggedUser) = {
