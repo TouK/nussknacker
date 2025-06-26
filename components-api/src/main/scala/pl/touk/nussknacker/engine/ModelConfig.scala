@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
@@ -20,9 +21,11 @@ final case class ModelConfig(
 
 }
 
-object ModelConfig {
+object ModelConfig extends LazyLogging {
 
   def parse(rawModelConfig: Config): ModelConfig = {
+    val a = parseLiveDataPreviewMode(rawModelConfig)
+    logger.error(s"MMMMMMMMMMM $a")
     ModelConfig(
       allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
       namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
