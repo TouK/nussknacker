@@ -38,7 +38,12 @@ export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
 
     return (
         <>
-            <ResetToDefaultIcon style={{ cursor: "pointer" }} fontSize="small" onClick={handleIconClick} />
+            <ResetToDefaultIcon
+                style={{ cursor: "pointer" }}
+                fontSize="small"
+                onClick={handleIconClick}
+                data-testid={"resetToDefaultButton"}
+            />
             <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
