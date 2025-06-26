@@ -4,6 +4,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessId
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
+// At the moment this data structure supports only streaming processing.
+// For batch processing, we should have a (collectorId, Flink job id) as a primary key.
 trait LiveDataEntityFactory extends BaseEntityFactory {
 
   import profile.apiWithEnforcedSchema._

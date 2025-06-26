@@ -72,8 +72,6 @@ services:
   postgres:
     image: postgres:13
     restart: unless-stopped
-    ports:
-      - 5432:5432
     environment:
       POSTGRES_DB: "nu-db"
       POSTGRES_USER: "nu"

@@ -184,12 +184,13 @@ description: Stay informed with detailed changelogs covering new features, impro
       ```hocon
       liveDataPreview {              // optional config section, functionality disabled by default
         enabled: true                // disabled by default
-        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned
-        throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated
+        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned, optional, default is 20
+        throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated, optional, default is 60
       }
       ```
     * [#8208](https://github.com/TouK/nussknacker/pull/8208) added functionality of collecting live data for scenarios running on standalone Flink with synchronisation in Designer DB  
-    * DB uploader must be configured in order to use the live data feature for standalone Flink  
+      * DB uploader must be configured in order to use the live data feature for standalone Flink  
+      * at the moment it supports only streaming scenarios - batch processing is not supported
       ```hocon
       liveDataPreview {              
         enabled: true               
