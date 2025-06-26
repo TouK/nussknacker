@@ -53,6 +53,7 @@ object ProcessTestData {
   val existingSinkFactory            = "barSink"
   val existingSinkFactory2           = "barSink2"
   val existingSinkFactoryKafkaString = "kafka-string"
+  val monitorSink                    = "monitor"
 
   val existingServiceId            = "barService"
   val otherExistingServiceId       = "fooService"
@@ -62,7 +63,8 @@ object ProcessTestData {
   val otherExistingServiceId4      = "fooService4"
   val dictParameterEditorServiceId = "dictParameterEditorService"
 
-  val processorId = "fooProcessor"
+  val processorId    = "fooProcessor"
+  val logProcessorId = "log"
 
   val existingStreamTransformer                = "transformer"
   val otherExistingStreamTransformer           = "otherTransformer"
@@ -80,6 +82,7 @@ object ProcessTestData {
       .withUnboundedStreamSource(otherExistingSourceFactory)
       .withUnboundedStreamSource(csvSourceFactory)
       .withSink(existingSinkFactory)
+      .withSink(monitorSink)
       .withSink(
         existingSinkFactoryKafkaString,
         Parameter[String](TopicParamName),
@@ -88,6 +91,7 @@ object ProcessTestData {
       .withService(existingServiceId)
       .withService(otherExistingServiceId)
       .withService(processorId, None)
+      .withService(logProcessorId, None)
       .withService(otherExistingServiceId2, Parameter[Any](ParameterName("expression")))
       .withService(otherExistingServiceId3, Parameter[String](ParameterName("expression")))
       .withService(notBlankExistingServiceId, NotBlankParameter(ParameterName("expression"), Typed[String]))

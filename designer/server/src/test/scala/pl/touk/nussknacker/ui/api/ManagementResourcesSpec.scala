@@ -296,6 +296,31 @@ class ManagementResourcesSpec
     }
   }
 
+  test("should invoke actionInfoService to get default params in deploy without deployment data") {
+    val testScenarioName = "test-scenario-with-default-params"
+    val scenario = ScenarioBuilder
+      .streaming(testScenarioName)
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .filter("input", "#input != null".spel)
+      .processor(
+        "logger",
+        "log",
+        "message" -> "Current #{#input}".spelTemplate,
+        "logger"  -> "'deployment-test'".spel,
+        "level"   -> "T(org.slf4j.event.Level).DEBUG".spel
+      )
+      .emptySink("end", "monitor")
+    saveCanonicalProcessAndAssertSuccess(scenario)
+    deployProcess(scenario.name) ~> checkThatEventually {
+      status shouldBe StatusCodes.OK
+      getProcess(scenario.name) ~> check {
+        decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
+        updateCanonicalProcessAndAssertSuccess(scenario)
+      }
+    }
+  }
+
   test("should return failure for not validating scenario") {
     val invalidScenario = ScenarioBuilder
       .streaming(processName.value)

@@ -145,6 +145,11 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         ),
         oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
         newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
+      ),
+      TestFactory.mapProcessingTypeDataProvider(
+        deploymentManagers.map { case (processingType, _) =>
+          processingType -> newActionInfoService(modelData)
+        }.toList: _*
       )
     )
     TestDeploymentServiceServices(
