@@ -61,9 +61,6 @@ class FlinkMiniClusterScenarioJobRunner(
 
   override def liveDataPreviewSupport: LiveDataPreviewSupport = {
     modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
-      // todo
-      case LiveDataPreviewMode.Enabled(maxSamples, _, storage: LiveDataStorage.DesignerDb) =>
-        LiveDataPreviewStoredInDesignerDb(maxSamples, storage.uploadIntervalInSeconds)
       case LiveDataPreviewMode.Enabled(_, _, _) =>
         LiveDataPreviewStoredInDesignerJvm
       case LiveDataPreviewMode.Disabled =>

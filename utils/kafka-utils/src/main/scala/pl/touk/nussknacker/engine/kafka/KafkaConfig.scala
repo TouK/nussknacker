@@ -127,6 +127,6 @@ final case class KafkaAdminConfig(
 )
 
 final case class KafkaAdminCacheConfig(
-    topicsExpirationTime: FiniteDuration = 10 seconds,
-    autoCreateTopicSettingExpirationTime: FiniteDuration = 10 seconds,
+    topicsExpirationTime: FiniteDuration = 30 seconds,
+    autoCreateTopicSettingExpirationTime: FiniteDuration = 5 minutes,
 )
