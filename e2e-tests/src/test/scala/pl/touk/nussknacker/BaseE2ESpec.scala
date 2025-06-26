@@ -29,8 +29,7 @@ object BaseE2ESpec extends LazyLogging {
       dockerComposeTweakFiles = List(
         new JFile(Resource.getUrl("bootstrap-setup-scenarios.override.yml").toURI),
         new JFile(Resource.getUrl("debuggable-nu-designer.override.yml").toURI)
-      ),
-      additionalEnv = Map("ENABLE_LIVE_DATA" -> "true")
+      )
     )
 
 }

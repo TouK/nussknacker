@@ -30,7 +30,6 @@ import scala.util.{Failure, Success, Try}
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
     dockerComposeTweakFiles: Iterable[JFile],
-    additionalEnv: Map[String, String],
 ) extends DockerComposeContainer(
       composeFiles = new JFile("examples/installation/docker-compose.yml") ::
         DockerBasedInstallationExampleNuEnvironment.getClass
@@ -39,7 +38,7 @@ class DockerBasedInstallationExampleNuEnvironment(
         dockerComposeTweakFiles.toList,
       env = Map(
         "NUSSKNACKER_VERSION" -> nussknackerImageVersion
-      ) ++ additionalEnv,
+      ),
       logConsumers = Seq(
         ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(slf4jLogger)),
         ServiceLogConsumer("designer", new Slf4jLogConsumer(slf4jLogger)),
