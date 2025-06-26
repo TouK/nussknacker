@@ -204,7 +204,7 @@ jobs:
           restore-keys: sbt
       - name: Backend tests
         shell: bash
-        run: ./ciRunSbt2.sh testOnly pl.touk.nussknacker.DetectLargeTransactionSpec
+        run: ./ciRunSbt2.sh testOnly *DetectLargeTransactionSpec
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v4
