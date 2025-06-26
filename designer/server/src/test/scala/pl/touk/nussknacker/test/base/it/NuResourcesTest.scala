@@ -58,6 +58,7 @@ import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider => OldApproachScenarioStatusProvider
 }
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
+import pl.touk.nussknacker.ui.process.livedata.LiveDataRepository
 import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -111,6 +112,8 @@ trait NuResourcesTest
   protected val actionRepository: ScenarioActionRepository = newActionProcessRepository(testDbRef)
 
   protected val scenarioActivityRepository: ScenarioActivityRepository = newScenarioActivityRepository(testDbRef, clock)
+
+  protected val liveDataRepository: LiveDataRepository = newLiveDataRepository(testDbRef)
 
   protected val processChangeListener = new TestProcessChangeListener()
 
@@ -237,6 +240,8 @@ trait NuResourcesTest
       processingTypeToActionInfoService = mapProcessingTypeDataProvider(
         Streaming.stringify -> newActionInfoService(modelData)
       ),
+      liveDataRepository = liveDataRepository,
+      dbioActionRunner = dbioRunner,
     )(executionContextWithIORuntime)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =

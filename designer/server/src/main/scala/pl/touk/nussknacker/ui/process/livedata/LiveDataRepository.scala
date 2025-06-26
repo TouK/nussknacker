@@ -17,6 +17,10 @@ import scala.concurrent.ExecutionContext
 
 trait LiveDataRepository {
 
+  def cleanLiveData(
+      processIdWithName: ProcessIdWithName,
+  ): DB[Unit]
+
   def fetchLiveData(
       processIdWithName: ProcessIdWithName,
       maxNumberOfSamples: Int,
@@ -34,15 +38,21 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
 
   import dbRef.profile.apiWithEnforcedSchema._
 
+  def cleanLiveData(
+      processIdWithName: ProcessIdWithName,
+  ): DB[Unit] = {
+    flinkLiveDataTable
+      .filter(_.scenarioId === processIdWithName.id)
+      .delete
+      .map(_ => ())
+  }
+
   override def fetchLiveData(
       processIdWithName: ProcessIdWithName,
       maxNumberOfSamples: Int,
       uploadIntervalInSeconds: Long,
   ): DB[Either[String, CollectedLiveData]] = {
-    for {
-      _        <- removeOldEntries(processIdWithName, uploadIntervalInSeconds)
-      liveData <- fetchAndAggregateLiveData(processIdWithName, maxNumberOfSamples)
-    } yield liveData
+    fetchAndAggregateLiveData(processIdWithName, maxNumberOfSamples)
   }
 
   private def fetchAndAggregateLiveData(
@@ -80,7 +90,7 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
         CollectedLiveData(
           timestamp = collectedLiveData.toList.map(_.timestamp).min,
           nodeTransitions = aggregate(
-            collectedLiveData.toList.map(_.nodeTransitions).toList,
+            collectedLiveData.toList.map(_.nodeTransitions),
             maxNumberOfSamples
           ),
           invocationResults = aggregate[InvocationResult](
@@ -103,7 +113,7 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
     }
   }
 
-  def aggregate(
+  private def aggregate(
       data: List[Map[NodeTransition, LiveDataForNodeTransition]],
       maxNumberOfSamples: Int,
   ): Map[NodeTransition, LiveDataForNodeTransition] = {
@@ -121,7 +131,7 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
       }
   }
 
-  def aggregate[V](
+  private def aggregate[V](
       data: List[Map[NodeId, List[V]]],
       maxNumberOfSamples: Int,
       getTimestamp: V => Instant
@@ -134,20 +144,6 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
           .sortBy(getTimestamp)
           .takeRight(maxNumberOfSamples)
       }
-  }
-
-  private def removeOldEntries(
-      processIdWithName: ProcessIdWithName,
-      uploadIntervalInSeconds: Long,
-  ) = {
-    run(
-      flinkLiveDataTable
-        .filter(_.scenarioId === processIdWithName.id)
-        .filter(
-          _.updatedAt < Instant.now.getEpochSecond - uploadIntervalInSeconds - 5
-        ) // Drop data older than interval + 5 seconds
-        .delete
-    )
   }
 
 }

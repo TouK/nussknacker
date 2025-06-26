@@ -25,6 +25,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{
+  dummyDbRef,
   mapProcessingTypeDataProvider,
   scenarioParametersServiceProvider
 }
@@ -345,6 +346,8 @@ class NotificationServiceTest
         newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
       ),
       TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> actionInfoService),
+      TestFactory.newLiveDataRepository(testDbRef),
+      dbioRunner,
     ) {
 
       override protected def validateUsingDeploymentManager(

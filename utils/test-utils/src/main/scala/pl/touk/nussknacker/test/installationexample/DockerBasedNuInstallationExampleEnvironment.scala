@@ -29,7 +29,7 @@ import scala.util.{Failure, Success, Try}
 
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
-    dockerComposeTweakFiles: Iterable[JFile],
+    dockerComposeTweakFiles: Iterable[JFile]
 ) extends DockerComposeContainer(
       composeFiles = new JFile("examples/installation/docker-compose.yml") ::
         DockerBasedInstallationExampleNuEnvironment.getClass
