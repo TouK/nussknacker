@@ -25,7 +25,8 @@ object BaseE2EBenchmark extends LazyLogging {
       nussknackerImageVersion = BuildInfo.version,
       dockerComposeTweakFiles = List(
         BaseE2EBenchmark.getClass.getResourceAsStream("/benchmark-setup.override.yml").toFile
-      )
+      ),
+      additionalEnv = Map.empty,
     )
 
 }

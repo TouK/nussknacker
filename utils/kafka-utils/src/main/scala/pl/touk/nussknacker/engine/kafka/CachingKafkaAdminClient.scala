@@ -14,71 +14,63 @@ class CachingKafkaAdminClient(
     usingKafkaAdminClient: UsingKafkaAdminClient
 ) extends LazyLogging {
 
-  def getOrFetchTopics: Set[UnspecializedTopicName] = Set.empty
+  def getOrFetchTopics: Set[UnspecializedTopicName] = {
+    caches.topicsCache.getOrCreate {
+      fetchFreshTopics
+    }
+  }
 
-  def getCachedTopics: Option[Set[UnspecializedTopicName]] = Some(Set.empty)
+  def getCachedTopics: Option[Set[UnspecializedTopicName]] = {
+    caches.topicsCache.get()
+  }
 
-  def fetchFreshTopicsAndCache: Set[UnspecializedTopicName] = Set.empty
+  def fetchFreshTopicsAndCache: Set[UnspecializedTopicName] = {
+    val topics = fetchFreshTopics
+    caches.topicsCache.put(topics)
+    topics
+  }
 
-  def getOrFetchAutoCreateTopicsSetting: Boolean = false
+  private def fetchFreshTopics: Set[UnspecializedTopicName] = {
+    logger.debug("Fetching topics from Kafka")
+    usingKafkaAdminClient { admin =>
+      admin
+        .listTopics(new ListTopicsOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
+        .names()
+        .get()
+        .asScala
+        .toSet
+        .map(UnspecializedTopicName.apply)
+    }
+  }
 
-//  def getOrFetchTopics: Set[UnspecializedTopicName] = {
-//    caches.topicsCache.getOrCreate {
-//      fetchFreshTopics
-//    }
-//  }
-//
-//  def getCachedTopics: Option[Set[UnspecializedTopicName]] = {
-//    caches.topicsCache.get()
-//  }
-//
-//  def fetchFreshTopicsAndCache: Set[UnspecializedTopicName] = {
-//    val topics = fetchFreshTopics
-//    caches.topicsCache.put(topics)
-//    topics
-//  }
-//
-//  private def fetchFreshTopics: Set[UnspecializedTopicName] = {
-//    logger.debug("Fetching topics from Kafka")
-//    usingKafkaAdminClient { admin =>
-//      admin
-//        .listTopics(new ListTopicsOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
-//        .names()
-//        .get()
-//        .asScala
-//        .toSet
-//        .map(UnspecializedTopicName.apply)
-//    }
-//  }
-//
-//  def getOrFetchAutoCreateTopicsSetting: Boolean = {
-//    caches.autoCreateTopicSettingCache.getOrCreate {
-//      logger.debug("Fetching auto.create.topics.enable setting from Kafka")
-//      usingKafkaAdminClient { admin =>
-//        val randomKafkaNodeId = admin
-//          .describeCluster(new DescribeClusterOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
-//          .nodes()
-//          .get()
-//          .asScala
-//          .head
-//          .id()
-//          .toString
-//        admin
-//          .describeConfigs(
-//            List(new ConfigResource(ConfigResource.Type.BROKER, randomKafkaNodeId)).asJava,
-//            new DescribeConfigsOptions().timeoutMs(adminClientTimeout.toMillis.toInt)
-//          )
-//          .values()
-//          .values()
-//          .asScala
-//          .map(_.get())
-//          .head // we ask for config of one node, but `describeConfigs` api have `List` of nodes, so here we got single element list
-//          .get("auto.create.topics.enable")
-//          .value()
-//          .toBoolean
-//      }
-//    }
-//  }
+  def getOrFetchAutoCreateTopicsSetting: Boolean = {
+    caches.autoCreateTopicSettingCache.getOrCreate {
+      logger.debug("Fetching auto.create.topics.enable setting from Kafka")
+      usingKafkaAdminClient { admin =>
+        val randomKafkaNodeId = admin
+          .describeCluster(new DescribeClusterOptions().timeoutMs(adminClientTimeout.toMillis.toInt))
+          .nodes()
+          .get()
+          .asScala
+          .head
+          .id()
+          .toString
+        admin
+          .describeConfigs(
+            List(new ConfigResource(ConfigResource.Type.BROKER, randomKafkaNodeId)).asJava,
+            new DescribeConfigsOptions().timeoutMs(adminClientTimeout.toMillis.toInt)
+          )
+          .values()
+          .values()
+          .asScala
+          .map(_.get())
+          .head // we ask for config of one node, but `describeConfigs` api have `List` of nodes, so here we got single element list
+          .get("auto.create.topics.enable")
+          .value()
+          .toBoolean
+      }
+    }
+  }
 
 }
 
