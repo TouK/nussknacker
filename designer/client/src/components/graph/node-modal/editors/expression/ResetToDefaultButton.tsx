@@ -2,8 +2,10 @@ import ResetToDefaultIcon from "@mui/icons-material/Replay";
 import { Menu, Button, Typography, Box } from "@mui/material";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import { SyntaxHighlighter } from "../../../../../common/SyntaxHighlighter";
+import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
 
 interface Props {
     defaultValue: string;
@@ -11,6 +13,9 @@ interface Props {
 }
 
 export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
+    const userSettings = useSelector(getUserSettings);
+    const showResetToDefaultButton = userSettings["editor.showResetToDefaultButton"];
+
     const { t } = useTranslation();
     const [anchorEl, setAnchorEl] = useState<null | SVGElement>(null);
 
@@ -26,6 +31,10 @@ export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
         handleChange(defaultValue);
         handleClose();
     };
+
+    if (!showResetToDefaultButton) {
+        return;
+    }
 
     return (
         <>
