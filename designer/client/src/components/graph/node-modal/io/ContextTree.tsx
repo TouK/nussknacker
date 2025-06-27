@@ -55,7 +55,6 @@ function DraggableValue({
         };
     }, [preview]);
 
-    console.log(isActive);
     return (
         <Box
             component="span"
