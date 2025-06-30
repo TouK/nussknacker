@@ -111,10 +111,10 @@ const getEditorContext = (session: Ace.EditSession, pos: Ace.Position, beforeCur
     const hasEmptyObjectAcrossLines = previousFirstChar === "{" && nextFirstChar === "}";
 
     // Just an opening brace (need to add closing brace)
-    const hasOpeningBraceOnly = beforeCursor.trimRight().endsWith("{") && !(nextFirstChar === "}" || afterCursor.includes("}"));
+    const hasOpeningBraceOnly = beforeCursor.trim() === "{" && afterCursor.trim() === "" && session.getLength() === 1;
 
     // Between properties (line ends with comma)
-    const isAfterComma = session.getLine(pos.row).trim().endsWith(",");
+    const isAfterComma = session.getLine(pos.row).trimRight().endsWith(",") && afterCursor.trim() === "";
 
     return {
         hasEmptyObject: hasEmptyObjectOnSameLine || hasEmptyObjectAcrossLines,
