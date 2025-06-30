@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
 import java.util.UUID
+import scala.collection.immutable
 
 // TODO: NU-1772
 //  - should be eventually replaced with pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
@@ -109,7 +110,7 @@ object ScenarioActionName extends Enum[ScenarioActionName] {
     case other              => ScenarioActionName.withName(other)
   }
 
-  override def values: scala.IndexedSeq[ScenarioActionName] = findValues
+  override def values: immutable.IndexedSeq[ScenarioActionName] = findValues
 
 }
 

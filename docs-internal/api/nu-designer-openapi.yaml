@@ -4198,21 +4198,6 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields: []
                       type: AUTOMATIC_UPDATE
-                    - id: 33509d37-7657-4229-940f-b5736c82fb13
-                      user: some user
-                      date: '2024-01-17T14:21:17Z'
-                      scenarioVersionId: 1
-                      comment:
-                        content:
-                          value: Execute special execution of scenario
-                          status: AVAILABLE
-                        lastModifiedBy: some user
-                        lastModifiedAt: '2024-01-17T14:21:17Z'
-                      additionalFields:
-                      - name: actionName
-                        value: special_execution
-                      overrideIcon: /assets/states/deploy-running-animated.svg
-                      type: CUSTOM_ACTION
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
