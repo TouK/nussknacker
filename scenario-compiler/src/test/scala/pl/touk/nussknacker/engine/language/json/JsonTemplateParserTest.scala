@@ -249,6 +249,65 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     }
   }
 
+  test("should allow to use Unknown type in field values where non-string value is expected") {
+    val jsonWithExpressionPlaceholderInUnquotedFieldValue =
+      """{
+        |  "field1": #{ #field1Value }
+        |}""".stripMargin
+    val validationContext = ValidationContext.empty.withVariableUnsafe("field1Value", Unknown)
+    val typedExpression   = parse[Any](jsonWithExpressionPlaceholderInUnquotedFieldValue, validationContext).validValue
+    typedExpression.typingInfo.typingResult shouldBe Typed.record(Seq("field1" -> Typed.json))
+
+    forAll(
+      Table(
+        ("test case", "field1Value"),
+        ("integer value", 1),
+        ("boolean value", true),
+        ("list value", List(1, 2, 3).asJava),
+        ("record value", Map("field2" -> 123).asJava),
+      )
+    ) { (_, field1Value) =>
+      typedExpression.expression
+        .evaluate[java.util.Map[String, Any]](
+          Context.dummy.withVariable("field1Value", field1Value),
+          globals = Map.empty
+        )
+        .asScala shouldBe Map("field1" -> field1Value).asJava
+    }
+  }
+
+  test("should allow to use Unknown type in list elements") {
+    val jsonWithExpressionPlaceholderInUnquotedFieldValue =
+      """[
+        |  #{ #listElement }
+        |]""".stripMargin
+    val validationContext = ValidationContext.empty.withVariableUnsafe("listElement", Unknown)
+    val typedExpression   = parse[Any](jsonWithExpressionPlaceholderInUnquotedFieldValue, validationContext).validValue
+    typedExpression.typingInfo.typingResult shouldBe Typed.genericTypeClass(
+      classOf[java.util.List[_]],
+      List(Typed.json)
+    )
+
+    forAll(
+      Table(
+        ("test case", "listElement"),
+        ("integer value", 1),
+        ("boolean value", true),
+        ("list value", List(1, 2, 3).asJava),
+        ("record value", Map("field2" -> 123).asJava),
+      )
+    ) { (_, listElement) =>
+      typedExpression.expression
+        .evaluate[java.util.List[Any]](
+          Context.dummy.withVariable("listElement", listElement),
+          globals = Map.empty
+        )
+        .asScala shouldBe List(listElement).asJava
+    }
+  }
+
+  // FIXME abr: test showing list with both known elements and unknown elements
+
   private def parse[T: TypeTag](
       jsonString: String,
       ctx: ValidationContext = ValidationContext.empty,

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{validNel, Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.parser
@@ -35,41 +35,35 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
       ctx: ValidationContext,
       expectedType: typing.TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    def validateExpectedType(parsed: TypedExpression) = {
+      Validated.condNel(
+        parsed.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType),
+        parsed,
+        JsonTemplateExpressionTypeError(expectedType, parsed.typingInfo.typingResult)
+      )
+    }
+
+    def convertSpelTemplateToJsonTemplate(spelTemplateExpression: TypedExpression) = {
+      extractJsonStringFromParsedExpression(
+        spelTemplateExpression.expression,
+        new WithContextValidationSpelExpressionConverter(spelParser, ctx)
+      ).andThen(JsonParser.parse(_, ctx, expectedType))
+        .map { typedJsonExpression =>
+          TypedExpression(
+            new CompiledJsonTemplateExpression(
+              original,
+              spelTemplateExpression.expression,
+              expectedType
+            ),
+            new JsonTemplateExpressionTypingInfo(typedJsonExpression.typingInfo),
+          )
+        }
+    }
+
     spelTemplateParser
       .parse(original, ctx, stringTypingResult)
-      .andThen { parsedSpelTemplateExpression =>
-        extractJsonStringFromParsedExpression(
-          parsedSpelTemplateExpression.expression,
-          new WithContextValidationSpelExpressionConverter(spelParser, ctx)
-        )
-          .andThen { jsonString =>
-            JsonParser
-              .parse(jsonString, ctx, expectedType)
-          }
-          .andThen { parsed =>
-            if (parsed.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType)) {
-              Valid(parsed)
-            } else {
-              Invalid(
-                NonEmptyList.of(
-                  JsonTemplateExpressionTypeError(
-                    expectedType,
-                    parsed.typingInfo.typingResult,
-                  )
-                )
-              )
-            }
-          }
-          .map { jsonTypeExpression =>
-            parsedSpelTemplateExpression -> jsonTypeExpression
-          }
-      }
-      .map { case (templateTypeExpression, jsonTypeExpression) =>
-        TypedExpression(
-          new CompiledJsonTemplateExpression(languageId, original, templateTypeExpression.expression, expectedType),
-          new JsonTemplateExpressionTypingInfo(jsonTypeExpression.typingInfo),
-        )
-      }
+      .andThen(convertSpelTemplateToJsonTemplate)
+      .andThen(validateExpectedType)
   }
 
   override def parseWithoutContextValidation(
@@ -86,7 +80,7 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
         .map { _ => parsedSpelTemplateExpression }
     }
     .map { templateTypeExpression =>
-      new CompiledJsonTemplateExpression(languageId, original, templateTypeExpression, expectedType)
+      new CompiledJsonTemplateExpression(original, templateTypeExpression, expectedType)
     }
 
   private def extractJsonStringFromParsedExpression(
@@ -126,13 +120,12 @@ object JsonTemplateParser {
   private val stringTypingResult = Typed.typedClass[String]
 
   private class CompiledJsonTemplateExpression(
-      languageId: Language,
       originalJsonString: String,
       templateCompiledExpression: CompiledExpression,
       expectedType: typing.TypingResult
   ) extends CompiledExpression {
 
-    override def language: Language = languageId
+    override def language: Language = Expression.Language.JsonTemplate
 
     override def original: String = originalJsonString
 
@@ -173,6 +166,7 @@ object JsonTemplateParser {
     val placeHolderForFloatingPointNumber: String = "0.5"
     val placeHolderForBoolean: String             = "true"
     val placeHolderForString: String              = "unquoted string"
+    val specialMarkerForUnknownTypes: String      = """{"$nu$":1}"""
   }
 
   class WithContextValidationSpelExpressionConverter(spelParser: SpelExpressionParser, context: ValidationContext)
@@ -191,11 +185,11 @@ object JsonTemplateParser {
           case clazz if TypeValueDeterminer.isFloatingPointNumber(clazz) => placeHolderForFloatingPointNumber
           case clazz if TypeValueDeterminer.isBoolean(clazz)             => placeHolderForBoolean
           case clazz if TypeValueDeterminer.isString(clazz)              => placeHolderForString
-          // For now, complex types are treated as String. In runtime, .toString is invoked on these types.
-          case _ => placeHolderForString
+          // We have to mark unknown types with some special marker to type them correctly in the next stage
+          case _ => specialMarkerForUnknownTypes
         }
-      // For now, complex types are treated as String. In runtime, .toString is invoked on these types.
-      case _ => placeHolderForString
+      // We have to mark unknown types with some special marker to type them correctly in the next stage
+      case _ => specialMarkerForUnknownTypes
     }
 
   }
