@@ -765,30 +765,6 @@ object Dtos {
       additionalFields = List.empty,
     )
 
-    def forCustomAction(
-        id: UUID,
-        user: String,
-        date: Instant,
-        scenarioVersionId: Option[Long],
-        comment: ScenarioActivityComment,
-        actionName: String,
-        customIcon: Option[String],
-        errorMessage: Option[String],
-    ): ScenarioActivity = ScenarioActivity(
-      id = id,
-      `type` = ScenarioActivityType.CustomAction,
-      user = user,
-      date = date,
-      scenarioVersionId = scenarioVersionId,
-      comment = Some(comment),
-      attachment = None,
-      additionalFields = List(
-        Some(AdditionalField("actionName", actionName)),
-        errorMessage.map(e => AdditionalField("errorMessage", e)),
-      ).flatten,
-      overrideIcon = customIcon,
-    )
-
   }
 
   @derive(encoder, decoder, schema)

@@ -28,7 +28,6 @@ object ScenarioActivityUtils {
         case _: ScenarioActivity.PerformedSingleExecution    => ScenarioActivityType.PerformedSingleExecution
         case _: ScenarioActivity.PerformedScheduledExecution => ScenarioActivityType.PerformedScheduledExecution
         case _: ScenarioActivity.AutomaticUpdate             => ScenarioActivityType.AutomaticUpdate
-        case activity: ScenarioActivity.CustomAction         => ScenarioActivityType.CustomAction(activity.actionName)
       }
     }
 
@@ -58,7 +57,6 @@ object ScenarioActivityUtils {
         case activity: ScenarioActivity.PerformedSingleExecution    => activity.comment.lastModifiedAt
         case activity: ScenarioActivity.PerformedScheduledExecution => activity.date
         case activity: ScenarioActivity.AutomaticUpdate             => activity.date
-        case activity: ScenarioActivity.CustomAction                => activity.comment.lastModifiedAt
       }
     }
 

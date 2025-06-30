@@ -339,17 +339,4 @@ object ScenarioActivity {
       changes: String,
   ) extends ScenarioActivity
 
-  // Other
-
-  final case class CustomAction(
-      scenarioId: ScenarioId,
-      scenarioActivityId: ScenarioActivityId,
-      user: ScenarioUser,
-      date: Instant,
-      scenarioVersionId: Option[ScenarioVersionId],
-      actionName: String,
-      comment: ScenarioComment,
-      result: DeploymentResult,
-  ) extends DeploymentRelatedActivity
-
 }

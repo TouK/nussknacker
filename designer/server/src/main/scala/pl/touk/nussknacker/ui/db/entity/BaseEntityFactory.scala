@@ -32,7 +32,7 @@ trait BaseEntityFactory extends LazyLogging {
     MappedColumnType.base[ProcessActionId, UUID](_.value, ProcessActionId.apply)
 
   implicit def scenarioActionName: BaseColumnType[ScenarioActionName] =
-    MappedColumnType.base[ScenarioActionName, String](_.toString, ScenarioActionName.apply)
+    MappedColumnType.base[ScenarioActionName, String](_.toString, ScenarioActionName.withName)
 
   implicit def processActionState: BaseColumnType[ProcessActionState] =
     MappedColumnType.base[ProcessActionState, String](_.toString, ProcessActionState.withName)

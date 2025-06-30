@@ -487,29 +487,6 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           changes = changes,
         )
-      case ScenarioActivity.CustomAction(
-            _,
-            scenarioActivityId,
-            user,
-            date,
-            scenarioVersionId,
-            actionName,
-            comment,
-            result,
-          ) =>
-        Dtos.ScenarioActivity.forCustomAction(
-          id = scenarioActivityId.value,
-          user = user.name.value,
-          date = date,
-          scenarioVersionId = scenarioVersionId.map(_.value),
-          actionName = actionName,
-          comment = toDto(comment),
-          customIcon = None,
-          errorMessage = result match {
-            case DeploymentResult.Success(_)               => None
-            case DeploymentResult.Failure(_, errorMessage) => errorMessage
-          },
-        )
     }
   }
 
