@@ -52,7 +52,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
         editorMode,
         placeholder,
         language = editorsParameters.SpelParameterEditor.language,
-        param: { defaultValue },
+        param,
     } = props;
 
     const handleChange = useCallback(
@@ -112,9 +112,9 @@ Use autocompletion to explore available options. To read more see [Documentation
         }
 
         if (editorMode === EditorMode.JsonTemplate && !readOnly) {
-            const defaultExpressionExists = defaultValue.expression;
-            const defaultExpressionIsDifferentThanCurrentValue = defaultValue.expression !== props.expressionObj.expression;
-            const showResetToDefaultButton = defaultExpressionExists && defaultExpressionIsDifferentThanCurrentValue;
+            const defaultValue = param?.defaultValue?.expression;
+            const defaultValueIsDifferentThanCurrentValue = defaultValue !== props.expressionObj.expression;
+            const showResetToDefaultButton = defaultValue && defaultValueIsDifferentThanCurrentValue;
 
             properties.placeholder = placeholder || t("editors.jsonTemplateEditor.placeholder", 'e.g. { "key": "#{ #input.value }" }');
             properties.InputAdornmentEnd = (
@@ -127,9 +127,7 @@ Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When acc
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                         )}
                     />
-                    {defaultExpressionIsDifferentThanCurrentValue && showResetToDefaultButton && (
-                        <ResetToDefaultButton defaultValue={defaultValue.expression} handleChange={handleChange} />
-                    )}
+                    {showResetToDefaultButton && <ResetToDefaultButton defaultValue={defaultValue} handleChange={handleChange} />}
                 </Box>
             );
         }
@@ -150,7 +148,7 @@ Use autocompletion to explore available options. To read more see [Documentation
         expressionObj.language,
         placeholder,
         t,
-        defaultValue.expression,
+        param?.defaultValue?.expression,
         props.expressionObj.expression,
     ]);
 
