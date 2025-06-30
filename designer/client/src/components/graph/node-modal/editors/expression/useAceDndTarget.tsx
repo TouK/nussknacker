@@ -22,7 +22,7 @@ function jsonToSpelString(value: any): string {
 
     if (typeof value === "object") {
         const entries = Object.entries(value).map(([key, val]) => [key.match(/\s/) ? `"${key}"` : key, jsonToSpelString(val)].join(": "));
-        return `{${entries.join(", ")}}`;
+        return `{ ${entries.join(", ")} }`;
     }
 
     throw new Error(`Unsupported type: ${typeof value}`);
@@ -33,8 +33,7 @@ export const getPathString = memoizeByArgsWithTTL((item: KeyPath = []): string =
         .map((key, index) => {
             if (index === 0) return `${key}`;
             if (typeof key === "number") return `[${key}]`;
-            if (key.match(/\s/)) return `["${key}"]`;
-            return `.${key}`;
+            return `["${key}"]`;
         })
         .join("");
 });
@@ -46,7 +45,7 @@ const getTextToInsert = memoizeByArgsWithTTL((item: SpelDndContext, language: Ex
             switch (language) {
                 case ExpressionLang.JsonTemplate:
                 case ExpressionLang.SpELTemplate:
-                    return `#{#${path}}`;
+                    return `#{ #${path} }`;
                 case ExpressionLang.SpEL:
                     return `#${path}`;
                 default:
