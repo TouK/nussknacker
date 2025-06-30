@@ -83,32 +83,18 @@ object ScenarioActionName extends Enum[ScenarioActionName] {
   implicit val keyEncoder: KeyEncoder[ScenarioActionName] = KeyEncoder.encodeKeyString.contramap(_.value)
   implicit val keyDecoder: KeyDecoder[ScenarioActionName] = KeyDecoder.decodeKeyString.map(ScenarioActionName.withName)
 
-  case object Deploy    extends ScenarioActionName("DEPLOY")
-  case object Redeploy  extends ScenarioActionName("REDEPLOY")
-  case object Cancel    extends ScenarioActionName("CANCEL")
-  case object Archive   extends ScenarioActionName("ARCHIVE")
-  case object UnArchive extends ScenarioActionName("UNARCHIVE")
-  // TODO remove unused action
-  case object Pause  extends ScenarioActionName("PAUSE") // TODO: To implement in future..
-  case object Rename extends ScenarioActionName("RENAME")
-  // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.
-  //       In the future it can be changed to better name, according to convention, but that would require database migration
-  //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
-  case object RunOffSchedule extends ScenarioActionName("run now") // Compatibility note
+  case object Deploy         extends ScenarioActionName("DEPLOY")
+  case object Redeploy       extends ScenarioActionName("REDEPLOY")
+  case object Cancel         extends ScenarioActionName("CANCEL")
+  case object Archive        extends ScenarioActionName("ARCHIVE")
+  case object UnArchive      extends ScenarioActionName("UNARCHIVE")
+  case object Pause          extends ScenarioActionName("PAUSE") // TODO: remove unused action or implement in future..
+  case object Rename         extends ScenarioActionName("RENAME")
+  case object RunOffSchedule extends ScenarioActionName("RUN_OFF_SCHEDULE")
 
   val DefaultActions: Set[ScenarioActionName] = Set.empty
 
   val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Redeploy)
-
-  def serialize(name: ScenarioActionName): String = name match {
-    case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"
-    case other                             => other.value
-  }
-
-  def deserialize(str: String): ScenarioActionName = str match {
-    case "RUN_OFF_SCHEDULE" => ScenarioActionName.RunOffSchedule
-    case other              => ScenarioActionName.withName(other)
-  }
 
   override def values: immutable.IndexedSeq[ScenarioActionName] = findValues
 

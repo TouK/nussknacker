@@ -91,13 +91,12 @@ object ScenarioStatusDto {
   implicit val scenarioVersionIdDecoder: Decoder[ScenarioVersionId] = Decoder.decodeLong.map(ScenarioVersionId.apply)
 
   implicit val scenarioActionNameEncoder: Encoder[ScenarioActionName] =
-    Encoder.encodeString.contramap(ScenarioActionName.serialize)
+    Encoder.encodeString.contramap(_.entryName)
   implicit val scenarioActionNameDecoder: Decoder[ScenarioActionName] =
-    Decoder.decodeString.map(ScenarioActionName.deserialize)
+    Decoder.decodeString.map(ScenarioActionName.withName)
 
   implicit val scenarioActionNameKeyDecoder: KeyDecoder[ScenarioActionName] =
-    (key: String) => Some(ScenarioActionName.deserialize(key))
-  implicit val scenarioActionNameKeyEncoder: KeyEncoder[ScenarioActionName] = (name: ScenarioActionName) =>
-    ScenarioActionName.serialize(name)
+    (key: String) => Some(ScenarioActionName.withName(key))
+  implicit val scenarioActionNameKeyEncoder: KeyEncoder[ScenarioActionName] = _.entryName
 
 }
