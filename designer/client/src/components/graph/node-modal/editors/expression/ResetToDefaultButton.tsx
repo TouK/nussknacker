@@ -33,7 +33,7 @@ export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
     };
 
     if (!showResetToDefaultButton) {
-        return;
+        return null;
     }
 
     return (
