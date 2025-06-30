@@ -46,6 +46,7 @@ class PeriodicProcessServiceTest
 
   implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
+  private val processId    = ProcessId(1)
   private val processName  = ProcessName("test")
   private val yearNow      = LocalDate.now().get(ChronoField.YEAR)
   private val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
@@ -59,7 +60,7 @@ class PeriodicProcessServiceTest
   private val processVersion = ProcessVersion(
     versionId = VersionId(1),
     processName = processName,
-    processId = ProcessId(1),
+    processId = processId,
     labels = List.empty,
     user = "testUser",
     modelVersion = None,
@@ -134,11 +135,13 @@ class PeriodicProcessServiceTest
   test("findToBeDeployed - should return scheduled and to be retried scenarios") {
     val fWithNoRetries = new Fixture
     fWithNoRetries.repository.addActiveProcess(
+      processId,
       processName,
       PeriodicProcessDeploymentStatus.FailedOnDeploy,
       deployMaxRetries = 0
     )
     val scheduledId1 = fWithNoRetries.repository.addActiveProcess(
+      processId,
       processName,
       PeriodicProcessDeploymentStatus.Scheduled,
       deployMaxRetries = 0
@@ -147,11 +150,13 @@ class PeriodicProcessServiceTest
 
     val fWithRetries = new Fixture
     val failedId2 = fWithRetries.repository.addActiveProcess(
+      processId,
       processName,
       PeriodicProcessDeploymentStatus.FailedOnDeploy,
       deployMaxRetries = 1
     )
     val scheduledId2 = fWithRetries.repository.addActiveProcess(
+      processId,
       processName,
       PeriodicProcessDeploymentStatus.Scheduled,
       deployMaxRetries = 1
@@ -161,7 +166,12 @@ class PeriodicProcessServiceTest
 
   test("findToBeDeployed - should not return scenarios with different processing type") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
+    f.repository.addActiveProcess(
+      processId,
+      processName,
+      PeriodicProcessDeploymentStatus.Scheduled,
+      processingType = "other"
+    )
 
     f.periodicProcessService.findToBeDeployed.futureValue shouldBe Symbol("empty")
   }
@@ -170,6 +180,7 @@ class PeriodicProcessServiceTest
   test("handleFinished - should reschedule scenario if Flink job is missing") {
     val f = new Fixture
     f.repository.addActiveProcess(
+      processId,
       processName,
       PeriodicProcessDeploymentStatus.Deployed,
       runAt = LocalDateTime.now().minusMinutes(11),
@@ -198,6 +209,7 @@ class PeriodicProcessServiceTest
   test("handleFinished - shouldn't reschedule scenario if Flink job is missing but not deployed for long enough") {
     val f = new Fixture
     f.repository.addActiveProcess(
+      processId,
       processName,
       PeriodicProcessDeploymentStatus.Deployed,
       runAt = LocalDateTime.now().minusSeconds(11),
@@ -223,6 +235,7 @@ class PeriodicProcessServiceTest
     val processActionId = randomProcessActionId
     val deploymentId =
       f.repository.addActiveProcess(
+        processId,
         processName,
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
@@ -262,6 +275,7 @@ class PeriodicProcessServiceTest
     val processActionId = randomProcessActionId
     val deploymentId =
       f.repository.addActiveProcess(
+        processId,
         processName,
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
@@ -282,6 +296,7 @@ class PeriodicProcessServiceTest
     val f               = new Fixture
     val processActionId = randomProcessActionId
     val deploymentId = f.repository.addActiveProcess(
+      processId,
       processName,
       PeriodicProcessDeploymentStatus.Deployed,
       scheduleProperty = cronInPast,
@@ -318,7 +333,7 @@ class PeriodicProcessServiceTest
   test("handleFinished - should not deactivate process if there is future schedule") {
     val f                 = new Fixture
     val scheduleProperty  = MultipleScheduleProperty(Map("schedule1" -> cronInPast, "schedule2" -> cronInFuture))
-    val periodicProcessId = f.repository.addOnlyProcess(processName, scheduleProperty)
+    val periodicProcessId = f.repository.addOnlyProcess(processId, processName, scheduleProperty)
     f.repository.addOnlyDeployment(
       periodicProcessId,
       status = PeriodicProcessDeploymentStatus.Deployed,
@@ -343,7 +358,12 @@ class PeriodicProcessServiceTest
 
   test("handleFinished - should not reschedule scenario with different processing type") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed, processingType = "other")
+    f.repository.addActiveProcess(
+      processId,
+      processName,
+      PeriodicProcessDeploymentStatus.Deployed,
+      processingType = "other"
+    )
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -379,7 +399,7 @@ class PeriodicProcessServiceTest
 
   test("handleFinished - should mark as failed for failed Flink job") {
     val f            = new Fixture
-    val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    val deploymentId = f.repository.addActiveProcess(processId, processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateDeploymentManagerStub.setDeploymentStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
@@ -401,7 +421,7 @@ class PeriodicProcessServiceTest
 
   test("deploy - should deploy and mark as so") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
+    f.repository.addActiveProcess(processId, processName, PeriodicProcessDeploymentStatus.Scheduled)
     val toSchedule = createPeriodicProcessDeployment(
       f.repository.processEntities.loneElement,
       f.repository.deploymentEntities.loneElement,
@@ -423,7 +443,7 @@ class PeriodicProcessServiceTest
 
   test("deploy - should handle failed deployment") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
+    f.repository.addActiveProcess(processId, processName, PeriodicProcessDeploymentStatus.Scheduled)
     f.scheduledExecutionPerformerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     val toSchedule = createPeriodicProcessDeployment(
       f.repository.processEntities.loneElement,
@@ -517,7 +537,7 @@ class PeriodicProcessServiceTest
         val f                 = new Fixture
         val now               = LocalDateTime.now()
         val scheduleProperty  = MultipleScheduleProperty(Map("schedule1" -> cronInPast, "schedule2" -> cronInFuture))
-        val periodicProcessId = f.repository.addOnlyProcess(processName, scheduleProperty)
+        val periodicProcessId = f.repository.addOnlyProcess(processId, processName, scheduleProperty)
         statuses.zip(schedules).zipWithIndex.foreach { case ((status, schedule), index) =>
           f.repository.addOnlyDeployment(
             periodicProcessId,

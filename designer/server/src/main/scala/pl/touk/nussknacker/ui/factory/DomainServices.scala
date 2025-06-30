@@ -161,7 +161,6 @@ object DomainServices extends LazyLogging {
           futureProcessRepository
         )
       fetchScenarioActivityService = new FetchScenarioActivityService(
-        dmDispatcher,
         scenarioActivityRepository,
         futureProcessRepository,
         dbioRunner,

@@ -32,7 +32,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessReposito
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
-import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
@@ -111,25 +110,6 @@ class PeriodicProcessServiceIntegrationTest
       ).asJava
     )
 
-    def runWithLegacyRepository(dbConfig: Config): Unit = {
-      val (db, profile) = LegacyDbInitializer.init(dbConfig)
-      val creator = (processingType: String, currentTime: Instant) =>
-        new SlickLegacyPeriodicProcessesRepository(
-          processingType,
-          db,
-          profile,
-          fixedClock(currentTime),
-          fetchingProcessRepository,
-        )
-      try {
-        testCode(
-          new Fixture(creator, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
-        )
-      } finally {
-        db.close()
-      }
-    }
-
     def runTestCodeWithNuDb(): Unit = {
       val creator = (processingType: String, currentTime: Instant) =>
         new SlickPeriodicProcessesRepository(
@@ -145,12 +125,6 @@ class PeriodicProcessServiceIntegrationTest
     }
 
     def testHeader(str: String) = "\n\n" + "#" * 100 + s"\n##### $str\n" + "#" * 100 + "\n"
-    logger.info(testHeader("Running test with legacy hsql-based repository"))
-    runWithLegacyRepository(hsqlConfig)
-    cleanDB()
-    logger.info(testHeader("Running test with legacy postgres-based repository"))
-    runWithLegacyRepository(postgresConfig)
-    cleanDB()
     logger.info(testHeader("Running test with Nu database"))
     runTestCodeWithNuDb()
     cleanDB()

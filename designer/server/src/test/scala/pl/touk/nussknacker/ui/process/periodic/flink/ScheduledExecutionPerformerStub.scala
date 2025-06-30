@@ -21,7 +21,7 @@ class ScheduledExecutionPerformerStub extends ScheduledExecutionPerformer {
   ): Future[DeploymentWithRuntimeParams] = {
     Future.successful(
       DeploymentWithRuntimeParams(
-        processId = Some(processVersion.processId),
+        processId = processVersion.processId,
         processName = processVersion.processName,
         versionId = processVersion.versionId,
         runtimeParams = RuntimeParams(Map("jarFileName" -> ""))

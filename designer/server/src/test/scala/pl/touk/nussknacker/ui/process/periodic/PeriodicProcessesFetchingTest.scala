@@ -8,7 +8,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
@@ -36,6 +36,8 @@ class PeriodicProcessesFetchingTest
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private def processName(n: Int) = ProcessName(s"test$n")
+
+  private def processId(n: Int) = ProcessId(n)
 
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
     val processingType                  = "testProcessingType"
@@ -79,7 +81,7 @@ class PeriodicProcessesFetchingTest
 
     for (i <- 1 to n) {
       val deploymentId =
-        f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
+        f.repository.addActiveProcess(processId(i), processName(i), PeriodicProcessDeploymentStatus.Deployed)
       f.delegateDeploymentManagerStub.addStateStatus(
         processName(i),
         SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),
@@ -108,7 +110,7 @@ class PeriodicProcessesFetchingTest
 
     for (i <- 1 to n) {
       val deploymentId =
-        f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
+        f.repository.addActiveProcess(processId(i), processName(i), PeriodicProcessDeploymentStatus.Deployed)
       f.delegateDeploymentManagerStub.addStateStatus(
         processName(i),
         SimpleStateStatus.Running(VersionId(1), startedAt = Instant.now()),

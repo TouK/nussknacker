@@ -66,7 +66,7 @@ class NotificationServiceImpl(
       case NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName) =>
         for {
           userAndGlobalNotifications         <- fetchUserAndGlobalNotifications(user)
-          notificationsForScenarioActivities <- notificationsForScenarioActivities(user, processName, limit)
+          notificationsForScenarioActivities <- notificationsForScenarioActivities(processName, limit)
         } yield userAndGlobalNotifications ++ notificationsForScenarioActivities
     }
 
@@ -100,11 +100,11 @@ class NotificationServiceImpl(
       })
   }
 
-  private def notificationsForScenarioActivities(user: LoggedUser, processName: ProcessName, limit: Instant)(
+  private def notificationsForScenarioActivities(processName: ProcessName, limit: Instant)(
       implicit ec: ExecutionContext
   ): Future[List[Notification]] = {
     for {
-      allActivities <- fetchScenarioActivityService.fetchActivities(processName, Some(limit))(user).value.map {
+      allActivities <- fetchScenarioActivityService.fetchActivities(processName, Some(limit)).value.map {
         case Right(activities) => activities
         case Left(_)           => List.empty
       }

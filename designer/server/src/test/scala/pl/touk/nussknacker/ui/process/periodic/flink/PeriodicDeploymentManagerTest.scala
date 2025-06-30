@@ -211,7 +211,12 @@ class PeriodicDeploymentManagerTest
   test("getScenarioStatus - should return not deployed for scenario with different processing type") {
     val f       = new Fixture
     val version = f.saveScenario()
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
+    f.repository.addActiveProcess(
+      version.processId,
+      processName,
+      PeriodicProcessDeploymentStatus.Scheduled,
+      processingType = "other"
+    )
 
     val state = f.getScenarioStatus(version.processId).mergedStatus
 
@@ -253,9 +258,11 @@ class PeriodicDeploymentManagerTest
   }
 
   test("getScenarioStatus - should be finished when scenario finished and job finished on Flink") {
-    val f = new Fixture
+    val f       = new Fixture
+    val version = f.saveScenario()
     // We use repository/periodicDeploymentManager directly because run deployment won't accept date in past
-    val periodicProcessId = f.repository.addOnlyProcess(processName, CronScheduleProperty("0 0 0 1 1 ? 1970"))
+    val periodicProcessId =
+      f.repository.addOnlyProcess(version.processId, processName, CronScheduleProperty("0 0 0 1 1 ? 1970"))
     val deploymentId = f.repository.addOnlyDeployment(
       periodicProcessId,
       PeriodicProcessDeploymentStatus.Finished,
@@ -368,7 +375,7 @@ class PeriodicDeploymentManagerTest
   test("deploy - should not cancel current schedule after trying to deploy with past date") {
     val f       = new Fixture
     val version = f.saveScenario()
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
+    f.repository.addActiveProcess(version.processId, processName, PeriodicProcessDeploymentStatus.Scheduled)
 
     f.periodicDeploymentManager
       .processCommand(
