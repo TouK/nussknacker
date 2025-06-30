@@ -3,7 +3,6 @@ import type { Theme } from "@mui/material";
 import "react-datetime/css/react-datetime.css";
 import { nodeInput, rowAceEditor } from "../../components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { blendDarken, blendLighten, getBorderColor } from "./helpers";
-
 const aceEditorStyles = (theme: Theme) => ({
     ".ace_tooltip.ace_dark": {
         ...theme.typography.body2,
@@ -163,6 +162,9 @@ const aceEditorStyles = (theme: Theme) => ({
                 marginBottom: "5px",
             },
         },
+    },
+    ".ace-nussknacker .ace_jsonTemplate, .ace_spelTemplate": {
+        color: "#00BFA5",
     },
 });
 
