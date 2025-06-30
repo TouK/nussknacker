@@ -7,7 +7,6 @@ import { useDispatch, useSelector } from "react-redux";
 import urljoin from "url-join";
 
 import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk";
-import { Initiator, startLiveData } from "../../../../actions/nk/liveData";
 import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
@@ -152,7 +151,6 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
     useEffect(() => {
         dispatch(takeHistorySnapshot());
         return () => {
-            dispatch(startLiveData(Initiator.list));
             dispatch(removeHistorySnapshot());
         };
     }, [dispatch]);
