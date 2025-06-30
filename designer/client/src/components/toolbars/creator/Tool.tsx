@@ -5,13 +5,10 @@ import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
 import type { NodeType } from "../../../types";
+import { DndTypes } from "../../DndTypes";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
 import { ComponentIcon } from "./ComponentIcon";
 import { SearchHighlighter } from "./SearchHighlighter";
-
-export const DndTypes = {
-    ELEMENT: "element",
-};
 
 type OwnProps = {
     nodeModel: NodeType;
@@ -21,7 +18,7 @@ type OwnProps = {
     tooltip?: string;
 };
 
-export default function Tool(props: OwnProps): JSX.Element {
+export default function Tool(props: OwnProps): React.JSX.Element {
     const { label, nodeModel, highlights = [], disabled, tooltip } = props;
     const [, drag, preview] = useDrag(() => ({
         type: DndTypes.ELEMENT,
