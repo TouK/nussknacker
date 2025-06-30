@@ -33,6 +33,12 @@ export const liveData: Reducer<LiveData> = (state = {}, action) => {
                     : state.pauseReasons,
             };
         }
+        case "CLEAR_PROCESS": {
+            return {
+                ...state,
+                pauseReasons: [],
+            };
+        }
         case "LIVE_DATA_START": {
             return {
                 ...state,

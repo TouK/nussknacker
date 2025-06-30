@@ -11,6 +11,7 @@ export enum Initiator {
     list = "list",
     inputAccordion = "input_accordion",
     outputAccordion = "output_accordion",
+    errorHandler = "error",
 }
 
 export type LiveDataActions =
@@ -33,24 +34,28 @@ function fetchAndDisplayLiveData(showErrors = false, refresh = REFRESH_TIME): Th
         async function perform(showErrors = false) {
             dispatch({ type: "FETCH_LIVE_DATA" });
             const scenario = getScenario(getState());
-            const { data: results } = await HttpService.fetchProcessLiveData(scenario.name, showErrors);
+            try {
+                const { data: results } = await HttpService.fetchProcessLiveData(scenario.name, showErrors);
 
-            const state = getState();
-            if (!(isReadyForLiveData(state) && getIsLiveDataWorking(state))) {
-                dispatch(stopLiveData());
-                return;
+                const state = getState();
+                if (!(isReadyForLiveData(state) && getIsLiveDataWorking(state))) {
+                    dispatch(stopLiveData());
+                    return;
+                }
+
+                if (intervalId && [VisibleDataType.test, VisibleDataType.counts].includes(getVisibleDataType(state))) {
+                    dispatch(stopLiveData(Initiator.tests));
+                    return;
+                }
+
+                dispatch({
+                    type: "DISPLAY_LIVE_DATA",
+                    results,
+                    nextIn: REFRESH_TIME,
+                });
+            } catch (error) {
+                dispatch(stopLiveData(Initiator.errorHandler));
             }
-
-            if (intervalId && [VisibleDataType.test, VisibleDataType.counts].includes(getVisibleDataType(state))) {
-                dispatch(stopLiveData(Initiator.tests));
-                return;
-            }
-
-            dispatch({
-                type: "DISPLAY_LIVE_DATA",
-                results,
-                nextIn: REFRESH_TIME,
-            });
         }
 
         perform(showErrors);
