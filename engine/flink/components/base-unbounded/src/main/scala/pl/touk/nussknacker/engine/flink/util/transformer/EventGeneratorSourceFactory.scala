@@ -77,7 +77,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @DefaultValue(
         value =
-          "{\n\t\"sampleField\": \"#{#UTIL.uuid()}\",\n\t\"dateTime\": \"#{#DATE_FORMAT.format(#DATE.now)}\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
+          "{\n\t\"sampleField\": \"#{ #UTIL.uuid() }\",\n\t\"dateTime\": \"#{ #DATE_FORMAT.format(#DATE.now) }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
         language = ExpressionLanguage.JSON_TEMPLATE
       )
       @ParamName("value")
