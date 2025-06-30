@@ -31,7 +31,8 @@ object FlinkDeploymentManagerProviderHelper {
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        ComponentDefinitionExtractionMode.FinalDefinition,
+        componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition,
+        designerDbRef = None
       ),
       modelClassLoader
     )

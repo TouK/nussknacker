@@ -4,7 +4,13 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentDependencies,
+  ComponentId,
+  DesignerWideComponentId
+}
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.modelinfo.ModelInfo
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -31,9 +37,9 @@ object ModelData extends LazyLogging {
   type ExtractDefinitionFun =
     (
         ClassLoader,
-        ModelConfig,
+        ComponentDependencies,
         ComponentId => DesignerWideComponentId,
-        Map[DesignerWideComponentId, ComponentAdditionalConfig]
+        Map[DesignerWideComponentId, ComponentAdditionalConfig],
     ) => ModelDefinition
 
   def apply(
@@ -47,7 +53,8 @@ object ModelData extends LazyLogging {
       Some(processingTypeConfig.category),
       dependencies.determineDesignerWideId,
       dependencies.additionalConfigsFromProvider,
-      dependencies.componentDefinitionExtractionMode
+      dependencies.componentDefinitionExtractionMode,
+      dependencies.designerDbRef
     )
   }
 
@@ -64,7 +71,7 @@ object ModelData extends LazyLogging {
   }
 
   // On the runtime side, we get only model config, not the whole processing type config,
-  // so we don't have category, processingType and additionalConfigsFromProvider
+  // so we don't have category, processingType, additionalConfigsFromProvider and designerDbRef
   // But it is not a big deal, because scenario was already validated before deploy, so we already check that
   // we don't use not allowed components for a given category
   // and that the scenario doesn't violate validators introduced by additionalConfigsFromProvider
@@ -89,7 +96,8 @@ object ModelData extends LazyLogging {
       category = None,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
       additionalConfigsFromProvider = modelConfigs.additionalModelConfigs.additionalConfigsFromProvider,
-      componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition
+      componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition,
+      designerDbRef = None
     )
   }
 
@@ -117,7 +125,8 @@ final case class ModelDependencies(
     additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
     workingDirectoryOpt: Option[Path],
-    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+    designerDbRef: Option[DbRef]
 )
 
 case class ClassLoaderModelData private (
@@ -127,6 +136,7 @@ case class ClassLoaderModelData private (
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+    override val designerDbRef: Option[DbRef]
 ) extends ModelData
     with LazyLogging {
 
@@ -185,14 +195,14 @@ object ClassLoaderModelData {
 
     override def apply(
         classLoader: ClassLoader,
-        modelConfig: ModelConfig,
+        componentDependencies: ComponentDependencies,
         determineDesignerWideId: ComponentId => DesignerWideComponentId,
-        additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+        additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     ): ModelDefinition = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
-        modelConfig,
+        componentDependencies,
         category,
         determineDesignerWideId,
         additionalConfigsFromProvider,
@@ -222,20 +232,22 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   def additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 
+  def designerDbRef: Option[DbRef]
+
   final lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
     val modelDefinitions = withModelClassloaderAsContextClassLoader {
       extractModelDefinitionFun(
         modelClassLoader,
-        modelConfig,
+        ComponentDependencies(modelConfig, designerDbRef),
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
       )
     }
     ModelDefinitionWithClasses(modelDefinitions)
   }
 
   // This has to be a function instead of method to explicitly define what scope will be serializable by Flink.
-  // See parameters of implementing functions
+  // See constructor parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
   final def modelDefinition: ModelDefinition =

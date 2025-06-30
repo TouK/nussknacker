@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.version
 
 import db.util.DBIOActionInstances.{toEffectAll, DB}
+import pl.touk.nussknacker.engine.api.db.{DbRef, NuJdbcProfile}
 import pl.touk.nussknacker.engine.api.process.ProcessId
-import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef, NuJdbcProfile}
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 

@@ -4,8 +4,8 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.db.{NuHsqldbProfile, NuJdbcProfile, NuPostgresProfile}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.customhttpservice.services.{NuHsqldbProfile, NuJdbcProfile, NuPostgresProfile}
 import pl.touk.nussknacker.ui.db.NuTables
 import slick.jdbc.{HsqldbProfile, JdbcProfile, PostgresProfile}
 

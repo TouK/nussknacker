@@ -150,7 +150,7 @@ class ManagementResources(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
                         commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
-                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
+                        nodesDeploymentData = request.nodesDeploymentData,
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath),
                         scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                       )
@@ -173,7 +173,7 @@ class ManagementResources(
                   .processCommand(
                     RunDeploymentCommand(
                       commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
-                      nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
+                      nodesDeploymentData = request.nodesDeploymentData,
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
                       scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                     )
@@ -193,7 +193,7 @@ class ManagementResources(
                     .processCommand(
                       RunRedeploymentCommand(
                         commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
-                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
+                        nodesDeploymentData = request.nodesDeploymentData,
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
                         scenarioSource = request.scenarioGraphSource.getOrElse(LatestVersion),
                       )

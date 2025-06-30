@@ -1,8 +1,12 @@
 package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentDependencies,
+  ComponentProvider,
+  NussknackerVersion
+}
 import pl.touk.nussknacker.engine.flink.util.transformer.{EventGeneratorSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{
@@ -18,7 +22,10 @@ class FlinkBaseUnboundedComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = {
     val docsConfig             = DocsConfig(componentProviderConfig)
     val aggregateWindowsConfig = AggregateWindowsConfig.loadOrDefault(componentProviderConfig)
     FlinkBaseUnboundedComponentProvider.create(docsConfig, aggregateWindowsConfig)

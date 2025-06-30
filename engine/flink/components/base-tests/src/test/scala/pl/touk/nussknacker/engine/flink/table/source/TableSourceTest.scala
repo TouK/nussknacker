@@ -5,7 +5,6 @@ import org.apache.flink.types.Row
 import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -44,10 +43,8 @@ class TableSourceTest
        |}""".stripMargin
   )
 
-  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableDataSourceComponentProvider().create(
-    tableComponentsConfig,
-    ModelConfig.parse(tableComponentsConfig)
-  )
+  private lazy val tableComponents: List[ComponentDefinition] =
+    new FlinkTableDataSourceComponentProvider().create(tableComponentsConfig)
 
   private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
@@ -121,10 +118,7 @@ class TableSourceTest
     )
 
     val tableComponentsBasedOnCatalogConfiguration: List[ComponentDefinition] =
-      new FlinkTableDataSourceComponentProvider().create(
-        configWithCatalogConfiguration,
-        ModelConfig.parse(configWithCatalogConfiguration)
-      )
+      new FlinkTableDataSourceComponentProvider().create(configWithCatalogConfiguration)
 
     val runnerWithCatalogConfiguration: FlinkTestScenarioRunner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniClusterWithServices)

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.customhttpservice.services
+package pl.touk.nussknacker.engine.api.db
 
 import com.github.tminglei.slickpg.ExPostgresProfile
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}

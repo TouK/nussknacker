@@ -5,7 +5,12 @@ import cats.data.Writer
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentDependencies,
+  ComponentProvider,
+  NussknackerVersion
+}
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.common.components.DecisionTable
@@ -22,7 +27,10 @@ class LiteBaseComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = {
     val docsConfig: DocsConfig = DocsConfig(componentProviderConfig)
     LiteBaseComponentProvider.create(docsConfig)
   }
