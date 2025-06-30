@@ -163,7 +163,7 @@ const aceEditorStyles = (theme: Theme) => ({
             },
         },
     },
-    ".ace-nussknacker .ace_jsonTemplate, .ace_spelTemplate": {
+    ".ace-nussknacker .ace_jsonTemplate, .ace-nussknacker .ace_spelTemplate": {
         color: "#00BFA5",
     },
 });
