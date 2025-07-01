@@ -263,14 +263,6 @@ object Dtos {
       override def supportedActions: List[String]     = List("compare")
     }
 
-    case object CustomAction extends ScenarioActivityType {
-      private val displayableName: String             = "Custom action"
-      override def displayableNameForScenario: String = displayableName
-      override def displayableNameForFragment: String = displayableName
-      override def icon: String                       = "/assets/activities/customAction.svg"
-      override def supportedActions: List[String]     = List.empty
-    }
-
     override def values: immutable.IndexedSeq[ScenarioActivityType] = findValues
 
     implicit def scenarioActivityTypeSchema: Schema[ScenarioActivityType] =
