@@ -56,7 +56,7 @@ describe("JSON template editor", () => {
             cy.window().then((win) => {
                 const aceEditor = (win as any).ace.edit(Cypress.$(".ace_editor")[0]);
                 expect(aceEditor.getValue()).to.eq(
-                    '{\n\t"sampleField": "#{#UTIL.uuid()}",\n\t"dateTime": "#{#DATE_FORMAT.format(#DATE.now)}",\n\t"type": "example",\n\t"value": 100\n}',
+                    '{\n\t"sampleField": "#{ #UTIL.uuid() }",\n\t"dateTime": "#{ #DATE_FORMAT.format(#DATE.now) }",\n\t"type": "example",\n\t"value": 100\n}',
                 );
             });
         });
