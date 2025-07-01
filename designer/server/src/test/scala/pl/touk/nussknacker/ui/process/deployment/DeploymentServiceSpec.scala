@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
   DeploymentId,
   ExternalDeploymentId,
@@ -31,7 +33,12 @@ import pl.touk.nussknacker.engine.deployment.{
 }
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.test.{
+  EitherValuesDetailedMessage,
+  ExtremelyPatientScalaFutures,
+  NuScalaTestAssertions,
+  PatientScalaFutures
+}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
@@ -845,6 +852,33 @@ class DeploymentServiceSpec
     }
   }
 
+  "should allow to deploy scenario using fragment with unspecified nodesDeploymentData" in {
+    val fragment = ScenarioBuilder
+      .fragment(generateScenarioName())
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+
+    val scenarioUsingFragment = ScenarioBuilder
+      .streaming(generateScenarioName())
+      .source("source", ProcessTestData.existingSourceFactory)
+      .fragmentEnd("fragment", fragment.name.value)
+
+    saveScenario(fragment, isFragment = true)
+    val idWithName = saveScenario(scenarioUsingFragment, isFragment = false)
+
+    deploymentManager1.withStubbedDeployResult(scenarioUsingFragment.name) {
+      deploymentService
+        .processCommand(
+          RunDeploymentCommand(
+            commonData = CommonCommandData(processIdWithName = idWithName, comment = None, user = user),
+            stateRestoringStrategy = RestoreStateFromReplacedJobSavepoint,
+            nodesDeploymentData = None,
+            scenarioSource = LatestVersion
+          )
+        )
+        .futureValue
+    }
+  }
+
   "should allow to deploy scenario when active scenarios count is less than the limit" when {
     "one processing type is considered" when {
       "1st scenario is running, and the 2nd scenario is not deployed" in {
@@ -1509,17 +1543,25 @@ class DeploymentServiceSpec
       .getOrElse(baseBuilder)
       .source("source", ProcessTestData.existingSourceFactory)
       .emptySink("sink", ProcessTestData.existingSinkFactory)
+    saveScenario(canonicalProcess, isFragment = false, processingType)
+  }
+
+  private def saveScenario(
+      scenario: CanonicalProcess,
+      isFragment: Boolean,
+      processingType: TestProcessingType = Streaming1
+  ) = {
     val action = CreateProcessAction(
-      processName = ProcessName(scenarioName),
+      processName = scenario.name,
       category = "Category1",
-      canonicalProcess = canonicalProcess,
+      canonicalProcess = scenario,
       processingType = processingType.stringify,
-      isFragment = false,
+      isFragment = isFragment,
     )
     writeProcessRepository
       .saveNewProcess(action)
       .map(_.value.processId)
-      .map(ProcessIdWithName(_, ProcessName(scenarioName)))
+      .map(ProcessIdWithName(_, scenario.name))
       .dbioActionValues
   }
 

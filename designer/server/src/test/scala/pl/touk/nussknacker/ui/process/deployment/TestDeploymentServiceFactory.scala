@@ -27,6 +27,7 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeployme
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider => OldApproachScenarioStatusProvider
 }
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ScenarioActionRepository}
@@ -129,16 +130,26 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         dbioRunner
       )
 
-    val validator = ProcessTestData.testProcessValidator(validator = ProcessValidator.default(modelData))
+    val fragmentResolver = new FragmentResolver(newFragmentRepository(dbRef))
     val deploymentService = new DeploymentService(
-      dmDispatcher,
-      TestFactory.mapProcessingTypeDataProvider(
-        deploymentManagers.map { case (processingType, _) => processingType -> validator }.toList: _*
+      dispatcher = dmDispatcher,
+      processValidator = TestFactory.mapProcessingTypeDataProvider(
+        deploymentManagers.map { case (processingType, _) =>
+          processingType -> ProcessTestData.testProcessValidator(
+            validator = ProcessValidator.default(modelData),
+            fragmentResolver = fragmentResolver,
+            processingType = processingType
+          )
+        }.toList: _*
       ),
-      TestFactory.scenarioResolverByProcessingType(deploymentManagers.keys.toList),
-      actionService,
-      additionalComponentConfigsByProcessingType,
-      new LimitsService(
+      scenarioResolver = TestFactory.mapProcessingTypeDataProvider(
+        deploymentManagers.map { case (processingType, _) =>
+          processingType -> new ScenarioResolver(fragmentResolver, processingType)
+        }.toList: _*
+      ),
+      actionService = actionService,
+      additionalComponentConfigs = additionalComponentConfigsByProcessingType,
+      limitsService = new LimitsService(
         globalLimitsConfig = globalLimitsConfig,
         perProcessingTypesLimitsProvider = TestFactory.mapProcessingTypeDataProvider(
           deploymentManagers.map { case (processingType, _) => processingType -> processingTypeLimits }.toList: _*
@@ -146,7 +157,7 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
         newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
       ),
-      TestFactory.mapProcessingTypeDataProvider(
+      processingTypeToActionInfoService = TestFactory.mapProcessingTypeDataProvider(
         deploymentManagers.map { case (processingType, _) =>
           processingType -> newActionInfoService(modelData)
         }.toList: _*
