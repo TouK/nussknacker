@@ -32,6 +32,23 @@ else
   JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$PROMETHEUS_AGENT_CONFIG_FILE"
 fi
 
+MODULES_OPEN_OPTS="--add-exports=java.base/sun.net.util=ALL-UNNAMED \
+--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED \
+--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
+--add-opens=java.base/java.lang=ALL-UNNAMED \
+--add-opens=java.base/java.net=ALL-UNNAMED \
+--add-opens=java.base/java.io=ALL-UNNAMED \
+--add-opens=java.base/java.nio=ALL-UNNAMED \
+--add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+--add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+--add-opens=java.base/java.text=ALL-UNNAMED \
+--add-opens=java.base/java.time=ALL-UNNAMED \
+--add-opens=java.base/java.util=ALL-UNNAMED \
+--add-opens=java.base/java.math=ALL-UNNAMED \
+--add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
+--add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED"
+
 mkdir -p $LOGS_DIR
 cd $WORKING_DIR
 
@@ -40,7 +57,7 @@ if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo "Starting Nussknacker Lite Runtime in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.app.NuRuntimeApp "$@" >> $LOG_FILE 2>&1 &
+  exec java $JDK_JAVA_OPTIONS $MODULES_OPEN_OPTS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.app.NuRuntimeApp "$@" >> $LOG_FILE 2>&1 &
   set +x
   echo $! > $PID_FILE
   echo "Nussknacker Lite Runtime up and running"
@@ -48,6 +65,6 @@ else
   echo -e "JVM: `java -version`\n"
   echo "Starting Nussknacker Lite Runtime"
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.app.NuRuntimeApp "$@"
+  exec java $JDK_JAVA_OPTIONS $MODULES_OPEN_OPTS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.app.NuRuntimeApp "$@"
   set +x
 fi
