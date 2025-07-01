@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import type { ForwardedRef, ReactNode } from "react";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
@@ -5,11 +6,13 @@ import { useTranslation } from "react-i18next";
 
 import type { VariableTypes } from "../../../../../types";
 import { InfoTooltip } from "../InfoTooltip";
+import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
 import type { ExpressionSuggestProps } from "./ExpressionSuggest";
 import { ExpressionSuggest } from "./ExpressionSuggest";
+import { ResetToDefaultButton } from "./ResetToDefaultButton";
 import type { ExpressionObj } from "./types";
 import { EditorMode, ExpressionLang } from "./types";
 
@@ -29,6 +32,7 @@ export type SpelEditorProps = {
     placeholder?: string;
     language?: ExpressionLang;
     infoText?: string;
+    param?: ParamType;
 };
 
 const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
@@ -48,6 +52,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
         editorMode,
         placeholder,
         language = editorsParameters.SpelParameterEditor.language,
+        param,
     } = props;
 
     const handleChange = useCallback(
@@ -107,16 +112,23 @@ Use autocompletion to explore available options. To read more see [Documentation
         }
 
         if (editorMode === EditorMode.JsonTemplate && !readOnly) {
+            const defaultValue = param?.defaultValue?.expression;
+            const defaultValueIsDifferentThanCurrentValue = defaultValue !== props.expressionObj.expression;
+            const showResetToDefaultButton = defaultValue && defaultValueIsDifferentThanCurrentValue;
+
             properties.placeholder = placeholder || t("editors.jsonTemplateEditor.placeholder", 'e.g. { "key": "#{ #input.value }" }');
             properties.InputAdornmentEnd = (
-                <InfoTooltip
-                    title={t(
-                        "editors.jsonTemplateEditor.infoText",
-                        `You are using a json-template-based input, allowing json with embedded expressions. \n 
+                <Box display={"flex"} flexDirection={"column"} alignItems={"center"} gap={0.5} width={"1rem"}>
+                    <InfoTooltip
+                        title={t(
+                            "editors.jsonTemplateEditor.infoText",
+                            `You are using a json-template-based input, allowing json with embedded expressions. \n 
 Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
-                    )}
-                />
+                        )}
+                    />
+                    {showResetToDefaultButton && <ResetToDefaultButton defaultValue={defaultValue} handleChange={handleChange} />}
+                </Box>
             );
         }
         if (editorMode === EditorMode.JsonTemplate) {
@@ -124,7 +136,21 @@ Use autocompletion to explore available options. To read more see [Documentation
         }
 
         return properties;
-    }, [rows, cols, value, language, handleChange, readOnly, forwardedRef, editorMode, expressionObj.language, placeholder, t]);
+    }, [
+        rows,
+        cols,
+        value,
+        language,
+        handleChange,
+        readOnly,
+        forwardedRef,
+        editorMode,
+        expressionObj.language,
+        placeholder,
+        t,
+        param?.defaultValue?.expression,
+        props.expressionObj.expression,
+    ]);
 
     return (
         <ExpressionSuggest
