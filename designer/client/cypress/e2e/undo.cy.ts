@@ -93,7 +93,7 @@ describe("Undo/Redo", () => {
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("body").type("{ctrl}a");
         cy.get("@copy").click();
-        cy.get("@undo").should("be.enabled").click().should("be.disabled");
+        cy.get("@undo").should("be.disabled");
         cy.get("@paste").click();
         cy.get("@undo").should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
@@ -134,10 +134,10 @@ describe("Undo/Redo", () => {
         cy.getNode("enricher").click();
         cy.contains(/^delete$/i).click();
 
-        cy.get("@undo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
+        cy.get("@undo").should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
 
-        cy.get("@redo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
+        cy.get("@redo").should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
     });
 });
