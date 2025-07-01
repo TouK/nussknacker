@@ -21,7 +21,11 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
-import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
+import pl.touk.nussknacker.ui.process.periodic.flink.db.{
+  InMemPeriodicProcessesRepository,
+  InMemScenarioActivityRepository,
+  TestDbioActionRunner
+}
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -80,6 +84,8 @@ class PeriodicProcessServiceTest
       delegateDeploymentManager = delegateDeploymentManagerStub,
       scheduledExecutionPerformer = scheduledExecutionPerformerStub,
       periodicProcessesRepository = repository,
+      scenarioActivityRepository = new InMemScenarioActivityRepository,
+      dbioActionRunner = TestDbioActionRunner,
       new ScheduledProcessListener {
 
         override def onScheduledProcessEvent: PartialFunction[ScheduledProcessEvent, Unit] = { case k =>
@@ -97,7 +103,6 @@ class PeriodicProcessServiceTest
       },
       DeploymentRetryConfig(),
       PeriodicExecutionConfig(),
-      maxFetchedPeriodicScenarioActivities = None,
       new ProcessConfigEnricher {
 
         override def onInitialSchedule(

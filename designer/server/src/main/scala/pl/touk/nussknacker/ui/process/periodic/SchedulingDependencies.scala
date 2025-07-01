@@ -5,7 +5,8 @@ import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.process.deployment.ActionService
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,6 +15,8 @@ final class SchedulingDependencies(
     val dbRef: DbRef,
     val actionService: ProcessingTypeActionService,
     val fetchingProcessRepository: FetchingProcessRepository[Future],
+    val scenarioActivityRepository: ScenarioActivityRepository,
+    val dbioActionRunner: DBIOActionRunner,
     val configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 )
 

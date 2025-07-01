@@ -240,7 +240,7 @@ object Dtos {
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
-      private val displayableName: String             = "Run now scheduling"
+      private val displayableName: String             = "Run now execution triggered"
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
       override def icon: String                       = "/assets/activities/deployed.svg"
@@ -678,7 +678,7 @@ object Dtos {
         dateFinished: Instant,
         errorMessage: Option[String],
     )(implicit zoneId: ZoneId): ScenarioActivity = {
-      val humanReadableStatus = "Run now execution finished"
+      val humanReadableStatus = "Run now execution triggered"
       ScenarioActivity(
         id = id,
         `type` = ScenarioActivityType.PerformedSingleExecution,

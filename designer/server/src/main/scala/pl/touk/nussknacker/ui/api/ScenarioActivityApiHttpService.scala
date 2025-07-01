@@ -19,6 +19,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 }
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManager
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
@@ -39,14 +41,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
+    dmDispatcher: DeploymentManagerDispatcher,
     fetchScenarioActivityService: FetchScenarioActivityService,
     scenarioActivityRepository: ScenarioActivityRepository,
+    dbioActionRunner: DBIOActionRunner,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     attachmentService: ScenarioAttachmentService,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     streamEndpointProvider: TapirStreamEndpointProvider,
-    dbioActionRunner: DBIOActionRunner,
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with LazyLogging {
@@ -243,13 +246,29 @@ class ScenarioActivityApiHttpService(
   )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
     EitherT.right {
       for {
-        combinedActivities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
+        activities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
+        //  We allow to limit the number of scheduling-related activities by setting max number in Nu config:
+        maxFetchedPeriodicScenarioActivities <- dmDispatcher.deploymentManager(processIdWithName).map {
+          case Some(manager: PeriodicDeploymentManager) => manager.maxFetchedPeriodicScenarioActivities
+          case _                                        => None
+        }
+        schedulingRelatedAndOtherActivities = activities.partition {
+          case _: SchedulingRelatedActivity => true
+          case _                            => false
+        }
+        schedulingRelatedActivities = schedulingRelatedAndOtherActivities._1
+        limitedSchedulingRelated = maxFetchedPeriodicScenarioActivities match {
+          case Some(limit) => schedulingRelatedActivities.take(limit)
+          case None        => schedulingRelatedActivities
+        }
+        otherActivities   = schedulingRelatedAndOtherActivities._2
+        limitedActivities = limitedSchedulingRelated ++ otherActivities
         //  The API endpoint returning scenario activities does not yet have support for filtering. We made a decision to:
-        //  - for activities not related to deployments:        always display them on FE
-        //  - for activities related to batch deployments:      always display them on FE
-        //  - for activities related to non-batch deployments:  display on FE only those, that represent successful operations
-        combinedSuccessfulActivities = combinedActivities.filter {
-          case _: BatchDeploymentRelatedActivity => true
+        //  - for activities not related to deployments:            always display them on FE
+        //  - for activities related to scheduled deployments:      always display them on FE
+        //  - for activities related to non-scheduled deployments:  display on FE only those, that represent successful operations
+        successfulActivities = limitedActivities.filter {
+          case _: SchedulingRelatedActivity => true
           case activity: DeploymentRelatedActivity =>
             activity.result match {
               case _: DeploymentResult.Success => true
@@ -257,7 +276,7 @@ class ScenarioActivityApiHttpService(
             }
           case _ => true
         }
-        sortedResult = combinedSuccessfulActivities.map(toDto).toList.sortBy(_.date)
+        sortedResult = successfulActivities.map(toDto).sortBy(_.date)
       } yield sortedResult
     }
   }

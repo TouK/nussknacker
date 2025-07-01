@@ -13,14 +13,16 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
-import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
+import pl.touk.nussknacker.ui.process.periodic.flink.db.{
+  InMemPeriodicProcessesRepository,
+  InMemScenarioActivityRepository,
+  TestDbioActionRunner
+}
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, PeriodicProcessesRepository}
 
 import java.time.{Clock, Instant}
 import java.util.UUID
-import scala.concurrent.Future
 
 class PeriodicProcessesFetchingTest
     extends AnyFunSuite
@@ -50,11 +52,12 @@ class PeriodicProcessesFetchingTest
       delegateDeploymentManager = delegateDeploymentManagerStub,
       scheduledExecutionPerformer = scheduledExecutionPerformerStub,
       periodicProcessesRepository = repository,
+      scenarioActivityRepository = new InMemScenarioActivityRepository,
+      dbioActionRunner = TestDbioActionRunner,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig = executionConfig,
-      maxFetchedPeriodicScenarioActivities = Some(200),
       processConfigEnricher = ProcessConfigEnricher.identity,
       clock = Clock.systemDefaultZone(),
       new ProcessingTypeActionServiceStub,
@@ -63,6 +66,7 @@ class PeriodicProcessesFetchingTest
 
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
+      maxFetchedPeriodicScenarioActivities = Some(200),
       service = periodicProcessService,
       periodicProcessesRepository = repository,
       schedulePropertyExtractor = CronSchedulePropertyExtractor(),

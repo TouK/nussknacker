@@ -33,7 +33,11 @@ import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtractor
-import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository
+import pl.touk.nussknacker.ui.process.periodic.flink.db.{
+  InMemPeriodicProcessesRepository,
+  InMemScenarioActivityRepository,
+  TestDbioActionRunner
+}
 import pl.touk.nussknacker.ui.process.periodic.model.{PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated}
@@ -82,11 +86,12 @@ class PeriodicDeploymentManagerTest
       delegateDeploymentManager = delegateDeploymentManagerStub,
       scheduledExecutionPerformer = scheduledExecutionPerformerStub,
       periodicProcessesRepository = repository,
+      scenarioActivityRepository = new InMemScenarioActivityRepository,
+      dbioActionRunner = TestDbioActionRunner,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig = executionConfig,
-      maxFetchedPeriodicScenarioActivities = None,
       processConfigEnricher = ProcessConfigEnricher.identity,
       clock = Clock.systemDefaultZone(),
       new ProcessingTypeActionServiceStub,
@@ -123,6 +128,7 @@ class PeriodicDeploymentManagerTest
     //       Thanks to that, we will see the process from user perspective - real scenarios statuses etc/
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
+      maxFetchedPeriodicScenarioActivities = None,
       service = periodicProcessService,
       periodicProcessesRepository = repository,
       schedulePropertyExtractor = CronSchedulePropertyExtractor(),

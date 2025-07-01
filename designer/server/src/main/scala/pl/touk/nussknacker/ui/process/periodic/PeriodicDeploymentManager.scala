@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDepend
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => ApiScheduleProperty}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.ui.process.periodic.Utils._
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
@@ -42,11 +42,12 @@ object PeriodicDeploymentManager {
       delegate,
       scheduledExecutionPerformer,
       periodicProcessesRepository,
+      schedulingDependencies.scenarioActivityRepository,
+      schedulingDependencies.dbioActionRunner,
       listener,
       additionalDeploymentDataProvider,
       schedulingConfig.deploymentRetry,
       schedulingConfig.executionConfig,
-      schedulingConfig.maxFetchedPeriodicScenarioActivities,
       processConfigEnricher,
       clock,
       schedulingDependencies.actionService,
@@ -75,6 +76,7 @@ object PeriodicDeploymentManager {
     }
     new PeriodicDeploymentManager(
       delegate,
+      schedulingConfig.maxFetchedPeriodicScenarioActivities,
       service,
       periodicProcessesRepository,
       schedulePropertyExtractorFactory(originalConfig),
@@ -86,6 +88,7 @@ object PeriodicDeploymentManager {
 
 class PeriodicDeploymentManager private[periodic] (
     val delegate: DeploymentManager,
+    val maxFetchedPeriodicScenarioActivities: Option[Int],
     service: PeriodicProcessService,
     periodicProcessesRepository: PeriodicProcessesRepository,
     schedulePropertyExtractor: SchedulePropertyExtractor,

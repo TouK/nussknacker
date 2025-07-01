@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProper
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
@@ -22,8 +22,8 @@ import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicStateStatus._
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.ui.process.periodic.utils.DeterministicUUIDFromLong
-import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, PeriodicProcessesRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 
 import java.time.{Clock, Instant, LocalDateTime}
 import java.time.chrono.ChronoLocalDateTime
@@ -35,11 +35,12 @@ class PeriodicProcessService(
     delegateDeploymentManager: DeploymentManager,
     scheduledExecutionPerformer: ScheduledExecutionPerformer,
     periodicProcessesRepository: PeriodicProcessesRepository,
+    scenarioActivityRepository: ScenarioActivityRepository,
+    dbioActionRunner: DBIOActionRunner,
     periodicProcessListener: ScheduledProcessListener,
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
     deploymentRetryConfig: DeploymentRetryConfig,
     executionConfig: PeriodicExecutionConfig,
-    maxFetchedPeriodicScenarioActivities: Option[Int],
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
     actionService: ProcessingTypeActionService,
@@ -61,44 +62,6 @@ class PeriodicProcessService(
   private val emptyCallback: Callback = () => Future.successful(())
 
   private implicit val localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
-
-  def getScenarioActivitiesSpecificToPeriodicProcess(
-      processIdWithName: ProcessIdWithName,
-      after: Option[Instant],
-  ): Future[List[ScenarioActivity]] = for {
-    schedulesState <- periodicProcessesRepository
-      .getSchedulesState(
-        processIdWithName.name,
-        after.map(localDateTimeAtSystemDefaultZone)
-      )
-      .run
-    groupedByProcess        = schedulesState.groupedByPeriodicProcess
-    deployments             = groupedByProcess.flatMap(_.deployments)
-    deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
-    activities = deploymentsWithStatuses.map { case (deployment, metadata) =>
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(processIdWithName.id.value),
-        // The periodic process executions are stored in the PeriodicProcessService datasource, with ids of type Long
-        // We need the ScenarioActivityId to be a unique UUID, generated in an idempotent way from Long id.
-        // It is important, because if the ScenarioActivityId would change, the activity may be treated as a new one,
-        // and, for example, GUI may have to refresh more often than necessary .
-        scenarioActivityId = ScenarioActivityId(DeterministicUUIDFromLong.longUUID(deployment.id.value)),
-        user = ScenarioUser.internalNuUser,
-        date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
-        scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.deploymentData.versionId)),
-        scheduledExecutionStatus = metadata.status,
-        dateFinished = metadata.dateFinished,
-        scheduleName = deployment.scheduleName.display,
-        createdAt = metadata.dateCreated,
-        nextRetryAt = deployment.nextRetryAt.map(instantAtSystemDefaultZone),
-        retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
-      )
-    }
-    limitedActivities = maxFetchedPeriodicScenarioActivities match {
-      case Some(limit) => activities.sortBy(_.date).takeRight(limit)
-      case None        => activities
-    }
-  } yield limitedActivities
 
   def schedule(
       schedule: ScheduleProperty,
@@ -401,6 +364,7 @@ class PeriodicProcessService(
           s"Could not fetch CanonicalProcess with ProcessVersion for processName=$processName, versionId=$versionId"
         )
       }
+      _ <- addScenarioActivity(currentState)
     } yield handleEvent(FinishedEvent(currentState.toDetails, canonicalProcess, state))
   }
 
@@ -428,6 +392,7 @@ class PeriodicProcessService(
     for {
       _ <- periodicProcessesRepository.markFailedOnDeployWithStatus(deployment.id, status, retriesLeft, nextRetryAt).run
       currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
+      _            <- addScenarioActivity(currentState)
     } yield handleEvent(FailedOnDeployEvent(currentState.toDetails, state))
   }
 
@@ -439,6 +404,7 @@ class PeriodicProcessService(
     for {
       _            <- periodicProcessesRepository.markFailed(deployment.id).run
       currentState <- periodicProcessesRepository.findProcessData(deployment.id).run
+      _            <- addScenarioActivity(currentState)
     } yield handleEvent(FailedOnRunEvent(currentState.toDetails, state))
   }
 
@@ -705,6 +671,37 @@ class PeriodicProcessService(
     def getStatus(deploymentId: PeriodicProcessDeploymentId): Option[DeploymentStatusDetails] =
       runtimeStatusesMap.get(DeploymentId(deploymentId.toString))
 
+  }
+
+  private def addScenarioActivity(periodicProcessDeployment: PeriodicProcessDeployment): Future[ScenarioActivityId] = {
+    scenarioActivityFor(periodicProcessDeployment) match {
+      case Some(activity) =>
+        dbioActionRunner.run(scenarioActivityRepository.addActivity(activity))
+      case None =>
+        throw new PeriodicProcessException(
+          s"Could not create scenario activity when marking scheduled scenario deployment as finished"
+        )
+    }
+  }
+
+  private def scenarioActivityFor(
+      deployment: PeriodicProcessDeployment,
+  ): Option[ScenarioActivity] = {
+    scheduledExecutionStatusAndDateFinished(deployment).map { metadata =>
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(deployment.periodicProcess.deploymentData.processId.value),
+        scenarioActivityId = ScenarioActivityId.random,
+        user = ScenarioUser.internalNuUser,
+        date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
+        scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.deploymentData.versionId)),
+        scheduledExecutionStatus = metadata.status,
+        dateFinished = metadata.dateFinished,
+        scheduleName = deployment.scheduleName.display,
+        createdAt = metadata.dateCreated,
+        nextRetryAt = deployment.nextRetryAt.map(instantAtSystemDefaultZone),
+        retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
+      )
+    }
   }
 
   private def scheduledExecutionStatusAndDateFinished(

@@ -128,6 +128,7 @@ object DomainServices extends LazyLogging {
         actionRepository,
         scenarioLabelsRepository
       )
+      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
       deploymentData <- DeploymentManagersLoader.load(
         alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader,
@@ -139,6 +140,8 @@ object DomainServices extends LazyLogging {
             infrastructureServices,
             actionServiceSupplier,
             futureProcessRepository,
+            scenarioActivityRepository,
+            dbioRunner,
             additionalUIConfigProvider,
             _
           )
@@ -154,7 +157,7 @@ object DomainServices extends LazyLogging {
             )
           )
         )(_.close())
-      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
+
       dmDispatcher =
         new DeploymentManagerDispatcher(
           deploymentDataProvider.mapValues(_.validDeploymentManagerOrStub),
@@ -414,6 +417,8 @@ object DomainServices extends LazyLogging {
       infrastructureServices: InfrastructureServices,
       actionServiceProvider: Supplier[ActionService],
       fetchingProcessRepository: FetchingProcessRepository[Future],
+      scenarioActivityRepository: ScenarioActivityRepository,
+      dbioActionRunner: DBIOActionRunner,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       processingType: ProcessingType
   ) = {
@@ -422,7 +427,9 @@ object DomainServices extends LazyLogging {
       infrastructureServices.dbRef,
       new DefaultProcessingTypeActionService(processingType, actionServiceProvider),
       fetchingProcessRepository,
-      additionalConfigsFromProvider
+      scenarioActivityRepository,
+      dbioActionRunner,
+      additionalConfigsFromProvider,
     )
   }
 
