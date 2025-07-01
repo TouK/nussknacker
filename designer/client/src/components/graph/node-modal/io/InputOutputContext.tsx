@@ -101,7 +101,7 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
 
         return connectedNodes.map((id) => ({
             id,
-            ...transitionResults?.find((r) => r.destinationNodeId === id),
+            ...transitionResults?.find((r) => r.destinationNodeId == id),
         }));
     }, [nodeId, nodeTransitionResults, scenario]);
 

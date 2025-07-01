@@ -8,7 +8,6 @@ import { getProcessDefinitionData } from "../../reducers/selectors/processDefini
 import type { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
-import { clearProcessCounts } from "./displayProcessCounts";
 
 export type EditNodeAction = {
     type: "EDIT_NODE";
@@ -34,7 +33,6 @@ export function editNode(scenarioBefore: Scenario, before: NodeType, after: Node
         const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
         const response = await HttpService.validateProcess(scenarioBefore.name, scenarioBefore.name, scenarioGraph);
 
-        dispatch(clearProcessCounts());
         dispatch({
             type: "EDIT_NODE",
             before,
