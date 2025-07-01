@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Initiator, startLiveData, stopLiveData } from "../../actions/nk/liveData";
@@ -22,9 +22,14 @@ export function useLiveDataIfNeeded() {
     const readyForResults = useSelector(isReadyForLiveData);
     const hasOpenedNodeWindow = useSelector(getHasOpenedNodeWindows);
     const hasPauseReasons = useSelector(getHasPauseReasons);
+
+    const shouldStart = useMemo(() => {
+        return autoEnableLiveData && readyForResults && !hasOpenedNodeWindow && !hasPauseReasons;
+    }, [autoEnableLiveData, hasOpenedNodeWindow, hasPauseReasons, readyForResults]);
+
     useEffect(() => {
-        if (autoEnableLiveData && readyForResults && !hasOpenedNodeWindow && !hasPauseReasons) {
+        if (shouldStart) {
             dispatch(startLiveData());
         }
-    }, [dispatch, autoEnableLiveData, hasOpenedNodeWindow, readyForResults, hasPauseReasons]);
+    }, [dispatch, shouldStart]);
 }

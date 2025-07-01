@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
+import type { ThunkDispatch } from "../../../../actions/reduxTypes";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
@@ -24,6 +25,7 @@ import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import type { ProcessName, ProcessVersionId } from "../../../Process/types";
+import { PredefinedActionName } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 import { ScenarioActionResultType } from "./types";
@@ -41,7 +43,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
 
     const allowQuickDeploy = settings["scenario.allowQuickDeploy"];
 
-    const dispatch = useDispatch();
+    const dispatch: ThunkDispatch = useDispatch();
 
     const isVisible = useSelector(isDeployVisible);
     const isPossible = useSelector(isDeployPossible);
@@ -132,6 +134,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
 
     const handleDeploy = useCallback(async () => {
         try {
+            dispatch({ type: "PENDING_SCENARIO_ACTION", action: PredefinedActionName.Deploy });
             setIsDeployCallProcessing(true);
             const response = await action(processName, processVersionId, "", null, scenarioGraphSource);
             switch (response.scenarioActionResultType) {

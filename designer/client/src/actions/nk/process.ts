@@ -1,7 +1,7 @@
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
-import type { ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
+import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
@@ -10,6 +10,7 @@ import HttpService from "./../../http/HttpService";
 import { Initiator, stopLiveData } from "./liveData";
 
 export type ScenarioActions =
+    | { type: "PENDING_SCENARIO_ACTION"; action: PredefinedActionName }
     | {
           type: "PROCESS_STATE_LOADED";
           processState: ProcessStateType;
