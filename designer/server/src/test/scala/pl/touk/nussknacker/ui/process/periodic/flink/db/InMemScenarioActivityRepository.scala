@@ -25,7 +25,7 @@ class InMemScenarioActivityRepository extends ScenarioActivityRepository {
   override def addActivity(
       scenarioActivity: ScenarioActivity
   ): DB[ScenarioActivityId] = DBIO.successful {
-    acitivities.addOne(scenarioActivity)
+    acitivities += scenarioActivity
     scenarioActivity.scenarioActivityId
   }
 
