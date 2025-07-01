@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo, StaticParameterConfig}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.StaticParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.action.ActionInfoProvider
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError
 import pl.touk.nussknacker.ui.api.ActionInfoHttpService.ActionInfoError.{
@@ -41,7 +44,7 @@ class ActionInfoService(
       .resolveScenario(canonical)
       .map { canonicalWithResolvedFragments =>
         canonicalWithResolvedFragments.toEither
-          .flatMap(scenario => actionInfoProvider.getActionParameters(processVersion, scenario).toEither) match {
+          .flatMap(getResolvedCanonicalScenarioActionParameters(_, processVersion).toEither) match {
           case Right(parameters) =>
             Right(toUIActionParameters(parameters))
           case Left(e) =>
@@ -49,6 +52,16 @@ class ActionInfoService(
             Left(ApiCannotCompileScenario)
         }
       }
+  }
+
+  def getResolvedCanonicalScenarioActionParameters(
+      resolvedCanonicalScenario: CanonicalProcess,
+      processVersion: ProcessVersion
+  ): ValidatedNel[
+    ProcessCompilationError,
+    Map[ScenarioActionName, Map[NodeComponentInfo, Map[ParameterName, StaticParameterConfig]]]
+  ] = {
+    actionInfoProvider.getActionParameters(processVersion, resolvedCanonicalScenario)
   }
 
   private def toUIActionParameters(

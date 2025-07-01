@@ -33,7 +33,12 @@ import pl.touk.nussknacker.engine.deployment.{
 }
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.test.{
+  EitherValuesDetailedMessage,
+  ExtremelyPatientScalaFutures,
+  NuScalaTestAssertions,
+  PatientScalaFutures
+}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
@@ -847,35 +852,20 @@ class DeploymentServiceSpec
     }
   }
 
-  "should allow to deploy scenario ended with fragment" in {
+  "should allow to deploy scenario using fragment with unspecified nodesDeploymentData" in {
     val fragment = ScenarioBuilder
       .fragment(generateScenarioName())
       .emptySink("sink", ProcessTestData.existingSinkFactory)
 
-    val scenarioEndedWithFragment = ScenarioBuilder
+    val scenarioUsingFragment = ScenarioBuilder
       .streaming(generateScenarioName())
       .source("source", ProcessTestData.existingSourceFactory)
       .fragmentEnd("fragment", fragment.name.value)
 
-    def saveScenario(scenario: CanonicalProcess, isFragment: Boolean) = {
-      val action = CreateProcessAction(
-        processName = scenario.name,
-        category = "Category1",
-        canonicalProcess = scenario,
-        processingType = Streaming1.stringify,
-        isFragment = isFragment,
-      )
-      writeProcessRepository
-        .saveNewProcess(action)
-        .map(_.value.processId)
-        .map(ProcessIdWithName(_, scenario.name))
-        .dbioActionValues
-    }
-
     saveScenario(fragment, isFragment = true)
-    val idWithName = saveScenario(scenarioEndedWithFragment, isFragment = false)
+    val idWithName = saveScenario(scenarioUsingFragment, isFragment = false)
 
-    deploymentManager1.withStubbedDeployResult(scenarioEndedWithFragment.name) {
+    deploymentManager1.withStubbedDeployResult(scenarioUsingFragment.name) {
       deploymentService
         .processCommand(
           RunDeploymentCommand(
@@ -1553,17 +1543,25 @@ class DeploymentServiceSpec
       .getOrElse(baseBuilder)
       .source("source", ProcessTestData.existingSourceFactory)
       .emptySink("sink", ProcessTestData.existingSinkFactory)
+    saveScenario(canonicalProcess, isFragment = false, processingType)
+  }
+
+  private def saveScenario(
+      scenario: CanonicalProcess,
+      isFragment: Boolean,
+      processingType: TestProcessingType = Streaming1
+  ) = {
     val action = CreateProcessAction(
-      processName = ProcessName(scenarioName),
+      processName = scenario.name,
       category = "Category1",
-      canonicalProcess = canonicalProcess,
+      canonicalProcess = scenario,
       processingType = processingType.stringify,
-      isFragment = false,
+      isFragment = isFragment,
     )
     writeProcessRepository
       .saveNewProcess(action)
       .map(_.value.processId)
-      .map(ProcessIdWithName(_, ProcessName(scenarioName)))
+      .map(ProcessIdWithName(_, scenario.name))
       .dbioActionValues
   }
 
