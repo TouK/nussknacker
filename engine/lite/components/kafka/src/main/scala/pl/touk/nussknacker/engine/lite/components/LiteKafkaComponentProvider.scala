@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
+  ComponentDependencies,
   ComponentProvider,
   ComponentType,
   NussknackerVersion
@@ -33,12 +34,15 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = {
     val docsConfig = DocsConfig(componentProviderConfig)
     import docsConfig._
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
-    val kafkaConfig = KafkaConfig.parseConfig(modelConfig.underlyingConfig)
+    val kafkaConfig = KafkaConfig.parseConfig(componentDependencies.modelConfig.underlyingConfig)
     validateConfiguration(kafkaConfig)
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
 
@@ -48,7 +52,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          modelConfig,
+          componentDependencies.modelConfig,
           kafkaConfig,
           new LiteKafkaSourceImplFactory
         )
@@ -58,7 +62,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
-          modelConfig,
+          componentDependencies.modelConfig,
           kafkaConfig,
           LiteKafkaUniversalSinkImplFactory
         )

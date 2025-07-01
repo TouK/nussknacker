@@ -31,7 +31,7 @@ final case class RunDeploymentResult(
 case class RunDeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
-    nodesDeploymentData: NodesDeploymentData,
+    nodesDeploymentData: Option[NodesDeploymentData],
     scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
     with ScenarioCommand[RunDeploymentResult]
@@ -39,7 +39,7 @@ case class RunDeploymentCommand(
 case class RunRedeploymentCommand(
     commonData: CommonCommandData,
     stateRestoringStrategy: StateRestoringStrategy,
-    nodesDeploymentData: NodesDeploymentData,
+    nodesDeploymentData: Option[NodesDeploymentData],
     scenarioSource: ScenarioGraphSource,
 ) extends CommonDeploymentCommand
     with ScenarioCommand[RunDeploymentResult]
@@ -47,7 +47,7 @@ case class RunRedeploymentCommand(
 trait CommonDeploymentCommand {
   val commonData: CommonCommandData
   val stateRestoringStrategy: StateRestoringStrategy
-  val nodesDeploymentData: NodesDeploymentData
+  val nodesDeploymentData: Option[NodesDeploymentData]
   val scenarioSource: ScenarioGraphSource
 }
 

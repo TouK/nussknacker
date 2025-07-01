@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
+  ComponentDependencies,
   ComponentProvider,
   ComponentType,
   NussknackerVersion
@@ -31,8 +32,12 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = {
-    val overriddenModelConfig = TemporaryKafkaConfigMapping.prepareModelConfig(componentProviderConfig, modelConfig)
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = {
+    val overriddenModelConfig =
+      TemporaryKafkaConfigMapping.prepareModelConfig(componentProviderConfig, componentDependencies.modelConfig)
     val finalModelConfig =
       modelConfigWithDisabledNamespacingIfApplicable(componentProviderConfig, overriddenModelConfig)
     val docsConfig = DocsConfig(componentProviderConfig)

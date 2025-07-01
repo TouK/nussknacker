@@ -28,7 +28,7 @@ const REFRESH_TIME = 1000;
 
 let intervalId: number;
 
-function fetchAndDisplayLiveData(showErrors = false): ThunkAction {
+function fetchAndDisplayLiveData(showErrors = false, refresh = REFRESH_TIME): ThunkAction {
     return (dispatch, getState) => {
         async function perform(showErrors = false) {
             dispatch({ type: "FETCH_LIVE_DATA" });
@@ -57,7 +57,7 @@ function fetchAndDisplayLiveData(showErrors = false): ThunkAction {
 
         if (!intervalId) {
             dispatch({ type: "LIVE_DATA_STARTED" });
-            intervalId = window.setInterval(perform, REFRESH_TIME);
+            intervalId = window.setInterval(perform, refresh);
         }
     };
 }

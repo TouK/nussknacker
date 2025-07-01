@@ -233,7 +233,10 @@ trait NuResourcesTest
           TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
         oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
         newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
-      )
+      ),
+      processingTypeToActionInfoService = mapProcessingTypeDataProvider(
+        Streaming.stringify -> newActionInfoService(modelData)
+      ),
     )(executionContextWithIORuntime)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =

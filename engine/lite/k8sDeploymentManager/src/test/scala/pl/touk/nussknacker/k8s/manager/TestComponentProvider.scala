@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
+  ComponentDependencies,
   ComponentProvider,
   NussknackerVersion,
   StaticParameterConfig
@@ -21,7 +22,10 @@ class TestComponentProvider extends ComponentProvider {
   override def isAutoLoaded: Boolean                              = true
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  override def create(componentProviderConfig: Config, modelConfig: ModelConfig): List[ComponentDefinition] = List(
+  override def create(
+      componentProviderConfig: Config,
+      componentDependencies: ComponentDependencies
+  ): List[ComponentDefinition] = List(
     ComponentDefinition("env", new EnvService),
     ComponentDefinition("deploy-param-service", new DeployParamService),
   )

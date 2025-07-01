@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.api.component.ComponentDependencies
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
@@ -18,7 +19,7 @@ class LiteKafkaComponentProviderSpec extends AnyFunSuite with MockitoSugar with 
 
   test("should create kafka components from configuration") {
     val emptyConfig = ConfigFactory.empty()
-    val result      = sut.create(emptyConfig, ModelConfig.parse(emptyConfig))
+    val result = sut.create(emptyConfig, ComponentDependencies(ModelConfig.parse(emptyConfig), designerDbRef = None))
 
     result.map(_.name).distinct shouldBe List("kafka")
     result.map(_.component.getClass.getSimpleName) shouldBe
@@ -30,7 +31,9 @@ class LiteKafkaComponentProviderSpec extends AnyFunSuite with MockitoSugar with 
       .empty()
       .withValue("kafka.idleTimeout", fromMap(Map("enabled" -> "true", "duration" -> "3 seconds").asJava))
 
-    val ex = intercept[IllegalArgumentException](sut.create(config, ModelConfig.parse(config)))
+    val ex = intercept[IllegalArgumentException](
+      sut.create(config, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
+    )
 
     ex.getMessage shouldBe "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +
       "Please remove the idleness config from your Lite Kafka sources config."
@@ -41,7 +44,9 @@ class LiteKafkaComponentProviderSpec extends AnyFunSuite with MockitoSugar with 
       .empty()
       .withValue("kafka.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
 
-    val ex = intercept[IllegalArgumentException](sut.create(config, ModelConfig.parse(config)))
+    val ex = intercept[IllegalArgumentException](
+      sut.create(config, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None))
+    )
 
     ex.getMessage shouldBe "SinkDeliveryGuarantee is a Flink specific feature and is not supported in Lite Kafka " +
       "config. Please remove the sinkDeliveryGuarantee property from your Lite Kafka config."

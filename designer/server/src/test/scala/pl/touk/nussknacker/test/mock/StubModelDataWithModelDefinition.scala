@@ -4,6 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
@@ -40,4 +41,7 @@ class StubModelDataWithModelDefinition(
 
   override def additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] =
     TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+
+  override def designerDbRef: Option[DbRef] = None
+
 }

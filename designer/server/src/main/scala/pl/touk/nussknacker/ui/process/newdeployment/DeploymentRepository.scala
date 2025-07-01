@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.db.{DbRef, NuJdbcProfile}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import pl.touk.nussknacker.ui.customhttpservice.services.{DbRef, NuJdbcProfile}
 import pl.touk.nussknacker.ui.db.{NuTables, SqlStates}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData

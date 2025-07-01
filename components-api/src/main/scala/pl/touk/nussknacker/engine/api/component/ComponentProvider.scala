@@ -6,6 +6,7 @@ import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
 import org.semver4j.Semver
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component.Component._
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -122,7 +123,7 @@ trait ComponentProvider {
   // on engine/executor side (e.g. on Flink it can be in different network location, or have lower HA guarantees), @see ModelConfigLoader
   def resolveConfigForExecution(config: Config): Config
 
-  def create(config: Config, modelConfig: ModelConfig): List[ComponentDefinition]
+  def create(config: Config, dependencies: ComponentDependencies): List[ComponentDefinition]
 
   def isCompatible(version: NussknackerVersion): Boolean
 
@@ -154,3 +155,9 @@ case class ComponentDefinition(
   def withDesignerWideId(id: String): ComponentDefinition = copy(designerWideId = Some(DesignerWideComponentId(id)))
 
 }
+
+case class ComponentDependencies(
+    modelConfig: ModelConfig,
+    // This dependency is passed only on the Designer side
+    designerDbRef: Option[DbRef]
+)

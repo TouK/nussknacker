@@ -4,6 +4,7 @@ import db.util.DBIOActionInstances.DB
 import org.apache.pekko.actor.ActorSystem
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, JobsRecoverySettings, ModelData}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig.LimitsConfig
+import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, Test
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.modelDefinition
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.customhttpservice.services.DbRef
 import pl.touk.nussknacker.ui.limits.{GlobalLimitsConfig, LimitsService}
 import pl.touk.nussknacker.ui.process.deployment.TestDeploymentServiceFactory.{
   actorSystem,
@@ -145,6 +145,11 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         ),
         oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
         newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
+      ),
+      TestFactory.mapProcessingTypeDataProvider(
+        deploymentManagers.map { case (processingType, _) =>
+          processingType -> newActionInfoService(modelData)
+        }.toList: _*
       )
     )
     TestDeploymentServiceServices(

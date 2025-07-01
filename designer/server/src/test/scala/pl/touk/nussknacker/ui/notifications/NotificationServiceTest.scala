@@ -130,7 +130,7 @@ class NotificationServiceTest
         .processCommand(
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
-            nodesDeploymentData = NodesDeploymentData.empty,
+            nodesDeploymentData = Some(NodesDeploymentData.empty),
             stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
             scenarioSource = LatestVersion,
           )
@@ -188,7 +188,7 @@ class NotificationServiceTest
         .processCommand(
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
-            nodesDeploymentData = NodesDeploymentData.empty,
+            nodesDeploymentData = Some(NodesDeploymentData.empty),
             stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
             scenarioSource = LatestVersion,
           )
@@ -260,7 +260,7 @@ class NotificationServiceTest
         .processCommand(
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
-            nodesDeploymentData = NodesDeploymentData.empty,
+            nodesDeploymentData = Some(NodesDeploymentData.empty),
             stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
             scenarioSource = LatestVersion,
           )
@@ -330,6 +330,7 @@ class NotificationServiceTest
       processService,
       scenarioParametersServiceProvider()
     )
+    val actionInfoService = mock[ActionInfoService]
     val deploymentService = new DeploymentService(
       managerDispatcher,
       TestFactory.processValidatorByProcessingType(),
@@ -342,7 +343,8 @@ class NotificationServiceTest
           TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> LimitsConfig.default),
         oldDeploymentsApproachScenarioStatusProvider = oldApproachScenarioStatusProvider,
         newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
-      )
+      ),
+      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> actionInfoService),
     ) {
 
       override protected def validateUsingDeploymentManager(

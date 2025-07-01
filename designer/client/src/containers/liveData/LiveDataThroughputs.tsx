@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 
 import { useUserSettings } from "../../common/userSettings";
 import { useGraph } from "../../components/graph/GraphContext";
+import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
 import {
     getIsLiveDataWorking,
     getLiveDataLastUpdate,
@@ -74,16 +75,19 @@ export function LiveDataThroughputs() {
         const graphInstance = graphGetter();
 
         graphInstance?.graph.getElements().forEach((model) => {
-            const events = newEvents.filter((e) => e.sourceNodeId === model.id);
+            const isMatchingModel = ({
+                sourceNodeId,
+                destinationNodeId,
+            }: Pick<NodeTransitionResult, "sourceNodeId" | "destinationNodeId">): boolean => {
+                if (model.hasPort("In")) return model.id === destinationNodeId;
+                if (model.hasPort("Out")) return model.id === sourceNodeId;
+            };
+
+            const events = newEvents.filter(isMatchingModel);
             const el = graphInstance.processGraphPaper.findViewByModel(model)?.el;
 
             const nodeInputThroughput = enabled
-                ? transitionResults
-                      .filter(({ sourceNodeId, destinationNodeId }) => {
-                          if (model.hasPort("In")) return destinationNodeId === model.id;
-                          if (model.hasPort("Out")) return sourceNodeId === model.id;
-                      })
-                      .reduce((sum, { currentThroughput }) => sum + currentThroughput, 0)
+                ? transitionResults.filter(isMatchingModel).reduce((sum, { currentThroughput }) => sum + currentThroughput, 0)
                 : 0;
 
             const animations = el.getAnimations().filter(({ id }) => id === "pulse2" || id === "pulse");

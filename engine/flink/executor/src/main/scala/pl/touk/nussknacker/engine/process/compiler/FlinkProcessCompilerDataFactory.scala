@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
+  ComponentDependencies,
   DesignerWideComponentId,
   NodesDeploymentData
 }
@@ -128,9 +129,9 @@ class FlinkProcessCompilerDataFactory(
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
       extractModelDefinition(
         userCodeClassLoader,
-        modelConfig,
+        ComponentDependencies(modelConfig, designerDbRef = None),
         id => DesignerWideComponentId(id.toString),
-        configsFromProviderWithDictionaryEditor
+        configsFromProviderWithDictionaryEditor,
       )
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
