@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{validNel, Invalid, Valid}
+import cats.data.{Validated, ValidatedNel}
+import cats.data.Validated.validNel
 import cats.implicits.toTraverseOps
 import io.circe.parser
 import org.springframework.expression.{Expression => SpringExpression}
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
+import pl.touk.nussknacker.engine.api.json.decoders.{FromJsonSimpleDecoder, FromJsonTypingResultBasedDecoder}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.TypeValueDeterminer
@@ -47,15 +47,16 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
       extractJsonStringFromParsedExpression(
         spelTemplateExpression.expression,
         new WithContextValidationSpelExpressionConverter(spelParser, ctx)
-      ).andThen(JsonParser.parse(_, ctx, expectedType))
-        .map { typedJsonExpression =>
+      ).andThen(JsonParser.parseWithoutContextValidation(_, expectedType))
+        .map { compiledExpression =>
+          val typ = FromJsonSimpleDecoder.jsonToAny(compiledExpression.json)
           TypedExpression(
             new CompiledJsonTemplateExpression(
               original,
               spelTemplateExpression.expression,
               expectedType
             ),
-            new JsonTemplateExpressionTypingInfo(typedJsonExpression.typingInfo),
+            ExpressionTypingInfo(Typed.fromInstance(typ))
           )
         }
     }
@@ -139,10 +140,6 @@ object JsonTemplateParser {
         .fold(e => throw new JsonTemplateEvaluationException(originalJsonString, e), _.asInstanceOf[T])
     }
 
-  }
-
-  private class JsonTemplateExpressionTypingInfo(typingInfo: ExpressionTypingInfo) extends ExpressionTypingInfo {
-    override val typingResult: TypingResult = typingInfo.typingResult.withoutValue
   }
 
   private class JsonTemplateEvaluationException(
