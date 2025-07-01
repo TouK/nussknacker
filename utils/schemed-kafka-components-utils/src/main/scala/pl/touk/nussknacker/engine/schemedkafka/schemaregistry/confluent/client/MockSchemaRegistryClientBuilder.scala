@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
+import org.everit.json.schema.{Schema => JsonSchema}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
-import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
 import scala.collection.mutable.ListBuffer
@@ -25,16 +23,17 @@ class MockConfluentSchemaRegistryClientBuilder {
   ): MockConfluentSchemaRegistryClientBuilder = {
     val avroSchema = ConfluentUtils.convertToAvroSchema(schema)
     register(topic, avroSchema, version, isKey)
+    this
   }
 
   def register(
       topic: String,
-      schema: ParsedSchema,
+      schema: JsonSchema,
       version: Int,
       isKey: Boolean
   ): MockConfluentSchemaRegistryClientBuilder = {
-    val registryItem = RegistryItem(topic, schema, version, isKey, AutoIncId)
-    registry.append(registryItem)
+    val avroSchema = ConfluentUtils.convertToJsonSchema(schema)
+    register(topic, avroSchema, version, isKey)
     this
   }
 
@@ -42,6 +41,16 @@ class MockConfluentSchemaRegistryClientBuilder {
     val client = new MockSchemaRegistryClient
     registry.foreach(reg => register(client, reg))
     client
+  }
+
+  private def register(
+      topic: String,
+      schema: ParsedSchema,
+      version: Int,
+      isKey: Boolean
+  ): Unit = {
+    val registryItem = RegistryItem(topic, schema, version, isKey, AutoIncId)
+    registry.append(registryItem)
   }
 
   private def register(mockSchemaRegistry: MockSchemaRegistryClient, item: RegistryItem): Int = {

@@ -149,7 +149,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   }
 
   protected def extractPreparedTopic(params: Params): PreparedKafkaTopic[TN] =
-    prepareTopic(params.extractRequiredParamUnsafe(topicParamName))
+    prepareTopic(params.extractDeclaredParamUnsafe(topicParamName))
 
   protected def prepareTopic(topicString: String): PreparedKafkaTopic[TN] =
     KafkaComponentsUtils.prepareKafkaTopic(topicFrom(topicString), modelConfig)

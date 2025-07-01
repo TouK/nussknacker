@@ -268,8 +268,8 @@ object SchemalessKafkaJsonTypeTests {
         .emptySink(
           "end",
           "kafka",
-          "Key" -> "".spel,
-//          "Raw editor"            -> "true".spel,
+          "Key"                   -> "".spel,
+          "Raw editor"            -> "true".spel,
           "Value"                 -> "#input".spel,
           "Topic"                 -> s"'$sinkTopicName'".spel,
           "Content type"          -> "'JSON'".spel,

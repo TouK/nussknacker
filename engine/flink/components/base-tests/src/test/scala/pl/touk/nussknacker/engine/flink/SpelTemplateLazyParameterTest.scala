@@ -116,7 +116,7 @@ object SpelTemplatePartsCustomTransformer
       finalState: Option[Unit]
   ): FlinkCustomStreamTransformation = {
     val templateLazyParam: LazyParameter[TemplateEvaluationResult] =
-      params.extractRequiredParamUnsafe[LazyParameter[TemplateEvaluationResult]](spelTemplateParameterName)
+      params.extractDeclaredParamUnsafe[LazyParameter[TemplateEvaluationResult]](spelTemplateParameterName)
     FlinkCustomStreamTransformation {
       (dataStream: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) =>
         dataStream

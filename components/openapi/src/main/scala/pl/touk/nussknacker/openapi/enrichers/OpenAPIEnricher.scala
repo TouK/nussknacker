@@ -36,7 +36,7 @@ class OpenAPIEnricher(
       componentUseContext: ComponentUseContext
   ): Future[AnyRef] = getTimeMeasurement().measuring(tags) {
     val fixedOrEvaluatedParams = extractor.parameterDefinition
-      .map { p => p.name.value -> params.extractOrEvaluateLazyParam[AnyRef](p.name, context) }
+      .map { p => p.name.value -> params.extractOrEvaluateDeclaredLazyParam[AnyRef](p.name, context) }
       .collect {
         case (name, Some(value)) => name -> value
         case (name, None)        => name -> null

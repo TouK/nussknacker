@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
-import io.confluent.kafka.schemaregistry.json.JsonSchema
+import org.everit.json.schema.Schema
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 
 object AllTypesJsonSchemaWithoutDefaultValues {
 
-  val schema = new JsonSchema(
+  val schema: Schema = JsonSchemaBuilder.parseSchema(
     s"""
        |{
        |  "$$schema": "https://json-schema.org/draft/2020-12/schema",
