@@ -27,6 +27,7 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.ScenarioDeployme
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.{
   ScenarioStatusProvider => OldApproachScenarioStatusProvider
 }
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.newdeployment.{ScenarioStatusProvider => NewApproachScenarioStatusProvider}
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, ScenarioActionRepository}
@@ -135,7 +136,11 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
       TestFactory.mapProcessingTypeDataProvider(
         deploymentManagers.map { case (processingType, _) => processingType -> validator }.toList: _*
       ),
-      TestFactory.scenarioResolverByProcessingType(deploymentManagers.keys.toList),
+      TestFactory.mapProcessingTypeDataProvider(
+        deploymentManagers.map { case (processingType, _) =>
+          processingType -> new ScenarioResolver(new FragmentResolver(newFragmentRepository(dbRef)), processingType)
+        }.toList: _*
+      ),
       actionService,
       additionalComponentConfigsByProcessingType,
       new LimitsService(

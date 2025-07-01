@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ScenarioStatusWithScenarioContext
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
   DeploymentId,
   ExternalDeploymentId,
@@ -842,6 +844,48 @@ class DeploymentServiceSpec
 
     eventually {
       deploymentManager1.successfulDeploys should contain(scenario.name)
+    }
+  }
+
+  "should allow to deploy scenario ended with fragment" in {
+    val fragment = ScenarioBuilder
+      .fragment(generateScenarioName())
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+
+    val scenarioEndedWithFragment = ScenarioBuilder
+      .streaming(generateScenarioName())
+      .source("source", ProcessTestData.existingSourceFactory)
+      .fragmentEnd("fragment", fragment.name.value)
+
+    def saveScenario(scenario: CanonicalProcess, isFragment: Boolean) = {
+      val action = CreateProcessAction(
+        processName = scenario.name,
+        category = "Category1",
+        canonicalProcess = scenario,
+        processingType = Streaming1.stringify,
+        isFragment = isFragment,
+      )
+      writeProcessRepository
+        .saveNewProcess(action)
+        .map(_.value.processId)
+        .map(ProcessIdWithName(_, scenario.name))
+        .dbioActionValues
+    }
+
+    saveScenario(fragment, isFragment = true)
+    val idWithName = saveScenario(scenarioEndedWithFragment, isFragment = false)
+
+    deploymentManager1.withStubbedDeployResult(scenarioEndedWithFragment.name) {
+      deploymentService
+        .processCommand(
+          RunDeploymentCommand(
+            commonData = CommonCommandData(processIdWithName = idWithName, comment = None, user = user),
+            stateRestoringStrategy = RestoreStateFromReplacedJobSavepoint,
+            nodesDeploymentData = None,
+            scenarioSource = LatestVersion
+          )
+        )
+        .futureValue
     }
   }
 
