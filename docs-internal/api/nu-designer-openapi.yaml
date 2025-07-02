@@ -4129,7 +4129,7 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
                       - name: status
-                        value: Run now execution finished
+                        value: Run now execution triggered
                       - name: started
                         value: '2024-01-17 14:21:17'
                       - name: finished
@@ -4148,7 +4148,7 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
                       - name: status
-                        value: Run now execution finished
+                        value: Run now execution triggered
                       - name: started
                         value: '2024-01-17 14:21:17'
                       - name: finished
@@ -4368,7 +4368,7 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Run now scheduling
+                      displayableName: Run now execution triggered
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4383,10 +4383,6 @@ paths:
                       icon: /assets/activities/automaticUpdate.svg
                       supportedActions:
                       - compare
-                    - type: CUSTOM_ACTION
-                      displayableName: Custom action
-                      icon: /assets/activities/customAction.svg
-                      supportedActions: []
                     actions:
                     - id: compare
                       displayableName: Compare
@@ -4496,7 +4492,7 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Run now scheduling
+                      displayableName: Run now execution triggered
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4511,10 +4507,6 @@ paths:
                       icon: /assets/activities/automaticUpdate.svg
                       supportedActions:
                       - compare
-                    - type: CUSTOM_ACTION
-                      displayableName: Custom action
-                      icon: /assets/activities/customAction.svg
-                      supportedActions: []
                     actions:
                     - id: compare
                       displayableName: Compare
@@ -7233,7 +7225,6 @@ components:
           - PERFORMED_SINGLE_EXECUTION
           - PERFORMED_SCHEDULED_EXECUTION
           - AUTOMATIC_UPDATE
-          - CUSTOM_ACTION
     ScenarioActivityActionMetadata:
       title: ScenarioActivityActionMetadata
       type: object
