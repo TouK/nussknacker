@@ -4670,7 +4670,8 @@ paths:
                   summary: Scenario not found
                   value: Scenario not found
         '422':
-          description: ''
+          description: Live data preview is not supported by this scenario. Any further
+            requests will result in HTTP 422 as well for this scenario
           content:
             text/plain:
               schema:
