@@ -621,7 +621,10 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           )
         )
       case activity: ScenarioActivity.PerformedSingleExecution =>
-        createEntity(scenarioActivity)()
+        createEntity(scenarioActivity)(
+          comment = comment(activity.comment),
+          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
+        )
       case activity: ScenarioActivity.PerformedScheduledExecution =>
         createEntity(scenarioActivity)(
           additionalProperties = AdditionalProperties(
