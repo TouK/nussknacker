@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.watermark
 
-@silent("deprecated")
+import scala.annotation.nowarn
+
+@nowarn("cat=deprecation")
 object StaticSource extends SourceFunction[String] {
 
   @volatile var buffer = List[Timer]()

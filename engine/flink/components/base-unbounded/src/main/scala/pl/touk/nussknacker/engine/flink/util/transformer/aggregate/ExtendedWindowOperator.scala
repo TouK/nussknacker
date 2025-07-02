@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{AggregateFunction, OpenContext, RuntimeContext}
 import org.apache.flink.api.common.state.AggregatingStateDescriptor
 import org.apache.flink.streaming.api.datastream.{KeyedStream, SingleOutputStreamOperator}
@@ -24,6 +23,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.Fire
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.lang
+import scala.annotation.nowarn
 
 object ExtendedWindowOperator {
   // TODO_PAWEL is it ok, previously StringKeyedValue
@@ -76,7 +76,7 @@ private[aggregate] final case class OnElementWindowContext(
 
 private[aggregate] case object OnTimerWindowContext extends NuWindowContext
 
-@silent("deprecated")
+@nowarn("cat=deprecation")
 private[aggregate] class ExtendedWindowOperator[A](
     stream: KeyedStream[Input[A], AnyRef],
     fctx: FlinkCustomNodeContext,

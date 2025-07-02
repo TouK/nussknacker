@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{HCursor, Json}
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
@@ -38,6 +37,7 @@ import java.time.Duration
 import java.time.temporal.ChronoUnit
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 // TODO: add testing capabilities
@@ -56,7 +56,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
     extends SourceFactory
     with UnboundedStreamComponent {
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   @MethodToInvoke
   def create(
       @ParamName("schedule")
@@ -181,7 +181,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
 
 }
 
-@silent("deprecated")
+@nowarn("cat=deprecation")
 class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
 
   @volatile private var isRunning = true

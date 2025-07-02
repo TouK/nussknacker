@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
@@ -8,6 +7,8 @@ import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api.{EndingReference, JoinReference, NextPartReference}
 import pl.touk.nussknacker.engine.util.Implicits._
+
+import scala.annotation.nowarn
 
 case class InterpretationResultMapTypeInfo(ctx: Map[String, TypeInformation[InterpretationResult]])
     extends TypeInformation[InterpretationResult] {
@@ -23,7 +24,7 @@ case class InterpretationResultMapTypeInfo(ctx: Map[String, TypeInformation[Inte
 
   override def isKeyType: Boolean = false
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[InterpretationResult] =
     InterpretationResultMapTypeSerializer(ctx.mapValuesNow(_.createSerializer(config)))
 

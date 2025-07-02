@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.exception
 
-import com.github.ghik.silencer.silent
 import com.typesafe.config.{Config, ConfigValue, ConfigValueType}
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
+import scala.annotation.nowarn
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.jdk.CollectionConverters._
 
@@ -56,7 +56,7 @@ object RestartStrategyFromConfiguration {
 
   // We convert HOCON to Flink configuration, so that we can use Flink parsing mechanisms
   // https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/dev/execution/task_failure_recovery/
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   private def readFromConfig(config: Config): RestartStrategyConfiguration = {
     val flinkConfig = new Configuration
     // restart-strategy.fixed-delay.attempts

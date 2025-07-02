@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -21,13 +20,14 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
 
 import java.time.Duration
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
+import scala.annotation.nowarn
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
 class NoEndingSource(val implementTimestampAssignerForTest: Boolean)
     extends StandardFlinkSource[String]
     with FlinkSourceTestSupport[String] {
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext

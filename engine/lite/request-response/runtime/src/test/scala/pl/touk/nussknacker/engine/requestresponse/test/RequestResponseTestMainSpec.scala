@@ -199,7 +199,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val endNodeIdInvocationResult = results.externalInvocationResults("endNodeIID").loneElement
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, "collect1").nextContextId()
 
-    endNodeIdInvocationResult.value shouldBe variable(List("bb", "aa"))
+    endNodeIdInvocationResult.value shouldBe variable(List("aa", "bb"))
   }
 
   private def createTestRecord(field1: String, field2: String) = {
