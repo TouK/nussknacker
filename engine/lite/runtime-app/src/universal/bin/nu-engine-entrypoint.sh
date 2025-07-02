@@ -36,9 +36,25 @@ if [ -n "$POD_NAME" ]; then
 fi
 
 WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
+MODULES_OPEN_OPTS="--add-exports=java.base/sun.net.util=ALL-UNNAMED \
+--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED \
+--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
+--add-opens=java.base/java.lang=ALL-UNNAMED \
+--add-opens=java.base/java.net=ALL-UNNAMED \
+--add-opens=java.base/java.io=ALL-UNNAMED \
+--add-opens=java.base/java.nio=ALL-UNNAMED \
+--add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+--add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+--add-opens=java.base/java.text=ALL-UNNAMED \
+--add-opens=java.base/java.time=ALL-UNNAMED \
+--add-opens=java.base/java.util=ALL-UNNAMED \
+--add-opens=java.base/java.math=ALL-UNNAMED \
+--add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
+--add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED"
 
 echo "Starting Nussknacker Lite Runtime"
 
-exec java $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS -Dlogback.configurationFile="$LOGBACK_FILE" \
+exec java $JAVA_DEBUG_OPTS $MODULES_OPEN_OPTS $JAVA_PROMETHEUS_OPTS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
           -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.app.NuRuntimeApp" "$SCENARIO_FILE" "$DEPLOYMENT_DATA_FILE"

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.kafka.serialization
 
 import java.lang
+import scala.annotation.nowarn
 import scala.reflect.classTag
 
 object FlinkSerializationSchemaConversions extends LazyLogging {
@@ -25,7 +25,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
   ): FlinkDeserializationSchemaWrapper[T] =
     new FlinkDeserializationSchemaWrapper[T](deserializationSchema, typeInformation)
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   class FlinkDeserializationSchemaWrapper[T](
       deserializationSchema: serialization.KafkaDeserializationSchema[T],
       typeInformation: TypeInformation[T]
@@ -66,7 +66,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
 
   }
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   def wrapToFlinkSerializationSchema[T](
       serializationSchema: serialization.KafkaSerializationSchema[T]
   ): kafka.KafkaSerializationSchema[T] = (element: T, timestamp: lang.Long) =>

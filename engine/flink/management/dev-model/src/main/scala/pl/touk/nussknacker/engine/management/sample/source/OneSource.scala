@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -13,9 +12,11 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 
+import scala.annotation.nowarn
+
 class OneSource extends StandardFlinkSource[String] {
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
