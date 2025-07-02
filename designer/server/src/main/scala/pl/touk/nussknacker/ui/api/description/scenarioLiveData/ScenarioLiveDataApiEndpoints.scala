@@ -49,7 +49,7 @@ class ScenarioLiveDataApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
         )
     ),
     oneOfVariant[LiveDataNotSupported.type](
-      NotImplemented,
+      UnprocessableEntity, // we don't want to use status 501 (which would be more fitting), because 5XX codes trigger infrastructure alerts
       plainBody[LiveDataNotSupported.type]
         .examples(
           List(
