@@ -61,7 +61,7 @@ object SpelTemplatePartsService extends EagerService with SingleInputDynamicComp
         componentUseContext: ComponentUseContext,
     ): Future[Any] = {
       val templateResult =
-        params.extractOrEvaluateLazyParamUnsafe[TemplateEvaluationResult](spelTemplateParameterName, context)
+        params.extractOrEvaluateDeclaredLazyParamUnsafe[TemplateEvaluationResult](spelTemplateParameterName, context)
       val result = templateResult.renderedParts.map {
         case RenderedLiteral(value)       => s"[$value]-literal"
         case RenderedSubExpression(value) => s"[$value]-subexpression"
