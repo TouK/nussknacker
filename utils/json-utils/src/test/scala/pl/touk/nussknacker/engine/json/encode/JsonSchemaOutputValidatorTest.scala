@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.json.encode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
@@ -123,7 +123,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     }
   }
 
-  test("validate against 'additionalProperties with patternProperties' schema") {
+  test("validate against 'additionalProperties with patternProperties' schema with nullable properties") {
     val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "additionalProperties": {
@@ -144,6 +144,40 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       (Typed.record(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), true, true),
       (Typed.record(ListMap("foo" -> Typed[Integer])), false, false),
       (Typed.record(ListMap("foo_int" -> Typed[String])), false, false),
+      (Typed.record(ListMap("foo_int" -> Unknown)), true, true),
+      (Typed.record(ListMap("foo" -> Unknown)), true, true),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, true),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Boolean])), false, false),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], Unknown)), false, true),
+    )
+
+    forAll(testData) { (typing: TypingResult, isValidForStrict: Boolean, isValidForLax: Boolean) =>
+      strictValidator.validate(typing, schema).isValid shouldBe isValidForStrict
+      laxValidator.validate(typing, schema).isValid shouldBe isValidForLax
+    }
+  }
+
+  test("validate against 'additionalProperties with patternProperties' schema") {
+    val schema = JsonSchemaBuilder.parseSchema("""{
+                                                 |  "type": "object",
+                                                 |  "additionalProperties": {
+                                                 |    "type": ["string"]
+                                                 |  },
+                                                 |  "patternProperties": {
+                                                 |    "_int$": {
+                                                 |      "oneOf": [
+                                                 |        { "type": "integer" }
+                                                 |      ]
+                                                 |    }
+                                                 |  }
+                                                 |}""".stripMargin)
+
+    val testData = Table(
+      ("typing", "is valid for strict", "is valid for lax"),
+      (Typed.record(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), true, true),
+      (Typed.record(ListMap("foo" -> Typed[Integer])), false, false),
+      (Typed.record(ListMap("foo_int" -> Typed[String])), false, false),
       (Typed.record(ListMap("foo_int" -> Unknown)), false, true),
       (Typed.record(ListMap("foo" -> Unknown)), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
@@ -158,7 +192,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     }
   }
 
-  test("validate against 'patternProperties without additionalProperties' schema") {
+  test("validate against 'patternProperties without additionalProperties' schema with nullable properties") {
     val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "patternProperties": {
@@ -170,6 +204,37 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
         |    }
         |  }
         |}""".stripMargin)
+
+    val testData = Table(
+      ("typing", "is valid for strict", "is valid for lax"),
+      (Typed.record(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), true, true),
+      (Typed.record(ListMap("foo" -> Typed[Integer])), true, true),
+      (Typed.record(ListMap("foo_int" -> Typed[String])), false, false),
+      (Typed.record(ListMap("foo_int" -> Unknown)), true, true),
+      (Typed.record(ListMap("foo" -> Unknown)), true, true),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, true),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Boolean])), false, true),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], Unknown)), false, true),
+    )
+
+    forAll(testData) { (typing: TypingResult, isValidForStrict: Boolean, isValidForLax: Boolean) =>
+      strictValidator.validate(typing, schema).isValid shouldBe isValidForStrict
+      laxValidator.validate(typing, schema).isValid shouldBe isValidForLax
+    }
+  }
+
+  test("validate against 'patternProperties without additionalProperties' schema") {
+    val schema = JsonSchemaBuilder.parseSchema("""{
+                                                 |  "type": "object",
+                                                 |  "patternProperties": {
+                                                 |    "_int$": {
+                                                 |      "oneOf": [
+                                                 |        { "type": "integer" },
+                                                 |      ]
+                                                 |    }
+                                                 |  }
+                                                 |}""".stripMargin)
 
     val testData = Table(
       ("typing", "is valid for strict", "is valid for lax"),

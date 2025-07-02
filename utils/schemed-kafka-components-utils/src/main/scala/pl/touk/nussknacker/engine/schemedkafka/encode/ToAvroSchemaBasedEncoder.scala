@@ -7,7 +7,6 @@ import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.util.Utf8
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
@@ -131,6 +130,10 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
         Valid(number.floatValue().asInstanceOf[AnyRef])
       case (Schema.Type.FLOAT, number: java.lang.Float) =>
         Valid(number)
+      case (Schema.Type.FLOAT, number: java.math.BigDecimal) =>
+        Valid(number.floatValue().asInstanceOf[AnyRef])
+      case (Schema.Type.DOUBLE, number: java.math.BigDecimal) =>
+        Valid(number.doubleValue().asInstanceOf[AnyRef])
       case (Schema.Type.DOUBLE, number: Number) =>
         Valid(number.doubleValue().asInstanceOf[AnyRef])
       case (Schema.Type.BOOLEAN, boolean: java.lang.Boolean) =>

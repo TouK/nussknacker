@@ -90,7 +90,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
 
     override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] =
-      params.extract[PARAMETER_VALUE_TYPE](parameterName)
+      params.extractDeclaredParam[PARAMETER_VALUE_TYPE](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName)
@@ -101,7 +101,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[Map[String, PARAMETER_VALUE_TYPE]] =
-      params.extract[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
+      params.extractDeclaredParam[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName)
@@ -114,7 +114,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[LazyParameter[PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[LazyParameter[PARAMETER_VALUE_TYPE]] =
-      params.extract[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
+      params.extractDeclaredParam[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName)
@@ -127,7 +127,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
 
     override def extractValue(params: Params): Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] =
-      params.extract[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+      params.extractDeclaredParam[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName)
@@ -140,7 +140,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
 
     override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] = {
-      params.extract[PARAMETER_VALUE_TYPE](parameterName)
+      params.extractDeclaredParam[PARAMETER_VALUE_TYPE](parameterName)
     }
 
     override private[definition] def createBase: Parameter =
@@ -152,7 +152,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[LazyParameter[PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[LazyParameter[PARAMETER_VALUE_TYPE]] =
-      params.extract[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
+      params.extractDeclaredParam[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter
@@ -166,7 +166,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[Map[String, PARAMETER_VALUE_TYPE]] =
-      params.extract[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
+      params.extractDeclaredParam[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter
@@ -180,7 +180,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
 
     override def extractValue(params: Params): Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] =
-      params.extract[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+      params.extractDeclaredParam[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
 
     override private[definition] def createBase: Parameter = {
       Parameter
