@@ -173,7 +173,7 @@ const aceEditorStyles = (theme: Theme) => ({
     },
 
     ".ace-nussknacker .ace_static_highlight": {
-        padding: "4px",
+        padding: theme.spacing(0.5),
         overflowX: "auto",
         whiteSpace: "pre",
     },
