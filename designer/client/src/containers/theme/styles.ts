@@ -171,6 +171,12 @@ const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_jsonTemplate, .ace-nussknacker .ace_spelTemplate": {
         color: "#00BFA5",
     },
+
+    ".ace-nussknacker .ace_static_highlight": {
+        padding: "4px",
+        overflowX: "auto",
+        whiteSpace: "pre",
+    },
 });
 
 const DTPickerStyles = (theme: Theme) => ({
