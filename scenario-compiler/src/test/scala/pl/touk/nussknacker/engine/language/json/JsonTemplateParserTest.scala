@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -68,6 +68,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     forAll(
       Table(
         ("Data sample", "Typing result"),
+        ("", Unknown),
         ("{}", Typed.record(List())),
         ("123", Typed.typedClass[Integer]),
         ("[]", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
@@ -132,7 +133,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       )
     ) { (dataSample: String, typingResult: TypingResult) =>
       parse[Any](dataSample, ctxWithVariables).map(_.returnType) shouldBe Valid(typingResult)
-      parseWithoutContextValidation[String](dataSample).isValid shouldBe true
+      parseWithoutContextValidation[String](dataSample) shouldBe Symbol("valid")
     }
   }
 
@@ -196,8 +197,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
                          |  "products": [
                          |}""".stripMargin
 
-    val parsingErrors               = parse[String](invalidJson).invalidValue
-    val parsingErrorsWithoutContext = parseWithoutContextValidation[String](invalidJson).invalidValue
+    val parsingErrors = parse[String](invalidJson).invalidValue
 
     parsingErrors shouldBe NonEmptyList.of(
       JsonParseError(
@@ -205,13 +205,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
       )
     )
-    parsingErrorsWithoutContext shouldBe
-      NonEmptyList.of(
-        JsonParseError(
-          "expected json value got '}'",
-          Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
-        )
-      )
   }
 
   test("should return error when complex variable type is not in quotes") {

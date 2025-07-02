@@ -413,7 +413,6 @@ object typing {
               }
             case notTypedClass => notTypedClass
           }
-
       }
     }
 
