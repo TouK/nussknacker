@@ -16,25 +16,25 @@ import scala.collection.mutable.ListBuffer
 
 class InMemScenarioActivityRepository extends ScenarioActivityRepository {
 
-  private val acitivities: mutable.ListBuffer[ScenarioActivity] = ListBuffer.empty
+  private val activities: mutable.ListBuffer[ScenarioActivity] = ListBuffer.empty
 
   def getActivities: List[ScenarioActivity] = synchronized {
-    acitivities.toList
+    activities.toList
   }
 
   override def addActivity(
       scenarioActivity: ScenarioActivity
   ): DB[ScenarioActivityId] = DBIO.successful {
-    acitivities += scenarioActivity
+    activities += scenarioActivity
     scenarioActivity.scenarioActivityId
   }
 
-  override def clock: Clock = ???
+  override def clock: Clock = notSupported
 
   override def findActivities(
       scenarioId: ProcessId,
       after: Option[Instant]
-  ): DB[Seq[ScenarioActivity]] = ???
+  ): DB[Seq[ScenarioActivity]] = notSupported
 
   override def editComment(
       scenarioId: ProcessId,
@@ -44,7 +44,8 @@ class InMemScenarioActivityRepository extends ScenarioActivityRepository {
         Unit
       ],
       comment: String
-  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = ???
+  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] =
+    notSupported
 
   override def deleteComment(
       scenarioId: ProcessId,
@@ -53,7 +54,8 @@ class InMemScenarioActivityRepository extends ScenarioActivityRepository {
         ScenarioActivityRepository.ModifyCommentError,
         Unit
       ]
-  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = ???
+  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] =
+    notSupported
 
   override def deleteComment(
       scenarioId: ProcessId,
@@ -62,29 +64,33 @@ class InMemScenarioActivityRepository extends ScenarioActivityRepository {
         ScenarioActivityRepository.ModifyCommentError,
         Unit
       ]
-  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = ???
+  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] =
+    notSupported
 
   override def addAttachment(
       attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd
-  )(implicit user: LoggedUser): DB[ScenarioActivityId] = ???
+  )(implicit user: LoggedUser): DB[ScenarioActivityId] = notSupported
 
   override def markAttachmentAsDeleted(
       scenarioId: ProcessId,
       attachmentId: Long,
-  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.DeleteAttachmentError, Unit]] = ???
+  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.DeleteAttachmentError, Unit]] = notSupported
 
   override def findAttachments(
       scenarioId: ProcessId,
-  ): DB[Seq[AttachmentEntityData]] = ???
+  ): DB[Seq[AttachmentEntityData]] = notSupported
 
   override def findAttachment(
       scenarioId: ProcessId,
       attachmentId: Long,
-  ): DB[Option[AttachmentEntityData]] = ???
+  ): DB[Option[AttachmentEntityData]] = notSupported
 
   override def findActivity(
       processId: ProcessId,
-  ): DB[Legacy.ProcessActivity] = ???
+  ): DB[Legacy.ProcessActivity] = notSupported
 
-  override def getActivityStats: DB[Map[String, Int]] = ???
+  override def getActivityStats: DB[Map[String, Int]] = notSupported
+
+  private def notSupported: Nothing = throw new Exception("not supported in tests")
+
 }
