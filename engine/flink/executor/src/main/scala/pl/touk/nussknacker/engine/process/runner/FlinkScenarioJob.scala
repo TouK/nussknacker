@@ -49,7 +49,7 @@ class FlinkScenarioJob(modelData: ModelData) {
       modelData.modelConfig.liveDataPreviewMode match {
         case LiveDataPreviewMode.Disabled =>
           None
-        case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, DesignerJvm) =>
+        case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, _) =>
           Some(
             LiveDataCollectingListenerHolder.createListenerFor(
               processVersion.processName,
@@ -57,14 +57,20 @@ class FlinkScenarioJob(modelData: ModelData) {
               throughputTimeWindowInSeconds
             )
           )
-        case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, storage: DesignerDb) =>
-          val processIdWithName = ProcessIdWithName(processVersion.processId, processVersion.processName)
-          PeriodicLiveDataUploader.register(env, processIdWithName, storage)
+      }
+    val periodicLiveDataUploader =
+      modelData.modelConfig.liveDataPreviewMode match {
+        case LiveDataPreviewMode.Disabled | LiveDataPreviewMode.Enabled(_, _, DesignerJvm) =>
+          None
+        case LiveDataPreviewMode.Enabled(_, _, storage: DesignerDb) =>
           Some(
-            LiveDataCollectingListenerHolder.createListenerFor(
-              processVersion.processName,
-              maxNumberOfSamples,
-              throughputTimeWindowInSeconds
+            new PeriodicLiveDataUploader(
+              ProcessIdWithName(processVersion.processId, processVersion.processName),
+              storage.uploadIntervalInSeconds,
+              storage.url,
+              storage.user,
+              storage.password,
+              storage.schema
             )
           )
       }
@@ -78,7 +84,10 @@ class FlinkScenarioJob(modelData: ModelData) {
       FlinkProcessRegistrar(compilerFactory, FlinkJobConfig.parse(modelData.modelConfig), executionConfigPreparer)
     registrar.register(env, scenario, processVersion, deploymentData)
     val preparedName = modelData.namingStrategy.prepareName(scenario.name.value)
-    env.execute(preparedName)
+    periodicLiveDataUploader.foreach(_.start())
+    val result = env.execute(preparedName)
+    periodicLiveDataUploader.foreach(_.close())
+    result
   }
 
 }

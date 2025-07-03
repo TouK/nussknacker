@@ -1,47 +1,13 @@
 package pl.touk.nussknacker.engine.process.livedata
 
 import io.circe.syntax.EncoderOps
-import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.OpenContext
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink
-import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
-import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage.DesignerDb
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.time.Instant
 import scala.util.{Failure, Try}
-
-object PeriodicLiveDataUploader {
-
-  // Uploading live data to external storage (in order to make it available for the Designer) is done as a Flink pipeline.
-  // Flink runs it alongside the scenario. It is started with the scenario and stopped when scenario is stopped.
-  def register(
-      env: StreamExecutionEnvironment,
-      processIdWithName: ProcessIdWithName,
-      storage: DesignerDb,
-  ): Unit = {
-    env
-      .fromSource(new EmitOnceSource, WatermarkStrategy.noWatermarks(), "live-data-uploader")
-      .keyBy((_: String) => "live-data")
-      .process(
-        new PeriodicLiveDataUploader(
-          processIdWithName = processIdWithName,
-          intervalSeconds = storage.uploadIntervalInSeconds,
-          dbUrl = storage.url,
-          dbUser = storage.user,
-          dbPassword = storage.password,
-          dbSchema = storage.schema,
-        )
-      )
-      .sinkTo(new DiscardingSink[String]())
-  }
-
-}
 
 class PeriodicLiveDataUploader(
     processIdWithName: ProcessIdWithName,
@@ -50,7 +16,7 @@ class PeriodicLiveDataUploader(
     dbUser: String,
     dbPassword: String,
     dbSchema: String,
-) extends KeyedProcessFunction[String, String, String] {
+) {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -60,30 +26,17 @@ class PeriodicLiveDataUploader(
   @transient private var connection: Connection       = _
   @transient private var statement: PreparedStatement = _
 
-  override def open(openContext: OpenContext): Unit = {
-    // Looks like unused code, but needed to load the driver
-    if (dbUrl.startsWith("jdbc:postgresql:"))
-      Class.forName("org.postgresql.Driver")
-    else if (dbUrl.startsWith("jdbc:hsqldb:"))
-      Class.forName("org.hsqldb.jdbc.JDBCDriver")
-
+  def start(): Unit = {
     running = true
+    loadJdbcDriver()
     updaterThread = new Thread(() => {
       while (running) {
         Try {
-          if (connection == null) prepareConnection()
-
-          statement.setLong(1, processIdWithName.id.value)
-          statement.setString(2, LiveDataCollectingListenerHolder.id.toString)
-          LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name) match {
-            case Some(liveData) =>
-              statement.setString(3, liveData.asJson.noSpaces)
-            case None =>
-              statement.setNull(3, java.sql.Types.VARCHAR)
+          if (connection == null) {
+            prepareConnection()
+            prepareStatement()
           }
-          statement.setLong(4, Instant.now.getEpochSecond)
-          statement.executeUpdate()
-
+          uploadLiveData()
           logger.debug("Uploaded scenario live data")
         } match {
           case Failure(exception) =>
@@ -99,7 +52,6 @@ class PeriodicLiveDataUploader(
             connection = null
           case _ => ()
         }
-
         // Sleep until next scheduled upload, or close
         try {
           Thread.sleep(intervalSeconds * 1000)
@@ -113,25 +65,31 @@ class PeriodicLiveDataUploader(
     updaterThread.start()
   }
 
-  override def processElement(
-      value: String,
-      ctx: KeyedProcessFunction[String, String, String]#Context,
-      out: Collector[String]
-  ): Unit = ()
-
-  override def close(): Unit = {
+  def close(): Unit = {
     running = false
     if (updaterThread != null) {
       updaterThread.interrupt()
       updaterThread.join()
     }
     if (connection != null) connection.close()
+    if (statement != null) statement.close()
+  }
+
+  private def loadJdbcDriver(): Unit = {
+    // Looks like unused code, but needed to load the driver
+    if (dbUrl.startsWith("jdbc:postgresql:"))
+      Class.forName("org.postgresql.Driver")
+    else if (dbUrl.startsWith("jdbc:hsqldb:"))
+      Class.forName("org.hsqldb.jdbc.JDBCDriver")
   }
 
   private def prepareConnection(): Unit = {
     connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
+    connection.setSchema(dbSchema)
+  }
+
+  private def prepareStatement(): Unit = {
     statement = if (dbUrl.startsWith("jdbc:postgresql:")) {
-      connection.setSchema(dbSchema)
       connection.prepareStatement(
         """
           |INSERT INTO live_data (scenario_id, collector_id, live_data, updated_at)
@@ -143,17 +101,30 @@ class PeriodicLiveDataUploader(
     } else {
       connection.prepareStatement(
         s"""
-          |MERGE INTO "$dbSchema"."live_data" AS target
-          |USING (VALUES (?, ?, ?, ?)) AS vals("scenario_id", "collector_id", "live_data", "updated_at")
-          |ON (target."scenario_id" = vals."scenario_id" AND target."collector_id" = vals."collector_id")
-          |WHEN MATCHED THEN
-          |  UPDATE SET "live_data" = vals."live_data", "updated_at" = vals."updated_at"
-          |WHEN NOT MATCHED THEN
-          |  INSERT ("scenario_id", "collector_id", "live_data", "updated_at")
-          |  VALUES (vals."scenario_id", vals."collector_id", vals."live_data", vals."updated_at")
-          |""".stripMargin
+           |MERGE INTO "$dbSchema"."live_data" AS target
+           |USING (VALUES (?, ?, ?, ?)) AS vals("scenario_id", "collector_id", "live_data", "updated_at")
+           |ON (target."scenario_id" = vals."scenario_id" AND target."collector_id" = vals."collector_id")
+           |WHEN MATCHED THEN
+           |  UPDATE SET "live_data" = vals."live_data", "updated_at" = vals."updated_at"
+           |WHEN NOT MATCHED THEN
+           |  INSERT ("scenario_id", "collector_id", "live_data", "updated_at")
+           |  VALUES (vals."scenario_id", vals."collector_id", vals."live_data", vals."updated_at")
+           |""".stripMargin
       )
     }
+  }
+
+  private def uploadLiveData(): Unit = {
+    statement.setLong(1, processIdWithName.id.value)
+    statement.setString(2, LiveDataCollectingListenerHolder.id.toString)
+    LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name) match {
+      case Some(liveData) =>
+        statement.setString(3, liveData.asJson.noSpaces)
+      case None =>
+        statement.setNull(3, java.sql.Types.VARCHAR)
+    }
+    statement.setLong(4, Instant.now.getEpochSecond)
+    statement.executeUpdate()
   }
 
 }
