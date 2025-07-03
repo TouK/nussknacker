@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig}
 import pl.touk.nussknacker.engine.api.context.transformation.DynamicComponent
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -16,6 +16,7 @@ final case class DynamicComponentDefinitionWithImplementation(
     override val implementationInvoker: ComponentImplementationInvoker,
     override val component: DynamicComponent[_],
     override val componentTypeSpecificData: ComponentTypeSpecificData,
+    override val providerComponentGroup: Option[ComponentGroupName],
     override protected val uiDefinition: ComponentUiDefinition,
     parametersConfig: Map[ParameterName, ParameterConfig],
 ) extends ComponentDefinitionWithImplementation {

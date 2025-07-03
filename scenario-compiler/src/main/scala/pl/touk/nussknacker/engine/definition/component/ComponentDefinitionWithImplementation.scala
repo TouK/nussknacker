@@ -26,6 +26,9 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   // This field is used as a part of identifier so it is important that it should be stable.
   def name: String
 
+  // This comes from component definition, not from UI config
+  def providerComponentGroup: Option[ComponentGroupName]
+
   final def componentType: ComponentType = componentTypeSpecificData.componentType
 
   final def id: ComponentId = ComponentId(componentType, name)
@@ -36,7 +39,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 
-  final def componentGroup: ComponentGroupName = uiDefinition.componentGroup
+  final def componentGroup: ComponentGroupName = providerComponentGroup.getOrElse(uiDefinition.componentGroup)
 
   final def originalGroupName: ComponentGroupName = uiDefinition.originalGroupName
 

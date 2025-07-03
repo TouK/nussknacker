@@ -47,7 +47,8 @@ object FragmentComponentDefinition {
         parameters,
         Some(Typed.genericTypeClass[Map[_, _]](List(Typed[String], Unknown)))
       ),
-      uiDefinition = uiDefinition
+      uiDefinition = uiDefinition,
+      providerComponentGroup = None
     )
   }
 

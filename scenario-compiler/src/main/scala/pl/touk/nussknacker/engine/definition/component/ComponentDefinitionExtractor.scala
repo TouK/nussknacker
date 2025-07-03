@@ -49,7 +49,8 @@ object ComponentDefinitionExtractor {
         configBasedOnDefinition,
         additionalConfigs,
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
+        inputComponentDefinition.componentGroup
       )
   }
 
@@ -59,7 +60,8 @@ object ComponentDefinitionExtractor {
       configFromDefinition: ComponentConfig,
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      componentGroup: Option[ComponentGroupName] = None
   ): Option[ComponentDefinitionWithImplementation] = {
     val (
       methodDefinitionExtractor: MethodDefinitionExtractor[Component],
@@ -130,7 +132,8 @@ object ComponentDefinitionExtractor {
               component = dynamicComponent,
               componentTypeSpecificData = componentSpecificData,
               uiDefinition = uiDefinition,
-              parametersConfig = parametersConfig
+              parametersConfig = parametersConfig,
+              providerComponentGroup = componentGroup
             )
           }
         )
@@ -162,7 +165,8 @@ object ComponentDefinitionExtractor {
                 component = component,
                 componentTypeSpecificData = componentSpecificData,
                 staticDefinition = staticDefinition,
-                uiDefinition = uiDefinition
+                uiDefinition = uiDefinition,
+                providerComponentGroup = componentGroup
               )
             }
           }
