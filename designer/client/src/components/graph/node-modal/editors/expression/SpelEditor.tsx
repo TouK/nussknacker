@@ -127,7 +127,13 @@ Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When acc
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                         )}
                     />
-                    {showResetToDefaultButton && <ResetToDefaultButton defaultValue={defaultValue} handleChange={handleChange} />}
+                    {showResetToDefaultButton && (
+                        <ResetToDefaultButton
+                            language={ExpressionLang.JsonTemplate}
+                            defaultValue={defaultValue}
+                            handleChange={handleChange}
+                        />
+                    )}
                 </Box>
             );
         }

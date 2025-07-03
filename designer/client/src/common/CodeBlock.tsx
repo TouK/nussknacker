@@ -28,11 +28,10 @@ const CodeBlockHeader = styled("div")(({ theme }) => ({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: darken(theme.palette.background.paper, 0.6),
+    backgroundColor: darken(theme.palette.background.paper, 0.4),
     padding: `${theme.spacing(0.5)} ${theme.spacing(1.5)}`,
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
-    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
 }));
 
 const LanguageLabel = styled(Typography)(({ theme }) => ({
@@ -65,7 +64,9 @@ export const CodeBlock = ({ className, children, node }: Props) => {
                 <LanguageLabel>{language}</LanguageLabel>
                 <CopyIconButton onClick={handleCopy} isCopied={isCopied} />
             </CodeBlockHeader>
-            <SyntaxHighlighter language={language}>{typeof children === "string" && children}</SyntaxHighlighter>
+            <SyntaxHighlighter language={language} customStyle={{ margin: 0 }}>
+                {typeof children === "string" && children}
+            </SyntaxHighlighter>
         </CodeBlockContainer>
     );
 };
