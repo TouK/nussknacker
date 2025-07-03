@@ -5,7 +5,7 @@ import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { clearProcess, clearScenarioState, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
+import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
@@ -48,7 +48,6 @@ function useUnmountCleanup() {
     const cleanup = useCallback(async () => {
         await closeRef.current();
         dispatch(clearProcess());
-        dispatch(clearScenarioState());
     }, [dispatch]);
 
     useEffect(() => {

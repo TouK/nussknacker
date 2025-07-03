@@ -3,18 +3,23 @@ import { createSelector } from "reselect";
 import type { Initiator } from "../../actions/nk/liveData";
 import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
 import type { RootState } from "../index";
-import { getGraph, getSavedScenario, getScenario, getTestResults, isDeployed } from "./graph";
+import { getGraph, getSavedScenario, getScenario, getTestResults, isCurrentVersionDeployed } from "./graph";
 import { isGraphUpdated } from "./helpers";
 
 const EMPTY = [];
 const getLiveData = (state: RootState) => state.liveData;
 
 export const getVisibleDataType = createSelector(getGraph, (graph) => graph.visibleDataType || null);
-export const isReadyForLiveData = createSelector(getScenario, getSavedScenario, isDeployed, (scenario, savedScenario, isDeployed) => {
-    if (!scenario?.name || scenario.isFragment || scenario.isArchived) return false;
-    if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph, true)) return false;
-    return isDeployed;
-});
+export const isReadyForLiveData = createSelector(
+    getScenario,
+    getSavedScenario,
+    isCurrentVersionDeployed,
+    (scenario, savedScenario, isDeployed) => {
+        if (!scenario?.name || scenario.isFragment || scenario.isArchived) return false;
+        if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph, true)) return false;
+        return isDeployed;
+    },
+);
 
 export const getIsLiveDataWorking = createSelector(getLiveData, ({ working }) => working || false);
 export const getLiveDataLastUpdate = createSelector(getLiveData, ({ last }) => last || null);

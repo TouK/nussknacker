@@ -57,20 +57,23 @@ export type ProcessStateType = {
     description: string;
 };
 
-export type StatusType =
-    | StatusRunning
-    | {
-          name: string;
-      };
+export const KnownStatusName = {
+    Running: "RUNNING",
+    Scheduled: "SCHEDULED",
+    Deploying: "DURING_DEPLOY",
+    Redeploying: "DURING_REDEPLOY",
+};
+
+export type StatusType = StatusRunning | { name: string };
 
 export type StatusRunning = {
-    name: "RUNNING";
+    name: typeof KnownStatusName.Running;
     startedAt: string;
     versionId: string;
 };
 
 export function isStatusRunning(statusType?: StatusType): statusType is StatusRunning {
-    return statusType?.name === "RUNNING";
+    return statusType?.name === KnownStatusName.Running;
 }
 
 export type StatusDefinitionType = {

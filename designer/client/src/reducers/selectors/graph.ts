@@ -43,7 +43,7 @@ export const isProcessRenamed = createSelector(
     (currentName, unsavedNewName) => unsavedNewName !== currentName,
 );
 
-export const getProcessVersionId = createSelector(getScenario, (d) => d?.processVersionId);
+export const getProcessVersionId = createSelector(getScenario, (d) => d?.processVersionId || null);
 export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
 export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
 export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
@@ -120,8 +120,11 @@ export const getAdditionalFields = createSelector(getProperties, (p) => p?.addit
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
-export const isDeployed = createSelector(getProcessVersionId, getProcessState, (version, state) => {
-    return isStatusRunning(state?.status) && state.status.versionId === `${version}`;
+export const getRunningVersion = createSelector(getProcessVersionId, getProcessState, (version, state) => {
+    return isStatusRunning(state?.status) ? state.status.versionId : null;
+});
+export const isCurrentVersionDeployed = createSelector(getProcessVersionId, getRunningVersion, (version, runningVersion) => {
+    return runningVersion === `${version}`;
 });
 
 export const getScenarioGraphSource = createSelector(

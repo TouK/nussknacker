@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 
 import { CopyIconButton, useCopyClipboard } from "../../../common/copyToClipboard";
 import { useUserSettings } from "../../../common/userSettings";
-import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { getIsRunning } from "../../../reducers/selectors/scenarioState";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
 import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
@@ -25,7 +25,7 @@ export const ParametersListField = (props: Props) => {
         [getListFieldPath],
     );
 
-    const scenarioState = useSelector(getProcessState);
+    const isRunning = useSelector(getIsRunning);
     const { t } = useTranslation();
     const [isCopied, copy] = useCopyClipboard();
     const [settings] = useUserSettings();
@@ -89,14 +89,8 @@ export const ParametersListField = (props: Props) => {
             {paramWithIndex.param.name === "Data sample" && settings["node.showSendRequestButton"] && (
                 <Box display={"flex"} justifyContent={"flex-end"}>
                     <SendRequestButton
-                        disabled={
-                            getValidationErrorsForField(props.errors, paramWithIndex.param.name).length > 0 ||
-                            scenarioState.status.name !== "RUNNING"
-                        }
-                        infoTooltip={
-                            scenarioState.status.name !== "RUNNING" &&
-                            t("node.actions.sendRequest.tooltip.deployScenarioFirst", "Deploy your scenario first")
-                        }
+                        disabled={getValidationErrorsForField(props.errors, paramWithIndex.param.name).length > 0 || !isRunning}
+                        infoTooltip={!isRunning && t("node.actions.sendRequest.tooltip.deployScenarioFirst", "Deploy your scenario first")}
                         expression={paramWithIndex.param.expression.expression}
                         node={node}
                     />

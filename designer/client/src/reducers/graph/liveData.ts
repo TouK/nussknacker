@@ -1,4 +1,4 @@
-import type { Initiator } from "../../actions/nk/liveData";
+import { Initiator } from "../../actions/nk/liveData";
 import type { Reducer } from "../../actions/reduxTypes";
 
 export type LiveData = {
@@ -31,6 +31,19 @@ export const liveData: Reducer<LiveData> = (state = {}, action) => {
                 pauseReasons: action.initiator
                     ? [...(state.pauseReasons || []).filter((r) => r !== action.initiator), action.initiator]
                     : state.pauseReasons,
+            };
+        }
+        case "CLEAR_PROCESS": {
+            return {
+                ...state,
+                pauseReasons: [],
+            };
+        }
+        case "NODE_DETAILS_CLOSED": {
+            const toClean = [Initiator.list];
+            return {
+                ...state,
+                pauseReasons: (state.pauseReasons || []).filter((r) => !toClean.includes(r)),
             };
         }
         case "LIVE_DATA_START": {
