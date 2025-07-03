@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.hamcrest.Matchers
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -904,6 +905,81 @@ class NodesApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body("methodName[0]", equalTo("#input"))
+    }
+    "suggest method of collection util" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(
+          s"""{
+             |  "expression": {
+             |    "language": "spel",
+             |    "expression": "#COLLECTION."
+             |  },
+             |  "caretPosition2d": {
+             |    "row": 0,
+             |    "column": 12
+             |  },
+             |  "variableTypes": {
+             |    "input": {
+             |      "display": "Record{amount: Long(5)}",
+             |      "type": "TypedObjectTypingResult",
+             |      "fields": {
+             |        "amount": {
+             |          "value": 5,
+             |          "display": "Long(5)",
+             |          "type": "TypedObjectWithValue",
+             |          "refClazzName": "java.lang.Long",
+             |          "params": []
+             |        }
+             |      },
+             |      "refClazzName": "java.util.Map",
+             |      "params": [
+             |        {
+             |          "display": "String",
+             |          "type": "TypedClass",
+             |          "refClazzName": "java.lang.String",
+             |          "params": []
+             |        },
+             |        {
+             |          "value": 5,
+             |          "display": "Long(5)",
+             |          "type": "TypedObjectWithValue",
+             |          "refClazzName": "java.lang.Long",
+             |          "params": []
+             |        }
+             |      ]
+             |    }
+             |  }
+             |}""".stripMargin
+        )
+        .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+        .Then()
+        .statusCode(200)
+        .body(
+          "methodName",
+          Matchers.contains(
+            "concat",
+            "diff",
+            "distinct",
+            "flatten",
+            "intersect",
+            "join",
+            "max",
+            "merge",
+            "min",
+            "product",
+            "reverse",
+            "shuffle",
+            "slice",
+            "sortedAsc",
+            "sortedAscBy",
+            "sortedDesc",
+            "sum",
+            "take",
+            "takeLast"
+          )
+        )
     }
     "not suggest anything if no such parameters exist" in {
       given()
