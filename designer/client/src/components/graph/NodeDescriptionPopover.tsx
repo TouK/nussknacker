@@ -116,6 +116,13 @@ type NodeDescriptionPopoverProps = {
     enterTimeout?: number;
 };
 
+function withFallback(anchorEl: PopoverProps["anchorEl"]) {
+    const el = typeof anchorEl === "function" ? anchorEl() : anchorEl;
+    if (!el) return null;
+    if ("isConnected" in el && !el.isConnected) return document.body;
+    return el;
+}
+
 // TODO: show rendered description somehow on touch screens
 export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
     const { t } = useTranslation();
@@ -168,7 +175,7 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
     return (
         <Popper
             open={open}
-            anchorEl={anchorEl}
+            anchorEl={withFallback(anchorEl)}
             sx={{
                 zIndex: (t) => t.zIndex.tooltip,
             }}
