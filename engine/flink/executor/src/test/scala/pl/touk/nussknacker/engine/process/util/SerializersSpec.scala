@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.util
 
-import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
+import org.apache.flink.runtime.types.FlinkScalaKryoInstantiator
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.process.util.Serializers.CaseClassSerializer
@@ -60,8 +60,22 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
     deserialized shouldBe obj
   }
 
+  it should "serialize case class with serial version uid" in {
+    val obj          = CaseClassWithSerialVersionUID("a")
+    val deserialized = serializeAndDeserialize(obj)
+    deserialized shouldBe obj
+  }
+
+  it should "serialize nested case class with serial version uid" in {
+    val obj = ObjCaseClassWrapper.CaseClassWithSerialVersionUIDInObject("a")
+    val deserialized =
+      serializeAndDeserialize(obj).asInstanceOf[ObjCaseClassWrapper.CaseClassWithSerialVersionUIDInObject]
+    deserialized.a shouldBe obj.a
+    deserialized.someField shouldBe obj.someField
+  }
+
   def serializeAndDeserialize(caseClass: Product): Product = {
-    val kryo       = new Kryo()
+    val kryo       = new FlinkScalaKryoInstantiator().newKryo()
     val out        = new Output(1024)
     val serializer = new CaseClassSerializer()
     serializer.write(kryo, out, caseClass)
@@ -75,6 +89,21 @@ case class WithImplicitVal(a: String)(implicit val b: Long)
 case class NoParams()
 
 case class UsualCaseClass(a: String, b: Integer, withDefaultValue: String = "aaa")
+
+@SerialVersionUID(-3277343097189933789L)
+case class CaseClassWithSerialVersionUID(a: String)
+
+trait CaseClassWrapper {
+
+  @SerialVersionUID(-2277343097189933789L)
+  case class CaseClassWithSerialVersionUIDInObject(a: String, foo: String = "abc") {
+    val someField: String = a
+  }
+
+}
+
+@SerialVersionUID(-1277343097189933789L)
+object ObjCaseClassWrapper extends CaseClassWrapper
 
 trait Wrapper {
   case class StaticInner(a: String)

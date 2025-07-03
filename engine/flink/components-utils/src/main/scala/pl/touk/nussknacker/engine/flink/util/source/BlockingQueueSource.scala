@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
@@ -19,6 +18,7 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunc
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
+import scala.annotation.nowarn
 import scala.collection.concurrent.TrieMap
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 /**
   * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
   */
-@silent("deprecated")
+@nowarn("cat=deprecation")
 class BlockingQueueSource[T](returnType: TypingResult, timestampAssigner: AssignerWithPunctuatedWatermarks[T])
     extends FlinkSource
     with Serializable {

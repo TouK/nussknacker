@@ -14,13 +14,8 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-// Warning: Flink doesn't work correctly with Scala 2.12.11 and higher.
-// Upgrading to a newer version of Scala 2.12 causes the JavaCollectionsSerializationTest to fail
-// because these versions switched to the same Java collection wrappers used in Scala 2.13.
-// These wrappers lack dedicated Kryo serializers, which we added in flink-scala-2.13 library https://github.com/TouK/flink-scala-2.13.
-// To bump Scala 2.12 we would need to do flink-scala-2.12 similar to flink-scala-2.13.
-val scala212 = "2.12.10"
-val scala213 = "2.13.15"
+val scala212 = "2.12.20"
+val scala213 = "2.13.16"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -29,13 +24,6 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 }
 
 lazy val supportedScalaVersions = List(scala212, scala213)
-
-// Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
-// Silencer 1.7.x requires Scala 2.12.11+
-// Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
-// https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.19"
-lazy val silencerV_2_12 = "1.6.0"
 
 lazy val scalaFixV = "0.14.2"
 
@@ -170,21 +158,12 @@ lazy val commonSettings =
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
-      libraryDependencies += compilerPlugin(
-        "com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value) {
-          case (2, 12) => silencerV_2_12
-          case _       => silencerV
-        } cross CrossVersion.full
-      ),
       libraryDependencies ++= forScalaVersion(scalaVersion.value) {
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
         case _       => Seq()
       },
       semanticdbEnabled                := true,
-      semanticdbVersion                := forScalaVersion(scalaVersion.value) {
-        case (2, 12) => "4.8.4"
-        case _       => "4.13.2"
-      },
+      semanticdbVersion                := "4.13.2",
       scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",
@@ -204,7 +183,6 @@ lazy val commonSettings =
             // -release option has no influence on class version so we at least setup target to 8 and check java version
             // at the begining of our Apps
             "-target:jvm-1.8",
-            "-P:silencer:globalFilters=deprecated"
           )
         case (2, 13) =>
           Seq(
@@ -223,12 +201,6 @@ lazy val commonSettings =
       ),
       // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
-      libraryDependencies ++= Seq(
-        "com.github.ghik" % "silencer-lib" % forScalaVersion(scalaVersion.value) {
-          case (2, 12) => silencerV_2_12
-          case _       => silencerV
-        }                 % Provided cross CrossVersion.full
-      ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
         "org.apache.avro"    % "avro"             % avroV,
@@ -374,23 +346,16 @@ val retryV                    = "0.3.6"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
-  forScalaVersion(scalaVersion) {
-    case (2, 12) =>
-      Seq(
-        "org.apache.flink" %% "flink-scala" % flinkV
-      ) // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
-    case (2, 13) =>
-      Seq(
-        "pl.touk" %% "flink-scala-2-13" % "1.1.2"
-      ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
-  }.map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
+  Seq(
+    "pl.touk" %% "flink-scala" % "1.1.3"
+  ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
   Seq(
     // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java and we want to have same jre in both designer and lite-runner
     // to make analysis of problems with jre compatibility easier using testing mechanism and embedded server
     // TODO: we want to support jre17+ but before that flink must be compatible with jre17+ and we should handle opening of modules for spel reflectional access to java modules classes
-    dockerBaseImage       := "eclipse-temurin:11-jre-jammy",
+    dockerBaseImage       := "eclipse-temurin:17-jre-jammy",
     dockerUsername        := dockerUserName,
     dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64"), // not used in case of Docker/publishLocal
@@ -1195,7 +1160,14 @@ lazy val testUtils = (project in utils("test-utils"))
 
 // rest-assured is not cross compiled, so we have to use different versions
 def restAssuredDependency(scalaVersion: String) = forScalaVersion(scalaVersion) {
-  case (2, 12) => Seq("io.rest-assured" % "scala-support" % "4.0.0")
+  case (2, 12) =>
+    Seq(
+      "io.rest-assured"     % "scala-support" % "4.0.0",
+      // groovy 2.5.6 which comes with rest assured doesn't work on jdk 17
+      "org.codehaus.groovy" % "groovy"        % "2.5.10",
+      "org.codehaus.groovy" % "groovy-xml"    % "2.5.10",
+      "org.codehaus.groovy" % "groovy-json"   % "2.5.10"
+    )
   case (2, 13) => Seq("io.rest-assured" % "scala-support" % "5.5.0")
 }
 

@@ -390,7 +390,7 @@ object typing {
           val fieldTypes = typeMapFields(map)
           Typed.record(fieldTypes, mapBasedRecordUnderlyingType[Map[_, _]](fieldTypes))
         case javaMap: java.util.Map[String @unchecked, _] =>
-          val fieldTypes = typeMapFields(javaMap.asScala.toMap)
+          val fieldTypes = typeMapFields(javaMap.asScala)
           Typed.record(fieldTypes)
         case list: List[_] =>
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
@@ -417,7 +417,7 @@ object typing {
       }
     }
 
-    private def typeMapFields(map: Map[String, Any]) = map.map { case (k, v) =>
+    private def typeMapFields(iterable: Iterable[(String, Any)]) = iterable.map { case (k, v) =>
       k -> fromInstance(v)
     }
 

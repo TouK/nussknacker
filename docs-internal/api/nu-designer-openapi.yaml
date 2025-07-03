@@ -4669,18 +4669,28 @@ paths:
                 Example:
                   summary: Scenario not found
                   value: Scenario not found
+        '422':
+          description: Live data preview is not supported by this scenario. Any further
+            requests will result in HTTP 422 as well for this scenario
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Live data preview is not supported by this scenario
+                  value: Live data preview is not supported by this scenario
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
             text/plain:
               schema:
-                anyOf:
-                - type: string
-                - type: string
+                type: string
               examples:
                 Example:
-                  summary: Live data preview is not supported by this scenario
-                  value: Live data preview is not supported by this scenario
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []

@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{
 }
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.Implicits.{RichIterable, RichScalaMap}
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.metrics.common.{
   EndCountingListener,
@@ -316,7 +316,7 @@ object ScenarioInterpreterFactory {
             passingErrors[InterpretationResult, PartResult](
               results,
               successful => {
-                Monoid.combineAll(successful.groupBy(_.reference).map { case (pr, ir) =>
+                Monoid.combineAll(successful.orderedGroupBy(_.reference).map { case (pr, ir) =>
                   interpretationInvoke(partsInvokers)(pr, ir)
                 })
               }

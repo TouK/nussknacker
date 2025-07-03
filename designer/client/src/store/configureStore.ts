@@ -11,7 +11,14 @@ import { reducer } from "../reducers";
 import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
 export default function configureStore() {
-    const actionsBlacklist: Action["type"][] = ["PROCESS_STATE_LOADED", "UPDATE_BACKEND_NOTIFICATIONS", "SET_PENDING_CHANGES"];
+    // avoid polluting devtools with frequent refresh actions
+    const actionsBlacklist: Action["type"][] = [
+        "PROCESS_STATE_LOADED",
+        "UPDATE_BACKEND_NOTIFICATIONS",
+        "SET_PENDING_CHANGES",
+        "FETCH_LIVE_DATA",
+        "DISPLAY_LIVE_DATA",
+    ];
     const store = createStore(
         reducer,
         composeWithDevTools({ actionsBlacklist: ["RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION", ...actionsBlacklist] })(

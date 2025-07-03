@@ -1,17 +1,20 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
 import { isEmpty } from "lodash";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
+import type { ParamType } from "../types";
 import type { FieldError } from "../Validators";
 import { setupAceEditorSnippets } from "./AceEditorJsonBasedSnippets";
 import { DEFAULT_OPTIONS } from "./AceWrapper";
 import type { OnValueChange, SimpleEditor } from "./Editor";
 import { editorsParameters } from "./editorsParameters";
+import { ResetToDefaultButton } from "./ResetToDefaultButton";
 import { StyledAceEditor } from "./StyledAceEditor";
 import type { ExpressionObj } from "./types";
+import { ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
@@ -23,6 +26,7 @@ type Props = {
     fieldName: string;
     readOnly?: boolean;
     isMarked?: boolean;
+    param?: ParamType;
 };
 
 export const JsonEditor: SimpleEditor<Props> = ({
@@ -33,17 +37,33 @@ export const JsonEditor: SimpleEditor<Props> = ({
     showValidation,
     readOnly,
     isMarked,
+    param,
 }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
     const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
 
-    const onChange = (newValue: string) => {
-        setValue(newValue);
+    const onChange = useCallback(
+        (newValue: string) => {
+            setValue(newValue);
 
-        onValueChange({ expression: newValue, language: editorsParameters.JsonParameterEditor.language });
-    };
+            onValueChange({ expression: newValue, language: editorsParameters.JsonParameterEditor.language });
+        },
+        [onValueChange],
+    );
 
     const THEME = "nussknacker";
+
+    const InputAdornmentEnd = useMemo(() => {
+        const defaultValue = typeof param?.defaultValue === "string" ? param?.defaultValue : param?.defaultValue?.expression; // defaultValue can be a string in case of Properties
+        const defaultValueIsDifferentThanCurrentValue = defaultValue !== value;
+        const showResetToDefaultButton = defaultValue && defaultValueIsDifferentThanCurrentValue;
+
+        if (!showResetToDefaultButton) {
+            return;
+        }
+
+        return <ResetToDefaultButton language={ExpressionLang.JSON} defaultValue={defaultValue} handleChange={onChange} />;
+    }, [onChange, param?.defaultValue, value]);
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
@@ -85,6 +105,18 @@ export const JsonEditor: SimpleEditor<Props> = ({
                     annotations={annotations}
                     markers={markers}
                 />
+                {InputAdornmentEnd && (
+                    <Box
+                        aria-label={"InputAdornmentEnd"}
+                        sx={{
+                            position: "absolute",
+                            right: "8px",
+                            top: "9px",
+                        }}
+                    >
+                        {InputAdornmentEnd}
+                    </Box>
+                )}
             </Box>
             {showValidation && !hasRangeText && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>

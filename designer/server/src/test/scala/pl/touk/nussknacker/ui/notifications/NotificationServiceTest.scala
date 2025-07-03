@@ -318,7 +318,7 @@ class NotificationServiceTest
       dbioRunner
     )
     val newApproachScenarioStatusProvider = new NewApproachScenarioStatusProvider(
-      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> ()),
+      TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> ((): Unit)),
       TestFactory.newDeploymentRepository(testDbRef, clock),
       dbioRunner
     )

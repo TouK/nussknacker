@@ -38,7 +38,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     kafkaClient.createTopic(outputTopic, 1)
     sendAsJson(jsonRecord.toString, ForSource(inputTopic), Instant.now.toEpochMilli)
 
-    val process =
+    val scenario =
       ScenarioBuilder
         .streaming("without-schema")
         .parallelism(1)
@@ -51,15 +51,13 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
         .emptySink(
           "end",
           "kafka",
-          KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "".spel,
-          KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true".spel,
-          KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input".spel,
-          KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$outputTopic'".spel,
-          KafkaUniversalComponentTransformer.contentTypeParamName.value   -> s"'${ContentTypes.JSON.toString}'".spel,
-          KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel
+          KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
+          KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "#input".spel,
+          KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
         )
 
-    run(process) {
+    run(scenario) {
       val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
       val parsedOutput = parser
         .parse(new String(outputRecord.value(), StandardCharsets.UTF_8))
@@ -84,7 +82,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
     )
 
     dataSampleExpressions.foreach { dataSampleExpression =>
-      val process =
+      val scenario =
         ScenarioBuilder
           .streaming("without-schema")
           .parallelism(1)
@@ -98,15 +96,13 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
           .emptySink(
             "end",
             "kafka",
-            KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "".spel,
-            KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true".spel,
-            KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input".spel,
-            KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$outputTopic'".spel,
-            KafkaUniversalComponentTransformer.contentTypeParamName.value   -> s"'${ContentTypes.JSON.toString}'".spel,
-            KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel
+            KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
+            KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "#input".spel,
+            KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
+            KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
           )
 
-      run(process) {
+      run(scenario) {
         val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
 
         val parsedOutput = parser
@@ -130,7 +126,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
 
     val exampleInputExpression = Expression.json(jsonRecord.toString())
 
-    val process =
+    val scenario =
       ScenarioBuilder
         .streaming("without-schema")
         .parallelism(1)
@@ -159,15 +155,13 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
         .emptySink(
           "end",
           "kafka",
-          KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "".spel,
-          KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true".spel,
-          KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#output".spel,
-          KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$outputTopic'".spel,
-          KafkaUniversalComponentTransformer.contentTypeParamName.value   -> s"'${ContentTypes.JSON.toString}'".spel,
-          KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel
+          KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
+          KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "#output".spel,
+          KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
         )
 
-    run(process) {
+    run(scenario) {
       val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
       val parsedOutput = parser
         .parse(new String(outputRecord.value(), StandardCharsets.UTF_8))
@@ -202,7 +196,7 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
       jsonRecord.toString().getBytes,
       timestamp = Instant.now.toEpochMilli
     )
-    val process =
+    val scenario =
       ScenarioBuilder
         .streaming("without-schema")
         .parallelism(1)
@@ -215,15 +209,13 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
         .emptySink(
           "end",
           "kafka",
-          KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "".spel,
-          KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true".spel,
-          KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input".spel,
-          KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$outputTopic'".spel,
-          KafkaUniversalComponentTransformer.contentTypeParamName.value   -> s"'${ContentTypes.PLAIN.toString}'".spel,
-          KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel
+          KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
+          KafkaUniversalComponentTransformer.sinkValueParamName.value   -> "#input".spel,
+          KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.PLAIN.toString}'".spel,
         )
 
-    run(process) {
+    run(scenario) {
       val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
 
       val parsedOutput = parser

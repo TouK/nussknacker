@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig.JsonLikeValuesEnteringMode
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -106,12 +107,14 @@ trait KafkaAvroSpecMixin
     )
   }
 
-  protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
+  protected def universalSinkFactory(
+      jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode
+  ): UniversalKafkaSinkFactory = {
     val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory, kafkaConfig)
     new UniversalKafkaSinkFactory(
       schemaRegistryClientFactory,
       universalPayload,
-      testModelConfig,
+      testModelConfig.copy(jsonLikeValuesEnteringMode = jsonLikeValuesEnteringMode),
       kafkaConfig,
       FlinkKafkaUniversalSinkImplFactory
     )

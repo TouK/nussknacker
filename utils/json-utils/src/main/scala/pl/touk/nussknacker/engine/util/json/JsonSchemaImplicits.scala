@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.util.json
 
 import cats.data.Validated
-import com.github.ghik.silencer.silent
 import org.everit.json.schema._
 import org.json.JSONException
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.util.regex.Pattern
+import scala.annotation.nowarn
 import scala.util.Try
 
 object JsonSchemaImplicits {
@@ -39,7 +39,7 @@ object JsonSchemaImplicits {
     def acceptsEverythingAsAdditionalProperty: Boolean =
       schema.permitsAdditionalProperties() && schema.getSchemaOfAdditionalProperties == null
 
-    @silent("deprecated")
+    @nowarn("cat=deprecation")
     def patternProperties: Map[Pattern, Schema] = {
       // getPatternProperties is deprecated but for now there is no alternative https://github.com/everit-org/json-schema/issues/304
       schema.getPatternProperties.asScala.toMap

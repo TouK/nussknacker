@@ -17,7 +17,6 @@
  */
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.annotation.{Public, PublicEvolving}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.operators.Keys.ExpressionKeys
@@ -32,6 +31,7 @@ import org.apache.flink.api.java.typeutils.TupleTypeInfoBase
 
 import java.util
 import java.util.regex.{Matcher, Pattern}
+import scala.annotation.nowarn
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
@@ -245,7 +245,7 @@ abstract class CaseClassTypeInfo[T <: Product](
       logicalKeyFields += fieldId
     }
 
-    @silent("deprecated")
+    @nowarn("cat=deprecation")
     override def createTypeComparator(config: ExecutionConfig): TypeComparator[T] = {
       val maxIndex = logicalKeyFields.max
 

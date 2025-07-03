@@ -835,7 +835,7 @@ class HttpService {
             if (axios.isAxiosError(error) && error.response) {
                 const status = error.response.status;
                 if (showErrors) {
-                    if (status === 501) {
+                    if (status === 422) {
                         this.#addError(
                             i18next.t("notification.error.liveDataNotSupported", "Live data is not supported for this scenario"),
                             error,

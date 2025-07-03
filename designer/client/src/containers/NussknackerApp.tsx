@@ -1,6 +1,8 @@
 import { css } from "@emotion/css";
 import { isEmpty } from "lodash";
+import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import React from "react";
+import { DndProvider } from "react-dnd-multi-backend";
 import { useSelector } from "react-redux";
 import { Outlet } from "react-router-dom";
 
@@ -28,35 +30,37 @@ export function NussknackerApp() {
 
     return (
         <>
-            <WindowManager
-                className={css({
-                    flex: 1,
-                    display: "flex",
-                    "& *": {
-                        scrollPadding: 40,
-                    },
-                })}
-            >
-                <div
-                    id="app-container"
+            <DndProvider options={HTML5toTouch}>
+                <WindowManager
                     className={css({
                         flex: 1,
-                        display: "grid",
-                        gridTemplateRows: "auto 1fr",
-                        alignItems: "stretch",
+                        display: "flex",
+                        "& *": {
+                            scrollPadding: 40,
+                        },
                     })}
                 >
-                    <MenuBar />
-                    <main className={css({ overflow: "auto" })}>
-                        <Outlet />
-                    </main>
-                </div>
-                <AiAssistantButton />
-            </WindowManager>
+                    <div
+                        id="app-container"
+                        className={css({
+                            flex: 1,
+                            display: "grid",
+                            gridTemplateRows: "auto 1fr",
+                            alignItems: "stretch",
+                        })}
+                    >
+                        <MenuBar />
+                        <main className={css({ overflow: "auto" })}>
+                            <Outlet />
+                        </main>
+                    </div>
+                    <AiAssistantButton />
+                </WindowManager>
 
-            <ConnectionErrorProvider>
-                <Notifications />
-            </ConnectionErrorProvider>
+                <ConnectionErrorProvider>
+                    <Notifications />
+                </ConnectionErrorProvider>
+            </DndProvider>
             <VersionInfo />
         </>
     );

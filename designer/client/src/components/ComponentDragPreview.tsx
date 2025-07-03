@@ -7,11 +7,11 @@ import { useDebouncedValue } from "rooks";
 import type { NodeType } from "../types";
 import type { ComponentPreviewProps } from "./ComponentPreview";
 import { ComponentPreview } from "./ComponentPreview";
+import { DndTypes } from "./DndTypes";
 import { StickyNoteType } from "./graph/utils/stickyNotesUtils";
 import { StickyNotePreview } from "./StickyNotePreview";
-import { DndTypes } from "./toolbars/creator/Tool";
 
-function useNotNull<T>(value: T) {
+export function useNotNull<T>(value: T) {
     const [current, setCurrent] = useState(() => value);
     useEffect(() => {
         if (!value) return;
@@ -19,7 +19,6 @@ function useNotNull<T>(value: T) {
     }, [value]);
     return current;
 }
-
 function PreviewElement(props: ComponentPreviewProps) {
     if (props.node.type === StickyNoteType) {
         return <StickyNotePreview isActive={props.isActive} isOver={props.isOver} />;
@@ -34,8 +33,8 @@ export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: () => nu
     const manager = useDragDropManager();
     const monitor = manager.getMonitor();
     const { currentOffset, active, data } = useDragLayer((monitor) => ({
-        data: monitor.getItem(),
-        active: monitor.isDragging() && monitor.getItemType() === DndTypes.ELEMENT,
+        data: monitor.getItemType() === DndTypes.ELEMENT && monitor.getItem(),
+        active: monitor.getItemType() === DndTypes.ELEMENT && monitor.isDragging(),
         currentOffset: monitor.getClientOffset(),
     }));
 

@@ -4,12 +4,14 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
+import pl.touk.nussknacker.engine.ModelConfig.{JsonLikeValuesEnteringMode, LiveDataPreviewMode}
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
+    jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode,
     namingStrategy: NamingStrategy,
     liveDataPreviewMode: LiveDataPreviewMode,
     // TODO: we should parse this underlying config as ModelConfig class fields instead of passing raw config
@@ -25,6 +27,7 @@ object ModelConfig {
   def parse(rawModelConfig: Config): ModelConfig = {
     ModelConfig(
       allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
+      jsonLikeValuesEnteringMode = parseJsonLikeValuesEnteringMode(rawModelConfig),
       namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
       liveDataPreviewMode = parseLiveDataPreviewMode(rawModelConfig),
       underlyingConfig = rawModelConfig,
@@ -59,6 +62,30 @@ object ModelConfig {
 
     }
 
+  }
+
+  sealed trait JsonLikeValuesEnteringMode
+
+  object JsonLikeValuesEnteringMode {
+    case object DynamicForms                extends JsonLikeValuesEnteringMode
+    case object SingleJsonTemplateParameter extends JsonLikeValuesEnteringMode
+  }
+
+  private def parseJsonLikeValuesEnteringMode(config: Config): JsonLikeValuesEnteringMode = {
+    val configPath = "jsonLikeValuesEnteringMode"
+    if (config.hasPath(configPath)) {
+      val mode = config.getString(configPath)
+      mode match {
+        case "DynamicForms"                => JsonLikeValuesEnteringMode.DynamicForms
+        case "SingleJsonTemplateParameter" => JsonLikeValuesEnteringMode.SingleJsonTemplateParameter
+        case other =>
+          throw new IllegalArgumentException(
+            s"Invalid jsonLikeValuesEnteringMode ${other}. Supported are [DynamicForms, SingleJsonTemplateParameter]"
+          )
+      }
+    } else {
+      JsonLikeValuesEnteringMode.DynamicForms
+    }
   }
 
   private def parseLiveDataPreviewMode(config: Config): LiveDataPreviewMode = {

@@ -27,7 +27,8 @@ type SettingsNames =
     | "scenario.autoEnableLiveData"
     | "scenario.showLiveDataAnimations"
     | "editor.showRangeMessages"
-    | "toolbar.autoSaveDuringDeployRedeploy";
+    | "toolbar.autoSaveDuringDeployRedeploy"
+    | "editor.showResetToDefaultButton";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
@@ -57,6 +58,7 @@ const getDefaultUserSettings = (): UserSettings => ({
     "scenario.showLiveDataAnimations": getInitialUserFlag("scenario.showLiveDataAnimations", true),
     "toolbar.autoSaveDuringDeployRedeploy": getInitialUserFlag("toolbar.autoSaveDuringDeployRedeploy", false),
     "editor.showRangeMessages": getInitialUserFlag("editor.showRangeMessages"),
+    "editor.showResetToDefaultButton": getInitialUserFlag("editor.showResetToDefaultButton"),
 });
 
 /**
