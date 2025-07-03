@@ -14,6 +14,7 @@ import { editorsParameters } from "./editorsParameters";
 import { ResetToDefaultButton } from "./ResetToDefaultButton";
 import { StyledAceEditor } from "./StyledAceEditor";
 import type { ExpressionObj } from "./types";
+import { ExpressionLang } from "./types";
 import { useAceEditorRangeMessages } from "./useAceEditorRangeMessages";
 
 type Props = {
@@ -61,7 +62,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
             return;
         }
 
-        return <ResetToDefaultButton defaultValue={defaultValue} handleChange={onChange} />;
+        return <ResetToDefaultButton language={ExpressionLang.JSON} defaultValue={defaultValue} handleChange={onChange} />;
     }, [onChange, param?.defaultValue, value]);
 
     return (

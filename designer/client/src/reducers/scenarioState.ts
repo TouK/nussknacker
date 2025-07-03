@@ -3,6 +3,7 @@ import { merge } from "lodash";
 
 import type { Reducer } from "../actions/reduxTypes";
 import type { ProcessStateType } from "../components/Process/types";
+import { KnownStatusName, PredefinedActionName } from "../components/Process/types";
 
 export const reducer: Reducer<ProcessStateType> = produce((draft, action) => {
     switch (action.type) {
@@ -15,11 +16,22 @@ export const reducer: Reducer<ProcessStateType> = produce((draft, action) => {
             }
             return null;
         }
+        case "PENDING_SCENARIO_ACTION": {
+            switch (action.action) {
+                case PredefinedActionName.Deploy:
+                    draft.status.name = KnownStatusName.Deploying;
+                    break;
+                case PredefinedActionName.Redeploy:
+                    draft.status.name = KnownStatusName.Redeploying;
+                    break;
+            }
+            return draft;
+        }
         case "PROCESS_STATE_LOADED": {
             merge(draft, action.processState);
             return draft;
         }
-        case "CLEAR_STATE": {
+        case "CLEAR_PROCESS": {
             return {} as ProcessStateType;
         }
     }

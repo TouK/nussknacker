@@ -410,7 +410,7 @@ export type GraphStateWithHistory = StateWithHistory<GraphState> & {
     snapshots: number[];
 };
 
-const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "layout", "selectionState"];
+const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "layout"];
 const omitKeys: NestedKeyOf<GraphState>[] = ["scenario.validationResult", "scenario.history"];
 
 export const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["scenario.validationResult"]));

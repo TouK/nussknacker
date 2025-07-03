@@ -331,7 +331,7 @@ class ScenarioLiveDataApiHttpServiceSpec
         .basicAuthAllPermUser()
         .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
         .Then()
-        .statusCode(StatusCodes.NotImplemented.intValue)
+        .statusCode(StatusCodes.UnprocessableEntity.intValue)
     }
   }
 
