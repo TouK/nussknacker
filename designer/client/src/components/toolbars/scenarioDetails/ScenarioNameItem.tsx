@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import React from "react";
 import { useSelector } from "react-redux";
 
@@ -6,23 +6,10 @@ import BatchIcon from "../../../assets/img/batch.svg";
 import RequestResponseIcon from "../../../assets/img/request-response.svg";
 import StreamingIcon from "../../../assets/img/streaming.svg";
 import { ProcessingMode } from "../../../http/HttpService";
-import {
-    getProcessUnsavedNewName,
-    getProcessVersionId,
-    getScenario,
-    isLatestProcessVersion,
-    isProcessRenamed,
-} from "../../../reducers/selectors/graph";
+import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
+import { ScenarioVersion } from "../../ScenarioVersion";
 import { getProcessingModeVariantName } from "./getProcessingModeVariantName";
 import { PanelScenarioDetailsIcon, ProcessName, ProcessRename } from "./ScenarioDetailsComponents";
-
-const ScenarioVersion = () => {
-    const currentVersionId = useSelector(getProcessVersionId);
-    const isLatestVersion = useSelector(isLatestProcessVersion);
-    if (isLatestVersion || !currentVersionId) return null;
-    // eslint-disable-next-line i18next/no-literal-string
-    return <Typography variant="overline">v{currentVersionId}</Typography>;
-};
 
 export function ScenarioNameItem() {
     const scenario = useSelector(getScenario);
@@ -40,15 +27,20 @@ export function ScenarioNameItem() {
             <PanelScenarioDetailsIcon title={getProcessingModeVariantName(scenario.processingMode)}>
                 <ProcessingModeIcon />
             </PanelScenarioDetailsIcon>
-            {isRenamePending ? (
-                <ProcessRename variant={"subtitle2"} title={scenario.name}>
-                    {unsavedNewName}* <ScenarioVersion />
-                </ProcessRename>
-            ) : (
-                <ProcessName variant={"subtitle2"} title={scenario.name}>
-                    {scenario.name} <ScenarioVersion />
-                </ProcessName>
-            )}
+            <Stack direction="row" sx={{ overflow: "hidden", alignItems: "baseline" }}>
+                {isRenamePending ? (
+                    <ProcessRename variant={"subtitle2"} title={scenario.name}>
+                        {unsavedNewName}*
+                    </ProcessRename>
+                ) : (
+                    <ProcessName variant={"subtitle2"} title={scenario.name}>
+                        {scenario.name}
+                    </ProcessName>
+                )}
+                <Typography variant="overline">
+                    <ScenarioVersion />
+                </Typography>
+            </Stack>
         </>
     );
 }

@@ -5,7 +5,6 @@ import { useSelector } from "react-redux";
 import { SwitchTransition } from "react-transition-group";
 
 import { formatDateTime } from "../../../common/DateUtils";
-import type { RootState } from "../../../reducers";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { CssFade } from "../../CssFade";
@@ -13,18 +12,19 @@ import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
 import type { ProcessStateType, Scenario, StatusRunning } from "../../Process/types";
 import { isStatusRunning } from "../../Process/types";
+import { RunningVersion } from "../../ScenarioVersion";
 
 export function ScenarioState() {
-    const scenario = useSelector((state: RootState) => getScenario(state));
-    const processState = useSelector((state: RootState) => getProcessState(state));
-
+    const scenario = useSelector(getScenario);
+    const processState = useSelector(getProcessState);
     const runningDescription = useCallback((statusRunning: StatusRunning) => {
         return (
             <Stack>
                 <Typography component={"div"} variant={"body2"}>
-                    {i18next.t("panels.scenarioStatus.runningVersion", "running version v{{versionId}}", {
+                    {i18next.t("panels.scenarioStatus.runningVersion", "running version", {
                         versionId: statusRunning.versionId,
-                    })}
+                    })}{" "}
+                    <RunningVersion />
                 </Typography>
                 <Typography component={"div"} variant={"overline"}>
                     {i18next.t("panels.scenarioStatus.runningSince", "since {{startedAt}}", {
