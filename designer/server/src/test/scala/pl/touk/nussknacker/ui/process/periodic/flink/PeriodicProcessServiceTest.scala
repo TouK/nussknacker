@@ -23,8 +23,7 @@ import pl.touk.nussknacker.ui.process.periodic._
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.db.{
   InMemPeriodicProcessesRepository,
-  InMemScenarioActivityRepository,
-  TestDbioActionRunner
+  InMemScenarioActivityRepository
 }
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
@@ -85,7 +84,6 @@ class PeriodicProcessServiceTest
       scheduledExecutionPerformer = scheduledExecutionPerformerStub,
       periodicProcessesRepository = repository,
       scenarioActivityRepository = new InMemScenarioActivityRepository,
-      dbioActionRunner = TestDbioActionRunner,
       new ScheduledProcessListener {
 
         override def onScheduledProcessEvent: PartialFunction[ScheduledProcessEvent, Unit] = { case k =>

@@ -31,7 +31,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessReposito
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
-import pl.touk.nussknacker.ui.process.periodic.flink.db.{InMemScenarioActivityRepository, TestDbioActionRunner}
+import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
@@ -129,7 +129,6 @@ class PeriodicProcessServiceIntegrationTest
         scheduledExecutionPerformer = scheduledExecutionPerformerStub,
         periodicProcessesRepository = periodicProcessesRepositoryCreator(processingType, currentTime),
         scenarioActivityRepository = scenarioActivityRepository,
-        dbioActionRunner = TestDbioActionRunner,
         periodicProcessListener = new ScheduledProcessListener {
 
           override def onScheduledProcessEvent: PartialFunction[ScheduledProcessEvent, Unit] = {

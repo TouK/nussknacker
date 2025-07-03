@@ -15,8 +15,7 @@ import pl.touk.nussknacker.ui.process.periodic.cron.CronSchedulePropertyExtracto
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
 import pl.touk.nussknacker.ui.process.periodic.flink.db.{
   InMemPeriodicProcessesRepository,
-  InMemScenarioActivityRepository,
-  TestDbioActionRunner
+  InMemScenarioActivityRepository
 }
 import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.ui.process.periodic.model.PeriodicProcessDeploymentStatus
@@ -53,7 +52,6 @@ class PeriodicProcessesFetchingTest
       scheduledExecutionPerformer = scheduledExecutionPerformerStub,
       periodicProcessesRepository = repository,
       scenarioActivityRepository = new InMemScenarioActivityRepository,
-      dbioActionRunner = TestDbioActionRunner,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),

@@ -327,6 +327,8 @@ class DBFetchingProcessRepositorySpec
     )
   }
 
+  // The PerformedScheduledExecution activity is not tested in integration tests, so a unit tests for database read/write is added here.
+  // (the scheduling mechanism is tested in an isolated way, using mocks, in package pl.touk.nussknacker.ui.process.periodic package
   test("save and read ScenarioActivity.PerformedScheduledExecution") {
     val processName = ProcessName("proc1")
     val newScenario = ScenarioBuilder

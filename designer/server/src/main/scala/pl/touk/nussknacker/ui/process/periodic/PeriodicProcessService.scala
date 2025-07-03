@@ -35,8 +35,7 @@ class PeriodicProcessService(
     delegateDeploymentManager: DeploymentManager,
     scheduledExecutionPerformer: ScheduledExecutionPerformer,
     periodicProcessesRepository: PeriodicProcessesRepository,
-    scenarioActivityRepository: ScenarioActivityRepository,
-    dbioActionRunner: DBIOActionRunner,
+    scenarioActivityRepository: SchedulingScenarioActivitiesRepository,
     periodicProcessListener: ScheduledProcessListener,
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
     deploymentRetryConfig: DeploymentRetryConfig,
@@ -673,10 +672,10 @@ class PeriodicProcessService(
 
   }
 
-  private def addScenarioActivity(periodicProcessDeployment: PeriodicProcessDeployment): Future[ScenarioActivityId] = {
+  private def addScenarioActivity(periodicProcessDeployment: PeriodicProcessDeployment): Future[Unit] = {
     scenarioActivityFor(periodicProcessDeployment) match {
       case Some(activity) =>
-        dbioActionRunner.run(scenarioActivityRepository.addActivity(activity))
+        scenarioActivityRepository.add(activity)
       case None =>
         throw new PeriodicProcessException(
           s"Could not create scenario activity when marking scheduled scenario deployment as finished"
@@ -686,7 +685,7 @@ class PeriodicProcessService(
 
   private def scenarioActivityFor(
       deployment: PeriodicProcessDeployment,
-  ): Option[ScenarioActivity] = {
+  ): Option[ScenarioActivity.PerformedScheduledExecution] = {
     scheduledExecutionStatusAndDateFinished(deployment).map { metadata =>
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(deployment.periodicProcess.deploymentData.processId.value),

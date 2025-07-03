@@ -35,7 +35,11 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
-import pl.touk.nussknacker.ui.process.periodic.{DefaultProcessingTypeActionService, SchedulingDependencies}
+import pl.touk.nussknacker.ui.process.periodic.{
+  DefaultProcessingTypeActionService,
+  DefaultSchedulingScenarioActivitiesRepository,
+  SchedulingDependencies
+}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.{
   DeploymentManagersLoader,
@@ -423,12 +427,15 @@ object DomainServices extends LazyLogging {
       processingType: ProcessingType
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+    val schedulingScenarioActivitiesRepository = new DefaultSchedulingScenarioActivitiesRepository(
+      activitiesRepository = scenarioActivityRepository,
+      dbioActionRunner = dbioActionRunner
+    )
     new SchedulingDependencies(
       infrastructureServices.dbRef,
       new DefaultProcessingTypeActionService(processingType, actionServiceProvider),
       fetchingProcessRepository,
-      scenarioActivityRepository,
-      dbioActionRunner,
+      schedulingScenarioActivitiesRepository,
       additionalConfigsFromProvider,
     )
   }
