@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.language.json
 
 import cats.data.{Validated, ValidatedNel}
 import io.circe.parser
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult}
+import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.language.json.JsonTemplateParser._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: SpelExpressionParser)
     extends ExpressionParser {
@@ -37,7 +39,7 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
     }
 
     spelTemplateParser
-      .parse(originalJsonString, validationContext, stringTypingResult)
+      .parse(originalJsonString, validationContext, Typed[TemplateEvaluationResult])
       .map(_.expression)
       .andThen { spelTemplateExpression =>
         typeDeterminer
@@ -52,7 +54,7 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
       expectedType: typing.TypingResult
   ): ValidatedNel[ExpressionParseError, CompiledExpression] = {
     spelTemplateParser
-      .parseWithoutContextValidation(originalJsonString, stringTypingResult)
+      .parseWithoutContextValidation(originalJsonString, Typed[TemplateEvaluationResult])
       .map(toJsonTemplateExpression(originalJsonString, _, expectedType))
       .map(_.expression)
   }
@@ -76,8 +78,6 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
 
 object JsonTemplateParser {
 
-  private val stringTypingResult = Typed.typedClass[String]
-
   private case class JsonTemplateExpressionTypeError(
       expected: TypingResult,
       found: TypingResult
@@ -96,23 +96,33 @@ object JsonTemplateParser {
     override def original: String = originalJsonString
 
     override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
-      val jsonString = templateCompiledExpression.evaluate[String](ctx, globals)
+      val renderedTemplate = templateCompiledExpression
+        .evaluate[TemplateEvaluationResult](ctx, globals)
+        .renderedParts
+        .map {
+          case RenderedLiteral(value) => value
+          case RenderedSubExpression(value) =>
+            val encodedJson = ToJsonEncoder.defaultForTests.encode(value)
+            // FIXME abr: escape characters
+            encodedJson.asString.getOrElse(encodedJson.noSpaces)
+        }
+        .mkString
       parser
-        .parse(jsonString)
+        .parse(renderedTemplate)
         .flatMap { value =>
           FromJsonTypingResultBasedDecoder.decodeValue(typ, value.hcursor)
         }
-        .fold(e => throw new JsonTemplateEvaluationException(originalJsonString, e), _.asInstanceOf[T])
+        .fold(e => throw new JsonTemplateDecodingException(renderedTemplate, e), _.asInstanceOf[T])
     }
 
   }
 
-  private class JsonTemplateEvaluationException(
-      input: String,
+  private class JsonTemplateDecodingException(
+      renderedTemplate: String,
       cause: Throwable,
   ) extends NonTransientException(
-        input = input,
-        message = s"Expression [$input] evaluation failed, message: ${cause.getMessage}",
+        input = renderedTemplate,
+        message = s"Rendered template [$renderedTemplate] cannot be decoded ad json, message: ${cause.getMessage}",
         cause = cause
       )
 

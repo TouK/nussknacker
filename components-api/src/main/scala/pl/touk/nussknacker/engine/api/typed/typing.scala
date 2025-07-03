@@ -382,43 +382,7 @@ object typing {
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
-    def fromInstance(obj: Any): TypingResult = {
-      obj match {
-        case null =>
-          TypedNull
-        case map: Map[String @unchecked, _] =>
-          val fieldTypes = typeMapFields(map)
-          Typed.record(fieldTypes, mapBasedRecordUnderlyingType[Map[_, _]](fieldTypes))
-        case javaMap: java.util.Map[String @unchecked, _] =>
-          val fieldTypes = typeMapFields(javaMap.asScala)
-          Typed.record(fieldTypes)
-        case list: List[_] =>
-          genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
-        case array: Array[_] =>
-          Typed(array.getClass)
-        case javaList: java.util.List[_] =>
-          typedListWithElementValues(
-            supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
-            javaList
-          )
-        case set: java.util.Set[_] =>
-          genericTypeClass(classOf[java.util.Set[_]], List(supertypeOfElementTypes(set.asScala.toList)))
-        case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        case other =>
-          Typed(other.getClass) match {
-            case typedClass: TypedClass =>
-              ToJsonEncoderWithFallback.encodeValue(other) match {
-                case Valid(_)   => TypedObjectWithValue(typedClass, other)
-                case Invalid(_) => typedClass
-              }
-            case notTypedClass => notTypedClass
-          }
-      }
-    }
-
-    private def typeMapFields(iterable: Iterable[(String, Any)]) = iterable.map { case (k, v) =>
-      k -> fromInstance(v)
-    }
+    def fromInstance(obj: Any): TypingResult = FromInstanceTypeDeterminer.fromInstance(obj)
 
     // This is a factory method allowing to create TypedUnion, but also ensuring that none of type will be duplicated,
     // TypedNull will be omitted if some other type exists etc.
@@ -477,10 +441,6 @@ object typing {
   private[api] def mapBasedRecordUnderlyingType[T: ClassTag](fields: Iterable[(String, TypingResult)]): TypedClass = {
     val valueType = superTypeOfTypes(fields.map(_._2))
     Typed.genericTypeClass[T](List(Typed[String], valueType))
-  }
-
-  private def supertypeOfElementTypes(list: List[_]): TypingResult = {
-    superTypeOfTypes(list.map(fromInstance))
   }
 
   object AdditionalDataValue {

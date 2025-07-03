@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -68,13 +68,13 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     forAll(
       Table(
         ("Data sample", "Typing result"),
-        ("", Unknown),
+        ("", Typed.json),
         ("{}", Typed.record(List())),
         ("123", Typed.typedClass[Integer]),
-        ("[]", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
+        ("[]", Typed.genericTypeClass[java.util.List[_]](List(Typed.json))),
         ("\"text\"", Typed.typedClass[String]),
         ("false", Typed.typedClass[java.lang.Boolean]),
-        ("null", Unknown),
+        ("null", Typed.json),
         (
           s"""
            |{
@@ -116,10 +116,10 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         (
           s"""
            |{
-           |  "name": "#{#name}",
-           |  "age": #{#age},
-           |  "hasConsent": #{#hasConsent},
-           |  "amount": #{#amount}
+           |  "name": "#{ #name }",
+           |  "age": #{ #age },
+           |  "hasConsent": #{ #hasConsent },
+           |  "amount": #{ #amount }
            |}""".stripMargin,
           Typed.record(
             List(
@@ -140,10 +140,10 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
   test("should evaluate json template") {
     val dataSample =
       s"""{
-         |  "name": "#{#name}",
-         |  "age": #{#age},
-         |  "hasConsent": #{#hasConsent},
-         |  "amount": #{#amount}
+         |  "name": "#{ #name }",
+         |  "age": #{ #age },
+         |  "hasConsent": #{ #hasConsent },
+         |  "amount": #{ #amount }
          |}""".stripMargin
 
     val mapResult = parse[Any](dataSample, ctxWithVariables).validValue.expression
@@ -154,41 +154,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       "age"        -> 50,
       "hasConsent" -> true,
       "amount"     -> new java.math.BigDecimal("100.5"),
-    ).asJava
-  }
-
-  test("should treat complex variables as strings") {
-    val jsonWithComplexVariables = """{
-                                     |  "products": "#{#products}",
-                                     |  "pricing": "#{#pricing}"
-                                     |}""".stripMargin
-
-    val result =
-      parse[Any](
-        jsonWithComplexVariables,
-        ValidationContext(
-          Map(
-            "products" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[String])),
-            "pricing" -> Typed.genericTypeClass(
-              classOf[java.util.Map[_, _]],
-              List(Typed.typedClass[String], Typed.typedClass[String])
-            )
-          )
-        )
-      ).validValue.expression
-        .evaluate[Any](
-          Context.dummy.withVariables(
-            Map(
-              "products" -> List("a", "b").asJava,
-              "pricing"  -> Map("a" -> 1000, "b" -> 500).asJava,
-            )
-          ),
-          Map.empty
-        )
-
-    result shouldBe Map(
-      "products" -> "[a, b]",
-      "pricing"  -> "{a=1000, b=500}",
     ).asJava
   }
 
@@ -207,47 +172,12 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     )
   }
 
-  test("should return error when complex variable type is not in quotes") {
-    forAll(
-      Table(
-        ("Invalid json", "Error message", "Error details"),
-        (
-          """{ "products": #{#products} }""",
-          "expected json value got 'unquot...'",
-          CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
-        ),
-        (
-          """{"random text"}""",
-          "expected : got '}'",
-          CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
-        ),
-        (
-          """{#{#products}}""",
-          "expected \" got 'unquot...'",
-          CoordinatesBasedTextRange(TextCoordinates(1, 0), TextCoordinates(2, 0))
-        ),
-      )
-    ) { (invalidJson: String, errorMessage, errorDetails) =>
-      val parsingErrors = parse[String](
-        invalidJson,
-        ValidationContext(
-          Map(
-            "products" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[String])),
-          )
-        )
-      ).invalidValue
-
-      // This error message could be better but it requires to analyze how string ends before template variable
-      parsingErrors shouldBe NonEmptyList.of(JsonParseError(errorMessage, Some(errorDetails)))
-    }
-  }
-
-  test("should allow to use Unknown type in field values where non-string value is expected") {
+  test("should allow to use Json type in field values where non-string value is expected") {
     val jsonWithExpressionPlaceholderInUnquotedFieldValue =
       """{
         |  "field1": #{ #field1Value }
         |}""".stripMargin
-    val validationContext = ValidationContext.empty.withVariableUnsafe("field1Value", Unknown)
+    val validationContext = ValidationContext.empty.withVariableUnsafe("field1Value", Typed.json)
     val typedExpression   = parse[Any](jsonWithExpressionPlaceholderInUnquotedFieldValue, validationContext).validValue
     typedExpression.typingInfo.typingResult shouldBe Typed.record(Seq("field1" -> Typed.json))
 
@@ -264,17 +194,16 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         .evaluate[java.util.Map[String, Any]](
           Context.dummy.withVariable("field1Value", field1Value),
           globals = Map.empty
-        )
-        .asScala shouldBe Map("field1" -> field1Value).asJava
+        ) shouldBe Map("field1" -> field1Value).asJava
     }
   }
 
-  test("should allow to use Unknown type in list elements") {
+  test("should allow to use Json type in list elements") {
     val jsonWithExpressionPlaceholderInUnquotedFieldValue =
       """[
         |  #{ #listElement }
         |]""".stripMargin
-    val validationContext = ValidationContext.empty.withVariableUnsafe("listElement", Unknown)
+    val validationContext = ValidationContext.empty.withVariableUnsafe("listElement", Typed.json)
     val typedExpression   = parse[Any](jsonWithExpressionPlaceholderInUnquotedFieldValue, validationContext).validValue
     typedExpression.typingInfo.typingResult shouldBe Typed.genericTypeClass(
       classOf[java.util.List[_]],
@@ -294,8 +223,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         .evaluate[java.util.List[Any]](
           Context.dummy.withVariable("listElement", listElement),
           globals = Map.empty
-        )
-        .asScala shouldBe List(listElement).asJava
+        ) shouldBe List(listElement).asJava
     }
   }
 
