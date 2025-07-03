@@ -19,5 +19,5 @@ export const getIsDeploying = createSelector(getProcessState, (state) => {
 });
 
 export const getIsRedeploying = createSelector(getProcessState, (state) => {
-    return [KnownStatusName.Deploying].includes(state?.status?.name);
+    return [KnownStatusName.Redeploying].includes(state?.status?.name);
 });
