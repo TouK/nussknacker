@@ -738,10 +738,6 @@ class PeriodicProcessService(
     localDateTime.atZone(clock.getZone).toInstant
   }
 
-  private def localDateTimeAtSystemDefaultZone(instant: Instant): LocalDateTime = {
-    instant.atZone(clock.getZone).toLocalDateTime
-  }
-
 }
 
 object PeriodicProcessService {
