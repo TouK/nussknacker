@@ -110,7 +110,7 @@ object ModelConfig {
                 schema = config.getString("liveDataPreview.storage.schema"),
               )
             case other =>
-              throw new IllegalStateException(s"Unknown live data storage type [$other]")
+              throw new IllegalArgumentException(s"Unknown live data storage type [$other]")
           }
         } else LiveDataStorage.DesignerJvm
       )

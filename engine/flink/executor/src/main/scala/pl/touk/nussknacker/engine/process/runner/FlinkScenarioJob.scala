@@ -58,22 +58,13 @@ class FlinkScenarioJob(modelData: ModelData) {
             )
           )
       }
-    val periodicLiveDataUploader =
-      modelData.modelConfig.liveDataPreviewMode match {
-        case LiveDataPreviewMode.Disabled | LiveDataPreviewMode.Enabled(_, _, DesignerJvm) =>
-          None
-        case LiveDataPreviewMode.Enabled(_, _, storage: DesignerDb) =>
-          Some(
-            new PeriodicLiveDataUploader(
-              ProcessIdWithName(processVersion.processId, processVersion.processName),
-              storage.uploadIntervalInSeconds,
-              storage.url,
-              storage.user,
-              storage.password,
-              storage.schema
-            )
-          )
-      }
+    modelData.modelConfig.liveDataPreviewMode match {
+      case LiveDataPreviewMode.Disabled | LiveDataPreviewMode.Enabled(_, _, DesignerJvm) =>
+        ()
+      case LiveDataPreviewMode.Enabled(_, _, storage: DesignerDb) =>
+        val processIdWithName = ProcessIdWithName(processVersion.processId, processVersion.processName)
+        PeriodicLiveDataUploader.register(env, processIdWithName, storage)
+    }
     val compilerFactory = new FlinkProcessCompilerDataFactory(
       modelData,
       deploymentData,
@@ -84,10 +75,7 @@ class FlinkScenarioJob(modelData: ModelData) {
       FlinkProcessRegistrar(compilerFactory, FlinkJobConfig.parse(modelData.modelConfig), executionConfigPreparer)
     registrar.register(env, scenario, processVersion, deploymentData)
     val preparedName = modelData.namingStrategy.prepareName(scenario.name.value)
-    periodicLiveDataUploader.foreach(_.start())
-    val result = env.execute(preparedName)
-    periodicLiveDataUploader.foreach(_.close())
-    result
+    env.execute(preparedName)
   }
 
 }
