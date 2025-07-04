@@ -52,6 +52,8 @@ object ModelConfig {
 
       case object DesignerJvm extends LiveDataStorage
 
+      // todo: We should use Designer db configuration here, but it is not easily available from the places where we use live data.
+      //  The db configuration is therefore provided separately for live data synchronization mechanism
       final case class DesignerDb(
           uploadIntervalInSeconds: Int,
           url: String,
