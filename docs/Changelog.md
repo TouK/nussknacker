@@ -192,6 +192,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
 * [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
+* [8304](https://github.com/TouK/nussknacker/pull/8304) Added functionality of setting component group in ComponentDefinition using `withComponentGroup`.
 
 ## 1.18
 
