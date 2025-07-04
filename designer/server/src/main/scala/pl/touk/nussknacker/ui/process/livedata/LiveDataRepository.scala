@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata._
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData._
 import pl.touk.nussknacker.ui.db.NuTables
+import pl.touk.nussknacker.ui.process.livedata.DbLiveDataRepository.StoredLivedDataDetails
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 
 import scala.concurrent.ExecutionContext
@@ -61,12 +62,25 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
         run(
           flinkLiveDataTable
             .filter(_.scenarioId === processIdWithName.id)
-            .map(_.liveData)
             .result
-            .map(_.flatten)
+            .map(
+              _.flatMap { entity =>
+                entity.liveData.map { liveData =>
+                  (
+                    liveData,
+                    StoredLivedDataDetails(
+                      entity.updatedAt,
+                      entity.deploymentId,
+                      entity.externalDeploymentId,
+                      entity.collectorId
+                    )
+                  )
+                }
+              }
+            )
         )
       )
-      parsedLiveDataOrErrorFromCollectors = rawLiveDataFromCollectors.map { liveDataStr =>
+      parsedLiveDataOrErrorFromCollectors = rawLiveDataFromCollectors.map(_._1).map { liveDataStr =>
         for {
           liveDataJson <- io.circe.parser.parse(liveDataStr).left.map(_.message)
           liveData     <- collectedLiveDataDecoder.decodeJson(liveDataJson).left.map(_.message)
@@ -81,7 +95,23 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
           case (_, Left(err))              => Left(err)
         }
       )
-    } yield CollectedLiveData.aggregate(liveDataFromCollectors, maxNumberOfSamples)
+    } yield {
+      if (liveDataFromCollectors.size > 1) {
+        logger.debug(s"Aggregating live data from ${rawLiveDataFromCollectors.map(_._2)}")
+      }
+      CollectedLiveData.aggregate(liveDataFromCollectors, maxNumberOfSamples)
+    }
   }.value
+
+}
+
+object DbLiveDataRepository {
+
+  final case class StoredLivedDataDetails(
+      timestamp: Long,
+      deploymentId: String,
+      externalDeploymentId: String,
+      collectorId: String,
+  )
 
 }

@@ -149,9 +149,9 @@ class PeriodicLiveDataUploader(
     statement = if (dbUrl.startsWith("jdbc:postgresql:")) {
       connection.prepareStatement(
         """
-          |INSERT INTO live_data (scenario_id, deployment_activity_id, external_deployment_id, collector_id, live_data, updated_at)
+          |INSERT INTO live_data (scenario_id, deployment_id, external_deployment_id, collector_id, live_data, updated_at)
           |VALUES (?, ?, ?, ?, ?, ?)
-          |ON CONFLICT (scenario_id, deployment_activity_id, external_deployment_id, collector_id) DO UPDATE
+          |ON CONFLICT (scenario_id, deployment_id, external_deployment_id, collector_id) DO UPDATE
           |SET live_data = EXCLUDED.live_data, updated_at = EXCLUDED.updated_at
           |""".stripMargin
       )
@@ -159,13 +159,13 @@ class PeriodicLiveDataUploader(
       connection.prepareStatement(
         s"""
            |MERGE INTO "$dbSchema"."live_data" AS target
-           |USING (VALUES (?, ?, ?, ?, ?, ?)) AS vals("scenario_id", "deployment_activity_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
-           |ON (target."scenario_id" = vals."scenario_id" AND target."deployment_activity_id" = vals."deployment_activity_id" AND target."external_deployment_id" = vals."external_deployment_id" AND target."collector_id" = vals."collector_id")
+           |USING (VALUES (?, ?, ?, ?, ?, ?)) AS vals("scenario_id", "deployment_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
+           |ON (target."scenario_id" = vals."scenario_id" AND target."deployment_id" = vals."deployment_id" AND target."external_deployment_id" = vals."external_deployment_id" AND target."collector_id" = vals."collector_id")
            |WHEN MATCHED THEN
            |  UPDATE SET "live_data" = vals."live_data", "updated_at" = vals."updated_at"
            |WHEN NOT MATCHED THEN
-           |  INSERT ("scenario_id", "deployment_activity_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
-           |  VALUES (vals."scenario_id", vals."deployment_activity_id", vals."external_deployment_id", vals."collector_id", vals."live_data", vals."updated_at")
+           |  INSERT ("scenario_id", "deployment_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
+           |  VALUES (vals."scenario_id", vals."deployment_id", vals."external_deployment_id", vals."collector_id", vals."live_data", vals."updated_at")
            |""".stripMargin
       )
     }
