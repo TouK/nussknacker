@@ -12,19 +12,24 @@ import scala.util.Try
 
 object ToJsonEncoder {
 
+  // We assume that this classloader is the model classloader
+  private val defaultClassloader = getClass.getClassLoader
+
   // The default behaviour is to fail-fast. This approach helps in an investigation of a potential wrong type usage in the json context.
-  val default: StrictToJsonEncoder.type = StrictToJsonEncoder
+  val default = new StrictToJsonEncoder(defaultClassloader)
 
   // For this encoder, encodeUnsafe() doesn't throw exceptions for unknown values - as a fallback .toString method is used
   // encode() method is hidden because it always returns Valid
-  val looseEncoder = new ToJsonEncoder(failOnUnknown = false, classOf[ToJsonEncoder].getClassLoader)
+  val looseEncoder = new LooseToJsonEncoder(getClass.getClassLoader)
 
 }
 
-object StrictToJsonEncoder extends ToJsonEncoder(failOnUnknown = true, classOf[ToJsonEncoder].getClassLoader) {
+class StrictToJsonEncoder(classLoader: ClassLoader) extends ToJsonEncoder(failOnUnknown = true, classLoader) {
   // Unhides encode method, which is hidden for loose encoder
   override def encode(obj: Any): ValidatedNel[String, Json] = super.encode(obj)
 }
+
+class LooseToJsonEncoder(classLoader: ClassLoader) extends ToJsonEncoder(failOnUnknown = false, classLoader)
 
 class ToJsonEncoder(failOnUnknown: Boolean, classLoader: ClassLoader) {
 

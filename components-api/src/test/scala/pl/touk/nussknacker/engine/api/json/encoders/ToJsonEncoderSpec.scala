@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.util.json
+package pl.touk.nussknacker.engine.api.json.encoders
 
 import io.circe.Json
 import io.circe.Json._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
+import pl.touk.nussknacker.engine.util.json.{SampleEnum, ToJsonEncoderCustomisation}
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
 import java.time._
@@ -89,7 +89,7 @@ class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
         classOf[ToJsonEncoderCustomisation] -> classOf[CustomJsonEncoderCustomisation2]
       )
     ) { classLoader =>
-      val encoder = ToJsonEncoder.default
+      val encoder = new StrictToJsonEncoder(classLoader)
 
       encoder.encodeUnsafe(
         Map(
