@@ -25,8 +25,7 @@ object ToJsonEncoder {
 }
 
 class StrictToJsonEncoder(classLoader: ClassLoader) extends ToJsonEncoder(failOnUnknown = true, classLoader) {
-  // Unhides encode method, which is hidden for loose encoder
-  override def encode(obj: Any): ValidatedNel[String, Json] = super.encode(obj)
+  def encode(obj: Any): ValidatedNel[String, Json] = doEncode(obj)
 }
 
 class LooseToJsonEncoder(classLoader: ClassLoader) extends ToJsonEncoder(failOnUnknown = false, classLoader)
@@ -53,7 +52,7 @@ class ToJsonEncoder(failOnUnknown: Boolean, classLoader: ClassLoader) {
   protected val highPriority: PartialFunction[Any, Json] = PartialFunction.empty
 
   def encodeUnsafe(obj: Any): Json = {
-    encode(obj).getOrElse {
+    doEncode(obj).getOrElse {
       if (failOnUnknown) {
         throw new IllegalArgumentException(s"Invalid type: ${obj.getClass}")
       } else {
@@ -62,7 +61,8 @@ class ToJsonEncoder(failOnUnknown: Boolean, classLoader: ClassLoader) {
     }
   }
 
-  protected def encode(obj: Any): ValidatedNel[String, Json] =
+  // This method is protected because it has no sense for LooseToJsonEncoder
+  protected def doEncode(obj: Any): ValidatedNel[String, Json] =
     customEncoding(obj).map(Valid(_)).getOrElse(encoderWithFallback.encodeValue(obj))
 
   private def customEncoding(obj: Any): Option[Json] = {

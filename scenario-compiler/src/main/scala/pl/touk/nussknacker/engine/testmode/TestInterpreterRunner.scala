@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testmode
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
+import pl.touk.nussknacker.engine.api.json.encoders.{LooseToJsonEncoder, ToJsonEncoder}
 
 object TestInterpreterRunner {
 
@@ -14,7 +14,7 @@ object TestInterpreterRunner {
   private[engine] def testResultsVariableEncoder: Any => io.circe.Json = {
     // Variables keep some intermediate state of a scenario. We can't be sure that there are only types that are supported
     // for json encoding. It is better to print not-well formatted .toString result than fail in this case
-    lazy val variablesEncoder = new ToJsonEncoder(failOnUnknown = false, Thread.currentThread().getContextClassLoader)
+    lazy val variablesEncoder = new LooseToJsonEncoder(Thread.currentThread().getContextClassLoader)
     def encode(a: Any): Json = a match {
       case scenarioGraph: DisplayJson =>
         def safeString(a: String): Json = Option(a).map(Json.fromString).getOrElse(Json.Null)
