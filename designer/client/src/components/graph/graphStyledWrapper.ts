@@ -3,7 +3,7 @@ import { alpha, css, styled } from "@mui/material";
 import { blend } from "@mui/system";
 import type { CSSProperties } from "react";
 
-import { blendLighten } from "../../containers/theme/helpers";
+import { blendLighten, getNodeBorderColor } from "../../containers/theme/helpers";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
     css({
@@ -18,6 +18,9 @@ const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSP
             strokeWidth: 1,
             fill: backgroundFill,
             stroke: strokeColor,
+            "&[magnet=true]:hover": {
+                fill: strokeColor,
+            },
         },
     });
 
@@ -34,6 +37,13 @@ const nodeStyles = (theme: Theme) => {
             "&, .body, .background, .joint-port-body": {
                 strokeWidth: 0.5,
                 transition: "filter 0.25s, fill 0.25s, stroke 0.25s",
+            },
+            ".joint-port-body": {
+                "&[magnet=true]": {
+                    "&:hover": {
+                        fill: getNodeBorderColor(theme),
+                    },
+                },
             },
         },
         ".joint-layers": {
