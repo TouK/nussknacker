@@ -16,6 +16,8 @@ trait ExpressionParser {
       expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression]
 
+  // This method should only provide an evaluable expression - no types validation should be done here. It is used
+  // in runtime, where we already validated all expressions using the normal "parse" method
   def parseWithoutContextValidation(
       original: String,
       expectedType: TypingResult
