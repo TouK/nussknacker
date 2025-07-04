@@ -257,10 +257,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private def classDefinitionSetWithCustomClasses(globalVariableTypes: Seq[TypingResult]): ClassDefinitionSet = {
     val typesFromGlobalVariables = globalVariableTypes
-      .flatMap(_.asInstanceOf[KnownTypingResult] match {
+      .flatMap {
         case single: SingleTypingResult => Seq(single)
         case union: TypedUnion          => union.possibleTypes.toList
-      })
+        case _                          => Seq.empty
+      }
       .map(_.runtimeObjType.klass)
     val customClasses = Seq(
       classOf[String],
@@ -1274,6 +1275,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
       .renderedTemplate shouldBe "alamakota 446 bar"
+  }
+
+  test("allow to use parsed expression with values with different types") {
+    val expression = parseV[String](
+      "some value: #{ #variable }",
+      ValidationContext.empty.withVariableUnsafe("variable", Unknown),
+      flavour = SpelExpressionParser.Template
+    ).validExpression
+
+    expression.evaluateSync[String](Context.dummy.withVariable("variable", 1)) shouldBe "some value: 1"
+    expression.evaluateSync[String](Context.dummy.withVariable("variable", false)) shouldBe "some value: false"
+    expression.evaluateSync[String](Context.dummy.withVariable("variable", "string")) shouldBe "some value: string"
   }
 
   test("evaluates empty template as empty string") {

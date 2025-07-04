@@ -32,78 +32,63 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
 
 /**
-  * Workaround for Spel compilation problem when expression's underlying class changes.
-  * Spel tries to explicitly cast result of compiled expression to a class that has been cached during the compilation.
-  *
-  * Problematic scenario:
-  * In case compilation occurs with type ArrayList and during evaluation a List is provided ClassCastException is thrown.
-  * Workaround:
-  * In such case we try to parse and compile expression again.
-  *
-  * Possible problems:
-  * - unless Expression is marked @volatile multiple threads might parse it on their own,
-  * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
-  */
-final case class ParsedSpelExpression(
-    original: String,
-    parser: () => ValidatedNel[SpelExpressionParseError, ExpressionWithTextRange],
-    initial: ExpressionWithTextRange
-) extends LazyLogging {
-  @volatile var parsed: ExpressionWithTextRange = initial
-  private val firstInterpretationFinished       = new AtomicBoolean()
-
-  def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
-    def value(): T = {
-      // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
-      // The latter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
-      // isn't finished yet. Due to this problem an expression that shouldn't be compiled might be compiled. It generates IllegalStateException errors in further evaluations of the expression.
-      if (!firstInterpretationFinished.get()) {
-        synchronized {
-          val valueToReturn = parsed.getExpression.getValue(context, desiredResultType).asInstanceOf[T]
-          firstInterpretationFinished.set(true)
-          valueToReturn
-        }
-      } else {
-        parsed.getExpression.getValue(context, desiredResultType).asInstanceOf[T]
-      }
-    }
-    try {
-      value()
-    } catch {
-      case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
-        logger.warn("Error during expression evaluation '{}': {}. Trying to compile", original, e.getMessage)
-        forceParse()
-        value()
-    }
-  }
-
-  def forceParse(): Unit = {
-    // we already parsed this expression successfully, so reparsing should NOT fail
-    parsed = parser().getOrElse(throw new RuntimeException(s"Failed to reparse $original - this should not happen!"))
-  }
-
-}
-
-class SpelExpressionEvaluationException(val expression: String, cause: Throwable)
-    extends NonTransientException(
-      expression,
-      s"Expression [$expression] evaluation failed, message: ${cause.getMessage}",
-      cause = cause
-    )
-
+ * Passing both initiallyParsedExpression and reparseFunction is a workaround for Spel compilation problem when
+ * expression's underlying class changes. Spel tries to explicitly cast result of compiled expression to
+ * a class that has been cached during the compilation.
+ *
+ * Problematic scenario:
+ * In case compilation occurs with type ArrayList and during evaluation a List is provided ClassCastException is thrown.
+ * Workaround:
+ * In such case we try to parse and compile expression again.
+ *
+ * Possible problems:
+ * - unless Expression is marked @volatile multiple threads might parse it on their own,
+ * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
+ */
 class SpelExpression(
-    parsed: ParsedSpelExpression,
+    override val original: String,
+    reparseFunction: () => ValidatedNel[SpelExpressionParseError, ExpressionWithTextRange],
+    initiallyParsedExpression: ExpressionWithTextRange,
     expectedReturnType: TypingResult,
     flavour: Flavour,
     evaluationContextPreparer: EvaluationContextPreparer
 ) extends CompiledExpression
     with LazyLogging {
 
-  override val original: String = parsed.original
+  @volatile private var parsed: ExpressionWithTextRange = initiallyParsedExpression
+  private val firstInterpretationFinished               = new AtomicBoolean()
+
+  private[spel] def forceCompile(): Unit = forceCompileSpringExpression(parsed.getExpression)
+
+  // TODO
+  // this does not work in every situation - e.g expression (#variable != '') is not compiled
+  // maybe we could remove it altogether with "enableSpelForceCompile" flag after some investigation
+  private def forceCompileSpringExpression(parsed: Expression): Unit = {
+    parsed match {
+      case e: standard.SpelExpression   => forceCompileStandardExpression(e)
+      case e: CompositeStringExpression => e.getExpressions.foreach(forceCompileSpringExpression)
+      case _: LiteralExpression         =>
+      case _: NullExpression            =>
+    }
+  }
+
+  private def forceCompileStandardExpression(spel: standard.SpelExpression): Unit = {
+    logger.debug(s"Compiling expression ${spel.getExpressionString}...")
+    val managedToCompile = spel.compileExpression()
+    if (!managedToCompile) {
+      spel.getAST match {
+        case node: SpelNodeImpl if node.isCompilable =>
+          throw new IllegalStateException(s"Failed to compile expression: ${spel.getExpressionString}")
+        case _ => logger.debug(s"Expression ${spel.getExpressionString} will not be compiled")
+      }
+    } else {
+      logger.debug(s"Compiled ${spel.getExpressionString} with compiler result: $spel")
+    }
+  }
 
   override val language: Language = flavour.languageId
 
-  val parsedSpringExpression: Expression = parsed.parsed.getExpression
+  def parsedSpringExpression: Expression = parsed.getExpression
 
   private val expectedClass =
     expectedReturnType match {
@@ -117,21 +102,59 @@ class SpelExpression(
   // TODO: better interoperability with scala type, mainly: scala.math.BigDecimal, scala.math.BigInt and collections
   override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = logOnException(ctx) {
     if (expectedClass == classOf[SpelExpressionRepr]) {
-      return SpelExpressionRepr(parsed.parsed.getExpression, ctx, globals, original).asInstanceOf[T]
+      return SpelExpressionRepr(parsed.getExpression, ctx, globals, original).asInstanceOf[T]
     }
     val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(ctx, globals)
-    flavour match {
-      case SpelExpressionParser.Standard =>
-        parsed.getValue[T](evaluationContext, expectedClass)
-      case SpelExpressionParser.Template =>
-        val parts            = renderTemplateExpressionParts(evaluationContext)
-        val evaluationResult = TemplateEvaluationResult(parts)
-        if (expectedReturnType == Typed[TemplateEvaluationResult]) {
-          evaluationResult.asInstanceOf[T]
-        } else if (expectedReturnType.canBeStrictlyAssignedTo(Typed[CharSequence])) {
-          evaluationResult.renderedTemplate.asInstanceOf[T]
-        } else {
-          throw new IllegalStateException(s"Expression parsed with unexpected type: $expectedReturnType")
+    getValue[T](evaluationContext)
+  }
+
+  def getValue[T](context: EvaluationContext): T = {
+    def getValueDependingOnFlavourAndResultType: T = {
+      flavour match {
+        case SpelExpressionParser.Standard =>
+          parsed.getExpression.getValue(context, expectedClass).asInstanceOf[T]
+        case SpelExpressionParser.Template =>
+          val parts            = renderTemplateExpressionParts(context)
+          val evaluationResult = TemplateEvaluationResult(parts)
+          if (expectedReturnType == Typed[TemplateEvaluationResult]) {
+            evaluationResult.asInstanceOf[T]
+          } else if (expectedReturnType.canBeStrictlyAssignedTo(Typed[CharSequence])) {
+            evaluationResult.renderedTemplate.asInstanceOf[T]
+          } else {
+            throw new IllegalStateException(s"Expression parsed with unexpected type: $expectedReturnType")
+          }
+      }
+    }
+
+    def getValueWithSynchronizedInterpretedCount: T = {
+      // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
+      // The latter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
+      // isn't finished yet. Due to this problem, an expression that shouldn't be compiled might be compiled. It generates IllegalStateException errors in further evaluations of the expression.
+      if (!firstInterpretationFinished.get()) {
+        synchronized {
+          val valueToReturn = getValueDependingOnFlavourAndResultType
+          firstInterpretationFinished.set(true)
+          valueToReturn
+        }
+      } else {
+        getValueDependingOnFlavourAndResultType
+      }
+    }
+
+    try {
+      getValueWithSynchronizedInterpretedCount
+    } catch {
+      case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
+        logger.warn(
+          s"Error during expression [$original] evaluation: ${e.getMessage}. Trying to parse expression again",
+        )
+        parseExpressionAgain()
+        try {
+          getValueWithSynchronizedInterpretedCount
+        } catch {
+          case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
+            logger.debug(s"Another attempt of expression [$original] evaluation failed. Exception will be rethrown")
+            throw e
         }
     }
   }
@@ -147,7 +170,17 @@ class SpelExpression(
           s"Unsupported expression type: ${other.getClass.getName} for a template expression"
         )
     }
-    renderExpression(parsed.parsed.getExpression)
+    renderExpression(parsed.getExpression)
+  }
+
+  private def parseExpressionAgain(): Unit = {
+    synchronized {
+      // We already parsed this expression successfully, so reparsing should NOT fail
+      parsed = reparseFunction().getOrElse(
+        throw new RuntimeException(s"Failed to reparse $original - this should not happen!")
+      )
+      firstInterpretationFinished.set(false)
+    }
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {
@@ -156,16 +189,11 @@ class SpelExpression(
     } catch {
       case NonFatal(e) =>
         if (logger.underlying.isDebugEnabled) {
-          // we log twice here because LazyLogging cannot print context and stacktrace at the same time
-          logger.debug("Expression evaluation failed. Original: {}. Context: {}", original, ctx)
+          // We log twice here because LazyLogging cannot print context and stacktrace at the same time
+          logger.debug(s"Expression evaluation failed. Original: $original. Context: $ctx")
           logger.debug("Expression evaluation failed", e)
         } else {
-          logger.info(
-            s"Expression evaluation failed. Original {}, ctxId: {}, message: {}",
-            original,
-            ctx.id,
-            e.getMessage
-          )
+          logger.info(s"Expression evaluation failed. Original $original, ctxId: ${ctx.id}, message: ${e.getMessage}")
         }
         throw new SpelExpressionEvaluationException(original, e)
     }
@@ -173,8 +201,16 @@ class SpelExpression(
 
 }
 
+class SpelExpressionEvaluationException(val expression: String, cause: Throwable)
+    extends NonTransientException(
+      expression,
+      s"Expression [$expression] evaluation failed, message: ${cause.getMessage}",
+      cause = cause
+    )
+
 class SpelExpressionParser(
-    parser: NuSpelExpressionParser,
+    immediateCompileParser: NuSpelExpressionParser,
+    noCompileParser: NuSpelExpressionParser,
     validator: SpelExpressionValidator,
     dictRegistry: DictRegistry,
     enableSpelForceCompile: Boolean,
@@ -193,8 +229,8 @@ class SpelExpressionParser(
     if (shouldUseNullExpression(original)) {
       Valid(NullExpression(original, flavour))
     } else {
-      baseParse(original).map { parsed =>
-        expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType)
+      parseSpelExpressionUsingImmediateCompileConfiguration(original).map { parsed =>
+        createExpression(original, parsed, expectedType)
       }
     }
   }
@@ -212,7 +248,7 @@ class SpelExpressionParser(
         )
       )
     } else {
-      baseParse(original)
+      parseSpelExpressionUsingImmediateCompileConfiguration(original)
         .andThen { parsed =>
           validator
             .validate(parsed, ctx, expectedType)
@@ -221,7 +257,11 @@ class SpelExpressionParser(
         }
         .map { case (combinedResult, parsed) =>
           TypedExpression(
-            expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType),
+            createExpression(
+              original = original,
+              initiallyParsedExpression = parsed,
+              expectedType = expectedType
+            ),
             combinedResult.typingInfo
           )
         }
@@ -230,11 +270,11 @@ class SpelExpressionParser(
 
   private def shouldUseNullExpression(original: String): Boolean = flavour != Template && StringUtils.isBlank(original)
 
-  private def baseParse(
+  private def parseSpelExpressionUsingImmediateCompileConfiguration(
       original: String
   ): ValidatedNel[SpelExpressionParseError, ExpressionWithTextRange] = {
     Validated
-      .catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull))
+      .catchNonFatal(immediateCompileParser.parseExpression(original, flavour.parserContext.orNull))
       .leftMap { ex =>
         val textRangeOpt = Option(ex).collect { case ex: ParseException =>
           IndexBasedTextRange(ex.getPosition, ex.getPosition + 1).toCoordinatesBasedTextRange(original)
@@ -263,16 +303,31 @@ class SpelExpressionParser(
   private def messageWithoutExpressionAndErrorCodeIndicator(ex: SpelParseException) =
     ex.getSimpleMessage.replaceFirst("^EL\\d{4}E?: ", "")
 
-  private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
+  private def createExpression(
+      original: String,
+      initiallyParsedExpression: ExpressionWithTextRange,
+      expectedType: TypingResult
+  ) = {
+    val expr =
+      new SpelExpression(
+        original = original,
+        // We should consider using parser with compilation off for reparse
+        reparseFunction = () => parseSpelExpressionUsingImmediateCompileConfiguration(original),
+        initiallyParsedExpression = initiallyParsedExpression,
+        expectedReturnType = expectedType,
+        flavour = flavour,
+        evaluationContextPreparer = prepareEvaluationContext
+      )
     if (enableSpelForceCompile) {
-      forceCompile(expression.parsed.getExpression)
+      expr.forceCompile()
     }
-    new SpelExpression(expression, expectedType, flavour, prepareEvaluationContext)
+    expr
   }
 
   def typingDictLabels =
     new SpelExpressionParser(
-      parser,
+      immediateCompileParser,
+      noCompileParser,
       validator.withTyper(_.withDictTyper(new LabelsDictTyper(dictRegistry))),
       dictRegistry,
       enableSpelForceCompile,
@@ -282,7 +337,8 @@ class SpelExpressionParser(
 
   def withValidator(modify: SpelExpressionValidator => SpelExpressionValidator): SpelExpressionParser = {
     new SpelExpressionParser(
-      parser,
+      immediateCompileParser,
+      noCompileParser,
       modify(validator),
       dictRegistry,
       enableSpelForceCompile,
@@ -300,31 +356,6 @@ object SpelExpressionParser extends LazyLogging {
   // TODO: should we enable other prefixes/suffixes?
   object Template extends Flavour(GraphExpression.Language.SpelTemplate, Some(ParserContext.TEMPLATE_EXPRESSION))
 
-  // TODO
-  // this does not work in every situation - e.g expression (#variable != '') is not compiled
-  // maybe we could remove it altogether with "enableSpelForceCompile" flag after some investigation
-  private[spel] def forceCompile(parsed: Expression): Unit = {
-    parsed match {
-      case e: standard.SpelExpression   => forceCompile(e)
-      case e: CompositeStringExpression => e.getExpressions.foreach(forceCompile)
-      case _: LiteralExpression         =>
-      case _: NullExpression            =>
-    }
-  }
-
-  private def forceCompile(spel: standard.SpelExpression): Unit = {
-    val managedToCompile = spel.compileExpression()
-    if (!managedToCompile) {
-      spel.getAST match {
-        case node: SpelNodeImpl if node.isCompilable =>
-          throw new IllegalStateException(s"Failed to compile expression: ${spel.getExpressionString}")
-        case _ => logger.debug(s"Expression ${spel.getExpressionString} will not be compiled")
-      }
-    } else {
-      logger.debug(s"Compiled ${spel.getExpressionString} with compiler result: $spel")
-    }
-  }
-
   def default(
       classLoader: ClassLoader,
       expressionConfig: ExpressionConfigDefinition,
@@ -334,8 +365,11 @@ object SpelExpressionParser extends LazyLogging {
       classDefinitionSet: ClassDefinitionSet,
   ): SpelExpressionParser = {
 
-    val parser = new NuSpelExpressionParser(
-      // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
+    // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
+    val immediateCompileParser = new NuSpelExpressionParser(
+      new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
+    )
+    val noCompileParser = new NuSpelExpressionParser(
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
@@ -349,7 +383,8 @@ object SpelExpressionParser extends LazyLogging {
       )
     )
     new SpelExpressionParser(
-      parser,
+      immediateCompileParser,
+      noCompileParser,
       validator,
       dictRegistry,
       enableSpelForceCompile,
