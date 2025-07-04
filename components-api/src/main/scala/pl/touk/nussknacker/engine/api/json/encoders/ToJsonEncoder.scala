@@ -15,7 +15,7 @@ object ToJsonEncoder {
   // We assume that this classloader is the model classloader
   private val defaultClassloader = getClass.getClassLoader
 
-  // The default behaviour is to fail-fast. This approach helps in an investigation of a potential wrong type usage in the json context.
+  // The default behavior is to fail-fast. This approach helps in an investigation of a potential wrong type usage in the json context.
   val default = new StrictToJsonEncoder(defaultClassloader)
 
   // For this encoder, encodeUnsafe() doesn't throw exceptions for unknown values - as a fallback .toString method is used
@@ -24,49 +24,51 @@ object ToJsonEncoder {
 
 }
 
-class StrictToJsonEncoder(classLoader: ClassLoader) extends ToJsonEncoder(failOnUnknown = true, classLoader) {
+class StrictToJsonEncoder(override protected val classLoader: ClassLoader) extends ToJsonEncoder {
+
+  // This method has sense only for strict encoder - for loose, it will always return Valid
   def encode(obj: Any): ValidatedNel[String, Json] = doEncode(obj)
+
+  override protected def handleUnknownValue(any: Any): Option[Json] = None
+
 }
 
-class LooseToJsonEncoder(classLoader: ClassLoader) extends ToJsonEncoder(failOnUnknown = false, classLoader)
+class LooseToJsonEncoder(override protected val classLoader: ClassLoader) extends ToJsonEncoder {
 
-class ToJsonEncoder(failOnUnknown: Boolean, classLoader: ClassLoader) {
+  override protected def handleUnknownValue(any: Any): Option[Json] = Some(fromString(any.toString))
+
+}
+
+sealed trait ToJsonEncoder {
+
+  protected val classLoader: ClassLoader
 
   private val optionalCustomisations =
     ServiceLoader.load(classOf[ToJsonEncoderCustomisation], classLoader).asScala.map(_.encoder(this.encodeUnsafe))
 
-  private val encoderWithFallback = new ToJsonEncoderWithFallback {
-    override protected def handleUnknownValue(any: Any): Option[Json] = {
-      customEncoding(any) match {
-        case Some(value) =>
-          Some(value)
-        case None if !failOnUnknown =>
-          Some(fromString(any.toString))
-        case None =>
-          None
-      }
-    }
-  }
-
   // Used by external project
   protected val highPriority: PartialFunction[Any, Json] = PartialFunction.empty
 
-  def encodeUnsafe(obj: Any): Json = {
-    doEncode(obj).getOrElse {
-      if (failOnUnknown) {
-        throw new IllegalArgumentException(s"Invalid type: ${obj.getClass}")
-      } else {
-        fromString(obj.toString)
-      }
+  private lazy val customEncodingPF = optionalCustomisations.foldLeft(highPriority)(_.orElse(_))
+
+  private val encoderWithFallback = new ToJsonEncoderWithFallback {
+    override protected def handleUnknownValue(any: Any): Option[Json] = {
+      customEncoding(any).orElse(ToJsonEncoder.this.handleUnknownValue(any))
     }
   }
+
+  protected def handleUnknownValue(any: Any): Option[Json]
+
+  def encodeUnsafe(obj: Any): Json =
+    doEncode(obj).getOrElse {
+      throw new IllegalArgumentException(s"Invalid type: ${obj.getClass}")
+    }
 
   // This method is protected because it has no sense for LooseToJsonEncoder
   protected def doEncode(obj: Any): ValidatedNel[String, Json] =
     customEncoding(obj).map(Valid(_)).getOrElse(encoderWithFallback.encodeValue(obj))
 
   private def customEncoding(obj: Any): Option[Json] = {
-    val customEncodingPF = optionalCustomisations.foldLeft(highPriority)(_.orElse(_))
     if (customEncodingPF.isDefinedAt(obj)) {
       Try(customEncodingPF.apply(obj)).toOption
     } else {
