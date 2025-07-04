@@ -109,40 +109,10 @@ class SpelExpression(
   }
 
   def getValue[T](context: EvaluationContext): T = {
-    def getValueDependingOnFlavourAndResultType: T = {
-      flavour match {
-        case SpelExpressionParser.Standard =>
-          parsed.getExpression.getValue(context, expectedClass).asInstanceOf[T]
-        case SpelExpressionParser.Template =>
-          val parts            = renderTemplateExpressionParts(context)
-          val evaluationResult = TemplateEvaluationResult(parts)
-          if (expectedReturnType == Typed[TemplateEvaluationResult]) {
-            evaluationResult.asInstanceOf[T]
-          } else if (expectedReturnType.canBeStrictlyAssignedTo(Typed[CharSequence])) {
-            evaluationResult.renderedTemplate.asInstanceOf[T]
-          } else {
-            throw new IllegalStateException(s"Expression parsed with unexpected type: $expectedReturnType")
-          }
-      }
-    }
-
-    def getValueWithSynchronizedInterpretedCount: T = {
-      // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
-      // The latter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
-      // isn't finished yet. Due to this problem, an expression that shouldn't be compiled might be compiled. It generates IllegalStateException errors in further evaluations of the expression.
-      if (!firstInterpretationFinished.get()) {
-        synchronized {
-          val valueToReturn = getValueDependingOnFlavourAndResultType
-          firstInterpretationFinished.set(true)
-          valueToReturn
-        }
-      } else {
-        getValueDependingOnFlavourAndResultType
-      }
-    }
-
     try {
-      getValueWithSynchronizedInterpretedCount
+      withSynchronizedInterpretedCount {
+        getValueDependingOnFlavourAndResultType[T](context)
+      }
     } catch {
       case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
         logger.warn(
@@ -150,11 +120,45 @@ class SpelExpression(
         )
         parseExpressionAgain()
         try {
-          getValueWithSynchronizedInterpretedCount
+          withSynchronizedInterpretedCount {
+            getValueDependingOnFlavourAndResultType[T](context)
+          }
         } catch {
           case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
             logger.debug(s"Another attempt of expression [$original] evaluation failed. Exception will be rethrown")
             throw e
+        }
+    }
+  }
+
+  private def withSynchronizedInterpretedCount[R](run: => R): R = {
+    // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
+    // The latter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
+    // isn't finished yet. Due to this problem, an expression that shouldn't be compiled might be compiled. It generates IllegalStateException errors in further evaluations of the expression.
+    if (!firstInterpretationFinished.get()) {
+      synchronized {
+        val valueToReturn = run
+        firstInterpretationFinished.set(true)
+        valueToReturn
+      }
+    } else {
+      run
+    }
+  }
+
+  private def getValueDependingOnFlavourAndResultType[T](context: EvaluationContext): T = {
+    flavour match {
+      case SpelExpressionParser.Standard =>
+        parsed.getExpression.getValue(context, expectedClass).asInstanceOf[T]
+      case SpelExpressionParser.Template =>
+        val parts            = renderTemplateExpressionParts(context)
+        val evaluationResult = TemplateEvaluationResult(parts)
+        if (expectedReturnType == Typed[TemplateEvaluationResult]) {
+          evaluationResult.asInstanceOf[T]
+        } else if (expectedReturnType.canBeStrictlyAssignedTo(Typed[CharSequence])) {
+          evaluationResult.renderedTemplate.asInstanceOf[T]
+        } else {
+          throw new IllegalStateException(s"Expression parsed with unexpected type: $expectedReturnType")
         }
     }
   }
@@ -210,7 +214,6 @@ class SpelExpressionEvaluationException(val expression: String, cause: Throwable
 
 class SpelExpressionParser(
     immediateCompileParser: NuSpelExpressionParser,
-    noCompileParser: NuSpelExpressionParser,
     validator: SpelExpressionValidator,
     dictRegistry: DictRegistry,
     enableSpelForceCompile: Boolean,
@@ -327,7 +330,6 @@ class SpelExpressionParser(
   def typingDictLabels =
     new SpelExpressionParser(
       immediateCompileParser,
-      noCompileParser,
       validator.withTyper(_.withDictTyper(new LabelsDictTyper(dictRegistry))),
       dictRegistry,
       enableSpelForceCompile,
@@ -338,7 +340,6 @@ class SpelExpressionParser(
   def withValidator(modify: SpelExpressionValidator => SpelExpressionValidator): SpelExpressionParser = {
     new SpelExpressionParser(
       immediateCompileParser,
-      noCompileParser,
       modify(validator),
       dictRegistry,
       enableSpelForceCompile,
@@ -369,9 +370,6 @@ object SpelExpressionParser extends LazyLogging {
     val immediateCompileParser = new NuSpelExpressionParser(
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
-    val noCompileParser = new NuSpelExpressionParser(
-      new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
-    )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
     val validator = new SpelExpressionValidator(
       Typer.default(
@@ -384,7 +382,6 @@ object SpelExpressionParser extends LazyLogging {
     )
     new SpelExpressionParser(
       immediateCompileParser,
-      noCompileParser,
       validator,
       dictRegistry,
       enableSpelForceCompile,
