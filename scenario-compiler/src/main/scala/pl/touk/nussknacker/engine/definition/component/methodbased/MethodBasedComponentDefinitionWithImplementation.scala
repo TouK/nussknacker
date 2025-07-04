@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentGroupName}
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -44,12 +44,12 @@ object MethodBasedComponentDefinitionWithImplementation {
       allowedProcessingModes: AllowedProcessingModes,
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
-      name,
-      ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
-      new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
-      componentTypeSpecificData,
-      staticDefinition,
-      uiDefinition
+      name = name,
+      implementationInvoker = ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
+      component = new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
+      componentTypeSpecificData = componentTypeSpecificData,
+      staticDefinition = staticDefinition,
+      uiDefinition = uiDefinition
     )
   }
 
