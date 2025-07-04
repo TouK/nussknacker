@@ -40,7 +40,8 @@ object ComponentDefinitionExtractor {
         docsUrl = inputComponentDefinition.docsUrl,
         icon = inputComponentDefinition.icon,
         componentId = inputComponentDefinition.designerWideId,
-        label = inputComponentDefinition.label
+        label = inputComponentDefinition.label,
+        componentGroup = inputComponentDefinition.componentGroup,
       )
     ComponentDefinitionExtractor
       .extract(
