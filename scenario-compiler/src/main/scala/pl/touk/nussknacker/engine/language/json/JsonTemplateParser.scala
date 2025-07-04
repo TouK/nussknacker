@@ -110,7 +110,7 @@ object JsonTemplateParser {
       cause: Throwable,
   ) extends NonTransientException(
         input = renderedTemplate,
-        message = s"Rendered template [$renderedTemplate] cannot be decoded ad json, message: ${cause.getMessage}",
+        message = s"Rendered template [$renderedTemplate] cannot be decoded as json, message: ${cause.getMessage}",
         cause = cause
       )
 
