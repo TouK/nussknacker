@@ -2,13 +2,13 @@ package pl.touk.nussknacker.openapi.extractor
 
 import io.circe
 import io.circe.Json
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerObject, SwaggerString}
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
+import pl.touk.nussknacker.engine.json.swagger.SwaggerObject
 import pl.touk.nussknacker.openapi._
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import sttp.client3._
 import sttp.client3.circe._
-import sttp.model.{Header, MediaType, Method, Uri}
+import sttp.model.{Header, Method, Uri}
 import sttp.model.Uri.PathSegment
 
 import java.net.URL
@@ -52,7 +52,8 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
   }
 
   def apply: SwaggerRequestType = {
-    val encoder = ToJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
+    // Here should probably be default encoder and the loose one is for historical reasons TODO: verify and switch to default
+    val encoder = ToJsonEncoder.looseEncoder
 
     // FIXME: lepsza obsluga (rozpoznawanie multi headers, itp...)
     val headers: List[Header] = swaggerService.parameters.collect { case paramDef @ HeaderParameter(value, _) =>
@@ -74,7 +75,7 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
     }.flatten match {
       case None => request
       case Some(body) =>
-        requestWithContentType.body(encoder.encode(body).noSpaces)
+        requestWithContentType.body(encoder.encodeUnsafe(body).noSpaces)
     }).response(asJson[Option[Json]])
 
   }

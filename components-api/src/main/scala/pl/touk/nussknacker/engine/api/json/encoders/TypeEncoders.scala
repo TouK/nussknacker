@@ -64,8 +64,8 @@ object TypeEncoders {
       objTypeEncoded.+:(tagEncoded)
     case TypedObjectWithValue(underlying, value) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded: (String, Json) = "value" -> ToJsonEncoderWithFallback
-        .encodeValue(value)
+      val dataEncoded: (String, Json) = "value" -> ToJsonEncoder.default
+        .encode(value)
         .getOrElse(throw new IllegalStateException(s"Not supported data value: $value"))
 
       objTypeEncoded.+:(dataEncoded)

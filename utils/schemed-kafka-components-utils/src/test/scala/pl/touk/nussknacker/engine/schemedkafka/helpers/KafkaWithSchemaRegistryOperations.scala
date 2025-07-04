@@ -11,13 +11,13 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.{serialization, KafkaClient, KafkaRecordUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.AbstractConfluentKafkaAvroSerializer
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.nio.charset.StandardCharsets
 
@@ -206,5 +206,5 @@ object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
 object SimpleKafkaJsonSerializer extends Serializer[Any] {
 
   override def serialize(topic: String, data: Any): Array[Byte] =
-    ToJsonEncoder.defaultForTests.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
+    ToJsonEncoder.default.encodeUnsafe(data).spaces2.getBytes(StandardCharsets.UTF_8)
 }
