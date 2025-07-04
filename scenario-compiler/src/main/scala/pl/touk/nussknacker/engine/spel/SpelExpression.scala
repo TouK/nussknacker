@@ -110,7 +110,7 @@ class SpelExpression(
 
   def getValue[T](context: EvaluationContext): T = {
     try {
-      withSynchronizedInterpretedCount {
+      withFirstInterpretationSynchronized {
         getValueDependingOnFlavourAndResultType[T](context)
       }
     } catch {
@@ -120,7 +120,7 @@ class SpelExpression(
         )
         parseExpressionAgain()
         try {
-          withSynchronizedInterpretedCount {
+          withFirstInterpretationSynchronized {
             getValueDependingOnFlavourAndResultType[T](context)
           }
         } catch {
@@ -131,10 +131,10 @@ class SpelExpression(
     }
   }
 
-  private def withSynchronizedInterpretedCount[R](run: => R): R = {
-    // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
-    // The latter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
-    // isn't finished yet. Due to this problem, an expression that shouldn't be compiled might be compiled. It generates IllegalStateException errors in further evaluations of the expression.
+  // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
+  // The latter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
+  // isn't finished yet. Due to this problem, an expression that shouldn't be compiled might be compiled. It generates IllegalStateException errors in further evaluations of the expression.
+  private def withFirstInterpretationSynchronized[R](run: => R): R = {
     if (!firstInterpretationFinished.get()) {
       synchronized {
         val valueToReturn = run
