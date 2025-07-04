@@ -1017,7 +1017,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       case Invalid(
             NonEmptyList(
               ExpressionParserCompilationError(
-                "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String(abc)}",
+                "Bad expression type, expected: Record{someInt: Integer, someString: String}, found: Record{someString: String}",
                 "enricher1",
                 Some(NodeCompiler.MockExpressionParameterName),
                 _,
