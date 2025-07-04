@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 import pl.touk.nussknacker.engine.management.jobrunner.{FlinkMiniClusterScenarioJobRunner, RemoteFlinkScenarioJobRunner}
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
+import scala.collection.compat._
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration.FiniteDuration

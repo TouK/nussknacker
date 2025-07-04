@@ -73,7 +73,7 @@ class PeriodicLiveDataUploader(
     prepareStatement()
     updaterThread = new Thread(() => {
       while (running) {
-        Try(uploadLiveData()).recover(handleLiveDataUploadFailure(_))
+        Try(uploadLiveData()).recover { case ex => handleLiveDataUploadFailure(ex) }
         sleepUntilNextUploadTimeUnlessInterrupted()
       }
     })
