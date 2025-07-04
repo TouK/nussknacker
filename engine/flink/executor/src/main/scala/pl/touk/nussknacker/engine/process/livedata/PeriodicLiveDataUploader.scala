@@ -10,6 +10,7 @@ import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage.DesignerDb
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
@@ -23,6 +24,7 @@ object PeriodicLiveDataUploader {
   def register(
       env: StreamExecutionEnvironment,
       processIdWithName: ProcessIdWithName,
+      deploymentData: DeploymentData,
       storage: DesignerDb,
   ): Unit = {
     env
@@ -31,6 +33,7 @@ object PeriodicLiveDataUploader {
       .process(
         new PeriodicLiveDataUploader(
           processIdWithName = processIdWithName,
+          deploymentData = deploymentData,
           intervalSeconds = storage.uploadIntervalInSeconds,
           dbUrl = storage.url,
           dbUser = storage.user,
@@ -45,6 +48,7 @@ object PeriodicLiveDataUploader {
 
 class PeriodicLiveDataUploader(
     processIdWithName: ProcessIdWithName,
+    deploymentData: DeploymentData,
     intervalSeconds: Int,
     dbUrl: String,
     dbUser: String,
@@ -59,6 +63,8 @@ class PeriodicLiveDataUploader(
 
   @transient private var connection: Connection       = _
   @transient private var statement: PreparedStatement = _
+
+  private lazy val jobId: String = getRuntimeContext.getJobInfo.getJobId.toHexString
 
   override def open(openContext: OpenContext): Unit = {
     running = true
@@ -133,18 +139,19 @@ class PeriodicLiveDataUploader(
   }
 
   private def prepareConnection(): Unit = {
-    connection.close()
+    if (connection != null) connection.close()
     connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
     connection.setSchema(dbSchema)
   }
 
   private def prepareStatement(): Unit = {
+    if (statement != null) statement.close()
     statement = if (dbUrl.startsWith("jdbc:postgresql:")) {
       connection.prepareStatement(
         """
-          |INSERT INTO live_data (scenario_id, collector_id, live_data, updated_at)
-          |VALUES (?, ?, ?, ?)
-          |ON CONFLICT (scenario_id, collector_id) DO UPDATE
+          |INSERT INTO live_data (scenario_id, deployment_activity_id, external_deployment_id, collector_id, live_data, updated_at)
+          |VALUES (?, ?, ?, ?, ?, ?)
+          |ON CONFLICT (scenario_id, deployment_activity_id, external_deployment_id, collector_id) DO UPDATE
           |SET live_data = EXCLUDED.live_data, updated_at = EXCLUDED.updated_at
           |""".stripMargin
       )
@@ -152,13 +159,13 @@ class PeriodicLiveDataUploader(
       connection.prepareStatement(
         s"""
            |MERGE INTO "$dbSchema"."live_data" AS target
-           |USING (VALUES (?, ?, ?, ?)) AS vals("scenario_id", "collector_id", "live_data", "updated_at")
-           |ON (target."scenario_id" = vals."scenario_id" AND target."collector_id" = vals."collector_id")
+           |USING (VALUES (?, ?, ?, ?, ?, ?)) AS vals("scenario_id", "deployment_activity_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
+           |ON (target."scenario_id" = vals."scenario_id" AND target."deployment_activity_id" = vals."deployment_activity_id" AND target."external_deployment_id" = vals."external_deployment_id" AND target."collector_id" = vals."collector_id")
            |WHEN MATCHED THEN
            |  UPDATE SET "live_data" = vals."live_data", "updated_at" = vals."updated_at"
            |WHEN NOT MATCHED THEN
-           |  INSERT ("scenario_id", "collector_id", "live_data", "updated_at")
-           |  VALUES (vals."scenario_id", vals."collector_id", vals."live_data", vals."updated_at")
+           |  INSERT ("scenario_id", "deployment_activity_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
+           |  VALUES (vals."scenario_id", vals."deployment_activity_id", vals."external_deployment_id", vals."collector_id", vals."live_data", vals."updated_at")
            |""".stripMargin
       )
     }
@@ -166,14 +173,16 @@ class PeriodicLiveDataUploader(
 
   private def doUploadLiveData(): Unit = {
     statement.setLong(1, processIdWithName.id.value)
-    statement.setString(2, LiveDataCollectingListenerHolder.id.toString)
+    statement.setString(2, deploymentData.deploymentId.value)
+    statement.setString(3, jobId)
+    statement.setString(4, LiveDataCollectingListenerHolder.id.toString)
     LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name) match {
       case Some(liveData) =>
-        statement.setString(3, liveData.asJson.noSpaces)
+        statement.setString(5, liveData.asJson.noSpaces)
       case None =>
-        statement.setNull(3, java.sql.Types.VARCHAR)
+        statement.setNull(5, java.sql.Types.VARCHAR)
     }
-    statement.setLong(4, Instant.now.getEpochSecond)
+    statement.setLong(6, Instant.now.getEpochSecond)
     statement.executeUpdate()
   }
 

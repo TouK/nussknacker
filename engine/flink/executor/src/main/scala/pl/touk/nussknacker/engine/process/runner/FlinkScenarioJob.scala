@@ -63,7 +63,7 @@ class FlinkScenarioJob(modelData: ModelData) {
         ()
       case LiveDataPreviewMode.Enabled(_, _, storage: DesignerDb) =>
         val processIdWithName = ProcessIdWithName(processVersion.processId, processVersion.processName)
-        PeriodicLiveDataUploader.register(env, processIdWithName, storage)
+        PeriodicLiveDataUploader.register(env, processIdWithName, deploymentData, storage)
     }
     val compilerFactory = new FlinkProcessCompilerDataFactory(
       modelData,
