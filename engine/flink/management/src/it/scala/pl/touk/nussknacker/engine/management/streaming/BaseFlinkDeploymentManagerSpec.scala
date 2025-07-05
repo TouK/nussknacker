@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import io.circe.syntax.EncoderOps
@@ -32,6 +34,11 @@ class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
 
 class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
   override protected def useMiniClusterForDeployment: Boolean = true
+
+  override def resolveConfig(config: Config): Config = {
+    super.resolveConfig(config).withValue("modelConfig.liveDataPreview.enabled", fromAnyRef(true))
+  }
+
 }
 
 trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with StreamingDockerTest with StrictLogging {
