@@ -49,17 +49,7 @@ class FlinkScenarioJob(modelData: ModelData) {
       modelData.modelConfig.liveDataPreviewMode match {
         case LiveDataPreviewMode.Disabled =>
           None
-        case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, DesignerJvm) =>
-          Some(
-            LiveDataCollectingListenerHolder.createListenerFor(
-              processVersion.processName,
-              maxNumberOfSamples,
-              throughputTimeWindowInSeconds
-            )
-          )
-        case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, storage: DesignerDb) =>
-          val processIdWithName = ProcessIdWithName(processVersion.processId, processVersion.processName)
-          PeriodicLiveDataUploader.register(env, processIdWithName, storage)
+        case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, _) =>
           Some(
             LiveDataCollectingListenerHolder.createListenerFor(
               processVersion.processName,
@@ -68,6 +58,13 @@ class FlinkScenarioJob(modelData: ModelData) {
             )
           )
       }
+    modelData.modelConfig.liveDataPreviewMode match {
+      case LiveDataPreviewMode.Disabled | LiveDataPreviewMode.Enabled(_, _, DesignerJvm) =>
+        ()
+      case LiveDataPreviewMode.Enabled(_, _, storage: DesignerDb) =>
+        val processIdWithName = ProcessIdWithName(processVersion.processId, processVersion.processName)
+        PeriodicLiveDataUploader.register(env, processIdWithName, deploymentData, storage)
+    }
     val compilerFactory = new FlinkProcessCompilerDataFactory(
       modelData,
       deploymentData,

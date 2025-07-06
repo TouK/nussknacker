@@ -10,11 +10,12 @@ import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage.DesignerDb
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.time.Instant
-import scala.util.{Failure, Try}
+import scala.util.Try
 
 object PeriodicLiveDataUploader {
 
@@ -23,6 +24,7 @@ object PeriodicLiveDataUploader {
   def register(
       env: StreamExecutionEnvironment,
       processIdWithName: ProcessIdWithName,
+      deploymentData: DeploymentData,
       storage: DesignerDb,
   ): Unit = {
     env
@@ -31,6 +33,7 @@ object PeriodicLiveDataUploader {
       .process(
         new PeriodicLiveDataUploader(
           processIdWithName = processIdWithName,
+          deploymentData = deploymentData,
           intervalSeconds = storage.uploadIntervalInSeconds,
           dbUrl = storage.url,
           dbUser = storage.user,
@@ -45,6 +48,7 @@ object PeriodicLiveDataUploader {
 
 class PeriodicLiveDataUploader(
     processIdWithName: ProcessIdWithName,
+    deploymentData: DeploymentData,
     intervalSeconds: Int,
     dbUrl: String,
     dbUser: String,
@@ -60,54 +64,17 @@ class PeriodicLiveDataUploader(
   @transient private var connection: Connection       = _
   @transient private var statement: PreparedStatement = _
 
-  override def open(openContext: OpenContext): Unit = {
-    // Looks like unused code, but needed to load the driver
-    if (dbUrl.startsWith("jdbc:postgresql:"))
-      Class.forName("org.postgresql.Driver")
-    else if (dbUrl.startsWith("jdbc:hsqldb:"))
-      Class.forName("org.hsqldb.jdbc.JDBCDriver")
+  private lazy val jobId: String = getRuntimeContext.getJobInfo.getJobId.toHexString
 
+  override def open(openContext: OpenContext): Unit = {
     running = true
+    loadJdbcDriver()
+    prepareConnection()
+    prepareStatement()
     updaterThread = new Thread(() => {
       while (running) {
-        Try {
-          if (connection == null) prepareConnection()
-
-          statement.setLong(1, processIdWithName.id.value)
-          statement.setString(2, LiveDataCollectingListenerHolder.id.toString)
-          LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name) match {
-            case Some(liveData) =>
-              statement.setString(3, liveData.asJson.noSpaces)
-            case None =>
-              statement.setNull(3, java.sql.Types.VARCHAR)
-          }
-          statement.setLong(4, Instant.now.getEpochSecond)
-          statement.executeUpdate()
-
-          logger.debug("Uploaded scenario live data")
-        } match {
-          case Failure(exception) =>
-            // If uploading fails, we skip this entry, close connection and try again after the scheduled interval
-            logger.error(
-              "Could not update scenario live data. The scenario is running, but it was impossible to upload the current live data to the db. It may be caused by misconfiguration. Please check the detailed reason of failure in logs below.",
-              exception
-            )
-            Option(exception.getCause).foreach(cause =>
-              logger.error("Detailed cause of the scenario live data uploading failure:", cause)
-            )
-            connection.close()
-            connection = null
-          case _ => ()
-        }
-
-        // Sleep until next scheduled upload, or close
-        try {
-          Thread.sleep(intervalSeconds * 1000)
-        } catch {
-          case _: InterruptedException =>
-            logger.warn("Update thread interrupted, stopping...")
-            running = false
-        }
+        Try(uploadLiveData()).recover { case ex => handleLiveDataUploadFailure(ex) }
+        sleepUntilNextUploadTimeUnlessInterrupted()
       }
     })
     updaterThread.start()
@@ -126,34 +93,97 @@ class PeriodicLiveDataUploader(
       updaterThread.join()
     }
     if (connection != null) connection.close()
+    if (statement != null) statement.close()
+  }
+
+  private def uploadLiveData(): Unit = {
+    if (connection == null) {
+      prepareConnection()
+      prepareStatement()
+    }
+    doUploadLiveData()
+    logger.debug("Uploaded scenario live data")
+  }
+
+  private def handleLiveDataUploadFailure(ex: Throwable): Unit = {
+    // If uploading fails, we skip this entry, close connection and try again after the scheduled interval
+    logger.error(
+      s"Could not upload scenario live data to the db. This upload is skipped and will be retried on next scheduled upload time in $intervalSeconds s. If uploading continues to fail, then please check the detailed reason of failure in logs below and look for configuration issues.",
+      ex
+    )
+    Option(ex.getCause).foreach(cause =>
+      logger.error("Detailed cause of the scenario live data uploading failure:", cause)
+    )
+    if (connection != null) connection.close()
+    connection = null
+    if (statement != null) statement.close()
+    statement = null
+  }
+
+  private def sleepUntilNextUploadTimeUnlessInterrupted(): Unit = {
+    try {
+      Thread.sleep(intervalSeconds * 1000)
+    } catch {
+      case _: InterruptedException =>
+        logger.warn("Update thread interrupted, stopping...")
+        running = false
+    }
+  }
+
+  private def loadJdbcDriver(): Unit = {
+    // Looks like unused code, but needed to load the driver
+    if (dbUrl.startsWith("jdbc:postgresql:"))
+      Class.forName("org.postgresql.Driver")
+    else if (dbUrl.startsWith("jdbc:hsqldb:"))
+      Class.forName("org.hsqldb.jdbc.JDBCDriver")
   }
 
   private def prepareConnection(): Unit = {
+    if (connection != null) connection.close()
     connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
+    connection.setSchema(dbSchema)
+  }
+
+  private def prepareStatement(): Unit = {
+    if (statement != null) statement.close()
     statement = if (dbUrl.startsWith("jdbc:postgresql:")) {
-      connection.setSchema(dbSchema)
       connection.prepareStatement(
         """
-          |INSERT INTO live_data (scenario_id, collector_id, live_data, updated_at)
-          |VALUES (?, ?, ?, ?)
-          |ON CONFLICT (scenario_id, collector_id) DO UPDATE
+          |INSERT INTO live_data (scenario_id, deployment_id, external_deployment_id, collector_id, live_data, updated_at)
+          |VALUES (?, ?, ?, ?, ?, ?)
+          |ON CONFLICT (scenario_id, deployment_id, external_deployment_id, collector_id) DO UPDATE
           |SET live_data = EXCLUDED.live_data, updated_at = EXCLUDED.updated_at
           |""".stripMargin
       )
     } else {
       connection.prepareStatement(
         s"""
-          |MERGE INTO "$dbSchema"."live_data" AS target
-          |USING (VALUES (?, ?, ?, ?)) AS vals("scenario_id", "collector_id", "live_data", "updated_at")
-          |ON (target."scenario_id" = vals."scenario_id" AND target."collector_id" = vals."collector_id")
-          |WHEN MATCHED THEN
-          |  UPDATE SET "live_data" = vals."live_data", "updated_at" = vals."updated_at"
-          |WHEN NOT MATCHED THEN
-          |  INSERT ("scenario_id", "collector_id", "live_data", "updated_at")
-          |  VALUES (vals."scenario_id", vals."collector_id", vals."live_data", vals."updated_at")
-          |""".stripMargin
+           |MERGE INTO "$dbSchema"."live_data" AS target
+           |USING (VALUES (?, ?, ?, ?, ?, ?)) AS vals("scenario_id", "deployment_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
+           |ON (target."scenario_id" = vals."scenario_id" AND target."deployment_id" = vals."deployment_id" AND target."external_deployment_id" = vals."external_deployment_id" AND target."collector_id" = vals."collector_id")
+           |WHEN MATCHED THEN
+           |  UPDATE SET "live_data" = vals."live_data", "updated_at" = vals."updated_at"
+           |WHEN NOT MATCHED THEN
+           |  INSERT ("scenario_id", "deployment_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
+           |  VALUES (vals."scenario_id", vals."deployment_id", vals."external_deployment_id", vals."collector_id", vals."live_data", vals."updated_at")
+           |""".stripMargin
       )
     }
+  }
+
+  private def doUploadLiveData(): Unit = {
+    statement.setLong(1, processIdWithName.id.value)
+    statement.setString(2, deploymentData.deploymentId.value)
+    statement.setString(3, jobId)
+    statement.setString(4, LiveDataCollectingListenerHolder.id.toString)
+    LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name) match {
+      case Some(liveData) =>
+        statement.setString(5, liveData.asJson.noSpaces)
+      case None =>
+        statement.setNull(5, java.sql.Types.VARCHAR)
+    }
+    statement.setLong(6, Instant.now.getEpochSecond)
+    statement.executeUpdate()
   }
 
 }

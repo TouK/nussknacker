@@ -95,7 +95,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       QueryArguments(
         (1 to argsCount).map { argNo =>
           val paramName = ParameterName(s"$ArgPrefix$argNo")
-          QueryArgument(index = argNo, value = params.extractOrEvaluateLazyParam(paramName, context))
+          QueryArgument(index = argNo, value = params.extractOrEvaluateDeclaredLazyParam(paramName, context))
         }.toList
       )
     }

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.helpers
 
-import com.github.ghik.silencer.silent
 import com.typesafe.config.Config
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.scalatest.Suite
@@ -21,6 +20,8 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.testing.LocalModelData
+
+import scala.annotation.nowarn
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
@@ -130,7 +131,7 @@ case object SinkAccessingNodeContext extends EmptySink with Serializable {
 
   def nodeId: String = _nodeId
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] = {
     _nodeId = flinkNodeContext.nodeId
     super.toFlinkFunction(flinkNodeContext)

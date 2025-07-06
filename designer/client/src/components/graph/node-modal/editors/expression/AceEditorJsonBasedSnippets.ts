@@ -48,20 +48,25 @@ const setupJsonBasedSnippets = (editor: Ace.Editor): void => {
 };
 
 const setupSpelTemplateBasedSnippets = (editor: Ace.Editor): void => {
-    editor.on("change", (delta) => {
-        if (delta.action === "insert" && delta.lines.length === 1 && delta.lines[0] === "{" && editor.getSelectedText() === "") {
+    const snippetManager = ace.require("ace/snippets").snippetManager;
+
+    editor.commands.on("afterExec", (e) => {
+        // Only react to user typing '{'
+        if (e.command.name === "insertstring" && typeof e.args === "string" && e.args === "{" && editor.getSelectedText() === "") {
             const pos = editor.getCursorPosition();
             const line = editor.session.getLine(pos.row);
-            const prevChar = line[pos.column - 1]; // Character before '#'
-            const nextChar = line[pos.column]; // Character after '{'
+            const prevChar = line[pos.column - 2]; // -2 because cursor is after '{'
+            const nextChar = line[pos.column - 1]; // -1 is the '{' just inserted
+
+            // Check if the previous char is '#' and the current is '{'
             if (prevChar === "#" && nextChar === "{") {
                 // Remove the old #{ ...
-                const range = new Range(pos.row, pos.column - 1, pos.row, pos.column + 1);
+                const range = new Range(pos.row, pos.column - 2, pos.row, pos.column);
                 editor.session.replace(range, "");
 
                 // ... And replace it with #{ #<CURSOR> }
-                const snippetManager = ace.require("ace/snippets").snippetManager;
-                snippetManager.insertSnippet(editor, "#{ ${1}# }");
+                snippetManager.insertSnippet(editor, "#{ #${1} }");
+                editor.execCommand("startAutocomplete"); // We need to call expression suggestion manually
             }
         }
     });
@@ -111,10 +116,10 @@ const getEditorContext = (session: Ace.EditSession, pos: Ace.Position, beforeCur
     const hasEmptyObjectAcrossLines = previousFirstChar === "{" && nextFirstChar === "}";
 
     // Just an opening brace (need to add closing brace)
-    const hasOpeningBraceOnly = beforeCursor.trimRight().endsWith("{") && !(nextFirstChar === "}" || afterCursor.includes("}"));
+    const hasOpeningBraceOnly = beforeCursor.trim() === "{" && afterCursor.trim() === "" && session.getLength() === 1;
 
     // Between properties (line ends with comma)
-    const isAfterComma = session.getLine(pos.row).trim().endsWith(",");
+    const isAfterComma = session.getLine(pos.row).trimRight().endsWith(",") && afterCursor.trim() === "";
 
     return {
         hasEmptyObject: hasEmptyObjectOnSameLine || hasEmptyObjectAcrossLines,

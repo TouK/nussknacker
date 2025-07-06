@@ -12,6 +12,4 @@ trait FlinkScenarioJobRunner {
       savepointPathOpt: Option[String]
   ): Future[Option[JobID]]
 
-  def liveDataPreviewSupport: LiveDataPreviewSupport
-
 }

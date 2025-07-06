@@ -11,6 +11,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
+import pl.touk.nussknacker.engine.api.Params.ParamExtractionResult
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -244,15 +245,12 @@ class UniversalKafkaSourceFactory(
 
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create(schemaRegistryClient)
 
-    val defaultValuesForTestParameters: Map[ParameterName, Expression] =
-      if (params.isPresent(dataSampleParamName)) {
-        params
-          .extract[Json](dataSampleParamName)
-          .map { dataSample => inputParamName -> Expression.json(dataSample.spaces2) }
-          .toMap
-      } else {
-        Map.empty
+    val defaultValuesForTestParameters: Map[ParameterName, Expression] = {
+      params.extractParam[Json](dataSampleParamName) match {
+        case ParamExtractionResult.MissingParam | ParamExtractionResult.ParamValueIsNone => Map.empty
+        case ParamExtractionResult.Value(dataSample) => Map(inputParamName -> Expression.json(dataSample.spaces2))
       }
+    }
 
     implProvider.createSource(
       params,

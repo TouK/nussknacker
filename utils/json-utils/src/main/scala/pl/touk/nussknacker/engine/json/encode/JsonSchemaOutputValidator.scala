@@ -116,9 +116,10 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       path: Option[String]
   ): ValidatedNel[OutputValidatorError, Unit] = {
     validationMode match {
-      case ValidationMode.lax    => valid
-      case ValidationMode.strict => invalid(Unknown, schema, rootSchema, path)
-      case validationMode        => throw new IllegalStateException(s"Unsupported validation mode $validationMode")
+      case ValidationMode.lax                               => valid
+      case ValidationMode.strict if schema.isNullableSchema => valid
+      case ValidationMode.strict                            => invalid(Unknown, schema, rootSchema, path)
+      case validationMode => throw new IllegalStateException(s"Unsupported validation mode $validationMode")
     }
   }
 

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.connector.source.Boundedness
@@ -26,6 +25,8 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
+
+import scala.annotation.nowarn
 
 object TestFlinkProcessCompilerDataFactory {
 
@@ -190,7 +191,7 @@ class TestFlinkExceptionHandler(
     classLoader: ClassLoader
 ) extends FlinkExceptionHandler(metaData, modelConfig, listeners, classLoader) {
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 
   override val consumer: FlinkEspExceptionConsumer = _ => {}

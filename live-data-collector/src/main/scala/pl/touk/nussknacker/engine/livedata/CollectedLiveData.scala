@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.livedata
 
+import cats.data.NonEmptyList
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.{ContextId, ContextIdPathPart, NodeId}
+import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 
 import java.time.Instant
 
@@ -74,6 +76,73 @@ object CollectedLiveData {
 
   implicit val collectedLiveDataEncoder: Encoder[CollectedLiveData] = deriveEncoder
   implicit val collectedLiveDataDecoder: Decoder[CollectedLiveData] = deriveDecoder
+
+  def aggregate(
+      liveData: List[CollectedLiveData],
+      maxNumberOfSamples: Int,
+  ): CollectedLiveData = {
+    NonEmptyList.fromList(liveData) match {
+      case Some(liveDataNel) =>
+        CollectedLiveData(
+          // We assume that the aggregated liveData has the timestamp of the latest of the aggregated ones
+          timestamp = liveDataNel.toList.map(_.timestamp).max,
+          // For each of the following CollectedLiveData fields we use `maxNumberOfSamples` latest samples
+          nodeTransitions = latestSamples(
+            liveDataNel.toList.map(_.nodeTransitions),
+            maxNumberOfSamples
+          ),
+          invocationResults = latestSamples[InvocationResult](
+            liveDataNel.toList.map(_.invocationResults),
+            maxNumberOfSamples,
+            _.timestamp
+          ),
+          externalInvocationResults = latestSamples[InvocationResult](
+            liveDataNel.toList.map(_.externalInvocationResults),
+            maxNumberOfSamples,
+            _.timestamp
+          ),
+          exceptions = latestSamples[ExceptionResult](
+            liveDataNel.toList.map(_.exceptions),
+            maxNumberOfSamples,
+            _.timestamp
+          ),
+        )
+      case None => CollectedLiveData.empty
+    }
+  }
+
+  private def latestSamples(
+      data: List[Map[NodeTransition, LiveDataForNodeTransition]],
+      maxNumberOfSamples: Int,
+  ): Map[NodeTransition, LiveDataForNodeTransition] = {
+    data.flatten.toGroupedMap
+      .mapValuesNow { entries =>
+        LiveDataForNodeTransition(
+          samples = entries
+            .flatMap(_.samples)
+            .sortBy(_.timestamp)
+            .takeRight(maxNumberOfSamples),
+          totalCount = entries.map(_.totalCount).sum,
+          currentThroughput = entries.map(_.currentThroughput).sum,
+        )
+      }
+  }
+
+  private def latestSamples[V](
+      data: List[Map[NodeId, List[V]]],
+      maxNumberOfSamples: Int,
+      getTimestamp: V => Instant
+  ): Map[NodeId, List[V]] = {
+    data.flatten
+      .groupBy(_._1)
+      .mapValuesNow { entries =>
+        val allValues = entries.flatMap(_._2)
+        allValues
+          .sortBy(getTimestamp)
+          .takeRight(maxNumberOfSamples)
+      }
+  }
+
 }
 
 final case class ExceptionResult(

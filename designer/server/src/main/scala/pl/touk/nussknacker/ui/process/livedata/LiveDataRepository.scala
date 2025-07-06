@@ -1,18 +1,16 @@
 package pl.touk.nussknacker.ui.process.livedata
 
-import cats.data.NonEmptyList
+import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.NodeId
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata._
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData._
-import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.ui.db.NuTables
+import pl.touk.nussknacker.ui.process.livedata.DbLiveDataRepository.StoredLivedDataDetails
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 
-import java.time.Instant
 import scala.concurrent.ExecutionContext
 
 trait LiveDataRepository {
@@ -58,92 +56,62 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
   private def fetchAndAggregateLiveData(
       processIdWithName: ProcessIdWithName,
       maxNumberOfSamples: Int,
-  ) = {
-    run(
-      flinkLiveDataTable
-        .filter(_.scenarioId === processIdWithName.id)
-        .map(_.liveData)
-        .result
-        .map(_.flatten)
-    ).map(_.map { liveDataStr =>
-      for {
-        liveDataJson <- io.circe.parser.parse(liveDataStr).left.map(_.message)
-        liveData     <- collectedLiveDataDecoder.decodeJson(liveDataJson).left.map(_.message)
-      } yield liveData
-    }).map(
-      _.reverse.foldLeft(Right(Nil): Either[String, List[CollectedLiveData]]) {
-        case (Right(acc), Right(result)) => Right(result :: acc)
-        case (Left(err), _)              => Left(err)
-        case (_, Left(err))              => Left(err)
-      }
-    ).map(_.map {
-      aggregate(_, maxNumberOfSamples)
-    })
-  }
-
-  private def aggregate(
-      collectedLiveData: List[CollectedLiveData],
-      maxNumberOfSamples: Int,
-  ): CollectedLiveData = {
-    NonEmptyList.fromList(collectedLiveData) match {
-      case Some(collectedLiveData) =>
-        CollectedLiveData(
-          timestamp = collectedLiveData.toList.map(_.timestamp).min,
-          nodeTransitions = aggregate(
-            collectedLiveData.toList.map(_.nodeTransitions),
-            maxNumberOfSamples
-          ),
-          invocationResults = aggregate[InvocationResult](
-            collectedLiveData.toList.map(_.invocationResults),
-            maxNumberOfSamples,
-            _.timestamp
-          ),
-          externalInvocationResults = aggregate[InvocationResult](
-            collectedLiveData.toList.map(_.externalInvocationResults),
-            maxNumberOfSamples,
-            _.timestamp
-          ),
-          exceptions = aggregate[ExceptionResult](
-            collectedLiveData.toList.map(_.exceptions),
-            maxNumberOfSamples,
-            _.timestamp
-          ),
+  ): DB[Either[String, CollectedLiveData]] = {
+    for {
+      rawLiveDataFromCollectors <- EitherT.right[String](
+        run(
+          flinkLiveDataTable
+            .filter(_.scenarioId === processIdWithName.id)
+            .result
+            .map(
+              _.flatMap { entity =>
+                entity.liveData.map { liveData =>
+                  (
+                    liveData,
+                    StoredLivedDataDetails(
+                      entity.updatedAt,
+                      entity.deploymentId,
+                      entity.externalDeploymentId,
+                      entity.collectorId
+                    )
+                  )
+                }
+              }
+            )
         )
-      case None => CollectedLiveData.empty
+      )
+      parsedLiveDataOrErrorFromCollectors = rawLiveDataFromCollectors.map(_._1).map { liveDataStr =>
+        for {
+          liveDataJson <- io.circe.parser.parse(liveDataStr).left.map(_.message)
+          liveData     <- collectedLiveDataDecoder.decodeJson(liveDataJson).left.map(_.message)
+        } yield liveData
+      }
+      liveDataFromCollectors <- EitherT.fromEither[DB](
+        parsedLiveDataOrErrorFromCollectors.toList.reverse.foldLeft(
+          Right(Nil): Either[String, List[CollectedLiveData]]
+        ) {
+          case (Right(acc), Right(result)) => Right(result :: acc)
+          case (Left(err), _)              => Left(err)
+          case (_, Left(err))              => Left(err)
+        }
+      )
+    } yield {
+      if (liveDataFromCollectors.size > 1) {
+        logger.debug(s"Aggregating live data from ${rawLiveDataFromCollectors.map(_._2)}")
+      }
+      CollectedLiveData.aggregate(liveDataFromCollectors, maxNumberOfSamples)
     }
-  }
+  }.value
 
-  private def aggregate(
-      data: List[Map[NodeTransition, LiveDataForNodeTransition]],
-      maxNumberOfSamples: Int,
-  ): Map[NodeTransition, LiveDataForNodeTransition] = {
-    data.flatten.toGroupedMap
-      .mapValuesNow { entries =>
-        LiveDataForNodeTransition(
-          samples = entries
-            .flatMap(_.samples)
-            .sortBy(_.timestamp)
-            .takeRight(maxNumberOfSamples),
-          totalCount = entries.map(_.totalCount).sum,
-          currentThroughput = entries.map(_.currentThroughput).sum,
-        )
+}
 
-      }
-  }
+object DbLiveDataRepository {
 
-  private def aggregate[V](
-      data: List[Map[NodeId, List[V]]],
-      maxNumberOfSamples: Int,
-      getTimestamp: V => Instant
-  ): Map[NodeId, List[V]] = {
-    data.flatten
-      .groupBy(_._1)
-      .mapValuesNow { entries =>
-        val allValues = entries.flatMap(_._2)
-        allValues
-          .sortBy(getTimestamp)
-          .takeRight(maxNumberOfSamples)
-      }
-  }
+  final case class StoredLivedDataDetails(
+      timestamp: Long,
+      deploymentId: String,
+      externalDeploymentId: String,
+      collectorId: String,
+  )
 
 }

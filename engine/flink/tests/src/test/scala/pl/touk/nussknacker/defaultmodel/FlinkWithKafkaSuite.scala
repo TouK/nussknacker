@@ -316,6 +316,25 @@ object SampleSchemas {
 
   val SecondRecordSchemaV1: Schema = AvroUtils.parseSchema(SecondRecordSchemaStringV1)
 
+  val ThirdRecordSchemaStringV1: String =
+    """{
+      |  "type": "record",
+      |  "namespace": "",
+      |  "name": "UserProfile",
+      |  "fields": [
+      |    { "name": "first", "type": "string", "default": "Jan" },
+      |    { "name": "middle", "type": ["null", "string"], "default": null },
+      |    { "name": "last", "type": "string", "default": "Kowalski" },
+      |    { "name": "age", "type": "int", "default": 18 },
+      |    { "name": "height", "type": "float", "default": 1.80 },
+      |    { "name": "weight", "type": "double", "default": 70.5 },
+      |    { "name": "lastLogin", "type": { "type": "int", "logicalType": "time-millis" }}
+      |  ]
+      |}
+    """.stripMargin
+
+  val ThirdRecordSchema: Schema = AvroUtils.parseSchema(ThirdRecordSchemaStringV1)
+
 }
 
 class TestDefaultConfigCreator extends DefaultConfigCreator {

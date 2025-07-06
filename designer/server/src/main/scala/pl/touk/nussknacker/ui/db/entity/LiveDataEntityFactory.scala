@@ -4,8 +4,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessId
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
-// At the moment this data structure supports only streaming processing.
-// For batch processing, we should have a (collectorId, Flink job id) as a primary key.
 trait LiveDataEntityFactory extends BaseEntityFactory {
 
   import profile.apiWithEnforcedSchema._
@@ -18,17 +16,23 @@ trait LiveDataEntityFactory extends BaseEntityFactory {
 
     def scenarioId: Rep[ProcessId] = column[ProcessId]("scenario_id")
 
+    def deploymentId: Rep[String] = column[String]("deployment_id")
+
+    def externalDeploymentId: Rep[String] = column[String]("external_deployment_id")
+
     def collectorId: Rep[String] = column[String]("collector_id")
 
     def liveData: Rep[Option[String]] = column[Option[String]]("live_data")
 
     def updatedAt: Rep[Long] = column[Long]("updated_at", NotNull)
 
-    def pk = primaryKey("pk_scenario_id_collector_id", (scenarioId, collectorId))
+    def pk = primaryKey("pk_scenario_activity_collector_ids", (scenarioId, deploymentId, collectorId))
 
     override def * =
       (
         scenarioId,
+        deploymentId,
+        externalDeploymentId,
         collectorId,
         liveData,
         updatedAt,
@@ -40,6 +44,8 @@ trait LiveDataEntityFactory extends BaseEntityFactory {
 
 final case class LiveDataEntityData(
     scenarioId: ProcessId,
+    deploymentId: String,
+    externalDeploymentId: String,
     collectorId: String,
     liveData: Option[String],
     updatedAt: Long,

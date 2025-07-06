@@ -7,6 +7,8 @@ import net.ceedubs.ficus.Ficus
 import net.ceedubs.ficus.readers.ValueReader
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
@@ -98,6 +100,10 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
             new FlinkMiniClusterScenarioJobRunner(miniClusterWithServices, modelDataProvider)
           else
             new RemoteFlinkScenarioJobRunner(modelDataProvider, client)
+        val liveDataPreviewSupport = createLiveDataPreviewSupport(
+          flinkConfig.useMiniClusterForDeployment,
+          modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode,
+        )
         val underlying =
           new FlinkDeploymentManager(
             modelDataProvider,
@@ -105,10 +111,36 @@ object FlinkDeploymentManagerProvider extends LazyLogging {
             flinkConfig,
             miniClusterWithServices,
             client,
-            jobRunner
+            jobRunner,
+            liveDataPreviewSupport,
           )
         CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
       }
+  }
+
+  private def createLiveDataPreviewSupport(
+      useMiniClusterForDeployment: Boolean,
+      liveDataPreviewMode: LiveDataPreviewMode
+  ) = {
+    if (useMiniClusterForDeployment) {
+      liveDataPreviewMode match {
+        case LiveDataPreviewMode.Enabled(_, _, _) =>
+          LiveDataPreviewStoredInDesignerJvm
+        case LiveDataPreviewMode.Disabled =>
+          NoLiveDataPreviewSupport
+      }
+    } else {
+      liveDataPreviewMode match {
+        case LiveDataPreviewMode.Enabled(_, _, LiveDataStorage.DesignerJvm) =>
+          throw new IllegalArgumentException(
+            s"Invalid configuration of live data. Flink deployment manager is configured to use standalone flink, but the db storage is not configured for live data synchronization. Please check modelConfig.liveDataPreview.storage config section."
+          )
+        case LiveDataPreviewMode.Enabled(maxSamples, _, storage: LiveDataStorage.DesignerDb) =>
+          LiveDataPreviewStoredInDesignerDb(maxSamples, storage.uploadIntervalInSeconds)
+        case LiveDataPreviewMode.Disabled =>
+          NoLiveDataPreviewSupport
+      }
+    }
   }
 
 }

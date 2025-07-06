@@ -170,7 +170,7 @@ object TableJoinComponent
         )
       )
 
-      val outputLazyParam = params.extractUnsafe[LazyParameter[AnyRef]](OutputParamName)
+      val outputLazyParam = params.extractDeclaredParamUnsafe[LazyParameter[AnyRef]](OutputParamName)
       val outputTypeInfo =
         flinkNodeContext.valueWithContextInfo.forBranch[AnyRef](mainBranchId, outputLazyParam.returnType)
 

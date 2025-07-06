@@ -19,7 +19,8 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonTemplateFromJsonSchemaDeterminer}
 import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{inputParamName, sinkValueParamName}
@@ -110,53 +111,45 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     }
   }
 
-  override def extractParameterForSink(
+  override def extractSingleParameterForSink(
       schema: ParsedSchema,
-      rawMode: Boolean,
       validationMode: ValidationMode,
-      rawParameter: Parameter,
-      restrictedParamNames: Set[ParameterName]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParameter(
-      schema,
-      rawMode,
-      validationMode,
-      rawParameter,
+      rawParameter: Parameter
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = {
+    Validated.Valid(
+      SingleSchemaBasedParameter(
+        rawParameter.copy(
+          defaultValue = Some(defaultJsonTemplateFor(schema)),
+          editors = List(JsonTemplateParameterEditor, SpelParameterEditor)
+        ),
+        new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+      )
+    )
+  }
+
+  override def extractDynamicParametersForSink(schema: ParsedSchema, restrictedParamNames: Set[ParameterName])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+    AvroSchemaBasedParameter(
+      schema.cast().rawSchema(),
       restrictedParamNames,
       // We need custom AvroSchemaTypeDefinitionExtractor here as otherwise SpelExpressionValidator rises an errors
       // when rawmode is off and sink schema contains nested records
       AvroSchemaTypeDefinitionExtractorWithUnderlyingMap
     )
+  }
 
   override def extractParameterForTests(schema: ParsedSchema)(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParameter(
+    extractDynamicParametersForSink(
       schema,
-      rawMode = false,
-      validationMode = ValidationMode.lax,
-      rawParameter = Parameter[AnyRef](sinkValueParamName),
       restrictedParamNames = Set.empty
     )
 
-  private def extractParameter(
-      schema: ParsedSchema,
-      rawMode: Boolean,
-      validationMode: ValidationMode,
-      rawParameter: Parameter,
-      restrictedParamNames: Set[ParameterName],
-      avroSchemaTypeDefinitionExtractor: AvroSchemaTypeDefinitionExtractor = AvroSchemaTypeDefinitionExtractor
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-    if (rawMode) {
-      Validated.Valid(
-        SingleSchemaBasedParameter(
-          rawParameter,
-          new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
-        )
-      )
-    } else {
-      AvroSchemaBasedParameter(schema.cast().rawSchema(), restrictedParamNames, avroSchemaTypeDefinitionExtractor)
-    }
+  private def defaultJsonTemplateFor(parsedSchema: ParsedSchema): Expression = {
+    val schema = parsedSchema.cast().rawSchema()
+    JsonTemplateFromAvroSchemaDeterminer.jsonTemplateFor(schema)
   }
 
 }
@@ -182,48 +175,50 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
     JsonPayloadRecordFormatterSupport
 
-  override def extractParameterForSink(
+  override def extractSingleParameterForSink(
       schema: ParsedSchema,
-      rawMode: Boolean,
       validationMode: ValidationMode,
-      rawParameter: Parameter,
+      rawParameter: Parameter
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = {
+    Valid(
+      SingleSchemaBasedParameter(
+        rawParameter.copy(
+          defaultValue = Some(defaultJsonTemplateFor(schema)),
+          editors = List(
+            JsonTemplateParameterEditor,
+            SpelParameterEditor
+          )
+        ),
+        new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+      )
+    )
+  }
+
+  override def extractDynamicParametersForSink(
+      schema: ParsedSchema,
       restrictedParamNames: Set[ParameterName]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParameter(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+    // in editor mode we use lax validation mode, to be backward compatible
+    JsonSchemaBasedParameter(schema.cast().rawSchema(), defaultParamName = sinkValueParamName, ValidationMode.lax)
       .withJsonEditors()
+  }
 
   override def extractParameterForTests(schema: ParsedSchema)(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    extractParameter(
+    extractDynamicParametersForSink(
       schema,
-      rawMode = false,
-      validationMode = ValidationMode.lax,
-      rawParameter = Parameter[AnyRef](sinkValueParamName),
       restrictedParamNames = Set.empty
-    ).withJsonEditors()
+    )
 
-  private def extractParameter(
-      schema: ParsedSchema,
-      rawMode: Boolean,
-      validationMode: ValidationMode,
-      rawParameter: Parameter,
-      restrictedParamNames: Set[ParameterName]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
-    if (rawMode) {
-      Validated.Valid(
-        SingleSchemaBasedParameter(
-          rawParameter,
-          new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
-        )
-      )
-    } else {
-      // in editor mode we use lax validation mode, to be backward compatible
-      JsonSchemaBasedParameter(schema.cast().rawSchema(), defaultParamName = sinkValueParamName, ValidationMode.lax)
-    }
+  private def defaultJsonTemplateFor(parsedSchema: ParsedSchema): Expression = {
+    val schema = parsedSchema.cast().rawSchema()
+    JsonTemplateFromJsonSchemaDeterminer.jsonTemplateFor(schema)
   }
 
-  implicit class WithJsonEditorsExtension(parameter: ValidatedNel[ProcessCompilationError, SchemaBasedParameter]) {
+  implicit class WithJsonEditorsExtension(
+      parameter: ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
+  ) {
 
     def withJsonEditors(): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = parameter
       .map {
@@ -260,14 +255,22 @@ object NoSchemaJsonSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
     jsonSupport.recordFormatterSupport(schemaRegistryClient)
 
-  override def extractParameterForSink(
+  override def extractSingleParameterForSink(
       schema: ParsedSchema,
-      rawMode: Boolean,
       validationMode: ValidationMode,
-      rawParameter: Parameter,
+      rawParameter: Parameter
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SingleSchemaBasedParameter] = {
+    jsonSupport.extractSingleParameterForSink(schema, validationMode, rawParameter)
+  }
+
+  override def extractDynamicParametersForSink(
+      schema: ParsedSchema,
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
-    jsonSupport.extractParameterForSink(schema, rawMode, validationMode, rawParameter, restrictedParamNames)
+    jsonSupport.extractDynamicParametersForSink(
+      schema,
+      restrictedParamNames
+    )
 
   override def extractParameterForTests(schema: ParsedSchema)(implicit nodeId: NodeId): Valid[SchemaBasedParameter] = {
     val parameter =

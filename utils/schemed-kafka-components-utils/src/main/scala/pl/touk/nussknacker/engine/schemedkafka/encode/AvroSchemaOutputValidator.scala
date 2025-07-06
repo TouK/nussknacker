@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.util.output._
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -85,6 +86,12 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         validateSchemaWithBaseType[java.lang.Integer](typingResult, schema, path)
       case (_, Type.LONG) if longLogicalTypes.contains(schema.getLogicalType) =>
         validateSchemaWithBaseType[java.lang.Long](typingResult, schema, path)
+      case (_, Type.FLOAT) =>
+        validateSchemaWithBaseType[java.lang.Float](typingResult, schema, path)
+          .orElse(validateSchemaWithBaseType[java.math.BigDecimal](typingResult, schema, path))
+      case (_, Type.DOUBLE) =>
+        validateSchemaWithBaseType[java.lang.Double](typingResult, schema, path)
+          .orElse(validateSchemaWithBaseType[java.math.BigDecimal](typingResult, schema, path))
       case (typingResult, Type.UNION) =>
         validateUnionSchema(typingResult, schema, path)
       case (_, _) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
@@ -112,7 +119,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       schema: Schema,
       path: Option[String]
   ): Validated[NonEmptyList[OutputValidatorError], Unit] = {
-    val schemaFields = schema.getFields.asScala.map(field => field.name() -> field).toMap
+    val schemaFields = ListMap(schema.getFields.asScala.toList.map(field => field.name() -> field): _*)
 
     val requiredFieldNames = if (validationMode == ValidationMode.strict) {
       schemaFields.values.map(_.name())

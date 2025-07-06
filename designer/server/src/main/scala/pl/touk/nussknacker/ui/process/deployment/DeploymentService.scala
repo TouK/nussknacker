@@ -3,10 +3,12 @@ package pl.touk.nussknacker.ui.process.deployment
 import cats.data.Validated
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
-  NodesDeploymentData
+  NodesDeploymentData,
+  StaticParameterConfig
 }
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
@@ -15,7 +17,6 @@ import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.util.{AdditionalComponentConfigsForRuntimeExtractor, ExecutionContextWithIORuntime}
 import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.MaxActiveScenariosCountExceededError
-import pl.touk.nussknacker.ui.process.deployment.ActionInfoService.UiActionParameterConfig
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.DeployingInvalidScenarioError
 import pl.touk.nussknacker.ui.process.livedata.LiveDataRepository
@@ -212,34 +213,34 @@ class DeploymentService(
   }
 
   private def prepareDMRunDeploymentCommand(
-      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+      scenarioDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
       command: CommonDeploymentCommand,
       actionName: ScenarioActionName,
   )(implicit user: LoggedUser): Future[DMRunDeploymentCommand] = {
     for {
-      resolvedCanonicalProcess <- scenarioResolver
-        .forProcessingTypeUnsafe(processDetails.processingType)
-        .resolveScenario(processDetails.json)
+      resolvedCanonicalScenario <- scenarioResolver
+        .forProcessingTypeUnsafe(scenarioDetails.processingType)
+        .resolveScenario(scenarioDetails.json)
         .flatMap {
           case Validated.Valid(scenario) => Future.successful(scenario)
           case Validated.Invalid(e)      => Future.failed(new RuntimeException(e.head.toString))
         }
-      nodesDeploymentData <- prepareNodesDeploymentData(command, processDetails, resolvedCanonicalProcess, actionName)
+      nodesDeploymentData = prepareNodesDeploymentData(command, scenarioDetails, resolvedCanonicalScenario, actionName)
       deploymentData = DeploymentData(
         DeploymentId.fromActionId(actionId),
         user.toManagerUser,
         additionalDeploymentData = Map.empty,
         nodesDeploymentData,
-        getAdditionalModelConfigsRequiredForRuntime(processDetails.processingType)
+        getAdditionalModelConfigsRequiredForRuntime(scenarioDetails.processingType)
       )
       updateStrategy = DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
         command.stateRestoringStrategy
       )
       dmCommand = DMRunDeploymentCommand(
-        processDetails.toEngineProcessVersion,
+        scenarioDetails.toEngineProcessVersion,
         deploymentData,
-        resolvedCanonicalProcess,
+        resolvedCanonicalScenario,
         updateStrategy
       )
     } yield dmCommand
@@ -248,39 +249,38 @@ class DeploymentService(
   private def prepareNodesDeploymentData(
       command: CommonDeploymentCommand,
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
-      canonicalProcess: CanonicalProcess,
+      resolvedCanonicalScenario: CanonicalProcess,
       actionName: ScenarioActionName
-  )(implicit user: LoggedUser): Future[NodesDeploymentData] = command.nodesDeploymentData match {
-    case Some(data) => Future.successful(data)
-    case None =>
+  )(implicit user: LoggedUser): NodesDeploymentData = {
+    command.nodesDeploymentData.getOrElse {
       processingTypeToActionInfoService
         .forProcessingTypeUnsafe(processDetails.processingType)
-        .getActionParameters(
-          canonicalProcess.toScenarioGraph,
+        .getResolvedCanonicalScenarioActionParameters(
+          resolvedCanonicalScenario,
           processDetails.toEngineProcessVersion,
-          processDetails.isFragment
         )
-        .map {
-          case Left(_) => NodesDeploymentData.empty
-          case Right(uiParams) =>
-            uiParams.actionNameToParameters.get(actionName) match {
-              case Some(params) =>
-                val paramsMap = params
-                  .map { param =>
-                    param.nodeId -> param.parameters
-                      // Important NOTICE! If the user hasn't provided any (quick deploy/redeploy action) deploy parameters,
-                      // we take parameters with defined default values.
-                      // Parameters without default values (even required ones) are skipped.
-                      .collect { case (paramName, UiActionParameterConfig(Some(defaultValue), _, _, _)) =>
-                        paramName -> defaultValue
-                      }
-                  }
-                  .filterNot(_._2.isEmpty)
-                  .toMap
-                NodesDeploymentData(paramsMap)
-              case None => NodesDeploymentData.empty
+        .map { params =>
+          params
+            .get(actionName)
+            .map { params =>
+              val paramsMap = params.toList
+                .map { case (nodeComponentInfo, paramsForNode) =>
+                  NodeId(nodeComponentInfo.nodeId) -> paramsForNode
+                    // Important NOTICE! If the user hasn't provided any (quick deploy/redeploy action) deploy parameters,
+                    // we take parameters with defined default values.
+                    // Parameters without default values (even required ones) are skipped.
+                    .collect { case (paramName, StaticParameterConfig(Some(defaultValue), _, _, _, _)) =>
+                      paramName.value -> defaultValue
+                    }
+                }
+                .filterNot(_._2.isEmpty)
+                .toMap
+              NodesDeploymentData(paramsMap)
             }
+            .getOrElse(NodesDeploymentData.empty)
         }
+        .valueOr(_ => NodesDeploymentData.empty)
+    }
   }
 
   private def getAdditionalModelConfigsRequiredForRuntime(processingType: ProcessingType)(implicit user: LoggedUser) = {

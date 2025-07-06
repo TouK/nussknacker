@@ -58,7 +58,6 @@ object AvroSchemaBasedParameter {
         Invalid(
           NonEmptyList.one(
             CustomNodeError(
-              nodeId.id,
               s"""Record field name is restricted. Restricted names are ${restrictedParamNames
                   .map(_.value)
                   .mkString(", ")}""",

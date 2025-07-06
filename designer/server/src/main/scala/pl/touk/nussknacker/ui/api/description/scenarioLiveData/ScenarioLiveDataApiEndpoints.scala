@@ -49,8 +49,11 @@ class ScenarioLiveDataApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
         )
     ),
     oneOfVariant[LiveDataNotSupported.type](
-      NotImplemented,
+      UnprocessableEntity, // we don't want to use status 501 (which would be more fitting), because 5XX codes trigger infrastructure alerts
       plainBody[LiveDataNotSupported.type]
+        .description(
+          "Live data preview is not supported by this scenario. Any further requests will result in HTTP 422 as well for this scenario"
+        )
         .examples(
           List(
             Example.of(

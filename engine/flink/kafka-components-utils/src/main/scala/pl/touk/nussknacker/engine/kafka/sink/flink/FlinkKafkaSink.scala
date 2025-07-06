@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.sink.flink
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
@@ -14,6 +13,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 
 import java.nio.charset.StandardCharsets
+import scala.annotation.nowarn
 
 // TODO: handle key passed by user - not only extracted by serialization schema from value
 class FlinkKafkaSink(
@@ -32,7 +32,7 @@ class FlinkKafkaSink(
   ): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
     helper.lazyMapFunction(value)
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] =
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic.prepared, serializationSchema, clientId)
 
