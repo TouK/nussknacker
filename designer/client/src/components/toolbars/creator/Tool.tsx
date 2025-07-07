@@ -1,6 +1,6 @@
 import { cx } from "@emotion/css";
 import { cloneDeep } from "lodash";
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useLayoutEffect } from "react";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
@@ -9,6 +9,31 @@ import { DndTypes } from "../../DndTypes";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
 import { ComponentIcon } from "./ComponentIcon";
 import { SearchHighlighter } from "./SearchHighlighter";
+
+const useIsTruncated = (label: string) => {
+    const [isTruncated, setIsTruncated] = useState(false);
+
+    useLayoutEffect(() => {
+        const element = document.querySelector(`[aria-label="tool:${label}"]`);
+
+        if (!element) return;
+
+        const observer = new ResizeObserver(() => {
+            const { scrollWidth, clientWidth } = element.parentElement; // SearchHighlighter wraps the text in a dynamically created span, making the parent element the correct container for accurate truncation calculations.
+            const isTruncated = scrollWidth > clientWidth;
+
+            setIsTruncated(isTruncated);
+        });
+
+        observer.observe(element);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [label]);
+
+    return isTruncated;
+};
 
 type OwnProps = {
     nodeModel: NodeType;
@@ -28,6 +53,8 @@ export default function Tool(props: OwnProps): React.JSX.Element {
         tooltip: tooltip,
     }));
 
+    const isTruncated = useIsTruncated(label);
+
     useEffect(() => {
         preview(getEmptyImage());
         return () => {
@@ -36,12 +63,14 @@ export default function Tool(props: OwnProps): React.JSX.Element {
     }, [preview]);
 
     return (
-        <div className={cx("tool", { disabled })} ref={drag} data-testid={`component:${label}`}>
-            <div className="toolWrapper">
-                <ComponentIcon node={nodeModel} className="toolIcon" />
-                <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
-                {tooltip ? <InfoTooltip variant={"hover"} title={tooltip} /> : ""}
+        <InfoTooltip title={isTruncated ? label : ""} variant={"hover"}>
+            <div className={cx("tool", { disabled })} ref={drag} data-testid={`component:${label}`}>
+                <div className="toolWrapper">
+                    <ComponentIcon node={nodeModel} className="toolIcon" />
+                    <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
+                    {tooltip ? <InfoTooltip variant={"hover"} title={tooltip} /> : ""}
+                </div>
             </div>
-        </div>
+        </InfoTooltip>
     );
 }
