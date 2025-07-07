@@ -69,8 +69,6 @@ class PeriodicLiveDataUploader(
   @transient private var connection: Connection       = _
   @transient private var statement: PreparedStatement = _
 
-  private lazy val jobId: String = getRuntimeContext.getJobInfo.getJobId.toHexString
-
   override def open(openContext: OpenContext): Unit = {
     running = true
     loadJdbcDriver()
@@ -164,13 +162,13 @@ class PeriodicLiveDataUploader(
       connection.prepareStatement(
         s"""
            |MERGE INTO "$dbSchema"."live_data" AS target
-           |USING (VALUES (?, ?, ?, ?, ?, ?)) AS vals("scenario_id", "deployment_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
-           |ON (target."scenario_id" = vals."scenario_id" AND target."deployment_id" = vals."deployment_id" AND target."external_deployment_id" = vals."external_deployment_id" AND target."collector_id" = vals."collector_id")
+           |USING (VALUES (?, ?, ?, ?, ?, ?)) AS vals("scenario_id", "deployment_id", "collector_id", "live_data", "updated_at")
+           |ON (target."scenario_id" = vals."scenario_id" AND target."deployment_id" = vals."deployment_id" AND target."collector_id" = vals."collector_id")
            |WHEN MATCHED THEN
            |  UPDATE SET "live_data" = vals."live_data", "updated_at" = vals."updated_at"
            |WHEN NOT MATCHED THEN
-           |  INSERT ("scenario_id", "deployment_id", "external_deployment_id", "collector_id", "live_data", "updated_at")
-           |  VALUES (vals."scenario_id", vals."deployment_id", vals."external_deployment_id", vals."collector_id", vals."live_data", vals."updated_at")
+           |  INSERT ("scenario_id", "deployment_id", "collector_id", "live_data", "updated_at")
+           |  VALUES (vals."scenario_id", vals."deployment_id", vals."collector_id", vals."live_data", vals."updated_at")
            |""".stripMargin
       )
     }
@@ -179,15 +177,14 @@ class PeriodicLiveDataUploader(
   private def doUploadLiveData(): Unit = {
     statement.setLong(1, processIdWithName.id.value)
     statement.setString(2, deploymentData.deploymentId.value)
-    statement.setString(3, jobId)
-    statement.setString(4, LiveDataCollectingListenerHolder.id.toString)
+    statement.setString(3, LiveDataCollectingListenerHolder.id.toString)
     LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name) match {
       case Some(liveData) =>
-        statement.setString(5, liveData.asJson.noSpaces)
+        statement.setString(4, liveData.asJson.noSpaces)
       case None =>
-        statement.setNull(5, java.sql.Types.VARCHAR)
+        statement.setNull(4, java.sql.Types.VARCHAR)
     }
-    statement.setLong(6, Instant.now.getEpochSecond)
+    statement.setLong(5, Instant.now.getEpochSecond)
     statement.executeUpdate()
   }
 
