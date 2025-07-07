@@ -2,6 +2,7 @@ import { debounce } from "lodash";
 
 import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/selectors";
+import { parseWindowsQueryParams, replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
 import type { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, TypingResult, UIParameter, VariableTypes } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
@@ -66,19 +67,29 @@ export function nodeValidationDynamicParametersLoaded(nodeId: string): NodeValid
     };
 }
 
-export function nodeDetailsOpened(nodeId: string, windowId: string): NodeDetailsOpened {
-    return {
-        type: "NODE_DETAILS_OPENED",
-        nodeId,
-        windowId,
+function mergeQuery(changes: Record<string, string[]>) {
+    return replaceSearchQuery((current) => ({ ...current, ...changes }));
+}
+
+export function nodeDetailsOpened(nodeId: string, windowId: string): ThunkAction {
+    return (dispatch) => {
+        dispatch({
+            type: "NODE_DETAILS_OPENED",
+            nodeId,
+            windowId,
+        });
+        mergeQuery(parseWindowsQueryParams({ nodeId: nodeId }));
     };
 }
 
-export function nodeDetailsClosed(nodeId: string, windowId: string): NodeDetailsClosed {
-    return {
-        type: "NODE_DETAILS_CLOSED",
-        nodeId,
-        windowId,
+export function nodeDetailsClosed(nodeId: string, windowId: string): ThunkAction {
+    return (dispatch) => {
+        dispatch({
+            type: "NODE_DETAILS_CLOSED",
+            nodeId,
+            windowId,
+        });
+        mergeQuery(parseWindowsQueryParams({}, { nodeId: nodeId }));
     };
 }
 

@@ -85,9 +85,9 @@ export function useWindows(parent?: WindowId) {
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
             if (node.type === StickyNoteType) return;
-            const windowId = nodeWindowIdMap.current[node.id] || node.id;
+            if (nodeWindowIdMap.current[node.id]) return;
             return open({
-                id: windowId,
+                id: node.id,
                 title: node.id,
                 isResizable: true,
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
