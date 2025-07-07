@@ -46,6 +46,11 @@ object PeriodicLiveDataUploader {
 
 }
 
+// This class runs the live data uploader as Flink function. But once started, it performs uploads in a loop in a single thread.
+// It proved difficult to use Flink timers or event generator source with intervals. Db connection and statement are not thread-safe.
+// It would need more thorough investigation to do in a more Flink-style way, for now:
+//  - Starting as Flink source provides Flink lifecycle control. It starts with scenario and ends when it ends. Standalone thread outside the Flink scenario would be immediately interrupted on Flink.
+//  - Running in a loop in a single thread gives full control over execution and eliminates problems with thread-safety.
 class PeriodicLiveDataUploader(
     processIdWithName: ProcessIdWithName,
     deploymentData: DeploymentData,
@@ -92,8 +97,8 @@ class PeriodicLiveDataUploader(
       updaterThread.interrupt()
       updaterThread.join()
     }
-    if (connection != null) connection.close()
     if (statement != null) statement.close()
+    if (connection != null) connection.close()
   }
 
   private def uploadLiveData(): Unit = {
