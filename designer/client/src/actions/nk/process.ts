@@ -93,7 +93,7 @@ export function clearProcess(): ThunkAction {
 export function hideRunProcessDetails(): ThunkAction {
     replaceSearchQuery(omit(["from", "to", "refresh"]));
     return (dispatch, getState) => {
-        dispatch(stopLiveData(Initiator.button));
+        dispatch(stopLiveData());
         dispatch({ type: "HIDE_RUN_PROCESS_DETAILS" });
     };
 }
