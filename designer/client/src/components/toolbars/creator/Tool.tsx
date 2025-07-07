@@ -19,7 +19,9 @@ const useIsTruncated = (label: string) => {
         if (!element) return;
 
         const observer = new ResizeObserver(() => {
-            const { scrollWidth, clientWidth } = element.parentElement; // SearchHighlighter wraps the text in a dynamically created span, making the parent element the correct container for accurate truncation calculations.
+            const parentElement = element.parentElement; // SearchHighlighter wraps the text in a dynamically created span, making the parent element the correct container for accurate truncation calculations.
+            if (!parentElement) return;
+            const { scrollWidth, clientWidth } = parentElement;
             const isTruncated = scrollWidth > clientWidth;
 
             setIsTruncated(isTruncated);
