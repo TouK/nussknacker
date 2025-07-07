@@ -5,6 +5,7 @@ import io.circe.Json
 import org.everit.json.schema.{CombinedSchema, Schema}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
@@ -18,8 +19,8 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sin
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
-import pl.touk.nussknacker.engine.util.json.{JsonSchemaUtils, ToJsonEncoder}
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
+import pl.touk.nussknacker.engine.util.json.JsonSchemaUtils
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.nio.charset.StandardCharsets
@@ -91,7 +92,7 @@ class JsonSchemaRequestResponseSource(
         params
           .get(SinkRawValueParamName)
           .map { paramValue =>
-            val json                       = ToJsonEncoder.defaultForTests.encode(paramValue)
+            val json                       = ToJsonEncoder.default.encodeUnsafe(paramValue)
             val schema                     = getFirstMatchingSchemaForJson(cs, json)
             val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
             FromJsonSchemaBasedDecoder.decode(json, swaggerTyped)
@@ -103,7 +104,7 @@ class JsonSchemaRequestResponseSource(
           }
       }
       case _ =>
-        val json = ToJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
+        val json = ToJsonEncoder.default.encodeUnsafe(TestingParametersSupport.unflattenParameters(params))
         val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
         FromJsonSchemaBasedDecoder.decode(json, swaggerTyped)
     }

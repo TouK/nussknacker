@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoderWithFallback
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.{genericTypeClass, typedListWithElementValues}
@@ -35,7 +35,7 @@ object FromInstanceTypeDeterminer {
       case other =>
         Typed(other.getClass) match {
           case typedClass: TypedClass =>
-            ToJsonEncoderWithFallback.encodeValue(other) match {
+            ToJsonEncoder.default.encode(other) match {
               case Valid(_)   => TypedObjectWithValue(typedClass, other)
               case Invalid(_) => typedClass
             }

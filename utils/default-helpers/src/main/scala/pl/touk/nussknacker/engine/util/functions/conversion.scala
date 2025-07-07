@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.util.functions
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import scala.annotation.nowarn
 
@@ -38,7 +38,7 @@ trait ConversionUtils extends HideToString {
 
   @Documentation(description = "Convert JSON to String")
   def toJsonString(@ParamName("value") value: Any): String = {
-    jsonEncoder.encode(value).noSpaces
+    ToJsonEncoder.default.encodeUnsafe(value).noSpaces
   }
 
   private def toJsonEither(value: String): Either[Throwable, Any] = {
@@ -47,7 +47,5 @@ trait ConversionUtils extends HideToString {
       case Left(ex)    => Left(new IllegalArgumentException(s"Cannot convert [$value] to JSON", ex))
     }
   }
-
-  private lazy val jsonEncoder = new ToJsonEncoder(true, this.getClass.getClassLoader)
 
 }
