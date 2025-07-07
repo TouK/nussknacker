@@ -8,9 +8,9 @@ import org.apache.kafka.common.record.DefaultRecordBatch
 import org.apache.kafka.common.utils.Utils
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.io.{PrintWriter, StringWriter}
 import java.lang
@@ -173,7 +173,9 @@ class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: 
 
 object KafkaExceptionInfo {
 
-  private val encoder = ToJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
+  // Variables keep some intermediate state of a scenario. We can't be sure that there are only types that are supported
+  // for json encoding. It is better to print not-well formatted .toString result than fail in this case
+  private val variablesEncoder = ToJsonEncoder.looseEncoder
 
   // TODO: better hostname (e.g. from some Flink config)
   private lazy val hostName = InetAddress.getLocalHost.getHostName
@@ -188,7 +190,7 @@ object KafkaExceptionInfo {
       exceptionInfo.nodeComponentInfo.map(_.nodeId),
       Option(exceptionInfo.throwable.getMessage),
       Option(exceptionInfo.input),
-      optional(exceptionInfo.context.allVariables, config.includeInputEvent).map(encoder.encode),
+      optional(exceptionInfo.context.allVariables, config.includeInputEvent).map(variablesEncoder.encodeUnsafe),
       serializeStackTrace(config.stackTraceLengthLimit, exceptionInfo.throwable),
       exceptionInfo.timestamp.toEpochMilli,
       optional(hostName, config.includeHost),

@@ -8,13 +8,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 
 import scala.jdk.CollectionConverters._
 
 class InputMetaToJsonSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
-  private val encoder = ToJsonEncoder.defaultForTests
+  private val encoder = ToJsonEncoder.default
 
   test("should encode for various keys") {
 
@@ -27,7 +27,7 @@ class InputMetaToJsonSpec extends AnyFunSuite with Matchers with TableDrivenProp
       )
     ) { (key, serialized) =>
       val inputMeta = InputMeta(key, "topic1", 1, 10, 1000, TimestampType.CREATE_TIME, Map("A" -> "B").asJava, 10)
-      encoder.encode(inputMeta) shouldBe obj(
+      encoder.encodeUnsafe(inputMeta) shouldBe obj(
         "key"           -> serialized,
         "topic"         -> fromString("topic1"),
         "partition"     -> fromInt(1),

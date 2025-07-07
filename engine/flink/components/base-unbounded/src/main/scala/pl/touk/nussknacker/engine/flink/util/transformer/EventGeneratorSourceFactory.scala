@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
-import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoderWithFallback
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
@@ -167,8 +167,8 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       private def generateSample(): AnyRef = value.evaluate(Context.dummy)
 
       private def encodeValueUnsafe(value: AnyRef) =
-        ToJsonEncoderWithFallback
-          .encodeValue(value)
+        ToJsonEncoder.default
+          .encode(value)
           .getOrElse(throw new IllegalArgumentException(s"Failed to encode value: $value"))
 
       private def decodeValueUnsafe(json: Json) =

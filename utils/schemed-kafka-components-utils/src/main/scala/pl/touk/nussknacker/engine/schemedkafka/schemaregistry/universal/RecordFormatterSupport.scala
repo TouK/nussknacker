@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{EmptySchemaRegistry, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.{AvroMessageFormatter, AvroMessageReader}
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.nio.charset.StandardCharsets
 
@@ -37,8 +37,11 @@ trait RecordFormatterSupport {
 }
 
 object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
-  override def formatMessage(data: Any): Json =
-    ToJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader).encode(data)
+
+  override def formatMessage(data: Any): Json = {
+    // Here should probably be default encoder and the loose one is for historical reasons TODO: verify and switch to default=
+    ToJsonEncoder.looseEncoder.encodeUnsafe(data)
+  }
 
   override def readKeyMessage(
       topic: TopicName.ForSource,

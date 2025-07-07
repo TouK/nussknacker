@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json._
@@ -19,7 +20,8 @@ class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
   private val classLoader = this.getClass.getClassLoader
-  private val jsonEncoder = ToJsonEncoder(failOnUnknown = false, this.getClass.getClassLoader)
+  // Here should probably be default encoder and the loose one is for historical reasons TODO: verify and switch to default
+  private val jsonEncoder = ToJsonEncoder.looseEncoder
 
   private val optionalEncoders = ServiceLoader
     .load(classOf[ToJsonSchemaBasedEncoderCustomisation], classLoader)
@@ -56,7 +58,7 @@ class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
   def encodeBasedOnSchema(input: EncodeInput): EncodeOutput = {
     val (value, schema, fieldName) = input
     (schema, value) match {
-      case (_: EmptySchema, _)                                                     => Valid(jsonEncoder.encode(value))
+      case (_: EmptySchema, _) => Valid(jsonEncoder.encodeUnsafe(value))
       case (schema: ObjectSchema, map: scala.collection.Map[String @unchecked, _]) => encodeObject(map.toMap, schema)
       case (schema: ObjectSchema, map: java.util.Map[String @unchecked, _]) => encodeObject(map.asScala.toMap, schema)
       case (schema: ArraySchema, value: Iterable[_])                        => encodeCollection(value, schema)
@@ -69,19 +71,19 @@ class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
       case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
       case (ref: ReferenceSchema, value: Any) => encodeBasedOnSchema(value, ref.getReferredSchema, fieldName)
       case (nm: NumberSchema, value: Any) if nm.requiresInteger() => encodeIntegerSchema(value, nm, fieldName)
-      case (_: NumberSchema, value: Long)                         => Valid(jsonEncoder.encode(value))
-      case (_: NumberSchema, value: Double)                       => Valid(jsonEncoder.encode(value))
-      case (_: NumberSchema, value: Float)                        => Valid(jsonEncoder.encode(value))
-      case (_: NumberSchema, value: Int)                          => Valid(jsonEncoder.encode(value))
-      case (_: NumberSchema, value: java.math.BigDecimal)         => Valid(jsonEncoder.encode(value))
-      case (_: NumberSchema, value: java.math.BigInteger)         => Valid(jsonEncoder.encode(value))
-      case (_: NumberSchema, value: Number)                       => Valid(jsonEncoder.encode(value.doubleValue()))
-      case (_: BooleanSchema, value: Boolean)                     => Valid(Json.fromBoolean(value))
-      case (_: EnumSchema, value: Any)                            => Valid(jsonEncoder.encode(value))
-      case (_: NullSchema, null)                                  => Valid(Json.Null)
-      case (_: NullSchema, None)                                  => Valid(Json.Null)
-      case (_, null)                                              => error(null, schema.toString, fieldName)
-      case (_, _)                                                 => error(value, schema.toString, fieldName)
+      case (_: NumberSchema, value: Long)                         => Valid(jsonEncoder.encodeUnsafe(value))
+      case (_: NumberSchema, value: Double)                       => Valid(jsonEncoder.encodeUnsafe(value))
+      case (_: NumberSchema, value: Float)                        => Valid(jsonEncoder.encodeUnsafe(value))
+      case (_: NumberSchema, value: Int)                          => Valid(jsonEncoder.encodeUnsafe(value))
+      case (_: NumberSchema, value: java.math.BigDecimal)         => Valid(jsonEncoder.encodeUnsafe(value))
+      case (_: NumberSchema, value: java.math.BigInteger)         => Valid(jsonEncoder.encodeUnsafe(value))
+      case (_: NumberSchema, value: Number)   => Valid(jsonEncoder.encodeUnsafe(value.doubleValue()))
+      case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
+      case (_: EnumSchema, value: Any)        => Valid(jsonEncoder.encodeUnsafe(value))
+      case (_: NullSchema, null)              => Valid(Json.Null)
+      case (_: NullSchema, None)              => Valid(Json.Null)
+      case (_, null)                          => error(null, schema.toString, fieldName)
+      case (_, _)                             => error(value, schema.toString, fieldName)
     }
   }
 
@@ -128,7 +130,7 @@ class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
     case ObjectField(fieldName, Some(value), None, parentSchema) if parentSchema.permitsAdditionalProperties =>
       Option(parentSchema.getSchemaOfAdditionalProperties) match {
         case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
-        case None                           => Valid(jsonEncoder.encode(value)).map(fieldName -> _)
+        case None                           => Valid(jsonEncoder.encodeUnsafe(value)).map(fieldName -> _)
       }
   }
 
@@ -142,14 +144,14 @@ class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
       fieldName: Option[String] = None
   ): Validated[NonEmptyList[String], Json] = {
     (schema.getFormatValidator.formatName(), value) match {
-      case ("date-time", zdt: ZonedDateTime)  => Valid(jsonEncoder.encode(zdt))
-      case ("date-time", odt: OffsetDateTime) => Valid(jsonEncoder.encode(odt))
+      case ("date-time", zdt: ZonedDateTime)  => Valid(jsonEncoder.encodeUnsafe(zdt))
+      case ("date-time", odt: OffsetDateTime) => Valid(jsonEncoder.encodeUnsafe(odt))
       case ("date-time", _: Any)              => error(value, schema.toString, fieldName)
-      case ("date", ldt: LocalDate)           => Valid(jsonEncoder.encode(ldt))
+      case ("date", ldt: LocalDate)           => Valid(jsonEncoder.encodeUnsafe(ldt))
       case ("date", _: Any)                   => error(value, schema.toString, fieldName)
-      case ("time", ot: OffsetTime)           => Valid(jsonEncoder.encode(ot))
+      case ("time", ot: OffsetTime)           => Valid(jsonEncoder.encodeUnsafe(ot))
       case ("time", _: Any)                   => error(value, schema.toString, fieldName)
-      case ("unnamed-format", _: String)      => Valid(jsonEncoder.encode(value))
+      case ("unnamed-format", _: String)      => Valid(jsonEncoder.encodeUnsafe(value))
       case _                                  => error(value, schema.toString, fieldName)
     }
   }
@@ -169,12 +171,12 @@ class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
       bigDecimalValue.toLongExact
     ) match {
       case Failure(_) => error(s"value '$value' is not an integer.", fieldName)
-      case Success(v) => Valid(jsonEncoder.encode(v))
+      case Success(v) => Valid(jsonEncoder.encodeUnsafe(v))
     }
 
     value match {
-      case i: Int                    => Valid(jsonEncoder.encode(i))
-      case l: Long                   => Valid(jsonEncoder.encode(l))
+      case i: Int                    => Valid(jsonEncoder.encodeUnsafe(i))
+      case l: Long                   => Valid(jsonEncoder.encodeUnsafe(l))
       case d: Double                 => encodeBigDecimalToIntegerSchema(BigDecimal(d))
       case f: Float                  => encodeBigDecimalToIntegerSchema(BigDecimal(f.toDouble))
       case bd: java.math.BigDecimal  => encodeBigDecimalToIntegerSchema(bd)

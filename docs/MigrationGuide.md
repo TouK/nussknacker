@@ -153,6 +153,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#8054](https://github.com/TouK/nussknacker/pull/8054) `ProcessObjectDependencies` class was replaced by `ModelConfig`
 * [#8256](https://github.com/TouK/nussknacker/pull/8256) The support for kafka source generating custom classes (`KafkaSourceFactory`) was removed
   We recommend a migration to more generic approach: `UniversalKafkaSourceFactory`
+* [#8308](https://github.com/TouK/nussknacker/pull/8308) `ToJsonEncoder` refactor:
+  * `ToJsonEncoder` was moved to `pl.touk.nussknacker.engine.api.json.encoders` package
+  * `ToJsonEncoder` is a sealed trait, if you want to extend it, use either `StrictToJsonEncoder` (old `failOnUnknown = true`) 
+    or `LooseToJsonEncoder` (old `failOnUnknown = false`)
+  * `highPriority` become a method instead of parameter
+  * `ToJsonEncoder.encode` method now returns `Validated` and is available only for `StrictToJsonEncoder`
+  * `ToJsonEncoder.encodeUnsafe` method behave as the previous `ToJsonEncoder.encode` (errors are thrown as Exceptions)
 
 ### Other changes
 
