@@ -10,7 +10,7 @@ export const StyledInfo = styled(InfoIcon)(() => ({
 }));
 
 export const StyledInfoChildrenWrapper = styled("span")(() => ({
-    display: "inline",
+    display: "inherit",
     height: "fit-content",
 }));
 
