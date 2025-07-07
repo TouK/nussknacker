@@ -7,8 +7,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.time.Instant
 import scala.jdk.CollectionConverters._
@@ -17,8 +17,6 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
   private val mockProducer =
     new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
-
-  private val encoder = ToJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
   private val metaData = MetaData("test", StreamMetaData())
 
@@ -68,7 +66,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
     decodedPayload.exceptionInput shouldBe Some("input1")
     decodedPayload.message shouldBe Some("mess")
     decodedPayload.timestamp shouldBe 111
-    decodedPayload.inputEvent shouldBe Some(encoder.encode(variables))
+    decodedPayload.inputEvent shouldBe Some(ToJsonEncoder.default.encodeUnsafe(variables))
     decodedPayload.additionalData shouldBe Map("testValue" -> "1")
   }
 

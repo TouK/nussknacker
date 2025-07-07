@@ -12,6 +12,7 @@ import org.scalatest.{BeforeAndAfterAll, LoneElement, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -39,7 +40,6 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties, VeryPatientScalaFutures}
 
 import java.time.Instant
@@ -138,8 +138,8 @@ class SchemedKafkaScenarioTestingSpec
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
-    val consumerRecord = ToJsonEncoder.defaultForTests
-      .encode(inputMeta)
+    val consumerRecord = ToJsonEncoder.default
+      .encodeUnsafe(inputMeta)
       .mapObject(
         _.add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa")))
       )

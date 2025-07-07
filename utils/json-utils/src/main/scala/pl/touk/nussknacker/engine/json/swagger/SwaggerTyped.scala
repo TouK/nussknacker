@@ -8,10 +8,10 @@ import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder.jsonToAny
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import java.util
@@ -57,11 +57,10 @@ case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 @JsonCodec case class SwaggerEnum private (values: List[Any]) extends SwaggerTyped
 
 object SwaggerEnum {
-  private lazy val om       = new ObjectMapper()
-  private val toJsonEncoder = ToJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
+  private lazy val om = new ObjectMapper()
   private implicit val listDecoder: Decoder[List[Any]] =
     Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
-  private implicit val listEncoder: Encoder[List[Any]] = Encoder.instance[List[Any]](toJsonEncoder.encode)
+  private implicit val listEncoder: Encoder[List[Any]] = Encoder.instance[List[Any]](ToJsonEncoder.default.encodeUnsafe)
 
   def apply(schema: Schema[_]): SwaggerEnum = {
     val list = schema.getEnum.asScala.toList.map {

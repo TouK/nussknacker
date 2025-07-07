@@ -1,10 +1,9 @@
-package pl.touk.nussknacker.engine.api.json
+package pl.touk.nussknacker.engine.api.json.decoders
 
 import io.circe.Json
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
 
 class FromJsonSimpleDecoderTest extends AnyFunSuiteLike with Matchers with OptionValues {
 

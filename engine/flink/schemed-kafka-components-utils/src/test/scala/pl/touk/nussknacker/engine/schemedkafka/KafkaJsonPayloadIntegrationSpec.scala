@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaJsonPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{
@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
 
@@ -59,7 +58,7 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
       process,
       topicConfig,
       PaymentV1.exampleData,
-      ToJsonEncoder.defaultForTests.encode(PaymentV1.exampleData)
+      ToJsonEncoder.default.encodeUnsafe(PaymentV1.exampleData)
     )
   }
 

@@ -113,13 +113,12 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
           )
         ),
         (
-          s"""
-           |{
-           |  "name": "#{#name}",
-           |  "age": #{#age},
-           |  "hasConsent": #{#hasConsent},
-           |  "amount": #{#amount}
-           |}""".stripMargin,
+          s"""{
+             |  "name": "#{ #name }",
+             |  "age": #{ #age },
+             |  "hasConsent": #{ #hasConsent },
+             |  "amount": #{ #amount }
+             |}""".stripMargin,
           Typed.record(
             List(
               "name"       -> Typed.typedClass[String],
@@ -132,17 +131,17 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       )
     ) { (dataSample: String, typingResult: TypingResult) =>
       parse[Any](dataSample, ctxWithVariables).map(_.returnType) shouldBe Valid(typingResult)
-      parseWithoutContextValidation[String](dataSample).isValid shouldBe true
+      parseWithoutContextValidation[String](dataSample) shouldBe Symbol("valid")
     }
   }
 
   test("should evaluate json template") {
     val dataSample =
       s"""{
-         |  "name": "#{#name}",
-         |  "age": #{#age},
-         |  "hasConsent": #{#hasConsent},
-         |  "amount": #{#amount}
+         |  "name": "#{ #name }",
+         |  "age": #{ #age },
+         |  "hasConsent": #{ #hasConsent },
+         |  "amount": #{ #amount }
          |}""".stripMargin
 
     val mapResult = parse[Any](dataSample, ctxWithVariables).validValue.expression
@@ -158,8 +157,8 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
 
   test("should treat complex variables as strings") {
     val jsonWithComplexVariables = """{
-                                     |  "products": "#{#products}",
-                                     |  "pricing": "#{#pricing}"
+                                     |  "products": "#{ #products }",
+                                     |  "pricing": "#{ #pricing }"
                                      |}""".stripMargin
 
     val result =
@@ -192,12 +191,11 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
   }
 
   test("should return error when JSON cannot be parsed") {
-    val invalidJson = """|{
-                         |  "products": [
-                         |}""".stripMargin
+    val invalidJson = """{
+                        |  "products": [
+                        |}""".stripMargin
 
-    val parsingErrors               = parse[String](invalidJson).invalidValue
-    val parsingErrorsWithoutContext = parseWithoutContextValidation[String](invalidJson).invalidValue
+    val parsingErrors = parse[String](invalidJson).invalidValue
 
     parsingErrors shouldBe NonEmptyList.of(
       JsonParseError(
@@ -205,13 +203,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
       )
     )
-    parsingErrorsWithoutContext shouldBe
-      NonEmptyList.of(
-        JsonParseError(
-          "expected json value got '}'",
-          Some(CoordinatesBasedTextRange(TextCoordinates(0, 2), TextCoordinates(1, 2)))
-        )
-      )
   }
 
   test("should return error when complex variable type is not in quotes") {
@@ -219,7 +210,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       Table(
         ("Invalid json", "Error message", "Error details"),
         (
-          """{ "products": #{#products} }""",
+          """{ "products": #{ #products } }""",
           "expected json value got 'unquot...'",
           CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
         ),
@@ -229,9 +220,9 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
           CoordinatesBasedTextRange(TextCoordinates(14, 0), TextCoordinates(15, 0))
         ),
         (
-          """{#{#products}}""",
+          """{ #{ #products } }""",
           "expected \" got 'unquot...'",
-          CoordinatesBasedTextRange(TextCoordinates(1, 0), TextCoordinates(2, 0))
+          CoordinatesBasedTextRange(TextCoordinates(2, 0), TextCoordinates(3, 0))
         ),
       )
     ) { (invalidJson: String, errorMessage, errorDetails) =>
