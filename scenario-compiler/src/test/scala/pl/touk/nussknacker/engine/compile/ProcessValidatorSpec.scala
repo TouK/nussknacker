@@ -1440,6 +1440,26 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     )
   }
 
+  test("should detect duplicated parameters in node") {
+    val processWithLocalVarInEagerParam =
+      ScenarioBuilder
+        .streaming("process1")
+        .source("id1", "source")
+        .customNode(
+          "custom",
+          "outVar",
+          "withParamsTransformer",
+          "par1" -> "#input.toString()".spel,
+          "par1" -> "''".spel,
+          "par2" -> "#input.toString()".spel,
+          "par2" -> "''".spel
+        )
+        .emptySink("id2", "sink")
+
+    validate(processWithLocalVarInEagerParam, baseDefinition).result shouldBe
+      Invalid(NonEmptyList.of(DuplicatedParameters(Set(ParameterName("par1"), ParameterName("par2")), "custom")))
+  }
+
   test("not allows local variables in eager custom node parameter") {
     val processWithLocalVarInEagerParam =
       ScenarioBuilder

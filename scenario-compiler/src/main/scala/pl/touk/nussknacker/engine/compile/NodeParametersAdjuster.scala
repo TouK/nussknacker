@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.Id
-import cats.data.{Writer, WriterT}
+import cats.data.Writer
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
@@ -9,11 +8,13 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDefiniti
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.CompilationLoggerExtensions.Ops
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 
 object NodeParametersAdjuster extends LazyLogging {
 
-  def adjustNonBranchParameters(parameterDefinitions: List[ParameterDefinition], parameters: List[NodeParameter])(
+  def adjustNonBranchParameters(
+      parameterDefinitions: List[ParameterDefinition],
+      parameters: Map[ParameterName, NodeParameter]
+  )(
       implicit nodeId: NodeId,
       jobData: JobData
   ): List[NodeParameter] = {
@@ -24,12 +25,12 @@ object NodeParametersAdjuster extends LazyLogging {
 
   private def checkRedundancyAndWarnIfNeeded(
       parameterDefinitions: List[ParameterDefinition],
-      parameters: List[NodeParameter]
+      parameters: Map[ParameterName, NodeParameter]
   )(
       implicit nodeId: NodeId,
       jobData: JobData
   ): Unit = {
-    val redundantParams = parameters.map(_.name).toSet.diff(parameterDefinitions.map(_.name).toSet)
+    val redundantParams = parameters.keys.toSet.diff(parameterDefinitions.map(_.name).toSet)
     if (redundantParams.nonEmpty) {
       logger.compilationWarning(
         s"Found redundant parameters: ${redundantParams.toList.map(_.value).sorted.mkString(", ")}. They will be skipped."
@@ -39,12 +40,11 @@ object NodeParametersAdjuster extends LazyLogging {
 
   private def addMissingNodeParameters(
       parameterDefinitions: List[ParameterDefinition],
-      parameters: List[NodeParameter]
+      parameterByName: Map[ParameterName, NodeParameter]
   )(
       implicit nodeId: NodeId,
       jobData: JobData
   ) = {
-    val parameterByName = parameters.map(p => p.name -> p).toMapCheckingDuplicates
     val (missingParameterNames, adjustedParameters) = parameterDefinitions.traverse { parameterDefinition =>
       parameterByName
         .get(parameterDefinition.name)

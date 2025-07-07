@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
@@ -29,13 +29,24 @@ object Implicits {
     def toGroupedMapSafe: ListMap[K, NonEmptyList[V]] =
       toGroupedMap.map { case (k, v) => k -> NonEmptyList.fromListUnsafe(v) }
 
-    def toMapCheckingDuplicates: Map[K, V] = {
+    def toMapCheckingDuplicates: ValidatedNel[K, Map[K, V]] = {
       val moreThanOneValueForKey = seq.toGroupedMap.filter(_._2.size > 1)
-      if (moreThanOneValueForKey.nonEmpty)
-        throw new IllegalStateException(
-          s"Found keys with more than one values: ${moreThanOneValueForKey.keys.mkString(", ")} during translating $seq to Map"
+      Validated.cond(
+        moreThanOneValueForKey.isEmpty,
+        seq.toMap,
+        NonEmptyList.fromListUnsafe(moreThanOneValueForKey.keys.toList)
+      )
+    }
+
+    def toMapCheckingDuplicatesUnsafe: Map[K, V] = {
+      toMapCheckingDuplicates
+        .fold(
+          duplicatedKeys =>
+            throw new IllegalStateException(
+              s"Found keys with more than one values: ${duplicatedKeys.toList.mkString(", ")} during translating $seq to Map"
+            ),
+          identity
         )
-      seq.toMap
     }
 
   }
