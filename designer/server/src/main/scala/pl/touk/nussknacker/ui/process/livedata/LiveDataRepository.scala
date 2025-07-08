@@ -71,7 +71,6 @@ class DbLiveDataRepository(override protected val dbRef: DbRef)(
                     StoredLivedDataDetails(
                       entity.updatedAt,
                       entity.deploymentId,
-                      entity.externalDeploymentId,
                       entity.collectorId
                     )
                   )
@@ -110,7 +109,6 @@ object DbLiveDataRepository {
   final case class StoredLivedDataDetails(
       timestamp: Long,
       deploymentId: String,
-      externalDeploymentId: String,
       collectorId: String,
   )
 

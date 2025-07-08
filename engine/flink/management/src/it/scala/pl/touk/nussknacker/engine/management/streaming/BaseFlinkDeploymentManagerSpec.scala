@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, Des
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -81,7 +81,9 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
     val deploymentId = DeploymentId("with-event-generator")
 
     LiveDataCollectingListenerHolder.createListenerFor(
-      processName = processName,
+      processIdWithName = ProcessIdWithName(processId, processName),
+      deploymentId = deploymentId,
+      config = None,
       maxNumberOfRecords = 20,
       throughputTimeWindowInSeconds = 60
     )

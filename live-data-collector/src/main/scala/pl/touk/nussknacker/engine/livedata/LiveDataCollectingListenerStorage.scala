@@ -4,12 +4,15 @@ import pl.touk.nussknacker.engine.api.NodeId
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 import scala.jdk.CollectionConverters._
 
 private[livedata] class LiveDataCollectingListenerStorage(
     maxNumberOfRecords: Int,
     throughputTimeWindowInSeconds: Int,
 )(implicit clock: Clock) {
+
+  private val lastUpdatedAt = new AtomicLong(Instant.now.getEpochSecond)
 
   private val samples = new ConcurrentHashMap[NodeTransition, RingBufferWithTotalCount[LiveDataSample]]
 
@@ -21,6 +24,8 @@ private[livedata] class LiveDataCollectingListenerStorage(
 
   private val transitionsSlidingWindowCounter: SlidingWindowCounter[NodeTransition] =
     new SlidingWindowCounter[NodeTransition](Instant.now, throughputTimeWindowInSeconds)
+
+  def getLastUpdatedAt: Long = lastUpdatedAt.get()
 
   def getLiveData: CollectedLiveData = {
     CollectedLiveData(
@@ -66,6 +71,7 @@ private[livedata] class LiveDataCollectingListenerStorage(
       key: K,
       value: V,
   ): Unit = {
+    lastUpdatedAt.set(clock.instant().getEpochSecond)
     storage.compute(
       key,
       (_: K, valuesOpt: RingBufferWithTotalCount[V]) => {

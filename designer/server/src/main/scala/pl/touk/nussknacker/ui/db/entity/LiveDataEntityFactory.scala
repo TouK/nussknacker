@@ -18,21 +18,16 @@ trait LiveDataEntityFactory extends BaseEntityFactory {
 
     def deploymentId: Rep[String] = column[String]("deployment_id")
 
-    def externalDeploymentId: Rep[String] = column[String]("external_deployment_id")
-
     def collectorId: Rep[String] = column[String]("collector_id")
 
     def liveData: Rep[Option[String]] = column[Option[String]]("live_data")
 
     def updatedAt: Rep[Long] = column[Long]("updated_at", NotNull)
 
-    def pk = primaryKey("pk_scenario_activity_collector_ids", (scenarioId, deploymentId, collectorId))
-
     override def * =
       (
         scenarioId,
         deploymentId,
-        externalDeploymentId,
         collectorId,
         liveData,
         updatedAt,
@@ -45,7 +40,6 @@ trait LiveDataEntityFactory extends BaseEntityFactory {
 final case class LiveDataEntityData(
     scenarioId: ProcessId,
     deploymentId: String,
-    externalDeploymentId: String,
     collectorId: String,
     liveData: Option[String],
     updatedAt: Long,

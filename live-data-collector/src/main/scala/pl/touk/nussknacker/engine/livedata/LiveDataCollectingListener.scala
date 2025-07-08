@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.livedata
 import io.circe.Json
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.deployment.DeploymentId
+import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
 import pl.touk.nussknacker.engine.testmode.TestInterpreterRunner
 
 import java.time.Instant
@@ -12,7 +14,9 @@ import scala.util.Try
 // This class must be serializable. It means, that when deserializing, we lose the reference to it.
 // The actual data is stored in the LiveDataCollectingListenerHolder, and all instances of LiveDataCollectingListener can access the data.
 class LiveDataCollectingListener private[livedata] (
-    processName: ProcessName,
+    processIdWithName: ProcessIdWithName,
+    deploymentId: DeploymentId,
+    config: Option[LiveDataUploaderConfig],
     maxNumberOfRecords: Int,
     throughputTimeWindowInSeconds: Int,
 ) extends ProcessListener
@@ -20,11 +24,14 @@ class LiveDataCollectingListener private[livedata] (
 
   private val variableEncoder: Any => io.circe.Json = TestInterpreterRunner.testResultsVariableEncoder
 
-  private def storage = LiveDataCollectingListenerHolder.storage(
-    processName = processName,
-    maxNumberOfRecords = maxNumberOfRecords,
-    throughputTimeWindowInSeconds = throughputTimeWindowInSeconds,
-  )
+  private def performStorageOperation(f: LiveDataCollectingListenerStorage => Unit): Unit =
+    LiveDataCollectingListenerHolder.performStorageOperation(
+      processIdWithName = processIdWithName,
+      deploymentId = deploymentId,
+      config = config,
+      maxNumberOfRecords = maxNumberOfRecords,
+      throughputTimeWindowInSeconds = throughputTimeWindowInSeconds
+    )(f)
 
   override def nodeEntered(
       nodeId: String,
@@ -37,8 +44,8 @@ class LiveDataCollectingListener private[livedata] (
       nextNodeId: String,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = {
-    storage.addLiveDataSample(
+  ): Unit = performStorageOperation {
+    _.addLiveDataSample(
       NodeTransition(nodeId, Some(nextNodeId)),
       sampleFromContext(context, Instant.now())
     )
@@ -48,8 +55,8 @@ class LiveDataCollectingListener private[livedata] (
       nodeId: String,
       context: Context,
       processMetaData: MetaData,
-  ): Unit = {
-    storage.addLiveDataSample(
+  ): Unit = performStorageOperation {
+    _.addLiveDataSample(
       NodeTransition(nodeId, None),
       sampleFromContext(context, Instant.now())
     )
@@ -75,8 +82,8 @@ class LiveDataCollectingListener private[livedata] (
       context: Context,
       processMetaData: MetaData,
       result: Any,
-  ): Unit = {
-    storage.addExpressionEvaluation(
+  ): Unit = performStorageOperation {
+    _.addExpressionEvaluation(
       NodeId(nodeId),
       InvocationResult(context.id, Instant.now(), expressionId, encode(result)),
     )
@@ -88,8 +95,8 @@ class LiveDataCollectingListener private[livedata] (
       context: Context,
       processMetaData: MetaData,
       result: Try[Any],
-  ): Unit = {
-    storage.addExternalInvocation(
+  ): Unit = performStorageOperation {
+    _.addExternalInvocation(
       NodeId(nodeId),
       InvocationResult(context.id, Instant.now(), id, result.map(encode).getOrElse(Json.Null)),
     )
@@ -100,15 +107,17 @@ class LiveDataCollectingListener private[livedata] (
   ): Unit = {
     exceptionInfo.nodeComponentInfo match {
       case Some(nodeComponentInfo) =>
-        storage.addException(
-          NodeId(nodeComponentInfo.nodeId),
-          ExceptionResult(
-            exceptionInfo.context.id,
-            Instant.now(),
-            encode(exceptionInfo.context.variables),
-            exceptionInfo.throwable
-          ),
-        )
+        performStorageOperation {
+          _.addException(
+            NodeId(nodeComponentInfo.nodeId),
+            ExceptionResult(
+              exceptionInfo.context.id,
+              Instant.now(),
+              encode(exceptionInfo.context.variables),
+              exceptionInfo.throwable
+            ),
+          )
+        }
       case None =>
         ()
     }

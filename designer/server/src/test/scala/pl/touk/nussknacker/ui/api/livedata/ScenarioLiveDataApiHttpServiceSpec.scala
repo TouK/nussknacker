@@ -12,8 +12,10 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.Source
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewStoredInDesignerJvm, NoLiveDataPreviewSupport}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
@@ -100,7 +102,9 @@ class ScenarioLiveDataApiHttpServiceSpec
     "return present data" in {
       val exampleScenario = createExampleScenario()
       val listener = LiveDataCollectingListenerHolder.createListenerFor(
-        processName = exampleScenario.name,
+        processIdWithName = ProcessIdWithName(ProcessId(1), exampleScenario.name),
+        deploymentId = DeploymentId("test-deployment-id"),
+        config = None,
         maxNumberOfRecords = 10,
         throughputTimeWindowInSeconds = 10
       )
