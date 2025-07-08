@@ -65,6 +65,7 @@ private[livedata] object LiveDataUploaderHolder {
             scheduledTask.foreach(_.cancel(true))
             scheduler.shutdownNow()
             activeUploaders.invalidate(CacheKey(processIdWithName, deploymentId))
+            uploader.close()
           } else {
             uploader.uploadLiveData(
               processIdWithName = processIdWithName,
