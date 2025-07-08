@@ -1,8 +1,10 @@
 import { get, uniq } from "lodash";
 import { useCallback, useState } from "react";
+import { useSelector } from "react-redux";
 import type { Align } from "react-window";
 
 import type { NestedKeyOf } from "../../../reducers/graph/lodashWrappers";
+import { getRunningVersion } from "../../../reducers/selectors/graph";
 import type { Activity, UIActivity } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
 import type { ActivityAdditionalFields } from "./types";
@@ -16,6 +18,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
+    const runningVersion = useSelector(getRunningVersion);
 
     const handleSetFoundResults = useCallback((activities: UIActivity[]) => {
         const uniqueFoundResults = uniq(activities).map((activity) => activity.uiGeneratedId);
@@ -112,6 +115,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
                 "activities.displayableName",
                 "overrideDisplayableName",
                 "additionalFields",
+                "scenarioVersionId",
             ];
 
             for (const activity of activities) {
@@ -120,7 +124,20 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
                 }
 
                 for (const fullSearchAllowedField of fullSearchAllowedFields) {
-                    const searchFieldValue: string | ActivityAdditionalFields[] = get(activity, fullSearchAllowedField, "") || "";
+                    const searchFieldValue: string | number | ActivityAdditionalFields[] = get(activity, fullSearchAllowedField, "") || "";
+
+                    const isRunningVersion =
+                        fullSearchAllowedField === "scenarioVersionId" &&
+                        value === "scenarioVersion:running version" &&
+                        (activity.type === "SCENARIO_REDEPLOYED" || activity.type === "SCENARIO_DEPLOYED");
+                    if (isRunningVersion) {
+                        if (parseInt(runningVersion, 10) === searchFieldValue && foundActivities.length === 0) {
+                            console.log(activity);
+                            foundActivities.push(activity);
+                        }
+
+                        continue;
+                    }
 
                     if (Array.isArray(searchFieldValue)) {
                         if (
@@ -134,7 +151,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
                         continue;
                     }
 
-                    if (value && searchFieldValue.toLowerCase().includes(value.toLowerCase())) {
+                    if (value && typeof searchFieldValue === "string" && searchFieldValue.toLowerCase().includes(value.toLowerCase())) {
                         foundActivities.push(activity);
                     }
                 }
@@ -152,6 +169,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
             handleScrollToItem,
             handleSetFoundResults,
             handleUpdateSearchResults,
+            runningVersion,
             selectedResult,
         ],
     );
