@@ -51,6 +51,7 @@ class FlinkScenarioJob(modelData: ModelData) {
         Some(
           LiveDataUploaderConfig(
             intervalSeconds = dbStorage.uploadIntervalInSeconds,
+            uploaderInactivityTimeoutInSeconds = dbStorage.uploaderInactivityTimeoutInSeconds,
             dbUrl = dbStorage.url,
             dbUser = dbStorage.user,
             dbPassword = dbStorage.password,

@@ -60,7 +60,8 @@ private[livedata] object LiveDataUploaderHolder {
         .foreach { storage =>
           // Arbitrary interval - if there are no new events for 5 minutes, then uploader is stopped.
           // It will be started again when there is a new event.
-          val shouldStop = storage.getLastUpdatedAt < Instant.now.getEpochSecond - 300
+          val shouldStop =
+            storage.getLastUpdatedAt < Instant.now.getEpochSecond - config.uploaderInactivityTimeoutInSeconds
           if (shouldStop) {
             logger.info(s"Stopping live data uploader for scenario $processIdWithName because of inactivity")
             scheduledTask.foreach(_.cancel(true))

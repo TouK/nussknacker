@@ -116,6 +116,7 @@ object LiveDataUploader {
 
   final case class LiveDataUploaderConfig(
       intervalSeconds: Int,
+      uploaderInactivityTimeoutInSeconds: Int,
       dbUrl: String,
       dbUser: String,
       dbPassword: String,
