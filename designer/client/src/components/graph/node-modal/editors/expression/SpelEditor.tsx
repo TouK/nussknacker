@@ -123,7 +123,19 @@ Use autocompletion to explore available options. To read more see [Documentation
                         title={t(
                             "editors.jsonTemplateEditor.infoText",
                             `You are using a json-template-based input, allowing json with embedded expressions. \n 
-Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
+\n
+Embed expression with \`#{ }\`, e.g., \n
+\`\`\`\n
+{\n
+  "name": "#{ #input.name }",
+  "age": #{ #input.age }
+  #{ #input.secondName ?: ', "secondName": "' + #input.secondName + '"' }
+}\n
+\`\`\`\n
+You can use more complex types such as records and lists. To make sure that the produces json will be a valid json, use \`#CONV.toJsonValue(#complexType)\` helper function.\n
+\n
+When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`.\n
+\n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                         )}
                     />

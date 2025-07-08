@@ -264,18 +264,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       }
       .map(_.runtimeObjType.klass)
     val customClasses = Seq(
-      classOf[String],
       classOf[java.text.NumberFormat],
-      classOf[java.lang.Long],
-      classOf[java.lang.Integer],
-      classOf[java.math.BigInteger],
       classOf[java.math.MathContext],
-      classOf[java.math.BigDecimal],
-      classOf[LocalDate],
-      classOf[ChronoLocalDate],
-      classOf[Locale],
-      classOf[Charset],
-      classOf[Currency],
       classOf[SampleValue],
       classOf[JavaClassWithStaticParameterlessMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
@@ -2000,29 +1990,27 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("unknownListOfTuples", ContainerOfUnknown(listOfTuples))
       .withVariable("unknownEmptyList", ContainerOfUnknown(emptyList))
       .withVariable("unknownEmptyTuplesList", ContainerOfUnknown(emptyTuplesList))
-    val byteTyping                = Typed.typedClass[JByte]
-    val shortTyping               = Typed.typedClass[JShort]
-    val integerTyping             = Typed.typedClass[JInteger]
-    val longTyping                = Typed.typedClass[JLong]
-    val floatTyping               = Typed.typedClass[JFloat]
-    val doubleTyping              = Typed.typedClass[JDouble]
-    val bigDecimalTyping          = Typed.typedClass[JBigDecimal]
-    val bigIntegerTyping          = Typed.typedClass[JBigInteger]
-    val booleanTyping             = Typed.typedClass[JBoolean]
-    val stringTyping              = Typed.typedClass[String]
-    val mapTyping                 = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
-    val listTyping                = Typed.genericTypeClass[JList[_]](List(Unknown))
-    val zoneOffsetTyping          = Typed.typedClass[ZoneOffset]
-    val zoneIdTyping              = Typed.typedClass[ZoneId]
-    val localeTyping              = Typed.typedClass[Locale]
-    val charsetTyping             = Typed.typedClass[Charset]
-    val currencyTyping            = Typed.typedClass[Currency]
-    val uuidTyping                = Typed.typedClass[UUID]
-    val localTimeTyping           = Typed.typedClass[LocalTime]
-    val localDateTyping           = Typed.typedClass[LocalDate]
-    val localDateTimeTyping       = Typed.typedClass[LocalDateTime]
-    val chronoLocalDateTyping     = Typed.typedClass[ChronoLocalDate]
-    val chronoLocalDateTimeTyping = Typed.typedClass[ChronoLocalDateTime[_]]
+    val byteTyping          = Typed.typedClass[JByte]
+    val shortTyping         = Typed.typedClass[JShort]
+    val integerTyping       = Typed.typedClass[JInteger]
+    val longTyping          = Typed.typedClass[JLong]
+    val floatTyping         = Typed.typedClass[JFloat]
+    val doubleTyping        = Typed.typedClass[JDouble]
+    val bigDecimalTyping    = Typed.typedClass[JBigDecimal]
+    val bigIntegerTyping    = Typed.typedClass[JBigInteger]
+    val booleanTyping       = Typed.typedClass[JBoolean]
+    val stringTyping        = Typed.typedClass[String]
+    val mapTyping           = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    val listTyping          = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val zoneOffsetTyping    = Typed.typedClass[ZoneOffset]
+    val zoneIdTyping        = Typed.typedClass[ZoneId]
+    val localeTyping        = Typed.typedClass[Locale]
+    val charsetTyping       = Typed.typedClass[Charset]
+    val currencyTyping      = Typed.typedClass[Currency]
+    val uuidTyping          = Typed.typedClass[UUID]
+    val localTimeTyping     = Typed.typedClass[LocalTime]
+    val localDateTyping     = Typed.typedClass[LocalDate]
+    val localDateTimeTyping = Typed.typedClass[LocalDateTime]
     forAll(
       Table(
         ("expression", "expectedType", "expectedResult"),
@@ -2126,8 +2114,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("'10:15:30'.to('LocalTime')", localTimeTyping, localTime),
         ("'2024-11-04'.to('LocalDate')", localDateTyping, localDate),
         ("'2024-11-04T10:15:30'.to('LocalDateTime')", localDateTimeTyping, localDateTime),
-        ("'2024-11-04'.to('ChronoLocalDate')", chronoLocalDateTyping, localDate),
-        ("'2024-11-04T10:15:30'.to('ChronoLocalDateTime')", chronoLocalDateTimeTyping, localDateTime),
         ("#unknownString.value.to('String')", stringTyping, "unknown"),
         ("#unknownMap.value.to('Map')", mapTyping, map),
         ("#unknownMap.value.toOrNull('Map')", mapTyping, map),

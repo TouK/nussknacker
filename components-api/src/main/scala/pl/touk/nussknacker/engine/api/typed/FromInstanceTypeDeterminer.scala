@@ -6,12 +6,19 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Defa
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.{genericTypeClass, typedListWithElementValues}
 
+import java.nio.charset.Charset
+import java.time.{ZoneId, ZoneOffset}
 import scala.jdk.CollectionConverters._
 
-object FromInstanceTypeDeterminer {
+object FromInstanceTypeDeterminer extends FromInstanceTypeDeterminer
+
+trait FromInstanceTypeDeterminer {
+
+  protected val highPriorityTypeDeterminer: PartialFunction[Any, TypingResult] = PartialFunction.empty
 
   def fromInstance(obj: Any): TypingResult = {
     obj match {
+      case _ if highPriorityTypeDeterminer.isDefinedAt(obj) => highPriorityTypeDeterminer(obj)
       case null =>
         TypedNull
       case map: Map[String @unchecked, _] =>
@@ -35,13 +42,23 @@ object FromInstanceTypeDeterminer {
       case other =>
         Typed(other.getClass) match {
           case typedClass: TypedClass =>
+            val adjustedType = replaceWithGenericTypeIfNeeded(typedClass)
             ToJsonEncoder.default.encode(other) match {
-              case Valid(_)   => TypedObjectWithValue(typedClass, other)
-              case Invalid(_) => typedClass
+              case Valid(_)   => TypedObjectWithValue(adjustedType, other)
+              case Invalid(_) => adjustedType
             }
           case notTypedClass => notTypedClass
         }
     }
+  }
+
+  // We don't want to present very specific types such as ZoneRegion or sun.nio.cs.UTF_8
+  private def replaceWithGenericTypeIfNeeded(typedClass: TypedClass) = {
+    if (classOf[ZoneId].isAssignableFrom(typedClass.klass) && !classOf[ZoneOffset].isAssignableFrom(typedClass.klass))
+      Typed.typedClass[ZoneId]
+    else if (classOf[Charset].isAssignableFrom(typedClass.klass))
+      Typed.typedClass[Charset]
+    else typedClass
   }
 
   private def typeMapFields(iterable: Iterable[(String, Any)]) = iterable.map { case (k, v) =>
