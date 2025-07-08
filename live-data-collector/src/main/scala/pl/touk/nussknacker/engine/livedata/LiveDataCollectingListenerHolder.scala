@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.livedata
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.deployment.DeploymentId
+import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
 
 import java.time.Clock
 import java.util.UUID
@@ -20,19 +22,38 @@ object LiveDataCollectingListenerHolder {
       .build[String, LiveDataCollectingListenerStorage]()
 
   def createListenerFor(
-      processName: ProcessName,
+      processIdWithName: ProcessIdWithName,
+      deploymentId: DeploymentId,
+      config: Option[LiveDataUploaderConfig],
       maxNumberOfRecords: Int,
       throughputTimeWindowInSeconds: Int,
   ): LiveDataCollectingListener = {
-    cleanResults(processName)
-    new LiveDataCollectingListener(processName, maxNumberOfRecords, throughputTimeWindowInSeconds)
+    cleanResults(processIdWithName.name)
+    new LiveDataCollectingListener(
+      processIdWithName,
+      deploymentId,
+      config,
+      maxNumberOfRecords,
+      throughputTimeWindowInSeconds
+    )
   }
 
   def getLiveDataPreview(processName: ProcessName): Option[CollectedLiveData] = {
     Option(listenerStorages.getIfPresent(processName.value)).map(_.getLiveData)
   }
 
-  private[livedata] def storage(
+  private[livedata] def performStorageOperation(
+      processIdWithName: ProcessIdWithName,
+      deploymentId: DeploymentId,
+      config: Option[LiveDataUploaderConfig],
+      maxNumberOfRecords: Int,
+      throughputTimeWindowInSeconds: Int,
+  )(f: LiveDataCollectingListenerStorage => Unit): Unit = {
+    f(storage(processIdWithName.name, maxNumberOfRecords, throughputTimeWindowInSeconds))
+    config.foreach(LiveDataUploaderHolder.getExistingOrStartLiveDataUploader(processIdWithName, deploymentId, _))
+  }
+
+  private def storage(
       processName: ProcessName,
       maxNumberOfRecords: Int,
       throughputTimeWindowInSeconds: Int,
@@ -43,6 +64,12 @@ object LiveDataCollectingListenerHolder {
         new LiveDataCollectingListenerStorage(maxNumberOfRecords, throughputTimeWindowInSeconds)
       )
     )
+  }
+
+  private[livedata] def storageOpt(
+      processName: ProcessName,
+  ): Option[LiveDataCollectingListenerStorage] = {
+    Option(listenerStorages.getIfPresent(processName.value))
   }
 
   // We want to store and present the live data from the most recent deployment:
