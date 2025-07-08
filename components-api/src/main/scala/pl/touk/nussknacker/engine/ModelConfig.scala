@@ -56,6 +56,7 @@ object ModelConfig {
       //  The db configuration is therefore provided separately for live data synchronization mechanism
       final case class DesignerDb(
           uploadIntervalInSeconds: Int,
+          uploaderInactivityTimeoutInSeconds: Int,
           url: String,
           user: String,
           password: String,
@@ -105,7 +106,9 @@ object ModelConfig {
           config.getString("liveDataPreview.storage.type").toUpperCase match {
             case "DESIGNER_DB" =>
               LiveDataStorage.DesignerDb(
-                uploadIntervalInSeconds = config.getInt("liveDataPreview.storage.uploadIntervalInSeconds"),
+                uploadIntervalInSeconds = config.getOrElse("liveDataPreview.storage.uploadIntervalInSeconds", 1),
+                uploaderInactivityTimeoutInSeconds =
+                  config.getOrElse("liveDataPreview.storage.uploaderInactivityTimeoutInSeconds", 300),
                 url = config.getString("liveDataPreview.storage.url"),
                 user = config.getString("liveDataPreview.storage.user"),
                 password = config.getString("liveDataPreview.storage.password"),

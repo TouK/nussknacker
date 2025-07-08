@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.livedata
 import io.circe.syntax.EncoderOps
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.time.Instant
@@ -67,15 +67,14 @@ private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
   private def prepareConnection(): Unit = {
     if (connection != null) connection.close()
     connection = DriverManager.getConnection(config.dbUrl, config.dbUser, config.dbPassword)
-    connection.setSchema(config.dbSchema)
   }
 
   private def prepareStatement(): Unit = {
     if (statement != null) statement.close()
     statement = if (config.dbUrl.startsWith("jdbc:postgresql:")) {
       connection.prepareStatement(
-        """
-          |INSERT INTO live_data (scenario_id, deployment_id, collector_id, live_data, updated_at)
+        s"""
+          |INSERT INTO ${config.dbSchema}.live_data (scenario_id, deployment_id, collector_id, live_data, updated_at)
           |VALUES (?, ?, ?, ?, ?)
           |ON CONFLICT (scenario_id, deployment_id, collector_id) DO UPDATE
           |SET live_data = EXCLUDED.live_data, updated_at = EXCLUDED.updated_at
@@ -103,7 +102,7 @@ private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
       collectedLiveData: CollectedLiveData
   ): Unit = {
     statement.setLong(1, processIdWithName.id.value)
-    statement.setString(2, deploymentId.value)
+    statement.setObject(2, deploymentId.value)
     statement.setString(3, LiveDataCollectingListenerHolder.id.toString)
     statement.setString(4, collectedLiveData.asJson.noSpaces)
     statement.setLong(5, Instant.now.getEpochSecond)
@@ -116,6 +115,7 @@ object LiveDataUploader {
 
   final case class LiveDataUploaderConfig(
       intervalSeconds: Int,
+      uploaderInactivityTimeoutInSeconds: Int,
       dbUrl: String,
       dbUser: String,
       dbPassword: String,

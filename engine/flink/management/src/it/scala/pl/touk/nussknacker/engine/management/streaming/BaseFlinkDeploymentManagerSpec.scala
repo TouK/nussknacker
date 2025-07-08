@@ -82,7 +82,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
 
     LiveDataCollectingListenerHolder.createListenerFor(
       processIdWithName = ProcessIdWithName(processId, processName),
-      deploymentId = deploymentId,
+      deploymentIdOpt = None,
       config = None,
       maxNumberOfRecords = 20,
       throughputTimeWindowInSeconds = 60

@@ -103,7 +103,7 @@ class ScenarioLiveDataApiHttpServiceSpec
       val exampleScenario = createExampleScenario()
       val listener = LiveDataCollectingListenerHolder.createListenerFor(
         processIdWithName = ProcessIdWithName(ProcessId(1), exampleScenario.name),
-        deploymentId = DeploymentId("test-deployment-id"),
+        deploymentIdOpt = None,
         config = None,
         maxNumberOfRecords = 10,
         throughputTimeWindowInSeconds = 10

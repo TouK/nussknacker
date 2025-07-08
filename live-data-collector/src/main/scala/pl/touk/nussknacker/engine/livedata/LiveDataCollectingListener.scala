@@ -4,8 +4,8 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testmode.TestInterpreterRunner
 
 import java.time.Instant
@@ -15,7 +15,7 @@ import scala.util.Try
 // The actual data is stored in the LiveDataCollectingListenerHolder, and all instances of LiveDataCollectingListener can access the data.
 class LiveDataCollectingListener private[livedata] (
     processIdWithName: ProcessIdWithName,
-    deploymentId: DeploymentId,
+    deploymentId: Option[DeploymentId],
     config: Option[LiveDataUploaderConfig],
     maxNumberOfRecords: Int,
     throughputTimeWindowInSeconds: Int,

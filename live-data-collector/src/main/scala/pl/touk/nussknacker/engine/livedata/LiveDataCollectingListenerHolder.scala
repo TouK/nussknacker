@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.livedata
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 
 import java.time.Clock
 import java.util.UUID
@@ -23,7 +23,8 @@ object LiveDataCollectingListenerHolder {
 
   def createListenerFor(
       processIdWithName: ProcessIdWithName,
-      deploymentId: DeploymentId,
+      // todo: option can be removed, when we fully migrate to newdeployment.DeploymentId
+      deploymentIdOpt: Option[DeploymentId],
       config: Option[LiveDataUploaderConfig],
       maxNumberOfRecords: Int,
       throughputTimeWindowInSeconds: Int,
@@ -31,7 +32,7 @@ object LiveDataCollectingListenerHolder {
     cleanResults(processIdWithName.name)
     new LiveDataCollectingListener(
       processIdWithName,
-      deploymentId,
+      deploymentIdOpt,
       config,
       maxNumberOfRecords,
       throughputTimeWindowInSeconds
@@ -44,7 +45,7 @@ object LiveDataCollectingListenerHolder {
 
   private[livedata] def performStorageOperation(
       processIdWithName: ProcessIdWithName,
-      deploymentId: DeploymentId,
+      deploymentId: Option[DeploymentId],
       config: Option[LiveDataUploaderConfig],
       maxNumberOfRecords: Int,
       throughputTimeWindowInSeconds: Int,

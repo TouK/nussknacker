@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.livedata
 import com.github.benmanes.caffeine.cache.Caffeine
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 
 import java.time.Instant
 import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFuture, TimeUnit}
@@ -25,16 +25,23 @@ private[livedata] object LiveDataUploaderHolder {
 
   def getExistingOrStartLiveDataUploader(
       processIdWithName: ProcessIdWithName,
-      deploymentId: DeploymentId,
+      deploymentIdOpt: Option[DeploymentId],
       config: LiveDataUploaderConfig,
   ): Unit = {
-    activeUploaders.get(
-      CacheKey(processIdWithName, deploymentId),
-      asJavaFunction((cacheKey: CacheKey) => {
-        startPeriodicLiveDataUploader(cacheKey.processIdWithName, cacheKey.deploymentId, config)
-        ""
-      })
-    )
+    deploymentIdOpt match {
+      case Some(deploymentId) =>
+        activeUploaders.get(
+          CacheKey(processIdWithName, deploymentId),
+          asJavaFunction((cacheKey: CacheKey) => {
+            startPeriodicLiveDataUploader(cacheKey.processIdWithName, cacheKey.deploymentId, config)
+            ""
+          })
+        )
+      case None =>
+        logger.error(
+          "Live data uploader cannot be started, because the DeploymentId is not defined or has non-UUID underlying value"
+        )
+    }
   }
 
   def startPeriodicLiveDataUploader(
@@ -51,14 +58,14 @@ private[livedata] object LiveDataUploaderHolder {
       LiveDataCollectingListenerHolder
         .storageOpt(processIdWithName.name)
         .foreach { storage =>
-          // Arbitrary interval - if there are no new events for 5 minutes, then uploader is stopped.
-          // It will be started again when there is a new event.
-          val shouldStop = storage.getLastUpdatedAt < Instant.now.getEpochSecond - 300
+          val shouldStop =
+            storage.getLastUpdatedAt < Instant.now.getEpochSecond - config.uploaderInactivityTimeoutInSeconds
           if (shouldStop) {
             logger.info(s"Stopping live data uploader for scenario $processIdWithName because of inactivity")
             scheduledTask.foreach(_.cancel(true))
             scheduler.shutdownNow()
             activeUploaders.invalidate(CacheKey(processIdWithName, deploymentId))
+            uploader.close()
           } else {
             uploader.uploadLiveData(
               processIdWithName = processIdWithName,
