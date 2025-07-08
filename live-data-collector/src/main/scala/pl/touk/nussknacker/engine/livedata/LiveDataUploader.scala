@@ -74,7 +74,7 @@ private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
     statement = if (config.dbUrl.startsWith("jdbc:postgresql:")) {
       connection.prepareStatement(
         s"""
-          |INSERT INTO ${config.dbSchema}.live_data (scenario_id, deployment_id, collector_id, live_data, updated_at)
+          |INSERT INTO "${config.dbSchema}"."live_data" (scenario_id, deployment_id, collector_id, live_data, updated_at)
           |VALUES (?, ?, ?, ?, ?)
           |ON CONFLICT (scenario_id, deployment_id, collector_id) DO UPDATE
           |SET live_data = EXCLUDED.live_data, updated_at = EXCLUDED.updated_at
