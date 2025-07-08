@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityId
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -16,7 +17,7 @@ trait LiveDataEntityFactory extends BaseEntityFactory {
 
     def scenarioId: Rep[ProcessId] = column[ProcessId]("scenario_id")
 
-    def deploymentId: Rep[String] = column[String]("deployment_id")
+    def deploymentId: Rep[ScenarioActivityId] = column[ScenarioActivityId]("deployment_id")
 
     def collectorId: Rep[String] = column[String]("collector_id")
 
@@ -39,7 +40,7 @@ trait LiveDataEntityFactory extends BaseEntityFactory {
 
 final case class LiveDataEntityData(
     scenarioId: ProcessId,
-    deploymentId: String,
+    deploymentId: ScenarioActivityId,
     collectorId: String,
     liveData: Option[String],
     updatedAt: Long,

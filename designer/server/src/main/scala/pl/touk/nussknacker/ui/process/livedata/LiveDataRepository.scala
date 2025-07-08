@@ -4,6 +4,7 @@ import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.db.DbRef
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityId
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata._
 import pl.touk.nussknacker.engine.livedata.CollectedLiveData._
@@ -108,7 +109,7 @@ object DbLiveDataRepository {
 
   final case class StoredLivedDataDetails(
       timestamp: Long,
-      deploymentId: String,
+      deploymentId: ScenarioActivityId,
       collectorId: String,
   )
 

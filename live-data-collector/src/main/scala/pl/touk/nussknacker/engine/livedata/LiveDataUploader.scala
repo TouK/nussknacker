@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.livedata
 import io.circe.syntax.EncoderOps
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.time.Instant
@@ -103,7 +103,7 @@ private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
       collectedLiveData: CollectedLiveData
   ): Unit = {
     statement.setLong(1, processIdWithName.id.value)
-    statement.setString(2, deploymentId.value)
+    statement.setObject(2, deploymentId.value)
     statement.setString(3, LiveDataCollectingListenerHolder.id.toString)
     statement.setString(4, collectedLiveData.asJson.noSpaces)
     statement.setLong(5, Instant.now.getEpochSecond)

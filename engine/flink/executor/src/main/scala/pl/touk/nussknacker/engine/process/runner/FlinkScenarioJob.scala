@@ -65,7 +65,7 @@ class FlinkScenarioJob(modelData: ModelData) {
         Some(
           LiveDataCollectingListenerHolder.createListenerFor(
             ProcessIdWithName(processVersion.processId, processVersion.processName),
-            deploymentData.deploymentId,
+            deploymentData.deploymentId.toNewDeploymentIdOpt,
             liveDataUploaderConfigOpt,
             maxNumberOfSamples,
             throughputTimeWindowInSeconds
