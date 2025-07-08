@@ -7,7 +7,6 @@ import { useDebounce } from "rooks";
 import { editNode, nodeValidationDynamicParametersLoaded } from "../../../../actions/nk";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import { useUserSettings } from "../../../../common/userSettings";
-import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import type { Edge, NodeType } from "../../../../types";
 import type { Scenario } from "../../../Process/types";
@@ -16,10 +15,6 @@ import type { EditedNode } from "../IdField";
 import { applyIdFromFakeName } from "../IdField";
 import type { NodeDetailsMeta } from "./NodeDetails";
 import { useEditState } from "./useEditState";
-
-export function mergeQuery(changes: Record<string, string[]>) {
-    return replaceSearchQuery((current) => ({ ...current, ...changes }));
-}
 
 export type EditState = "idle" | "processing" | "pending" | "error";
 export type NodeState = {
@@ -31,6 +26,7 @@ export type NodeState = {
     performNodeEdit: (editedNode: EditedNode, outputEdges: Edge[]) => Promise<void>;
     isTouched: boolean;
     editState: EditState;
+    editStateRef: React.RefObject<EditState>;
 };
 
 export function getEdgesForNode(scenario: Scenario, node: NodeType) {
@@ -70,13 +66,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         setNodeId(node.id);
         setEditedNodeWithDebounce(node);
     }, [editStateRef, node, setEditedNodeWithDebounce]);
-
-    useEffect(() => {
-        mergeQuery(parseWindowsQueryParams({ nodeId: nodeId }));
-        return () => {
-            mergeQuery(parseWindowsQueryParams({}, { nodeId: nodeId }));
-        };
-    }, [nodeId]);
 
     useEffect(() => {
         setOutputEdges((currentOutputEdges) => {
@@ -163,5 +152,6 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         performNodeEdit,
         isTouched,
         editState: status,
+        editStateRef,
     };
 }

@@ -29,7 +29,6 @@ export function fetchVisualizationData(processName: ProcessName, onSuccess: () =
                 dispatch({ type: "CORRECT_INVALID_SCENARIO", processDefinitionData });
             });
             dispatch(loadProcessToolbarsConfiguration(name));
-            dispatch(displayTestCapabilities(name, scenario.scenarioGraph));
             HttpService.validateProcess(name, name, scenario.scenarioGraph).then(({ data }) =>
                 dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
             );
