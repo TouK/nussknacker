@@ -34,7 +34,6 @@ const MockExpressionParameter: UIParameter = {
     additionalVariables: {},
     branchParam: false,
     defaultValue: { expression: "", language: "spel" },
-    editor: { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
     editors: [{ type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR }, { type: EditorType.SPEL_PARAMETER_EDITOR }],
     label: "",
     name: MOCK_EXPRESSION_PARAMETER_NAME,
@@ -83,7 +82,8 @@ function MockExpressionField(props: Props): JSX.Element {
     return (
         <ExpressionTestResults fieldName={MOCK_EXPRESSION_PARAMETER_NAME} resultsToShow={testResultsState.testResultsToShow}>
             <EditableEditor
-                param={MockExpressionParameter}
+                editors={MockExpressionParameter.editors}
+                paramType={MockExpressionParameter.typ}
                 renderFieldLabel={renderMockExpressionParameterLabel}
                 fieldLabel={"unused"}
                 expressionObj={mockExpression}
