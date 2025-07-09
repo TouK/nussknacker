@@ -3,8 +3,8 @@ import type React from "react";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type { Graph } from "./Graph";
 import NodeUtils from "./NodeUtils";
 import { Events } from "./types";

@@ -4,7 +4,7 @@ import { ActionCreators as UndoActionCreators } from "redux-undo";
 import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
-import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
