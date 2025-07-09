@@ -82,8 +82,8 @@ trait KafkaUtils extends LazyLogging {
 
   def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
     val props: Properties = new Properties
-    props.put("key.serializer", classOf[ByteArraySerializer])
-    props.put("value.serializer", classOf[ByteArraySerializer])
+    props.put("key.serializer", classOf[ByteArraySerializer].getName)
+    props.put("value.serializer", classOf[ByteArraySerializer].getName)
     setClientId(props, clientId)
     withPropertiesFromConfig(props, config)
   }
@@ -102,8 +102,8 @@ trait KafkaUtils extends LazyLogging {
 
   def toConsumerProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
     val props = new Properties()
-    props.put("value.deserializer", classOf[ByteArrayDeserializer])
-    props.put("key.deserializer", classOf[ByteArrayDeserializer])
+    props.put("value.deserializer", classOf[ByteArrayDeserializer].getName)
+    props.put("key.deserializer", classOf[ByteArrayDeserializer].getName)
     groupId.foreach(props.setProperty("group.id", _))
     withPropertiesFromConfig(props, config)
   }
