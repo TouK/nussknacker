@@ -257,7 +257,7 @@ describe("Fragment", () => {
                     });
             });
 
-            cy.getNode("@fragmentName").trigger("dblclick");
+            cy.openNodeWindow("@fragmentName");
 
             cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find("[role=tab]").contains("fixed values");
             cy.get('[title="name_string_fixed"]').siblings().eq(0).contains("#meta.processName");
@@ -295,7 +295,7 @@ describe("Fragment", () => {
                     },
                 });
 
-            cy.getNode("sendSms").trigger("dblclick");
+            cy.openNodeWindow("sendSms");
             cy.intercept("POST", "/api/nodes/*/validation", (request) => {
                 if (request.body.nodeData.ref?.parameters[0]?.expression.expression == "#fragmentResult.") {
                     request.alias = "validation";
@@ -342,18 +342,19 @@ describe("Fragment", () => {
             cy.get("@window").should("not.exist");
 
             // Verify if Frontend received correct data after save
-            cy.getNode("@fragmentName").trigger("dblclick");
+            cy.openNodeWindow("@fragmentName");
             cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB()");
             cy.get("@window").get("[title='test5']").should("not.exist");
 
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
+            cy.get("@window").should("not.exist");
 
             cy.visitProcess("@fragmentName");
 
             // Provide new parameter to the fragment input
-            cy.getNode("input").trigger("dblclick");
+            cy.openNodeWindow("input");
             cy.get("@window").should("be.visible").contains("+").click();
             cy.get("[data-testid='fieldsRow:9']").find("[placeholder='Field name']").type("test5");
             cy.get("@window")
@@ -369,7 +370,7 @@ describe("Fragment", () => {
             cy.go(-1);
 
             // Verify existing fragment after properties change
-            cy.getNode("@fragmentName").trigger("dblclick");
+            cy.openNodeWindow("@fragmentName");
             cy.get("@window").get("[title='name_value_string_any_value']").get("[role=tab]").contains("expression").click();
 
             cy.get("@window").get("[title='test5']").should("exist");

@@ -14,6 +14,7 @@ import { Graph } from "./Graph";
 import { GraphStyledWrapper } from "./graphStyledWrapper";
 import { NodeDescriptionPopover } from "./NodeDescriptionPopover";
 import type { GraphProps } from "./types";
+import { usePortMagnetToggle } from "./usePortMagnetToggle";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
@@ -29,6 +30,8 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const { trackEvent } = useEventTracking();
     const graphRef = useRef<Graph>();
     const ref = useForkRef(graphRef, forwardedRef);
+
+    usePortMagnetToggle(graphRef);
 
     return (
         <>

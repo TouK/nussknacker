@@ -27,7 +27,7 @@ export function ScenarioNameItem() {
             <PanelScenarioDetailsIcon title={getProcessingModeVariantName(scenario.processingMode)}>
                 <ProcessingModeIcon />
             </PanelScenarioDetailsIcon>
-            <Stack direction="row" sx={{ overflow: "hidden", alignItems: "baseline" }}>
+            <Stack direction="row" sx={{ overflow: "hidden", alignItems: "baseline" }} spacing={0.5}>
                 {isRenamePending ? (
                     <ProcessRename variant={"subtitle2"} title={scenario.name}>
                         {unsavedNewName}*

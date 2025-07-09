@@ -32,4 +32,15 @@ describe("Creator toolbar", () => {
         cy.get("@toolbar").find("input").type("var");
         cy.get("@toolbar").matchImage();
     });
+
+    it("should display tooltip when tool is truncated", () => {
+        const componentWithTooltip = "Kafka Transaction No Test Timestamp Assigner";
+        const componentWithoutTooltip = "Kafka Transaction";
+
+        cy.get(`[data-testid="component:${componentWithTooltip}"]`).realMouseDown();
+        cy.contains('[role="tooltip"]', componentWithTooltip).should("be.visible");
+
+        cy.get(`[data-testid="component:${componentWithoutTooltip}"]`).realMouseDown();
+        cy.contains('[role="tooltip"]').should("not.exist");
+    });
 });
