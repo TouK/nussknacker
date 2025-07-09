@@ -79,6 +79,12 @@ export const ParametersListField = (props: Props) => {
         );
     }
 
+    const displaySendRequestButton =
+        paramWithIndex.param.name === "Data sample" &&
+        node.type === "Source" &&
+        node.id === "HTTP Endpoint" &&
+        settings["node.showSendRequestButton"];
+
     return (
         <>
             <ParameterExpressionField
@@ -86,7 +92,7 @@ export const ParametersListField = (props: Props) => {
                 parameter={paramWithIndex.param}
                 {...props}
             />
-            {paramWithIndex.param.name === "Data sample" && settings["node.showSendRequestButton"] && (
+            {displaySendRequestButton && (
                 <Box display={"flex"} justifyContent={"flex-end"}>
                     <SendRequestButton
                         disabled={getValidationErrorsForField(props.errors, paramWithIndex.param.name).length > 0 || !isRunning}
