@@ -262,7 +262,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                  = "1.20.1"
+val flinkV                  = "1.20.2"
 val flinkConnectorKafkaV    = "3.3.0-1.20" // 3.4.0-1.20 breaks compilation with Scala 2.12
 val jdbcFlinkConnectorV     = "3.3.0-1.20"
 val flinkCommonsCompressV   = "1.26.0"
@@ -347,7 +347,7 @@ val retryV                    = "0.3.6"
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
   Seq(
-    "pl.touk" %% "flink-scala" % "1.1.3"
+    "pl.touk" %% "flink-scala" % "1.1.4"
   ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
