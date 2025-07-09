@@ -19,6 +19,7 @@ import type { UserSettings } from "../../reducers/userSettings";
 import type { Edge, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import type { Scenario } from "../Process/types";
+import { globalEventBus } from "../toolbars/creator/globalEventBus";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
@@ -184,6 +185,7 @@ export class Graph extends React.Component<Props> {
             el: this.getEspGraphRef(),
             validateConnection: this.twoWayValidateConnection,
             cellViewNamespace: nuGraphNamespace,
+            linkPinning: true,
             validateMagnet: this.validateMagnet,
             interactive: (cellView: dia.CellView) => {
                 const { model } = cellView;
@@ -739,6 +741,18 @@ export class Graph extends React.Component<Props> {
             })
             .on(Events.LINK_DISCONNECT, ({ model }) => {
                 this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to);
+            })
+            .on(Events.CELL_POINTERUP, (cellView, event, x, y) => {
+                const link = cellView.model;
+                if (link.isLink()) {
+                    const source = link.get("source");
+                    const target = link.get("target");
+                    if (!source.id || !target.id) {
+                        globalEventBus.emit("creatorSearchFocus");
+                        console.log(link.attributes.edgeData, x, y);
+                        // link.remove();
+                    }
+                }
             });
     }
 

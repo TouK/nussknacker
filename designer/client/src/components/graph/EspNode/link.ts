@@ -124,6 +124,7 @@ export function getDefaultLinkCreator(
                     processDefinition,
                     scenarioGraph,
                 });
+                link.prop("edgeData", edge);
                 link.labels(makeLabels(theme, NodeUtils.edgeLabel(edge)));
             } else {
                 link.labels([]);

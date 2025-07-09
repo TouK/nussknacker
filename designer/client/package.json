@@ -45,6 +45,7 @@
         "mockdate": "3.0.5",
         "moment": "2.29.4",
         "moment-duration-format": "2.3.2",
+        "nanoevents": "9.1.0",
         "nanoid": "3.2.0",
         "prop-types": "15.8.1",
         "query-string": "7.1.0",

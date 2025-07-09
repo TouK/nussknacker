@@ -1,20 +1,25 @@
 import type { ModuleUrl } from "@touk/federated-component";
 import { isEmpty } from "lodash";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { toggleToolbar } from "../../../actions/nk/toolbars";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import { getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { RemoteComponent } from "../../RemoteComponent";
+import { useSidePanel } from "../../sidePanels/SidePanelsContext";
 import { SearchIcon } from "../../table/SearchFilter";
+import type { Focusable } from "../../themed/InputWithIcon";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { globalEventBus } from "./globalEventBus";
 import ToolBox from "./ToolBox";
 
 type CreatorPanelProps = ToolbarPanelProps & {
@@ -48,12 +53,26 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             dispatch(getAdditionalComponents());
         }
     }, [dispatch, isCloud, settings]);
+    const searchRef = useRef<Focusable>();
+    const toolbarsConfigId = useSelector(getToolbarsConfigId);
+    const sidePanel = useSidePanel();
+
+    useEffect(() => {
+        return globalEventBus.on("creatorSearchFocus", () => {
+            if (!sidePanel.isOpened) {
+                sidePanel.toggleCollapse();
+            }
+            dispatch(toggleToolbar(props.id, toolbarsConfigId, false));
+            searchRef.current?.focus();
+        });
+    }, [dispatch, props.id, sidePanel, toolbarsConfigId]);
 
     const { componentGroups } = useSelector(getProcessDefinitionData);
 
     return (
-        <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")}>
+        <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")} onExpand={() => searchRef.current?.focus()}>
             <SearchInputWithIcon
+                ref={searchRef}
                 onChange={setFilter}
                 onClear={clearFilter}
                 value={filter}
