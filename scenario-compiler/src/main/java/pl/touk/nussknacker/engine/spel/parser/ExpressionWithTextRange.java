@@ -13,7 +13,7 @@ public interface ExpressionWithTextRange {
 
     IndexBasedTextRange getTextRange();
 
-    static ExpressionWithTextRange forSingleExpression(Expression expression, int length) {
+    static SingleExpressionWithTextRange forSingleExpression(Expression expression, int length) {
         return new SingleExpressionWithTextRange(expression, new IndexBasedTextRange(0, length));
     }
 

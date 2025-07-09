@@ -20,7 +20,7 @@ public class CompositeExpressionsWithTextRanges implements ExpressionWithTextRan
     }
 
     public Optional<SingleExpressionWithTextRange> findSubexpressionByPosition(int position) {
-        return Arrays.stream(childExpressionsWithTextRanges).filter(e -> e.getTextRange().start() <= position && position <= e.getTextRange().end()).findFirst();
+        return Arrays.stream(childExpressionsWithTextRanges).filter(e -> e.getTextRange().containsPosition(position)).findFirst();
     }
 
     public Expression getExpression() {

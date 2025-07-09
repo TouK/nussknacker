@@ -16,7 +16,11 @@ public class SingleExpressionWithTextRange implements ExpressionWithTextRange {
 
     @Override
     public Optional<SingleExpressionWithTextRange> findSubexpressionByPosition(int position) {
-        return Optional.of(this);
+        if (textRange.containsPosition(position)) {
+            return Optional.of(this);
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override

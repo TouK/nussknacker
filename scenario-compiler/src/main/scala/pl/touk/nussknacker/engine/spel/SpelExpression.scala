@@ -254,7 +254,7 @@ class SpelExpressionParser(
       parseSpelExpressionUsingImmediateCompileConfiguration(original)
         .andThen { parsed =>
           validator
-            .validate(parsed, ctx, expectedType)
+            .validate(parsed, ctx, expectedType, flavour)
             .map((_, parsed))
             .leftMap(_.map(_.toParseError(original)))
         }

@@ -75,13 +75,7 @@ public class NuSpelExpressionParser {
 
         SingleExpressionWithTextRange[] expressions = parseExpressions(expressionString, context);
         if (expressions.length == 1) {
-            SingleExpressionWithTextRange singleExpression = expressions[0];
-            if (singleExpression.getExpression() instanceof LiteralExpression || singleExpression.getExpression() instanceof CompositeStringExpression) {
-                return singleExpression;
-            } else {
-                // HERE is another difference. In some cases, Spring returns another expression's type than StringExpression (SpelExpression) for the template context, we fix it by this trick
-                return ExpressionWithTextRange.forSingleExpression(new CompositeStringExpression(expressionString, new Expression[]{singleExpression.getExpression()}), expressionString.length());
-            }
+            return expressions[0];
         } else {
             return ExpressionWithTextRange.forCompositeStringExpression(expressionString, expressions);
         }
@@ -250,6 +244,7 @@ public class NuSpelExpressionParser {
         return pos;
     }
 
+    // It returns AST nodes with position local to spel expression
     protected Expression doParseExpression(String expressionString) throws ParseException {
         return underlyingParser.parseRaw(expressionString);
     }

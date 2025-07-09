@@ -6,6 +6,10 @@ case class IndexBasedTextRange(start: Int, end: Int) {
 
   def shiftRight(delta: Int): IndexBasedTextRange = IndexBasedTextRange(start + delta, end + delta)
 
+  def containsPosition(position: Int): Boolean = {
+    start <= position && position <= end
+  }
+
   def toCoordinatesBasedTextRange(expression: String): CoordinatesBasedTextRange = {
     def computeTextCoordinates(text: String): TextCoordinates =
       TextCoordinates(
