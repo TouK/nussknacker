@@ -27,7 +27,7 @@ type Props = {
     readOnly?: boolean;
     isMarked?: boolean;
     param?: ParamType;
-    defaultValue: ExpressionObj | string;
+    defaultValue?: ExpressionObj | string;
 };
 
 export const JsonEditor: SimpleEditor<Props> = ({
