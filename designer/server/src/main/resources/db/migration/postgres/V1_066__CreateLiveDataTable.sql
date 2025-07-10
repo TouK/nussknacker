@@ -8,4 +8,4 @@ CREATE UNLOGGED TABLE "live_data"
 );
 
 ALTER TABLE "live_data"
-    ADD CONSTRAINT pk_live_data PRIMARY KEY ("scenario_id", "deployment_id", "collector_id")
+    ADD CONSTRAINT live_data_pk PRIMARY KEY ("scenario_id", "deployment_id", "collector_id")
