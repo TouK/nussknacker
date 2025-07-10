@@ -41,9 +41,8 @@ object ComponentAdditionalConfigConverter {
 
     ParameterConfig(
       defaultValue = paramAdditionalConfig.initialValue.map {
-        case ParameterInitialValue.AnyValue(expression) => expression
-        case ParameterInitialValue.FixedValue(expression) =>
-          Expression.dictKeyWithLabel(expression.expression, Some(expression.label))
+        case ParameterInitialValue.AnyValue(expression)   => expression
+        case ParameterInitialValue.FixedValue(expression) => Expression.spel(expression.expression)
       },
       editors = paramAdditionalConfig.valueEditor.flatMap(editor =>
         ValueEditorValidator
