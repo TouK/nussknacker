@@ -35,6 +35,7 @@ export default function ScenarioProperty(props: Props) {
     return (
         <EditableEditor
             editors={[propertyConfig.editor]}
+            defaultValue={propertyConfig.defaultValue}
             fieldLabel={propertyConfig.label || propertyName}
             onValueChange={onValueChange}
             expressionObj={expressionObj}

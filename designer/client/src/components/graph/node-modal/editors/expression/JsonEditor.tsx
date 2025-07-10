@@ -27,6 +27,7 @@ type Props = {
     readOnly?: boolean;
     isMarked?: boolean;
     param?: ParamType;
+    defaultValue: ExpressionObj | string;
 };
 
 export const JsonEditor: SimpleEditor<Props> = ({
@@ -37,7 +38,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
     showValidation,
     readOnly,
     isMarked,
-    param,
+    defaultValue,
 }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
     const { annotations, markers, hasRangeText, setAnnotationsOnLoad } = useAceEditorRangeMessages(fieldErrors);
@@ -54,7 +55,8 @@ export const JsonEditor: SimpleEditor<Props> = ({
     const THEME = "nussknacker";
 
     const InputAdornmentEnd = useMemo(() => {
-        const defaultValue = typeof param?.defaultValue === "string" ? param?.defaultValue : param?.defaultValue?.expression; // defaultValue can be a string in case of Properties
+        const defaultValueObject =
+            typeof defaultValue === "string" ? { expression: defaultValue, language: ExpressionLang.JSON } : defaultValue; // defaultValue can be a string in case of Properties
         const defaultValueIsDifferentThanCurrentValue = defaultValue !== value;
         const showResetToDefaultButton = defaultValue && defaultValueIsDifferentThanCurrentValue;
 
@@ -62,8 +64,8 @@ export const JsonEditor: SimpleEditor<Props> = ({
             return;
         }
 
-        return <ResetToDefaultButton language={ExpressionLang.JSON} defaultValue={defaultValue} handleChange={onChange} />;
-    }, [onChange, param?.defaultValue, value]);
+        return <ResetToDefaultButton defaultValue={defaultValueObject} handleChange={onChange} />;
+    }, [defaultValue, onChange, value]);
 
     return (
         <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>

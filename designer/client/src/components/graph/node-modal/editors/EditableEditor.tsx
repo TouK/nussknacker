@@ -1,5 +1,6 @@
 import { cx } from "@emotion/css";
 import { Box, FormControl, FormLabel } from "@mui/material";
+import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { forwardRef, useMemo } from "react";
 
@@ -32,12 +33,16 @@ interface Props {
     validationLabelInfo?: ReactNode;
     placeholder?: string;
     endAdornment?: ReactNode;
+    defaultValue?: ExpressionObj | string;
 }
 
 export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, editors, paramType, fieldErrors = [], validationLabelInfo } = props;
 
-    const availableEditors: Editor[] = useMemo((): Editor[] => editors || [{ type: EditorType.SPEL_PARAMETER_EDITOR }], [editors]);
+    const availableEditors: Editor[] = useMemo(
+        (): Editor[] => (isEmpty(editors) ? [{ type: EditorType.SPEL_PARAMETER_EDITOR }] : editors),
+        [editors],
+    );
 
     const formatter = useMemo(
         () => (expressionObj?.language === ExpressionLang.SpEL ? spelFormatters[paramType?.refClazzName] : null),

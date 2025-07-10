@@ -32,7 +32,7 @@ export type SpelEditorProps = {
     placeholder?: string;
     language?: ExpressionLang;
     infoText?: string;
-    param?: ParamType;
+    defaultValue?: ExpressionObj;
 };
 
 const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
@@ -52,7 +52,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
         editorMode,
         placeholder,
         language = editorsParameters.SpelParameterEditor.language,
-        param,
+        defaultValue,
     } = props;
 
     const handleChange = useCallback(
@@ -112,8 +112,7 @@ Use autocompletion to explore available options. To read more see [Documentation
         }
 
         if (editorMode === EditorMode.JsonTemplate && !readOnly) {
-            const defaultValue = param?.defaultValue?.expression;
-            const defaultValueIsDifferentThanCurrentValue = defaultValue !== props.expressionObj.expression;
+            const defaultValueIsDifferentThanCurrentValue = defaultValue.expression !== props.expressionObj.expression;
             const showResetToDefaultButton = defaultValue && defaultValueIsDifferentThanCurrentValue;
 
             properties.placeholder = placeholder || t("editors.jsonTemplateEditor.placeholder", 'e.g. { "key": "#{ #input.value }" }');
@@ -127,13 +126,7 @@ Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When acc
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                         )}
                     />
-                    {showResetToDefaultButton && (
-                        <ResetToDefaultButton
-                            language={ExpressionLang.JsonTemplate}
-                            defaultValue={defaultValue}
-                            handleChange={handleChange}
-                        />
-                    )}
+                    {showResetToDefaultButton && <ResetToDefaultButton defaultValue={defaultValue} handleChange={handleChange} />}
                 </Box>
             );
         }
@@ -154,7 +147,7 @@ Use autocompletion to explore available options. To read more see [Documentation
         expressionObj.language,
         placeholder,
         t,
-        param?.defaultValue?.expression,
+        defaultValue,
         props.expressionObj.expression,
     ]);
 

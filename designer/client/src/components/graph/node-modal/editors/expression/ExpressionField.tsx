@@ -71,6 +71,7 @@ function ExpressionField(props: Props): JSX.Element {
                 fieldLabel={fieldLabel}
                 editors={editors}
                 paramType={parameterDefinition?.typ}
+                defaultValue={parameterDefinition?.defaultValue}
                 expressionObj={expressionObj}
                 renderFieldLabel={renderFieldLabel}
                 isMarked={isMarked(exprTextPath)}
@@ -90,6 +91,7 @@ function ExpressionField(props: Props): JSX.Element {
             <EditableEditor
                 editors={editors}
                 paramType={parameterDefinition?.typ}
+                defaultValue={parameterDefinition?.defaultValue}
                 renderFieldLabel={renderFieldLabel}
                 fieldLabel={fieldLabel}
                 expressionObj={expressionObj}

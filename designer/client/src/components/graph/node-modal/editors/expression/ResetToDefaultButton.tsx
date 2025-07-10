@@ -6,15 +6,14 @@ import { useSelector } from "react-redux";
 
 import { SyntaxHighlighter } from "../../../../../common/SyntaxHighlighter";
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import type { ExpressionLang } from "./types";
+import type { ExpressionObj } from "./types";
 
 interface Props {
-    defaultValue: string;
-    language: ExpressionLang;
+    defaultValue: ExpressionObj;
     handleChange: (expression: string) => void;
 }
 
-export const ResetToDefaultButton = ({ defaultValue, language, handleChange }: Props) => {
+export const ResetToDefaultButton = ({ defaultValue, handleChange }: Props) => {
     const userSettings = useSelector(getUserSettings);
     const showResetToDefaultButton = userSettings["editor.showResetToDefaultButton"];
 
@@ -30,7 +29,7 @@ export const ResetToDefaultButton = ({ defaultValue, language, handleChange }: P
     };
 
     const handleApply = () => {
-        handleChange(defaultValue);
+        handleChange(defaultValue.expression);
         handleClose();
     };
 
@@ -56,8 +55,11 @@ export const ResetToDefaultButton = ({ defaultValue, language, handleChange }: P
                     <Typography variant="subtitle1" gutterBottom>
                         {t("resetToDefault.header", "Reset to default value")}
                     </Typography>
-                    <SyntaxHighlighter language={language} customStyle={{ margin: 0, maxHeight: 300, maxWidth: 600, overflowY: "auto" }}>
-                        {defaultValue}
+                    <SyntaxHighlighter
+                        language={defaultValue.language}
+                        customStyle={{ margin: 0, maxHeight: 300, maxWidth: 600, overflowY: "auto" }}
+                    >
+                        {defaultValue.expression}
                     </SyntaxHighlighter>
                     <Button variant="contained" size="small" onClick={handleApply} sx={{ mt: 2 }}>
                         {t("resetToDefault.button", "Apply Default Values")}
