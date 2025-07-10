@@ -6,6 +6,7 @@ import type ProcessUtils from "../../../common/ProcessUtils";
 import type { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import { IdField } from "./IdField";
+import { findParameters } from "./NodeDetailsContent/helpers";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
 
@@ -46,7 +47,7 @@ export const SourceSinkCommon = ({
                 errors={errors}
             />
             <ParametersListAdvanced
-                parameters={node.ref.parameters}
+                parameters={findParameters(node)}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 showSwitch={showSwitch}

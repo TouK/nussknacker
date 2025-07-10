@@ -9,7 +9,7 @@ import { DisableField } from "./DisableField";
 import MockExpressionField from "./editors/expression/MockExpressionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
-import { serviceParameters } from "./NodeDetailsContent/helpers";
+import { findParameters } from "./NodeDetailsContent/helpers";
 import { NodeField } from "./NodeField";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -52,7 +52,7 @@ export function EnricherProcessor({
                 errors={errors}
             />
             <ParametersListAdvanced
-                parameters={serviceParameters(node)}
+                parameters={findParameters(node)}
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
