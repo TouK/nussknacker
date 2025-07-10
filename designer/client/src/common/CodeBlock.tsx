@@ -1,9 +1,12 @@
-import { darken, Typography } from "@mui/material";
-import { styled } from "@mui/material";
+import { darken, Stack, styled, Typography } from "@mui/material";
 import type { JSX } from "react";
-import React from "react";
+import React, { useMemo } from "react";
 
+import { SANITIZED_PASSWORD_TAG_NAME } from "../components/graph/node-modal/MarkdownStyled";
+import { useTextSanitizer } from "../components/graph/node-modal/useTextSanitizer";
 import { CopyIconButton, useCopyClipboard } from "./copyToClipboard";
+import { ShowPasswordsButton } from "./copyToClipboard/ShowPasswordsButton";
+import { InlineButtonsWrapper } from "./InlineButtonsWrapper";
 import { SyntaxHighlighter } from "./SyntaxHighlighter";
 
 type NodePosition = {
@@ -48,24 +51,42 @@ export const CodeBlock = ({ className, children, node }: Props) => {
     const singleLineCode = start.line === end.line;
     const match = /language-(\w+)/.exec(className || "");
     const language = match?.[1] || "text";
+    const text = useMemo(() => (typeof children !== "string" ? "" : children), [children]);
+
+    const { visible, setVisible, sanitize } = useTextSanitizer();
+
+    const sanitizedMatches = useMemo(() => {
+        const tagName = SANITIZED_PASSWORD_TAG_NAME;
+        const re = new RegExp(`<${tagName}>(.*)</${tagName}>`, "g");
+        return [...text.matchAll(re)];
+    }, [text]);
+
+    const sanitizedText = useMemo(() => {
+        return sanitizedMatches.reduce((text, [search, password]) => text.replace(search, sanitize(password)), text);
+    }, [sanitizedMatches, sanitize, text]);
+
     const [isCopied, copy] = useCopyClipboard();
+    const handleCopy = () => copy(sanitizedText);
 
-    const handleCopy = () => {
-        if (typeof children === "string") {
-            copy(children);
-        }
-    };
-
+    const buttons = (
+        <>
+            {sanitizedMatches.length > 0 ? <ShowPasswordsButton onClick={() => setVisible((v) => !v)} visible={visible} /> : null}
+            <CopyIconButton onClick={handleCopy} isCopied={isCopied} />
+        </>
+    );
     return singleLineCode ? (
-        <StyledSingleLineBlock>{children}</StyledSingleLineBlock>
+        <>
+            <StyledSingleLineBlock>{sanitizedText}</StyledSingleLineBlock>
+            <InlineButtonsWrapper>{buttons}</InlineButtonsWrapper>
+        </>
     ) : (
         <CodeBlockContainer>
             <CodeBlockHeader>
                 <LanguageLabel>{language}</LanguageLabel>
-                <CopyIconButton onClick={handleCopy} isCopied={isCopied} />
+                <Stack direction="row">{buttons}</Stack>
             </CodeBlockHeader>
             <SyntaxHighlighter language={language} customStyle={{ margin: 0 }}>
-                {typeof children === "string" && children}
+                {sanitizedText}
             </SyntaxHighlighter>
         </CodeBlockContainer>
     );
