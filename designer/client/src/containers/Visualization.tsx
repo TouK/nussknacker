@@ -18,6 +18,7 @@ import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
+import { getProcessDefinitionData } from "../reducers/selectors/getProcessDefinitionData";
 import {
     getProcessVersionId,
     getScenario,
@@ -28,7 +29,6 @@ import {
     isPristine,
 } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
-import { getProcessDefinitionData } from "../reducers/selectors/processDefinitionData";
 import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";

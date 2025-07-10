@@ -1,7 +1,7 @@
 import { debounce } from "lodash";
 
 import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
-import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/selectors";
+import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
 import type { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, TypingResult, UIParameter, VariableTypes } from "../../types";

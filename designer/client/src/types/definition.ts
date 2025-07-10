@@ -58,6 +58,7 @@ export interface UIParameter {
     label: string;
     category?: ParameterCategory;
     changesCanReloadParameters?: boolean;
+    nonImportantForExecution?: boolean;
 }
 
 export enum ParameterCategory {

@@ -8,6 +8,7 @@ import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { isAggregate } from "./isAggregate";
+import { findParameters } from "./NodeDetailsContent/helpers";
 import { NodeField } from "./NodeField";
 import { ParametersListAdvanced } from "./parametersListAdvanced";
 import type { SetProperty } from "./useNodeTypeDetailsContentLogic";
@@ -72,7 +73,7 @@ export function CustomNode({
             )}
             {children}
             <ParametersComponent
-                parameters={node.parameters}
+                parameters={findParameters(node)}
                 showSwitch={showSwitch}
                 findAvailableVariables={findAvailableVariables}
                 parameterDefinitions={parameterDefinitions}
