@@ -17,7 +17,7 @@ private[livedata] object LiveDataUploaderHolder {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  // todo: This object will not be shared between Flink jobs, because each scenario has its own isolated memory area and classloader
+  // todo: The LiveDataUploaderHolder object will not be shared between Flink jobs, because each scenario has its own isolated memory area and classloader
   //       In future we might want to create a Flink lib that will contain this part of code and uploaders shared between scenarios.
   private val activePeriodicLiveDataUploaders = Caffeine.newBuilder().build[CacheKey, Stoppable]()
 
