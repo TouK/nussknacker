@@ -56,8 +56,7 @@ export const CodeBlock = ({ className, children, node }: Props) => {
     const { visible, setVisible, sanitize } = useTextSanitizer();
 
     const sanitizedMatches = useMemo(() => {
-        const tagName = SANITIZED_PASSWORD_TAG_NAME;
-        const re = new RegExp(`<${tagName}>(.*)</${tagName}>`, "g");
+        const re = new RegExp(`<${SANITIZED_PASSWORD_TAG_NAME}>(.*)</${SANITIZED_PASSWORD_TAG_NAME}>`, "g");
         return [...text.matchAll(re)];
     }, [text]);
 
