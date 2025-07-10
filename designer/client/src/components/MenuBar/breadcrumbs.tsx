@@ -29,10 +29,10 @@ export const Breadcrumbs = () => {
 
     const breadcrumbs = useMemo(() => {
         const basicBreadcrumbs = [
-            <Typography key="environmentTag" variant="body2">
+            <Typography component="div" key="environmentTag" variant="body2">
                 <EnvironmentTag />
             </Typography>,
-            <Typography key="scenarios" variant="body2">
+            <Typography component="div" key="scenarios" variant="body2">
                 <Box component={NavLink} color="inherit" to={ScenariosBasePath} sx={{ fontWeight: "bold" }}>
                     Scenarios
                 </Box>

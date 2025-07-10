@@ -165,7 +165,6 @@ const defaults = (theme: Theme) =>
                     in: {
                         position: { name: `top`, args: { dx: 90 } },
                         attrs: {
-                            magnet: "passive",
                             type: "input",
                             z: 1,
                         },
