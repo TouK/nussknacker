@@ -19,8 +19,8 @@ package pl.touk.nussknacker.engine.spel.parser;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ParseException;
 import org.springframework.expression.ParserContext;
-import org.springframework.expression.common.CompositeStringExpression;
 import org.springframework.expression.common.LiteralExpression;
+import org.springframework.expression.spel.SpelParseException;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
@@ -63,14 +63,16 @@ public class NuSpelExpressionParser {
         if (context != null && context.isTemplate()) {
             return parseTemplate(expressionString, context);
         } else {
-            return ExpressionWithTextRange.forSingleExpression(doParseExpression(expressionString), expressionString.length());
+            IndexBasedTextRange textRange = new IndexBasedTextRange(0, expressionString.length());
+            return ExpressionWithTextRange.forSingleExpression(doParseExpression(expressionString, textRange), textRange);
         }
     }
 
 
     private ExpressionWithTextRange parseTemplate(String expressionString, ParserContext context) throws ParseException {
         if (expressionString.isEmpty()) {
-            return ExpressionWithTextRange.forSingleExpression(new LiteralExpression(""), 0);
+            IndexBasedTextRange textRange = new IndexBasedTextRange(0, 0);
+            return ExpressionWithTextRange.forSingleExpression(new LiteralExpression(""), textRange);
         }
 
         SingleExpressionWithTextRange[] expressions = parseExpressions(expressionString, context);
@@ -136,7 +138,8 @@ public class NuSpelExpressionParser {
                             "No expression defined within delimiter '" + prefix + suffix +
                                     "' at character " + prefixIndex);
                 }
-                expressions.add(new SingleExpressionWithTextRange(doParseExpression(exprStripBoth), new IndexBasedTextRange(prefixIndex + prefix.length() + leadingWhitespaces, suffixIndex - trailingWhitespaces)));
+                IndexBasedTextRange textRange = new IndexBasedTextRange(prefixIndex + prefix.length() + leadingWhitespaces, suffixIndex - trailingWhitespaces);
+                expressions.add(new SingleExpressionWithTextRange(doParseExpression(exprStripBoth, textRange), textRange));
                 startIdx = suffixIndex + suffix.length();
             } else {
                 // no more ${expressions} found in string, add rest as static text
@@ -245,8 +248,28 @@ public class NuSpelExpressionParser {
     }
 
     // It returns AST nodes with position local to spel expression
-    protected Expression doParseExpression(String expressionString) throws ParseException {
-        return underlyingParser.parseRaw(expressionString);
+    private Expression doParseExpression(String expressionString, IndexBasedTextRange expressionTextRange) throws ParseException {
+        try {
+            return underlyingParser.parseRaw(expressionString);
+        } catch (ParseException exception) {
+            throw adjustErrorPosition(exception, expressionTextRange);
+        }
+    }
+
+    private ParseException adjustErrorPosition(ParseException exception, IndexBasedTextRange expressionTextRange) {
+        int adjustedPosition = exception.getPosition() + expressionTextRange.start();
+        if (exception instanceof SpelParseException) {
+            SpelParseException spelEx = (SpelParseException) exception;
+            if (spelEx.getCause() == null) {
+                return new SpelParseException(spelEx.getExpressionString(), adjustedPosition, spelEx.getMessageCode(), spelEx.getInserts());
+            } else {
+                return new SpelParseException(adjustedPosition, spelEx.getCause(), spelEx.getMessageCode(), spelEx.getInserts());
+            }
+        } else if (exception.getCause() == null) {
+            return new ParseException(exception.getExpressionString(), adjustedPosition, exception.getMessage());
+        } else {
+            return new ParseException(adjustedPosition, exception.getMessage(), exception.getCause());
+        }
     }
 
 

@@ -1264,6 +1264,28 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String]("#{'raz'},#{12345}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
   }
 
+  test("return correct error location when parsing expression with template context") {
+    parse[String]("ala #{.}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            _,
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{".length && end == "ala #{.".length =>
+    }
+  }
+
+  test("return correct error location when typing expression with template context") {
+    parse[String](
+      "#{ #notExisting }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(
+            _,
+            CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0))
+          ) :: Nil if start == "#{ ".length && end == "#{ #notExisting".length =>
+    }
+  }
+
   test("evaluates expression with template context") {
     parse[TemplateEvaluationResult]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
