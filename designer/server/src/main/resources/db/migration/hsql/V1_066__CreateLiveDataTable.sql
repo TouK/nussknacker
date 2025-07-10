@@ -8,4 +8,4 @@ CREATE TABLE "live_data"
 );
 
 ALTER TABLE "live_data"
-    ADD CONSTRAINT pk_scenario_activity_collector_ids PRIMARY KEY ("scenario_id", "deployment_id", "collector_id")
+    ADD CONSTRAINT pk_live_data PRIMARY KEY ("scenario_id", "deployment_id", "collector_id")
