@@ -17,7 +17,7 @@ private[livedata] object LiveDataUploaderHolder {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  private val activePeriodicLiveDataUploaders = Caffeine.newBuilder().build[CacheKey, () => Unit]()
+  private val activePeriodicLiveDataUploaders = Caffeine.newBuilder().build[CacheKey, Stoppable]()
 
   def ensureLiveDataUploaderIsActive(
       processIdWithName: ProcessIdWithName,
@@ -47,7 +47,7 @@ private[livedata] object LiveDataUploaderHolder {
       processIdWithName: ProcessIdWithName,
       deploymentId: DeploymentId,
       config: LiveDataUploaderConfig,
-  ): () => Unit = {
+  ): Stoppable = {
     val uploader                                  = new LiveDataUploader(config)
     val scheduler: ScheduledExecutorService       = Executors.newSingleThreadScheduledExecutor(threadFactory)
     var scheduledTask: Option[ScheduledFuture[_]] = None
@@ -87,7 +87,7 @@ private[livedata] object LiveDataUploaderHolder {
     scheduledTask = Some(
       scheduler.scheduleAtFixedRate(() => uploadLiveData(), 0, config.intervalSeconds, TimeUnit.SECONDS)
     )
-    stopPeriodicLiveDataUpload
+    () => stopPeriodicLiveDataUpload()
   }
 
   private def tryAndLog(action: => Unit, errorMessage: String): Unit = {
@@ -99,9 +99,13 @@ private[livedata] object LiveDataUploaderHolder {
       deploymentId: DeploymentId,
   )
 
+  private trait Stoppable {
+    def stop(): Unit
+  }
+
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
-      activePeriodicLiveDataUploaders.asMap().asScala.foreach { case (_, stop) => stop() }
+      activePeriodicLiveDataUploaders.asMap().asScala.foreach { case (_, stoppable) => stoppable.stop() }
       activePeriodicLiveDataUploaders.invalidateAll()
     }
   })
