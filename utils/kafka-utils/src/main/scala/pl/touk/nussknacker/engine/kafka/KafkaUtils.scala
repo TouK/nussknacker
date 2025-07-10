@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.KafkaClient
+import org.apache.kafka.clients.{CommonClientConfigs, KafkaClient}
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
-import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer.{Callback, Producer, ProducerConfig, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.process.TopicName
@@ -29,7 +29,7 @@ trait KafkaUtils extends LazyLogging {
   val defaultTimeoutMillis = 10000
 
   def setClientId(props: Properties, id: String): Unit = {
-    props.setProperty("client.id", sanitizeClientId(id))
+    props.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, sanitizeClientId(id))
   }
 
   def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
@@ -72,8 +72,8 @@ trait KafkaUtils extends LazyLogging {
 
   def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
     val props: Properties = new Properties
-    props.put("key.serializer", classOf[ByteArraySerializer])
-    props.put("value.serializer", classOf[ByteArraySerializer])
+    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
+    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[ByteArraySerializer].getName)
     setClientId(props, clientId)
     withPropertiesFromConfig(props, config)
   }
@@ -92,8 +92,8 @@ trait KafkaUtils extends LazyLogging {
 
   def toConsumerProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
     val props = new Properties()
-    props.put("value.deserializer", classOf[ByteArrayDeserializer])
-    props.put("key.deserializer", classOf[ByteArrayDeserializer])
+    props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[ByteArrayDeserializer].getName)
+    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[ByteArrayDeserializer].getName)
     groupId.foreach(props.setProperty("group.id", _))
     withPropertiesFromConfig(props, config)
   }
@@ -194,9 +194,11 @@ trait KafkaUtils extends LazyLogging {
   def sendToKafkaWithTempProducer(
       record: ProducerRecord[Array[Byte], Array[Byte]]
   )(kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]): Future[RecordMetadata] = {
-    // returned future is completed, as this method flushes producer cache
-    Using.resource(kafkaProducerCreator.createProducer("temp-" + record.topic())) { producer =>
-      sendToKafka(record)(producer)
+    ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
+      // returned future is completed, as this method flushes producer cache
+      Using.resource(kafkaProducerCreator.createProducer("temp-" + record.topic())) { producer =>
+        sendToKafka(record)(producer)
+      }
     }
   }
 

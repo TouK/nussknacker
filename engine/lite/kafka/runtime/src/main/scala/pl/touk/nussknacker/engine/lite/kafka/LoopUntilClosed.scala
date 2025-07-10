@@ -7,6 +7,7 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
 import pl.touk.nussknacker.engine.lite.TaskStatus
 import pl.touk.nussknacker.engine.lite.TaskStatus.{DuringDeploy, Restarting, Running, TaskStatus}
+import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, MetricsProviderForScenario}
 
 import java.util.concurrent.{Executors, TimeUnit}
@@ -58,7 +59,9 @@ class TaskRunner(
     val ecForRunningTasks = ExecutionContext.fromExecutor(threadPool)
     tasks.map { task =>
       Future {
-        task.run()
+        ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+          task.run()
+        }
       }(ecForRunningTasks)
     }
   }
