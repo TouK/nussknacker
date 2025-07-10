@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.livedata
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
@@ -9,32 +10,26 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import java.time.Instant
 import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFuture, TimeUnit}
 import scala.compat.java8.FunctionConverters.asJavaFunction
+import scala.jdk.CollectionConverters.mapAsScalaConcurrentMapConverter
+import scala.util.Try
 
 private[livedata] object LiveDataUploaderHolder {
 
-  private val activeUploaders =
-    Caffeine
-      .newBuilder()
-      .expireAfterAccess(java.time.Duration.ofHours(1))
-      .build[
-        CacheKey,
-        String
-      ]() // Should be [(ProcessIdWithName, DeploymentId), Unit], but Scala 2.12 does not accept tuples and Unit
-
   private val logger = LoggerFactory.getLogger(getClass)
 
-  def getExistingOrStartLiveDataUploader(
+  private val activePeriodicLiveDataUploaders = Caffeine.newBuilder().build[CacheKey, () => Unit]()
+
+  def ensureLiveDataUploaderIsActive(
       processIdWithName: ProcessIdWithName,
       deploymentIdOpt: Option[DeploymentId],
       config: LiveDataUploaderConfig,
   ): Unit = {
     deploymentIdOpt match {
       case Some(deploymentId) =>
-        activeUploaders.get(
+        activePeriodicLiveDataUploaders.get(
           CacheKey(processIdWithName, deploymentId),
-          asJavaFunction((cacheKey: CacheKey) => {
-            startPeriodicLiveDataUploader(cacheKey.processIdWithName, cacheKey.deploymentId, config)
-            ""
+          asJavaFunction((key: CacheKey) => {
+            startPeriodicLiveDataUploader(key.processIdWithName, key.deploymentId, config)
           })
         )
       case None =>
@@ -44,43 +39,71 @@ private[livedata] object LiveDataUploaderHolder {
     }
   }
 
-  def startPeriodicLiveDataUploader(
+  private lazy val threadFactory = new BasicThreadFactory.Builder()
+    .namingPattern(s"periodic-live-data-uploader")
+    .build()
+
+  private def startPeriodicLiveDataUploader(
       processIdWithName: ProcessIdWithName,
       deploymentId: DeploymentId,
       config: LiveDataUploaderConfig,
-  ): Unit = {
-    logger.info(s"Starting live data uploader for scenario $processIdWithName with interval ${config.intervalSeconds}s")
+  ): () => Unit = {
     val uploader                                  = new LiveDataUploader(config)
-    val scheduler: ScheduledExecutorService       = Executors.newSingleThreadScheduledExecutor()
+    val scheduler: ScheduledExecutorService       = Executors.newSingleThreadScheduledExecutor(threadFactory)
     var scheduledTask: Option[ScheduledFuture[_]] = None
 
     def uploadLiveData(): Unit = {
-      LiveDataCollectingListenerHolder
-        .storageOpt(processIdWithName.name)
-        .foreach { storage =>
+      logger.debug(logMessage("Periodic live data upload triggered"))
+      LiveDataCollectingListenerHolder.storageOpt(processIdWithName.name) match {
+        case Some(storage) =>
           val shouldStop =
             storage.getLastUpdatedAt < Instant.now.getEpochSecond - config.uploaderInactivityTimeoutInSeconds
           if (shouldStop) {
-            logger.info(s"Stopping live data uploader for scenario $processIdWithName because of inactivity")
-            scheduledTask.foreach(_.cancel(true))
-            scheduler.shutdownNow()
-            activeUploaders.invalidate(CacheKey(processIdWithName, deploymentId))
-            uploader.close()
+            logger.info(logMessage("Stopping live data uploader because of inactivity"))
+            stopPeriodicLiveDataUpload()
           } else {
+            logger.debug(logMessage("Uploading live data"))
             uploader.uploadLiveData(
               processIdWithName = processIdWithName,
               deploymentId = deploymentId,
               collectedLiveData = storage.getLiveData
             )
           }
-        }
+        case None =>
+          logger.error(logMessage("There are no live data to upload"))
+      }
     }
 
+    def stopPeriodicLiveDataUpload(): Unit = {
+      tryAndLog(scheduledTask.foreach(_.cancel(true)), logMessage("Error when cancelling live data periodic upload"))
+      tryAndLog(scheduler.shutdownNow(), logMessage("Error when shutting down live data uploader periodic upload"))
+      tryAndLog(uploader.close(), logMessage("Error when closing live data uploader"))
+      activePeriodicLiveDataUploaders.invalidate(CacheKey(processIdWithName, deploymentId))
+    }
+
+    def logMessage(message: String) = s"$message for scenario $processIdWithName with deploymentId=$deploymentId"
+
+    logger.info(logMessage(s"Starting live data uploader with interval ${config.intervalSeconds}s on a new thread"))
     scheduledTask = Some(
       scheduler.scheduleAtFixedRate(() => uploadLiveData(), 0, config.intervalSeconds, TimeUnit.SECONDS)
     )
+    stopPeriodicLiveDataUpload
   }
 
-  private final case class CacheKey(processIdWithName: ProcessIdWithName, deploymentId: DeploymentId)
+  private def tryAndLog(action: => Unit, errorMessage: String): Unit = {
+    Try(action).recover { case ex: Throwable => logger.error(errorMessage, ex) }
+  }
+
+  private final case class CacheKey(
+      processIdWithName: ProcessIdWithName,
+      deploymentId: DeploymentId,
+  )
+
+  Runtime.getRuntime.addShutdownHook(new Thread() {
+    override def run(): Unit = {
+      activePeriodicLiveDataUploaders.asMap().asScala.foreach { case (_, stop) => stop() }
+      activePeriodicLiveDataUploaders.invalidateAll()
+    }
+  })
 
 }

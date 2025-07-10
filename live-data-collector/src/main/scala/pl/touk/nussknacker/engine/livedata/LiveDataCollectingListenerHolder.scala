@@ -51,7 +51,7 @@ object LiveDataCollectingListenerHolder {
       throughputTimeWindowInSeconds: Int,
   )(f: LiveDataCollectingListenerStorage => Unit): Unit = {
     f(storage(processIdWithName.name, maxNumberOfRecords, throughputTimeWindowInSeconds))
-    config.foreach(LiveDataUploaderHolder.getExistingOrStartLiveDataUploader(processIdWithName, deploymentId, _))
+    config.foreach(LiveDataUploaderHolder.ensureLiveDataUploaderIsActive(processIdWithName, deploymentId, _))
   }
 
   private def storage(

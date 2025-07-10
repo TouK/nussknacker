@@ -38,7 +38,6 @@ private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
       prepareStatement()
     }
     doUploadLiveData(processIdWithName, deploymentId, collectedLiveData)
-    logger.debug("Uploaded scenario live data")
   }.recover { case ex => handleLiveDataUploadFailure(ex) }
 
   private def handleLiveDataUploadFailure(ex: Throwable): Unit = {
