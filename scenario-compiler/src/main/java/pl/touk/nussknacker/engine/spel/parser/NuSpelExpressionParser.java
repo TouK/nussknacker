@@ -126,13 +126,17 @@ public class NuSpelExpressionParser {
                             new IndexBasedTextRange(prefixIndex, suffixIndex + suffix.length() + 1));
                 }
                 String expr = expressionString.substring(prefixIndex + prefix.length(), suffixIndex);
-                if (expr.trim().isEmpty()) {
+                // expr.trim() replaced with this code to calculate actual start and end (without leading/trailing spaces)
+                String exprStripLeading = expr.stripLeading();
+                String exprStripBoth = exprStripLeading.stripTrailing();
+                int leadingWhitespaces = expr.length() - exprStripLeading.length();
+                int trailingWhitespaces = exprStripLeading.length() - exprStripBoth.length();
+                if (exprStripBoth.isEmpty()) {
                     throw new ExceptionWithExpressionTextRange("Empty placeholder",
                             new IndexBasedTextRange(prefixIndex, suffixIndex + suffix.length() + 1));
                 }
-                IndexBasedTextRange textRange = new IndexBasedTextRange(afterPrefixIndex, suffixIndex);
-                // We don't do trim() as it is in original version - we want to have expression text range including whitespaces
-                Expression parsedExpression = doParseExpression(expr, textRange);
+                IndexBasedTextRange textRange = new IndexBasedTextRange(prefixIndex + prefix.length() + leadingWhitespaces, suffixIndex - trailingWhitespaces);
+                Expression parsedExpression = doParseExpression(exprStripBoth, textRange);
                 expressions.add(new SingleExpressionWithTextRange(parsedExpression, textRange));
                 startIdx = suffixIndex + suffix.length();
             } else {

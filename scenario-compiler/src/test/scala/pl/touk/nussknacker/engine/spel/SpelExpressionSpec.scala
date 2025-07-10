@@ -1267,9 +1267,20 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("return correct error location when parsing expression with template context") {
     parse[String]("ala #{.}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
-            _,
+            "Unexpectedly ran out of input",
             Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
           ) :: Nil if start == "ala #{".length && end == "ala #{.".length =>
+    }
+
+    parse[String](
+      "ala #{ .foo }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "No node", // TODO This is an internal, spel message, it is not human-readable, we should find all places where it is used, understand the context and replace it with better message
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ .foo".length =>
     }
   }
 
