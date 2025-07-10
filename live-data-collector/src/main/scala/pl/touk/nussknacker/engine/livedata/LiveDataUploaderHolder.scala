@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import java.time.Instant
 import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFuture, TimeUnit}
 import scala.compat.java8.FunctionConverters.asJavaFunction
-import scala.jdk.CollectionConverters.mapAsScalaConcurrentMapConverter
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 private[livedata] object LiveDataUploaderHolder {
@@ -105,7 +105,7 @@ private[livedata] object LiveDataUploaderHolder {
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
-      activePeriodicLiveDataUploaders.asMap().asScala.foreach { case (_, stoppable) => stoppable.stop() }
+      activePeriodicLiveDataUploaders.asMap().values().asScala.foreach(_.stop())
       activePeriodicLiveDataUploaders.invalidateAll()
     }
   })
