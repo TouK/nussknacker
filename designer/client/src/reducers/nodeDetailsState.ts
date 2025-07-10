@@ -62,6 +62,8 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
             };
         }
 
+        case "CLEAR_PROCESS":
+            return {};
         default:
             return state;
     }
