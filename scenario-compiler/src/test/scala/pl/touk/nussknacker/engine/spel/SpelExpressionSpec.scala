@@ -1273,6 +1273,30 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("return correct error location when using blank placeholder in template expression") {
+    parse[String]("ala #{}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Empty placeholder",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{}".length =>
+    }
+    parse[String]("ala #{  }", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Empty placeholder",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{  }".length =>
+    }
+  }
+
+  test("return correct error location when placeholder is not finished correctly in template expression") {
+    parse[String]("ala #{ aaa", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Placeholder is not finished correctly",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{".length =>
+    }
+  }
+
   test("return correct error location when typing expression with template context") {
     parse[String](
       "#{ #notExisting }",

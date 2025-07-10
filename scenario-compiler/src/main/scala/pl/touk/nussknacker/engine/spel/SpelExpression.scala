@@ -26,7 +26,11 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SpelExpressionUnderlyingParserError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
-import pl.touk.nussknacker.engine.spel.parser.{ExpressionWithTextRange, NuSpelExpressionParser}
+import pl.touk.nussknacker.engine.spel.parser.{
+  ExceptionWithExpressionTextRange,
+  ExpressionWithTextRange,
+  NuSpelExpressionParser
+}
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
@@ -279,9 +283,14 @@ class SpelExpressionParser(
     Validated
       .catchNonFatal(immediateCompileParser.parseExpression(original, flavour.parserContext.orNull))
       .leftMap { ex =>
-        val textRangeOpt = Option(ex).collect { case ex: ParseException =>
-          IndexBasedTextRange(ex.getPosition, ex.getPosition + 1).toCoordinatesBasedTextRange(original)
-        }
+        val textRangeOpt = Option(ex)
+          .collect {
+            case ex: ExceptionWithExpressionTextRange =>
+              ex.getExpressionTextRange
+            case ex: ParseException =>
+              IndexBasedTextRange(ex.getPosition, ex.getPosition + 1)
+          }
+          .map(_.toCoordinatesBasedTextRange(original))
         val message = Option(ex)
           .collect { case ex: SpelParseException =>
             ex.getMessageCode match {
