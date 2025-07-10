@@ -21,6 +21,7 @@ const RouterLink = ({
     to: string;
 }>) => <Link to={to}>{children}</Link>;
 
+// might look like typo, but it's on purpose - makes it more unique and less likely to run by accident.
 export const SANITIZED_PASSWORD_TAG_NAME = "sanitizd-passwrd" as const;
 
 declare global {
