@@ -204,9 +204,11 @@ trait KafkaUtils extends LazyLogging {
   def sendToKafkaWithTempProducer(
       record: ProducerRecord[Array[Byte], Array[Byte]]
   )(kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]): Future[RecordMetadata] = {
-    // returned future is completed, as this method flushes producer cache
-    Using.resource(kafkaProducerCreator.createProducer("temp-" + record.topic())) { producer =>
-      sendToKafka(record)(producer)
+    ThreadUtils.withContextClassLoader(classOf[KafkaClient].getClassLoader) {
+      // returned future is completed, as this method flushes producer cache
+      Using.resource(kafkaProducerCreator.createProducer("temp-" + record.topic())) { producer =>
+        sendToKafka(record)(producer)
+      }
     }
   }
 
