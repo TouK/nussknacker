@@ -740,6 +740,18 @@ class ExpressionSuggesterSpec
     )
   }
 
+  test("should suggest variables for spel template - basic usage") {
+    spelTemplateSuggestionsFor("#{ #in }", 0, "#{ #in".length) shouldBe List(
+      suggestion("#input", Typed[A]),
+    )
+  }
+
+  test("should suggest global variable methods for spel template") {
+    spelTemplateSuggestionsFor("#{ #util.no }", 0, "#{ #util.no".length) shouldBe List(
+      suggestion("now", Typed[LocalDateTime])
+    )
+  }
+
   test("should suggest variables for spel template with spaces around") {
     spelTemplateSuggestionsFor(
       "#{        #hello        } - #{  #AN  }",

@@ -1254,6 +1254,96 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String]("#{'raz'},#{12345}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
   }
 
+  test("return correct error location when parsing expression with template context") {
+    parse[String]("ala #{.}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Unexpectedly ran out of input",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{".length && end == "ala #{.".length =>
+    }
+
+    parse[String](
+      "ala #{ .foo }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "No node", // TODO This is an internal, spel message, it is not human-readable, we should find all places where it is used, understand the context and replace it with better message
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ .foo".length =>
+    }
+  }
+
+  test("return correct error location when using blank placeholder in template expression") {
+    parse[String]("ala #{}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Empty placeholder",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{}".length =>
+    }
+    parse[String]("ala #{  }", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Empty placeholder",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{  }".length =>
+    }
+  }
+
+  test("return correct error location when placeholder is not finished correctly in template expression") {
+    parse[String]("ala #{ aaa", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Placeholder is not finished correctly, missing closing }",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{".length =>
+    }
+  }
+
+  test("return comprehensive error message when invalid syntax is used inside placeholder") {
+    parse[String](
+      "ala #{ aaa) }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Illegal syntax: closing ')' without an opening '('",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ aaa".length && end == "ala #{ aaa)".length =>
+    }
+    parse[String](
+      "ala #{ (aaa }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Illegal syntax: unclosed '('",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ (".length =>
+    }
+    parse[String](
+      "ala #{ \" }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "String literal is not finished correctly, missing closing '\"'",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ \"".length =>
+    }
+  }
+
+  test("return correct error location when typing expression with template context") {
+    parse[String](
+      "#{ #notExisting }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(
+            _,
+            CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0))
+          ) :: Nil if start == "#{ ".length && end == "#{ #notExisting".length =>
+    }
+  }
+
   test("evaluates expression with template context") {
     parse[TemplateEvaluationResult]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)

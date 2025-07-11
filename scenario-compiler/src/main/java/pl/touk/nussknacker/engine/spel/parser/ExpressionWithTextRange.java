@@ -13,8 +13,8 @@ public interface ExpressionWithTextRange {
 
     IndexBasedTextRange getTextRange();
 
-    static ExpressionWithTextRange forSingleExpression(Expression expression, int length) {
-        return new SingleExpressionWithTextRange(expression, new IndexBasedTextRange(0, length));
+    static SingleExpressionWithTextRange forSingleExpression(Expression expression, IndexBasedTextRange textRange) {
+        return new SingleExpressionWithTextRange(expression, textRange);
     }
 
     static ExpressionWithTextRange forCompositeStringExpression(String expressionString, SingleExpressionWithTextRange[] expressionsWithTextRanges) {
