@@ -1,4 +1,6 @@
-import type { ParamType } from "../components/graph/node-modal/editors/types";
+import type { EditorMode } from "../components/graph/node-modal/editors/expression/types";
+import type { Editor} from "../components/graph/node-modal/editors/types";
+import { ParamType } from "../components/graph/node-modal/editors/types";
 import type { ComponentGroup } from "./component";
 import type { TypingResult, UIParameter } from "./definition";
 import type { Edge, EdgeType } from "./edge";
@@ -20,8 +22,15 @@ export type ProcessAdditionalFields = {
     showDescription?: boolean;
 };
 
+export interface UIScenarioProperty {
+    defaultValue?: string;
+    editor: Editor;
+    label?: string;
+    hintText?: string;
+}
+
 export interface UiScenarioProperties {
-    propertiesConfig: { [key: string]: ParamType };
+    propertiesConfig: { [key: string]: UIScenarioProperty };
     docsUrl?: string;
 }
 //"ReturnType" is builtin type alias

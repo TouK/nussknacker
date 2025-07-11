@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { nodeValidationDynamicParametersLoading, nodeValidationDynamicParametersLoaded, validateNodeData } from "../../../actions/nk";
 import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
-import { getProcessDefinitionData } from "../../../reducers/selectors/processDefinitionData";
+import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import type { Edge, NodeType, Parameter } from "../../../types";
 import { ParamFieldLabel } from "./FieldLabel";
 import type { NodeState } from "./node/useNodeState";

@@ -5,13 +5,12 @@ import type { EditorMode, EditorType } from "./expression/types";
 export type Editor = {
     type: `${EditorType}`;
     dictId?: string;
-    possibleValues?: PossibleValue;
+    possibleValues?: PossibleValue[];
 };
 
 export type ParamType = {
     name?: string;
     typ?: TypingResult;
-    editor?: Editor;
     editors?: Editor[];
     defaultValue: {
         language: EditorMode | string;

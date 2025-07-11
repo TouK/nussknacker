@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/processDefinitionData";
+import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/getProcessDefinitionData";
 import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import Input from "../../../../editors/field/Input";

@@ -6,7 +6,6 @@ import type { SpelEditorProps } from "./SpelEditor";
 import { SpelEditor } from "./SpelEditor";
 import { EditorMode } from "./types";
 
-//TODO add highlighting for opening and closing braces ('#{' and '}') in brace/mode/spelTemplate.js file
 export const SpelTemplateEditor: SimpleEditor<SpelEditorProps> = (props: SpelEditorProps) => {
     const { expressionObj, rows = 1, ...passProps } = props;
 

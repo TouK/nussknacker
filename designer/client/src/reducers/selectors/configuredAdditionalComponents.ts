@@ -1,7 +1,7 @@
 import { createSelector } from "reselect";
 
 import type { RootState } from "../index";
-import { getProcessDefinitionData } from "./processDefinitionData";
+import { getProcessDefinitionData } from "./getProcessDefinitionData";
 
 const cloudConfiguredComponents = (state: RootState) => state.cloudData?.configuredComponents;
 
