@@ -1,10 +1,14 @@
+import { produce } from "immer";
 import { get, uniq } from "lodash";
-import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
+import { useCallback, useLayoutEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import type { Align } from "react-window";
+import { useFreshRef } from "rooks";
 
+import { updateSearchQuery } from "../../../actions/nk/scenarioActivities";
 import type { NestedKeyOf } from "../../../reducers/graph/lodashWrappers";
 import { getRunningVersion } from "../../../reducers/selectors/graph";
+import { getSearchQuery } from "../../../reducers/selectors/processActivities";
 import type { Activity, UIActivity } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
 import type { ActivityAdditionalFields } from "./types";
@@ -14,11 +18,15 @@ interface Props {
     handleScrollToItem: (index: number, align: Align) => void;
     handleUpdateScenarioActivities: (activities: (activities: UIActivity[]) => UIActivity[]) => void;
 }
+
 export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpdateScenarioActivities }: Props) => {
-    const [searchQuery, setSearchQuery] = useState<string>("");
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
+
+    const searchQuery = useSelector(getSearchQuery);
     const runningVersion = useSelector(getRunningVersion);
+
+    const dispatch = useDispatch();
 
     const handleSetFoundResults = useCallback((activities: UIActivity[]) => {
         const uniqueFoundResults = uniq(activities).map((activity) => activity.uiGeneratedId);
@@ -29,26 +37,16 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
 
     const handleUpdateSearchResults = useCallback(
         (foundActivities: string[], selectedResult: number) => {
-            handleUpdateScenarioActivities((prevState) => {
-                return prevState.map((activity) => {
-                    if (activity.uiType !== "item") {
-                        return activity;
-                    }
-
-                    activity.isFound = false;
-                    activity.isActiveFound = false;
-
-                    if (foundActivities.some((foundResult) => foundResult === activity.uiGeneratedId)) {
-                        activity.isFound = true;
-                    }
-
-                    if (activity.uiGeneratedId === foundActivities[selectedResult]) {
-                        activity.isActiveFound = true;
-                    }
-
-                    return activity;
-                });
-            });
+            handleUpdateScenarioActivities(
+                produce((prevState) => {
+                    prevState.forEach((activity) => {
+                        if (activity.uiType === "item") {
+                            activity.isFound = foundActivities.some((foundResult) => foundResult === activity.uiGeneratedId);
+                            activity.isActiveFound = activity.uiGeneratedId === foundActivities[selectedResult];
+                        }
+                    });
+                }),
+            );
         },
         [handleUpdateScenarioActivities],
     );
@@ -87,23 +85,23 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
     }, [handleUpdateScenarioActivities]);
 
     const handleClearResults = useCallback(() => {
-        setSearchQuery("");
+        dispatch(updateSearchQuery(""));
         setSelectedResult(0);
         setFoundResults([]);
         handleUpdateSearchResults([], 0);
         handleCollapseAllResults();
-    }, [handleCollapseAllResults, handleUpdateSearchResults]);
+    }, [dispatch, handleCollapseAllResults, handleUpdateSearchResults]);
 
     const handleSearch = useCallback(
         (value: string) => {
+            dispatch(updateSearchQuery(value));
+        },
+        [dispatch],
+    );
+
+    const handleGetResults = useCallback(
+        (value: string) => {
             handleExpandAllResults();
-            setSearchQuery(value);
-
-            if (value === "") {
-                handleClearResults();
-                return;
-            }
-
             setSelectedResult(0);
 
             const foundActivities: UIActivity[] = [];
@@ -132,7 +130,6 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
                         (activity.type === "SCENARIO_REDEPLOYED" || activity.type === "SCENARIO_DEPLOYED");
                     if (isRunningVersion) {
                         if (parseInt(runningVersion, 10) === searchFieldValue && foundActivities.length === 0) {
-                            console.log(activity);
                             foundActivities.push(activity);
                         }
 
@@ -164,7 +161,6 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
         },
         [
             activities,
-            handleClearResults,
             handleExpandAllResults,
             handleScrollToItem,
             handleSetFoundResults,
@@ -173,6 +169,9 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
             selectedResult,
         ],
     );
+
+    // Avoid rerender depth limit exceeded error in useLayoutEffect
+    const handleGetResultsRef = useFreshRef(handleGetResults);
 
     const changeResult = (selectedResultNewValue: number) => {
         if (selectedResultNewValue < 0) {
@@ -191,6 +190,17 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
         setSelectedResult(selectedResultNewValue);
         handleUpdateSearchResults(foundResults, selectedResultNewValue);
     };
+
+    useLayoutEffect(() => {
+        if (searchQuery) {
+            handleGetResultsRef.current(searchQuery);
+        }
+
+        if (searchQuery === "") {
+            handleClearResults();
+            return;
+        }
+    }, [handleClearResults, handleGetResultsRef, searchQuery]);
 
     return { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults };
 };
