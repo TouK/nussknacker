@@ -104,7 +104,8 @@ Use autocompletion to explore available options. To read more see [Documentation
                     title={t(
                         "editors.spelTemplateEditor.infoText",
                         `You are using a string-template-based input, allowing text with embedded expressions. Text should not be quoted. \n 
-Embed expression with \`#{ }\`, e.g., \`Hello #{ #input.name }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
+Embed expression with \`#{ }\`, e.g., \`Hello #{ #input.name }\`.  \n
+When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                     )}
                 />
@@ -120,10 +121,14 @@ Use autocompletion to explore available options. To read more see [Documentation
             properties.InputAdornmentEnd = (
                 <Box display={"flex"} flexDirection={"column"} alignItems={"center"} gap={0.5} width={"1rem"}>
                     <InfoTooltip
+                        customComponentsProps={{
+                            tooltip: { sx: { maxWidth: "none" } },
+                        }}
                         title={t(
                             "editors.jsonTemplateEditor.infoText",
                             `You are using a json-template-based input, allowing json with embedded expressions. \n 
-Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
+Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. \n
+When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                         )}
                     />
