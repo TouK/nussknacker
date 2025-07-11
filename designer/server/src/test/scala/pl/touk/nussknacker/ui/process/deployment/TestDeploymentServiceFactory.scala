@@ -161,7 +161,9 @@ class TestDeploymentServiceFactory(dbRef: DbRef) {
         deploymentManagers.map { case (processingType, _) =>
           processingType -> newActionInfoService(modelData)
         }.toList: _*
-      )
+      ),
+      TestFactory.newLiveDataRepository(dbRef),
+      dbioRunner,
     )
     TestDeploymentServiceServices(
       oldApproachScenarioStatusProvider,
