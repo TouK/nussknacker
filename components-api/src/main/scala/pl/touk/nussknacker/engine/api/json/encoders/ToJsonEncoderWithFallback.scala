@@ -18,9 +18,10 @@ import io.circe.Json.{
 import pl.touk.nussknacker.engine.api.DisplayJson
 
 import java.math.BigInteger
+import java.nio.charset.Charset
 import java.time._
 import java.time.format.DateTimeFormatter
-import java.util.UUID
+import java.util.{Currency, Locale, UUID}
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
@@ -66,6 +67,16 @@ private[encoders] trait ToJsonEncoderWithFallback {
       fromString(value.toString).validNel // Duration uses ISO-8601 format by default
     case value: Period =>
       fromString(value.toString).validNel // Period uses ISO-8601 format by default
+    case value: ZoneOffset =>
+      fromString(value.toString).validNel
+    case value: ZoneId =>
+      fromString(value.toString).validNel
+    case value: Locale =>
+      fromString(value.toString).validNel
+    case value: Charset =>
+      fromString(value.toString).validNel
+    case value: Currency =>
+      fromString(value.toString).validNel
     case map: Map[_, _] =>
       encodeMap(map)
     case map: scala.collection.Map[_, _] =>

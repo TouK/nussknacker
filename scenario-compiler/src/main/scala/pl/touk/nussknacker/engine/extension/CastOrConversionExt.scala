@@ -8,26 +8,20 @@ import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, Meth
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
-import pl.touk.nussknacker.engine.extension.CastOrConversionExt.{
-  booleanClass,
-  canBeMethodName,
-  getConversion,
-  toMethodName,
-  toOrNullMethodName
-}
 import pl.touk.nussknacker.engine.extension.ExtensionMethod.SingleArg
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassesExtensions, ClassExtensions}
 
 import java.lang.{Boolean => JBoolean}
 import java.nio.charset.Charset
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time._
 import java.util.{Currency, UUID}
 import scala.util.Try
 
 // TODO: lbg - add casting methods to UTIL
 class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
+  import pl.touk.nussknacker.engine.extension.CastOrConversionExt._
+
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 
   def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod[_]] = (methodName match {
@@ -111,8 +105,11 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
     new FromStringConversion(LocalTime.parse),
     new FromStringConversion(LocalDate.parse),
     new FromStringConversion(LocalDateTime.parse),
-    new FromStringConversion[ChronoLocalDate](LocalDate.parse),
-    new FromStringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
+    new FromStringConversion(ZonedDateTime.parse),
+    new FromStringConversion(OffsetDateTime.parse),
+    new FromStringConversion(Instant.parse),
+    new FromStringConversion[Period](Period.parse),
+    new FromStringConversion[Duration](Duration.parse),
   )
 
   private val conversionsByType: Map[String, Conversion[_ >: Null <: AnyRef]] = conversionsRegistry

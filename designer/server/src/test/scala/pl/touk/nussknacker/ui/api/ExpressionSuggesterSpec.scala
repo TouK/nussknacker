@@ -24,11 +24,11 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
+import java.math.{BigDecimal => JBigDecimal, BigInteger}
 import java.nio.charset.Charset
-import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time._
 import java.util.{Currency, Locale, UUID}
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.{List, ListMap}
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
@@ -791,62 +791,67 @@ class ExpressionSuggesterSpec
   }
 
   test("should suggest parameters for casts/conversions methods on unknown") {
-    spelSuggestionsFor("#unknown.to('')", column = 13) should contain theSameElementsAs List(
-      suggestion("Duration", Typed[Duration]),
-      suggestion("LocalDateTime", Typed[LocalDateTime]),
+    spelSuggestionsFor("#unknown.to('')", column = 13) shouldBe List(
       suggestion("A", Typed[A]),
       suggestion("AA", Typed[AA]),
       suggestion("B", Typed[B]),
+      suggestion("BigDecimal", Typed[JBigDecimal]),
+      suggestion("BigInteger", Typed[BigInteger]),
+      suggestion("Boolean", Typed[Boolean]),
+      suggestion("Byte", Typed[Byte]),
       suggestion("C", Typed[C]),
-      suggestion("Util", Typed[Util]),
-      suggestion("WithList", Typed[WithList]),
-      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
-      suggestion("BigInteger", Typed[java.math.BigInteger]),
-      suggestion("Boolean", Typed[java.lang.Boolean]),
-      suggestion("Double", Typed[java.lang.Double]),
-      suggestion("Float", Typed[java.lang.Float]),
-      suggestion("Long", Typed[java.lang.Long]),
-      suggestion("Integer", Typed[java.lang.Integer]),
-      suggestion("Short", Typed[java.lang.Short]),
-      suggestion("Byte", Typed[java.lang.Byte]),
-      suggestion("String", Typed[java.lang.String]),
-      suggestion("List", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
-      suggestion("Map", Typed.genericTypeClass[java.util.Map[_, _]](List(Unknown, Unknown))),
       suggestion("Charset", Typed[Charset]),
-      suggestion("ChronoLocalDate", Typed[ChronoLocalDate]),
-      suggestion("ChronoLocalDateTime", Typed[ChronoLocalDateTime[_]]),
       suggestion("Currency", Typed[Currency]),
+      suggestion("Double", Typed[Double]),
+      suggestion("Duration", Typed[Duration]),
+      suggestion("Float", Typed[Float]),
+      suggestion("Instant", Typed[Instant]),
+      suggestion("Integer", Typed[Integer]),
+      suggestion("List", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
       suggestion("LocalDate", Typed[LocalDate]),
+      suggestion("LocalDateTime", Typed[LocalDateTime]),
       suggestion("LocalTime", Typed[LocalTime]),
       suggestion("Locale", Typed[Locale]),
+      suggestion("Long", Typed[Long]),
+      suggestion("Map", Typed.genericTypeClass[java.util.Map[_, _]](List(Unknown, Unknown))),
+      suggestion("OffsetDateTime", Typed[OffsetDateTime]),
+      suggestion("Period", Typed[Period]),
+      suggestion("Short", Typed[Short]),
+      suggestion("String", Typed[String]),
       suggestion("UUID", Typed[UUID]),
+      suggestion("Util", Typed[Util]),
+      suggestion("WithList", Typed[WithList]),
       suggestion("ZoneId", Typed[ZoneId]),
       suggestion("ZoneOffset", Typed[ZoneOffset]),
+      suggestion("ZonedDateTime", Typed[ZonedDateTime]),
     )
   }
 
   test("should suggest parameters for casts/conversions methods on string") {
-    spelSuggestionsFor("'11'.to('')", column = 9) should contain theSameElementsAs List(
-      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
-      suggestion("BigInteger", Typed[java.math.BigInteger]),
-      suggestion("Boolean", Typed[java.lang.Boolean]),
-      suggestion("Double", Typed[java.lang.Double]),
-      suggestion("Float", Typed[java.lang.Float]),
-      suggestion("Long", Typed[java.lang.Long]),
-      suggestion("Integer", Typed[java.lang.Integer]),
-      suggestion("Short", Typed[java.lang.Short]),
-      suggestion("Byte", Typed[java.lang.Byte]),
+    spelSuggestionsFor("'11'.to('')", column = 9) shouldBe List(
+      suggestion("BigDecimal", Typed[JBigDecimal]),
+      suggestion("BigInteger", Typed[BigInteger]),
+      suggestion("Boolean", Typed[Boolean]),
+      suggestion("Byte", Typed[Byte]),
       suggestion("Charset", Typed[Charset]),
-      suggestion("ChronoLocalDate", Typed[ChronoLocalDate]),
-      suggestion("ChronoLocalDateTime", Typed[ChronoLocalDateTime[_]]),
       suggestion("Currency", Typed[Currency]),
+      suggestion("Double", Typed[Double]),
+      suggestion("Duration", Typed[Duration]),
+      suggestion("Float", Typed[Float]),
+      suggestion("Instant", Typed[Instant]),
+      suggestion("Integer", Typed[Integer]),
       suggestion("LocalDate", Typed[LocalDate]),
       suggestion("LocalDateTime", Typed[LocalDateTime]),
       suggestion("LocalTime", Typed[LocalTime]),
       suggestion("Locale", Typed[Locale]),
+      suggestion("Long", Typed[Long]),
+      suggestion("OffsetDateTime", Typed[OffsetDateTime]),
+      suggestion("Period", Typed[Period]),
+      suggestion("Short", Typed[Short]),
       suggestion("UUID", Typed[UUID]),
       suggestion("ZoneId", Typed[ZoneId]),
       suggestion("ZoneOffset", Typed[ZoneOffset]),
+      suggestion("ZonedDateTime", Typed[ZonedDateTime]),
     )
   }
 
