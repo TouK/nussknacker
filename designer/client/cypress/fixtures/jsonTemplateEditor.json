@@ -36,7 +36,7 @@
                         "name": "value",
                         "expression": {
                             "language": "jsonTemplate",
-                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid() }\",\n\t\"dateTime\": \"#{ #DATE_FORMAT.format(#DATE.now) }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
+                            "expression": "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}"
                         }
                     }
                 ]
