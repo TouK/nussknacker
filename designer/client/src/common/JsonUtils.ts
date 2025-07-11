@@ -1,6 +1,7 @@
 import type { IFlattened } from "flattenizer";
 import { flatten } from "flattenizer";
 import { isEqual, isObject, mapKeys, transform } from "lodash";
+import type { DeepPartial } from "redux";
 
 export function tryParseOrNull<T = any>(input: string): T | null {
     try {
@@ -25,7 +26,7 @@ export function flattenObj<T>(obj: T): IFlattened<T> {
     });
 }
 
-export function objectDiff<O, B>(object: O, base: B): Partial<O> {
+export function objectDiff<O, B>(object: O, base: B): DeepPartial<O> {
     return transform<any, any>(object, (result, value, key) => {
         if (base && !isEqual(value, base[key])) {
             result[key] = isObject(value) && isObject(base[key]) ? objectDiff(value, base[key]) : value;

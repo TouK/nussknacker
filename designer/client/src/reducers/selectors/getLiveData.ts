@@ -1,6 +1,7 @@
 import { createSelector } from "reselect";
 
 import type { Initiator } from "../../actions/nk/liveData";
+import { getNodeDetails } from "../../components/graph/node-modal/NodeDetailsContent/getNodeDetails";
 import type { NodeTransitionResult } from "../../http/resultsWithCountsDto";
 import type { RootState } from "../index";
 import { getGraph, getSavedScenario, getScenario, getTestResults, isCurrentVersionDeployed } from "./graph";
@@ -13,11 +14,12 @@ export const getVisibleDataType = createSelector(getGraph, (graph) => graph.visi
 export const isReadyForLiveData = createSelector(
     getScenario,
     getSavedScenario,
+    getNodeDetails,
     isCurrentVersionDeployed,
-    (scenario, savedScenario, isDeployed) => {
-        if (!scenario?.name || scenario.isFragment || scenario.isArchived) return false;
-        if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph, true)) return false;
-        return isDeployed;
+    (scenario, savedScenario, nodeDetailsGetter, isDeployed) => {
+        if (!isDeployed) return false;
+        if (isGraphUpdated(scenario.scenarioGraph, savedScenario.scenarioGraph, "execution", nodeDetailsGetter)) return false;
+        return true;
     },
 );
 

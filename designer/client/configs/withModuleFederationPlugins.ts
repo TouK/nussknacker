@@ -67,7 +67,7 @@ export const withModuleFederationPlugins = (webpackConfig: Configuration, cfg?: 
             }),
             new SimpleScriptPlugin([
                 `rm -rf .federated-types/*`,
-                `npx --package=@touk/federated-types make-federated-types --outputDir .federated-types/${federationConfig.name} --saveToNodeModules`,
+                `npx --package=@touk/federated-types make-federated-types --outputDir .federated-types/${federationConfig.name}`,
                 // this .tgz with types for exposed modules lands in public root
                 // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
                 `mkdir -p "${webpackConfig.output.path}"`,

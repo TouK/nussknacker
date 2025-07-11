@@ -5,8 +5,8 @@ import { flushSync } from "react-dom";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getNodes, getScenarioGraph } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type {
     Dimensions,
     Edge,

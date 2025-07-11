@@ -3,8 +3,8 @@ import { replaceNodeData } from "../../components/graph/node-modal/NodeSwitcherU
 import type { Scenario } from "../../components/Process/types";
 import HttpService from "../../http/HttpService";
 import { updateAfterNodeDelete } from "../../reducers/graph/utils";
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getGraph } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import type { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
