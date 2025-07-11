@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import io.circe._
 import pl.touk.nussknacker.engine.api.ContextId
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
+import pl.touk.nussknacker.engine.livedata.CollectedLiveData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Test.{SkipResultsPerNode, SkipResultsPerTransition}
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.ResultsWithCountsDtoCodecs.{
@@ -53,7 +53,7 @@ object ResultsWithCountsDto {
     )
   }
 
-  def from(liveData: LiveData, counts: Map[String, NodeCount]): ResultsWithCountsDto = {
+  def from(liveData: CollectedLiveData, counts: Map[String, NodeCount]): ResultsWithCountsDto = {
     lazy val exceptionsByNodeId = liveData.exceptions.map { case (nodeId, results) =>
       nodeId.id -> results.map(e =>
         ExceptionResult(ResultContext(e.contextId, e.timestamp, e.variables), Some(nodeId.id), e.throwable)

@@ -2,10 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import cats.effect.{Resource, SyncIO}
 import com.typesafe.config.Config
-import io.circe.Json
-import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.newdeployment
@@ -97,58 +94,11 @@ case object NoSchedulingSupport extends SchedulingSupport
 
 sealed trait LiveDataPreviewSupport
 
-trait LiveDataPreviewSupported extends LiveDataPreviewSupport {
+object LiveDataPreviewStoredInDesignerJvm extends LiveDataPreviewSupport
 
-  def getLiveData(
-      processIdWithName: ProcessIdWithName,
-  ): Future[Either[LiveDataError, LiveData]]
-
-}
-
-object LiveDataPreviewSupported {
-
-  final case class LiveData(
-      timestamp: Instant,
-      nodeTransitions: Map[NodeTransition, LiveDataForNodeTransition],
-      invocationResults: Map[NodeId, List[InvocationResult]],
-      externalInvocationResults: Map[NodeId, List[InvocationResult]],
-      exceptions: Map[NodeId, List[ExceptionResult]]
-  )
-
-  final case class ExceptionResult(
-      contextId: ContextId,
-      timestamp: Instant,
-      variables: Map[String, Json],
-      throwable: Throwable,
-  )
-
-  final case class InvocationResult(
-      contextId: ContextId,
-      timestamp: Instant,
-      name: String,
-      value: Json,
-  )
-
-  final case class LiveDataForNodeTransition(
-      samples: List[LiveDataSample],
-      totalCount: Long,
-      currentThroughput: BigDecimal,
-  )
-
-  case class LiveDataSample(
-      contextId: ContextId,
-      timestamp: Instant,
-      variables: Map[String, Json],
-  )
-
-  final case class NodeTransition(sourceNodeId: String, destinationNodeId: Option[String])
-
-  sealed trait LiveDataError
-
-  object LiveDataError {
-    case object NoLiveDataAvailableForScenario extends LiveDataError
-  }
-
-}
+final case class LiveDataPreviewStoredInDesignerDb(
+    maxSamples: Int,
+    uploadIntervalInSeconds: Long,
+) extends LiveDataPreviewSupport
 
 case object NoLiveDataPreviewSupport extends LiveDataPreviewSupport

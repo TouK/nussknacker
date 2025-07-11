@@ -29,7 +29,7 @@ export function GroupedActionParameter(props: Props): JSX.Element {
     return (
         <EditableEditor
             key={parameterName}
-            param={parameterConfig}
+            editors={[parameterConfig.editor]}
             fieldLabel={parameterConfig.label || parameterName}
             onValueChange={onValueChange}
             expressionObj={expressionObj}

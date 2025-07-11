@@ -5,8 +5,8 @@ import { useSelector } from "react-redux";
 import { useForkRef } from "rooks";
 
 import { useEventTracking } from "../../containers/event-tracking";
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import { getLoggedUser } from "../../reducers/selectors/settings";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { useWindows } from "../../windowManager";

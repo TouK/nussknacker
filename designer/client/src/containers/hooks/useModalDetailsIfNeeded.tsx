@@ -30,7 +30,8 @@ export function useModalDetailsIfNeeded() {
             return getNodeIds()
                 .map((id) => NodeUtils.getNodeById(id, scenario.scenarioGraph))
                 .filter(Boolean)
-                .map((node) => openNodeWindow(node, scenario));
+                .map((node) => openNodeWindow(node, scenario))
+                .filter(Boolean);
         },
         [getNodeIds, openNodeWindow],
     );
@@ -42,7 +43,8 @@ export function useModalDetailsIfNeeded() {
                 .filter((i) => i.startsWith(prefix))
                 .map((id) => NodeUtils.getNodeById(removePrefix(id, prefix), fragment.scenarioGraph))
                 .filter(Boolean)
-                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment, true));
+                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment, true))
+                .filter(Boolean);
         },
         [getNodeIds, openNodeWindow],
     );

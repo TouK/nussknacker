@@ -23,9 +23,9 @@ import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
 import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
 import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHistory";
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();

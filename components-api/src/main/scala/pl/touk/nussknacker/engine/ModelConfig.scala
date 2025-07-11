@@ -5,6 +5,8 @@ import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
 import pl.touk.nussknacker.engine.ModelConfig.{JsonLikeValuesEnteringMode, LiveDataPreviewMode}
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
@@ -41,7 +43,27 @@ object ModelConfig {
     final case class Enabled(
         maxNumberOfRecords: Int,
         throughputTimeWindowInSeconds: Int,
+        liveDataStorage: LiveDataStorage,
     ) extends LiveDataPreviewMode
+
+    sealed trait LiveDataStorage
+
+    object LiveDataStorage {
+
+      case object DesignerJvm extends LiveDataStorage
+
+      // todo: We should use Designer db configuration here, but it is not easily available from the places where we use live data.
+      //  The db configuration is therefore provided separately for live data synchronization mechanism
+      final case class DesignerDb(
+          uploadIntervalInSeconds: Int,
+          uploaderInactivityTimeoutInSeconds: Int,
+          url: String,
+          user: String,
+          password: String,
+          schema: String,
+      ) extends LiveDataStorage
+
+    }
 
   }
 
@@ -72,11 +94,30 @@ object ModelConfig {
   private def parseLiveDataPreviewMode(config: Config): LiveDataPreviewMode = {
     if (config.getOrElse("liveDataPreview.enabled", false)) {
       LiveDataPreviewMode.Enabled(
-        maxNumberOfRecords = config.getAs[Int]("liveDataPreview.maxNumberOfRecords") orElse
-          // TODO: left for a compatibility reasons, will be removed in the future
-          config.getAs[Int]("liveDataPreview.maxNumberOfSamples") getOrElse
-          10,
+        maxNumberOfRecords = config
+          .getAs[Int]("liveDataPreview.maxNumberOfRecords")
+          .orElse(
+            // TODO: left for a compatibility reasons, will be removed in the future
+            config.getAs[Int]("liveDataPreview.maxNumberOfSamples")
+          )
+          .getOrElse(20),
         throughputTimeWindowInSeconds = config.getOrElse("liveDataPreview.throughputTimeWindowInSeconds", 60),
+        liveDataStorage = if (config.hasPath("liveDataPreview.storage")) {
+          config.getString("liveDataPreview.storage.type").toUpperCase match {
+            case "DESIGNER_DB" =>
+              LiveDataStorage.DesignerDb(
+                uploadIntervalInSeconds = config.getOrElse("liveDataPreview.storage.uploadIntervalInSeconds", 1),
+                uploaderInactivityTimeoutInSeconds =
+                  config.getOrElse("liveDataPreview.storage.uploaderInactivityTimeoutInSeconds", 300),
+                url = config.getString("liveDataPreview.storage.url"),
+                user = config.getString("liveDataPreview.storage.user"),
+                password = config.getString("liveDataPreview.storage.password"),
+                schema = config.getString("liveDataPreview.storage.schema"),
+              )
+            case other =>
+              throw new IllegalArgumentException(s"Unknown live data storage type [$other]")
+          }
+        } else LiveDataStorage.DesignerJvm
       )
     } else {
       LiveDataPreviewMode.Disabled

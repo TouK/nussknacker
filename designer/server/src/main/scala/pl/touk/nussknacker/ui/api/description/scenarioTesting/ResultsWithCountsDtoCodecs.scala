@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json, JsonObject}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.ContextId
@@ -49,7 +49,22 @@ object ResultsWithCountsDtoCodecs {
         Encoder.forProduct4("cid", "timestamp", "name", "value")(r => (r.contextId, r.timestamp, r.name, r.value)),
     )
 
-    implicit val nodeTransitionResult: Encoder[NodeTransitionResult] = deriveConfiguredEncoder
+    implicit val nodeTransitionResultEncoder: Encoder[NodeTransitionResult] = Encoder.instance { value =>
+      val baseFields: List[(String, Option[Json])] = List(
+        "sourceNodeId"      -> Some(Json.fromString(value.sourceNodeId)),
+        "destinationNodeId" -> Some(value.destinationNodeId.asJson), // Always include json field (even when None)
+        "results"           -> Some(value.results.asJson),
+        "totalCount"        -> value.totalCount.map(Json.fromLong),  // Drop json field when None
+        "currentThroughput" -> value.currentThroughput.map(_.asJson) // Drop json field when None
+      )
+      Json.fromJsonObject(
+        JsonObject.fromIterable(
+          baseFields.collect { case (key, Some(json)) =>
+            key -> json
+          }
+        )
+      )
+    }
 
     // TODO: do we want more information here?
     implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))

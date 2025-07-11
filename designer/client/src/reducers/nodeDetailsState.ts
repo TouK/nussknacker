@@ -6,7 +6,7 @@ import type { NodeValidationError, TypingResult, UIParameter } from "../types";
 export type NodeDetailsState = Record<
     string,
     {
-        parameters?: UIParameter[];
+        parameters: UIParameter[];
         expressionType?: TypingResult;
         validationErrors: NodeValidationError[];
         validationPerformed: boolean;
@@ -21,6 +21,7 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
             return {
                 ...state,
                 [nodeId]: {
+                    parameters: [],
                     validationErrors: [],
                     validationPerformed: false,
                     changingDynamicParameters: [],
@@ -61,8 +62,8 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
             };
         }
 
-        case "NODE_DETAILS_CLOSED":
-            return omit(state, action.nodeId);
+        case "CLEAR_PROCESS":
+            return {};
         default:
             return state;
     }

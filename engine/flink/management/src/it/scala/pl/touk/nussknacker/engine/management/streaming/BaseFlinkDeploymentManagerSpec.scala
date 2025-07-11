@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import io.circe.syntax.EncoderOps
@@ -11,15 +13,14 @@ import pl.touk.nussknacker.engine.api.{ContextId, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.classloader.ModelClassLoaderFactory
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
-import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
+import pl.touk.nussknacker.engine.livedata._
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -33,6 +34,11 @@ class RemoteFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
 
 class MiniClusterFlinkDeploymentManagerSpec extends BaseFlinkDeploymentManagerSpec {
   override protected def useMiniClusterForDeployment: Boolean = true
+
+  override def resolveConfig(config: Config): Config = {
+    super.resolveConfig(config).withValue("modelConfig.liveDataPreview.enabled", fromAnyRef(true))
+  }
+
 }
 
 trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with StreamingDockerTest with StrictLogging {
@@ -75,7 +81,9 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
     val deploymentId = DeploymentId("with-event-generator")
 
     LiveDataCollectingListenerHolder.createListenerFor(
-      processName = processName,
+      processIdWithName = ProcessIdWithName(processId, processName),
+      deploymentIdOpt = None,
+      config = None,
       maxNumberOfRecords = 20,
       throughputTimeWindowInSeconds = 60
     )
@@ -92,7 +100,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       eventually {
         if (useMiniClusterForDeployment) {
           // Wait until first live data samples are collected
-          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName).toOption
+          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName)
           liveDataOpt shouldBe defined
           val liveDataSamples = liveDataOpt.get
 
@@ -104,7 +112,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
           val (liveDataWithMockedTimestamp, mockedTimestamp) = withFixedTimestamp(liveDataSamples)
 
           externalDeploymentIdOpt shouldBe defined
-          val expected = LiveData(
+          val expected = CollectedLiveData(
             timestamp = mockedTimestamp,
             nodeTransitions = Map(
               NodeTransition("start", Some("endSend")) ->
@@ -429,10 +437,10 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
   private def deploymentStatus(name: ProcessName): List[DeploymentStatusDetails] =
     deploymentManager.getScenarioDeploymentsStatuses(name).futureValue.value
 
-  private def withFixedTimestamp(testResults: LiveData): (LiveData, Instant) = {
+  private def withFixedTimestamp(testResults: CollectedLiveData): (CollectedLiveData, Instant) = {
     val fixedInstant = Instant.now
     (
-      LiveData(
+      CollectedLiveData(
         timestamp = fixedInstant,
         nodeTransitions = withFixedTimestamp(testResults.nodeTransitions, fixedInstant),
         invocationResults = withFixedTimestamp[NodeId, InvocationResult](
