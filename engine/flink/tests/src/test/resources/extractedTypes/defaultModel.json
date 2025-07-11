@@ -16716,25 +16716,13 @@
       ],
       "toJsonString": [
         {
-          "description": "Convert value to String with JSON",
+          "description": "Convert value to JSON String",
           "name": "toJsonString",
           "signature": {
             "noVarArgs": [
               {"name": "value", "refClazz": {"type": "Unknown"}}
             ],
             "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "toJsonValue": [
-        {
-          "description": "Convert value to JSON",
-          "name": "toJsonValue",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
           }
         }
       ],

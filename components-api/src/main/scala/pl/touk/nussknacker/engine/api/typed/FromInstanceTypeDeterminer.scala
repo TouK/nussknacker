@@ -43,23 +43,25 @@ trait FromInstanceTypeDeterminer {
         Typed(other.getClass) match {
           case typedClass: TypedClass =>
             val adjustedType = replaceWithGenericTypeIfNeeded(typedClass)
-            ToJsonEncoder.default.encode(other) match {
-              case Valid(_)   => TypedObjectWithValue(adjustedType, other)
-              case Invalid(_) => adjustedType
-            }
+            if (ToJsonEncoder.default.encode(other).isValid)
+              TypedObjectWithValue(adjustedType, other)
+            else
+              adjustedType
           case notTypedClass => notTypedClass
         }
     }
   }
 
   // We don't want to present very specific types such as ZoneRegion or sun.nio.cs.UTF_8
-  private def replaceWithGenericTypeIfNeeded(typedClass: TypedClass) = {
-    if (classOf[ZoneId].isAssignableFrom(typedClass.klass) && !classOf[ZoneOffset].isAssignableFrom(typedClass.klass))
-      Typed.typedClass[ZoneId]
-    else if (classOf[Charset].isAssignableFrom(typedClass.klass))
-      Typed.typedClass[Charset]
-    else typedClass
-  }
+  private def replaceWithGenericTypeIfNeeded(typedClass: TypedClass) =
+    typedClass.klass match {
+      case c if classOf[ZoneId].isAssignableFrom(c) && !classOf[ZoneOffset].isAssignableFrom(c) =>
+        Typed.typedClass(classOf[ZoneId])
+      case c if classOf[Charset].isAssignableFrom(c) =>
+        Typed.typedClass(classOf[Charset])
+      case _ =>
+        typedClass
+    }
 
   private def typeMapFields(iterable: Iterable[(String, Any)]) = iterable.map { case (k, v) =>
     k -> fromInstance(v)

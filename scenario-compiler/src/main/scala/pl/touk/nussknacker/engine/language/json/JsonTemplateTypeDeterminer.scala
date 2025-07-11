@@ -102,7 +102,7 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
       .map(_.toValuePlacedInPlaceholder)
       .map { json =>
         // String expressions may be used in multiple contexts. See CompiledJsonTemplateExpression.renderExpressionResult
-        // For UC 1 and UC 3 it is better to use unquoted string, for UC 2, a user has to wrap expression with #CONV.toJsonValue()
+        // For UC 1 and UC 3 it is better to use unquoted string, for UC 2, a user has to wrap expression with #CONV.toJsonString()
         json.asString
           .getOrElse(json.noSpaces)
       }

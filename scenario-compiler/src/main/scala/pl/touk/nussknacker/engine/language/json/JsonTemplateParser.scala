@@ -118,20 +118,13 @@ object JsonTemplateParser {
   //             In this cases we have:
   //             a) implicit logic converting all values to proper json. The only exception is a String which is unquoted (see UC 1)
   //                because we can't recognize which case it is.
-  //             b) To avoid rendering invalid jsons, user can explicitly convert value to json by using #CONV.toJsonValue()
+  //             b) To avoid rendering invalid jsons, user can explicitly convert value to json by using #CONV.toJsonString()
   // Use case 3. In other places where user want to treat json template the same as string template and use typical templatic logic such as
   //             #{ #condition ? '"field1": 123' : '"field2": 234' } - here implicit logic should work correctly as well
   private def renderExpressionResult(value: AnyRef): String = {
-    value match {
-      // See UC 2b. (explicit logic)
-      case json: Json =>
-        json.noSpaces
-      case _ =>
-        val encodedJson = ToJsonEncoder.default.encodeUnsafe(value)
-        // User didn't know intention - we use implicit logic (see UC 1, 2a, 3)
-        encodedJson.asString
-          .getOrElse(encodedJson.noSpaces)
-    }
+    val encodedJson = ToJsonEncoder.default.encodeUnsafe(value)
+    encodedJson.asString
+      .getOrElse(encodedJson.noSpaces)
   }
 
   private[json] class JsonTemplateDecodingException(

@@ -26,9 +26,9 @@ trait ConversionUtils extends HideToString {
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number =
     numeric.toNumber(stringOrNumber)
 
-  // TODO 1: We should rename toJson/toJsonOrNull to parseJson/parseJsonOrNull and toJsonValue to toJson
+  // TODO 1: We should probable rename toJson/toJsonOrNull to parseJson/parseJsonOrNull
   // TODO 2: We should extract a separate helper JSON and shorten parseJson/parseJsonOrNull to just parse/parseOrNull
-  // TODO 3: toJson can be a extension method like other toXYZ methods
+  // TODO 3: toJsonString can be a extension method like other toXYZ methods
   // TODO 4: We should consider exposing Circe's Json class or similar interface. Thanks to that user could do: #value.toJson.spaces2
   @Documentation(description = "Parse String value as JSON")
   def toJson(@ParamName("value") value: String): Any = {
@@ -40,15 +40,9 @@ trait ConversionUtils extends HideToString {
     parseJsonEither(value).getOrElse(null)
   }
 
-  @Documentation(description = "Convert value to String with JSON")
+  @Documentation(description = "Convert value to JSON String")
   def toJsonString(@ParamName("value") value: Any): String = {
     ToJsonEncoder.default.encodeUnsafe(value).noSpaces
-  }
-
-  // Return type is Any because for now we don't want to expose Json in the API
-  @Documentation(description = "Convert value to JSON")
-  def toJsonValue(@ParamName("value") value: Any): Any = {
-    ToJsonEncoder.default.encodeUnsafe(value)
   }
 
   private def parseJsonEither(value: String): Either[Throwable, Any] = {

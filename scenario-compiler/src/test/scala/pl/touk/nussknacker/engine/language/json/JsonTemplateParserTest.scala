@@ -249,7 +249,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     }
 
     a[JsonTemplateDecodingException] shouldBe thrownBy {
-      // strings normally are unquoted, to quote it, a user have to use #CONV.toJsonValue()
+      // strings normally are unquoted, to quote it, a user have to use #CONV.toJsonString()
       evaluate("sample string")
     }
   }
@@ -259,8 +259,8 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       """{
         |  "quotedField": "#{ #logicalValue }",
         |  "quotedFieldUnknownType": "#{ #logicalValueUnknownType }",
-        |  "unquotedFieldExplicitConversion": #{ #CONV.toJsonValue(#logicalValue) },
-        |  "unquotedFieldUnknownTypeExplicitConversion": #{ #CONV.toJsonValue(#logicalValueUnknownType) }
+        |  "unquotedFieldExplicitConversion": #{ #CONV.toJsonString(#logicalValue) },
+        |  "unquotedFieldUnknownTypeExplicitConversion": #{ #CONV.toJsonString(#logicalValueUnknownType) }
         |}""".stripMargin
 
     def prepareValidationContext(logicalValue: Any) = {
@@ -323,7 +323,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       prepareValidationContext(Instant.ofEpochMilli(123L))
     ).validValue
     a[JsonTemplateDecodingException] shouldBe thrownBy {
-      // logical types normally are unquoted, to quote it, a user have to use #CONV.toJsonValue()
+      // logical types normally are unquoted, to quote it, a user have to use #CONV.toJsonString()
       compiledExpressionForUnquotedField.expression.evaluate[Any](
         prepareEvaluationContext(Instant.ofEpochMilli(123L)),
         globals = defaultHelpers
@@ -334,7 +334,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
   test("should allow to use string elements and other type elements in the list with unknown type") {
     val jsonWithExpressionPlaceholderInList =
       """[
-        |  #{ #CONV.toJsonValue( #listElement ) }
+        |  #{ #CONV.toJsonString( #listElement ) }
         |]""".stripMargin
     val validationContext = validationContextWithDefaultHelpers
       .withVariableUnsafe("listElement", Typed.json)
@@ -417,10 +417,9 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
   // This is a copy of ConversionUtils. We can't use it directly, because it would cause a cycle in module dependencies
   class ToJsonConverter {
 
-    // Return type is Any because for now we don't want to expose Json in the API
-    @Documentation(description = "Convert value to JSON")
-    def toJsonValue(@ParamName("value") value: Any): Json = {
-      ToJsonEncoder.default.encodeUnsafe(value)
+    @Documentation(description = "Convert value to JSON String")
+    def toJsonString(@ParamName("value") value: Any): String = {
+      ToJsonEncoder.default.encodeUnsafe(value).noSpaces
     }
 
   }
