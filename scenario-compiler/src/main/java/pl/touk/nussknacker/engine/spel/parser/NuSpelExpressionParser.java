@@ -118,7 +118,7 @@ public class NuSpelExpressionParser {
                 int afterPrefixIndex = prefixIndex + prefix.length();
                 int suffixIndex = skipToCorrectEndSuffix(suffix, expressionString, afterPrefixIndex);
                 if (suffixIndex == -1) {
-                    throw new ExceptionWithExpressionTextRange("Placeholder is not finished correctly",
+                    throw new ExceptionWithExpressionTextRange("Placeholder is not finished correctly, missing closing " + suffix,
                             new IndexBasedTextRange(prefixIndex, afterPrefixIndex));
                 }
                 if (suffixIndex == afterPrefixIndex) {
@@ -208,11 +208,11 @@ public class NuSpelExpressionParser {
                 case ']':
                 case ')':
                     if (stack.isEmpty()) {
-                        throw new ParseException(expressionString, pos, "Found closing '" + ch + "' at position " + pos + " without an opening '" + Bracket.theOpenBracketFor(ch) + "'");
+                        throw new ParseException(expressionString, pos, "Illegal syntax: closing '" + ch + "' without an opening '" + Bracket.theOpenBracketFor(ch) + "'");
                     }
                     Bracket p = stack.pop();
                     if (!p.compatibleWithCloseBracket(ch)) {
-                        throw new ParseException(expressionString, pos, "Found closing '" + ch + "' at position " + pos + " but most recent opening is '" + p.bracket + "' at position " + p.pos);
+                        throw new ParseException(expressionString, p.pos, "Illegal syntax: unclosed '" +  p.bracket + "'");
                     }
                     break;
                 case '\'':
@@ -220,7 +220,7 @@ public class NuSpelExpressionParser {
                     // jump to the end of the literal
                     int endLiteral = expressionString.indexOf(ch, pos + 1);
                     if (endLiteral == -1) {
-                        throw new ParseException(expressionString, pos, "Found non terminating string literal starting at position " + pos);
+                        throw new ParseException(expressionString, pos, "String literal is not finished correctly, missing closing '\"'");
                     }
                     pos = endLiteral;
                     break;
@@ -229,7 +229,7 @@ public class NuSpelExpressionParser {
         }
         if (!stack.isEmpty()) {
             Bracket p = stack.pop();
-            throw new ParseException(expressionString, p.pos, "Missing closing '" + Bracket.theCloseBracketFor(p.bracket) + "' for '" + p.bracket + "' at position " + p.pos);
+            throw new ParseException(expressionString, p.pos, "Illegal syntax: unclosed '" + p.bracket + "'");
         }
         if (!isSuffixHere(expressionString, pos, suffix)) {
             return -1;

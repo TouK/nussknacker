@@ -1308,6 +1308,39 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("return comprehensive error message when invalid syntax is used inside placeholder") {
+    parse[String](
+      "ala #{ aaa) }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Illegal syntax: closing ')' without an opening '('",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ aaa".length && end == "ala #{ aaa)".length =>
+    }
+    parse[String](
+      "ala #{ (aaa }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Illegal syntax: unclosed '('",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ (".length =>
+    }
+    parse[String](
+      "ala #{ \" }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "String literal is not finished correctly, missing closing '\"'",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ \"".length =>
+    }
+  }
+
   test("return correct error location when typing expression with template context") {
     parse[String](
       "#{ #notExisting }",

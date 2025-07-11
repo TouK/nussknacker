@@ -292,13 +292,16 @@ class SpelExpressionParser(
           }
           .map(_.toCoordinatesBasedTextRange(original))
         val message = Option(ex)
-          .collect { case ex: SpelParseException =>
-            ex.getMessageCode match {
-              case SpelMessage.MORE_INPUT =>
-                // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
-                "Unexpected text"
-              case _ => messageWithoutExpressionAndErrorCodeIndicator(ex)
-            }
+          .collect {
+            case ex: SpelParseException =>
+              ex.getMessageCode match {
+                case SpelMessage.MORE_INPUT =>
+                  // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
+                  "Unexpected text"
+                case _ => messageWithoutExpressionAndErrorCodeIndicator(ex)
+              }
+            case ex: ParseException =>
+              ex.getSimpleMessage
           }
           .getOrElse(ex.getMessage)
         NonEmptyList.of(
