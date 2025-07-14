@@ -1,5 +1,5 @@
-import { Button, styled } from "@mui/material";
-import React from "react";
+import { Link, styled, Typography } from "@mui/material";
+import React, { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { updateSearchQuery } from "../actions/nk/scenarioActivities";
@@ -12,16 +12,32 @@ export function RunningVersion() {
     const currentVersionDeployed = useSelector(isCurrentVersionDeployed);
     const dispatch = useDispatch();
 
+    const handleGoToRunningVersion = useCallback(() => {
+        const element = document.querySelector('[data-rfd-drag-handle-draggable-id="activities-panel"]');
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+            console.log("Element not found");
+        }
+
+        dispatch(updateSearchQuery(`scenarioVersion:running version`));
+    }, [dispatch]);
+
     if (!runningVersion) return null;
 
     return (
-        <Button
-            onClick={() => dispatch(updateSearchQuery(`scenarioVersion:running version`))}
-            sx={{ color: currentVersionDeployed ? "inherit" : (theme) => theme.palette.warning.main }}
-            variant="text"
+        <Typography
+            data-testid="runningVersion"
+            component={Link}
+            onClick={handleGoToRunningVersion}
+            sx={{
+                color: (theme) => (currentVersionDeployed ? theme.palette.primary.main : theme.palette.warning.main),
+                cursor: "pointer",
+            }}
+            variant="body2"
         >
             {/* eslint-disable-next-line i18next/no-literal-string */}v{runningVersion}
-        </Button>
+        </Typography>
     );
 }
 

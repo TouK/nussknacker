@@ -47,6 +47,10 @@ describe("Activities", () => {
         cy.visitNewProcess(seed, "testProcess");
     });
 
+    afterEach(() => {
+        cy.cancelScenario();
+    });
+
     it("should display activities", () => {
         cy.contains(/creator panel/i).click();
 
@@ -111,5 +115,23 @@ describe("Activities", () => {
         cy.get("[data-testid=window]").find("button").contains(/^Edit/i).click();
         cy.wait("@editComment");
         cy.get("@editCommentRow").contains("test comment new comment").should("be.visible");
+    });
+
+    it("should select and scroll to running version when running version in scenario actions click", () => {
+        cy.window().then((win) => {
+            const original = win.HTMLElement.prototype.scrollIntoView;
+
+            // Cypress doesn't support scrollIntoView options in the same way as browsers do, smooth option is not supported.
+            win.HTMLElement.prototype.scrollIntoView = function (options) {
+                if (options && typeof options === "object") {
+                    options.behavior = "auto";
+                }
+                original.call(this, options);
+            };
+        });
+
+        cy.deployScenario();
+        cy.get('[data-testid="runningVersion"]').click();
+        cy.get('[aria-selected="true"]').find('[aria-label="tool:Deployment"]').should("be.visible");
     });
 });
