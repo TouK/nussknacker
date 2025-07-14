@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.modelconfig
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigException, ConfigValueType}
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.component.{
   ComponentConfig,
@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ParameterConfig
 }
-import pl.touk.nussknacker.engine.api.definition.ParameterCategory
+import pl.touk.nussknacker.engine.api.definition.{ParameterCategory, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -25,7 +25,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language.{
 object ComponentsUiConfigParser {
 
   import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   private implicit val componentsUiGroupNameReader: ValueReader[ComponentGroupName] =
@@ -57,16 +56,29 @@ object ComponentsUiConfigParser {
     }
   }
 
-  implicit val expressionReader: ValueReader[Expression] = ValueReader.relative { config: Config =>
-    config
-      .getAs[String](".")
-      .map(Expression.spel)
-      .getOrElse {
+  implicit val expressionReader: ValueReader[Expression] = (config: Config, path: String) => {
+    config.getValue(path).valueType() match {
+      case ConfigValueType.OBJECT =>
         Expression(
-          language = ValueReader[Language].read(config, "language"),
-          expression = ValueReader[String].read(config, "expression")
+          language = config.getConfig(path).as[Language]("language"),
+          expression = config.getConfig(path).as[String]("expression")
         )
-      }
+      case ConfigValueType.STRING =>
+        Expression.spel(config.as[String](path))
+      case other =>
+        throw new ConfigException.WrongType(config.origin(), path, "OBJECT or STRING", other.name())
+    }
+  }
+
+  implicit val parameterConfig: ValueReader[ParameterConfig] = ValueReader.relative { config: Config =>
+    ParameterConfig(
+      defaultValue = optionValueReader(expressionReader).read(config, "defaultValue"),
+      editors = config.as[Option[List[ParameterEditor]]]("editors"),
+      validators = config.as[Option[List[ParameterValidator]]]("validators"),
+      label = config.as[Option[String]]("label"),
+      hintText = config.as[Option[String]]("hintText"),
+      category = config.as[Option[ParameterCategory]]("category")
+    )
   }
 
   implicit val parameterConfigMapReader: ValueReader[Map[ParameterName, ParameterConfig]] =
@@ -74,6 +86,19 @@ object ComponentsUiConfigParser {
       .map { mapping =>
         mapping.map { case (key, value) => ParameterName(key) -> value }
       }
+
+  implicit val componentConfigReader: ValueReader[ComponentConfig] =
+    ValueReader.relative { config: Config =>
+      ComponentConfig(
+        params = config.as[Option[Map[ParameterName, ParameterConfig]]]("params"),
+        icon = config.as[Option[String]]("icon"),
+        docsUrl = config.as[Option[String]]("docsUrl"),
+        componentGroup = config.as[Option[ComponentGroupName]]("componentGroup"),
+        componentId = config.as[Option[DesignerWideComponentId]]("componentId"),
+        disabled = config.as[Option[Boolean]]("componentId").getOrElse(ComponentConfig.zero.disabled),
+        label = config.as[Option[String]]("label")
+      )
+    }
 
   private val ComponentsUiConfigPath = "componentsUiConfig"
 
