@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { updateSearchQuery } from "../actions/nk/scenarioActivities";
 import { getProcessVersionId, getRunningVersion, isCurrentVersionDeployed, isLatestProcessVersion } from "../reducers/selectors/graph";
+import { predefinedQueries } from "./toolbars/activities/useActivitiesSearch";
 
 const Span = styled("span")({});
 
@@ -20,7 +21,7 @@ export function RunningVersion() {
             console.log("Element not found");
         }
 
-        dispatch(updateSearchQuery(`scenarioVersion:running version`));
+        dispatch(updateSearchQuery(predefinedQueries.runningVersionQuery));
     }, [dispatch]);
 
     if (!runningVersion) return null;

@@ -13,6 +13,10 @@ import type { Activity, UIActivity } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
 import type { ActivityAdditionalFields } from "./types";
 
+export const predefinedQueries = {
+    runningVersionQuery: "scenarioVersion:running version",
+};
+
 interface Props {
     activities: UIActivity[];
     handleScrollToItem: (index: number, align: Align) => void;
@@ -126,7 +130,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
 
                     const isRunningVersion =
                         fullSearchAllowedField === "scenarioVersionId" &&
-                        value === "scenarioVersion:running version" &&
+                        value === predefinedQueries.runningVersionQuery &&
                         (activity.type === "SCENARIO_REDEPLOYED" || activity.type === "SCENARIO_DEPLOYED");
                     if (isRunningVersion) {
                         if (parseInt(runningVersion, 10) === searchFieldValue && foundActivities.length === 0) {
