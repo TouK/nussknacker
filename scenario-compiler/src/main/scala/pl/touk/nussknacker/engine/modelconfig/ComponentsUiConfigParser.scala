@@ -95,7 +95,7 @@ object ComponentsUiConfigParser {
         docsUrl = config.as[Option[String]]("docsUrl"),
         componentGroup = config.as[Option[ComponentGroupName]]("componentGroup"),
         componentId = config.as[Option[DesignerWideComponentId]]("componentId"),
-        disabled = config.as[Option[Boolean]]("componentId").getOrElse(ComponentConfig.zero.disabled),
+        disabled = config.as[Option[Boolean]]("disabled").getOrElse(ComponentConfig.zero.disabled),
         label = config.as[Option[String]]("label")
       )
     }
