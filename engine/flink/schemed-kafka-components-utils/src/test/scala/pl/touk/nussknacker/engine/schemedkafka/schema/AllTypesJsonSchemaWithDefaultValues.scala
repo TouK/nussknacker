@@ -77,9 +77,11 @@ object AllTypesJsonSchemaWithDefaultValues {
        |    },
        |    "unionField": {
        |      "anyOf": [
-       |        { "type": "null" },
        |        { "type": "string" },
-       |        { "type": "integer" }
+       |        { "type": "null" },
+       |        { "type": "integer" },
+       |        { "type": "boolean" },
+       |        { "type": "object" }
        |      ],
        |      "default": null
        |    },
