@@ -39,6 +39,11 @@ case class ValidationContext(
       throw new IllegalStateException(s"ValidationContext with duplicated variable [$KeyVariableName]")
     )
 
+  def withVariablesUnsafe(variablesWithType: (String, TypingResult)*): ValidationContext =
+    variablesWithType.foldLeft(this) { case (acc, (variableName, variableType)) =>
+      acc.withVariableUnsafe(variableName, variableType)
+    }
+
   def withVariable(name: String, value: TypingResult, paramName: Option[ParameterName])(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {

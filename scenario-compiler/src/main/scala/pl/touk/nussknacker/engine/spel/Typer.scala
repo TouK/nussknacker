@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementVal
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
-import pl.touk.nussknacker.engine.expression.NullExpression
+import pl.touk.nussknacker.engine.expression.{IndexBasedTextRange, NullExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
   ArgumentTypeError,
   PartTypeError,
@@ -48,7 +48,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOper
   ModificationError
 }
 import pl.touk.nussknacker.engine.spel.Typer._
-import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
+import pl.touk.nussknacker.engine.spel.ast.SpelAst.{RichSpelNode, SpelNodeId}
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.parser.{
@@ -57,6 +57,7 @@ import pl.touk.nussknacker.engine.spel.parser.{
   SingleExpressionWithTextRange
 }
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.MathUtils
 
 import scala.annotation.tailrec
@@ -95,56 +96,66 @@ private[spel] class Typer(
     NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(result))
   }
 
-  private def typeExpressionWithTextRange(
+  def typeExpressionWithTextRange(
       expressionWithTextRange: ExpressionWithTextRange,
       ctx: ValidationContext
   ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
     expressionWithTextRange match {
       case composite: CompositeExpressionsWithTextRanges =>
-        val errors = composite.getChildExpressionsWithTextRanges.toList.flatMap { expressionWithTextRange =>
-          doTypeExpression(expressionWithTextRange.getExpression, ctx)._1
-            .map(_.shiftTextRangeRight(expressionWithTextRange.getTextRange.start))
-        }
-        (errors, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
+        val (allShiftedErrors, allShiftedIntermediateResults) =
+          composite.getChildExpressionsWithTextRanges.toList.foldRight(
+            (List.empty[SpelExpressionTypingErrorWithTextRange], Map.empty[SpelNodeId, TypingResultWithContext])
+          ) { case (expressionWithTextRange, (errorsAcc, intermediateResultsAcc)) =>
+            val (errors, collectedTypingResult) =
+              doTypeSingleExpression(expressionWithTextRange.getExpression, ctx, expressionWithTextRange.getTextRange)
+            (errors ::: errorsAcc, intermediateResultsAcc ++ collectedTypingResult.intermediateResults)
+          }
+        (
+          allShiftedErrors,
+          CollectedTypingResult(
+            allShiftedIntermediateResults,
+            TypingResultWithContext(Typed[String]) // composite expressions are used in the string context
+          )
+        )
       case single: SingleExpressionWithTextRange =>
-        doTypeExpression(single.getExpression, ctx)
+        doTypeSingleExpression(single.getExpression, ctx, single.getTextRange)
     }
   }
 
-  def doTypeExpression(
+  private def doTypeSingleExpression(
       expr: Expression,
       ctx: ValidationContext,
-  ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
+      textRange: IndexBasedTextRange
+  ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) =
     expr match {
       case e: standard.SpelExpression =>
-        typeExpression(e, ctx)
-      case e: CompositeStringExpression =>
-        val (errors, _) = e.getExpressions.toList.map(doTypeExpression(_, ctx)).sequence
-        // We drop intermediate results here:
-        // * It's tricky to combine it as each of the subexpressions has it's own abstract tree with positions relative to the subexpression's starting position
-        // * CompositeStringExpression is dedicated to template SpEL expressions. It cannot be nested (as templates cannot be nested)
-        // * Currently we don't use intermediate typing results outside of Typer
-        (errors, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
+        typeExpression(e, ctx, textRange)
       case _: LiteralExpression =>
         (Nil, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
       case _: NullExpression =>
         (Nil, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(TypedNull)))
+      case e: CompositeStringExpression =>
+        throw new IllegalStateException(s"${e.getClass.getName} in place where only single expressions where expected")
     }
-  }
 
   private def typeExpression(
       spelExpression: standard.SpelExpression,
-      ctx: ValidationContext
+      ctx: ValidationContext,
+      textRange: IndexBasedTextRange
   ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
     val ast                       = spelExpression.getAST
     val (errors, collectedResult) = typeNode(ctx, ast, TypingContext(List.empty, Map.empty)).run
     logger.whenTraceEnabled {
       val printer = new SpelNodePrettyPrinter(n =>
-        collectedResult.intermediateResults.get(SpelNodeId(n)).map(_.display).getOrElse("NOT_TYPED")
+        collectedResult.intermediateResults.get(n.textRange).map(_.display).getOrElse("NOT_TYPED")
       )
       logger.trace(s"typed nodes: ${printer.print(ast)}, errors: ${errors.mkString(", ")}")
     }
-    (errors, collectedResult)
+    val shiftedErrors = errors.map(_.shiftTextRangeRight(textRange.start))
+    val shiftedIntermediateResults = collectedResult.intermediateResults.map { case (spelNodeId, intermediateResult) =>
+      spelNodeId.shiftRight(textRange.start) -> intermediateResult
+    }
+    (shiftedErrors, CollectedTypingResult(shiftedIntermediateResults, collectedResult.finalResult))
   }
 
   private def typeNode(
@@ -497,7 +508,7 @@ private[spel] class Typer(
             }
             validatedLastType.map { lastType =>
               CollectedTypingResult(
-                lastType.intermediateResults + (SpelNodeId(e) -> lastType.finalResult),
+                lastType.intermediateResults + (e.textRange -> lastType.finalResult),
                 lastType.finalResult
               )
             }
@@ -939,7 +950,7 @@ private[spel] case class TypedNode(nodeId: SpelNodeId, typ: TypingResultWithCont
 private[spel] object TypedNode {
 
   def apply(node: SpelNode, typ: TypingResultWithContext): TypedNode =
-    TypedNode(SpelNodeId(node), typ)
+    TypedNode(node.textRange, typ)
 
 }
 
@@ -953,6 +964,9 @@ private[spel] case class CollectedTypingResult(
     intermediateResults.map(intermediateResult => (intermediateResult._1 -> intermediateResult._2.typingResult)),
     finalResult.typingResult
   )
+
+  def withFinalTypingResult(newFinalTypingResult: TypingResult): CollectedTypingResult =
+    copy(finalResult = finalResult.copy(typingResult = newFinalTypingResult))
 
 }
 

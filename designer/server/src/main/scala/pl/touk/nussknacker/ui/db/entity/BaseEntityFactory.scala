@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentStatusName,
   ProcessActionId,
   ProcessActionState,
-  ScenarioActionName
+  ScenarioActionName,
+  ScenarioActivityId
 }
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -42,5 +43,8 @@ trait BaseEntityFactory extends LazyLogging {
 
   implicit def deploymentStatusName: BaseColumnType[DeploymentStatusName] =
     MappedColumnType.base[DeploymentStatusName, String](_.value, DeploymentStatusName.apply)
+
+  implicit def scenarioActivityIdMapper: BaseColumnType[ScenarioActivityId] =
+    MappedColumnType.base[ScenarioActivityId, UUID](_.value, ScenarioActivityId.apply)
 
 }

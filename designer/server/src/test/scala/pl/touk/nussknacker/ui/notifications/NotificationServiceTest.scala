@@ -25,6 +25,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{
+  dummyDbRef,
   mapProcessingTypeDataProvider,
   scenarioParametersServiceProvider
 }
@@ -122,6 +123,7 @@ class NotificationServiceTest
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
+      when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
@@ -180,6 +182,7 @@ class NotificationServiceTest
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
     ): RunDeploymentResult = {
+      when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
@@ -249,6 +252,7 @@ class NotificationServiceTest
         givenDeployResult: Try[Option[ExternalDeploymentId]],
         user: LoggedUser
     ): RunDeploymentResult = {
+      when(deploymentManager.liveDataPreviewSupport).thenReturn(NoLiveDataPreviewSupport)
       when(
         deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenAnswer { invocation =>
@@ -345,6 +349,8 @@ class NotificationServiceTest
         newDeploymentsApproachScenarioStatusProvider = newApproachScenarioStatusProvider,
       ),
       TestFactory.mapProcessingTypeDataProvider(Streaming.stringify -> actionInfoService),
+      TestFactory.newLiveDataRepository(testDbRef),
+      dbioRunner,
     ) {
 
       override protected def validateUsingDeploymentManager(

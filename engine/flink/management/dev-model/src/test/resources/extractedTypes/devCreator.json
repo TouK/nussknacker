@@ -7228,6 +7228,21 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "java.nio.charset.Charset"},
+    "methods": {
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "java.text.Format"},
     "methods": {
       "toString": [
@@ -14547,6 +14562,21 @@
     "staticMethods": {}
   },
   {
+    "clazzName": {"refClazzName": "java.util.Currency"},
+    "methods": {
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {
       "params": [
         {
@@ -17384,7 +17414,7 @@
       ],
       "toJson": [
         {
-          "description": "Convert String value to JSON",
+          "description": "Parse String value as JSON",
           "name": "toJson",
           "signature": {
             "noVarArgs": [
@@ -17396,7 +17426,7 @@
       ],
       "toJsonOrNull": [
         {
-          "description": "Convert String value to JSON or null in case of failure",
+          "description": "Parse String value as JSON. It returns null in case of failure",
           "name": "toJsonOrNull",
           "signature": {
             "noVarArgs": [
@@ -17408,7 +17438,7 @@
       ],
       "toJsonString": [
         {
-          "description": "Convert JSON to String",
+          "description": "Convert value to JSON String",
           "name": "toJsonString",
           "signature": {
             "noVarArgs": [

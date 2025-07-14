@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, type TooltipProps } from "@mui/material";
 import type { ForwardedRef, ReactNode } from "react";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import type ReactAce from "react-ace/lib/ace";
@@ -33,6 +33,10 @@ export type SpelEditorProps = {
     language?: ExpressionLang;
     infoText?: string;
     defaultValue?: ExpressionObj;
+};
+
+const infoTooltipCustomComponentsProps: TooltipProps["componentsProps"] = {
+    tooltip: { sx: { maxWidth: "none" } },
 };
 
 const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
@@ -80,9 +84,7 @@ const SpelEditorComponent = (props: SpelEditorProps, forwardedRef: ForwardedRef<
             properties.placeholder = placeholder || t("editors.spelEditor.placeholder", "e.g. #input.someField");
             properties.InputAdornmentEnd = (
                 <InfoTooltip
-                    customComponentsProps={{
-                        tooltip: { sx: { maxWidth: "none" } },
-                    }}
+                    customComponentsProps={infoTooltipCustomComponentsProps}
                     title={t(
                         "editors.spelEditor.infoText",
                         `You are using an expression-based input, allowing calculations and conditions. Access variables and helpers with \`#\`, e.g., \`#input.someField == 'value'\` or \`#UTIL.split('foo-bar', '-')\`. \n 
@@ -98,13 +100,12 @@ Use autocompletion to explore available options. To read more see [Documentation
             properties.placeholder = placeholder || t("editors.spelTemplateEditor.placeholder", "e.g. Hello #{ #input.someField }");
             properties.InputAdornmentEnd = (
                 <InfoTooltip
-                    customComponentsProps={{
-                        tooltip: { sx: { maxWidth: "none" } },
-                    }}
+                    customComponentsProps={infoTooltipCustomComponentsProps}
                     title={t(
                         "editors.spelTemplateEditor.infoText",
                         `You are using a string-template-based input, allowing text with embedded expressions. Text should not be quoted. \n 
-Embed expression with \`#{ }\`, e.g., \`Hello #{ #input.name }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
+Embed expression with \`#{ }\`, e.g., \`Hello #{ #input.name }\`.  \n
+When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                     )}
                 />
@@ -119,10 +120,25 @@ Use autocompletion to explore available options. To read more see [Documentation
             properties.InputAdornmentEnd = (
                 <Box display={"flex"} flexDirection={"column"} alignItems={"center"} gap={0.5} width={"1rem"}>
                     <InfoTooltip
+                        customComponentsProps={infoTooltipCustomComponentsProps}
                         title={t(
                             "editors.jsonTemplateEditor.infoText",
-                            `You are using a json-template-based input, allowing json with embedded expressions. \n 
-Embed expression with \`#{ }\`, e.g., \`{ "name": #{ #input.name } }\`. When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`. \n
+                            `You are using a json-template-based input, allowing json with embedded expressions. This input behave similar to string-template, with differences:\n
+* It produces a data record, which is very useful when you produces some message and want to be sure that it will be in valid format\n
+* It supports validations against schema, when used in schema-aware context\n
+\n
+Embed expression with \`#{ }\`, e.g., \n
+\`\`\`jsonTemplate
+{
+  "name": "#{ #input.name }",
+  "age": #{ #input.age },
+  #{ #input.secondName ?: ', "secondName": "' + #input.secondName + '"' }
+}
+\`\`\`\n
+In placeholders, you can use more complex types such as records and lists. To make sure that they will be rendered correctly, use \`#CONV.toJsonString(#complexType)\` helper function.\n
+\n
+When accessing variables that support dynamic fields you can use \`#input['dynamicField'].toTargetType\`, e.g. \`#input['accountNo'].toLong\`.\n
+\n
 Use autocompletion to explore available options. To read more see [Documentation](https://nussknacker.io/documentation/docs/scenarios_authoring/Spel)`,
                         )}
                     />

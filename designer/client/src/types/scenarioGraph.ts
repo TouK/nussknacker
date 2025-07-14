@@ -1,5 +1,5 @@
 import type { EditorMode } from "../components/graph/node-modal/editors/expression/types";
-import type { Editor} from "../components/graph/node-modal/editors/types";
+import type { Editor } from "../components/graph/node-modal/editors/types";
 import { ParamType } from "../components/graph/node-modal/editors/types";
 import type { ComponentGroup } from "./component";
 import type { TypingResult, UIParameter } from "./definition";

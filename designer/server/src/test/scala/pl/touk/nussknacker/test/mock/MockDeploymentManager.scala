@@ -47,7 +47,8 @@ class MockDeploymentManager private (
       FlinkConfig(None, scenarioStateVerification = ScenarioStateVerificationConfig(enabled = false)),
       FlinkMiniClusterFactory.createMiniClusterWithServices(modelData.modelClassLoader, new Configuration),
       FlinkClientStub,
-      FlinkScenarioJobRunnerStub
+      FlinkScenarioJobRunnerStub,
+      NoLiveDataPreviewSupport,
     ) {
 
   import deploymentManagerDependencies._
@@ -148,9 +149,6 @@ object FlinkScenarioJobRunnerStub extends FlinkScenarioJobRunner {
       savepointPathOpt: Option[String]
   ): Future[Option[JobID]] =
     Future.failed(new IllegalAccessException("This implementation shouldn't be used"))
-
-  override def liveDataPreviewSupport: LiveDataPreviewSupport =
-    throw new IllegalAccessException("This implementation shouldn't be used")
 
 }
 

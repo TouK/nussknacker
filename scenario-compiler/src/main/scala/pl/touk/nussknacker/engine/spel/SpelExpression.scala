@@ -26,7 +26,11 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SpelExpressionUnderlyingParserError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
-import pl.touk.nussknacker.engine.spel.parser.{ExpressionWithTextRange, NuSpelExpressionParser}
+import pl.touk.nussknacker.engine.spel.parser.{
+  ExceptionWithExpressionTextRange,
+  ExpressionWithTextRange,
+  NuSpelExpressionParser
+}
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
@@ -254,7 +258,7 @@ class SpelExpressionParser(
       parseSpelExpressionUsingImmediateCompileConfiguration(original)
         .andThen { parsed =>
           validator
-            .validate(parsed, ctx, expectedType)
+            .validate(parsed, ctx, expectedType, flavour)
             .map((_, parsed))
             .leftMap(_.map(_.toParseError(original)))
         }
@@ -279,17 +283,25 @@ class SpelExpressionParser(
     Validated
       .catchNonFatal(immediateCompileParser.parseExpression(original, flavour.parserContext.orNull))
       .leftMap { ex =>
-        val textRangeOpt = Option(ex).collect { case ex: ParseException =>
-          IndexBasedTextRange(ex.getPosition, ex.getPosition + 1).toCoordinatesBasedTextRange(original)
-        }
+        val textRangeOpt = Option(ex)
+          .collect {
+            case ex: ExceptionWithExpressionTextRange =>
+              ex.getExpressionTextRange
+            case ex: ParseException =>
+              IndexBasedTextRange(ex.getPosition, ex.getPosition + 1)
+          }
+          .map(_.toCoordinatesBasedTextRange(original))
         val message = Option(ex)
-          .collect { case ex: SpelParseException =>
-            ex.getMessageCode match {
-              case SpelMessage.MORE_INPUT =>
-                // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
-                "Unexpected text"
-              case _ => messageWithoutExpressionAndErrorCodeIndicator(ex)
-            }
+          .collect {
+            case ex: SpelParseException =>
+              ex.getMessageCode match {
+                case SpelMessage.MORE_INPUT =>
+                  // This message sounds better than "After parsing a valid expression, there is still more data in the expression: ''{0}''"
+                  "Unexpected text"
+                case _ => messageWithoutExpressionAndErrorCodeIndicator(ex)
+              }
+            case ex: ParseException =>
+              ex.getSimpleMessage
           }
           .getOrElse(ex.getMessage)
         NonEmptyList.of(
