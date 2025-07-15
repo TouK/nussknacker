@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.Applicative
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalidNel, valid}
 import cats.implicits.catsSyntaxTuple2Semigroupal
@@ -20,7 +19,9 @@ import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 sealed trait ValidationResponse
 
@@ -60,12 +61,28 @@ class NodeDataValidator(modelData: ModelData) {
 
   def validate(
       nodeData: NodeData,
-      validationContext: ValidationContext,
-      branchContexts: Map[String, ValidationContext],
+      variableTypes: Map[String, TypingResult],
+      branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
       outgoingEdges: List[OutgoingEdge],
       fragmentResolver: FragmentResolver
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): ValidationResponse = {
     import scenarioCompilationDependencies._
+
+    val validationContextWithGlobalVariablesOnly =
+      GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+        .prepareValidationContextWithGlobalVariablesOnly(jobData)
+
+    lazy val validationContext = SingleInputNodeInputValidationContext(
+      validationContextWithGlobalVariablesOnly.copy(localVariables = variableTypes)
+    )
+    lazy val branchCtxs = {
+      val branchContexts = branchVariableTypes
+        .getOrElse(Map.empty)
+        .mapValuesNow { branchVariableTypes =>
+          validationContextWithGlobalVariablesOnly.copy(localVariables = branchVariableTypes)
+        }
+      MultipleInputBranchesNodeInputValidationContext(branchContexts, validationContextWithGlobalVariablesOnly)
+    }
 
     modelData.withModelClassloaderAsContextClassLoader {
       val compilationErrors = nodeData match {
@@ -73,7 +90,7 @@ class NodeDataValidator(modelData: ModelData) {
           toValidationResponse(
             compiler.compileCustomNodeObject(
               a,
-              MultipleInputBranchesNodeInputValidationContext(branchContexts),
+              branchCtxs,
               ending = false
             )
           )
@@ -81,7 +98,7 @@ class NodeDataValidator(modelData: ModelData) {
           toValidationResponse(
             compiler.compileCustomNodeObject(
               a,
-              SingleInputNodeInputValidationContext(validationContext),
+              validationContext,
               ending = false
             )
           )
@@ -137,7 +154,7 @@ class NodeDataValidator(modelData: ModelData) {
   }
 
   private def validateFragment(
-      validationContext: ValidationContext,
+      inputContext: SingleInputNodeInputValidationContext,
       outgoingEdges: List[OutgoingEdge],
       a: FragmentInput,
       fragmentResolver: FragmentResolver
@@ -155,7 +172,7 @@ class NodeDataValidator(modelData: ModelData) {
                 val outputName =
                   Validated.fromOption(maybeOutputName, NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))
                 outputName.andThen(name =>
-                  validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown)
+                  inputContext.validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown)
                 )
               }
               .toList
@@ -175,7 +192,7 @@ class NodeDataValidator(modelData: ModelData) {
           .map(_.toList)
           .valueOr(_ => List.empty)
         val parametersResponse = toValidationResponse(
-          compiler.compileFragmentInput(a.copy(fragmentParams = Some(definition.fragmentParameters)), validationContext)
+          compiler.compileFragmentInput(a.copy(fragmentParams = Some(definition.fragmentParameters)), inputContext)
         )
         parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
       }

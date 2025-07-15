@@ -60,8 +60,15 @@ class ParameterEvaluator(
       case (e: TypedExpression, SingleInputNodeInputValidationContext(singleCtx)) if !definition.branchParam =>
         SingleLazyParameterEvaluationResult(prepareLazyParameterExpression(definition, e, singleCtx))
       case (
+            e: TypedExpression,
+            MultipleInputBranchesNodeInputValidationContext(_, validationContextWithGlobalVariablesOnly)
+          ) if !definition.branchParam =>
+        SingleLazyParameterEvaluationResult(
+          prepareLazyParameterExpression(definition, e, validationContextWithGlobalVariablesOnly)
+        )
+      case (
             TypedExpressionMap(valueByKey),
-            MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId)
+            MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId, _)
           ) if definition.branchParam =>
         BranchLazyParameterEvaluationResult(valueByKey.map { case (branchId, typedExpression) =>
           val branchValidationContext = validationContextByBranchId.getOrElse(

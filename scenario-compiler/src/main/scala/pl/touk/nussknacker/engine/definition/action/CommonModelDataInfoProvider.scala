@@ -8,7 +8,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompiler, ProcessCompiler}
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  LazyParameterCreationStrategy,
+  NodeCompiler,
+  SingleInputNodeInputValidationContext
+}
 import pl.touk.nussknacker.engine.compiledgraph.{node => compiledNode, CompiledNodesCollector}
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart, SourcePart}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
@@ -98,7 +102,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
       part: ProcessPart
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): Map[NodeComponentInfo, Any] =
     subGraphCompiler
-      .compile(part.node, part.validationContext)
+      .compile(part.node, SingleInputNodeInputValidationContext(part.validationContext))
       .result
       .toList
       .flatMap(n => CompiledNodesCollector.collectAllNodes(n))

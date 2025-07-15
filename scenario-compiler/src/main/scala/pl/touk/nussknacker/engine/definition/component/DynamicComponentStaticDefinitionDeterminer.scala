@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
 // It is necessary to provide them, because:
@@ -29,7 +30,8 @@ import pl.touk.nussknacker.engine.definition.component.parameter.StandardParamet
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
 class DynamicComponentStaticDefinitionDeterminer(
-    nodeValidator: DynamicNodeValidator
+    nodeValidator: DynamicNodeValidator,
+    globalVariablesPreparer: GlobalVariablesPreparer,
 ) extends LazyLogging {
 
   private def determineStaticDefinition(
@@ -50,13 +52,14 @@ class DynamicComponentStaticDefinitionDeterminer(
       implicit val nodeId: NodeId = NodeId("fakeNodeId")
       nodeValidator
         .validateNode(
-          transformer,
-          Nil,
-          Nil,
-          if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
-          else None,
-          dynamic.parametersConfig,
-          inputContext
+          component = transformer,
+          parametersFromNode = Nil,
+          branchParametersFromNode = Nil,
+          outputVariable =
+            if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
+            else None,
+          parametersConfig = dynamic.parametersConfig,
+          nodeInputValidationContext = inputContext
         )
         .map(_.parameters)
         .valueOr { err =>
@@ -69,13 +72,19 @@ class DynamicComponentStaticDefinitionDeterminer(
         }
     }
 
+    val globalVariablesOnlyValidationContext =
+      globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(Set.empty)
+
     dynamic.component match {
       case withStatic: WithStaticParameters =>
         StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
       case single: SingleInputDynamicComponent[_] =>
-        inferParameters(single, SingleInputNodeInputValidationContext(ValidationContext.empty))
+        inferParameters(single, SingleInputNodeInputValidationContext(globalVariablesOnlyValidationContext))
       case join: JoinDynamicComponent[_] =>
-        inferParameters(join, MultipleInputBranchesNodeInputValidationContext(Map.empty))
+        inferParameters(
+          join,
+          MultipleInputBranchesNodeInputValidationContext(Map.empty, globalVariablesOnlyValidationContext)
+        )
     }
   }
 
@@ -91,7 +100,10 @@ object DynamicComponentStaticDefinitionDeterminer {
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
-      new DynamicComponentStaticDefinitionDeterminer(nodeValidator)
+      new DynamicComponentStaticDefinitionDeterminer(
+        nodeValidator,
+        GlobalVariablesPreparer(modelDataForType.modelDefinition.expressionConfig)
+      )
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withModelClassloaderAsContextClassLoader {

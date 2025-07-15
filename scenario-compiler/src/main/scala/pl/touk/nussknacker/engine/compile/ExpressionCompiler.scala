@@ -11,6 +11,11 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  MultipleInputBranchesNodeInputValidationContext,
+  NodeInputValidationContext,
+  SingleInputNodeInputValidationContext
+}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
@@ -127,17 +132,16 @@ class ExpressionCompiler(
   def compileExecutorComponentNodeParameters(
       parameterDefinitions: List[Parameter],
       nodeParameters: List[NodeParameter],
-      ctx: ValidationContext
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit nodeId: NodeId,
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
     compileNodeParameters(
-      parameterDefinitions,
-      nodeParameters,
-      List.empty,
-      ctx,
-      Map.empty,
+      parameterDefinitions = parameterDefinitions,
+      nodeParameters = nodeParameters,
+      nodeBranchParameters = List.empty,
+      inputContext = inputContext,
       treatEagerParametersAsLazy = true
     ).map(_.map {
       case (TypedParameter(_, expr: TypedExpression), paramDef) =>
@@ -152,8 +156,7 @@ class ExpressionCompiler(
       parameterDefinitions: List[Parameter],
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
-      ctx: ValidationContext,
-      branchContexts: Map[String, ValidationContext],
+      inputContext: NodeInputValidationContext,
       treatEagerParametersAsLazy: Boolean = false
   )(
       implicit nodeId: NodeId,
@@ -164,15 +167,32 @@ class ExpressionCompiler(
       parameterDefinitions,
       nodeParameters
     )
-    val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, ctx.globalVariables)
+    val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, inputContext.globalVariables)
     val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
+    val nonBranchParamValidationContext = inputContext match {
+      case SingleInputNodeInputValidationContext(validationContext) => validationContext
+      case MultipleInputBranchesNodeInputValidationContext(_, validationContextWithGlobalVariablesOnly) =>
+        validationContextWithGlobalVariablesOnly
+    }
     val compiledParams = adjustedParameters
       .flatMap { nodeParam =>
         paramDefMap
           .get(nodeParam.name)
-          .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy).map((_, paramDef)))
+          .map(paramDef =>
+            compileParam(nodeParam, nonBranchParamValidationContext, paramDef, treatEagerParametersAsLazy)
+              .map((_, paramDef))
+          )
       }
+
+    lazy val branchContexts = inputContext match {
+      case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId, _) =>
+        validationContextByBranchId
+      case single: SingleInputNodeInputValidationContext =>
+        throw new IllegalStateException(
+          s"[$single] found in place where MultipleInputBranchesNodeInputValidationContext expected"
+        )
+    }
     val compiledBranchParams = (for {
       branchParams <- nodeBranchParameters
       p            <- branchParams.parameters

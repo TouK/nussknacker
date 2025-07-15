@@ -76,7 +76,7 @@ class DynamicNodeValidator(
     private val inputContext = nodeInputValidationContext match {
       case SingleInputNodeInputValidationContext(validationContext) =>
         validationContext.asInstanceOf[component.InputContext]
-      case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId) =>
+      case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId, _) =>
         validationContextByBranchId.asInstanceOf[component.InputContext]
     }
 
