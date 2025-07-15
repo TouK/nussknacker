@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
@@ -32,34 +33,53 @@ class ParameterEvaluator(
 
   def evaluateParameter(
       typedParameter: TypedParameter,
-      definition: ParameterDef
+      definition: ParameterDef,
+      nodeInputValidationContext: NodeInputValidationContext,
   )(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): ParameterEvaluationResult = {
     if (definition.isLazyParameter) {
-      evaluateLazyParameter(typedParameter, definition)
+      evaluateLazyParameter(typedParameter, definition, nodeInputValidationContext)
     } else {
       prepareEagerParameter(typedParameter, definition)
     }
   }
 
-  private def evaluateLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
+  private def evaluateLazyParameter(
+      param: TypedParameter,
+      definition: ParameterDef,
+      nodeInputValidationContext: NodeInputValidationContext,
+  )(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): LazyParameterEvaluationResult = {
-    param.typedValue match {
-      case e: TypedExpression if !definition.branchParam =>
-        SingleLazyParameterEvaluationResult(prepareLazyParameterExpression(definition, e))
-      case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        BranchLazyParameterEvaluationResult(valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)))
-      case _ => throw new IllegalStateException()
+    (param.typedValue, nodeInputValidationContext) match {
+      case (e: TypedExpression, SingleInputNodeInputValidationContext(singleCtx)) if !definition.branchParam =>
+        SingleLazyParameterEvaluationResult(prepareLazyParameterExpression(definition, e, singleCtx))
+      case (
+            TypedExpressionMap(valueByKey),
+            MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId)
+          ) if definition.branchParam =>
+        BranchLazyParameterEvaluationResult(valueByKey.map { case (branchId, typedExpression) =>
+          val branchValidationContext = validationContextByBranchId.getOrElse(
+            branchId,
+            throw new IllegalStateException(
+              s"Missing validation context for branch [$branchId] during lazy parameter compilation. Only validation contexts for branches [${validationContextByBranchId.keys.mkString(", ")}] are available"
+            )
+          )
+          branchId -> prepareLazyParameterExpression(definition, typedExpression, branchValidationContext)
+        })
+      case _ =>
+        throw new IllegalStateException(
+          s"Illegal combination of typed parameter [$param] and node input validation context [$nodeInputValidationContext]"
+        )
     }
   }
 
-  private def prepareEagerParameter[T](
+  private def prepareEagerParameter(
       param: TypedParameter,
       definition: ParameterDef
   )(implicit jobData: JobData, nodeId: NodeId): EagerParameterEvaluationResult = {
@@ -81,7 +101,11 @@ class ParameterEvaluator(
     }
   }
 
-  private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(
+  private def prepareLazyParameterExpression(
+      definition: ParameterDef,
+      exprValue: TypedExpression,
+      validationContext: ValidationContext
+  )(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
@@ -99,6 +123,7 @@ class ParameterEvaluator(
           nodeId,
           definition,
           graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
+          validationContext,
           exprValue.returnType
         )
     }

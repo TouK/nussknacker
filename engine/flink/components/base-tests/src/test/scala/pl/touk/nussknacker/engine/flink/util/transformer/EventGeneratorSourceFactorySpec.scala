@@ -94,7 +94,7 @@ class EventGeneratorSourceFactorySpec
     }
   }
 
-  ignore("should handle complex types") {
+  test("should handle complex types") {
     val sinkId = "sinkId"
 
     ResultsCollectingListenerHolder.withListener { collectingListener =>

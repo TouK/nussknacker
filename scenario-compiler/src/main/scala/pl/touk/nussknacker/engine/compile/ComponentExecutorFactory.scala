@@ -8,7 +8,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.transformation.{OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  LazyParameterCreationStrategy,
+  NodeInputValidationContext,
+  ParameterEvaluator
+}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 
@@ -21,6 +25,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       compiledParameters: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additionalDependencies: Seq[AnyRef],
+      nodeInputValidationContext: NodeInputValidationContext,
       componentUseContext: ComponentUseContext,
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy
   )(
@@ -33,6 +38,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         compiledParameters,
         outputVariableNameOpt,
         additionalDependencies,
+        nodeInputValidationContext,
         componentUseContext,
         nonServicesLazyParamStrategy
       )
@@ -44,8 +50,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       params: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef],
+      nodeInputValidationContext: NodeInputValidationContext,
       componentUseContext: ComponentUseContext,
-      nonServicesLazyParamStrategy: LazyParameterCreationStrategy
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
@@ -60,7 +67,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         case _          => nonServicesLazyParamStrategy
       }
     val paramsMap = Params.fromParameterEvaluationResultMap(
-      params.map { case (tp, p) => p.name -> parameterEvaluator.evaluateParameter(tp, p) }.toMap
+      params.map { case (tp, p) =>
+        p.name -> parameterEvaluator.evaluateParameter(tp, p, nodeInputValidationContext)
+      }.toMap
     )
     // TODO: refactor implementationInvoker's to not use AnyRefs
     val nodeDependenciesRaw = scenarioCompilationDependencies.nodeDependencies.map {

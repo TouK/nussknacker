@@ -13,7 +13,12 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  DynamicNodeValidator,
+  MultipleInputBranchesNodeInputValidationContext,
+  NodeInputValidationContext,
+  SingleInputNodeInputValidationContext
+}
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
@@ -40,9 +45,7 @@ class DynamicComponentStaticDefinitionDeterminer(
   private def determineInitialParameters(
       dynamic: DynamicComponentDefinitionWithImplementation
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): List[Parameter] = {
-    def inferParameters(
-        transformer: DynamicComponent[_]
-    )(inputContext: transformer.InputContext) = {
+    def inferParameters(transformer: DynamicComponent[_], inputContext: NodeInputValidationContext) = {
       // We assume that this information is not important for determining initial parameters of dynamic nodes, so we pass fake values
       implicit val nodeId: NodeId = NodeId("fakeNodeId")
       nodeValidator
@@ -52,8 +55,9 @@ class DynamicComponentStaticDefinitionDeterminer(
           Nil,
           if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
           else None,
-          dynamic.parametersConfig
-        )(inputContext)
+          dynamic.parametersConfig,
+          inputContext
+        )
         .map(_.parameters)
         .valueOr { err =>
           logger.warn(
@@ -69,9 +73,9 @@ class DynamicComponentStaticDefinitionDeterminer(
       case withStatic: WithStaticParameters =>
         StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
       case single: SingleInputDynamicComponent[_] =>
-        inferParameters(single)(ValidationContext())
+        inferParameters(single, SingleInputNodeInputValidationContext(ValidationContext.empty))
       case join: JoinDynamicComponent[_] =>
-        inferParameters(join)(Map.empty)
+        inferParameters(join, MultipleInputBranchesNodeInputValidationContext(Map.empty))
     }
   }
 

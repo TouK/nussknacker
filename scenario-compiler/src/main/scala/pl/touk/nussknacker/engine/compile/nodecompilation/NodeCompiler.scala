@@ -636,7 +636,7 @@ class NodeCompiler(
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
       outputVariableNameOpt: Option[String],
-      ctxOrBranches: NodeInputValidationContext,
+      nodeInputValidationContext: NodeInputValidationContext,
       parameterDefinitionsToUse: List[Parameter],
       additionalDependencies: Seq[AnyRef]
   )(
@@ -644,11 +644,11 @@ class NodeCompiler(
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ComponentExecutor]) = {
     import scenarioCompilationDependencies._
-    val ctx = ctxOrBranches match {
+    val ctx = nodeInputValidationContext match {
       case SingleInputNodeInputValidationContext(validationContext) => validationContext
       case MultipleInputBranchesNodeInputValidationContext(_)       => contextWithOnlyGlobalVariables
     }
-    val branchContexts = ctxOrBranches match {
+    val branchContexts = nodeInputValidationContext match {
       case SingleInputNodeInputValidationContext(_) => Map.empty[String, ValidationContext]
       case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId) => validationContextByBranchId
     }
@@ -664,12 +664,13 @@ class NodeCompiler(
       .flatMap { compiledParameters =>
         factory
           .createComponentExecutor[ComponentExecutor](
-            componentDefinition,
-            compiledParameters,
-            outputVariableNameOpt,
-            additionalDependencies,
-            runtimeMode.createContext(nodesDeploymentData.get(nodeId)),
-            nonServicesLazyParamStrategy
+            component = componentDefinition,
+            compiledParameters = compiledParameters,
+            outputVariableNameOpt = outputVariableNameOpt,
+            additionalDependencies = additionalDependencies,
+            nodeInputValidationContext = nodeInputValidationContext,
+            componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(nodeId)),
+            nonServicesLazyParamStrategy = nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>
             val typingInfo = compiledParameters.flatMap {
@@ -726,7 +727,7 @@ class NodeCompiler(
   }
 
   private def validateDynamicTransformer(
-      eitherSingleOrJoin: NodeInputValidationContext,
+      nodeInputValidationContext: NodeInputValidationContext,
       parameters: List[NodeParameter],
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
@@ -735,16 +736,15 @@ class NodeCompiler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (dynamicDefinition.component, eitherSingleOrJoin) match {
+    (dynamicDefinition.component, nodeInputValidationContext) match {
       case (single: SingleInputDynamicComponent[_], SingleInputNodeInputValidationContext(singleCtx)) =>
         dynamicNodeValidator.validateNode(
           single,
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.parametersConfig
-        )(
-          singleCtx
+          dynamicDefinition.parametersConfig,
+          nodeInputValidationContext
         )
       case (join: JoinDynamicComponent[_], MultipleInputBranchesNodeInputValidationContext(joinCtx)) =>
         dynamicNodeValidator.validateNode(
@@ -752,9 +752,8 @@ class NodeCompiler(
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.parametersConfig
-        )(
-          joinCtx
+          dynamicDefinition.parametersConfig,
+          nodeInputValidationContext
         )
       case (_: SingleInputDynamicComponent[_], MultipleInputBranchesNodeInputValidationContext(_)) =>
         Invalid(

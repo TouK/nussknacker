@@ -42,17 +42,21 @@ class DynamicNodeValidator(
       parametersFromNode: List[NodeParameter],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      parametersConfig: Map[ParameterName, ParameterConfig]
-  )(
-      inputContext: component.InputContext
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      nodeInputValidationContext: NodeInputValidationContext,
   )(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
+
       val processor =
-        new TransformationStepsProcessor(component, branchParametersFromNode, outputVariable, parametersConfig)(
-          inputContext
+        new TransformationStepsProcessor(
+          component,
+          branchParametersFromNode,
+          outputVariable,
+          parametersConfig,
+          nodeInputValidationContext
         )
       processor.processRemainingTransformationSteps(Nil, None, Nil, parametersFromNode)
     }(nodeId, scenarioCompilationDependencies.metaData)
@@ -63,12 +67,18 @@ class DynamicNodeValidator(
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       parametersConfig: Map[ParameterName, ParameterConfig],
-  )(inputContextRaw: Any)(implicit nodeId: NodeId, scenarioCompilationDependencies: ScenarioCompilationDependencies)
+      nodeInputValidationContext: NodeInputValidationContext,
+  )(implicit nodeId: NodeId, scenarioCompilationDependencies: ScenarioCompilationDependencies)
       extends LazyLogging {
 
     import scenarioCompilationDependencies._
 
-    private val inputContext = inputContextRaw.asInstanceOf[component.InputContext]
+    private val inputContext = nodeInputValidationContext match {
+      case SingleInputNodeInputValidationContext(validationContext) =>
+        validationContext.asInstanceOf[component.InputContext]
+      case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId) =>
+        validationContextByBranchId.asInstanceOf[component.InputContext]
+    }
 
     private val outputVariableDependency = outputVariable.map(OutputVariableNameValue)
 
@@ -191,14 +201,15 @@ class DynamicNodeValidator(
     ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[NodeParameter])] = {
       val compiledParameter = compileParameter(parameterDefinition, nodeParameters)
       compiledParameter.map { case (typedParameter, extraNodeParamOpt) =>
-        val definedParam = parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition) match {
-          case SingleEagerParameterEvaluationResult(value, returnType) => DefinedEagerParameter(value, returnType)
-          case SingleLazyParameterEvaluationResult(lazyParameter)      => DefinedLazyParameter(lazyParameter.returnType)
-          case BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId) =>
-            DefinedEagerBranchParameter(valueByBranchId, returnTypeByBranchId)
-          case BranchLazyParameterEvaluationResult(lazyParamByBranchId) =>
-            DefinedLazyBranchParameter(lazyParamByBranchId.mapValuesNow(_.returnType))
-        }
+        val definedParam =
+          parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition, nodeInputValidationContext) match {
+            case SingleEagerParameterEvaluationResult(value, returnType) => DefinedEagerParameter(value, returnType)
+            case SingleLazyParameterEvaluationResult(lazyParameter) => DefinedLazyParameter(lazyParameter.returnType)
+            case BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId) =>
+              DefinedEagerBranchParameter(valueByBranchId, returnTypeByBranchId)
+            case BranchLazyParameterEvaluationResult(lazyParamByBranchId) =>
+              DefinedLazyBranchParameter(lazyParamByBranchId.mapValuesNow(_.returnType))
+          }
         (definedParam, extraNodeParamOpt)
       }
     }

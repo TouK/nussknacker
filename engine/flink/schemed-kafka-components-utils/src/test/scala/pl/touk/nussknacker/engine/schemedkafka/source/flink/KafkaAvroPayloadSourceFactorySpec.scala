@@ -13,7 +13,11 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  DynamicNodeValidator,
+  SingleInputNodeInputValidationContext,
+  TransformationResult
+}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
@@ -390,8 +394,9 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
         paramsList,
         Nil,
         Some(VariableConstants.InputVariableName),
-        Map.empty
-      )(ValidationContext())
+        Map.empty,
+        SingleInputNodeInputValidationContext(ValidationContext.empty)
+      )
       .toOption
       .get
   }
