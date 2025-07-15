@@ -4,7 +4,6 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -16,19 +15,8 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.nio.charset.{Charset, StandardCharsets}
-import java.time.{
-  Duration,
-  Instant,
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-  OffsetDateTime,
-  Period,
-  ZonedDateTime,
-  ZoneId,
-  ZoneOffset
-}
+import java.nio.charset.StandardCharsets
+import java.time._
 import java.util.{Currency, Locale, UUID}
 import scala.jdk.CollectionConverters._
 

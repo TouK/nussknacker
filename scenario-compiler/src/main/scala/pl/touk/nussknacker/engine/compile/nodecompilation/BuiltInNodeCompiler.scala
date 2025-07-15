@@ -34,7 +34,8 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
         outputVar = Some(OutputVar.variable(variable.varName))
       )
 
-    val additionalValidationResult = validateVariableValue(validTypedExpression, DefaultExpressionIdParamName)
+    val additionalValidationResult =
+      validateVariableValue(validTypedExpression, DefaultExpressionIdParamName, inputContext)
 
     combineErrors(nodeCompilation, additionalValidationResult)
   }
@@ -51,7 +52,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
         outputVar = None
       )
 
-    val additionalValidationResult = validateBoolean(validTypedExpression, DefaultExpressionIdParamName)
+    val additionalValidationResult = validateBoolean(validTypedExpression, DefaultExpressionIdParamName, inputContext)
 
     combineErrors(nodeCompilation, additionalValidationResult)
   }
@@ -84,7 +85,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
       val outEdgeParamName = ParameterName(outEdge)
       val (validTypedExpression, nodeCompilation) =
         compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdgeParamName, None)
-      val validation     = validateBoolean(validTypedExpression, outEdgeParamName)
+      val validation     = validateBoolean(validTypedExpression, outEdgeParamName, inputContext)
       val caseExpression = nodeCompilation
       (validation, caseExpression)
     }.unzip
@@ -156,7 +157,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
       expressionType = Some(typedObject)
     )
 
-    val additionalValidationResult = RecordValidator.validate(compiledRecord, indexedFields)
+    val additionalValidationResult = RecordValidator.validate(compiledRecord, indexedFields, inputContext)
 
     combineErrors(compilationResult, additionalValidationResult)
   }

@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.transformation.{JoinDynamicComponent, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -34,7 +33,12 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.expression.parse.{
+  CompiledExpression,
+  MultipleBranchesTypedValue,
+  SingleBranchTypedValue,
+  TypedExpression
+}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
@@ -695,16 +699,15 @@ class NodeCompiler(
             compiledParameters = compiledParameters,
             outputVariableNameOpt = outputVariableNameOpt,
             additionalDependencies = additionalDependencies,
-            nodeInputValidationContext = nodeInputValidationContext,
             componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(nodeId)),
             nonServicesLazyParamStrategy = nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>
             val typingInfo = compiledParameters.flatMap {
-              case (TypedParameter(name, TypedExpression(_, typingInfo)), _) =>
+              case (TypedParameter(name, SingleBranchTypedValue(TypedExpression(_, typingInfo), _)), _) =>
                 List(name.value -> typingInfo)
-              case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
-                valueByBranch.map { case (branch, TypedExpression(_, typingInfo)) =>
+              case (TypedParameter(paramName, MultipleBranchesTypedValue(valueByBranch)), _) =>
+                valueByBranch.map { case (branch, SingleBranchTypedValue(TypedExpression(_, typingInfo), _)) =>
                   val expressionId = branchParameterExpressionId(paramName, branch)
                   expressionId -> typingInfo
                 }

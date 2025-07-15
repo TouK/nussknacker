@@ -202,7 +202,7 @@ class DynamicNodeValidator(
       val compiledParameter = compileParameter(parameterDefinition, nodeParameters)
       compiledParameter.map { case (typedParameter, extraNodeParamOpt) =>
         val definedParam =
-          parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition, nodeInputValidationContext) match {
+          parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition) match {
             case SingleEagerParameterEvaluationResult(value, returnType) => DefinedEagerParameter(value, returnType)
             case SingleLazyParameterEvaluationResult(lazyParameter) => DefinedLazyParameter(lazyParameter.returnType)
             case BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId) =>

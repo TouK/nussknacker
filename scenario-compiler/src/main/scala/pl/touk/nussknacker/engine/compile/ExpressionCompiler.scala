@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{Ior, IorNel, NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{invalid, invalidNel, valid, Invalid, Valid}
+import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalid, invalidNel, valid, Valid}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
@@ -22,10 +22,10 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.Valid
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.{ExpressionEvaluator, NullExpression}
 import pl.touk.nussknacker.engine.expression.parse.{
-  CompiledExpression,
   ExpressionParser,
-  TypedExpression,
-  TypedExpressionMap
+  MultipleBranchesTypedValue,
+  SingleBranchTypedValue,
+  TypedExpression
 }
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -144,9 +144,9 @@ class ExpressionCompiler(
       inputContext = inputContext,
       treatEagerParametersAsLazy = true
     ).map(_.map {
-      case (TypedParameter(_, expr: TypedExpression), paramDef) =>
-        CompiledParameter(expr, paramDef)
-      case (TypedParameter(_, _: TypedExpressionMap), _) =>
+      case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
+        CompiledParameter(expr.typedExpression, paramDef)
+      case (TypedParameter(_, _: MultipleBranchesTypedValue), _) =>
         throw new IllegalArgumentException("Typed expression map should not be here...")
     })
   }
@@ -234,7 +234,7 @@ class ExpressionCompiler(
     substituteDictKeyExpression(nodeParam.expression, definition.editors, nodeParam.name).andThen { finalExpr =>
       enrichContext(ctxToUse, definition).andThen { finalCtx =>
         compile(finalExpr, Some(nodeParam.name), finalCtx, definition.typ)
-          .map(TypedParameter(nodeParam.name, _))
+          .map(typedExpression => TypedParameter(nodeParam.name, SingleBranchTypedValue(typedExpression, finalCtx)))
       }
     }
   }
@@ -250,12 +250,14 @@ class ExpressionCompiler(
         substituteDictKeyExpression(expression, definition.editors, paramName).andThen { finalExpr =>
           enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
             // TODO JOIN: branch id on error field level
-            compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(branchId -> _)
+            compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(typedExpression =>
+              branchId -> SingleBranchTypedValue(typedExpression, finalCtx)
+            )
           }
         }
       }
       .sequence
-      .map(exprByBranchId => TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
+      .map(exprByBranchId => TypedParameter(definition.name, MultipleBranchesTypedValue(exprByBranchId.toMap)))
   }
 
   private def substituteDictKeyExpression(

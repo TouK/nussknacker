@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
-import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.expression.parse.{MultipleBranchesTypedValue, SingleBranchTypedValue}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object Validations {
@@ -31,13 +31,16 @@ object Validations {
       implicit nodeId: NodeId
   ): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
     val paramWithValueAndExpressionList = parameter.typedValue match {
-      case te: TypedExpression => List((parameter.name, te.typingInfo.typingResult.valueOpt, te.expression))
-      case tem: TypedExpressionMap =>
-        tem.valueByKey.toList.map { case (branchName, expression) =>
+      case single: SingleBranchTypedValue =>
+        List(
+          (parameter.name, single.typedExpression.typingInfo.typingResult.valueOpt, single.typedExpression.expression)
+        )
+      case multiple: MultipleBranchesTypedValue =>
+        multiple.valueByBranchId.toList.map { case (branchName, expression) =>
           (
             parameter.name.withBranchId(branchName),
-            expression.returnType.valueOpt,
-            expression.expression
+            expression.typedExpression.returnType.valueOpt,
+            expression.typedExpression.expression
           )
         }
     }
