@@ -36,13 +36,6 @@ object JsonParser extends ExpressionParser {
     }
   }
 
-  override def parseWithoutContextValidation(
-      jsonString: String,
-      expectedType: TypingResult
-  ): ValidatedNel[ExpressionParseError, CompiledJsonExpression] = {
-    parseJson(jsonString).map(json => CompiledJsonExpression(jsonString, json))
-  }
-
   private def parseJson(jsonString: String): Validated[NonEmptyList[JsonParseError], Json] =
     if (shouldBeTreatedAsNull(jsonString)) {
       Valid(Json.Null)

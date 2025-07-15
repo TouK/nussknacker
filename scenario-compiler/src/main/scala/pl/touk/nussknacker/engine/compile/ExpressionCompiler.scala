@@ -378,27 +378,6 @@ class ExpressionCompiler(
     }
   }
 
-  def compileWithoutContextValidation(n: Expression, paramName: ParameterName, expectedType: TypingResult)(
-      implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, CompiledExpression] = {
-    val validParser = expressionParsers
-      .get(n.language)
-      .map(valid)
-      .getOrElse(invalid(NotSupportedExpressionLanguage(n.language)))
-      .toValidatedNel
-
-    validParser andThen { parser =>
-      parser
-        .parseWithoutContextValidation(n.expression, expectedType)
-        .leftMap(errs =>
-          errs.map(err =>
-            ProcessCompilationError
-              .ExpressionParserCompilationError(err.message, Some(paramName), n.expression, err.details)
-          )
-        )
-    }
-  }
-
   def withLabelsDictTyper: ExpressionCompiler =
     new ExpressionCompiler(
       expressionParsers.map {

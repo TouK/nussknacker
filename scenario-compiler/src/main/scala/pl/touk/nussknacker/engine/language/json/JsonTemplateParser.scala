@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.language.json
 
 import cats.data.{Validated, ValidatedNel}
-import io.circe.{parser, Json}
+import io.circe.parser
 import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -47,16 +47,6 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
           .map(toJsonTemplateExpression(originalJsonString, spelTemplateExpression, _))
       }
       .andThen(validateExpectedType)
-  }
-
-  override def parseWithoutContextValidation(
-      originalJsonString: String,
-      expectedType: typing.TypingResult
-  ): ValidatedNel[ExpressionParseError, CompiledExpression] = {
-    spelTemplateParser
-      .parseWithoutContextValidation(originalJsonString, Typed[TemplateEvaluationResult])
-      .map(toJsonTemplateExpression(originalJsonString, _, expressionResultType = expectedType))
-      .map(_.expression)
   }
 
   private def toJsonTemplateExpression(

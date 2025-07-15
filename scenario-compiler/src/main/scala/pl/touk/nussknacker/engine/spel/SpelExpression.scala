@@ -229,19 +229,6 @@ class SpelExpressionParser(
 
   override final val languageId: Language = flavour.languageId
 
-  override def parseWithoutContextValidation(
-      original: String,
-      expectedType: TypingResult
-  ): ValidatedNel[ExpressionParseError, CompiledExpression] = {
-    if (shouldUseNullExpression(original)) {
-      Valid(NullExpression(original, flavour))
-    } else {
-      parseSpelExpressionUsingImmediateCompileConfiguration(original).map { parsed =>
-        createExpression(original, parsed, expectedType)
-      }
-    }
-  }
-
   override def parse(
       original: String,
       ctx: ValidationContext,
