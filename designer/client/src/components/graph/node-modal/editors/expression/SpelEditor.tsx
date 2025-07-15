@@ -113,7 +113,7 @@ Use autocompletion to explore available options. To read more see [Documentation
         }
 
         if (editorMode === EditorMode.JsonTemplate && !readOnly) {
-            const defaultValueIsDifferentThanCurrentValue = defaultValue.expression !== props.expressionObj.expression;
+            const defaultValueIsDifferentThanCurrentValue = defaultValue?.expression !== props.expressionObj.expression;
             const showResetToDefaultButton = defaultValue && defaultValueIsDifferentThanCurrentValue;
 
             properties.placeholder = placeholder || t("editors.jsonTemplateEditor.placeholder", 'e.g. { "key": "#{ #input.value }" }');
