@@ -47,10 +47,6 @@ describe("Activities", () => {
         cy.visitNewProcess(seed, "testProcess");
     });
 
-    afterEach(() => {
-        cy.cancelScenario();
-    });
-
     it("should display activities", () => {
         cy.contains(/creator panel/i).click();
 
@@ -133,5 +129,6 @@ describe("Activities", () => {
         cy.deployScenario();
         cy.get('[data-testid="runningVersion"]').click();
         cy.get('[aria-selected="true"]').find('[aria-label="tool:Deployment"]').should("be.visible");
+        cy.cancelScenario();
     });
 });
