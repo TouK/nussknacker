@@ -15,6 +15,9 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.time.Instant
+import scala.jdk.CollectionConverters._
+
 class EventGeneratorSourceFactorySpec
     extends AnyFunSuite
     with FlinkSpec
@@ -86,6 +89,49 @@ class EventGeneratorSourceFactorySpec
             emittedResults.size should be > 1
             emittedResults.distinct.size shouldBe emittedResults.size
           }
+        }
+      }
+    }
+  }
+
+  ignore("should handle complex types") {
+    val sinkId = "sinkId"
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = LocalModelData(
+        ConfigFactory.empty(),
+        FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+        configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
+      )
+      val scenario = ScenarioBuilder
+        .streaming("test")
+        .source(
+          "event-generator",
+          "event-generator",
+          "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+          "count"    -> "1".spel,
+          "value" ->
+            """{
+              |  "instant": "#{ T(java.time.Instant).ofEpochMilli(123L) }"
+              |}""".stripMargin.jsonTemplate
+        )
+        // We adds some flink operator to enforce flink messages serialization
+        .customNode("foo", "previousOutput", "previousValue", "Key" -> "''".spel, "Value" -> "''".spel)
+        .emptySink(sinkId, "dead-end")
+
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
+
+        flinkMiniCluster.withRunningJob(executionResult.getJobID) {
+          val emittedRecord = eventually {
+            val results        = collectingListener.results.nodeResults.get(sinkId)
+            val emittedResults = results.toList.flatten.flatMap(_.variableTyped[Any]("input"))
+            emittedResults.size should be > 1
+            emittedResults.head
+          }
+          emittedRecord shouldBe Map(
+            "instant" -> Instant.ofEpochMilli(123L)
+          ).asJava
         }
       }
     }

@@ -113,8 +113,6 @@ class NodeCompiler(
     )
   }
 
-  private type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
-
   private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
   private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
   private val expressionConfig: ExpressionConfigDefinition =
@@ -152,7 +150,7 @@ class NodeCompiler(
             compileComponentWithContextTransformation[Source](
               a.parameters,
               Nil,
-              Left(contextWithOnlyGlobalVariables),
+              SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables),
               Some(VariableConstants.InputVariableName),
               definition,
               defaultCtxForMethodBasedCreatedComponentExecutor
@@ -179,7 +177,7 @@ class NodeCompiler(
             compileComponentWithContextTransformation[Source](
               Nil,
               Nil,
-              Left(contextWithOnlyGlobalVariables),
+              SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables),
               None,
               definition,
               _ => Valid(validationContext)
@@ -259,14 +257,17 @@ class NodeCompiler(
     parameterExtractionValidation |+| fixedValuesErrors |+| dictValueEditorErrors
   }
 
-  def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(
+  def compileCustomNodeObject(data: CustomNodeData, ctx: NodeInputValidationContext, ending: Boolean)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
   ): NodeCompilationResult[AnyRef] = {
     implicit val nodeId: NodeId = NodeId(data.id)
     import scenarioCompilationDependencies._
 
-    val outputVar       = data.outputVar.map(OutputVar.customNode)
-    val defaultCtx      = ctx.fold(identity, _ => contextWithOnlyGlobalVariables)
+    val outputVar = data.outputVar.map(OutputVar.customNode)
+    val defaultCtx = ctx match {
+      case SingleInputNodeInputValidationContext(validationContext) => validationContext
+      case MultipleInputBranchesNodeInputValidationContext(_)       => contextWithOnlyGlobalVariables
+    }
     val defaultCtxToUse = outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
     definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
@@ -304,7 +305,7 @@ class NodeCompiler(
         compileComponentWithContextTransformation[api.process.Sink](
           sink.parameters,
           Nil,
-          Left(ctx),
+          SingleInputNodeInputValidationContext(ctx),
           None,
           definition,
           _ => Valid(ctx)
@@ -490,7 +491,7 @@ class NodeCompiler(
     val compilationResult = compileComponentWithContextTransformation[ServiceInvoker](
       parameters = serviceRef.parameters,
       branchParameters = Nil,
-      ctx = Left(validationContext),
+      ctx = SingleInputNodeInputValidationContext(validationContext),
       outputVar = outputVar.map(_.outputName),
       componentDefinition = componentDefinition,
       defaultCtxForMethodBasedCreatedComponentExecutor = defaultCtxForMethodBasedCreatedComponentExecutor
@@ -514,13 +515,16 @@ class NodeCompiler(
   private def defaultContextAfter(
       node: CustomNodeData,
       ending: Boolean,
-      branchCtx: GenericValidationContext
+      branchCtx: NodeInputValidationContext
   )(
       implicit nodeId: NodeId,
       jobData: JobData
   ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] =
     returnTypeOpt => {
-      val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
+      val validationContext = branchCtx match {
+        case SingleInputNodeInputValidationContext(validationContext) => validationContext
+        case MultipleInputBranchesNodeInputValidationContext(_)       => contextWithOnlyGlobalVariables
+      }
 
       def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = validationContext
         .withVariable(outputVar, typ)
@@ -544,7 +548,7 @@ class NodeCompiler(
   private def compileComponentWithContextTransformation[ComponentExecutor](
       parameters: List[NodeParameter],
       branchParameters: List[BranchParameters],
-      ctx: GenericValidationContext,
+      ctx: NodeInputValidationContext,
       outputVar: Option[String],
       componentDefinition: ComponentDefinitionWithImplementation,
       defaultCtxForMethodBasedCreatedComponentExecutor: Option[TypingResult] => ValidatedNel[
@@ -632,7 +636,7 @@ class NodeCompiler(
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
       outputVariableNameOpt: Option[String],
-      ctxOrBranches: GenericValidationContext,
+      ctxOrBranches: NodeInputValidationContext,
       parameterDefinitionsToUse: List[Parameter],
       additionalDependencies: Seq[AnyRef]
   )(
@@ -640,8 +644,14 @@ class NodeCompiler(
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ComponentExecutor]) = {
     import scenarioCompilationDependencies._
-    val ctx            = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
-    val branchContexts = ctxOrBranches.getOrElse(Map.empty)
+    val ctx = ctxOrBranches match {
+      case SingleInputNodeInputValidationContext(validationContext) => validationContext
+      case MultipleInputBranchesNodeInputValidationContext(_)       => contextWithOnlyGlobalVariables
+    }
+    val branchContexts = ctxOrBranches match {
+      case SingleInputNodeInputValidationContext(_) => Map.empty[String, ValidationContext]
+      case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId) => validationContextByBranchId
+    }
 
     val compiledObjectWithTypingInfo = expressionCompiler
       .compileNodeParameters(
@@ -682,7 +692,7 @@ class NodeCompiler(
 
   private def contextAfterMethodBasedCreatedComponentExecutor[ComponentExecutor](
       executor: ComponentExecutor,
-      validationContexts: GenericValidationContext,
+      validationContexts: NodeInputValidationContext,
       handleNonContextTransformingExecutor: ComponentExecutor => ValidatedNel[
         ProcessCompilationError,
         ValidationContext
@@ -691,10 +701,16 @@ class NodeCompiler(
     NodeValidationExceptionHandler.handleExceptionsInValidation {
       val contextTransformationDefOpt = executor.cast[AbstractContextTransformation].map(_.definition)
       (contextTransformationDefOpt, validationContexts) match {
-        case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
+        case (
+              Some(transformation: ContextTransformationDef),
+              SingleInputNodeInputValidationContext(validationContext)
+            ) =>
           // copying global variables because custom transformation may override them -> TODO: in ValidationContext
           transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
-        case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
+        case (
+              Some(transformation: JoinContextTransformationDef),
+              MultipleInputBranchesNodeInputValidationContext(branchEndContexts)
+            ) =>
           // copying global variables because custom transformation may override them -> TODO: in ValidationContext
           transformation
             .transform(branchEndContexts)
@@ -710,7 +726,7 @@ class NodeCompiler(
   }
 
   private def validateDynamicTransformer(
-      eitherSingleOrJoin: GenericValidationContext,
+      eitherSingleOrJoin: NodeInputValidationContext,
       parameters: List[NodeParameter],
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
@@ -720,7 +736,7 @@ class NodeCompiler(
       nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (dynamicDefinition.component, eitherSingleOrJoin) match {
-      case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
+      case (single: SingleInputDynamicComponent[_], SingleInputNodeInputValidationContext(singleCtx)) =>
         dynamicNodeValidator.validateNode(
           single,
           parameters,
@@ -730,7 +746,7 @@ class NodeCompiler(
         )(
           singleCtx
         )
-      case (join: JoinDynamicComponent[_], Right(joinCtx)) =>
+      case (join: JoinDynamicComponent[_], MultipleInputBranchesNodeInputValidationContext(joinCtx)) =>
         dynamicNodeValidator.validateNode(
           join,
           parameters,
@@ -740,11 +756,11 @@ class NodeCompiler(
         )(
           joinCtx
         )
-      case (_: SingleInputDynamicComponent[_], Right(_)) =>
+      case (_: SingleInputDynamicComponent[_], MultipleInputBranchesNodeInputValidationContext(_)) =>
         Invalid(
           NonEmptyList.of(CustomNodeError("Invalid scenario structure: single input component used as a join", None))
         )
-      case (_: JoinDynamicComponent[_], Left(_)) =>
+      case (_: JoinDynamicComponent[_], SingleInputNodeInputValidationContext(_)) =>
         Invalid(
           NonEmptyList.of(
             CustomNodeError("Invalid scenario structure: join component used as with single, not named input", None)

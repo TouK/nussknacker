@@ -5,7 +5,13 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.{
+  BranchEagerParameterEvaluationResult,
+  BranchLazyParameterEvaluationResult,
+  NodeId,
+  SingleEagerParameterEvaluationResult,
+  SingleLazyParameterEvaluationResult
+}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters

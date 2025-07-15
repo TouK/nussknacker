@@ -69,9 +69,22 @@ class NodeDataValidator(modelData: ModelData) {
 
     modelData.withModelClassloaderAsContextClassLoader {
       val compilationErrors = nodeData match {
-        case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))
+        case a: Join =>
+          toValidationResponse(
+            compiler.compileCustomNodeObject(
+              a,
+              MultipleInputBranchesNodeInputValidationContext(branchContexts),
+              ending = false
+            )
+          )
         case a: CustomNode =>
-          toValidationResponse(compiler.compileCustomNodeObject(a, Left(validationContext), ending = false))
+          toValidationResponse(
+            compiler.compileCustomNodeObject(
+              a,
+              SingleInputNodeInputValidationContext(validationContext),
+              ending = false
+            )
+          )
         case a: SourceNodeData => toValidationResponse(compiler.compileSource(a))
         case a: Sink           => toValidationResponse(compiler.compileSink(a, validationContext))
         case a: Enricher =>

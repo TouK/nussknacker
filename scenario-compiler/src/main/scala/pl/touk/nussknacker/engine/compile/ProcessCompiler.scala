@@ -12,7 +12,12 @@ import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  LazyParameterCreationStrategy,
+  MultipleInputBranchesNodeInputValidationContext,
+  NodeCompiler,
+  SingleInputNodeInputValidationContext
+}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.{part, CompiledProcessParts}
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
@@ -264,7 +269,7 @@ protected trait ProcessCompilerBase {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
-      nodeCompiler.compileCustomNodeObject(data, Left(ctx), ending = true)
+      nodeCompiler.compileCustomNodeObject(data, SingleInputNodeInputValidationContext(ctx), ending = true)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
 
     CompilationResult
@@ -294,8 +299,14 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     import scenarioCompilationDependencies._
 
+    val nodeInputValidationContext = ctx match {
+      case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
+      case Right(branchEndContexts) =>
+        MultipleInputBranchesNodeInputValidationContext(branchEndContexts.contextsForJoin(data.id))
+    }
+
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
-      nodeCompiler.compileCustomNodeObject(data, ctx.map(_.contextsForJoin(data.id)), ending = false)
+      nodeCompiler.compileCustomNodeObject(data, nodeInputValidationContext, ending = false)
 
     val nextPartsValidation =
       sub.validate(node, validatedNextCtx.valueOr(_ => ctx.left.getOrElse(contextWithOnlyGlobalVariables)))
