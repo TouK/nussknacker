@@ -62,7 +62,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
         new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
       case TypedClass(klass, Nil) if klass == classOf[ZonedDateTime]                => ZonedDateTimeTypeInformation
       case TypedClass(klass, Nil) if klass == classOf[OffsetDateTime]               => OffsetDateTimeTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[ZoneId]                       => ZoneIdTypeInformation
+      case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass)        => ZoneIdTypeInformation
       case TypedClass(klass, Nil) if klass == classOf[Duration]                     => DurationTypeInformation
       case TypedClass(klass, Nil) if klass == classOf[Period]                       => PeriodTypeInformation
       case TypedClass(klass, Nil) if klass == classOf[Charset]                      => CharsetTypeInformation
