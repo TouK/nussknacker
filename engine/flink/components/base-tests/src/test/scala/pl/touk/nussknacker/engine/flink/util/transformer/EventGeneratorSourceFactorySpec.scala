@@ -166,4 +166,92 @@ class EventGeneratorSourceFactorySpec
     }
   }
 
+  test("should handle complex types in heterogeneous context") {
+    val sinkId = "sinkId"
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = LocalModelData(
+        ConfigFactory.empty(),
+        FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+        configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
+      )
+      val scenario = ScenarioBuilder
+        .streaming("test")
+        .source(
+          "event-generator",
+          "event-generator",
+          "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+          "count"    -> "1".spel,
+          "value" ->
+            """{
+              |  "instant": "#{ T(java.time.Instant).ofEpochMilli(123L) }",
+              |  "offsetDateTime": "#{ T(java.time.OffsetDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC) }",
+              |  "zonedDateTime": "#{ T(java.time.ZonedDateTime).of(2025, 1, 1, 0, 0, 0, 0, T(java.time.ZoneOffset).UTC) }",
+              |  "localDateTime": "#{ T(java.time.LocalDateTime).of(2025, 1, 1, 0, 0, 0, 0) }",
+              |  "localDate": "#{ T(java.time.LocalDate).of(2025, 1, 1) }",
+              |  "localTime": "#{ T(java.time.LocalTime).of(12, 1) }",
+              |  "period": "#{ T(java.time.Period).ofDays(30) }",
+              |  "duration": "#{ T(java.time.Duration).ofHours(12) }",
+              |  "zoneOffset": "#{ T(java.time.ZoneOffset).of("+01:00") }",
+              |  "zoneId": "#{ T(java.time.ZoneId).of("Europe/Warsaw") }",
+              |  "locale": "#{ T(java.util.Locale).ENGLISH }",
+              |  "charset": "#{ T(java.nio.charset.StandardCharsets).UTF_8 }",
+              |  "currency": "#{ T(java.util.Currency).getInstance("USD") }",
+              |  "uuid": "#{ T(java.util.UUID).fromString("38a727ce-44d6-43ef-85b8-1fdde02108cf") }"
+              |}""".stripMargin.jsonTemplate
+        )
+        .buildVariable(
+          "mapOfLists",
+          "mapOfLists",
+          "instant"        -> "{ 123, #input.instant }".spel,
+          "offsetDateTime" -> "{ 123, #input.offsetDateTime }".spel,
+          "zonedDateTime"  -> "{ 123, #input.zonedDateTime }".spel,
+          "localDateTime"  -> "{ 123, #input.localDateTime }".spel,
+          "localDate"      -> "{ 123, #input.localDate }".spel,
+          "localTime"      -> "{ 123, #input.localTime }".spel,
+          "period"         -> "{ 123, #input.period }".spel,
+          "duration"       -> "{ 123, #input.duration }".spel,
+          "zoneOffset"     -> "{ 123, #input.zoneOffset }".spel,
+          "zoneId"         -> "{ 123, #input.zoneId }".spel,
+          "locale"         -> "{ 123, #input.locale }".spel,
+          "charset"        -> "{ 123, #input.charset }".spel,
+          "currency"       -> "{ 123, #input.currency }".spel,
+          "uuid"           -> "{ 123, #input.uuid }".spel,
+        )
+        // We adds some flink operator to enforce flink messages serialization
+        .customNode("foo", "previousOutput", "previousValue", "Key" -> "''".spel, "Value" -> "''".spel)
+        .emptySink(sinkId, "dead-end")
+
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
+
+        flinkMiniCluster.withRunningJob(executionResult.getJobID) {
+          val emittedRecord = eventually {
+            val results        = collectingListener.results.nodeResults.get(sinkId)
+            val emittedResults = results.toList.flatten.flatMap(_.variableTyped[Any]("mapOfLists"))
+            emittedResults.size should be > 1
+            emittedResults.head
+          }
+          val expectedRecord = Map(
+            "instant"        -> List(123, Instant.ofEpochMilli(123L)).asJava,
+            "offsetDateTime" -> List(123, OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).asJava,
+            "zonedDateTime"  -> List(123, ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).asJava,
+            "localDateTime"  -> List(123, LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0)).asJava,
+            "localDate"      -> List(123, LocalDate.of(2025, 1, 1)).asJava,
+            "localTime"      -> List(123, LocalTime.of(12, 1)).asJava,
+            "period"         -> List(123, Period.ofDays(30)).asJava,
+            "duration"       -> List(123, Duration.ofHours(12)).asJava,
+            "zoneOffset"     -> List(123, ZoneOffset.of("+01:00")).asJava,
+            "zoneId"         -> List(123, ZoneId.of("Europe/Warsaw")).asJava,
+            "locale"         -> List(123, Locale.ENGLISH).asJava,
+            "charset"        -> List(123, StandardCharsets.UTF_8).asJava,
+            "currency"       -> List(123, Currency.getInstance("USD")).asJava,
+            "uuid"           -> List(123, UUID.fromString("38a727ce-44d6-43ef-85b8-1fdde02108cf")).asJava,
+          ).asJava
+          emittedRecord shouldBe expectedRecord
+        }
+      }
+    }
+  }
+
 }

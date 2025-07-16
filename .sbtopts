@@ -21,3 +21,5 @@
 -J--add-opens=java.base/java.util.concurrent=ALL-UNNAMED
 -J--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
 -J--add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED
+-J--add-opens=java.base/java.nio.charset=ALL-UNNAMED
+-J--add-opens=java.base/sun.nio.cs=ALL-UNNAMED
