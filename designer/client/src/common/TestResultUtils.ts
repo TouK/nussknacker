@@ -101,7 +101,7 @@ class TestResultUtils {
     }
 
     private _errors(results: TestResultsDto, nodeId: NodeId): ExceptionResultJson[] {
-        return results?.exceptions?.filter((ex) => ex.nodeId === nodeId);
+        return results?.exceptionsByNodeId[nodeId] ?? [];
     }
 
     private _contextDisplay = (context: ResultContextJson): string => {
