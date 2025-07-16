@@ -212,7 +212,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
 * [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
-* [#7137](https://github.com/TouK/nussknacker/pull/7137) Updated Flink dependency to 1.20.1
+* [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink dependency to 1.20.2
 * [#8239](https://github.com/TouK/nussknacker/pull/8239) Added a DB reference to the set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
 * [#8242](https://github.com/TouK/nussknacker/pull/8242) Toolbar buttons can be disabled and their tooltip can be customized based on user roles
     * Example of button configuration, using new settings:

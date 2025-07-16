@@ -358,7 +358,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "hintText": null,
              |      "label": "Topic",
              |      "category": "Standard",
-             |      "changesCanReloadParameters": false
+             |      "changesCanReloadParameters": false,
+             |      "nonImportantForExecution": false
              |    },
              |    {
              |      "name": "Value",
@@ -382,7 +383,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "hintText": null,
              |      "label": "Value",
              |      "category": "Standard",
-             |      "changesCanReloadParameters": false
+             |      "changesCanReloadParameters": false,
+             |      "nonImportantForExecution": false
              |    }
              |  ],
              |  "expressionType": null,

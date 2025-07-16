@@ -41,8 +41,8 @@ object ParametersExtractor {
   private def prepareParameter(propertyName: String, swaggerType: SwaggerTyped, isBodyPart: Boolean) = {
     ParameterWithBodyFlag(
       Parameter(
-        ParameterName(propertyName),
-        SwaggerTyped.typingResult(swaggerType, resolveListOfObjects = false),
+        name = ParameterName(propertyName),
+        typ = SwaggerTyped.typingResult(swaggerType, resolveListOfObjects = false),
         editors = swaggerType.editorList,
         validators = List.empty,
         defaultValue = None,
@@ -55,7 +55,8 @@ object ParametersExtractor {
         hintText = None,
         labelOpt = None,
         category = ParameterCategory.Standard,
-        changesCanReloadParameters = false
+        changesCanReloadParameters = false,
+        nonImportantForExecution = false,
       ),
       isBodyPart = isBodyPart
     )
