@@ -1,4 +1,4 @@
-FROM touk/flink:1.1.3-flink1.20.1-scala_${scala.version}
+FROM touk/flink:1.1.3-flink1.20.2-scala_${scala.version}
 
 COPY entrypointWithIP.sh /
 COPY conf.yml /

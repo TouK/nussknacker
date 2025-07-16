@@ -119,7 +119,7 @@ const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_comment": {
         color: "#75715E",
     },
-    ".ace-nussknacker .ace_spel": {
+    ".ace-nussknacker .ace_spel, .ace-nussknacker .ace_jsonTemplate, .ace-nussknacker .ace_spelTemplate": {
         color: "#337AB7",
     },
     ".ace-nussknacker .ace_paren": {
@@ -167,9 +167,6 @@ const aceEditorStyles = (theme: Theme) => ({
                 marginBottom: "5px",
             },
         },
-    },
-    ".ace-nussknacker .ace_jsonTemplate, .ace-nussknacker .ace_spelTemplate": {
-        color: "#00BFA5",
     },
 
     ".ace-nussknacker .ace_static_highlight": {
