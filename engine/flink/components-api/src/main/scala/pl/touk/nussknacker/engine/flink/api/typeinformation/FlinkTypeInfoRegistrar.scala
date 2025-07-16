@@ -4,7 +4,7 @@ import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation, T
 import org.apache.flink.api.java.typeutils.TypeExtractor
 
 import java.lang.reflect.Type
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time._
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 

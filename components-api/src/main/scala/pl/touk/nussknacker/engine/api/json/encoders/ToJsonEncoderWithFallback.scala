@@ -67,8 +67,6 @@ private[encoders] trait ToJsonEncoderWithFallback {
       fromString(value.toString).validNel // Duration uses ISO-8601 format by default
     case value: Period =>
       fromString(value.toString).validNel // Period uses ISO-8601 format by default
-    case value: ZoneOffset =>
-      fromString(value.toString).validNel
     case value: ZoneId =>
       fromString(value.toString).validNel
     case value: Locale =>

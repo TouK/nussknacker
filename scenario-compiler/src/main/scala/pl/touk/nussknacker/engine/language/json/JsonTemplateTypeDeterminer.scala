@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.FromInstanceTypeDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.TypeValueDeterminer
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
+import pl.touk.nussknacker.engine.language.json.JsonParser.CompiledJsonExpression
 import pl.touk.nussknacker.engine.language.json.JsonTemplateTypeDeterminer._
 import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelExpressionParser, SpelExpressionRepr}
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
@@ -52,10 +53,15 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
           )
           // This step may generate a wrong error position because we fill placeholders but it not a problem because we abandon validation result
           JsonParser
-            .parseWithoutContextValidation(jsonWithPlaceholdersFilled, Unknown)
+            .parse(jsonWithPlaceholdersFilled, validationContext, Unknown)
             .fold(
               handleJsonWithPlaceholdersFilledParseError(spelExpression, _),
-              jsonExpression => Valid(computeTypeForJsonWithPlaceholdersFilled(jsonExpression.json))
+              typedJsonExpression =>
+                Valid(
+                  computeTypeForJsonWithPlaceholdersFilled(
+                    typedJsonExpression.expression.asInstanceOf[CompiledJsonExpression].json
+                  )
+                )
             )
         }
     }

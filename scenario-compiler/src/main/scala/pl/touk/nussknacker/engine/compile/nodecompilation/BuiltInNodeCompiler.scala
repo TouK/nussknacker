@@ -22,36 +22,37 @@ import pl.touk.nussknacker.engine.graph.node._
 
 class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
 
-  def compileVariable(variable: Variable, ctx: ValidationContext)(
+  def compileVariable(variable: Variable, inputContext: SingleInputNodeInputValidationContext)(
       implicit nodeId: NodeId
   ): NodeCompilationResult[CompiledExpression] = {
     val (validTypedExpression, nodeCompilation) =
       compileExpression(
         variable.value,
-        ctx,
+        inputContext.validationContext,
         expectedType = Unknown,
         paramName = DefaultExpressionIdParamName,
         outputVar = Some(OutputVar.variable(variable.varName))
       )
 
-    val additionalValidationResult = validateVariableValue(validTypedExpression, DefaultExpressionIdParamName)
+    val additionalValidationResult =
+      validateVariableValue(validTypedExpression, DefaultExpressionIdParamName, inputContext)
 
     combineErrors(nodeCompilation, additionalValidationResult)
   }
 
-  def compileFilter(filter: Filter, ctx: ValidationContext)(
+  def compileFilter(filter: Filter, inputContext: SingleInputNodeInputValidationContext)(
       implicit nodeId: NodeId
   ): NodeCompilationResult[CompiledExpression] = {
     val (validTypedExpression, nodeCompilation) =
       compileExpression(
         filter.expression,
-        ctx,
+        inputContext.validationContext,
         expectedType = Typed[Boolean],
         paramName = DefaultExpressionIdParamName,
         outputVar = None
       )
 
-    val additionalValidationResult = validateBoolean(validTypedExpression, DefaultExpressionIdParamName)
+    val additionalValidationResult = validateBoolean(validTypedExpression, DefaultExpressionIdParamName, inputContext)
 
     combineErrors(nodeCompilation, additionalValidationResult)
   }
@@ -59,7 +60,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
   def compileSwitch(
       expressionRaw: Option[(String, Expression)],
       choices: List[(String, Expression)],
-      ctx: ValidationContext
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit nodeId: NodeId
   ): NodeCompilationResult[(Option[CompiledExpression], List[CompiledExpression])] = {
@@ -70,7 +71,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
     val expressionCompilation = expression.map { case (output, expression) =>
       compileExpression(
         expr = expression,
-        ctx = ctx,
+        ctx = inputContext.validationContext,
         expectedType = Unknown,
         paramName = NodeExpressionId.DefaultExpressionIdParamName,
         outputVar = Some(OutputVar.switch(output))
@@ -78,13 +79,13 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
     }
     val objExpression = expressionCompilation.map(_.compiledObject).sequence
 
-    val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
+    val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(inputContext.validationContext)
 
     val (additionalValidations, caseExpressions) = choices.map { case (outEdge, caseExpr) =>
       val outEdgeParamName = ParameterName(outEdge)
       val (validTypedExpression, nodeCompilation) =
         compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdgeParamName, None)
-      val validation     = validateBoolean(validTypedExpression, outEdgeParamName)
+      val validation     = validateBoolean(validTypedExpression, outEdgeParamName, inputContext)
       val caseExpression = nodeCompilation
       (validation, caseExpression)
     }.unzip
@@ -100,7 +101,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
     val compilationResult = NodeCompilationResult(
       expressionTypingInfos,
       None,
-      expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
+      expressionCompilation.map(_.validationContext).getOrElse(Valid(inputContext.validationContext)),
       objExpression.product(objCases),
       expressionCompilation.flatMap(_.expressionType)
     )
@@ -110,14 +111,19 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
 
   def compileFields(
       fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
-      ctx: ValidationContext,
+      inputContext: SingleInputNodeInputValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
 
     val (compiledRecord, indexedFields) = {
       val compiledFields = fields.zipWithIndex.map { case (field, index) =>
         val compiledField = expressionCompiler
-          .compile(field.expression, Some(ParameterName(node.recordValueFieldName(index))), ctx, Unknown)
+          .compile(
+            field.expression,
+            Some(ParameterName(node.recordValueFieldName(index))),
+            inputContext.validationContext,
+            Unknown
+          )
           .map(result =>
             CompiledIndexedRecordField(compiledgraph.variable.Field(field.name, result.expression), index, result)
           )
@@ -144,12 +150,14 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
     val compilationResult = NodeCompilationResult(
       expressionTypingInfo = fieldsTypingInfo,
       parameters = None,
-      validationContext = outputVar.map(ctx.withVariable(_, typedObject)).getOrElse(Valid(ctx)),
+      validationContext = outputVar
+        .map(inputContext.validationContext.withVariable(_, typedObject))
+        .getOrElse(Valid(inputContext.validationContext)),
       compiledObject = compiledFields,
       expressionType = Some(typedObject)
     )
 
-    val additionalValidationResult = RecordValidator.validate(compiledRecord, indexedFields)
+    val additionalValidationResult = RecordValidator.validate(compiledRecord, indexedFields, inputContext)
 
     combineErrors(compilationResult, additionalValidationResult)
   }

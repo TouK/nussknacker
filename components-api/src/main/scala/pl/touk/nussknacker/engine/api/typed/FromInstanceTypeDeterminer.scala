@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing._
