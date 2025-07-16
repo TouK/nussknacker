@@ -4,8 +4,10 @@ import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation, T
 import org.apache.flink.api.java.typeutils.TypeExtractor
 
 import java.lang.reflect.Type
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.nio.charset.Charset
+import java.time._
 import java.util
+import java.util.{Currency, Locale, UUID}
 import java.util.concurrent.atomic.AtomicBoolean
 
 // This class contains registers TypeInfoFactory for commonly used classes in Nussknacker.
@@ -20,9 +22,20 @@ object FlinkTypeInfoRegistrar {
   private[engine] case class RegistrationEntry[T](klass: Class[T], factoryClass: Class[_ <: TypeInfoFactory[T]])
 
   private[engine] val typeInfoToRegister = List(
+    // LocalDate/Time types are provided by Flink but not registered by default
     RegistrationEntry(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
     RegistrationEntry(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
     RegistrationEntry(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
+    // Below are types that are provided by Nussknacker itself - from Flink Table API perspective they are custom type info
+    RegistrationEntry(classOf[OffsetDateTime], classOf[OffsetDateTimeTypeInfoFactory]),
+    RegistrationEntry(classOf[ZonedDateTime], classOf[ZonedDateTimeTypeInfoFactory]),
+    RegistrationEntry(classOf[Duration], classOf[DurationTypeInfoFactory]),
+    RegistrationEntry(classOf[Period], classOf[PeriodTypeInfoFactory]),
+    RegistrationEntry(classOf[ZoneId], classOf[ZoneIdTypeInfoFactory]),
+    RegistrationEntry(classOf[Charset], classOf[CharsetTypeInfoFactory]),
+    RegistrationEntry(classOf[Currency], classOf[CurrencyTypeInfoFactory]),
+    RegistrationEntry(classOf[Locale], classOf[LocaleTypeInfoFactory]),
+    RegistrationEntry(classOf[UUID], classOf[UUIDTypeInfoFactory]),
   )
 
   def ensureTypeInfosAreRegistered(): Unit = {
