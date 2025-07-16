@@ -31,22 +31,23 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
 
   private def defaultFor(editors: List[ParameterEditor]) = {
     editors
-      .collectFirst[Expression] {
-        case FixedValuesParameterEditor(firstValue :: _) => Expression.spel(firstValue.expression)
-        // it is better to see error that field is not filled instead of strange default value like '' for String
-        case FixedValuesParameterEditor(Nil)                      => Expression.spel("")
-        case FixedValuesWithIconParameterEditor(firstValue :: _)  => Expression.spel(firstValue.expression)
-        case FixedValuesWithIconParameterEditor(_)                => Expression.spel("")
-        case FixedValuesWithRadioParameterEditor(firstValue :: _) => Expression.spel(firstValue.expression)
-        case FixedValuesWithRadioParameterEditor(_)               => Expression.spel("")
-      }
+      .collectFirst[Expression](defaultForFixedParameterEditor)
       .orElse(
-        forEditors(editors)
+        defaultForFirstEditor(editors)
       )
-
   }
 
-  private def forEditors(editors: List[ParameterEditor]): Option[Expression] = editors.headOption.flatMap {
+  private def defaultForFixedParameterEditor: PartialFunction[ParameterEditor, Expression] = {
+    case FixedValuesParameterEditor(firstValue :: _) => Expression.spel(firstValue.expression)
+    // it is better to see error that field is not filled instead of strange default value like '' for String
+    case FixedValuesParameterEditor(Nil)                      => Expression.spel("")
+    case FixedValuesWithIconParameterEditor(firstValue :: _)  => Expression.spel(firstValue.expression)
+    case FixedValuesWithIconParameterEditor(Nil)              => Expression.spel("")
+    case FixedValuesWithRadioParameterEditor(firstValue :: _) => Expression.spel(firstValue.expression)
+    case FixedValuesWithRadioParameterEditor(Nil)             => Expression.spel("")
+  }
+
+  private def defaultForFirstEditor(editors: List[ParameterEditor]): Option[Expression] = editors.headOption.flatMap {
     case JsonParameterEditor                              => Some(Expression.json("{}"))
     case JsonTemplateParameterEditor                      => Some(Expression.jsonTemplate("{}"))
     case SpelTemplateParameterEditor | SqlParameterEditor => Some(Expression.spelTemplate(""))
@@ -61,7 +62,9 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
     case SpelParameterEditor        => None
     case BoolParameterEditor        => None
     case TextareaParameterEditor    => None
-    case other                      => None
+    case _: FixedValuesParameterEditor | _: FixedValuesWithIconParameterEditor |
+        _: FixedValuesWithRadioParameterEditor =>
+      None
   }
 
 }
