@@ -89,7 +89,7 @@ class TestResultUtils {
     };
 
     private _nodeResults(results: TestResultsDto, nodeId: NodeId): ResultContextJson[] {
-        return results?.nodeResults?.[nodeId] || [];
+        return results?.nodeTransitionResults?.find((nodeTransitionResult) => nodeTransitionResult.sourceNodeId === nodeId)?.results || [];
     }
 
     private _invocationResults(results: TestResultsDto, nodeId: NodeId): ExpressionInvocationResultJson[] {
@@ -101,7 +101,7 @@ class TestResultUtils {
     }
 
     private _errors(results: TestResultsDto, nodeId: NodeId): ExceptionResultJson[] {
-        return results?.exceptions?.filter((ex) => ex.nodeId === nodeId);
+        return results?.exceptionsByNodeId[nodeId] ?? [];
     }
 
     private _contextDisplay = (context: ResultContextJson): string => {
