@@ -5,6 +5,7 @@ import React, { useRef, useState } from "react";
 import type { PropsWithChildren } from "react";
 
 import type { NodeResultsForContext } from "../../../../common/TestResultUtils";
+import { useUserSettings } from "../../../../common/userSettings";
 import { InfoTooltip } from "../editors/InfoTooltip";
 import { HIDDEN_TEXTAREA_PIXEL_HEIGHT } from "../NodeDetailsContent/NodeTableStyled";
 import TestValue from "./TestValue";
@@ -21,13 +22,15 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
     const [collapsedTestResults, setCollapsedTestResults] = useState(true);
     const testValue = fieldName ? resultsToShow && resultsToShow.expressionResults[fieldName] : null;
     const PrettyIconComponent = collapsedTestResults ? VisibilityOff : Visibility;
+    const [userSettings] = useUserSettings();
+    const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
 
-    return testValue ? (
+    return testValue && !showInputsAndOutputs ? (
         <div>
             {props.children}
             <FormControl>
                 <FormLabel>
-                    <InfoTooltip title={"Value evaluated in test case"} variant={"hover"}>
+                    <InfoTooltip title={"Expression evaluation result"} variant={"hover"}>
                         <InfoIcon sx={() => ({ alignSelf: "center" })} />
                     </InfoTooltip>
                     {testValue.pretty && !fitsMaxHeight ? (

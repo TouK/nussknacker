@@ -89,7 +89,7 @@ class TestResultUtils {
     };
 
     private _nodeResults(results: TestResultsDto, nodeId: NodeId): ResultContextJson[] {
-        return results?.nodeResults?.[nodeId] || [];
+        return results?.nodeTransitionResults?.find((nodeTransitionResult) => nodeTransitionResult.sourceNodeId === nodeId)?.results || [];
     }
 
     private _invocationResults(results: TestResultsDto, nodeId: NodeId): ExpressionInvocationResultJson[] {
