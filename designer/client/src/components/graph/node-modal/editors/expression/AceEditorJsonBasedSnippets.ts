@@ -13,12 +13,13 @@ export const setupAceEditorSnippets = (editor: Ace.Editor): void => {
     const isJsonEditor = editorMode.includes("json");
     const isJsonTemplateEditor = editorMode.includes("jsonTemplate");
     const isSpelTemplateEditor = editorMode.includes("spelTemplate");
+    const isSqlEditor = editorMode.includes("sql");
 
     if (isJsonEditor || isJsonTemplateEditor) {
         setupJsonBasedSnippets(editor);
     }
 
-    if (isJsonTemplateEditor || isSpelTemplateEditor) {
+    if (isJsonTemplateEditor || isSpelTemplateEditor || isSqlEditor) {
         setupSpelTemplateBasedSnippets(editor);
     }
 };
