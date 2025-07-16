@@ -51,6 +51,7 @@ package object definition {
       requiredParam: Option[Boolean],
       category: ParameterCategory,
       changesCanReloadParameters: Boolean,
+      nonImportantForExecution: Boolean,
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
