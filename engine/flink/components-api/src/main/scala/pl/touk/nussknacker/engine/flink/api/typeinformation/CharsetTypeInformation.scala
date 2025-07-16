@@ -1,29 +1,12 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation}
-import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
+import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
-import java.lang.reflect.Type
 import java.nio.charset.{Charset, StandardCharsets}
-import java.util
 
-class CharsetTypeInfoFactory extends TypeInfoFactory[Charset] {
-
-  override def createTypeInfo(
-      t: Type,
-      genericParameters: util.Map[String, TypeInformation[_]]
-  ): TypeInformation[Charset] =
-    CharsetTypeInfoFactory.typeInfo
-
-}
-
-object CharsetTypeInfoFactory {
-
-  val typeInfo = new SimpleTypeInformation[Charset](new CharsetTypeSerializer)
-
-}
+object CharsetTypeInformation extends SimpleTypeInformation[Charset](new CharsetTypeSerializer)
 
 class CharsetTypeSerializer
     extends TypeSerializerSingleton[Charset]

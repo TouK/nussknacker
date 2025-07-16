@@ -235,6 +235,9 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8209](https://github.com/TouK/nussknacker/pull/8209) Support for jdk 1.17. Scala 2.12.10 -> 2.12.20 and 2.13.15 -> 2.13.16 migration. Using the own flink-scala library also for 2.12 builds.  
 * [8304](https://github.com/TouK/nussknacker/pull/8304) Added functionality of setting component group in ComponentDefinition using `withComponentGroup`.
 * [#8319](https://github.com/TouK/nussknacker/pull/8319) Set default Kafka serializer/deserializer in `KafkaUtils` as class names to be compatible with Flink's `KafkaSource`
+* [#8343](https://github.com/TouK/nussknacker/pull/8343) During compilation of lazy parameters expressions, node input variable types now are provided
+  Thanks to that expression parsers can leverage this information for preparing better evaluation logic. It is used in `json-template` expressions
+  where users can now use logical types such as `OffsetDateTime`, `Duration` etc.
 
 ## 1.18
 

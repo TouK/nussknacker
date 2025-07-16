@@ -1,29 +1,12 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation}
-import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
+import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
-import java.lang.reflect.Type
 import java.time.Duration
-import java.util
 
-class DurationTypeInfoFactory extends TypeInfoFactory[Duration] {
-
-  override def createTypeInfo(
-      t: Type,
-      genericParameters: util.Map[String, TypeInformation[_]]
-  ): TypeInformation[Duration] =
-    DurationTypeInfoFactory.typeInfo
-
-}
-
-object DurationTypeInfoFactory {
-
-  val typeInfo = new SimpleTypeInformation[Duration](new DurationTypeSerializer)
-
-}
+object DurationTypeInformation extends SimpleTypeInformation[Duration](new DurationTypeSerializer)
 
 class DurationTypeSerializer
     extends TypeSerializerSingleton[Duration]

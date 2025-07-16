@@ -1,29 +1,12 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation}
-import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
+import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
-import java.lang.reflect.Type
-import java.util
 import java.util.UUID
 
-class UUIDTypeInfoFactory extends TypeInfoFactory[UUID] {
-
-  override def createTypeInfo(
-      t: Type,
-      genericParameters: util.Map[String, TypeInformation[_]]
-  ): TypeInformation[UUID] =
-    UUIDTypeInfoFactory.typeInfo
-
-}
-
-object UUIDTypeInfoFactory {
-
-  val typeInfo = new SimpleTypeInformation[UUID](new UUIDTypeSerializer)
-
-}
+object UUIDTypeInformation extends SimpleTypeInformation[UUID](new UUIDTypeSerializer)
 
 class UUIDTypeSerializer
     extends TypeSerializerSingleton[UUID]

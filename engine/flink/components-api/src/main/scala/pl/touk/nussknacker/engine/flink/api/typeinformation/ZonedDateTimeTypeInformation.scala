@@ -1,29 +1,12 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation}
-import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
+import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
-import java.lang.reflect.Type
-import java.time.{Instant, ZonedDateTime, ZoneOffset}
-import java.util
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
 
-class ZonedDateTimeTypeInfoFactory extends TypeInfoFactory[ZonedDateTime] {
-
-  override def createTypeInfo(
-      t: Type,
-      genericParameters: util.Map[String, TypeInformation[_]]
-  ): TypeInformation[ZonedDateTime] =
-    ZonedDateTimeTypeInfoFactory.typeInfo
-
-}
-
-object ZonedDateTimeTypeInfoFactory {
-
-  val typeInfo = new SimpleTypeInformation[ZonedDateTime](new ZonedDateTimeTypeSerializer)
-
-}
+object ZonedDateTimeTypeInformation extends SimpleTypeInformation[ZonedDateTime](new ZonedDateTimeTypeSerializer)
 
 class ZonedDateTimeTypeSerializer
     extends TypeSerializerSingleton[ZonedDateTime]
