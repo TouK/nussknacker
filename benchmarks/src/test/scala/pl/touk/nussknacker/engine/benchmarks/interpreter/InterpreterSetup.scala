@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.{
   ScenarioCompilationDependencies
 }
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
+import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
@@ -74,6 +75,8 @@ class InterpreterSetup[T: ClassTag] {
       ComponentDefinition("sink", SinkFactory.noParam(new Sink {}))
     ) ::: additionalComponents
 
+    val editorConfig = EditorConfig.default
+
     val definitions = ModelDefinition(
       Components
         .forList(
@@ -81,11 +84,13 @@ class InterpreterSetup[T: ClassTag] {
           ComponentsUiConfig.Empty,
           id => DesignerWideComponentId(id.toString),
           Map.empty,
+          editorConfig,
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default,
       allowEndingScenarioWithoutSink = false,
+      editorConfig
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 

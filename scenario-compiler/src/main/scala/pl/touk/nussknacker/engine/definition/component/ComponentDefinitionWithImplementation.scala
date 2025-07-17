@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
@@ -79,10 +80,17 @@ object ComponentDefinitionWithImplementation {
       components: List[ComponentDefinition],
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      editorConfig: EditorConfig
   ): List[ComponentDefinitionWithImplementation] = {
     components.flatMap(
-      ComponentDefinitionExtractor.extract(_, additionalConfigs, determineDesignerWideId, additionalConfigsFromProvider)
+      ComponentDefinitionExtractor.extract(
+        _,
+        additionalConfigs,
+        determineDesignerWideId,
+        additionalConfigsFromProvider,
+        editorConfig
+      )
     )
   }
 
@@ -98,7 +106,8 @@ object ComponentDefinitionWithImplementation {
         ComponentConfig.zero,
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
-        Map.empty
+        Map.empty,
+        EditorConfig.default,
       )
       .getOrElse(
         throw new IllegalStateException(

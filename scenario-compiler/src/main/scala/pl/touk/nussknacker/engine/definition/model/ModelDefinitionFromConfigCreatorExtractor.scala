@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.definition.model
 
 import pl.touk.nussknacker.engine.ModelConfig
+import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
 import pl.touk.nussknacker.engine.api.component.{
   Component,
   ComponentAdditionalConfig,
@@ -42,16 +43,18 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentsUiConfig,
       determineDesignerWideId,
       additionalConfigsFromProvider,
+      modelConfig.editorConfig,
       componentDefinitionExtractionMode,
     )
 
     val classExtractionSettings = creator.classExtractionSettings(modelConfig)
 
     ModelDefinition(
-      components,
-      toDefinition(expressionConfig, categoryOpt),
-      classExtractionSettings,
-      modelConfig.allowEndingScenarioWithoutSink,
+      components = components,
+      expressionConfig = toDefinition(expressionConfig, categoryOpt),
+      classExtractionSettings = classExtractionSettings,
+      allowEndingScenarioWithoutSink = modelConfig.allowEndingScenarioWithoutSink,
+      editorConfig = modelConfig.editorConfig
     )
   }
 
@@ -61,7 +64,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+      editorConfig: EditorConfig,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
   ): Components = {
     Components.fold(
       componentDefinitionExtractionMode,
@@ -75,7 +79,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
               componentsUiConfig,
               determineDesignerWideId,
               additionalConfigsFromProvider,
-              componentDefinitionExtractionMode
+              editorConfig,
+              componentDefinitionExtractionMode,
             )
         }
     )

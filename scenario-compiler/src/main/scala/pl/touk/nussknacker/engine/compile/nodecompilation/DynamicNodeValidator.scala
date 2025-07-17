@@ -5,13 +5,8 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.{
-  BranchEagerParameterEvaluationResult,
-  BranchLazyParameterEvaluationResult,
-  NodeId,
-  SingleEagerParameterEvaluationResult,
-  SingleLazyParameterEvaluationResult
-}
+import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
@@ -32,7 +27,8 @@ import scala.util.{Failure, Success, Try}
 class DynamicNodeValidator(
     expressionCompiler: ExpressionCompiler,
     globalVariablesPreparer: GlobalVariablesPreparer,
-    parameterEvaluator: ParameterEvaluator
+    parameterEvaluator: ParameterEvaluator,
+    editorConfig: EditorConfig
 ) {
 
   private implicit val lazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
@@ -147,7 +143,11 @@ class DynamicNodeValidator(
               returnUnmatchedFallback
             case component.NextParameters(newParametersDefinitions, newParameterErrors, state) =>
               val enrichedParametersDefinitions =
-                StandardParameterEnrichment.enrichParameterDefinitions(newParametersDefinitions, parametersConfig)
+                StandardParameterEnrichment.enrichParameterDefinitions(
+                  newParametersDefinitions,
+                  parametersConfig,
+                  editorConfig
+                )
               // We assume that the developer of component split parameter transformation steps this way because
               // the last parameter in the step can cause changes in parameter definitions for the next step
               val newParametersDefinition =
@@ -295,7 +295,8 @@ object DynamicNodeValidator {
       new ParameterEvaluator(
         globalVariablesPreparer,
         Seq.empty,
-      )
+      ),
+      modelData.modelConfig.editorConfig
     )
   }
 

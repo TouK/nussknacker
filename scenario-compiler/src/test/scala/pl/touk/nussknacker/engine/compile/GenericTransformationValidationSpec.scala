@@ -6,6 +6,7 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
@@ -70,11 +71,13 @@ class GenericTransformationValidationSpec
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
+        EditorConfig.default,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default,
     allowEndingScenarioWithoutSink = false,
+    editorConfig = EditorConfig.default,
   )
 
   private val validator = ProcessValidator.default(
@@ -402,7 +405,7 @@ class GenericTransformationValidationSpec
       Parameter
         .optional[CharSequence](ParameterName("optionalParameter"))
         .copy(
-          editors = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(),
+          editors = new ParameterTypeEditorDeterminer(Typed[CharSequence], EditorConfig.default).determine(),
           defaultValue = Some("".spelTemplate)
         )
     )

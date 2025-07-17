@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentId
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
   JoinDynamicComponent,
@@ -32,6 +32,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 class DynamicComponentStaticDefinitionDeterminer(
     nodeValidator: DynamicNodeValidator,
     globalVariablesPreparer: GlobalVariablesPreparer,
+    editorConfig: EditorConfig
 ) extends LazyLogging {
 
   private def determineStaticDefinition(
@@ -77,7 +78,11 @@ class DynamicComponentStaticDefinitionDeterminer(
 
     dynamic.component match {
       case withStatic: WithStaticParameters =>
-        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
+        StandardParameterEnrichment.enrichParameterDefinitions(
+          withStatic.staticParameters,
+          dynamic.parametersConfig,
+          editorConfig
+        )
       case single: SingleInputDynamicComponent[_] =>
         inferParameters(single, SingleInputNodeInputValidationContext(globalVariablesOnlyValidationContext))
       case join: JoinDynamicComponent[_] =>
@@ -102,7 +107,8 @@ object DynamicComponentStaticDefinitionDeterminer {
     val toStaticComponentDefinitionTransformer =
       new DynamicComponentStaticDefinitionDeterminer(
         nodeValidator,
-        GlobalVariablesPreparer(modelDataForType.modelDefinition.expressionConfig)
+        GlobalVariablesPreparer(modelDataForType.modelDefinition.expressionConfig),
+        modelDataForType.modelConfig.editorConfig
       )
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood

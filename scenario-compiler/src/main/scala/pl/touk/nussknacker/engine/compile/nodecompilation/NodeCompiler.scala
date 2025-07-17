@@ -126,7 +126,7 @@ class NodeCompiler(
     new ParameterEvaluator(globalVariablesPreparer, listeners)
   private val factory = new ComponentExecutorFactory(parametersEvaluator)
   private val dynamicNodeValidator =
-    new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
+    new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator, definitions.editorConfig)
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
 
   private val fragmentParameterValidator = FragmentParameterValidator(fragmentDefinitionExtractor.classDefinitions)

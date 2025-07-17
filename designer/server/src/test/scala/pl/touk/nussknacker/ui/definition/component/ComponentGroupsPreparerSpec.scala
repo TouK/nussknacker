@@ -9,11 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  Components,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{Components, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
@@ -196,7 +192,8 @@ class ComponentGroupsPreparerSpec
         getClass.getClassLoader,
         ClassDefinitionSet(Set.empty[ClassDefinition]),
         Some(_),
-        DesignerWideComponentId.default("Streaming", _)
+        DesignerWideComponentId.default("Streaming", _),
+        modelDefinition.editorConfig
       ),
       modelDefinition,
       ProcessingMode.UnboundedStream

@@ -120,7 +120,7 @@ class ScenarioTestService(
       compiledSource: Source,
   ): Either[ParametersDefinitionError, List[Parameter]] = {
     getTestParameters(sourceId, compiledSource)
-      .map(StandardParameterEnrichment.enrichParameterDefinitions(_, Map.empty))
+      .map(StandardParameterEnrichment.enrichParameterDefinitions(_, Map.empty, modelData.modelConfig.editorConfig))
   }
 
   // Currently we rely on the assumption that client always call scenarioTesting / {scenarioName} / parameters endpoint

@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine
 
+import cats.data.NonEmptyList
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
-import pl.touk.nussknacker.engine.ModelConfig.{JsonLikeValuesEnteringMode, LiveDataPreviewMode}
-import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.ModelConfig.{EditorConfig, JsonLikeValuesEnteringMode, LiveDataPreviewMode}
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelParameterEditor, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
+    editorConfig: EditorConfig,
     jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode,
     namingStrategy: NamingStrategy,
     liveDataPreviewMode: LiveDataPreviewMode,
@@ -27,6 +29,7 @@ object ModelConfig {
   def parse(rawModelConfig: Config): ModelConfig = {
     ModelConfig(
       allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
+      editorConfig = parseEditorConfig(rawModelConfig),
       jsonLikeValuesEnteringMode = parseJsonLikeValuesEnteringMode(rawModelConfig),
       namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
       liveDataPreviewMode = parseLiveDataPreviewMode(rawModelConfig),
@@ -74,6 +77,23 @@ object ModelConfig {
     case object SingleJsonTemplateParameter extends JsonLikeValuesEnteringMode
   }
 
+  final case class EditorConfig(editorsForStringType: NonEmptyList[ParameterEditor])
+
+  object EditorConfig {
+
+    val default: EditorConfig = EditorConfig(
+      editorsForStringType = NonEmptyList.of(SpelTemplateParameterEditor, SpelParameterEditor)
+    )
+
+  }
+
+  sealed trait DefaultEditorForStringType
+
+  object DefaultEditorForStringType {
+    case object Spel         extends DefaultEditorForStringType
+    case object SpelTemplate extends DefaultEditorForStringType
+  }
+
   private def parseJsonLikeValuesEnteringMode(config: Config): JsonLikeValuesEnteringMode = {
     val configPath = "jsonLikeValuesEnteringMode"
     if (config.hasPath(configPath)) {
@@ -89,6 +109,25 @@ object ModelConfig {
     } else {
       JsonLikeValuesEnteringMode.DynamicForms
     }
+  }
+
+  private def parseEditorConfig(config: Config): EditorConfig = {
+    import net.ceedubs.ficus.Ficus._
+    import pl.touk.nussknacker.engine.util.config.FicusReaders._
+    val stringEditorsPath = "editorConfig.editorsForStringType"
+
+    val stringEditors = config.getAs[List[ParameterEditor]](stringEditorsPath) match {
+      case Some(editors) =>
+        NonEmptyList
+          .fromList(editors)
+          .getOrElse(
+            throw new IllegalArgumentException(s"Non empty list of editors is required at path $stringEditorsPath")
+          )
+      case None =>
+        EditorConfig.default.editorsForStringType
+    }
+
+    EditorConfig(editorsForStringType = stringEditors)
   }
 
   private def parseLiveDataPreviewMode(config: Config): LiveDataPreviewMode = {

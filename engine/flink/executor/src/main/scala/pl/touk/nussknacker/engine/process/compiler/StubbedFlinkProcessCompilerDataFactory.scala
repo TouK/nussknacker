@@ -74,6 +74,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     val fragmentParametersDefinitionExtractor = new FragmentParametersDefinitionExtractor(
       definitionContext.userCodeClassLoader,
       classDefinitions,
+      modelConfig.editorConfig
     )
     val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
       fragmentParametersDefinitionExtractor

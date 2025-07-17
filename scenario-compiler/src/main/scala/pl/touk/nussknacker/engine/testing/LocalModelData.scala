@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{ModelConfig, ModelData}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -80,6 +80,7 @@ object LocalModelData {
         componentsUiConfig,
         determineDesignerWideId,
         additionalConfigsFromProvider,
+        componentDependencies.modelConfig.editorConfig,
         componentDefinitionExtractionMode
       )
       // To avoid classloading magic, for local model we load components manually and skip ComponentProvider's loading

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
+import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
 import pl.touk.nussknacker.engine.api.{BranchParamName, MethodToInvoke, OutputVariableName, ParamName}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
@@ -16,12 +17,13 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   def extractMethodDefinition(
       obj: T,
       methodToInvoke: Method,
-      parametersConfig: Map[ParameterName, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      editorConfig: EditorConfig
   ): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).map { method =>
       new MethodDefinition(
         method,
-        extractParameters(obj, method, parametersConfig),
+        extractParameters(obj, method, parametersConfig, editorConfig),
         extractReturnTypeFromMethod(method),
         method.getReturnType
       )
@@ -42,7 +44,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   private def extractParameters(
       obj: T,
       method: Method,
-      parametersConfig: Map[ParameterName, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      editorConfig: EditorConfig
   ): OrderedDependencies = {
     val dependencies = method.getParameters.map { p =>
       if (additionalDependencies.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null &&
@@ -57,7 +60,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           OutputVariableNameDependency
         }
       } else {
-        ParameterExtractor.extractParameter(p, parametersConfig)
+        ParameterExtractor.extractParameter(p, parametersConfig, editorConfig)
       }
     }.toList
     new OrderedDependencies(dependencies)
