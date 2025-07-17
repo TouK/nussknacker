@@ -54,10 +54,9 @@ export function TestResultsWrapper({
         setTestResultsState(TestResultUtils.stateForSelectTestResults(nodeResults, chosenId));
     }, [nodeResults, io?.state?.inputDataSetId, io?.state?.outputDataSetId, showInputsAndOutputs]);
 
-    const [settings] = useUserSettings();
     return (
         <Context.Provider value={testResultsState}>
-            {settings["node.showInputsAndOutputs"] ? (
+            {showInputsAndOutputs ? (
                 <>
                     <TestErrors />
                     {children}
