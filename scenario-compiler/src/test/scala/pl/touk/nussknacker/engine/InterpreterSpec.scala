@@ -37,6 +37,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -126,7 +127,11 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val parts = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
+      failOnErrors(
+        processCompilerData.subPartCompiler
+          .compile(part.node, SingleInputNodeInputValidationContext(part.validationContext))
+          .result
+      )
 
     val initialCtx                    = Context.dummy.withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)

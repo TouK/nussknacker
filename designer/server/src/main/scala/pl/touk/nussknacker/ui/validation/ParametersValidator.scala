@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -53,11 +54,10 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
 
     expressionCompiler
       .compileNodeParameters(
-        parameterList,
-        evaluatedParameters,
+        parameterDefinitions = parameterList,
+        nodeParameters = evaluatedParameters,
         nodeBranchParameters = Nil,
-        context,
-        branchContexts = Map.empty
+        inputContext = SingleInputNodeInputValidationContext(context),
       )
       .left
       .fold(List.empty[NodeValidationError])(_.map(PrettyValidationErrors.formatErrorMessage).toList)

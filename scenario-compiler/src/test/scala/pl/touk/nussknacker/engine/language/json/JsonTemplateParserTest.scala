@@ -151,7 +151,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       )
     ) { (dataSample: String, typingResult: TypingResult) =>
       parse[Any](dataSample, validationContextWithVariables).map(_.returnType) shouldBe Valid(typingResult)
-      parseWithoutContextValidation[String](dataSample) shouldBe Symbol("valid")
     }
   }
 
@@ -406,12 +405,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       ctx: ValidationContext = validationContextWithDefaultHelpers,
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     sut.parse(jsonString, ctx, Typed.fromDetailedType[T])
-  }
-
-  private def parseWithoutContextValidation[T: TypeTag](
-      jsonString: String
-  ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = {
-    sut.parseWithoutContextValidation(jsonString, Typed.fromDetailedType[T])
   }
 
   // This is a copy of ConversionUtils. We can't use it directly, because it would cause a cycle in module dependencies

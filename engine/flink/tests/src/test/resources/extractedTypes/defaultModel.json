@@ -6763,6 +6763,76 @@
     "staticMethods": {}
   },
   {
+    "clazzName": {"refClazzName": "java.nio.charset.StandardCharsets"},
+    "methods": {
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "ISO_8859_1": [
+        {
+          "name": "ISO_8859_1",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.nio.charset.Charset"}
+          }
+        }
+      ],
+      "US_ASCII": [
+        {
+          "name": "US_ASCII",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.nio.charset.Charset"}
+          }
+        }
+      ],
+      "UTF_16": [
+        {
+          "name": "UTF_16",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.nio.charset.Charset"}
+          }
+        }
+      ],
+      "UTF_16BE": [
+        {
+          "name": "UTF_16BE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.nio.charset.Charset"}
+          }
+        }
+      ],
+      "UTF_16LE": [
+        {
+          "name": "UTF_16LE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.nio.charset.Charset"}
+          }
+        }
+      ],
+      "UTF_8": [
+        {
+          "name": "UTF_8",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.nio.charset.Charset"}
+          }
+        }
+      ]
+    }
+  },
+  {
     "clazzName": {"refClazzName": "java.text.Format"},
     "methods": {
       "toString": [
@@ -14084,6 +14154,132 @@
   {
     "clazzName": {"refClazzName": "java.util.Currency"},
     "methods": {
+      "currencyCode": [
+        {
+          "name": "currencyCode",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "defaultFractionDigits": [
+        {
+          "name": "defaultFractionDigits",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "displayName": [
+        {
+          "name": "displayName",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "getCurrencyCode": [
+        {
+          "name": "getCurrencyCode",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "getDefaultFractionDigits": [
+        {
+          "name": "getDefaultFractionDigits",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "getDisplayName": [
+        {
+          "name": "getDisplayName",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        },
+        {
+          "name": "getDisplayName",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "getNumericCode": [
+        {
+          "name": "getNumericCode",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "getNumericCodeAsString": [
+        {
+          "name": "getNumericCodeAsString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "getSymbol": [
+        {
+          "name": "getSymbol",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        },
+        {
+          "name": "getSymbol",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "numericCode": [
+        {
+          "name": "numericCode",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "numericCodeAsString": [
+        {
+          "name": "numericCodeAsString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "symbol": [
+        {
+          "name": "symbol",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -14094,7 +14290,66 @@
         }
       ]
     },
-    "staticMethods": {}
+    "staticMethods": {
+      "availableCurrencies": [
+        {
+          "name": "availableCurrencies",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "Currency",
+                  "params": [],
+                  "refClazzName": "java.util.Currency",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.Set"
+            }
+          }
+        }
+      ],
+      "getAvailableCurrencies": [
+        {
+          "name": "getAvailableCurrencies",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "Currency",
+                  "params": [],
+                  "refClazzName": "java.util.Currency",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.Set"
+            }
+          }
+        }
+      ],
+      "getInstance": [
+        {
+          "name": "getInstance",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.util.Currency"}
+          }
+        },
+        {
+          "name": "getInstance",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
+            ],
+            "result": {"refClazzName": "java.util.Currency"}
+          }
+        }
+      ]
+    }
   },
   {
     "clazzName": {
@@ -14341,7 +14596,339 @@
         }
       ]
     },
-    "staticMethods": {}
+    "staticMethods": {
+      "CANADA": [
+        {
+          "name": "CANADA",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "CANADA_FRENCH": [
+        {
+          "name": "CANADA_FRENCH",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "CHINA": [
+        {
+          "name": "CHINA",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "CHINESE": [
+        {
+          "name": "CHINESE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "ENGLISH": [
+        {
+          "name": "ENGLISH",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "FRANCE": [
+        {
+          "name": "FRANCE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "FRENCH": [
+        {
+          "name": "FRENCH",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "GERMAN": [
+        {
+          "name": "GERMAN",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "GERMANY": [
+        {
+          "name": "GERMANY",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "ITALIAN": [
+        {
+          "name": "ITALIAN",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "ITALY": [
+        {
+          "name": "ITALY",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "JAPAN": [
+        {
+          "name": "JAPAN",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "JAPANESE": [
+        {
+          "name": "JAPANESE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "KOREA": [
+        {
+          "name": "KOREA",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "KOREAN": [
+        {
+          "name": "KOREAN",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "PRC": [
+        {
+          "name": "PRC",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "ROOT": [
+        {
+          "name": "ROOT",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "SIMPLIFIED_CHINESE": [
+        {
+          "name": "SIMPLIFIED_CHINESE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "TAIWAN": [
+        {
+          "name": "TAIWAN",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "TRADITIONAL_CHINESE": [
+        {
+          "name": "TRADITIONAL_CHINESE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "UK": [
+        {
+          "name": "UK",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "US": [
+        {
+          "name": "US",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.util.Locale"}
+          }
+        }
+      ],
+      "availableLocales": [
+        {
+          "name": "availableLocales",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "Locale",
+                  "params": [],
+                  "refClazzName": "java.util.Locale",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ],
+      "getAvailableLocales": [
+        {
+          "name": "getAvailableLocales",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "Locale",
+                  "params": [],
+                  "refClazzName": "java.util.Locale",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ],
+      "getISOCountries": [
+        {
+          "name": "getISOCountries",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "String",
+                  "params": [],
+                  "refClazzName": "java.lang.String",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        },
+        {
+          "name": "getISOCountries",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale$IsoCountryCode"}}
+            ],
+            "result": {
+              "params": [
+                {
+                  "display": "String",
+                  "params": [],
+                  "refClazzName": "java.lang.String",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.Set"
+            }
+          }
+        }
+      ],
+      "getISOLanguages": [
+        {
+          "name": "getISOLanguages",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "String",
+                  "params": [],
+                  "refClazzName": "java.lang.String",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ],
+      "iSOCountries": [
+        {
+          "name": "iSOCountries",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "String",
+                  "params": [],
+                  "refClazzName": "java.lang.String",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ],
+      "iSOLanguages": [
+        {
+          "name": "iSOLanguages",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "String",
+                  "params": [],
+                  "refClazzName": "java.lang.String",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ]
+    }
   },
   {
     "clazzName": {

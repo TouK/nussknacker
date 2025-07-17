@@ -59,16 +59,6 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
         )
       )
 
-  override def parseWithoutContextValidation(
-      keyWithLabel: String,
-      expectedType: TypingResult
-  ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = {
-    if (keyWithLabel.isBlank)
-      Valid(NullExpression(keyWithLabel, SpelExpressionParser.Standard))
-    else
-      parseDictKeyWithLabelExpression(keyWithLabel).map(expr => CompiledDictKeyExpression(expr.key, expectedType))
-  }
-
   def parseDictKeyWithLabelExpression(
       keyWithLabelJson: String
   ): Validated[NonEmptyList[KeyWithLabelExpressionParsingError], DictKeyWithLabelExpression] =
@@ -81,7 +71,7 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
         }
     }
 
-  case class CompiledDictKeyExpression(key: String, expectedType: TypingResult) extends CompiledExpression {
+  private case class CompiledDictKeyExpression(key: String, expectedType: TypingResult) extends CompiledExpression {
     override def language: Language = languageId
 
     override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {

@@ -12,7 +12,12 @@ import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  LazyParameterCreationStrategy,
+  MultipleInputBranchesNodeInputValidationContext,
+  NodeCompiler,
+  SingleInputNodeInputValidationContext
+}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.{part, CompiledProcessParts}
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
@@ -185,13 +190,13 @@ protected trait ProcessCompilerBase {
 
   }
 
-  private def compileParts(parts: List[SubsequentPart], ctx: Map[String, ValidationContext])(
+  private def compileParts(parts: List[SubsequentPart], partInputContexts: Map[String, ValidationContext])(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
     import CompilationResult._
     parts
       .map(p =>
-        ctx
+        partInputContexts
           .get(p.id)
           .map(compileSubsequentPart(p, _))
           .getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
@@ -199,21 +204,20 @@ protected trait ProcessCompilerBase {
       .sequence
   }
 
-  private def compileSubsequentPart(part: SubsequentPart, ctx: ValidationContext)(
+  private def compileSubsequentPart(part: SubsequentPart, partInputContext: ValidationContext)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.SubsequentPart] = {
-    implicit val nodeId: NodeId = NodeId(part.id)
     part match {
       case SinkPart(node) =>
-        compileSinkPart(node, ctx)
+        compileSinkPart(node, partInputContext)
       case CustomNodePart(node @ splittednode.EndingNode(data), _, _) =>
-        compileEndingCustomNodePart(node, data, ctx)
+        compileEndingCustomNodePart(node, data, partInputContext)
       case CustomNodePart(node @ splittednode.OneOutputSubsequentNode(data, _), _, _) =>
-        compileCustomNodePart(part, node, data, Left(ctx))
+        compileCustomNodePart(part, node, data, Left(partInputContext))
     }
   }
 
-  def compileSourcePart(
+  private def compileSourcePart(
       part: SourcePart,
       sourceData: SourceNodeData
   )(
@@ -223,9 +227,12 @@ protected trait ProcessCompilerBase {
     val NodeCompilationResult(typingInfo, parameters, initialCtx, compiledSource, _) =
       nodeCompiler.compileSource(sourceData)
 
-    val validatedSource = sub.validate(part.node, initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
-    val typesForParts   = validatedSource.typing.mapValuesNow(_.inputValidationContext)
-    val nodeTypingInfo  = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters))
+    val validatedSource = sub.validate(
+      part.node,
+      SingleInputNodeInputValidationContext(initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
+    )
+    val typesForParts  = validatedSource.typing.mapValuesNow(_.inputValidationContext)
+    val nodeTypingInfo = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters))
 
     CompilationResult.map4(
       validatedSource,
@@ -243,20 +250,22 @@ protected trait ProcessCompilerBase {
     }
   }
 
-  def compileSinkPart(
+  private def compileSinkPart(
       node: EndingNode[Sink],
       ctx: ValidationContext
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[part.SinkPart] = {
-    val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
+    val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) =
+      nodeCompiler.compileSink(node.data, SingleInputNodeInputValidationContext(ctx))
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
-    CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
-      compiledgraph.part.SinkPart(obj, node, ctx, ctx)
-    )
+    CompilationResult.map2(
+      sub.validate(node, SingleInputNodeInputValidationContext(ctx)),
+      CompilationResult(nodeTypingInfo, compiledSink)
+    )((_, obj) => compiledgraph.part.SinkPart(obj, node, ctx, ctx))
   }
 
-  def compileEndingCustomNodePart(
+  private def compileEndingCustomNodePart(
       node: splittednode.EndingNode[CustomNode],
       data: CustomNodeData,
       ctx: ValidationContext
@@ -264,7 +273,7 @@ protected trait ProcessCompilerBase {
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
-      nodeCompiler.compileCustomNodeObject(data, Left(ctx), ending = true)
+      nodeCompiler.compileCustomNodeObject(data, SingleInputNodeInputValidationContext(ctx), ending = true)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
 
     CompilationResult
@@ -284,7 +293,7 @@ protected trait ProcessCompilerBase {
       .distinctErrors
   }
 
-  def compileCustomNodePart(
+  private def compileCustomNodePart(
       part: ProcessPart,
       node: splittednode.OneOutputNode[CustomNodeData],
       data: CustomNodeData,
@@ -294,12 +303,27 @@ protected trait ProcessCompilerBase {
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     import scenarioCompilationDependencies._
 
-    val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
-      nodeCompiler.compileCustomNodeObject(data, ctx.map(_.contextsForJoin(data.id)), ending = false)
+    val nodeInputValidationContext = ctx match {
+      case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
+      case Right(branchEndContexts) =>
+        MultipleInputBranchesNodeInputValidationContext(
+          branchEndContexts.contextsForJoin(data.id),
+          contextWithOnlyGlobalVariables
+        )
+    }
 
-    val nextPartsValidation =
-      sub.validate(node, validatedNextCtx.valueOr(_ => ctx.left.getOrElse(contextWithOnlyGlobalVariables)))
-    val typesForParts = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
+    val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
+      nodeCompiler.compileCustomNodeObject(data, nodeInputValidationContext, ending = false)
+
+    val nextPartInputValidationContext = validatedNextCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse {
+      ctx match {
+        case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
+        case Right(_)            => SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables)
+      }
+    }
+
+    val nextPartsValidation = sub.validate(node, nextPartInputValidationContext)
+    val typesForParts       = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(
       node.id -> NodeTypingInfo(ctx.left.getOrElse(contextWithOnlyGlobalVariables), typingInfo, parameters)
     )

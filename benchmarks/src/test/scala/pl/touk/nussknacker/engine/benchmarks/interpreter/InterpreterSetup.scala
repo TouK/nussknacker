@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -56,7 +57,7 @@ class InterpreterSetup[T: ClassTag] {
     def compileNode(part: ProcessPart) =
       failOnErrors(
         compilerData.subPartCompiler
-          .compile(part.node, part.validationContext)
+          .compile(part.node, SingleInputNodeInputValidationContext(part.validationContext))
           .result
       )
 

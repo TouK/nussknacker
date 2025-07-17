@@ -4,7 +4,6 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.{parser, Json}
 import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
