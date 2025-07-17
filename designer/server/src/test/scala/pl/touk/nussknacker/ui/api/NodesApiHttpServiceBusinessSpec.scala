@@ -5,6 +5,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
@@ -24,7 +25,8 @@ class NodesApiHttpServiceBusinessSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
-    with PatientScalaFutures {
+    with PatientScalaFutures
+    with TableDrivenPropertyChecks {
 
   "The endpoint for nodes additional info should" - {
     "return additional info for node with expression in existing scenario" in {
@@ -906,80 +908,234 @@ class NodesApiHttpServiceBusinessSpec
         .statusCode(200)
         .body("methodName[0]", equalTo("#input"))
     }
-    "suggest method of collection util" in {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(
-          s"""{
-             |  "expression": {
-             |    "language": "spel",
-             |    "expression": "#COLLECTION."
-             |  },
-             |  "caretPosition2d": {
-             |    "row": 0,
-             |    "column": 12
-             |  },
-             |  "variableTypes": {
-             |    "input": {
-             |      "display": "Record{amount: Long(5)}",
-             |      "type": "TypedObjectTypingResult",
-             |      "fields": {
-             |        "amount": {
-             |          "value": 5,
-             |          "display": "Long(5)",
-             |          "type": "TypedObjectWithValue",
-             |          "refClazzName": "java.lang.Long",
-             |          "params": []
-             |        }
-             |      },
-             |      "refClazzName": "java.util.Map",
-             |      "params": [
-             |        {
-             |          "display": "String",
-             |          "type": "TypedClass",
-             |          "refClazzName": "java.lang.String",
-             |          "params": []
-             |        },
-             |        {
-             |          "value": 5,
-             |          "display": "Long(5)",
-             |          "type": "TypedObjectWithValue",
-             |          "refClazzName": "java.lang.Long",
-             |          "params": []
-             |        }
-             |      ]
-             |    }
-             |  }
-             |}""".stripMargin
+    "return proper suggestions for all global helpers" in {
+      val helpersWithSuggestions = List(
+        "BASE64" -> List("decode", "encode", "urlSafeDecode", "urlSafeEncode"),
+        "BusinessConfig" -> List(
+          "Campaign 2020 News",
+          "Email Marketing 12.2019",
+          "IT Special BC",
+          "Marketing v1",
+          "Nussknacker base configuration ",
+          "Users Black List"
+        ),
+        "COLLECTION" -> List(
+          "concat",
+          "diff",
+          "distinct",
+          "flatten",
+          "intersect",
+          "join",
+          "max",
+          "merge",
+          "min",
+          "product",
+          "reverse",
+          "shuffle",
+          "slice",
+          "sortedAsc",
+          "sortedAscBy",
+          "sortedDesc",
+          "sum",
+          "take",
+          "takeLast"
+        ),
+        "CONV" -> List("toAny", "toJson", "toJsonOrNull", "toJsonString", "toNumber"),
+        "DATE" -> List(
+          "APRIL",
+          "AUGUST",
+          "DECEMBER",
+          "FEBRUARY",
+          "FRIDAY",
+          "JANUARY",
+          "JULY",
+          "JUNE",
+          "MARCH",
+          "MAY",
+          "MONDAY",
+          "NOVEMBER",
+          "OCTOBER",
+          "SATURDAY",
+          "SEPTEMBER",
+          "SUNDAY",
+          "THURSDAY",
+          "TUESDAY",
+          "UTCOffset",
+          "WEDNESDAY",
+          "defaultTimeZone",
+          "durationBetween",
+          "isBetween",
+          "isBetween",
+          "isBetween",
+          "isBetween",
+          "isBetween",
+          "localDateTime",
+          "now",
+          "nowAtDefaultTimeZone",
+          "nowAtOffset",
+          "nowAtZone",
+          "periodBetween",
+          "periodBetween",
+          "periodBetween",
+          "toEpochMilli",
+          "toEpochMilli",
+          "toEpochMilli",
+          "toEpochMilli",
+          "toInstant",
+          "toInstantAtDefaultTimeZone",
+          "zone",
+          "zoneOffset",
+          "zuluTimeZone"
+        ),
+        "DATE_FORMAT" -> List(
+          "format",
+          "formatter",
+          "formatter",
+          "lenientFormatter",
+          "lenientFormatter",
+          "parseInstant",
+          "parseLocalDate",
+          "parseLocalDate",
+          "parseLocalDate",
+          "parseLocalDateTime",
+          "parseLocalDateTime",
+          "parseLocalDateTime",
+          "parseLocalTime",
+          "parseLocalTime",
+          "parseLocalTime",
+          "parseOffsetDateTime",
+          "parseOffsetDateTime",
+          "parseOffsetDateTime",
+          "parseZonedDateTime",
+          "parseZonedDateTime",
+          "parseZonedDateTime"
+        ),
+        "DICT" -> List(
+          "Bar",
+          "Foo",
+          "Pretty label",
+          "Sentence with spaces and . dots"
+        ),
+        "GEO"            -> List("distanceInKm"),
+        "HelperFunction" -> List("docs", "example", "toString"),
+        "NUMERIC" -> List(
+          "abs",
+          "ceil",
+          "divide",
+          "equal",
+          "floor",
+          "greater",
+          "greaterOrEqual",
+          "largeSum",
+          "lesser",
+          "lesserOrEqual",
+          "max",
+          "min",
+          "minus",
+          "multiply",
+          "negate",
+          "notEqual",
+          "plus",
+          "pow",
+          "remainder",
+          "round",
+          "sum",
+          "toNumber"
+        ),
+        "RANDOM" -> List(
+          "nextBoolean",
+          "nextBooleanWithSuccessRate",
+          "nextDouble",
+          "nextDouble",
+          "nextDouble",
+          "nextInt",
+          "nextInt",
+          "nextLong",
+          "nextLong"
+        ),
+        "RGB" -> List("Aqua", "Black", "Blue", "DarkRed", "Green", "Magenta", "Maroon", "Red", "Tan", "Yellow"),
+        "TypedConfig" -> List(
+          "canBe",
+          "canBeMap",
+          "contains",
+          "containsAll",
+          "empty",
+          "get",
+          "indexOf",
+          "isEmpty",
+          "lastIndexOf",
+          "size",
+          "to",
+          "toMap",
+          "toMapOrNull",
+          "toOrNull",
+          "toString"
+        ),
+        "UTIL" -> List("split", "uuid"),
+        "meta" -> List(
+          "canBe",
+          "canBeList",
+          "containsKey",
+          "containsValue",
+          "empty",
+          "get",
+          "getOrDefault",
+          "isEmpty",
+          "keySet",
+          "processName",
+          "properties",
+          "scenarioLabels",
+          "size",
+          "to",
+          "toList",
+          "toListOrNull",
+          "toOrNull",
+          "toString",
+          "values"
         )
-        .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
-        .Then()
+      )
+
+      def requestSuggestions(expression: String) = {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
+               |  "expression": {
+               |    "language": "spel",
+               |    "expression": "$expression"
+               |  },
+               |  "caretPosition2d": {
+               |    "row": 0,
+               |    "column": ${expression.length}
+               |  },
+               |  "variableTypes": {}
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+          .Then()
+      }
+
+      requestSuggestions("#")
         .statusCode(200)
         .body(
           "methodName",
           Matchers.contains(
-            "concat",
-            "diff",
-            "distinct",
-            "flatten",
-            "intersect",
-            "join",
-            "max",
-            "merge",
-            "min",
-            "product",
-            "reverse",
-            "shuffle",
-            "slice",
-            "sortedAsc",
-            "sortedAscBy",
-            "sortedDesc",
-            "sum",
-            "take",
-            "takeLast"
+            helpersWithSuggestions
+              .map(helperWithSuggestion => s"#${helperWithSuggestion._1}"): _*
           )
         )
+
+      val testTable = Table[String, List[String]](
+        ("helper", "expectedSuggestions"),
+        helpersWithSuggestions: _*
+      )
+
+      forAll(testTable) { case (globalVariable, expectedSuggestions) =>
+        requestSuggestions(s"#$globalVariable.")
+          .statusCode(200)
+          .body("methodName", Matchers.contains(expectedSuggestions: _*))
+      }
     }
     "not suggest anything if no such parameters exist" in {
       given()
