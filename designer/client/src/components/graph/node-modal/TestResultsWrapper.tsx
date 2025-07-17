@@ -41,13 +41,18 @@ export function TestResultsWrapper({
     const [testResultsState, setTestResultsState] = useState<StateForSelectTestResults>(
         TestResultUtils.stateForSelectTestResults(nodeResults),
     );
+    const [userSettings] = useUserSettings();
+    const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
 
     const io = useInputOutputContext();
     useEffect(() => {
-        setTestResultsState(
-            TestResultUtils.stateForSelectTestResults(nodeResults, io?.state?.inputDataSetId ? io.state.inputDataSetId : null),
-        );
-    }, [nodeResults, io?.state?.inputDataSetId]);
+        const chosenId = showInputsAndOutputs
+            ? io?.state?.inputDataSetId || io?.state?.outputDataSetId
+            : TestResultUtils.hasTestResults(nodeResults)
+            ? TestResultUtils.availableContexts(nodeResults)[0].id
+            : null;
+        setTestResultsState(TestResultUtils.stateForSelectTestResults(nodeResults, chosenId));
+    }, [nodeResults, io?.state?.inputDataSetId, io?.state?.outputDataSetId, showInputsAndOutputs]);
 
     const [settings] = useUserSettings();
     return (

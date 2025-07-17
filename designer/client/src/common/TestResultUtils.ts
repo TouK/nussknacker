@@ -71,10 +71,9 @@ class TestResultUtils {
 
     stateForSelectTestResults = (testResults?: NodeTestResults, id?: string): StateForSelectTestResults => {
         if (this.hasTestResults(testResults)) {
-            const chosenId = id || this.availableContexts(testResults)[0].id;
             return {
-                testResultsToShow: this.nodeResultsForContext(testResults, chosenId),
-                testResultsIdToShow: chosenId,
+                testResultsToShow: this.nodeResultsForContext(testResults, id),
+                testResultsIdToShow: id,
             };
         }
         return {};
