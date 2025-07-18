@@ -90,6 +90,7 @@ class TestResultUtils {
     private _nodeResults(results: TestResultsDto, nodeId: NodeId): ResultContextJson[] {
         return (
             results?.nodeTransitionResults
+                //TODO: Let's find a better way to get All node results, and get rid of this destinationNodeId and sourceNodeId filer
                 ?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId)
                 .flatMap(({ results }) => results) || []
         );
