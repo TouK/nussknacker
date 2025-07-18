@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers
-import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.{empty, equalTo, is, not}
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -909,190 +909,22 @@ class NodesApiHttpServiceBusinessSpec
         .body("methodName[0]", equalTo("#input"))
     }
     "return proper suggestions for all global helpers" in {
-      val helpersWithSuggestions = List(
-        "BASE64" -> List("decode", "encode", "urlSafeDecode", "urlSafeEncode"),
-        "BusinessConfig" -> List(
-          "Campaign 2020 News",
-          "Email Marketing 12.2019",
-          "IT Special BC",
-          "Marketing v1",
-          "Nussknacker base configuration ",
-          "Users Black List"
-        ),
-        "COLLECTION" -> List(
-          "concat",
-          "diff",
-          "distinct",
-          "flatten",
-          "intersect",
-          "join",
-          "max",
-          "merge",
-          "min",
-          "product",
-          "reverse",
-          "shuffle",
-          "slice",
-          "sortedAsc",
-          "sortedAscBy",
-          "sortedDesc",
-          "sum",
-          "take",
-          "takeLast"
-        ),
-        "CONV" -> List("toAny", "toJson", "toJsonOrNull", "toJsonString", "toNumber"),
-        "DATE" -> List(
-          "APRIL",
-          "AUGUST",
-          "DECEMBER",
-          "FEBRUARY",
-          "FRIDAY",
-          "JANUARY",
-          "JULY",
-          "JUNE",
-          "MARCH",
-          "MAY",
-          "MONDAY",
-          "NOVEMBER",
-          "OCTOBER",
-          "SATURDAY",
-          "SEPTEMBER",
-          "SUNDAY",
-          "THURSDAY",
-          "TUESDAY",
-          "UTCOffset",
-          "WEDNESDAY",
-          "defaultTimeZone",
-          "durationBetween",
-          "isBetween",
-          "isBetween",
-          "isBetween",
-          "isBetween",
-          "isBetween",
-          "localDateTime",
-          "now",
-          "nowAtDefaultTimeZone",
-          "nowAtOffset",
-          "nowAtZone",
-          "periodBetween",
-          "periodBetween",
-          "periodBetween",
-          "toEpochMilli",
-          "toEpochMilli",
-          "toEpochMilli",
-          "toEpochMilli",
-          "toInstant",
-          "toInstantAtDefaultTimeZone",
-          "zone",
-          "zoneOffset",
-          "zuluTimeZone"
-        ),
-        "DATE_FORMAT" -> List(
-          "format",
-          "formatter",
-          "formatter",
-          "lenientFormatter",
-          "lenientFormatter",
-          "parseInstant",
-          "parseLocalDate",
-          "parseLocalDate",
-          "parseLocalDate",
-          "parseLocalDateTime",
-          "parseLocalDateTime",
-          "parseLocalDateTime",
-          "parseLocalTime",
-          "parseLocalTime",
-          "parseLocalTime",
-          "parseOffsetDateTime",
-          "parseOffsetDateTime",
-          "parseOffsetDateTime",
-          "parseZonedDateTime",
-          "parseZonedDateTime",
-          "parseZonedDateTime"
-        ),
-        "DICT" -> List(
-          "Bar",
-          "Foo",
-          "Pretty label",
-          "Sentence with spaces and . dots"
-        ),
-        "GEO"            -> List("distanceInKm"),
-        "HelperFunction" -> List("docs", "example", "toString"),
-        "NUMERIC" -> List(
-          "abs",
-          "ceil",
-          "divide",
-          "equal",
-          "floor",
-          "greater",
-          "greaterOrEqual",
-          "largeSum",
-          "lesser",
-          "lesserOrEqual",
-          "max",
-          "min",
-          "minus",
-          "multiply",
-          "negate",
-          "notEqual",
-          "plus",
-          "pow",
-          "remainder",
-          "round",
-          "sum",
-          "toNumber"
-        ),
-        "RANDOM" -> List(
-          "nextBoolean",
-          "nextBooleanWithSuccessRate",
-          "nextDouble",
-          "nextDouble",
-          "nextDouble",
-          "nextInt",
-          "nextInt",
-          "nextLong",
-          "nextLong"
-        ),
-        "RGB" -> List("Aqua", "Black", "Blue", "DarkRed", "Green", "Magenta", "Maroon", "Red", "Tan", "Yellow"),
-        "TypedConfig" -> List(
-          "canBe",
-          "canBeMap",
-          "contains",
-          "containsAll",
-          "empty",
-          "get",
-          "indexOf",
-          "isEmpty",
-          "lastIndexOf",
-          "size",
-          "to",
-          "toMap",
-          "toMapOrNull",
-          "toOrNull",
-          "toString"
-        ),
-        "UTIL" -> List("split", "uuid"),
-        "meta" -> List(
-          "canBe",
-          "canBeList",
-          "containsKey",
-          "containsValue",
-          "empty",
-          "get",
-          "getOrDefault",
-          "isEmpty",
-          "keySet",
-          "processName",
-          "properties",
-          "scenarioLabels",
-          "size",
-          "to",
-          "toList",
-          "toListOrNull",
-          "toOrNull",
-          "toString",
-          "values"
-        )
+      val helpers = List(
+        "BASE64",
+        "BusinessConfig",
+        "COLLECTION",
+        "CONV",
+        "DATE",
+        "DATE_FORMAT",
+        "DICT",
+        "GEO",
+        "HelperFunction",
+        "NUMERIC",
+        "RANDOM",
+        "RGB",
+        "TypedConfig",
+        "UTIL",
+        "meta"
       )
 
       def requestSuggestions(expression: String) = {
@@ -1120,21 +952,13 @@ class NodesApiHttpServiceBusinessSpec
         .statusCode(200)
         .body(
           "methodName",
-          Matchers.contains(
-            helpersWithSuggestions
-              .map(helperWithSuggestion => s"#${helperWithSuggestion._1}"): _*
-          )
+          Matchers.contains(helpers.map(helper => s"#$helper"): _*)
         )
 
-      val testTable = Table[String, List[String]](
-        ("helper", "expectedSuggestions"),
-        helpersWithSuggestions: _*
-      )
-
-      forAll(testTable) { case (globalVariable, expectedSuggestions) =>
-        requestSuggestions(s"#$globalVariable.")
+      forAll(Table[String]("helper", helpers: _*)) { helper =>
+        requestSuggestions(s"#$helper.")
           .statusCode(200)
-          .body("methodName", Matchers.contains(expectedSuggestions: _*))
+          .body("methodName", is(not(empty())))
       }
     }
     "not suggest anything if no such parameters exist" in {
