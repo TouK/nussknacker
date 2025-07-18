@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,6 @@
 
 package org.springframework.expression.spel.ast;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.TypedValue;
 import org.springframework.expression.common.ExpressionUtils;
@@ -31,6 +25,12 @@ import org.springframework.expression.spel.SpelMessage;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents projection, where a given operation is performed on all elements in some
@@ -71,14 +71,13 @@ public class Projection extends SpelNodeImpl {
         // has two fields 'key' and 'value' that refer to the map entries key
         // and value, and they can be referenced in the operation
         // eg. {'a':'y','b':'n'}.![value=='y'?key:null]" == ['a', null]
-        if (operand instanceof Map) {
-            Map<?, ?> mapData = (Map<?, ?>) operand;
+        if (operand instanceof Map<?, ?> mapData) {
             return handleMap(state, mapData);
         }
 
         if (operand instanceof Iterable || operandIsArray) {
-            Iterable<?> data = (operand instanceof Iterable ?
-                    (Iterable<?>) operand : Arrays.asList(ObjectUtils.toObjectArray(operand)));
+            Iterable<?> data = (operand instanceof Iterable<?> iterable ?
+                    iterable : Arrays.asList(ObjectUtils.toObjectArray(operand)));
 
             List<Object> result = new ArrayList<>();
             Class<?> arrayElementType = null;
