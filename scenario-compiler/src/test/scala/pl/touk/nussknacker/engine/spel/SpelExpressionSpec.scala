@@ -1505,6 +1505,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       }
     }
 
+    // TODO bump-spring-6.0.x:
     invokeAndCheck("1.toString", "1")
     invokeAndCheck("1.toString()", "1")
     invokeAndCheck("1.doubleValue", 1d)
