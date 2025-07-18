@@ -48,7 +48,8 @@ class FlinkMiniClusterScenarioJobRunner(
             command.processVersion,
             command.deploymentData,
             env,
-            List.empty,
+            List.empty,                                    // processListeners
+            Some("MiniCluster is used for the deployment") // skipLiveDataUploaderWithReason
           )
           .getJobID
         Some(jobID)

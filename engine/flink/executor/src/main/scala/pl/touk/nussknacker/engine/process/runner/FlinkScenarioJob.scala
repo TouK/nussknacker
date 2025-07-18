@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListener
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
@@ -25,13 +25,15 @@ object FlinkScenarioJob {
       deploymentData: DeploymentData,
       env: StreamExecutionEnvironment,
       processListeners: List[ProcessListener],
+      skipLiveDataUploaderWithReason: Option[String],
   ): JobExecutionResult =
     new FlinkScenarioJob(modelData.asInvokableModelData).run(
-      scenario,
-      processVersion,
-      deploymentData,
-      env,
-      processListeners,
+      scenario = scenario,
+      processVersion = processVersion,
+      deploymentData = deploymentData,
+      env = env,
+      processListeners = processListeners,
+      skipLiveDataUploaderWithReason = skipLiveDataUploaderWithReason
     )
 
 }
@@ -44,32 +46,16 @@ class FlinkScenarioJob(modelData: ModelData) {
       deploymentData: DeploymentData,
       env: StreamExecutionEnvironment,
       processListeners: List[ProcessListener],
+      skipLiveDataUploaderWithReason: Option[String],
   ): JobExecutionResult = {
-    val liveDataPreviewMode = modelData.modelConfig.liveDataPreviewMode
-    lazy val liveDataUploaderConfigOpt = liveDataPreviewMode match {
-      case LiveDataPreviewMode.Enabled(_, _, dbStorage: LiveDataStorage.DesignerDb) =>
+    val liveDataCollectingListener = modelData.modelConfig.liveDataPreviewMode match {
+      case enabledConfig: LiveDataPreviewMode.Enabled =>
         Some(
-          LiveDataUploaderConfig(
-            intervalSeconds = dbStorage.uploadIntervalInSeconds,
-            uploaderInactivityTimeoutInSeconds = dbStorage.uploaderInactivityTimeoutInSeconds,
-            dbUrl = dbStorage.url,
-            dbUser = dbStorage.user,
-            dbPassword = dbStorage.password,
-            dbSchema = dbStorage.schema,
-          )
-        )
-      case _ =>
-        None
-    }
-    val liveDataCollectingListener = liveDataPreviewMode match {
-      case LiveDataPreviewMode.Enabled(maxNumberOfSamples, throughputTimeWindowInSeconds, _) =>
-        Some(
-          LiveDataCollectingListenerHolder.createListenerFor(
+          LiveDataCollectingListener.createListenerFor(
             ProcessIdWithName(processVersion.processId, processVersion.processName),
             deploymentData.deploymentId.toNewDeploymentIdOpt,
-            liveDataUploaderConfigOpt,
-            maxNumberOfSamples,
-            throughputTimeWindowInSeconds
+            enabledConfig,
+            skipLiveDataUploaderWithReason
           )
         )
       case LiveDataPreviewMode.Disabled =>

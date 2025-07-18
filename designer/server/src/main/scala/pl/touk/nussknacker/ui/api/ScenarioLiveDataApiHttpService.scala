@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcessConverter
-import pl.touk.nussknacker.engine.livedata.{CollectedLiveData, LiveDataCollectingListenerHolder}
+import pl.touk.nussknacker.engine.livedata.{CollectedLiveData, LiveDataCollectingListenerStorageHolder}
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -71,7 +71,7 @@ class ScenarioLiveDataApiHttpService(
           liveData <- EitherT[Future, LiveDataError, CollectedLiveData] {
             deploymentManager.liveDataPreviewSupport match {
               case LiveDataPreviewStoredInDesignerJvm =>
-                Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name)).map {
+                Future(LiveDataCollectingListenerStorageHolder.getLiveDataPreview(processIdWithName.name)).map {
                   case Some(liveData) => Right(liveData)
                   case None           => Right(CollectedLiveData.empty)
                 }

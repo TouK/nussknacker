@@ -7,6 +7,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.component.ComponentType.Source
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
@@ -15,8 +16,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentId
-import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListener
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -101,12 +101,15 @@ class ScenarioLiveDataApiHttpServiceSpec
     }
     "return present data" in {
       val exampleScenario = createExampleScenario()
-      val listener = LiveDataCollectingListenerHolder.createListenerFor(
+      val listener = LiveDataCollectingListener.createListenerFor(
         processIdWithName = ProcessIdWithName(ProcessId(1), exampleScenario.name),
         deploymentIdOpt = None,
-        config = None,
-        maxNumberOfRecords = 10,
-        throughputTimeWindowInSeconds = 10
+        liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
+          maxNumberOfRecords = 10,
+          throughputTimeWindowInSeconds = 10,
+          liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
+        ),
+        skipLiveDataUploaderWithReason = None
       )
       listener.transitionToNextNode(
         nodeId = "start",

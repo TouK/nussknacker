@@ -34,11 +34,12 @@ class FlinkScenarioJobSpec extends AnyFlatSpec with Matchers with Inside with Be
 
       val modelData = LocalModelData(ConfigFactory.empty(), List.empty, configCreator = new SimpleProcessConfigCreator)
       val executionResult = new FlinkScenarioJob(modelData).run(
-        process,
-        ProcessVersion.empty,
-        DeploymentData.empty,
-        env,
-        List.empty,
+        scenario = process,
+        processVersion = ProcessVersion.empty,
+        deploymentData = DeploymentData.empty,
+        env = env,
+        processListeners = List.empty,
+        skipLiveDataUploaderWithReason = None
       )
       flinkMiniClusterWithServices.waitForJobIsFinished(executionResult.getJobID)
     }

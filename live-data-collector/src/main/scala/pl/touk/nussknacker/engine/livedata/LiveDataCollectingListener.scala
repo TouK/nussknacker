@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.livedata
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
@@ -16,22 +19,13 @@ import scala.util.Try
 class LiveDataCollectingListener private[livedata] (
     processIdWithName: ProcessIdWithName,
     deploymentId: Option[DeploymentId],
-    config: Option[LiveDataUploaderConfig],
+    uploaderConfig: Option[LiveDataUploaderConfig],
     maxNumberOfRecords: Int,
     throughputTimeWindowInSeconds: Int,
 ) extends ProcessListener
     with Serializable {
 
   private val variableEncoder: Any => io.circe.Json = TestInterpreterRunner.testResultsVariableEncoder
-
-  private def performStorageOperation(f: LiveDataCollectingListenerStorage => Unit): Unit =
-    LiveDataCollectingListenerHolder.performStorageOperation(
-      processIdWithName = processIdWithName,
-      deploymentId = deploymentId,
-      config = config,
-      maxNumberOfRecords = maxNumberOfRecords,
-      throughputTimeWindowInSeconds = throughputTimeWindowInSeconds
-    )(f)
 
   override def nodeEntered(
       nodeId: String,
@@ -123,6 +117,15 @@ class LiveDataCollectingListener private[livedata] (
     }
   }
 
+  private def performStorageOperation(actionOnStorage: LiveDataCollectingListenerStorage => Unit): Unit = {
+    LiveDataCollectingListenerStorageHolder.withStorage(
+      processName = processIdWithName.name,
+      maxNumberOfRecords = maxNumberOfRecords,
+      throughputTimeWindowInSeconds = throughputTimeWindowInSeconds
+    )(actionOnStorage)
+    uploaderConfig.foreach(LiveDataUploaderHolder.ensureLiveDataUploaderIsActive(processIdWithName, deploymentId, _))
+  }
+
   override final def close(): Unit = ()
 
   private def sampleFromContext(context: Context, timestamp: Instant): LiveDataSample =
@@ -132,5 +135,46 @@ class LiveDataCollectingListener private[livedata] (
     variables.map { case (k, v) => k -> encode(v) }
 
   private def encode(value: Any): Json = variableEncoder(value)
+
+}
+
+object LiveDataCollectingListener extends LazyLogging {
+
+  def createListenerFor(
+      processIdWithName: ProcessIdWithName,
+      // todo: option can be removed, when we fully migrate to newdeployment.DeploymentId
+      deploymentIdOpt: Option[DeploymentId],
+      liveDataEnabledConfig: LiveDataPreviewMode.Enabled,
+      skipLiveDataUploaderWithReason: Option[String]
+  ): LiveDataCollectingListener = {
+    LiveDataCollectingListenerStorageHolder.cleanResults(processIdWithName.name)
+    val liveDataUploaderConfigOpt = (liveDataEnabledConfig.liveDataStorage, skipLiveDataUploaderWithReason) match {
+      case (_: LiveDataStorage.DesignerDb, Some(skipLiveDataUploaderReason)) =>
+        logger.debug(
+          s"liveDataPreview.storage is configured but $skipLiveDataUploaderReason. Live Data uploader will be disabled and data will be kept in the JVM memory only."
+        )
+        None
+      case (dbStorage: LiveDataStorage.DesignerDb, None) =>
+        Some(
+          LiveDataUploaderConfig(
+            intervalSeconds = dbStorage.uploadIntervalInSeconds,
+            uploaderInactivityTimeoutInSeconds = dbStorage.uploaderInactivityTimeoutInSeconds,
+            dbUrl = dbStorage.url,
+            dbUser = dbStorage.user,
+            dbPassword = dbStorage.password,
+            dbSchema = dbStorage.schema,
+          )
+        )
+      case (LiveDataStorage.DesignerJvm, _) =>
+        None
+    }
+    new LiveDataCollectingListener(
+      processIdWithName,
+      deploymentIdOpt,
+      liveDataUploaderConfigOpt,
+      liveDataEnabledConfig.maxNumberOfRecords,
+      liveDataEnabledConfig.throughputTimeWindowInSeconds
+    )
+  }
 
 }
