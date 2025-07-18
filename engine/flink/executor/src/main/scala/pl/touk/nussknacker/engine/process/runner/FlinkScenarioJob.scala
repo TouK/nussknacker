@@ -25,13 +25,15 @@ object FlinkScenarioJob {
       deploymentData: DeploymentData,
       env: StreamExecutionEnvironment,
       processListeners: List[ProcessListener],
+      skipLiveDataUploaderWithReason: Option[String],
   ): JobExecutionResult =
     new FlinkScenarioJob(modelData.asInvokableModelData).run(
-      scenario,
-      processVersion,
-      deploymentData,
-      env,
-      processListeners,
+      scenario = scenario,
+      processVersion = processVersion,
+      deploymentData = deploymentData,
+      env = env,
+      processListeners = processListeners,
+      skipLiveDataUploaderWithReason = skipLiveDataUploaderWithReason
     )
 
 }
@@ -44,6 +46,7 @@ class FlinkScenarioJob(modelData: ModelData) {
       deploymentData: DeploymentData,
       env: StreamExecutionEnvironment,
       processListeners: List[ProcessListener],
+      skipLiveDataUploaderWithReason: Option[String],
   ): JobExecutionResult = {
     val liveDataCollectingListener = modelData.modelConfig.liveDataPreviewMode match {
       case enabledConfig: LiveDataPreviewMode.Enabled =>
@@ -51,7 +54,8 @@ class FlinkScenarioJob(modelData: ModelData) {
           LiveDataCollectingListener.createListenerFor(
             ProcessIdWithName(processVersion.processId, processVersion.processName),
             deploymentData.deploymentId.toNewDeploymentIdOpt,
-            enabledConfig
+            enabledConfig,
+            skipLiveDataUploaderWithReason
           )
         )
       case LiveDataPreviewMode.Disabled =>

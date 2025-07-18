@@ -108,7 +108,8 @@ class ScenarioLiveDataApiHttpServiceSpec
           maxNumberOfRecords = 10,
           throughputTimeWindowInSeconds = 10,
           liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
-        )
+        ),
+        skipLiveDataUploaderWithReason = None
       )
       listener.transitionToNextNode(
         nodeId = "start",

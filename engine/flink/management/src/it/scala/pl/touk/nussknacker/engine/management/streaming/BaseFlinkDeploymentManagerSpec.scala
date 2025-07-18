@@ -88,7 +88,8 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
         maxNumberOfRecords = 20,
         throughputTimeWindowInSeconds = 60,
         liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
-      )
+      ),
+      skipLiveDataUploaderWithReason = None
     )
     val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
       process = process,

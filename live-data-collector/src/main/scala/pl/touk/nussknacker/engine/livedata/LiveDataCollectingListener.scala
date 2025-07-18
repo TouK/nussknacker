@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.livedata
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
@@ -137,17 +138,23 @@ class LiveDataCollectingListener private[livedata] (
 
 }
 
-object LiveDataCollectingListener {
+object LiveDataCollectingListener extends LazyLogging {
 
   def createListenerFor(
       processIdWithName: ProcessIdWithName,
       // todo: option can be removed, when we fully migrate to newdeployment.DeploymentId
       deploymentIdOpt: Option[DeploymentId],
-      liveDataEnabledConfig: LiveDataPreviewMode.Enabled
+      liveDataEnabledConfig: LiveDataPreviewMode.Enabled,
+      skipLiveDataUploaderWithReason: Option[String]
   ): LiveDataCollectingListener = {
     LiveDataCollectingListenerStorageHolder.cleanResults(processIdWithName.name)
-    val liveDataUploaderConfigOpt = liveDataEnabledConfig.liveDataStorage match {
-      case dbStorage: LiveDataStorage.DesignerDb =>
+    val liveDataUploaderConfigOpt = (liveDataEnabledConfig.liveDataStorage, skipLiveDataUploaderWithReason) match {
+      case (_: LiveDataStorage.DesignerDb, Some(skipLiveDataUploaderReason)) =>
+        logger.debug(
+          s"liveDataPreview.storage is configured but $skipLiveDataUploaderReason. Live Data uploader will be disabled and data will be kept in the JVM memory only."
+        )
+        None
+      case (dbStorage: LiveDataStorage.DesignerDb, None) =>
         Some(
           LiveDataUploaderConfig(
             intervalSeconds = dbStorage.uploadIntervalInSeconds,
@@ -158,7 +165,7 @@ object LiveDataCollectingListener {
             dbSchema = dbStorage.schema,
           )
         )
-      case _ =>
+      case (LiveDataStorage.DesignerJvm, _) =>
         None
     }
     new LiveDataCollectingListener(
