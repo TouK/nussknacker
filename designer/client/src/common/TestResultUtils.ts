@@ -71,10 +71,9 @@ class TestResultUtils {
 
     stateForSelectTestResults = (testResults?: NodeTestResults, id?: string): StateForSelectTestResults => {
         if (this.hasTestResults(testResults)) {
-            const chosenId = id || this.availableContexts(testResults)[0].id;
             return {
-                testResultsToShow: this.nodeResultsForContext(testResults, chosenId),
-                testResultsIdToShow: chosenId,
+                testResultsToShow: this.nodeResultsForContext(testResults, id),
+                testResultsIdToShow: id,
             };
         }
         return {};
@@ -89,7 +88,12 @@ class TestResultUtils {
     };
 
     private _nodeResults(results: TestResultsDto, nodeId: NodeId): ResultContextJson[] {
-        return results?.nodeTransitionResults?.find((nodeTransitionResult) => nodeTransitionResult.sourceNodeId === nodeId)?.results || [];
+        return (
+            results?.nodeTransitionResults
+                //TODO: Let's find a better way to get All node results, and get rid of this destinationNodeId and sourceNodeId filer
+                ?.filter((r) => r.destinationNodeId === nodeId || r.sourceNodeId === nodeId)
+                .flatMap(({ results }) => results) || []
+        );
     }
 
     private _invocationResults(results: TestResultsDto, nodeId: NodeId): ExpressionInvocationResultJson[] {
