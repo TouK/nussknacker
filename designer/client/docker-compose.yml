@@ -11,9 +11,11 @@ services:
             SQL_ENRICHER_URL: "dummy:5432"
             KAFKA_AUTO_OFFSET_RESET: "earliest"
             SCHEMA_REGISTRY_URL: http://redpanda:8081
-            CONFIG_FILE: /opt/nussknacker/conf/dev-application.conf
+            CONFIG_FILE: "/opt/nussknacker/conf/dev-application.conf,/opt/nussknacker/conf/designer-config-customizations.conf"
             CONFIG_FORCE_usageStatisticsReports_enabled: "false"
             CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type: stub
+        volumes:
+          - "./cypress/designer-config-customizations.conf:/opt/nussknacker/conf/designer-config-customizations.conf"
         ports:
             - "${BE_PORT:-8080}:8080"
         depends_on:
