@@ -4,6 +4,7 @@ import org.apache.avro.Schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.scalacheck.Gen
+import org.scalacheck.util.Buildable
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
 import java.nio.ByteBuffer
@@ -87,7 +88,7 @@ object AvroGen {
         .sequence(
           schema.getFields.asScala
             .map(field => genValueForSchema(field.schema()).flatMap(value => field.name() -> value))
-        )
+        )(Buildable.buildableHashMap)
         .map(data => AvroUtils.createRecord(schema, data.asScala.toMap))
     case _ => throw new IllegalArgumentException(s"Unsupported schema: $schema")
   }
