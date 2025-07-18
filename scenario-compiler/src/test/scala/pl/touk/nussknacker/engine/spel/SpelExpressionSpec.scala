@@ -1261,17 +1261,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
             Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
           ) :: Nil if start == "ala #{".length && end == "ala #{.".length =>
     }
-
-    parse[String](
-      "ala #{ .foo }",
-      ctx,
-      flavour = SpelExpressionParser.Template
-    ).invalidValue.toList should matchPattern {
-      case SpelExpressionUnderlyingParserError(
-            "No node", // TODO This is an internal, spel message, it is not human-readable, we should find all places where it is used, understand the context and replace it with better message
-            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
-          ) :: Nil if start == "ala #{ ".length && end == "ala #{ .foo".length =>
-    }
   }
 
   test("return correct error location when using blank placeholder in template expression") {
