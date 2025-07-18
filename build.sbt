@@ -278,7 +278,7 @@ val kafkaV                  = "3.8.1"
 // to update we need configurable SpEL length limit from 6.0.9, but 6.x requires JDK 17
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
-val springV                 = "5.2.23.RELEASE"
+val springV                 = "6.0.23"
 val scalaTestV              = "3.2.18"
 val scalaCheckV             = "1.17.1"
 val scalaCheckVshort        = scalaCheckV.take(4).replace(".", "-")
