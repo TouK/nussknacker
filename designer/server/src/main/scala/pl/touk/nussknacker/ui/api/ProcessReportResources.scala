@@ -49,7 +49,7 @@ class ProcessReportResources(
         val request = prepareRequest(dateFrom, dateTo)
         complete {
           processRepository
-            .fetchLatestProcessDetailsForProcessId[ScenarioGraph](processId.id)
+            .fetchLatestProcessDetails[ScenarioGraph](processId.id)
             .flatMap[ToResponseMarshallable] {
               case Some(process) => computeCounts(processName, process.json, process.isFragment, request)
               case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
