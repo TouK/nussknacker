@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import pl.touk.nussknacker.engine.util.JvmVersionUtil
+
 import scala.collection.compat._
 import scala.collection.immutable.ListSet
 
@@ -20,14 +22,25 @@ import scala.collection.immutable.ListSet
   */
 object ClassHierarchyCommonSupertypeFinder {
 
-  private val IgnoredCommonInterfaces = Set[Class[_]](
-    classOf[java.io.Serializable],
-    classOf[java.lang.Comparable[_]],
-    classOf[java.lang.Cloneable],
-    classOf[scala.Serializable],
-    classOf[scala.Cloneable],
-    classOf[scala.Product],
-  )
+  private lazy val IgnoredCommonInterfaces = {
+    // we stick to target 1.8 due to scala 2.12.10 incompatibility with jvm 17 so we can't refer statically to those interfaces
+    val jvmVersionDependentInterfaces = if (JvmVersionUtil.jvmMajorVersion > 12) {
+      Set(
+        Class.forName("java.lang.constant.ConstantDesc"),
+        Class.forName("java.lang.constant.Constable")
+      )
+    } else {
+      Set()
+    }
+    Set[Class[_]](
+      classOf[java.io.Serializable],
+      classOf[java.lang.Comparable[_]],
+      classOf[java.lang.Cloneable],
+      classOf[scala.Serializable],
+      classOf[scala.Cloneable],
+      classOf[scala.Product],
+    ) ++ jvmVersionDependentInterfaces
+  }
 
   def findCommonSupertypes(first: Class[_], sec: Class[_]): Set[Class[_]] = {
     // We need to have breadth first search to make reduction below work
