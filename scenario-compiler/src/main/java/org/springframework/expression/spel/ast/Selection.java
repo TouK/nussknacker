@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2024 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,13 @@
 
 package org.springframework.expression.spel.ast;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.TypedValue;
@@ -28,18 +35,9 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Represents selection over a map or collection.
- *
- * <p>For example, <code>{1,2,3,4,5,6,7,8,9,10}.?{#isEven(#this)}</code> evaluates
- * to {@code [2, 4, 6, 8, 10]}.
+ * For example: {1,2,3,4,5,6,7,8,9,10}.?{#isEven(#this) == 'y'} returns [2, 4, 6, 8, 10]
  *
  * <p>Basically a subset of the input data is returned based on the
  * evaluation of the expression supplied as selection criteria.
@@ -90,7 +88,8 @@ public class Selection extends SpelNodeImpl {
         Object operand = op.getValue();
         SpelNodeImpl selectionCriteria = this.children[0];
 
-        if (operand instanceof Map<?, ?> mapdata) {
+        if (operand instanceof Map) {
+            Map<?, ?> mapdata = (Map<?, ?>) operand;
             return handleMap(state, mapdata, selectionCriteria);
         }
 
@@ -105,8 +104,8 @@ public class Selection extends SpelNodeImpl {
                     state.pushActiveContextObject(new TypedValue(element));
                     state.enterScope("index", index);
                     Object val = selectionCriteria.getValueInternal(state).getValue();
-                    if (val instanceof Boolean b) {
-                        if (b) {
+                    if (val instanceof Boolean) {
+                        if ((Boolean) val) {
                             if (this.variant == FIRST) {
                                 return new ValueRef.TypedValueHolderValueRef(new TypedValue(element), this);
                             }
@@ -183,8 +182,8 @@ public class Selection extends SpelNodeImpl {
                 state.pushActiveContextObject(kvPair);
                 state.enterScope();
                 Object val = selectionCriteria.getValueInternal(state).getValue();
-                if (val instanceof Boolean b) {
-                    if (b) {
+                if (val instanceof Boolean) {
+                    if ((Boolean) val) {
                         if (this.variant == FIRST) {
                             result.put(entry.getKey(), entry.getValue());
                             return new ValueRef.TypedValueHolderValueRef(new TypedValue(result), this);
@@ -205,13 +204,13 @@ public class Selection extends SpelNodeImpl {
         }
 
         if ((this.variant == FIRST || this.variant == LAST) && result.isEmpty()) {
-            return new ValueRef.TypedValueHolderValueRef(TypedValue.NULL, this);
+            return new ValueRef.TypedValueHolderValueRef(new TypedValue(null), this);
         }
 
         if (this.variant == LAST) {
             Map<Object, Object> resultMap = new HashMap<>();
             Object lastValue = result.get(lastKey);
-            resultMap.put(lastKey, lastValue);
+            resultMap.put(lastKey,lastValue);
             return new ValueRef.TypedValueHolderValueRef(new TypedValue(resultMap), this);
         }
 
@@ -224,12 +223,12 @@ public class Selection extends SpelNodeImpl {
     }
 
     private String prefix() {
-        return switch (this.variant) {
-            case ALL -> "?[";
-            case FIRST -> "^[";
-            case LAST -> "$[";
-            default -> "";
-        };
+        switch (this.variant) {
+            case ALL:   return "?[";
+            case FIRST: return "^[";
+            case LAST:  return "$[";
+        }
+        return "";
     }
 
 }
