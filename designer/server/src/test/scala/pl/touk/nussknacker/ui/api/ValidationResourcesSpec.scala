@@ -204,7 +204,7 @@ class ValidationResourcesSpec
         .streaming("process")
         .source("source", ProcessTestData.existingSourceFactory)
         .filter("filter", emptyExpression)
-        .buildSimpleVariable("variable", "varName", Expression.spelTemplate(""))
+        .buildSimpleVariable("variable", "varName", emptyExpression)
         .emptySink("sink", ProcessTestData.existingSinkFactory)
 
     createAndValidateScenario(process) {
