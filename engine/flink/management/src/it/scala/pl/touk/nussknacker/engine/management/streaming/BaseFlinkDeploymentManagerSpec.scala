@@ -9,6 +9,7 @@ import org.apache.flink.api.common.JobID
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
 import pl.touk.nussknacker.engine.api.{ContextId, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment._
@@ -80,12 +81,14 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
     val process      = SampleProcess.prepareProcessWithEventGeneratorSource(processName)
     val deploymentId = DeploymentId("with-event-generator")
 
-    LiveDataCollectingListenerHolder.createListenerFor(
+    LiveDataCollectingListener.createListenerFor(
       processIdWithName = ProcessIdWithName(processId, processName),
       deploymentIdOpt = None,
-      config = None,
-      maxNumberOfRecords = 20,
-      throughputTimeWindowInSeconds = 60
+      liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
+        maxNumberOfRecords = 20,
+        throughputTimeWindowInSeconds = 60,
+        liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
+      )
     )
     val externalDeploymentIdOpt = deployProcessAndWaitIfRunning(
       process = process,
@@ -100,7 +103,7 @@ trait BaseFlinkDeploymentManagerSpec extends AnyFunSuiteLike with Matchers with 
       eventually {
         if (useMiniClusterForDeployment) {
           // Wait until first live data samples are collected
-          val liveDataOpt = LiveDataCollectingListenerHolder.getLiveDataPreview(processName)
+          val liveDataOpt = LiveDataCollectingListenerStorageHolder.getLiveDataPreview(processName)
           liveDataOpt shouldBe defined
           val liveDataSamples = liveDataOpt.get
 
