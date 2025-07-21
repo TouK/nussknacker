@@ -385,7 +385,7 @@ class DBFetchingProcessRepositorySpec
       .fetchProcessId(name)
       .futureValue
       .flatMap(
-        fetching.fetchLatestProcessDetailsForProcessId(_).futureValue
+        fetching.fetchLatestProcessDetails(_).futureValue
       )
 
     fetchedProcess shouldBe Symbol("defined")

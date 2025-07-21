@@ -590,7 +590,7 @@ trait NuResourcesTest
   }
 
   protected def getProcessDetails(processId: ProcessId): ScenarioWithDetailsEntity[Unit] =
-    futureFetchingScenarioRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
+    futureFetchingScenarioRepository.fetchLatestProcessDetails[Unit](processId).futureValue.get
 
   protected def createEmptyProcess(
       processName: ProcessName,

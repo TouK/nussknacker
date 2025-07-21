@@ -143,12 +143,8 @@ class ActionService(
       import command.commonData._
       for {
         validatedComment <- validateDeploymentComment(comment)
-        ctx <- prepareCommandContextWithAction(
-          processIdWithName,
-          actionName,
-          extractVersionOnWhichActionIsDone,
-        )
-        actionResult <- runAction(ctx, new ActionFinalizer(actionName, validatedComment, ctx))
+        ctx              <- prepareCommandContextWithAction(processIdWithName, actionName)
+        actionResult     <- runAction(ctx, new ActionFinalizer(actionName, validatedComment, ctx))
       } yield actionResult
     }
 
@@ -163,7 +159,6 @@ class ActionService(
     private def prepareCommandContextWithAction(
         processId: ProcessIdWithName,
         actionName: ScenarioActionName,
-        extractVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[ScenarioDetailsShape] => Option[VersionId]
     )(implicit user: LoggedUser): Future[CommandContext[ScenarioDetailsShape]] = {
       implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
       // 1.1 lock for critical section
@@ -196,10 +191,10 @@ class ActionService(
     private def fetchAndUpdateScenarioIfNeeded(processId: ProcessIdWithName)(implicit user: LoggedUser) = {
       scenarioGraphSource match {
         case LatestVersion =>
-          processRepository.fetchLatestProcessDetailsForProcessId[ScenarioDetailsShape](processId.id)
+          processRepository.fetchLatestProcessDetails[ScenarioDetailsShape](processId.id)
         case FromGraph(scenarioGraph, scenarioLabels, baseScenarioVersionId) =>
           processRepository
-            .fetchProcessDetailsForId[CanonicalProcess](processId.id, baseScenarioVersionId)
+            .fetchProcessDetailsForVersion[CanonicalProcess](processId.id, baseScenarioVersionId)
             .flatMap {
               case Some(scenario)
                   if checkIfGraphIsEqual(scenarioGraph, scenario) &&
