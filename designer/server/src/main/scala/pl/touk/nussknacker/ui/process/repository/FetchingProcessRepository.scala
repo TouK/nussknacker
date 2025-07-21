@@ -11,11 +11,11 @@ import scala.language.higherKinds
 
 abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepository[F] {
 
-  def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
+  def fetchLatestProcessDetails[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ScenarioWithDetailsEntity[PS]]]
 
-  def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(
+  def fetchProcessDetailsForVersion[PS: ScenarioShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): F[Option[ScenarioWithDetailsEntity[PS]]]

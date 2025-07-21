@@ -307,7 +307,7 @@ class DeploymentServiceSpec
         expected = true
       )
       fetchingScenarioDBIORepository
-        .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+        .fetchLatestProcessDetails[Unit](scenario.id)
         .dbioActionValues
         .value
         .lastStateAction should not be None
@@ -318,7 +318,7 @@ class DeploymentServiceSpec
     }
 
     val scenarioDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetails[Unit](scenario.id).dbioActionValues.value
     val lastStateAction = scenarioDetails.lastStateAction.value
     lastStateAction.actionName shouldBe ScenarioActionName.Deploy
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
@@ -341,7 +341,7 @@ class DeploymentServiceSpec
 
     def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ScenarioActionName]) = {
       fetchingScenarioDBIORepository
-        .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+        .fetchLatestProcessDetails[Unit](scenario.id)
         .dbioActionValues
         .flatMap(_.lastStateAction)
         .map(_.actionName) shouldBe expectedAction
@@ -409,7 +409,7 @@ class DeploymentServiceSpec
         s"Decrease scenario's parallelism or extend Flink cluster resources"
       deploymentManager1.successfulDeploys should not contain scenario.name
       fetchingScenarioDBIORepository
-        .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+        .fetchLatestProcessDetails[Unit](scenario.id)
         .dbioActionValues
         .flatMap(_.lastStateAction) shouldBe None
       listener.events shouldBe Symbol("empty")
@@ -432,7 +432,7 @@ class DeploymentServiceSpec
     val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+      .fetchLatestProcessDetails[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction should not be None
@@ -442,7 +442,7 @@ class DeploymentServiceSpec
     }
 
     val scenarioDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetails[Unit](scenario.id).dbioActionValues.value
     scenarioDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
@@ -450,7 +450,7 @@ class DeploymentServiceSpec
     val (scenario, _) = prepareCanceledScenario(generateScenarioName())
 
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+      .fetchLatestProcessDetails[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction should not be None
@@ -460,7 +460,7 @@ class DeploymentServiceSpec
     }
 
     val scenarioDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetails[Unit](scenario.id).dbioActionValues.value
     scenarioDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
   }
 
@@ -586,7 +586,7 @@ class DeploymentServiceSpec
   "should return not deployed status for scenario with empty state - not deployed state" in {
     val scenario = prepareScenario(generateScenarioName())
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+      .fetchLatestProcessDetails[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction shouldBe None
@@ -598,7 +598,7 @@ class DeploymentServiceSpec
     }
 
     val scenarioDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetails[Unit](scenario.id).dbioActionValues.value
     scenarioDetails.lastStateAction shouldBe None
     scenarioDetails.lastAction shouldBe None
   }
@@ -606,7 +606,7 @@ class DeploymentServiceSpec
   "should return not deployed status for scenario with not found state - not deployed state" in {
     val scenario = prepareScenario(generateScenarioName())
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+      .fetchLatestProcessDetails[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction shouldBe None
@@ -616,7 +616,7 @@ class DeploymentServiceSpec
     }
 
     val scenarioDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetails[Unit](scenario.id).dbioActionValues.value
     scenarioDetails.lastStateAction shouldBe None
     scenarioDetails.lastAction shouldBe None
   }
@@ -624,7 +624,7 @@ class DeploymentServiceSpec
   "should return not deployed status for scenario without actions and with state (it should never happen)" in {
     val scenario = prepareScenario(generateScenarioName())
     fetchingScenarioDBIORepository
-      .fetchLatestProcessDetailsForProcessId[Unit](scenario.id)
+      .fetchLatestProcessDetails[Unit](scenario.id)
       .dbioActionValues
       .value
       .lastStateAction shouldBe None
@@ -639,7 +639,7 @@ class DeploymentServiceSpec
     }
 
     val scenarioDetails =
-      fetchingScenarioDBIORepository.fetchLatestProcessDetailsForProcessId[Unit](scenario.id).dbioActionValues.value
+      fetchingScenarioDBIORepository.fetchLatestProcessDetails[Unit](scenario.id).dbioActionValues.value
     scenarioDetails.lastStateAction shouldBe None
     scenarioDetails.lastAction shouldBe None
   }
