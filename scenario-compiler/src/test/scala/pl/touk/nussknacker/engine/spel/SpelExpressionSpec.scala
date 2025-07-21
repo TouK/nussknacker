@@ -2546,15 +2546,20 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should allow to use null safe operator") {
+  test("should allow to use safe navigation operator") {
     val contextWithNotNullVariables = Context.dummy
       .withVariable("obj", ContainerOfUnknown(42L))
-      .withVariable("array", List("a", "b", "c").asJava)
-      .withVariable("map", Map("a" -> 1, "b" -> 2, "c" -> 3).asJava)
+      .withVariable("array", List(10, 20, 30).asJava)
+      .withVariable("map", Map("a" -> 10, "b" -> 20, "c" -> 30).asJava)
+      .withVariable("record", Map("fieldString" -> "string", "fieldInteger" -> 42).asJava)
     val validationContextWithNotNullVariables = ValidationContext.empty
       .withVariableUnsafe("obj", Typed.fromInstance(contextWithNotNullVariables("obj")))
-      .withVariableUnsafe("array", Typed.genericTypeClass[JList[_]](List(Typed[String])))
+      .withVariableUnsafe("array", Typed.genericTypeClass[JList[_]](List(Typed[JInteger])))
       .withVariableUnsafe("map", Typed.genericTypeClass[JMap[_, _]](List(Typed[String], Typed[JInteger])))
+      .withVariableUnsafe(
+        "record",
+        Typed.record(List("fieldString" -> Typed[String], "fieldInteger" -> Typed[JInteger]))
+      )
     val context = contextWithNotNullVariables.variables.foldLeft(contextWithNotNullVariables) {
       case (context, (varName, _)) =>
         context.withVariable(s"null_$varName", null)
@@ -2567,18 +2572,34 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     forAll(
       Table(
-        ("expression", "return type", "result"),
-        ("#obj?.value", Unknown, 42L),
-        ("#null_obj?.value", Unknown, null),
-        ("#array?.[1]", Typed[String], "b"),
-        ("#null_array?.[1]", Typed[String], null),
-        ("#map?.['a']", Typed[JInteger], 1),
-        ("#null_map?.['a']", Typed[JInteger], null),
+        ("expression with not null var", "expression with null var", "return type", "not null result"),
+        ("#obj?.value", "#null_obj?.value", Unknown, 42L),
+        ("#array?.[1]", "#null_array?.[1]", Typed[JInteger], 20),
+        (
+          "#array?.?[#this > 10]",
+          "#null_array?.?[#this > 10]",
+          Typed.genericTypeClass[JList[_]](List(Typed[JInteger])),
+          List(20, 30).asJava
+        ),
+        ("#array?.^[#this > 10]", "#null_array?.^[#this > 10]", Typed[JInteger], 20),
+        ("#array?.$[#this > 10]", "#null_array?.$[#this > 10]", Typed[JInteger], 30),
+        (
+          "#array?.![#this * 2]",
+          "#null_array?.![#this * 2]",
+          Typed.genericTypeClass[JList[_]](List(Typed[JInteger])),
+          List(20, 40, 60).asJava
+        ),
+        ("#map?.['a']", "#null_map?.['a']", Typed[JInteger], 10),
+        ("#record?.['fieldString']", "#null_record?.['fieldString']", Typed[String], "string"),
       )
-    ) { (expression, returnType, result) =>
-      val parsed = parseV[Any](expression, validationContext).validValue
-      parsed.returnType shouldBe returnType
-      parsed.evaluateSync[Any](context) shouldBe result
+    ) { (expressionWithNotNullVar, expressionWithNullVar, returnType, result) =>
+      val parsedWithNotNullVar = parseV[Any](expressionWithNotNullVar, validationContext).validValue
+      parsedWithNotNullVar.returnType shouldBe returnType
+      parsedWithNotNullVar.evaluateSync[Any](context) shouldBe result
+
+      val parsedWithNullVar = parseV[Any](expressionWithNullVar, validationContext).validValue
+      parsedWithNullVar.returnType shouldBe returnType
+      parsedWithNullVar.evaluateSync[AnyRef](context) shouldBe null
     }
   }
 

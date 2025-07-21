@@ -238,6 +238,9 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8343](https://github.com/TouK/nussknacker/pull/8343) During compilation of lazy parameters expressions, node input variable types now are provided
   Thanks to that expression parsers can leverage this information for preparing better evaluation logic. It is used in `json-template` expressions
   where users can now use logical types such as `OffsetDateTime`, `Duration` etc.
+* [#8366](https://github.com/TouK/nussknacker/pull/8366) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9.
+  [Safe navigation operator ?.](https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/operator-safe-navigation.html)
+  is supported for collections, maps and strings.
 
 ## 1.18
 
