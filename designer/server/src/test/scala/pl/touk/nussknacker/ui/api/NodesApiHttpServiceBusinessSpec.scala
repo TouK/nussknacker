@@ -2,8 +2,10 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers
+import org.hamcrest.Matchers.{empty, equalTo, is, not}
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
@@ -23,7 +25,8 @@ class NodesApiHttpServiceBusinessSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
-    with PatientScalaFutures {
+    with PatientScalaFutures
+    with TableDrivenPropertyChecks {
 
   "The endpoint for nodes additional info should" - {
     "return additional info for node with expression in existing scenario" in {
@@ -358,7 +361,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "hintText": null,
              |      "label": "Topic",
              |      "category": "Standard",
-             |      "changesCanReloadParameters": false
+             |      "changesCanReloadParameters": false,
+             |      "nonImportantForExecution": false
              |    },
              |    {
              |      "name": "Value",
@@ -382,7 +386,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "hintText": null,
              |      "label": "Value",
              |      "category": "Standard",
-             |      "changesCanReloadParameters": false
+             |      "changesCanReloadParameters": false,
+             |      "nonImportantForExecution": false
              |    }
              |  ],
              |  "expressionType": null,
@@ -902,6 +907,59 @@ class NodesApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body("methodName[0]", equalTo("#input"))
+    }
+    "return proper suggestions for all global helpers" in {
+      val helpers = List(
+        "BASE64",
+        "BusinessConfig",
+        "COLLECTION",
+        "CONV",
+        "DATE",
+        "DATE_FORMAT",
+        "DICT",
+        "GEO",
+        "HelperFunction",
+        "NUMERIC",
+        "RANDOM",
+        "RGB",
+        "TypedConfig",
+        "UTIL",
+        "meta"
+      )
+
+      def requestSuggestions(expression: String) = {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
+               |  "expression": {
+               |    "language": "spel",
+               |    "expression": "$expression"
+               |  },
+               |  "caretPosition2d": {
+               |    "row": 0,
+               |    "column": ${expression.length}
+               |  },
+               |  "variableTypes": {}
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+          .Then()
+      }
+
+      requestSuggestions("#")
+        .statusCode(200)
+        .body(
+          "methodName",
+          Matchers.contains(helpers.map(helper => s"#$helper"): _*)
+        )
+
+      forAll(Table[String]("helper", helpers: _*)) { helper =>
+        requestSuggestions(s"#$helper.")
+          .statusCode(200)
+          .body("methodName", is(not(empty())))
+      }
     }
     "not suggest anything if no such parameters exist" in {
       given()

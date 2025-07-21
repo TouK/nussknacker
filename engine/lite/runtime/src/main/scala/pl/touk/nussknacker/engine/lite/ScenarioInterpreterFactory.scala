@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
@@ -249,7 +250,7 @@ object ScenarioInterpreterFactory {
         validationContext: ValidationContext,
     ): ValidatedNel[ProcessCompilationError, Node] =
       processCompilerData.subPartCompiler
-        .compile(node, validationContext)(
+        .compile(node, SingleInputNodeInputValidationContext(validationContext))(
           new ScenarioCompilationDependencies(processCompilerData.jobData, EngineScenarioCompilationDependencies.empty)
         )
         .result

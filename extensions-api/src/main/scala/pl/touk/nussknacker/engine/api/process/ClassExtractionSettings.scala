@@ -8,13 +8,14 @@ import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromot
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.util.JvmVersionUtil
 
-import java.lang.reflect.{AccessibleObject, Member, Method}
+import java.lang.reflect.{AccessibleObject, Member, Method, Modifier}
+import java.nio.charset.{Charset, StandardCharsets}
 import java.text.NumberFormat
 import java.time.Clock
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime, ChronoZonedDateTime}
 import java.time.temporal.{ChronoUnit, Temporal, TemporalAccessor}
 import java.util
-import java.util.{Calendar, Date, Optional, UUID}
+import java.util.{Calendar, Currency, Date, Locale, Optional, UUID}
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
@@ -266,6 +267,18 @@ object ClassExtractionSettings {
       ),
       ClassMemberPredicate(ClassNamePrefixPredicate("java.time."), { case _ => true }),
       ClassMemberPredicate(ClassNamePrefixPredicate("scala.concurrent.duration."), { case _ => true }),
+      ClassMemberPredicate(
+        ExactClassPredicate[Locale],
+        { case m =>
+          Modifier.isStatic(m.getModifiers) &&
+          // all locales
+          ((m.getName.matches("[A-Z_]*") && !m.getName.endsWith("_EXTENSION")) ||
+            // useful methods
+            Set("getAvailableLocales", "getISOCountries", "getISOLanguages", "getISOCountries").contains(m.getName))
+        }
+      ),
+      ClassMemberPredicate(ExactClassPredicate[StandardCharsets], { case m => Modifier.isStatic(m.getModifiers) }),
+      ClassMemberPredicate(ExactClassPredicate[Currency], { case _ => true }),
       MemberNamePatternPredicate(
         SuperClassPredicate(ExactClassPredicate[CharSequence]),
         Pattern.compile(

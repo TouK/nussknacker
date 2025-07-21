@@ -425,6 +425,10 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateAny("#COLLECTION.flatten({{'1'},{'2', '3'},{'3'}})") shouldBe List("1", "2", "3", "3").asJava
     evaluateAny("#COLLECTION.flatten({{{a:1},{b:2}},{{c:3},{d:4}}})") shouldBe
       List(Map("a" -> 1).asJava, Map("b" -> 2).asJava, Map("c" -> 3).asJava, Map("d" -> 4).asJava).asJava
+    evaluateAny(
+      "#COLLECTION.flatten({#l1, #l2, #l3})",
+      localVariables = Map("l1" -> List("a").asJava, "l2" -> List("b", "c").asJava, "l3" -> List("d").asJava)
+    ) shouldBe List("a", "b", "c", "d").asJava
 
     evaluateType("#COLLECTION.flatten({{'1'},{'2', '3'},{'3'}})") shouldBe "List[String]".valid
     evaluateType("#COLLECTION.flatten({{1},{2},{3}})") shouldBe "List[Integer]".valid

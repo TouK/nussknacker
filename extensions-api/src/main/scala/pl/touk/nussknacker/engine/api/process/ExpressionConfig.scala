@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExclud
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 
-import java.nio.charset.Charset
+import java.nio.charset.{Charset, StandardCharsets}
 import java.time._
 import java.util.{Currency, Locale, UUID}
 
@@ -44,6 +44,7 @@ object ExpressionConfig {
     classOf[ZoneId],
     classOf[Currency],
     classOf[Locale],
+    classOf[StandardCharsets],
     classOf[Charset],
     classOf[UUID],
   )

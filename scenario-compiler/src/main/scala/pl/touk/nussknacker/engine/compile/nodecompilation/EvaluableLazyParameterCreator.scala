@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.LazyParameter._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -17,6 +18,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
     nodeId: NodeId,
     parameterDef: definition.Parameter,
     expression: Expression,
+    inputValidationContext: ValidationContext,
     override val returnType: TypingResult
 ) extends CustomLazyParameter[T] {
 
@@ -32,13 +34,13 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
 
   private def createEvaluableLazyParameter(deps: EvaluableLazyParameterCreatorDeps) = {
     val compiledExpression = deps.expressionCompiler
-      .compileWithoutContextValidation(expression, parameterDef.name, parameterDef.typ)(nodeId)
+      .compile(expression, Some(parameterDef.name), inputValidationContext, parameterDef.typ)(nodeId)
       .valueOr(err =>
         throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}")
       )
     val compiledParameter: BaseCompiledParameter = new BaseCompiledParameter {
       override val name: ParameterName                      = parameterDef.name
-      override val expression: CompiledExpression           = compiledExpression
+      override val expression: CompiledExpression           = compiledExpression.expression
       override val shouldBeWrappedWithScalaOption: Boolean  = parameterDef.scalaOptionParameter
       override val shouldBeWrappedWithJavaOptional: Boolean = parameterDef.javaOptionalParameter
     }

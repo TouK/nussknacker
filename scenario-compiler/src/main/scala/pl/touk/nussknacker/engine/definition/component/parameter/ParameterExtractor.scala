@@ -63,22 +63,23 @@ object ParameterExtractor {
       .getOrElse(ParameterCategory.Standard)
 
     Parameter(
-      name,
-      paramType,
-      editors,
-      validators,
-      defaultValue,
-      additionalVariables(p, isLazyParameter),
-      Set.empty,
-      branchParamName.isDefined,
+      name = name,
+      typ = paramType,
+      editors = editors,
+      validators = validators,
+      defaultValue = defaultValue,
+      additionalVariables = additionalVariables(p, isLazyParameter),
+      variablesToHide = Set.empty,
+      branchParam = branchParamName.isDefined,
       isLazyParameter = isLazyParameter,
       scalaOptionParameter = isScalaOptionParameter,
       javaOptionalParameter = isJavaOptionalParameter,
       hintText = parameterConfig.hintText,
       labelOpt = parameterConfig.label,
       category = category,
-      // this feature is available only for DynamicComponents
-      changesCanReloadParameters = false
+      // these features are available only for DynamicComponents
+      changesCanReloadParameters = false,
+      nonImportantForExecution = false
     )
   }
 

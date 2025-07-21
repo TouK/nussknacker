@@ -31,10 +31,12 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
 
   protected lazy val savepointDir: Path = prepareSavepointVolumeDir()
 
+  private lazy val flinkImage = prepareFlinkImage()
+
   private lazy val jobManagerContainer: GenericContainer = {
     logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
     new GenericContainer(
-      dockerImage = prepareFlinkImage(),
+      dockerImage = flinkImage,
       command = "jobmanager" :: Nil,
       exposedPorts = FlinkJobManagerRestPort :: Nil,
       env = Map(
@@ -58,7 +60,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
 
   private lazy val taskManagerContainer: GenericContainer = {
     new GenericContainer(
-      dockerImage = prepareFlinkImage(),
+      dockerImage = flinkImage,
       command = "taskmanager" :: Nil,
       env = Map(
         "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString,
@@ -80,17 +82,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
     ) { case (image, file) =>
       val resource = ResourceLoader.load(s"/docker/$file")
 
-      val flinkLibTweakCommand = ScalaMajorVersionConfig.scalaMajorVersion match {
-        case "2.12" => ""
-        case "2.13" =>
-          s"""
-             |RUN rm $$FLINK_HOME/lib/flink-scala*.jar
-             |RUN wget https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.2/flink-scala-2-13_2.13-1.1.2-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.2-assembly.jar
-             |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.2-assembly.jar
-             |""".stripMargin
-        case v => throw new IllegalStateException(s"unsupported scala version: $v")
-      }
-      val withFlinkLibTweaks = resource.replace("${scala.version.flink.tweak.commands}", flinkLibTweakCommand)
+      val withFlinkLibTweaks = resource.replace("${scala.version}", ScalaMajorVersionConfig.scalaMajorVersion)
 
       image.withFileFromString(file, withFlinkLibTweaks)
     }

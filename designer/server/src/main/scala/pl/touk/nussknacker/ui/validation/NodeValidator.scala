@@ -4,9 +4,7 @@ import cats.effect.SyncIO
 import cats.effect.kernel.Resource
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
@@ -14,8 +12,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationPerformed
 }
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
@@ -36,9 +32,6 @@ class NodeValidator(
 
     val nodeDataValidator = new NodeDataValidator(modelData)
 
-    val validationContext = prepareValidationContext(nodeData.variableTypes)
-    val branchCtxs        = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValuesNow(prepareValidationContext)
-
     val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
 
     // We create fragmentResolver for each request, because it requires LoggedUser to fetch fragments
@@ -51,11 +44,11 @@ class NodeValidator(
           implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
             new ScenarioCompilationDependencies(jobData, engineScenarioCompilationDependencies)
           nodeDataValidator.validate(
-            nodeData.nodeData,
-            validationContext,
-            branchCtxs,
-            edges,
-            fragmentResolver
+            nodeData = nodeData.nodeData,
+            variableTypes = nodeData.variableTypes,
+            branchVariableTypes = nodeData.branchVariableTypes,
+            outgoingEdges = edges,
+            fragmentResolver = fragmentResolver
           ) match {
             case ValidationNotPerformed =>
               NodeValidationResult(
@@ -77,14 +70,6 @@ class NodeValidator(
         }
       }
       .unsafeRunSync()
-  }
-
-  private def prepareValidationContext(
-      variableTypes: Map[String, TypingResult]
-  )(implicit jobData: JobData): ValidationContext = {
-    GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-      .prepareValidationContextWithGlobalVariablesOnly(jobData)
-      .copy(localVariables = variableTypes)
   }
 
 }

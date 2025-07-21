@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.livedata.LiveDataUploader.LiveDataUploaderConfig
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 
-import java.time.Instant
+import java.time.{Duration, Instant}
 import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFuture, TimeUnit}
 import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.jdk.CollectionConverters._
@@ -56,15 +56,25 @@ private[livedata] object LiveDataUploaderHolder {
 
     def uploadLiveData(): Unit = {
       logger.debug(logMessage("Periodic live data upload triggered"))
-      LiveDataCollectingListenerHolder.storageOpt(processIdWithName.name) match {
+      LiveDataCollectingListenerStorageHolder.storageOpt(processIdWithName.name) match {
         case Some(storage) =>
+          val timeFromLastUpdate = Duration.between(storage.getLastUpdatedAt, Instant.now)
           val shouldStop =
-            storage.getLastUpdatedAt < Instant.now.getEpochSecond - config.uploaderInactivityTimeoutInSeconds
+            timeFromLastUpdate.toSeconds >= config.uploaderInactivityTimeoutInSeconds
           if (shouldStop) {
-            logger.info(logMessage("Stopping live data uploader because of inactivity"))
+            logger.info(
+              logMessage(
+                s"Stopping live data uploader because of inactivity, " +
+                  s"time from last update=${timeFromLastUpdate.toSeconds}s is greater than or equal to uploaderInactivityTimeoutInSeconds=${config.uploaderInactivityTimeoutInSeconds}s"
+              )
+            )
             stopPeriodicLiveDataUpload()
           } else {
-            logger.debug(logMessage("Uploading live data"))
+            logger.debug(
+              logMessage(
+                s"Uploading live data, last update=${storage.getLastUpdatedAt}, time from last update=${timeFromLastUpdate.toSeconds}s"
+              )
+            )
             uploader.uploadLiveData(
               processIdWithName = processIdWithName,
               deploymentId = deploymentId,

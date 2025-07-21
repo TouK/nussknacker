@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{Ior, IorNel, NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{invalid, invalidNel, valid, Invalid, Valid}
+import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalid, invalidNel, valid, Valid}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
@@ -11,16 +11,21 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  MultipleInputBranchesNodeInputValidationContext,
+  NodeInputValidationContext,
+  SingleInputNodeInputValidationContext
+}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.{ExpressionEvaluator, NullExpression}
 import pl.touk.nussknacker.engine.expression.parse.{
-  CompiledExpression,
   ExpressionParser,
-  TypedExpression,
-  TypedExpressionMap
+  MultipleBranchesTypedValue,
+  SingleBranchTypedValue,
+  TypedExpression
 }
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -127,22 +132,21 @@ class ExpressionCompiler(
   def compileExecutorComponentNodeParameters(
       parameterDefinitions: List[Parameter],
       nodeParameters: List[NodeParameter],
-      ctx: ValidationContext
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit nodeId: NodeId,
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
     compileNodeParameters(
-      parameterDefinitions,
-      nodeParameters,
-      List.empty,
-      ctx,
-      Map.empty,
+      parameterDefinitions = parameterDefinitions,
+      nodeParameters = nodeParameters,
+      nodeBranchParameters = List.empty,
+      inputContext = inputContext,
       treatEagerParametersAsLazy = true
     ).map(_.map {
-      case (TypedParameter(_, expr: TypedExpression), paramDef) =>
-        CompiledParameter(expr, paramDef)
-      case (TypedParameter(_, _: TypedExpressionMap), _) =>
+      case (TypedParameter(_, expr: SingleBranchTypedValue), paramDef) =>
+        CompiledParameter(expr.typedExpression, paramDef)
+      case (TypedParameter(_, _: MultipleBranchesTypedValue), _) =>
         throw new IllegalArgumentException("Typed expression map should not be here...")
     })
   }
@@ -152,8 +156,7 @@ class ExpressionCompiler(
       parameterDefinitions: List[Parameter],
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
-      ctx: ValidationContext,
-      branchContexts: Map[String, ValidationContext],
+      inputContext: NodeInputValidationContext,
       treatEagerParametersAsLazy: Boolean = false
   )(
       implicit nodeId: NodeId,
@@ -164,15 +167,32 @@ class ExpressionCompiler(
       parameterDefinitions,
       nodeParameters
     )
-    val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, ctx.globalVariables)
+    val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, inputContext.globalVariables)
     val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
+    val nonBranchParamValidationContext = inputContext match {
+      case SingleInputNodeInputValidationContext(validationContext) => validationContext
+      case MultipleInputBranchesNodeInputValidationContext(_, validationContextWithGlobalVariablesOnly) =>
+        validationContextWithGlobalVariablesOnly
+    }
     val compiledParams = adjustedParameters
       .flatMap { nodeParam =>
         paramDefMap
           .get(nodeParam.name)
-          .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy).map((_, paramDef)))
+          .map(paramDef =>
+            compileParam(nodeParam, nonBranchParamValidationContext, paramDef, treatEagerParametersAsLazy)
+              .map((_, paramDef))
+          )
       }
+
+    lazy val branchContexts = inputContext match {
+      case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId, _) =>
+        validationContextByBranchId
+      case single: SingleInputNodeInputValidationContext =>
+        throw new IllegalStateException(
+          s"[$single] found in place where MultipleInputBranchesNodeInputValidationContext expected"
+        )
+    }
     val compiledBranchParams = (for {
       branchParams <- nodeBranchParameters
       p            <- branchParams.parameters
@@ -214,7 +234,7 @@ class ExpressionCompiler(
     substituteDictKeyExpression(nodeParam.expression, definition.editors, nodeParam.name).andThen { finalExpr =>
       enrichContext(ctxToUse, definition).andThen { finalCtx =>
         compile(finalExpr, Some(nodeParam.name), finalCtx, definition.typ)
-          .map(TypedParameter(nodeParam.name, _))
+          .map(typedExpression => TypedParameter(nodeParam.name, SingleBranchTypedValue(typedExpression, finalCtx)))
       }
     }
   }
@@ -230,12 +250,14 @@ class ExpressionCompiler(
         substituteDictKeyExpression(expression, definition.editors, paramName).andThen { finalExpr =>
           enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
             // TODO JOIN: branch id on error field level
-            compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(branchId -> _)
+            compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(typedExpression =>
+              branchId -> SingleBranchTypedValue(typedExpression, finalCtx)
+            )
           }
         }
       }
       .sequence
-      .map(exprByBranchId => TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
+      .map(exprByBranchId => TypedParameter(definition.name, MultipleBranchesTypedValue(exprByBranchId.toMap)))
   }
 
   private def substituteDictKeyExpression(
@@ -373,27 +395,6 @@ class ExpressionCompiler(
         .leftMap(errs =>
           errs.map(err =>
             ProcessCompilationError.ExpressionParserCompilationError(err.message, paramName, n.expression, err.details)
-          )
-        )
-    }
-  }
-
-  def compileWithoutContextValidation(n: Expression, paramName: ParameterName, expectedType: TypingResult)(
-      implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, CompiledExpression] = {
-    val validParser = expressionParsers
-      .get(n.language)
-      .map(valid)
-      .getOrElse(invalid(NotSupportedExpressionLanguage(n.language)))
-      .toValidatedNel
-
-    validParser andThen { parser =>
-      parser
-        .parseWithoutContextValidation(n.expression, expectedType)
-        .leftMap(errs =>
-          errs.map(err =>
-            ProcessCompilationError
-              .ExpressionParserCompilationError(err.message, Some(paramName), n.expression, err.details)
           )
         )
     }
