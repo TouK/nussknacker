@@ -58,14 +58,14 @@ trait CollectionUtils extends HideToString {
   }
 
   @Documentation(description = "Returns the smallest element (elements must be comparable)")
-  @GenericType(typingFunction = classOf[ListElementTyping])
+  @GenericType(typingFunction = classOf[CollectionElementTyping])
   def min[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): T = {
     checkIfComparable(list)
     Collections.min[T](list)
   }
 
   @Documentation(description = "Returns the largest element (elements must be comparable)")
-  @GenericType(typingFunction = classOf[ListElementTyping])
+  @GenericType(typingFunction = classOf[CollectionElementTyping])
   def max[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): T = {
     checkIfComparable(list)
     Collections.max[T](list)
@@ -74,7 +74,7 @@ trait CollectionUtils extends HideToString {
   @Documentation(description =
     "Returns a slice of the list starting with start index (inclusive) and ending at stop index (exclusive)"
   )
-  @GenericType(typingFunction = classOf[ListTyping])
+  @GenericType(typingFunction = classOf[CollectionToListTyping])
   def slice[T](
       @ParamName("list") list: java.util.Collection[T],
       @ParamName("start") start: Int,
@@ -87,7 +87,7 @@ trait CollectionUtils extends HideToString {
   // * it works slower than it could with statically typed result
   // To overcome this limitations we should supply returnType to this method
   @Documentation(description = "Returns a sum of all elements")
-  @GenericType(typingFunction = classOf[ListElementTypingForSum])
+  @GenericType(typingFunction = classOf[CollectionElementTypingForSum])
   def sum[T <: java.lang.Number](@ParamName("listOfNumbers") list: java.util.Collection[T]): T = {
     val types = list.asScala.map(Typed.fromInstance(_)).toList
     val targetType = types match {
@@ -115,14 +115,14 @@ trait CollectionUtils extends HideToString {
   }
 
   @Documentation(description = "Returns a list of all elements sorted in ascending order (elements must be comparable)")
-  @GenericType(typingFunction = classOf[ListTyping])
+  @GenericType(typingFunction = classOf[CollectionToListTyping])
   def sortedAsc[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): java.util.List[T] =
     sorted(list, desc = false)
 
   @Documentation(description =
     "Returns a list of all elements sorted in descending order (elements must be comparable)"
   )
-  @GenericType(typingFunction = classOf[ListTyping])
+  @GenericType(typingFunction = classOf[CollectionToListTyping])
   def sortedDesc[T <: Comparable[T]](@ParamName("list") list: java.util.Collection[T]): java.util.List[T] =
     sorted(list, desc = true)
 
@@ -221,7 +221,7 @@ trait CollectionUtils extends HideToString {
     new java.util.ArrayList(new java.util.LinkedHashSet[T](list))
 
   @Documentation(description = "Returns a copy of the list with its elements shuffled")
-  @GenericType(typingFunction = classOf[ListTyping])
+  @GenericType(typingFunction = classOf[CollectionToListTyping])
   def shuffle[T](@ParamName("list") list: java.util.Collection[T]): java.util.List[T] = {
     val values = new java.util.ArrayList[T](list)
     Collections.shuffle(values)
@@ -229,7 +229,7 @@ trait CollectionUtils extends HideToString {
   }
 
   @Documentation(description = "Returns a list of all elements from all lists in the given list")
-  @GenericType(typingFunction = classOf[ListElementTyping])
+  @GenericType(typingFunction = classOf[NestedCollectionToListTyping])
   def flatten[T](@ParamName("list") list: java.util.Collection[java.util.Collection[T]]): java.util.List[T] =
     list.asScala.flatMap(_.asScala).toList.asJava
 
@@ -267,22 +267,23 @@ object CollectionUtils {
 
   }
 
-  class CollectionElementTyping[F[_]](implicit classTag: ClassTag[F[_]]) extends TypingFunction {
-    private val fClass: Class[F[_]] = classTag.runtimeClass.asInstanceOf[Class[F[_]]]
+  class CollectionElementTyping extends TypingFunction {
+    private val collectionClass: Class[java.util.Collection[_]] = classOf[java.util.Collection[_]]
 
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case TypedClass(`fClass`, componentType :: Nil) :: _ => componentType.withoutValue.validNel
-      case TypedObjectWithValue(TypedClass(`fClass`, componentType :: Nil), _) :: _ =>
+      case TypedClass(aClass, componentType :: Nil) :: _ if collectionClass.isAssignableFrom(aClass) =>
         componentType.withoutValue.validNel
-      case firstArgument :: _ => firstArgument.withoutValue.validNel
-      case _                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case TypedObjectWithValue(TypedClass(aClass, componentType :: Nil), _) :: _
+          if collectionClass.isAssignableFrom(aClass) =>
+        componentType.withoutValue.validNel
+      case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
 
-  class CollectionElementTypingForSum[F[_]](implicit classTag: ClassTag[F[_]]) extends CollectionElementTyping[F] {
+  class CollectionElementTypingForSum extends CollectionElementTyping {
 
     override def computeResultType(
         arguments: List[typing.TypingResult]
@@ -490,13 +491,56 @@ object CollectionUtils {
 
   }
 
+  class JavaCollectionTyping[ResultCollectionType[_]](implicit classTag: ClassTag[ResultCollectionType[_]])
+      extends TypingFunction {
+    private val collectionClass: Class[java.util.Collection[_]] = classOf[java.util.Collection[_]]
+
+    override def computeResultType(
+        arguments: List[typing.TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
+      case TypedClass(aClass, componentType :: Nil) :: _ if collectionClass.isAssignableFrom(aClass) =>
+        Typed.genericTypeClass[ResultCollectionType[_]](componentType.withoutValue :: Nil).validNel
+      case TypedObjectWithValue(TypedClass(aClass, componentType :: Nil), _) :: _
+          if collectionClass.isAssignableFrom(aClass) =>
+        Typed.genericTypeClass[ResultCollectionType[_]](componentType.withoutValue :: Nil).validNel
+      case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+    }
+
+  }
+
+  class NestedJavaCollectionTyping[ResultCollectionType[_]](implicit classTag: ClassTag[ResultCollectionType[_]])
+      extends TypingFunction {
+    private val collectionClass: Class[java.util.Collection[_]] = classOf[java.util.Collection[_]]
+
+    override def computeResultType(
+        arguments: List[typing.TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
+      case TypedClass(outerClass, TypedClass(innerClass, componentType :: Nil) :: Nil) :: _
+          if collectionClass.isAssignableFrom(outerClass) && collectionClass.isAssignableFrom(innerClass) =>
+        Typed.genericTypeClass[ResultCollectionType[_]](componentType.withoutValue :: Nil).validNel
+      case TypedObjectWithValue(
+            TypedClass(outerClass, TypedClass(innerClass, componentType :: Nil) :: Nil),
+            _
+          ) :: _ if collectionClass.isAssignableFrom(outerClass) && collectionClass.isAssignableFrom(innerClass) =>
+        Typed.genericTypeClass[ResultCollectionType[_]](componentType.withoutValue :: Nil).validNel
+      // cases for empty collections
+      case TypedClass(aClass, componentType :: Nil) :: _ if collectionClass.isAssignableFrom(aClass) =>
+        Typed.genericTypeClass[ResultCollectionType[_]](componentType.withoutValue :: Nil).validNel
+      case TypedObjectWithValue(TypedClass(aClass, componentType :: Nil), _) :: _
+          if collectionClass.isAssignableFrom(aClass) =>
+        Typed.genericTypeClass[ResultCollectionType[_]](componentType.withoutValue :: Nil).validNel
+      case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+    }
+
+  }
+
   class ListTyping extends CollectionTyping[java.util.List]
 
   class ListAdditionTyping extends VarargsCollectionMergeTyping[java.util.List]
 
-  class ListElementTyping extends CollectionElementTyping[java.util.List]
+  class CollectionToListTyping extends JavaCollectionTyping[java.util.List]
 
-  class ListElementTypingForSum extends CollectionElementTypingForSum[java.util.List]
+  class NestedCollectionToListTyping extends NestedJavaCollectionTyping[java.util.List]
 
   class RecordCollectionSortingTyping extends TypingFunction {
     private val listClass       = classOf[java.util.List[java.util.Map[String, Any]]]

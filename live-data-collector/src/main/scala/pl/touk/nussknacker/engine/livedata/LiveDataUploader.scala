@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.time.Instant
+import java.util.UUID
 import scala.util.Try
 
 private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
@@ -102,7 +103,7 @@ private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
   ): Unit = {
     statement.setLong(1, processIdWithName.id.value)
     statement.setObject(2, deploymentId.value)
-    statement.setString(3, LiveDataCollectingListenerHolder.id.toString)
+    statement.setString(3, LiveDataUploader.collectorId.toString)
     statement.setString(4, collectedLiveData.asJson.noSpaces)
     statement.setLong(5, Instant.now.getEpochSecond)
     statement.executeUpdate()
@@ -111,6 +112,8 @@ private[livedata] class LiveDataUploader(config: LiveDataUploaderConfig) {
 }
 
 object LiveDataUploader {
+
+  private val collectorId: UUID = UUID.randomUUID()
 
   final case class LiveDataUploaderConfig(
       intervalSeconds: Int,
