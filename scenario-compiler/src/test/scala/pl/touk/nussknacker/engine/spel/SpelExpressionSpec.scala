@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.catsSyntaxValidatedId
+import jdk.jpackage.internal.Arguments.CLIOptions.context
 import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.flink.types.Row
@@ -2542,6 +2543,42 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ) { (expression, result) =>
       val parsed = parse[String](expr = expression, flavour = SpelExpressionParser.Template).validValue
       parsed.evaluateSync[String]() shouldBe result
+    }
+  }
+
+  test("should allow to use null safe operator") {
+    val contextWithNotNullVariables = Context.dummy
+      .withVariable("obj", ContainerOfUnknown(42L))
+      .withVariable("array", List("a", "b", "c").asJava)
+      .withVariable("map", Map("a" -> 1, "b" -> 2, "c" -> 3).asJava)
+    val validationContextWithNotNullVariables = ValidationContext.empty
+      .withVariableUnsafe("obj", Typed.fromInstance(contextWithNotNullVariables("obj")))
+      .withVariableUnsafe("array", Typed.genericTypeClass[JList[_]](List(Typed[String])))
+      .withVariableUnsafe("map", Typed.genericTypeClass[JMap[_, _]](List(Typed[String], Typed[JInteger])))
+    val context = contextWithNotNullVariables.variables.foldLeft(contextWithNotNullVariables) {
+      case (context, (varName, _)) =>
+        context.withVariable(s"null_$varName", null)
+    }
+    val validationContext =
+      validationContextWithNotNullVariables.variables.foldLeft(validationContextWithNotNullVariables) {
+        case (validationContext, (varName, varType)) =>
+          validationContext.withVariableUnsafe(s"null_$varName", varType)
+      }
+
+    forAll(
+      Table(
+        ("expression", "return type", "result"),
+        ("#obj?.value", Unknown, 42L),
+        ("#null_obj?.value", Unknown, null),
+        ("#array?.[1]", Typed[String], "b"),
+        ("#null_array?.[1]", Typed[String], null),
+        ("#map?.['a']", Typed[JInteger], 1),
+        ("#null_map?.['a']", Typed[JInteger], null),
+      )
+    ) { (expression, returnType, result) =>
+      val parsed = parseV[Any](expression, validationContext).validValue
+      parsed.returnType shouldBe returnType
+      parsed.evaluateSync[Any](context) shouldBe result
     }
   }
 
