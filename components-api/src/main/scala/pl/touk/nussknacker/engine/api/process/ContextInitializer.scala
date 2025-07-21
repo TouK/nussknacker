@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 trait ContextInitializer[Raw] extends Serializable {
 
   /**
-    * convert a raw event to initial Context variables in runtime
+    * Converts a raw input event (for example a Kafka message) into initial context variables in runtime.
     */
   def convertToInitialVariables(raw: Raw): ContextVariables
 
