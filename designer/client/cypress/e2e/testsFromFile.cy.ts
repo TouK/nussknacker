@@ -22,6 +22,8 @@ describe("Process tests from file", () => {
             .selectFile("cypress/fixtures/transactionsTestData.txt", { force: true });
         cy.get("text[joint-selector='testResultsSummary']").eq(0).contains("1");
         cy.get("[model-id='kafka']").should("be.visible").trigger("dblclick");
+        cy.get('[data-testid="window"] [role="progressbar"]').should("exist");
+        cy.get('[data-testid="window"] [role="progressbar"]').should("not.exist");
         cy.get("[data-testid='window-frame']").matchImage();
     });
 
