@@ -14,7 +14,7 @@ class AuthorizeProcess(processRepository: FetchingProcessRepository[Future])(
 
   def check(processId: ProcessId, permission: Permission, user: LoggedUser): Future[Boolean] = {
     processRepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processId)
+      .fetchLatestProcessDetails[Unit](processId)
       .map(maybeProcessDetails =>
         maybeProcessDetails
           .map(_.processCategory)

@@ -295,7 +295,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
           expected: Option[ScenarioWithDetailsEntity[ScenarioGraph]]
       ) =>
         val result = mockRepository
-          .fetchLatestProcessDetailsForProcessId(process.processId)(DisplayableShape, user, global)
+          .fetchLatestProcessDetails(process.processId)(DisplayableShape, user, global)
           .futureValue
         result shouldBe expected
     }
@@ -333,7 +333,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
           expected: Option[ScenarioWithDetailsEntity[ScenarioGraph]]
       ) =>
         val result =
-          mockRepository.fetchProcessDetailsForId(processId, versionId)(DisplayableShape, user, global).futureValue
+          mockRepository.fetchProcessDetailsForVersion(processId, versionId)(DisplayableShape, user, global).futureValue
         result shouldBe expected
     }
   }

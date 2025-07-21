@@ -1518,7 +1518,7 @@ class ProcessesResourcesSpec
     implicit val adminUser: LoggedUser = TestFactory.adminUser()
     val detailsOptT = for {
       id      <- OptionT(futureFetchingScenarioRepository.fetchProcessId(name))
-      details <- OptionT(futureFetchingScenarioRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id))
+      details <- OptionT(futureFetchingScenarioRepository.fetchLatestProcessDetails[CanonicalProcess](id))
     } yield details
     detailsOptT.value.futureValue match {
       case Some(scenarioDetails) => scenarioDetails.json
