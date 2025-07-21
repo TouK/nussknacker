@@ -117,7 +117,6 @@ export type ScenarioGraphSource = {
 };
 
 export enum ScenarioGraphSourceType {
-    LATEST_VERSION = "LatestVersion",
     FROM_GRAPH = "FromGraph",
 }
 
