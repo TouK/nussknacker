@@ -58,19 +58,12 @@ class LiteKafkaSourceImpl[K, V](
     with TestDataGenerator
     with TestWithParametersSupport[ConsumerRecord[Array[Byte], Array[Byte]]] {
 
-  private var initializerFun: ContextInitializingFunction[ConsumerRecord[K, V]] = _
-
-  override def open(context: EngineRuntimeContext): Unit = {
-    super.open(context)
-    initializerFun = contextInitializer.initContext
-  }
-
   override lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
   override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): ContextVariables = {
     val deserialized = deserializationSchema.deserialize(record)
     // TODO: what about other properties based on kafkaConfig?
-    val initializerVariables = initializerFun(deserialized)
+    val initializerVariables = contextInitializer.convertToInitialVariables(deserialized)
     ContextVariables(
       initializerVariables.variables + (VariableConstants.EventTimestampVariableName -> record.timestamp())
     )

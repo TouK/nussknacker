@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.requestresponse.api
 
-import pl.touk.nussknacker.engine.api.VariableConstants
 import pl.touk.nussknacker.engine.api.component.RequestResponseComponent
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializingFunction, ContextVariables, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextVariables, SourceFactory}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 
@@ -31,8 +31,10 @@ trait RequestResponseSource[T] extends BaseLiteSource[Any] {
 
   def openApiDefinition: Option[OpenApiSourceDefinition] = None
 
+  private val contextInitializer = new BasicContextInitializer[Any](Unknown)
+
   override def transform(record: Any): ContextVariables = {
-    new BasicContextInitializingFunction[Any](VariableConstants.InputVariableName)(record)
+    contextInitializer.convertToInitialVariables(record)
   }
 
 }

@@ -875,21 +875,16 @@ object SampleNodes {
         }
       }
 
-      override val initContext: ContextInitializingFunction[String] =
-        new BasicContextInitializingFunction[String](outputVariableName) {
-
-          override def apply(input: String): ContextVariables = {
-            // perform some transformations and/or computations
-            val additionalVariables = Map[String, Any](
-              "additionalOne" -> s"transformed:$input",
-              "additionalTwo" -> input.length()
-            )
-            // initialize context with input variable and append computed values
-            val superVariables = super.apply(input)
-            ContextVariables(superVariables.variables ++ additionalVariables)
-          }
-
-        }
+      override def convertToInitialVariables(input: String): ContextVariables = {
+        // perform some transformations and/or computations
+        val additionalVariables = Map[String, Any](
+          "additionalOne" -> s"transformed:$input",
+          "additionalTwo" -> input.length()
+        )
+        // initialize context with input variable and append computed values
+        val superVariables = super.convertToInitialVariables(input)
+        ContextVariables(superVariables.variables ++ additionalVariables)
+      }
 
     }
 

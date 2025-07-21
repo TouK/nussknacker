@@ -137,8 +137,10 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       // This is a custom ContextInitializer, which initializes Context ignoring input.
       // It is required, because in EventGenerator we first initialize Context, and only then generate input.
       private def contextInitializer[T]: ContextInitializer[T] = new ContextInitializer[T] {
-        override val initContext: ContextInitializingFunction[T] =
-          (_: T) => ContextVariables(Map.empty)
+        override def convertToInitialVariables(raw: T): ContextVariables = {
+          ContextVariables(Map.empty)
+        }
+
         override def validationContext(
             context: ValidationContext
         )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] =

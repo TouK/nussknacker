@@ -61,7 +61,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       override val contextInitializer: ContextInitializer[Map[String, Any]] =
         new ContextInitializer[Map[String, Any]] {
 
-          override val initContext: ContextInitializingFunction[Map[String, Any]] = { input =>
+          override def convertToInitialVariables(input: Map[String, Any]): ContextVariables = {
             ContextVariables(input)
           }
 
