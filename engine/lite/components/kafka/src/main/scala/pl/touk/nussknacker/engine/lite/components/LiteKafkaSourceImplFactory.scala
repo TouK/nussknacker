@@ -67,11 +67,13 @@ class LiteKafkaSourceImpl[K, V](
 
   override lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
-  override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
+  override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): ContextVariables = {
     val deserialized = deserializationSchema.deserialize(record)
     // TODO: what about other properties based on kafkaConfig?
-    initializerFun(deserialized)
-      .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
+    val initializerVariables = initializerFun(deserialized)
+    ContextVariables(
+      initializerVariables.variables + (VariableConstants.EventTimestampVariableName -> record.timestamp())
+    )
   }
 
   override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)

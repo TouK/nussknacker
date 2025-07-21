@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
@@ -46,14 +46,15 @@ object GenericSourceWithCustomVariablesSample
     override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
       new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
 
-        override def apply(input: String): Context = {
+        override def apply(input: String): ContextVariables = {
           // perform some transformations and/or computations
           val additionalVariables = Map[String, Any](
             "additionalOne" -> s"transformed:$input",
             "additionalTwo" -> input.length()
           )
           // initialize context with input variable and append computed values
-          super.apply(input).withVariables(additionalVariables)
+          val superVariables = super.apply(input)
+          ContextVariables(superVariables.variables ++ additionalVariables)
         }
 
       }

@@ -44,7 +44,7 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
-import java.util.{Date, Optional, UUID}
+import java.util.{Date, Optional}
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.Nullable
 import scala.annotation.nowarn
@@ -878,14 +878,15 @@ object SampleNodes {
       override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
         new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
 
-          override def apply(input: String): Context = {
+          override def apply(input: String): ContextVariables = {
             // perform some transformations and/or computations
             val additionalVariables = Map[String, Any](
-              "additionalOne" -> s"transformed:${input}",
+              "additionalOne" -> s"transformed:$input",
               "additionalTwo" -> input.length()
             )
             // initialize context with input variable and append computed values
-            super.apply(input).withVariables(additionalVariables)
+            val superVariables = super.apply(input)
+            ContextVariables(superVariables.variables ++ additionalVariables)
           }
 
         }

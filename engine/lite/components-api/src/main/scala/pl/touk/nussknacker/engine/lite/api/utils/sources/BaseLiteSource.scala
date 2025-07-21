@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.lite.api.utils.sources
 
 import cats.Monad
 import cats.data.{Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.api.{Context, Lifecycle}
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.{Context, Lifecycle, NodeId}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.process.ContextVariables
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
@@ -29,18 +29,21 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
   override def createTransformation[F[_]: Monad](
       componentContext: customComponentTypes.CustomComponentContext[F]
   ): T => ValidatedNel[ErrorType, Context] =
-    record =>
+    record => {
+      val context = Context(contextIdGenerator.nextContextId())
       Validated
         .fromEither(Try(transform(record)).toEither)
+        .map(contextVariables => context.withVariables(contextVariables.variables))
         .leftMap(ex =>
           NuExceptionInfo(
             Some(NodeComponentInfo(componentContext.nodeId, ComponentType.Source, "unknown")),
             ex,
-            Context(contextIdGenerator.nextContextId())
+            context
           )
         )
         .toValidatedNel
+    }
 
-  def transform(record: T): Context
+  def transform(record: T): ContextVariables
 
 }

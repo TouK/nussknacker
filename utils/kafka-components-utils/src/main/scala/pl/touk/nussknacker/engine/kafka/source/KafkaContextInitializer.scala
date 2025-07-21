@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{
   BasicContextInitializer,
   BasicContextInitializingFunction,
-  ContextInitializingFunction
+  ContextInitializingFunction,
+  ContextVariables
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -49,7 +50,7 @@ class KafkaContextInitializer[K, V](
   override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[ConsumerRecord[K, V]] =
     new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
 
-      override def apply(input: ConsumerRecord[K, V]): Context = {
+      override def apply(input: ConsumerRecord[K, V]): ContextVariables = {
         // Scala map wrapper causes some serialization problems
         val headers: util.Map[String, String] = new util.HashMap(KafkaRecordUtils.toMap(input.headers).asJava)
         // null won't be serialized properly
@@ -64,9 +65,12 @@ class KafkaContextInitializer[K, V](
           headers,
           safeLeaderEpoch
         )
-        newContext
-          .withVariable(VariableConstants.InputVariableName, input.value())
-          .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
+        ContextVariables(
+          Map(
+            VariableConstants.InputVariableName     -> input.value(),
+            VariableConstants.InputMetaVariableName -> inputMeta,
+          )
+        )
       }
 
     }

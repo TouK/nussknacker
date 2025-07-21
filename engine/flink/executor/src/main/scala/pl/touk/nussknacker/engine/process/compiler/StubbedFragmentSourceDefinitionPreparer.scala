@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{
   ContextInitializer,
   ContextInitializingFunction,
+  ContextVariables,
   Source,
   TestWithParametersSupport
 }
@@ -70,7 +71,7 @@ class StubbedFragmentSourceDefinitionPreparer(
           override def initContext(
               contextIdGenerator: ContextIdGenerator
           ): ContextInitializingFunction[Map[String, Any]] = { input =>
-            Context(contextIdGenerator.nextContextId(), input, None)
+            ContextVariables(input)
           }
 
           override def validationContext(

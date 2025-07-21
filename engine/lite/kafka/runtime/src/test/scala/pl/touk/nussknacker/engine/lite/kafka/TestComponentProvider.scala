@@ -5,7 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, TopicName}
+import pl.touk.nussknacker.engine.api.process.{ContextVariables, SinkFactory, SourceFactory, TopicName}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.Output
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
@@ -35,13 +35,16 @@ object TestComponentProvider {
 
         override val topics: NonEmptyList[TopicName.ForSource] = NonEmptyList.one(TopicName.ForSource(topicName))
 
-        override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
+        override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): ContextVariables = {
           val value = new String(record.value())
           if (value == FailingInputValue)
             throw SourceFailure
-          Context(contextIdGenerator.nextContextId())
-            .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
-            .withVariable(VariableConstants.InputVariableName, value)
+          ContextVariables(
+            Map(
+              VariableConstants.EventTimestampVariableName -> record.timestamp(),
+              VariableConstants.InputVariableName          -> value,
+            )
+          )
         }
 
       }
