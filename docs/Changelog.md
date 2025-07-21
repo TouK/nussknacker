@@ -239,10 +239,10 @@ description: Stay informed with detailed changelogs covering new features, impro
   Thanks to that expression parsers can leverage this information for preparing better evaluation logic. It is used in `json-template` expressions
   where users can now use logical types such as `OffsetDateTime`, `Duration` etc.
 * [#8349](https://github.com/TouK/nussknacker/pull/8349) Added ability to configure a default editors for the String type parameters
-  * You can now configure default editors by setting the `modelConfig.editorConfig` of a scenarioType in the `scenarioTypes` config section
+  * You can now configure default editors by setting the `modelConfig.globalParametersConfig` of a scenarioType in the `scenarioTypes` config section
   ```hocon
      modelConfig {
-       editorConfig {
+       globalParametersConfig {
          editorsForStringType: [
            {
              type: "SpelParameterEditor"

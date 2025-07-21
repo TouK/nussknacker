@@ -49,7 +49,7 @@ class NodeDataValidator(modelData: ModelData) {
     new FragmentParametersDefinitionExtractor(
       modelData.modelClassLoader,
       modelData.modelDefinitionWithClasses.classDefinitions,
-      modelData.modelConfig.editorConfig
+      modelData.modelConfig.globalParametersConfig
     ),
     expressionCompiler,
     modelData.modelClassLoader,

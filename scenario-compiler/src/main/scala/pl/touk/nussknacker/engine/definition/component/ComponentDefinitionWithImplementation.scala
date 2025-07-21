@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
@@ -81,7 +81,7 @@ object ComponentDefinitionWithImplementation {
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      editorConfig: EditorConfig
+      globalParametersConfig: GlobalParametersConfig
   ): List[ComponentDefinitionWithImplementation] = {
     components.flatMap(
       ComponentDefinitionExtractor.extract(
@@ -89,7 +89,7 @@ object ComponentDefinitionWithImplementation {
         additionalConfigs,
         determineDesignerWideId,
         additionalConfigsFromProvider,
-        editorConfig
+        globalParametersConfig
       )
     )
   }
@@ -107,7 +107,7 @@ object ComponentDefinitionWithImplementation {
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
-        EditorConfig.default,
+        GlobalParametersConfig.default,
       )
       .getOrElse(
         throw new IllegalStateException(

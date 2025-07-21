@@ -193,7 +193,7 @@ class ComponentGroupsPreparerSpec
         ClassDefinitionSet(Set.empty[ClassDefinition]),
         Some(_),
         DesignerWideComponentId.default("Streaming", _),
-        modelDefinition.editorConfig
+        modelDefinition.globalParametersConfig
       ),
       modelDefinition,
       ProcessingMode.UnboundedStream

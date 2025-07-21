@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context._
@@ -28,7 +28,7 @@ class DynamicNodeValidator(
     expressionCompiler: ExpressionCompiler,
     globalVariablesPreparer: GlobalVariablesPreparer,
     parameterEvaluator: ParameterEvaluator,
-    editorConfig: EditorConfig
+    globalParametersConfig: GlobalParametersConfig
 ) {
 
   private implicit val lazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
@@ -146,7 +146,7 @@ class DynamicNodeValidator(
                 StandardParameterEnrichment.enrichParameterDefinitions(
                   newParametersDefinitions,
                   parametersConfig,
-                  editorConfig
+                  globalParametersConfig
                 )
               // We assume that the developer of component split parameter transformation steps this way because
               // the last parameter in the step can cause changes in parameter definitions for the next step
@@ -296,7 +296,7 @@ object DynamicNodeValidator {
         globalVariablesPreparer,
         Seq.empty,
       ),
-      modelData.modelConfig.editorConfig
+      modelData.modelConfig.globalParametersConfig
     )
   }
 

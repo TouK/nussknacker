@@ -62,7 +62,7 @@ object AlignedComponentsDefinitionProvider {
         designerModelData.modelData.modelDefinitionWithClasses.classDefinitions,
         designerModelData.modelData.componentsUiConfig.groupName,
         designerModelData.modelData.determineDesignerWideId,
-        designerModelData.modelData.modelConfig.editorConfig
+        designerModelData.modelData.modelConfig.globalParametersConfig
       ),
       designerModelData.modelData.modelDefinition,
       designerModelData.processingMode

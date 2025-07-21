@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 class DynamicComponentStaticDefinitionDeterminer(
     nodeValidator: DynamicNodeValidator,
     globalVariablesPreparer: GlobalVariablesPreparer,
-    editorConfig: EditorConfig
+    globalParametersConfig: GlobalParametersConfig
 ) extends LazyLogging {
 
   private def determineStaticDefinition(
@@ -81,7 +81,7 @@ class DynamicComponentStaticDefinitionDeterminer(
         StandardParameterEnrichment.enrichParameterDefinitions(
           withStatic.staticParameters,
           dynamic.parametersConfig,
-          editorConfig
+          globalParametersConfig
         )
       case single: SingleInputDynamicComponent[_] =>
         inferParameters(single, SingleInputNodeInputValidationContext(globalVariablesOnlyValidationContext))
@@ -108,7 +108,7 @@ object DynamicComponentStaticDefinitionDeterminer {
       new DynamicComponentStaticDefinitionDeterminer(
         nodeValidator,
         GlobalVariablesPreparer(modelDataForType.modelDefinition.expressionConfig),
-        modelDataForType.modelConfig.editorConfig
+        modelDataForType.modelConfig.globalParametersConfig
       )
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood

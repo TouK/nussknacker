@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
@@ -209,10 +209,10 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   private def validatorParams(
       rawJavaParam: java.lang.reflect.Parameter,
       parameterConfig: ParameterConfig = ParameterConfig.empty,
-      editorConfig: EditorConfig = EditorConfig.default
+      globalParametersConfig: GlobalParametersConfig = GlobalParametersConfig.default
   ) = {
     val parameterData   = ParameterData(rawJavaParam, ClassDefinitionExtractor.extractParameterType(rawJavaParam))
-    val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig, editorConfig)
+    val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig)
     ValidatorExtractorParameters(
       parameterData,
       OptionalDeterminer.isOptional(

@@ -403,7 +403,7 @@ object ProcessValidator {
       new FragmentParametersDefinitionExtractor(
         classLoader,
         definitionWithTypes.classDefinitions,
-        modelDefinition.editorConfig
+        modelDefinition.globalParametersConfig
       ),
       expressionCompiler,
       classLoader,

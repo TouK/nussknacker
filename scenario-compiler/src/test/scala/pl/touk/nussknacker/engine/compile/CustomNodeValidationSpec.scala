@@ -6,7 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -58,13 +58,13 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       ComponentsUiConfig.Empty,
       id => DesignerWideComponentId(id.toString),
       Map.empty,
-      EditorConfig.default,
+      GlobalParametersConfig.default,
       ComponentDefinitionExtractionMode.FinalDefinition
     ),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default,
     allowEndingScenarioWithoutSink = false,
-    editorConfig = EditorConfig.default,
+    globalParametersConfig = GlobalParametersConfig.default,
   )
 
   private val validator = ProcessValidator.default(

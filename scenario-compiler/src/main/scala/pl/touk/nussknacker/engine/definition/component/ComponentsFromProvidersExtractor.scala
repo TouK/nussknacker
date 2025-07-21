@@ -154,7 +154,7 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
       componentsUiConfig,
       determineDesignerWideId,
       additionalConfigsFromProvider,
-      componentDependencies.modelConfig.editorConfig,
+      componentDependencies.modelConfig.globalParametersConfig,
       componentDefinitionExtractionMode
     )
 

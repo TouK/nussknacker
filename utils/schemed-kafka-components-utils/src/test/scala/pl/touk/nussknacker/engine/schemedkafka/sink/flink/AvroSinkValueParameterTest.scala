@@ -5,7 +5,7 @@ import cats.data.Validated.Invalid
 import org.apache.avro.SchemaBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{Parameter, SpelParameterEditor, SpelTemplateParameterEditor}
@@ -63,7 +63,7 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
     StandardParameterEnrichment.enrichParameterDefinitions(
       result.toParameters,
       Map.empty,
-      EditorConfig.default
+      GlobalParametersConfig.default
     ) shouldBe List(
       Parameter(name = ParameterName("a"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
@@ -92,7 +92,7 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
     StandardParameterEnrichment.enrichParameterDefinitions(
       result.toParameters,
       Map.empty,
-      EditorConfig.default
+      GlobalParametersConfig.default
     ) shouldBe List(
       Parameter(name = sinkValueParamName, typ = typing.Typed[Long])
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0")))

@@ -57,7 +57,7 @@ object ProcessCompilerData {
       new FragmentParametersDefinitionExtractor(
         userCodeClassLoader,
         definitionWithTypes.classDefinitions,
-        definitionWithTypes.modelDefinition.editorConfig
+        definitionWithTypes.modelDefinition.globalParametersConfig
       ),
       expressionCompiler,
       userCodeClassLoader,

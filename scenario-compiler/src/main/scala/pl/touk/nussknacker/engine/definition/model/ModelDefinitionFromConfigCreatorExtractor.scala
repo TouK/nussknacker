@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.model
 
 import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.{
   Component,
   ComponentAdditionalConfig,
@@ -43,7 +43,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentsUiConfig,
       determineDesignerWideId,
       additionalConfigsFromProvider,
-      modelConfig.editorConfig,
+      modelConfig.globalParametersConfig,
       componentDefinitionExtractionMode,
     )
 
@@ -54,7 +54,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig = toDefinition(expressionConfig, categoryOpt),
       classExtractionSettings = classExtractionSettings,
       allowEndingScenarioWithoutSink = modelConfig.allowEndingScenarioWithoutSink,
-      editorConfig = modelConfig.editorConfig
+      globalParametersConfig = modelConfig.globalParametersConfig
     )
   }
 
@@ -64,7 +64,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      editorConfig: EditorConfig,
+      globalParametersConfig: GlobalParametersConfig,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
   ): Components = {
     Components.fold(
@@ -79,7 +79,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
               componentsUiConfig,
               determineDesignerWideId,
               additionalConfigsFromProvider,
-              editorConfig,
+              globalParametersConfig,
               componentDefinitionExtractionMode,
             )
         }

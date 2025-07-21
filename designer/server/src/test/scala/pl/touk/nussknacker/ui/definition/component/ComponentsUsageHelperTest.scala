@@ -178,7 +178,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         ClassDefinitionSet(Set.empty[ClassDefinition]),
         Some(_),
         determineDesignerWideId,
-        modelDefinition.editorConfig,
+        modelDefinition.globalParametersConfig,
       ),
       modelDefinition,
       ProcessingMode.UnboundedStream

@@ -343,7 +343,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       inputConfig = ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
         .getConfig("modelConfig")
         .withValue(
-          "editorConfig.editorsForStringType",
+          "globalParametersConfig.editorsForStringType",
           ConfigValueFactory.fromIterable(
             List(
               ConfigValueFactory.fromMap(Map("type" -> "SpelParameterEditor").asJava),
@@ -386,7 +386,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         model.modelDefinitionWithClasses.classDefinitions,
         Some(_),
         DesignerWideComponentId.default(processingType.stringify, _),
-        model.modelConfig.editorConfig,
+        model.modelConfig.globalParametersConfig,
       ),
       model.modelDefinition,
       ProcessingMode.UnboundedStream

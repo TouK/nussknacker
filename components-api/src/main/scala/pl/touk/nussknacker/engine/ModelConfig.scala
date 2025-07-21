@@ -5,14 +5,14 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
-import pl.touk.nussknacker.engine.ModelConfig.{EditorConfig, JsonLikeValuesEnteringMode, LiveDataPreviewMode}
+import pl.touk.nussknacker.engine.ModelConfig.{GlobalParametersConfig, JsonLikeValuesEnteringMode, LiveDataPreviewMode}
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelParameterEditor, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
-    editorConfig: EditorConfig,
+    globalParametersConfig: GlobalParametersConfig,
     jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode,
     namingStrategy: NamingStrategy,
     liveDataPreviewMode: LiveDataPreviewMode,
@@ -29,7 +29,7 @@ object ModelConfig {
   def parse(rawModelConfig: Config): ModelConfig = {
     ModelConfig(
       allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
-      editorConfig = parseEditorConfig(rawModelConfig),
+      globalParametersConfig = parseGlobalParametersConfig(rawModelConfig),
       jsonLikeValuesEnteringMode = parseJsonLikeValuesEnteringMode(rawModelConfig),
       namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
       liveDataPreviewMode = parseLiveDataPreviewMode(rawModelConfig),
@@ -77,21 +77,14 @@ object ModelConfig {
     case object SingleJsonTemplateParameter extends JsonLikeValuesEnteringMode
   }
 
-  final case class EditorConfig(editorsForStringType: NonEmptyList[ParameterEditor])
+  final case class GlobalParametersConfig(editorsForStringType: NonEmptyList[ParameterEditor])
 
-  object EditorConfig {
+  object GlobalParametersConfig {
 
-    val default: EditorConfig = EditorConfig(
+    val default: GlobalParametersConfig = GlobalParametersConfig(
       editorsForStringType = NonEmptyList.of(SpelTemplateParameterEditor, SpelParameterEditor)
     )
 
-  }
-
-  sealed trait DefaultEditorForStringType
-
-  object DefaultEditorForStringType {
-    case object Spel         extends DefaultEditorForStringType
-    case object SpelTemplate extends DefaultEditorForStringType
   }
 
   private def parseJsonLikeValuesEnteringMode(config: Config): JsonLikeValuesEnteringMode = {
@@ -111,23 +104,16 @@ object ModelConfig {
     }
   }
 
-  private def parseEditorConfig(config: Config): EditorConfig = {
+  private def parseGlobalParametersConfig(config: Config): GlobalParametersConfig = {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
-    val stringEditorsPath = "editorConfig.editorsForStringType"
 
-    val stringEditors = config.getAs[List[ParameterEditor]](stringEditorsPath) match {
-      case Some(editors) =>
-        NonEmptyList
-          .fromList(editors)
-          .getOrElse(
-            throw new IllegalArgumentException(s"Non empty list of editors is required at path $stringEditorsPath")
-          )
-      case None =>
-        EditorConfig.default.editorsForStringType
-    }
+    val maybeStringEditors =
+      config.getAs[NonEmptyList[ParameterEditor]]("globalParametersConfig.editorsForStringType")
 
-    EditorConfig(editorsForStringType = stringEditors)
+    GlobalParametersConfig(
+      editorsForStringType = maybeStringEditors.getOrElse(GlobalParametersConfig.default.editorsForStringType)
+    )
   }
 
   private def parseLiveDataPreviewMode(config: Config): LiveDataPreviewMode = {

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
@@ -26,7 +26,7 @@ object ParameterExtractor {
   def extractParameter(
       p: java.lang.reflect.Parameter,
       parametersConfig: Map[ParameterName, ParameterConfig],
-      editorConfig: EditorConfig
+      globalParametersConfig: GlobalParametersConfig
   ): Parameter = {
     val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
       .map(_.value())
@@ -47,7 +47,7 @@ object ParameterExtractor {
     val parameterData = ParameterData(p, paramType)
     val isOptional    = OptionalDeterminer.isOptional(parameterData, isScalaOptionParameter, isJavaOptionalParameter)
 
-    val editors = EditorExtractor.extract(parameterData, parameterConfig, editorConfig)
+    val editors = EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig)
     val validators =
       ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional, parameterConfig, editors))
     val defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(

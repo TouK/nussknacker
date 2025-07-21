@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.data.Validated
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -23,10 +23,11 @@ class FragmentComponentDefinitionExtractor(
     classDefinitions: ClassDefinitionSet,
     translateGroupName: ComponentGroupName => Option[ComponentGroupName],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    editorConfig: EditorConfig
+    globalParametersConfig: GlobalParametersConfig
 ) {
 
-  val parametersExtractor = new FragmentParametersDefinitionExtractor(classLoader, classDefinitions, editorConfig)
+  val parametersExtractor =
+    new FragmentParametersDefinitionExtractor(classLoader, classDefinitions, globalParametersConfig)
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess,

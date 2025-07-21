@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
@@ -34,13 +34,13 @@ object EditorExtractor {
   def extract(
       param: ParameterData,
       parameterConfig: ParameterConfig,
-      editorConfig: EditorConfig
+      globalParametersConfig: GlobalParametersConfig
   ): List[ParameterEditor] = {
     parameterConfig.editors
       .getOrElse(Nil)
       .orElseIfEmpty(extractFromAnnotation(param))
       .orElseIfEmpty(extractFromAnnotations(param))
-      .orElseIfEmpty(new ParameterTypeEditorDeterminer(param.typing, editorConfig).determine())
+      .orElseIfEmpty(new ParameterTypeEditorDeterminer(param.typing, globalParametersConfig).determine())
   }
 
   private def extractFromAnnotation(param: ParameterData): List[ParameterEditor] =

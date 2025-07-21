@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.testing
 
-import pl.touk.nussknacker.engine.ModelConfig.EditorConfig
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -208,7 +208,7 @@ final case class ModelDefinitionBuilder(
       expressionConfig = emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
       classExtractionSettings = ClassExtractionSettings.Default,
       allowEndingScenarioWithoutSink = false,
-      editorConfig = EditorConfig.default
+      globalParametersConfig = GlobalParametersConfig.default
     )
   }
 
