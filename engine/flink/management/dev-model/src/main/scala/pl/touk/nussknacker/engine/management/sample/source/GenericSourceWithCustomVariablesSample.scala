@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -43,8 +42,8 @@ object GenericSourceWithCustomVariablesSample
       }
     }
 
-    override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
-      new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
+    override val initContext: ContextInitializingFunction[String] =
+      new BasicContextInitializingFunction[String](outputVariableName) {
 
         override def apply(input: String): ContextVariables = {
           // perform some transformations and/or computations

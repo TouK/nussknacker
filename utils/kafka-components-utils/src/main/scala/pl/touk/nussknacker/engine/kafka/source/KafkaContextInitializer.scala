@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import cats.data.ValidatedNel
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{
@@ -12,7 +11,6 @@ import pl.touk.nussknacker.engine.api.process.{
   ContextInitializingFunction,
   ContextVariables
 }
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 
@@ -47,8 +45,8 @@ class KafkaContextInitializer[K, V](
     contextWithInput.andThen(_.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None))
   }
 
-  override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[ConsumerRecord[K, V]] =
-    new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
+  override val initContext: ContextInitializingFunction[ConsumerRecord[K, V]] =
+    new BasicContextInitializingFunction[ConsumerRecord[K, V]](outputVariableName) {
 
       override def apply(input: ConsumerRecord[K, V]): ContextVariables = {
         // Scala map wrapper causes some serialization problems

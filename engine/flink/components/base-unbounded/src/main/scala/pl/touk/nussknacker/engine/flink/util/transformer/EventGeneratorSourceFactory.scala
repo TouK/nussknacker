@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDec
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -138,7 +137,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       // This is a custom ContextInitializer, which initializes Context ignoring input.
       // It is required, because in EventGenerator we first initialize Context, and only then generate input.
       private def contextInitializer[T]: ContextInitializer[T] = new ContextInitializer[T] {
-        override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[T] =
+        override val initContext: ContextInitializingFunction[T] =
           (_: T) => ContextVariables(Map.empty)
         override def validationContext(
             context: ValidationContext

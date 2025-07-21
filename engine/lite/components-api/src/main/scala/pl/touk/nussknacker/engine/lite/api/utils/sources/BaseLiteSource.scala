@@ -16,8 +16,8 @@ import scala.util.Try
 
 trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
-  protected var context: EngineRuntimeContext          = _
-  protected var contextIdGenerator: ContextIdGenerator = _
+  protected var context: EngineRuntimeContext        = _
+  private var contextIdGenerator: ContextIdGenerator = _
 
   def nodeId: NodeId
 

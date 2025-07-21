@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, NodeId, Params, VariableConstants}
+import pl.touk.nussknacker.engine.api.{NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -62,7 +62,7 @@ class LiteKafkaSourceImpl[K, V](
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
-    initializerFun = contextInitializer.initContext(contextIdGenerator)
+    initializerFun = contextInitializer.initContext
   }
 
   override lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)

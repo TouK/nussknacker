@@ -17,7 +17,7 @@ class FlinkContextInitializingFunction[Raw](
 
   override def open(openContext: OpenContext): Unit = {
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
-    initializingStrategy = contextInitializer.initContext(contextIdGenerator)
+    initializingStrategy = contextInitializer.initContext
   }
 
   override def map(input: Raw): Context = {
