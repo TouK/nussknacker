@@ -44,10 +44,11 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   val componentAdditionalConfigMap: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map(
     DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
       parameterConfigs = Map(
-        ParameterName("param1") -> ParameterAdditionalUIConfig(
+        ParameterName("param") -> ParameterAdditionalUIConfig(
           required = true,
-          initialValue =
-            Some(ParameterInitialValue.AnyValue(Expression.spel("'default-from-additional-ui-config-provider'"))),
+          initialValue = Some(
+            ParameterInitialValue.AnyValue(Expression.spelTemplate("default-from-additional-ui-config-provider"))
+          ),
           hintText = Some("hint-text-from-additional-ui-config-provider"),
           valueEditor = None,
           valueCompileTimeValidation = None

@@ -152,12 +152,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
             params = Some(
               Map(
                 ParameterName("bar") -> ParameterConfig(
-                  Some(Expression.spel("barValueFromProviderCode")),
-                  None,
-                  None,
-                  None,
-                  None,
-                  None
+                  defaultValue = Some(Expression.spelTemplate("barValueFromProviderCode")),
+                  editors = None,
+                  validators = None,
+                  label = None,
+                  hintText = None,
+                  category = None
                 )
               )
             )

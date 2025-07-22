@@ -255,7 +255,26 @@ description: Stay informed with detailed changelogs covering new features, impro
      }
   ```
   * This setting is optional. If not specified, the default editors remain `SpelTemplateParameterEditor` and `SpelParameterEditor` (no change in behavior).
-
+* [#8375](https://github.com/TouK/nussknacker/pull/8375) Explicit definition of expression language for default parameter values in component configuration
+  * Default value expressions must now explicitly define the expression language using the language field. 
+  * If no language is specified, the expression will be interpreted as a SPeL expression by default.
+  ```hocon
+     componentsUiConfig {
+       enricher {
+         params {
+           param1 {
+             defaultValue: {
+               expression: "default value 1"
+               language: "spelTemplate"
+             }
+           }
+           param2 {
+             defaultValue: "'default value 2'" // This syntax will be interpreted as a SpEL expression
+           }
+         }
+       }
+     }
+  ```
 ## 1.18
 
 #### Highlights
