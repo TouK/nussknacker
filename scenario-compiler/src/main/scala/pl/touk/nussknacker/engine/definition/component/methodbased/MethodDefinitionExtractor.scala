@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.Service
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -15,7 +16,8 @@ private[component] trait MethodDefinitionExtractor[T] {
   def extractMethodDefinition(
       obj: T,
       methodToInvoke: Method,
-      parametersConfig: Map[ParameterName, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      globalParametersConfig: GlobalParametersConfig
   ): Either[String, MethodDefinition]
 
 }

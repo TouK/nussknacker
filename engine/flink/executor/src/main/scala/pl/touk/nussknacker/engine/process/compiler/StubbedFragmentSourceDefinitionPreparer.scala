@@ -2,19 +2,13 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{
-  ContextInitializer,
-  ContextInitializingFunction,
-  Source,
-  TestWithParametersSupport
-}
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.FragmentIcon
@@ -67,10 +61,8 @@ class StubbedFragmentSourceDefinitionPreparer(
       override val contextInitializer: ContextInitializer[Map[String, Any]] =
         new ContextInitializer[Map[String, Any]] {
 
-          override def initContext(
-              contextIdGenerator: ContextIdGenerator
-          ): ContextInitializingFunction[Map[String, Any]] = { input =>
-            Context(contextIdGenerator.nextContextId(), input, None)
+          override def convertToInitialVariables(input: Map[String, Any]): ContextVariables = {
+            ContextVariables(input)
           }
 
           override def validationContext(

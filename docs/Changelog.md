@@ -238,6 +238,23 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8343](https://github.com/TouK/nussknacker/pull/8343) During compilation of lazy parameters expressions, node input variable types now are provided
   Thanks to that expression parsers can leverage this information for preparing better evaluation logic. It is used in `json-template` expressions
   where users can now use logical types such as `OffsetDateTime`, `Duration` etc.
+* [#8349](https://github.com/TouK/nussknacker/pull/8349) Added ability to configure a default editors for the String type parameters
+  * You can now configure default editors by setting the `modelConfig.globalParametersConfig` of a scenarioType in the `scenarioTypes` config section
+  ```hocon
+     modelConfig {
+       globalParametersConfig {
+         editorsForStringType: [
+           {
+             type: "SpelParameterEditor"
+           }
+           {
+             type: "SpelTemplateParameterEditor"
+           }          
+         ] 
+       }
+     }
+  ```
+  * This setting is optional. If not specified, the default editors remain `SpelTemplateParameterEditor` and `SpelParameterEditor` (no change in behavior).
 
 ## 1.18
 

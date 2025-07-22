@@ -3,9 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import cats.data.NonEmptyList
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.db.DbRef
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.componentConfigPath
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -156,6 +154,7 @@ class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVers
       componentsUiConfig,
       determineDesignerWideId,
       additionalConfigsFromProvider,
+      componentDependencies.modelConfig.globalParametersConfig,
       componentDefinitionExtractionMode
     )
 

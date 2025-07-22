@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.util.config
 
-import com.typesafe.config.ConfigRenderOptions
+import cats.data.NonEmptyList
+import com.typesafe.config.{Config, ConfigException, ConfigRenderOptions}
 import io.circe.Decoder
+import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
@@ -21,4 +23,18 @@ object FicusReaders {
   implicit val paramValidatorReader: ValueReader[ParameterValidator] = forDecoder
 
   implicit val paramConfigReader: ValueReader[ScenarioPropertyConfig] = forDecoder
+
+  implicit def nonEmptyListValueReader[A: ValueReader]: ValueReader[NonEmptyList[A]] =
+    (config: Config, path: String) => {
+      NonEmptyList
+        .fromList(ValueReader[List[A]].read(config, path))
+        .getOrElse(
+          throw new ConfigException.BadValue(
+            config.origin(),
+            path,
+            s"Non empty list of values is required"
+          )
+        )
+    }
+
 }
