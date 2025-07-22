@@ -4,6 +4,7 @@ import type { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
 import type { RootState } from "../reducers";
 import type { CloudDataActions } from "../reducers/cloudData";
 import type { SquashHistoryActions } from "../reducers/graph/historySquash";
+import type { ProcessActivityActions } from "../reducers/processActivity";
 import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
 import type { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
@@ -34,6 +35,7 @@ type TypedAction =
     | ToolbarActions
     | UiActions
     | UpdateScenarioActivitiesAction
+    | ProcessActivityActions
     | UserSettingsActions;
 
 interface UntypedAction extends AnyAction {
