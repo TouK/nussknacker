@@ -2,16 +2,10 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import cats.data.ValidatedNel
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{
-  BasicContextInitializer,
-  BasicContextInitializingFunction,
-  ContextInitializingFunction
-}
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextVariables}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 
@@ -46,29 +40,27 @@ class KafkaContextInitializer[K, V](
     contextWithInput.andThen(_.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None))
   }
 
-  override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[ConsumerRecord[K, V]] =
-    new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
-
-      override def apply(input: ConsumerRecord[K, V]): Context = {
-        // Scala map wrapper causes some serialization problems
-        val headers: util.Map[String, String] = new util.HashMap(KafkaRecordUtils.toMap(input.headers).asJava)
-        // null won't be serialized properly
-        val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
-        val inputMeta = InputMeta(
-          input.key,
-          namingStrategy.decodeName(input.topic).getOrElse(input.topic),
-          input.partition,
-          input.offset,
-          input.timestamp,
-          input.timestampType(),
-          headers,
-          safeLeaderEpoch
-        )
-        newContext
-          .withVariable(VariableConstants.InputVariableName, input.value())
-          .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
-      }
-
-    }
+  override def convertToInitialVariables(input: ConsumerRecord[K, V]): ContextVariables = {
+    // Scala map wrapper causes some serialization problems
+    val headers: util.Map[String, String] = new util.HashMap(KafkaRecordUtils.toMap(input.headers).asJava)
+    // null won't be serialized properly
+    val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
+    val inputMeta = InputMeta(
+      input.key,
+      namingStrategy.decodeName(input.topic).getOrElse(input.topic),
+      input.partition,
+      input.offset,
+      input.timestamp,
+      input.timestampType(),
+      headers,
+      safeLeaderEpoch
+    )
+    ContextVariables(
+      Map(
+        VariableConstants.InputVariableName     -> input.value(),
+        VariableConstants.InputMetaVariableName -> inputMeta,
+      )
+    )
+  }
 
 }

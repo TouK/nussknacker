@@ -6,7 +6,7 @@ import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -48,7 +48,8 @@ class NodeDataValidator(modelData: ModelData) {
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(
       modelData.modelClassLoader,
-      modelData.modelDefinitionWithClasses.classDefinitions
+      modelData.modelDefinitionWithClasses.classDefinitions,
+      modelData.modelConfig.globalParametersConfig
     ),
     expressionCompiler,
     modelData.modelClassLoader,

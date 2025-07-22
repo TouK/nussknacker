@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 
 import java.time.temporal.ChronoUnit
 
-class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEditorDeterminer {
+class ParameterTypeEditorDeterminer(val typ: TypingResult, globalParametersConfig: GlobalParametersConfig)
+    extends ParameterEditorDeterminer {
 
   override def determine(): List[ParameterEditor] = {
     Option(typ)
@@ -22,10 +24,7 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
             SpelParameterEditor
           )
         case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
-          List(
-            SpelTemplateParameterEditor,
-            SpelParameterEditor,
-          )
+          globalParametersConfig.editorsForStringType.toList
         case klazz if klazz == classOf[java.time.LocalDateTime] =>
           List(
             DateTimeParameterEditor,

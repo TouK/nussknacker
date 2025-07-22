@@ -50,7 +50,7 @@ class MockFetchingProcessRepository private (
   )(implicit user: LoggedUser): Future[Option[ProcessVersion]] = {
     val result = for {
       processId <- OptionT(fetchProcessId(processName))
-      details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
+      details   <- OptionT(fetchProcessDetailsForVersion[CanonicalProcess](processId, versionId))
     } yield details.toEngineProcessVersion
     result.value
   }
@@ -80,12 +80,15 @@ class MockFetchingProcessRepository private (
       )
     )
 
-  override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
+  override def fetchLatestProcessDetails[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.processId == id).lastOption)
 
-  override def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(
+  override def fetchProcessDetailsForVersion[PS: ScenarioShapeFetchStrategy](
+      processId: ProcessId,
+      versionId: VersionId
+  )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Option[ScenarioWithDetailsEntity[PS]]] =
