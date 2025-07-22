@@ -1,5 +1,5 @@
 import CircleIcon from "@mui/icons-material/Circle";
-import { Button, styled, Tooltip, Typography } from "@mui/material";
+import { Button, styled, Typography } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import { getProcessName, getProcessVersionId, getScenario, isPristine } from "..
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
+import { InfoTooltip } from "../../../graph/node-modal/editors/InfoTooltip";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 import UrlIcon from "../../../UrlIcon";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
@@ -282,9 +283,9 @@ const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFou
                     {text}
                 </Typography>
                 {activeItemIndicatorText && (
-                    <Tooltip title={activeItemIndicatorText}>
+                    <InfoTooltip title={activeItemIndicatorText} variant={"hover"}>
                         <CircleIcon sx={{ fontSize: "10px", mx: openVersionEnable && 1 }} color={"primary"} />
-                    </Tooltip>
+                    </InfoTooltip>
                 )}
             </>
         );

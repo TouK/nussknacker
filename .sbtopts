@@ -23,3 +23,4 @@
 -J--add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED
 -J--add-opens=java.base/java.nio.charset=ALL-UNNAMED
 -J--add-opens=java.base/sun.nio.cs=ALL-UNNAMED
+-J--add-opens=java.sql/java.sql=ALL-UNNAMED
