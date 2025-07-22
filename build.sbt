@@ -174,15 +174,11 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-release",
-        "11"
+        "17",
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 12) =>
           Seq(
             "-Ypartial-unification",
-            // We use jdk standard lib classes from java 11, but Scala 2.12 does not support target > 8 and
-            // -release option has no influence on class version so we at least setup target to 8 and check java version
-            // at the begining of our Apps
-            "-target:jvm-1.8",
           )
         case (2, 13) =>
           Seq(
