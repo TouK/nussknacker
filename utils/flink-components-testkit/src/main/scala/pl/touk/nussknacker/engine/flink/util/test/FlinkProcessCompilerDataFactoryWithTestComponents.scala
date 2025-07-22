@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -73,7 +74,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
             components = testExtensionsHolder.components,
             additionalConfigs = ComponentsUiConfig.Empty,
             determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-            additionalConfigsFromProvider = Map.empty
+            additionalConfigsFromProvider = Map.empty,
+            globalParametersConfig = GlobalParametersConfig.default
           )
 
         originalModelDefinition
