@@ -376,7 +376,11 @@ object ProcessValidator {
 
     val nodeCompiler = new NodeCompiler(
       modelDefinition,
-      new FragmentParametersDefinitionExtractor(classLoader, definitionWithTypes.classDefinitions),
+      new FragmentParametersDefinitionExtractor(
+        classLoader,
+        definitionWithTypes.classDefinitions,
+        modelDefinition.globalParametersConfig
+      ),
       expressionCompiler,
       classLoader,
       Seq.empty,

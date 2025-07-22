@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.model
 
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
@@ -11,6 +12,7 @@ case class ModelDefinition private (
     expressionConfig: ExpressionConfigDefinition,
     settings: ClassExtractionSettings,
     allowEndingScenarioWithoutSink: Boolean,
+    globalParametersConfig: GlobalParametersConfig,
 ) {
 
   def withComponent(component: ComponentDefinitionWithImplementation): ModelDefinition = {
@@ -51,7 +53,14 @@ object ModelDefinition {
       expressionConfig: ExpressionConfigDefinition,
       classExtractionSettings: ClassExtractionSettings,
       allowEndingScenarioWithoutSink: Boolean,
+      globalParametersConfig: GlobalParametersConfig,
   ): ModelDefinition =
-    new ModelDefinition(components, expressionConfig, classExtractionSettings, allowEndingScenarioWithoutSink)
+    new ModelDefinition(
+      components,
+      expressionConfig,
+      classExtractionSettings,
+      allowEndingScenarioWithoutSink,
+      globalParametersConfig,
+    )
 
 }

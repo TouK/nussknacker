@@ -194,6 +194,23 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
 * [8304](https://github.com/TouK/nussknacker/pull/8304) Added functionality of setting component group in ComponentDefinition using `withComponentGroup`.
 * [#8319](https://github.com/TouK/nussknacker/pull/8319) Set default Kafka serializer/deserializer in `KafkaUtils` as class names to be compatible with Flink's `KafkaSource`
+* [#8349](https://github.com/TouK/nussknacker/pull/8349) Added ability to configure a default editors for the String type parameters
+  * You can now configure default editors by setting the `modelConfig.globalParametersConfig` of a scenarioType in the `scenarioTypes` config section
+  ```hocon
+     modelConfig {
+       globalParametersConfig {
+         editorsForStringType: [
+           {
+             type: "SpelParameterEditor"
+           }
+           {
+             type: "SpelTemplateParameterEditor"
+           }          
+         ] 
+       }
+     }
+  ```
+  * This setting is optional. If not specified, the default editors remain `SpelTemplateParameterEditor` and `SpelParameterEditor` (no change in behavior).
 
 ## 1.18
 

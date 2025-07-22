@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -24,7 +25,8 @@ import pl.touk.nussknacker.engine.definition.component.parameter.StandardParamet
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
 class DynamicComponentStaticDefinitionDeterminer(
-    nodeValidator: DynamicNodeValidator
+    nodeValidator: DynamicNodeValidator,
+    globalParametersConfig: GlobalParametersConfig
 ) extends LazyLogging {
 
   private def determineStaticDefinition(
@@ -67,7 +69,11 @@ class DynamicComponentStaticDefinitionDeterminer(
 
     dynamic.component match {
       case withStatic: WithStaticParameters =>
-        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
+        StandardParameterEnrichment.enrichParameterDefinitions(
+          withStatic.staticParameters,
+          dynamic.parametersConfig,
+          globalParametersConfig
+        )
       case single: SingleInputDynamicComponent[_] =>
         inferParameters(single)(ValidationContext())
       case join: JoinDynamicComponent[_] =>
@@ -87,7 +93,10 @@ object DynamicComponentStaticDefinitionDeterminer {
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
-      new DynamicComponentStaticDefinitionDeterminer(nodeValidator)
+      new DynamicComponentStaticDefinitionDeterminer(
+        nodeValidator,
+        modelDataForType.modelConfig.globalParametersConfig
+      )
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withModelClassloaderAsContextClassLoader {

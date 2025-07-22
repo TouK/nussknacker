@@ -76,6 +76,7 @@ object LocalModelData {
         componentsUiConfig,
         determineDesignerWideId,
         additionalConfigsFromProvider,
+        modelConfig.globalParametersConfig,
         componentDefinitionExtractionMode
       )
       // To avoid classloading magic, for local model we load components manually and skip ComponentProvider's loading
