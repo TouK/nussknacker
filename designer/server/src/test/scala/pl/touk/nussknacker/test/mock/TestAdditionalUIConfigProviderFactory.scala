@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesValidator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import sttp.client3.SttpBackend
 
@@ -43,14 +44,10 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   val componentAdditionalConfigMap: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map(
     DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
       parameterConfigs = Map(
-        ParameterName("param") -> ParameterAdditionalUIConfig(
+        ParameterName("param1") -> ParameterAdditionalUIConfig(
           required = true,
-          initialValue = Some(
-            FixedExpressionValue(
-              "default-from-additional-ui-config-provider",
-              "'default-from-additional-ui-config-provider'",
-            )
-          ),
+          initialValue =
+            Some(ParameterInitialValue.AnyValue(Expression.spel("'default-from-additional-ui-config-provider'"))),
           hintText = Some("hint-text-from-additional-ui-config-provider"),
           valueEditor = None,
           valueCompileTimeValidation = None

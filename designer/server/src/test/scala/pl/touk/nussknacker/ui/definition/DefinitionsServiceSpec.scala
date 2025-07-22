@@ -262,10 +262,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
             ParameterName("paramStringEditor") -> ParameterAdditionalUIConfig(
               required = false,
               initialValue = Some(
-                FixedExpressionValue(
-                  "default-from-additional-ui-config-provider",
-                  "default-from-additional-ui-config-provider"
-                )
+                ParameterInitialValue.AnyValue(Expression.spel("default-from-additional-ui-config-provider"))
               ),
               hintText = None,
               valueEditor = None,

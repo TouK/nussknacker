@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{ReturningClassInstanceSource, ReturningTestCaseClass}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
@@ -150,7 +151,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           ComponentConfig.zero.copy(
             params = Some(
               Map(
-                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(
+                  Some(Expression.spel("barValueFromProviderCode")),
+                  None,
+                  None,
+                  None,
+                  None,
+                  None
+                )
               )
             )
           )
