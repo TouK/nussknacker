@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.definition.model.DuplicatedComponentsException
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -76,6 +77,7 @@ object Components {
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      globalParametersConfig: GlobalParametersConfig,
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
 
@@ -90,7 +92,8 @@ object Components {
           configFromDefinition,
           uiConfig,
           determineDesignerWideId,
-          configFromProvider
+          configFromProvider,
+          globalParametersConfig
         )
     }
 
@@ -109,7 +112,8 @@ object Components {
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+      globalParametersConfig: GlobalParametersConfig,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
   ): Components = {
 
     def extractComponentDefinitions(
@@ -120,7 +124,8 @@ object Components {
         components,
         uiConfig,
         determineDesignerWideId,
-        configFromProvider
+        configFromProvider,
+        globalParametersConfig
       )
     }
 

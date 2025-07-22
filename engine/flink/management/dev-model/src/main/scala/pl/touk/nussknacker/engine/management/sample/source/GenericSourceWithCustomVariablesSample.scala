@@ -2,14 +2,13 @@ package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -43,20 +42,16 @@ object GenericSourceWithCustomVariablesSample
       }
     }
 
-    override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
-      new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
-
-        override def apply(input: String): Context = {
-          // perform some transformations and/or computations
-          val additionalVariables = Map[String, Any](
-            "additionalOne" -> s"transformed:$input",
-            "additionalTwo" -> input.length()
-          )
-          // initialize context with input variable and append computed values
-          super.apply(input).withVariables(additionalVariables)
-        }
-
-      }
+    override def convertToInitialVariables(input: String): ContextVariables = {
+      // perform some transformations and/or computations
+      val additionalVariables = Map[String, Any](
+        "additionalOne" -> s"transformed:$input",
+        "additionalTwo" -> input.length()
+      )
+      // initialize context with input variable and append computed values
+      val superVariables = super.convertToInitialVariables(input)
+      ContextVariables(superVariables.variables ++ additionalVariables)
+    }
 
   }
 

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
@@ -28,14 +29,23 @@ object StandardParameterEnrichment {
 
   def enrichParameterDefinitions(
       original: List[Parameter],
-      parametersConfig: Map[ParameterName, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      globalParametersConfig: GlobalParametersConfig
   ): List[Parameter] = {
-    original.map(p => enrichParameter(p, parametersConfig.getOrElse(p.name, ParameterConfig.empty)))
+    original.map(p =>
+      enrichParameter(p, parametersConfig.getOrElse(p.name, ParameterConfig.empty), globalParametersConfig)
+    )
   }
 
-  private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {
+  private def enrichParameter(
+      original: Parameter,
+      parameterConfig: ParameterConfig,
+      globalParametersConfig: GlobalParametersConfig
+  ): Parameter = {
     val parameterData = ParameterData(original.typ, Nil)
-    val finalEditors  = original.editors.orElseIfEmpty(EditorExtractor.extract(parameterData, parameterConfig))
+    val finalEditors = original.editors.orElseIfEmpty(
+      EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig)
+    )
     val finalValidators =
       (original.validators ++
         parameterConfig.validators.toList.flatten ++

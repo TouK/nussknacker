@@ -251,7 +251,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
 
   protected var exceptionHandler: ExceptionHandler = _
 
-  protected var exceptionPurposeContextIdGenerator: ContextIdGenerator = _
+  private var exceptionPurposeContextIdGenerator: ContextIdGenerator = _
 
   override def open(openContext: OpenContext): Unit = {
     patchRestoredState()
