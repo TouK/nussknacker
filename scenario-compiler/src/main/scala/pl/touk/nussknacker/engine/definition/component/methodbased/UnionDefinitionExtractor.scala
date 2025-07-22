@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
@@ -11,11 +12,14 @@ private[definition] class UnionDefinitionExtractor[T](seq: List[MethodDefinition
   override def extractMethodDefinition(
       obj: T,
       methodToInvoke: Method,
-      parametersConfig: Map[ParameterName, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      globalParametersConfig: GlobalParametersConfig
   ): Either[String, MethodDefinition] = {
     val extractorsWithDefinitions = for {
-      extractor  <- seq
-      definition <- extractor.extractMethodDefinition(obj, methodToInvoke, parametersConfig).toOption
+      extractor <- seq
+      definition <- extractor
+        .extractMethodDefinition(obj, methodToInvoke, parametersConfig, globalParametersConfig)
+        .toOption
     } yield (extractor, definition)
     extractorsWithDefinitions match {
       case Nil =>
