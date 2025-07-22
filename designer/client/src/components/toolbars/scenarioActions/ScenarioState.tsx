@@ -21,10 +21,7 @@ export function ScenarioState() {
         return (
             <Stack>
                 <Typography component={"div"} variant={"body2"}>
-                    {i18next.t("panels.scenarioStatus.runningVersion", "running version", {
-                        versionId: statusRunning.versionId,
-                    })}{" "}
-                    <RunningVersion />
+                    {i18next.t("panels.scenarioStatus.runningVersion", "running version")} <RunningVersion />
                 </Typography>
                 <Typography component={"div"} variant={"overline"}>
                     {i18next.t("panels.scenarioStatus.runningSince", "since {{startedAt}}", {

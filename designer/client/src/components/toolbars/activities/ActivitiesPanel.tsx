@@ -2,6 +2,7 @@ import { Box, CircularProgress, styled } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import AutoSizer from "react-virtualized-auto-sizer";
+import type { Align } from "react-window";
 import { VariableSizeList } from "react-window";
 
 import { getScenarioActivities, updateScenarioActivities } from "../../../actions/nk/scenarioActivities";
@@ -93,9 +94,12 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         (activities: (activities: UIActivity[]) => UIActivity[]) => dispatch(updateScenarioActivities(activities)),
         [dispatch],
     );
+
+    const handleScrollToItem = useCallback((index: number, align: Align) => listRef.current.scrollToItem(index, align), []);
+
     const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = useActivitiesSearch({
         activities: uiActivities,
-        handleScrollToItem: (index, align) => listRef.current.scrollToItem(index, align),
+        handleScrollToItem,
         handleUpdateScenarioActivities,
     });
 
