@@ -255,9 +255,9 @@ description: Stay informed with detailed changelogs covering new features, impro
      }
   ```
   * This setting is optional. If not specified, the default editors remain `SpelTemplateParameterEditor` and `SpelParameterEditor` (no change in behavior).
-* [#8366](https://github.com/TouK/nussknacker/pull/8366) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9.
-  [Safe navigation operator ?.](https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/operator-safe-navigation.html)
-  is supported for collections, maps and strings.
+* [#8366](https://github.com/TouK/nussknacker/pull/8366) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9. The code is compiled for Java 17.
+  * [Safe navigation operator ?.](https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/operator-safe-navigation.html)
+    is supported for collections, maps and strings.
 
 ## 1.18
 
