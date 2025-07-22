@@ -1,7 +1,7 @@
 import { ExpandMore } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import type { PropsWithChildren } from "react";
-import { memo, ReactNode } from "react";
+import { memo } from "react";
 import { useRef } from "react";
 import React, { useLayoutEffect } from "react";
 import { useDispatch } from "react-redux";
@@ -19,6 +19,7 @@ export const ContextAccordion = memo(function ContextAccordion({
     direction,
     locked,
     showNodes,
+    newlyAdded,
 }: PropsWithChildren<{
     disabled?: boolean;
     expanded?: boolean;
@@ -27,6 +28,7 @@ export const ContextAccordion = memo(function ContextAccordion({
     direction: Direction;
     locked?: boolean;
     showNodes?: boolean;
+    newlyAdded: boolean;
 }>) {
     const dispatch = useDispatch();
     const accordionRef = useRef<HTMLDivElement>(null);
@@ -64,9 +66,15 @@ export const ContextAccordion = memo(function ContextAccordion({
             }}
             ref={accordionRef}
             // disableGutters
-            sx={{
+            sx={(theme) => ({
+                boxShadow: newlyAdded
+                    ? `inset 0 0 0 2px ${theme.palette.success.main}, inset 0 0 8px 0px ${theme.palette.success.light}`
+                    : "none",
+                position: "relative",
+                zIndex: newlyAdded ? 1 : "auto",
+                transition: "box-shadow 0.3s ease-in-out",
                 zoom: 0.75,
-            }}
+            })}
         >
             <AccordionSummary expandIcon={<ExpandMore />} sx={{ overflow: "hidden" }}>
                 <ContextTitle reversed={direction === "input"} context={value} locked={locked} showNodes={showNodes} />
