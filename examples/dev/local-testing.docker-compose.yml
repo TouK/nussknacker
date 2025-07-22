@@ -133,7 +133,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 384M
+          memory: 768M
 
   ### FLINK-related services
 
