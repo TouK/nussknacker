@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.Source
@@ -30,6 +29,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
     new FragmentParametersDefinitionExtractor(
       modelData.modelClassLoader,
       modelData.modelDefinitionWithClasses.classDefinitions,
+      modelData.modelConfig.globalParametersConfig
     ),
     expressionCompiler,
     modelData.modelClassLoader,

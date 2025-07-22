@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.{
   BuiltInComponentId,
   ComponentId,
@@ -25,7 +26,8 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
       getClass.getClassLoader,
       ClassDefinitionSet(Set.empty[ClassDefinition]),
       Some(_),
-      DesignerWideComponentId.default(Streaming.stringify, _)
+      DesignerWideComponentId.default(Streaming.stringify, _),
+      GlobalParametersConfig.default
     )
       .extractFragmentComponentDefinition(ProcessTestData.sampleFragment, AllowedProcessingModes.All)
       .validValue

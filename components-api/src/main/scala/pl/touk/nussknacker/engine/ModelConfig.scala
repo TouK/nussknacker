@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine
 
+import cats.data.NonEmptyList
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import net.ceedubs.ficus.readers.AnyValReaders._
 import net.ceedubs.ficus.readers.OptionReader._
-import pl.touk.nussknacker.engine.ModelConfig.{JsonLikeValuesEnteringMode, LiveDataPreviewMode}
-import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.ModelConfig.{GlobalParametersConfig, JsonLikeValuesEnteringMode, LiveDataPreviewMode}
 import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode.LiveDataStorage
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelParameterEditor, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 final case class ModelConfig(
     allowEndingScenarioWithoutSink: Boolean,
+    globalParametersConfig: GlobalParametersConfig,
     jsonLikeValuesEnteringMode: JsonLikeValuesEnteringMode,
     namingStrategy: NamingStrategy,
     liveDataPreviewMode: LiveDataPreviewMode,
@@ -27,6 +29,7 @@ object ModelConfig {
   def parse(rawModelConfig: Config): ModelConfig = {
     ModelConfig(
       allowEndingScenarioWithoutSink = rawModelConfig.getOrElse[Boolean]("allowEndingScenarioWithoutSink", false),
+      globalParametersConfig = parseGlobalParametersConfig(rawModelConfig),
       jsonLikeValuesEnteringMode = parseJsonLikeValuesEnteringMode(rawModelConfig),
       namingStrategy = NamingStrategy.fromConfig(rawModelConfig),
       liveDataPreviewMode = parseLiveDataPreviewMode(rawModelConfig),
@@ -74,6 +77,16 @@ object ModelConfig {
     case object SingleJsonTemplateParameter extends JsonLikeValuesEnteringMode
   }
 
+  final case class GlobalParametersConfig(editorsForStringType: NonEmptyList[ParameterEditor])
+
+  object GlobalParametersConfig {
+
+    val default: GlobalParametersConfig = GlobalParametersConfig(
+      editorsForStringType = NonEmptyList.of(SpelTemplateParameterEditor, SpelParameterEditor)
+    )
+
+  }
+
   private def parseJsonLikeValuesEnteringMode(config: Config): JsonLikeValuesEnteringMode = {
     val configPath = "jsonLikeValuesEnteringMode"
     if (config.hasPath(configPath)) {
@@ -89,6 +102,18 @@ object ModelConfig {
     } else {
       JsonLikeValuesEnteringMode.DynamicForms
     }
+  }
+
+  private def parseGlobalParametersConfig(config: Config): GlobalParametersConfig = {
+    import net.ceedubs.ficus.Ficus._
+    import pl.touk.nussknacker.engine.util.config.FicusReaders._
+
+    val maybeStringEditors =
+      config.getAs[NonEmptyList[ParameterEditor]]("globalParametersConfig.editorsForStringType")
+
+    GlobalParametersConfig(
+      editorsForStringType = maybeStringEditors.getOrElse(GlobalParametersConfig.default.editorsForStringType)
+    )
   }
 
   private def parseLiveDataPreviewMode(config: Config): LiveDataPreviewMode = {

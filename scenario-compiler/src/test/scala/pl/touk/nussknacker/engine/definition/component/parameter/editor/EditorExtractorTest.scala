@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.component.parameter.editor
 import com.cronutils.model.Cron
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
@@ -80,7 +81,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   private val paramMultipleEditorAnnotated = getFirstParam("multipleEditorsAnnotated", classOf[String])
 
   test("assign RawEditor when no annotation detected") {
-    EditorExtractor.extract(paramNotAnnotated, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(paramNotAnnotated, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       SpelTemplateParameterEditor,
       SpelParameterEditor,
     )
@@ -88,7 +89,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
 
   test("detect @Editor annotations") {
 
-    EditorExtractor.extract(paramDualEditorAnnotated, ParameterConfig.empty) shouldBe
+    EditorExtractor.extract(paramDualEditorAnnotated, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe
       List(
         FixedValuesParameterEditor(
           possibleValues = List(FixedExpressionValue("'test'", "test2"))
@@ -96,7 +97,11 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
         SpelParameterEditor,
       )
 
-    EditorExtractor.extract(paramDualEditorLazyAnnotated, ParameterConfig.empty) shouldBe
+    EditorExtractor.extract(
+      paramDualEditorLazyAnnotated,
+      ParameterConfig.empty,
+      GlobalParametersConfig.default
+    ) shouldBe
       List(
         DateParameterEditor,
         SpelParameterEditor,
@@ -105,29 +110,41 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
 
   test("detect @Editor annotation") {
 
-    EditorExtractor.extract(paramEditorAnnotated, ParameterConfig.empty) shouldBe
+    EditorExtractor.extract(paramEditorAnnotated, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe
       List(BoolParameterEditor)
 
-    EditorExtractor.extract(paramEditorLazyAnnotated, ParameterConfig.empty) shouldBe
+    EditorExtractor.extract(paramEditorLazyAnnotated, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe
       List(BoolParameterEditor)
   }
 
   test("detect Spel @Editor annotation") {
-    EditorExtractor.extract(paramRawEditorAnnotated, ParameterConfig.empty) shouldBe List(SpelParameterEditor)
-    EditorExtractor.extract(paramRawEditorAnnotatedLazy, ParameterConfig.empty) shouldBe List(SpelParameterEditor)
+    EditorExtractor.extract(
+      paramRawEditorAnnotated,
+      ParameterConfig.empty,
+      GlobalParametersConfig.default
+    ) shouldBe List(
+      SpelParameterEditor
+    )
+    EditorExtractor.extract(
+      paramRawEditorAnnotatedLazy,
+      ParameterConfig.empty,
+      GlobalParametersConfig.default
+    ) shouldBe List(
+      SpelParameterEditor
+    )
   }
 
   test("determine editor by config") {
     val fixedValuesEditor = FixedValuesParameterEditor(List(FixedExpressionValue("'expression'", "label")))
     val config            = ParameterConfig(None, Some(List(fixedValuesEditor)), None, None, None, None)
 
-    EditorExtractor.extract(paramNotAnnotated, config) shouldBe List(fixedValuesEditor)
+    EditorExtractor.extract(paramNotAnnotated, config, GlobalParametersConfig.default) shouldBe List(fixedValuesEditor)
   }
 
   test("determine editor by type enum") {
     val param = getSimpleParamByType[JavaSampleEnum]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(param, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       FixedValuesParameterEditor(
         List(
           FixedExpressionValue(
@@ -147,7 +164,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   test("determine editor by type LocalDateTime") {
     val param = getSimpleParamByType[LocalDateTime]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(param, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       DateTimeParameterEditor,
       SpelParameterEditor,
     )
@@ -156,7 +173,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   test("determine editor by type LocalDate") {
     val param = getSimpleParamByType[LocalDate]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(param, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       DateParameterEditor,
       SpelParameterEditor,
     )
@@ -165,7 +182,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   test("determine editor by type LocalTime") {
     val param = getSimpleParamByType[LocalTime]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(param, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       TimeParameterEditor,
       SpelParameterEditor,
     )
@@ -174,7 +191,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   test("determine editor by type Duration") {
     val param = getSimpleParamByType[Duration]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(param, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
       SpelParameterEditor,
     )
@@ -184,13 +201,17 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
     val param  = getSimpleParamByType[Duration]
     val editor = DurationParameterEditor(timeRangeComponents = List(ChronoUnit.MINUTES))
 
-    EditorExtractor.extract(param, ParameterConfig.empty.copy(editors = Some(List(editor)))) shouldBe List(editor)
+    EditorExtractor.extract(
+      param,
+      ParameterConfig.empty.copy(editors = Some(List(editor))),
+      GlobalParametersConfig.default
+    ) shouldBe List(editor)
   }
 
   test("determine editor by type Period") {
     val param = getSimpleParamByType[Period]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(param, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
       SpelParameterEditor,
     )
@@ -199,7 +220,7 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   test("determine editor by type Cron") {
     val param = getSimpleParamByType[Cron]
 
-    EditorExtractor.extract(param, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(param, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe List(
       CronParameterEditor,
       SpelParameterEditor,
     )
@@ -213,12 +234,16 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       SpelTemplateParameterEditor,
       SpelParameterEditor,
     )
-    EditorExtractor.extract(charseqParam, ParameterConfig.empty) shouldBe expectedEditor
-    EditorExtractor.extract(stringParam, ParameterConfig.empty) shouldBe expectedEditor
+    EditorExtractor.extract(charseqParam, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe expectedEditor
+    EditorExtractor.extract(stringParam, ParameterConfig.empty, GlobalParametersConfig.default) shouldBe expectedEditor
   }
 
   test("determine multiple editors") {
-    EditorExtractor.extract(paramMultipleEditorAnnotated, ParameterConfig.empty) shouldBe List(
+    EditorExtractor.extract(
+      paramMultipleEditorAnnotated,
+      ParameterConfig.empty,
+      GlobalParametersConfig.default
+    ) shouldBe List(
       FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test2"))),
       SpelTemplateParameterEditor,
       SpelParameterEditor,

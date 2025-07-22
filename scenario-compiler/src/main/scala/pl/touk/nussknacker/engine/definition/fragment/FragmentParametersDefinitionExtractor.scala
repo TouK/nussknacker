@@ -5,6 +5,7 @@ import cats.data.{Writer, WriterT}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
@@ -36,6 +37,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentPar
 class FragmentParametersDefinitionExtractor(
     classLoader: ClassLoader,
     val classDefinitions: ClassDefinitionSet,
+    globalParametersConfig: GlobalParametersConfig
 ) {
 
   private val fragmentParameterTypingParser = new FragmentParameterTypingParser(classLoader, classDefinitions)
@@ -90,7 +92,7 @@ class FragmentParametersDefinitionExtractor(
           case Invalid(e)     => (Nil, e.toList)
         }
       )
-      .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))
+      .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty, globalParametersConfig), List.empty))
 
     val validationExpressionValidator = fragmentParameter.valueCompileTimeValidation.map(validation =>
       ValidationExpressionParameterValidatorToCompile(validation)

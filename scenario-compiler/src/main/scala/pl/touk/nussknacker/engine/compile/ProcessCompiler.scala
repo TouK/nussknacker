@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.{JobData, NodeId}
+import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -400,7 +400,11 @@ object ProcessValidator {
 
     val nodeCompiler = new NodeCompiler(
       modelDefinition,
-      new FragmentParametersDefinitionExtractor(classLoader, definitionWithTypes.classDefinitions),
+      new FragmentParametersDefinitionExtractor(
+        classLoader,
+        definitionWithTypes.classDefinitions,
+        modelDefinition.globalParametersConfig
+      ),
       expressionCompiler,
       classLoader,
       Seq.empty,
