@@ -197,14 +197,17 @@ class ValidationResourcesSpec
   }
 
   it should "find missing mandatory parameter errors in built-in components" in {
-    val emptyExpression = Expression.spel("")
-
     val process =
       ScenarioBuilder
         .streaming("process")
         .source("source", ProcessTestData.existingSourceFactory)
-        .filter("filter", emptyExpression)
-        .buildSimpleVariable("variable", "varName", emptyExpression)
+        .filter("filter", Expression.spel(""))
+        .buildSimpleVariable("variable1", "varName1", Expression.spel(""))
+        .buildSimpleVariable(
+          "variable2",
+          "varName2",
+          Expression.spelTemplate("")
+        ) // empty spelTemplate expression should be valid
         .emptySink("sink", ProcessTestData.existingSinkFactory)
 
     createAndValidateScenario(process) {
@@ -213,9 +216,10 @@ class ValidationResourcesSpec
       validation.errors.invalidNodes("filter").head.message should include(
         "This field is required and can not be null"
       )
-      validation.errors.invalidNodes("variable").head.message should include(
+      validation.errors.invalidNodes("variable1").head.message should include(
         "Field: $expression is mandatory and can not be empty"
       )
+      validation.errors.invalidNodes.get("variable2") shouldBe None
     }
   }
 
