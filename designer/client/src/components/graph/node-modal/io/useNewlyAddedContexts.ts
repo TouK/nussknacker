@@ -17,7 +17,7 @@ export function useNewlyAddedContexts(availableContexts: VariableContextType[], 
 
         setHighlightedContexts((prev) => {
             const currentTime = Date.now();
-            const updates = {};
+            const updates: Record<string, number> = {};
 
             newContexts.forEach((context) => {
                 if (!prev[context.id]) {
