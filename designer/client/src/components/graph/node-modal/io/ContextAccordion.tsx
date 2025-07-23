@@ -70,8 +70,6 @@ export const ContextAccordion = memo(function ContextAccordion({
                 boxShadow: newlyAdded
                     ? `inset 0 0 0 2px ${theme.palette.success.main}, inset 0 0 8px 0px ${theme.palette.success.light}`
                     : "none",
-                position: "relative",
-                zIndex: newlyAdded ? 1 : "auto",
                 transition: "box-shadow 0.3s ease-in-out",
                 zoom: 0.75,
             })}

@@ -1,52 +1,68 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { usePreviousDifferent } from "rooks";
 
 import type { VariableContextType } from "./VariableContextTree";
 
 export function useNewlyAddedContexts(availableContexts: VariableContextType[], timeout = 3000) {
     const prevAvailableContexts = usePreviousDifferent(availableContexts);
-    const [highlightedContext, setHighlightedContext] = useState<{ id: string; timestamp: number } | null>(null);
+    const [highlightedContexts, setHighlightedContexts] = useState<Record<string, number>>({});
 
     const findNewlyAddedContexts = useCallback(() => {
         if (!prevAvailableContexts) return [];
         return availableContexts.filter((context) => !prevAvailableContexts.some((prevContext) => prevContext.id === context.id));
     }, [availableContexts, prevAvailableContexts]);
 
-    const getMostRecentContext = useCallback((contexts: VariableContextType[]) => {
-        if (contexts.length === 0) return null;
-        return contexts[contexts.length - 1];
-    }, []);
+    const addHighlightsForNewContexts = useCallback((newContexts: VariableContextType[]) => {
+        if (newContexts.length === 0) return;
 
-    const highlightContext = useCallback((context: VariableContextType) => {
-        setHighlightedContext({
-            id: context.id,
-            timestamp: Date.now(),
+        setHighlightedContexts((prev) => {
+            const currentTime = Date.now();
+            const updates = {};
+
+            newContexts.forEach((context) => {
+                if (!prev[context.id]) {
+                    updates[context.id] = currentTime;
+                }
+            });
+
+            return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
         });
     }, []);
 
-    // Detect newly added contexts and highlight the most recent one
+    const removeExpiredHighlights = useCallback(() => {
+        const currentTime = Date.now();
+
+        setHighlightedContexts((prev) => {
+            const updatedHighlights = { ...prev };
+            let changed = false;
+
+            Object.entries(updatedHighlights).forEach(([id, timestamp]) => {
+                if (currentTime - timestamp > timeout) {
+                    delete updatedHighlights[id];
+                    changed = true;
+                }
+            });
+
+            return changed ? updatedHighlights : prev;
+        });
+    }, [timeout]);
+
+    const isContextHighlighted = useCallback(
+        (contextId: string) => Object.keys(highlightedContexts).includes(contextId),
+        [highlightedContexts],
+    );
+
+    // Track and highlight new contexts
     useEffect(() => {
         const newContexts = findNewlyAddedContexts();
-        const mostRecentContext = getMostRecentContext(newContexts);
+        addHighlightsForNewContexts(newContexts);
+    }, [findNewlyAddedContexts, addHighlightsForNewContexts]);
 
-        if (mostRecentContext) {
-            highlightContext(mostRecentContext);
-        }
-    }, [findNewlyAddedContexts, getMostRecentContext, highlightContext]);
-
-    // Clear highlight after timeout
+    // Cleanup expired highlights
     useEffect(() => {
-        if (!highlightedContext) return;
-
-        const timerId = setTimeout(() => {
-            setHighlightedContext(null);
-        }, timeout);
-
-        return () => clearTimeout(timerId);
-    }, [highlightedContext, timeout]);
-
-    // Check if a specific context is currently highlighted
-    const isContextHighlighted = useCallback((contextId: string) => highlightedContext?.id === contextId, [highlightedContext]);
+        const timer = setInterval(removeExpiredHighlights, 1000);
+        return () => clearInterval(timer);
+    }, [removeExpiredHighlights]);
 
     return isContextHighlighted;
 }
