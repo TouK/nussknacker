@@ -20,7 +20,7 @@ in this case.
 
 ## Prerequisites
 
-We assume that `java` (recommended version is JDK 11) is on PATH.
+We assume that `java` (recommended version is JDK 17) is on PATH.
 
 Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
 running on `localhost` with their default ports configured.
