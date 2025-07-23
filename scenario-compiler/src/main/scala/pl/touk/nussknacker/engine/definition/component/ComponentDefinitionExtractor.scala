@@ -38,7 +38,8 @@ object ComponentDefinitionExtractor {
       .copy(
         docsUrl = inputComponentDefinition.docsUrl,
         icon = inputComponentDefinition.icon,
-        componentId = inputComponentDefinition.designerWideId
+        componentId = inputComponentDefinition.designerWideId,
+        componentGroup = inputComponentDefinition.componentGroup,
       )
     ComponentDefinitionExtractor
       .extract(

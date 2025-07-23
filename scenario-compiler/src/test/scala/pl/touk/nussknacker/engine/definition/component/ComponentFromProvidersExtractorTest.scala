@@ -83,6 +83,17 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     components.map(_.name).head shouldBe "t1-component-v1"
   }
 
+  test("should pass defined in provider componentGroup") {
+    val components = extractComponents(
+      "components" -> Map(
+        "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 1),
+        "auto"     -> Map("disabled" -> true)
+      )
+    )
+    components should have size 1
+    components.map(_.componentGroup).head shouldBe ComponentGroupName("dynamic")
+  }
+
   test("should skip incompatible providers") {
     // see DynamicProvider.isCompatible
     val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
@@ -212,7 +223,7 @@ class DynamicProvider extends ComponentProvider {
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     config.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
-      ComponentDefinition(s"component-$value", DynamicService(value))
+      ComponentDefinition(s"component-$value", DynamicService(value)).withComponentGroup("dynamic")
     }
   }
 
