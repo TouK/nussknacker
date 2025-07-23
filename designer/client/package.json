@@ -245,9 +245,6 @@
             "json"
         ]
     },
-    "overrides": {
-        "stylus": "github:stylus/stylus#0.54.8"
-    },
     "private": true,
     "scripts": {
         "postinstall": "patch-package",
