@@ -1,26 +1,19 @@
-package pl.touk.nussknacker.defaultmodel
+package pl.touk.nussknacker.engine.flink
 
 import cats.data.NonEmptyList
-import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.EmptyMandatoryParameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
-import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
-class ExpressionEvaluationItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
-
-  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
-
-  override protected def afterAll(): Unit = {
-    super.afterAll()
-    flinkMiniClusterWithServices.close()
-  }
+class ExpressionEvaluationSpec extends AnyFunSuite with FlinkSpec with Matchers {
 
   test("should run scenario when sink value is empty spelTemplate expression") {
     val scenario = createScenario(Expression.spelTemplate(""))
@@ -70,7 +63,7 @@ class ExpressionEvaluationItSpec extends FlinkWithKafkaSuite with PatientScalaFu
 
   private def runScenario(scenario: CanonicalProcess, data: List[String]) = {
     TestScenarioRunner
-      .flinkBased(config, flinkMiniClusterWithServices)
+      .flinkBased(config, flinkMiniCluster)
       .build()
       .runWithData[String, String](scenario, data)
   }
