@@ -5,7 +5,7 @@ taskmanager.memory.jvm-metaspace.size: 400m
 
 state.backend.type: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints
-state.savepoints.dir: file:///opt/flink/data/savepoints
+execution.checkpointing.savepoint-dir: file:///opt/flink/data/savepoints
 
 #Below are base settings for rocksdb metrics, that can be used for grafana dashboards
 state.backend.rocksdb.metrics.estimate-num-keys: true
