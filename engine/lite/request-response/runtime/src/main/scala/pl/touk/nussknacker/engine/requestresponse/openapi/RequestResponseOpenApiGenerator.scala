@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.requestresponse.openapi
 
 import io.circe.Json
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 
 class RequestResponseOpenApiGenerator(oApiVersion: String, oApiInfo: OApiInfo) {
 
@@ -39,8 +39,6 @@ class RequestResponseOpenApiGenerator(oApiVersion: String, oApiInfo: OApiInfo) {
 
 object RequestResponseOpenApiGenerator {
 
-  private val jsonEncoder = ToJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
-
   private[requestresponse] def generateScenarioDefinition(
       operationId: String,
       summary: String,
@@ -55,7 +53,7 @@ object RequestResponseOpenApiGenerator {
       postOpenApiDefinition,
       Map(), // TODO generate openApi for GET sources
     )
-    jsonEncoder.encode(openApiDefinition)
+    ToJsonEncoder.default.encodeUnsafe(openApiDefinition)
   }
 
   private def generateOApiDefinition(

@@ -262,9 +262,11 @@ export const state: GraphState = {
                                 refClazzName: "java.lang.Object",
                                 params: [],
                             },
-                            editor: {
-                                type: "SpelParameterEditor",
-                            },
+                            editors: [
+                                {
+                                    type: "SpelParameterEditor",
+                                },
+                            ],
                             defaultValue: {
                                 language: "spel",
                                 expression: "",
@@ -345,9 +347,11 @@ export const state: GraphState = {
                                 refClazzName: "java.lang.Boolean",
                                 params: [],
                             },
-                            editor: {
-                                type: "BoolParameterEditor",
-                            },
+                            editors: [
+                                {
+                                    type: "BoolParameterEditor",
+                                },
+                            ],
                             defaultValue: {
                                 language: "spel",
                                 expression: "false",
@@ -366,9 +370,11 @@ export const state: GraphState = {
                                 refClazzName: "java.lang.Object",
                                 params: [],
                             },
-                            editor: {
-                                type: "SpelParameterEditor",
-                            },
+                            editors: [
+                                {
+                                    type: "SpelParameterEditor",
+                                },
+                            ],
                             defaultValue: {
                                 language: "spel",
                                 expression: "",
@@ -434,9 +440,11 @@ export const state: GraphState = {
                                 refClazzName: "java.lang.Object",
                                 params: [],
                             },
-                            editor: {
-                                type: "SpelParameterEditor",
-                            },
+                            editors: [
+                                {
+                                    type: "SpelParameterEditor",
+                                },
+                            ],
                             defaultValue: {
                                 language: "spel",
                                 expression: "",
@@ -562,9 +570,11 @@ export const state: GraphState = {
                                 refClazzName: "java.lang.Object",
                                 params: [],
                             },
-                            editor: {
-                                type: "SpelParameterEditor",
-                            },
+                            editors: [
+                                {
+                                    type: "SpelParameterEditor",
+                                },
+                            ],
                             defaultValue: {
                                 language: "spel",
                                 expression: "",

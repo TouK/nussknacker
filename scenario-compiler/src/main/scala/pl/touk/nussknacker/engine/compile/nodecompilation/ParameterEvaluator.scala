@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
@@ -8,7 +9,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationS
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.expression.parse.{MultipleBranchesTypedValue, SingleBranchTypedValue, TypedExpression}
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -45,21 +46,31 @@ class ParameterEvaluator(
     }
   }
 
-  private def evaluateLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
+  private def evaluateLazyParameter(
+      param: TypedParameter,
+      definition: ParameterDef
+  )(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): LazyParameterEvaluationResult = {
     param.typedValue match {
-      case e: TypedExpression if !definition.branchParam =>
-        SingleLazyParameterEvaluationResult(prepareLazyParameterExpression(definition, e))
-      case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        BranchLazyParameterEvaluationResult(valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)))
-      case _ => throw new IllegalStateException()
+      case SingleBranchTypedValue(e, singleCtx) if !definition.branchParam =>
+        SingleLazyParameterEvaluationResult(prepareLazyParameterExpression(definition, e, singleCtx))
+      case MultipleBranchesTypedValue(valueByBranchId) if definition.branchParam =>
+        BranchLazyParameterEvaluationResult(
+          valueByBranchId.map { case (branchId, SingleBranchTypedValue(e, singleCtx)) =>
+            branchId -> prepareLazyParameterExpression(definition, e, singleCtx)
+          }
+        )
+      case _ =>
+        throw new IllegalStateException(
+          s"Illegal combination of typed parameter [$param] and typed value [${param.typedValue}]"
+        )
     }
   }
 
-  private def prepareEagerParameter[T](
+  private def prepareEagerParameter(
       param: TypedParameter,
       definition: ParameterDef
   )(implicit jobData: JobData, nodeId: NodeId): EagerParameterEvaluationResult = {
@@ -70,18 +81,27 @@ class ParameterEvaluator(
     val augumentedCtx = contextToUse.withVariables(additionalDefinitions)
 
     param.typedValue match {
-      case e: TypedExpression if !definition.branchParam =>
-        val evaluatedValue = evaluateSync(CompiledParameter(e, definition), augumentedCtx)
-        SingleEagerParameterEvaluationResult(evaluatedValue, e.returnType)
-      case TypedExpressionMap(valueByKey) if definition.branchParam =>
+      case single: SingleBranchTypedValue if !definition.branchParam =>
+        val evaluatedValue = evaluateSync(CompiledParameter(single.typedExpression, definition), augumentedCtx)
+        SingleEagerParameterEvaluationResult(evaluatedValue, single.typedExpression.returnType)
+      case MultipleBranchesTypedValue(valueByBranchId) if definition.branchParam =>
         val evaluatedValuesByBranchId =
-          valueByKey.mapValuesNow(exp => evaluateSync(CompiledParameter(exp, definition), augumentedCtx))
-        BranchEagerParameterEvaluationResult(evaluatedValuesByBranchId, valueByKey.mapValuesNow(_.returnType))
+          valueByBranchId.mapValuesNow(exp =>
+            evaluateSync(CompiledParameter(exp.typedExpression, definition), augumentedCtx)
+          )
+        BranchEagerParameterEvaluationResult(
+          evaluatedValuesByBranchId,
+          valueByBranchId.mapValuesNow(_.typedExpression.returnType)
+        )
       case _ => throw new IllegalStateException()
     }
   }
 
-  private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(
+  private def prepareLazyParameterExpression(
+      definition: ParameterDef,
+      exprValue: TypedExpression,
+      validationContext: ValidationContext
+  )(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
@@ -99,6 +119,7 @@ class ParameterEvaluator(
           nodeId,
           definition,
           graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
+          validationContext,
           exprValue.returnType
         )
     }

@@ -41,3 +41,12 @@ export function updateScenarioActivities(activities: (activities: UIActivity[]) 
         });
     };
 }
+
+export function updateSearchQuery(searchQuery: string): ThunkAction {
+    return (dispatch) => {
+        return dispatch({
+            type: "UPDATE_SEARCH_QUERY",
+            searchQuery,
+        });
+    };
+}

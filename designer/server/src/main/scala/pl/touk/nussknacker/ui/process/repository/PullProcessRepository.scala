@@ -24,14 +24,14 @@ class PullProcessRepository(
   override def fetchLatestProcessDetailsForProcessId(
       id: ProcessId
   )(implicit listenerUser: User, ec: ExecutionContext): Future[Option[ListenerScenarioWithDetails]] = {
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[ScenarioGraph](id = id)
+    fetchingProcessRepository.fetchLatestProcessDetails[ScenarioGraph](id = id)
   }
 
   override def fetchProcessDetailsForId(
       processId: ProcessId,
       versionId: VersionId
   )(implicit listenerUser: User, ec: ExecutionContext): Future[Option[ListenerScenarioWithDetails]] = {
-    fetchingProcessRepository.fetchProcessDetailsForId[ScenarioGraph](processId, versionId)
+    fetchingProcessRepository.fetchProcessDetailsForVersion[ScenarioGraph](processId, versionId)
   }
 
   override def fetchProcessDetailsForName(

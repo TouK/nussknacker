@@ -9,9 +9,10 @@ import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationS
 import pl.touk.nussknacker.ui.notifications.NotificationServiceImpl
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService
 import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
+import pl.touk.nussknacker.ui.process.livedata.LiveDataRepository
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService
-import pl.touk.nussknacker.ui.process.repository.ScenarioMetadataRepository
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioMetadataRepository}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.{
@@ -125,6 +126,8 @@ object TapirHttpServiceFactory {
       scenarioService = processService,
       dmDispatcher = dmDispatcher,
       processCounter = processCounter,
+      liveDataRepository = liveDataRepository,
+      dbioActionRunner = dbioRunner,
     )
 
     val actionInfoHttpService = new ActionInfoHttpService(

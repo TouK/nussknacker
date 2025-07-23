@@ -11,3 +11,13 @@ trait ExpressionTypingInfo {
   def typingResult: TypingResult
 
 }
+
+object ExpressionTypingInfo {
+
+  def apply(typingResult: TypingResult): ExpressionTypingInfo = {
+    new ResultTypeOnlyExpressionTypingInfo(typingResult)
+  }
+
+  private class ResultTypeOnlyExpressionTypingInfo(override val typingResult: TypingResult) extends ExpressionTypingInfo
+
+}

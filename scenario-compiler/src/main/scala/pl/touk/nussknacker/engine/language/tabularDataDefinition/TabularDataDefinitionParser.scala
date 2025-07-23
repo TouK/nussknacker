@@ -35,13 +35,6 @@ object TabularDataDefinitionParser extends ExpressionParser {
     parse(original, fromTabularDataToT = createTabularDataDefinitionTypedExpression(_, original, expectedType))
   }
 
-  override def parseWithoutContextValidation(
-      original: String,
-      expectedType: typing.TypingResult
-  ): ValidatedNel[ExpressionParseError, CompiledExpression] = {
-    parse(original, fromTabularDataToT = createTabularDataDefinitionExpression(_, original))
-  }
-
   private def parse[T](original: String, fromTabularDataToT: TabularTypedData => T) = {
     TabularTypedData
       .fromString(original)
@@ -57,9 +50,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
       expectedType: typing.TypingResult
   ) = TypedExpression(
     createTabularDataDefinitionExpression(tabularTypedData, anOriginal),
-    new ExpressionTypingInfo {
-      override def typingResult: typing.TypingResult = expectedType
-    }
+    ExpressionTypingInfo(expectedType)
   )
 
   private def createTabularDataDefinitionExpression(tabularTypedData: TabularTypedData, anOriginal: String) = {

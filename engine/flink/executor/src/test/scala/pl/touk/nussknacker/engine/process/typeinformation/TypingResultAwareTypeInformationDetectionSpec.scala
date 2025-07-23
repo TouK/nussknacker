@@ -27,7 +27,20 @@ import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerial
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.CustomTypedObject
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.nio.charset.{Charset, StandardCharsets}
+import java.time.{
+  Duration,
+  Instant,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  OffsetDateTime,
+  Period,
+  ZonedDateTime,
+  ZoneId,
+  ZoneOffset
+}
+import java.util.{Currency, Locale, UUID}
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
@@ -39,6 +52,8 @@ class TypingResultAwareTypeInformationDetectionSpec
     with OptionValues {
 
   private val detection = new TypingResultAwareTypeInformationDetection
+
+  FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
@@ -123,6 +138,50 @@ class TypingResultAwareTypeInformationDetectionSpec
       ("three", assertMapSerializers(_, ("key", new StringSerializer))),
       ("two", _ shouldBe new StringSerializer)
     )
+  }
+
+  test("serialization for logical types that can be represented as string") {
+    val ctx = Context.dummy.copy(variables =
+      Map(
+        "instant"        -> Instant.ofEpochMilli(123L),
+        "offsetDateTime" -> OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
+        "zonedDateTime"  -> ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
+        "localDateTime"  -> LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0),
+        "localDate"      -> LocalDate.of(2025, 1, 1),
+        "localTime"      -> LocalTime.of(12, 1),
+        "period"         -> Period.ofDays(30),
+        "duration"       -> Duration.ofHours(12),
+        "zoneOffset"     -> ZoneOffset.of("+01:00"),
+        "zoneId"         -> ZoneId.of("Europe/Warsaw"),
+        "locale"         -> Locale.ENGLISH,
+        "charset"        -> StandardCharsets.UTF_8,
+        "currency"       -> Currency.getInstance("USD"),
+        "uuid"           -> UUID.fromString("38a727ce-44d6-43ef-85b8-1fdde02108cf"),
+      )
+    )
+
+    val vCtx = ValidationContext.empty.copy(localVariables =
+      Map(
+        "instant"        -> Typed[Instant],
+        "offsetDateTime" -> Typed[OffsetDateTime],
+        "zonedDateTime"  -> Typed[ZonedDateTime],
+        "localDateTime"  -> Typed[LocalDateTime],
+        "localDate"      -> Typed[LocalDate],
+        "localTime"      -> Typed[LocalTime],
+        "period"         -> Typed[Period],
+        "duration"       -> Typed[Duration],
+        "zoneOffset"     -> Typed[ZoneOffset],
+        "zoneId"         -> Typed[ZoneId],
+        "locale"         -> Typed[Locale],
+        "charset"        -> Typed[Charset],
+        "currency"       -> Typed[Currency],
+        "uuid"           -> Typed[UUID],
+      )
+    )
+
+    val typeInfo          = detection.forContext(vCtx)
+    val ctxAfterRoundTrip = getSerializeRoundTrip(ctx, typeInfo)
+    checkContextAreSame(ctxAfterRoundTrip, ctx)
   }
 
   // This is not exactly intended behaviour - the test is here to show problems with static type definitions

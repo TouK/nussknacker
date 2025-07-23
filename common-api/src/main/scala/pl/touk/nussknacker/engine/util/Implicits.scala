@@ -33,7 +33,7 @@ object Implicits {
       val moreThanOneValueForKey = seq.toGroupedMap.filter(_._2.size > 1)
       if (moreThanOneValueForKey.nonEmpty)
         throw new IllegalStateException(
-          s"Found keys with more than one values: ${moreThanOneValueForKey.keys.mkString(", ")} during translating $seq to Map"
+          s"Found keys with more than one for value [${moreThanOneValueForKey.mkString(", ")}] during translating Seq to Map"
         )
       seq.toMap
     }

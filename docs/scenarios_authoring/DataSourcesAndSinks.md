@@ -99,8 +99,8 @@ should be used for that.
 
 ![Kafka source](img/kafkaSource.png "Kafka source")
 
-_&nbsp;
-### Kafka sink_
+&nbsp;
+### Kafka sink
 
 The `kafka` sink configuration form will show a list of fields defined in Schema Registry for the given topic. 
 The result of the expression entered in the `Key` field will be used as a partitioning key when sending the 

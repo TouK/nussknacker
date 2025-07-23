@@ -3,9 +3,10 @@ import { createSelector, createSelectorCreator, defaultMemoize } from "reselect"
 
 import ProcessUtils from "../../../../common/ProcessUtils";
 import type { RootState } from "../../../../reducers";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
-import { getProcessDefinitionData } from "../../../../reducers/selectors/processDefinitionData";
-import type { NodeId, NodeType, NodeValidationError, UiScenarioProperties, UIParameter } from "../../../../types";
+import type { NodeId, NodeType, NodeValidationError, UIParameter, UiScenarioProperties } from "../../../../types";
+import { getNodeDetails } from "./getNodeDetails";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
@@ -19,10 +20,6 @@ export const getFindAvailableBranchVariables = createSelector(getNodeResults, (n
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
 const getNodeResult = createSelector(getNodeResults, (s) => (nodeId: string) => s?.[nodeId]);
-export const getNodeDetails = createDeepEqualSelector(
-    (state: RootState) => state.nodeDetails,
-    (nodeDetails) => (nodeId: string) => nodeDetails[nodeId],
-);
 
 export const getValidationPerformed = createSelector(
     getNodeDetails,

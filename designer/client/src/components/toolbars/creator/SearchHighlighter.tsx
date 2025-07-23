@@ -21,6 +21,7 @@ export function SearchHighlighter({
     return (
         <Highlighter
             className={className}
+            aria-label={`tool:${children}`}
             textToHighlight={children || ""}
             searchWords={highlights}
             autoEscape

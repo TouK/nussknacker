@@ -12,6 +12,7 @@ import remarkHtml from "remark-html";
 
 import { CodeBlock } from "../../../common/CodeBlock";
 import { getBorderColor } from "../../../containers/theme/helpers";
+import { PasswordMask } from "./PasswordMask";
 
 const RouterLink = ({
     to,
@@ -20,11 +21,15 @@ const RouterLink = ({
     to: string;
 }>) => <Link to={to}>{children}</Link>;
 
+// might look like typo, but it's on purpose - makes it more unique and less likely to run by accident.
+export const SANITIZED_PASSWORD_TAG_NAME = "sanitizd-passwrd" as const;
+
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace JSX {
         interface IntrinsicElements {
             "router-link": PropsOf<typeof RouterLink>;
+            [SANITIZED_PASSWORD_TAG_NAME]: PropsOf<typeof PasswordMask>;
         }
     }
 }
@@ -39,6 +44,7 @@ const MarkdownWithPlugins = ({
 }: MarkdownWithPluginsProps) => (
     <Markdown
         components={{
+            [SANITIZED_PASSWORD_TAG_NAME]: PasswordMask,
             "router-link": RouterLink,
             code: CodeBlock,
             ...components,

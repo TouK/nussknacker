@@ -79,7 +79,7 @@ export const NodeDetailsContent = ({
                     onCreate={onCreate}
                 />
             ) : null}
-            <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
+            {showValidation ? <NodeErrors errors={diagramStructureErrors} message="Node has errors" /> : null}
             <TestResultsWrapper nodeId={node.id} showTestResults={showTestResults}>
                 <NodeTypeDetailsContent
                     node={node}

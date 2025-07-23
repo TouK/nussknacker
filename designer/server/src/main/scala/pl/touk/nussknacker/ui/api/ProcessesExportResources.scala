@@ -44,7 +44,7 @@ class ProcessesExportResources(
     path("processesExport" / ProcessNameSegment) { processName =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchLatestProcessDetailsForProcessId[ScenarioGraph](processId.id).map {
+          processRepository.fetchLatestProcessDetails[ScenarioGraph](processId.id).map {
             exportProcess
           }
         }
@@ -63,7 +63,7 @@ class ProcessesExportResources(
     } ~ path("processesExport" / ProcessNameSegment / VersionIdSegment) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchProcessDetailsForId[ScenarioGraph](processId.id, versionId).map {
+          processRepository.fetchProcessDetailsForVersion[ScenarioGraph](processId.id, versionId).map {
             exportProcess
           }
         }
@@ -72,7 +72,7 @@ class ProcessesExportResources(
       (post & processId(processName)) { processId =>
         entity(as[String]) { svg =>
           complete {
-            processRepository.fetchProcessDetailsForId[ScenarioGraph](processId.id, versionId).flatMap { process =>
+            processRepository.fetchProcessDetailsForVersion[ScenarioGraph](processId.id, versionId).flatMap { process =>
               dbioActionRunner.run {
                 scenarioActivityRepository.findActivity(processId.id).map(exportProcessToPdf(svg, process, _))
               }

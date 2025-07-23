@@ -12,37 +12,43 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
-import pl.touk.nussknacker.engine.expression.parse.TypedExpression
+import pl.touk.nussknacker.engine.expression.parse.{SingleBranchTypedValue, TypedExpression}
 
 object BaseComponentValidationHelper {
 
   def validateBoolean(
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
-      paramName: ParameterName
+      paramName: ParameterName,
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    validateOrValid(NotNullParameterValidator, expression, paramName)
+    validateOrValid(NotNullParameterValidator, expression, paramName, inputContext)
   }
 
   def validateVariableValue(
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
-      paramName: ParameterName
+      paramName: ParameterName,
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    validateOrValid(MandatoryParameterValidator, expression, paramName)
+    validateOrValid(MandatoryParameterValidator, expression, paramName, inputContext)
   }
 
   private def validateOrValid(
       validator: ParameterValidator,
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
-      paramName: ParameterName
+      paramName: ParameterName,
+      inputContext: SingleInputNodeInputValidationContext
   )(implicit nodeId: NodeId) = {
     expression
       .map { expr =>
         Validations
-          .validate(List(validator), TypedParameter(paramName, expr))
+          .validate(
+            List(validator),
+            TypedParameter(paramName, SingleBranchTypedValue(expr, inputContext.validationContext))
+          )
           .map(_ => ())
       }
       .getOrElse(valid(()))

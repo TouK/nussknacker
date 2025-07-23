@@ -62,7 +62,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   ): F[Option[ProcessVersion]] = {
     val result = for {
       processId <- OptionT(fetchProcessId(processName))
-      details   <- OptionT(fetchProcessDetailsForId[CanonicalProcess](processId, versionId))
+      details   <- OptionT(fetchProcessDetailsForVersion[CanonicalProcess](processId, versionId))
     } yield details.toEngineProcessVersion
     result.value
   }
@@ -197,27 +197,30 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     }
   }
 
-  override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
+  override def fetchLatestProcessDetails[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ScenarioWithDetailsEntity[PS]]] = {
-    run(fetchLatestProcessDetailsForProcessIdQuery(id))
+    val action = for {
+      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
+        fetchProcessLatestVersionsQuery(id).result.headOption
+      )
+      processDetails <- wrapVersionWithProcessDetails(latestProcessVersion)
+    } yield processDetails
+    run(action.value)
   }
 
-  override def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](
+  override def fetchProcessDetailsForVersion[PS: ScenarioShapeFetchStrategy](
       processId: ProcessId,
       versionId: VersionId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ScenarioWithDetailsEntity[PS]]] = {
     val action = for {
-      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
-        fetchProcessLatestVersionsQuery(processId)(ScenarioShapeFetchStrategy.NotFetch).result.headOption
-      )
       processVersion <- OptionT[DB, ProcessVersionEntityData](
-        fetchProcessLatestVersionsQuery(processId).filter(pv => pv.id === versionId).result.headOption
+        processVersionsTableQuery
+          .filter(pv => pv.processId === processId && pv.id === versionId)
+          .result
+          .headOption
       )
-      processDetails <- fetchProcessDetailsForVersion(
-        processVersion,
-        isLatestVersion = latestProcessVersion.id == processVersion.id
-      )
+      processDetails <- wrapVersionWithProcessDetails(processVersion)
     } yield processDetails
     run(action.value)
   }
@@ -234,28 +237,15 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       processId: ProcessIdWithName
   )(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
-      implicit val fetchStrategy: ScenarioShapeFetchStrategy[_] = ScenarioShapeFetchStrategy.NotFetch
-      fetchLatestProcessDetailsForProcessIdQuery(processId.id).flatMap {
+      processTableFilteredByUser.filter(_.id === processId.id).result.headOption.flatMap {
         case None          => DBIO.failed(ProcessNotFoundError(processId.name))
         case Some(process) => DBIO.successful(process.processingType)
       }
     }
   }
 
-  private def fetchLatestProcessDetailsForProcessIdQuery[PS: ScenarioShapeFetchStrategy](
-      id: ProcessId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[ScenarioWithDetailsEntity[PS]]] = {
-    (for {
-      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
-        fetchProcessLatestVersionsQuery(id).result.headOption
-      )
-      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true)
-    } yield processDetails).value
-  }
-
-  private def fetchProcessDetailsForVersion[PS: ScenarioShapeFetchStrategy](
-      processVersion: ProcessVersionEntityData,
-      isLatestVersion: Boolean
+  private def wrapVersionWithProcessDetails[PS: ScenarioShapeFetchStrategy](
+      processVersion: ProcessVersionEntityData
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, ScenarioWithDetailsEntity[PS]] = {
     val id = processVersion.processId
     for {
@@ -278,13 +268,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           List(ScenarioActionName.Deploy, ScenarioActionName.Redeploy)
             .contains(action.actionName) && action.state == ProcessActionState.Finished
         ),
-      isLatestVersion = isLatestVersion,
+      isLatestVersion = processVersions.headOption.exists(_.id == processVersion.id),
       labels = labels,
-      history = Some(
-        processVersions.map(v =>
-          ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p.processVersionId == v.id))
-        )
-      ),
+      history = Some(processVersions.map(v => ProcessDBQueryRepository.toProcessVersion(v))),
     )
   }
 

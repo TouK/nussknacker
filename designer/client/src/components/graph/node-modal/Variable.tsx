@@ -7,6 +7,7 @@ import type { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo
 import { DescriptionField } from "./DescriptionField";
 import EditableEditor from "./editors/EditableEditor";
 import type { ExpressionObj } from "./editors/expression/types";
+import { EditorType } from "./editors/expression/types";
 import LabeledInput from "./editors/field/LabeledInput";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { IdField } from "./IdField";
@@ -40,7 +41,7 @@ export default function Variable({
     variableTypes,
     renderFieldLabel,
 }: Props): JSX.Element {
-    const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value.expression", value.expression), [setProperty]);
+    const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value", value), [setProperty]);
     const [isMarked] = useDiffMark();
     const inferredVariableType = useSelector((state: RootState) => {
         const expressionType = getExpressionType(state)(node.id);
@@ -49,6 +50,12 @@ export default function Variable({
         return ProcessUtils.humanReadableType(varExprType);
     });
     const readOnly = !isEditMode;
+
+    const editors = [
+        { type: EditorType.SPEL_PARAMETER_EDITOR },
+        { type: EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR },
+        { type: EditorType.JSON_TEMPLATE_PARAMETER_EDITOR },
+    ];
 
     return (
         <>
@@ -71,13 +78,13 @@ export default function Variable({
                 {renderFieldLabel("Variable Name")}
             </LabeledInput>
             <EditableEditor
+                editors={editors}
                 fieldLabel={"Expression"}
                 renderFieldLabel={renderFieldLabel}
                 expressionObj={node.value}
                 onValueChange={onExpressionChange}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                showSwitch={false}
                 fieldErrors={getValidationErrorsForField(errors, "$expression")}
                 variableTypes={variableTypes}
                 validationLabelInfo={inferredVariableType}

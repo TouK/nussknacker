@@ -40,7 +40,8 @@ class FlinkDeploymentManager(
     flinkConfig: FlinkConfig,
     miniClusterWithServices: FlinkMiniClusterWithServices,
     client: FlinkClient,
-    jobRunner: FlinkScenarioJobRunner
+    jobRunner: FlinkScenarioJobRunner,
+    override val liveDataPreviewSupport: LiveDataPreviewSupport,
 ) extends DeploymentManager
     with LazyLogging {
 
@@ -381,9 +382,6 @@ class FlinkDeploymentManager(
       .createDetachedStreamExecutionEnvironment[SyncIO]
       .map(new FlinkScenarioCompilationDependencies(_))
   }
-
-  override def liveDataPreviewSupport: LiveDataPreviewSupport =
-    jobRunner.liveDataPreviewSupport
 
 }
 

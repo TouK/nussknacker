@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.limits.LimitsService
 import pl.touk.nussknacker.ui.limits.LimitsService.LimitError.MaxActiveScenariosCountExceededError
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.DeployingInvalidScenarioError
+import pl.touk.nussknacker.ui.process.livedata.LiveDataRepository
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -40,6 +41,8 @@ class DeploymentService(
     ],
     limitsService: LimitsService,
     processingTypeToActionInfoService: ProcessingTypeDataProvider[ActionInfoService, _],
+    liveDataRepository: LiveDataRepository,
+    dbioActionRunner: DBIOActionRunner,
 )(implicit executionContextWithIORuntime: ExecutionContextWithIORuntime)
     extends LazyLogging {
 
@@ -127,6 +130,15 @@ class DeploymentService(
             actionName,
           ).removeInvalidActionOnFailure()
           _ <- validateScenario(ctx.latestScenarioDetails).removeInvalidActionOnFailure()
+          deploymentManager = dispatcher.deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+          _ <- deploymentManager.liveDataPreviewSupport match {
+            case LiveDataPreviewStoredInDesignerDb(_, _) =>
+              dbioActionRunner.run(liveDataRepository.cleanLiveData(processIdWithName))
+            case LiveDataPreviewStoredInDesignerJvm =>
+              Future.unit
+            case NoLiveDataPreviewSupport =>
+              Future.unit
+          }
           actionResult <- checkActiveScenariosLimits(ctx.latestScenarioDetails, dmCommand.updateStrategy) {
             IO.fromFuture {
               IO {
@@ -136,9 +148,7 @@ class DeploymentService(
                 } yield {
                   // we notify of deployment finish/fail only if initial validation succeeded - this step is done asynchronously
                   actionFinalizer.handleResult {
-                    dispatcher
-                      .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-                      .processCommand(dmCommand)
+                    deploymentManager.processCommand(dmCommand)
                   }
                 }
               }

@@ -9,11 +9,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
-  CoordinatesBasedTextRange,
-  ErrorDetails,
-  TextCoordinates
-}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
@@ -32,18 +28,12 @@ object JsonParser extends ExpressionParser {
       expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
     parseJson(jsonString).map { json =>
+      val typ = Typed.fromInstance(FromJsonSimpleDecoder.jsonToAny(json))
       TypedExpression(
         CompiledJsonExpression(jsonString, json),
-        JsonExpressionTypingInfo(json)
+        ExpressionTypingInfo(typ)
       )
     }
-  }
-
-  override def parseWithoutContextValidation(
-      jsonString: String,
-      expectedType: TypingResult
-  ): ValidatedNel[ExpressionParseError, CompiledExpression] = {
-    parseJson(jsonString).map(json => CompiledJsonExpression(jsonString, json))
   }
 
   private def parseJson(jsonString: String): Validated[NonEmptyList[JsonParseError], Json] =
@@ -82,13 +72,5 @@ object JsonParser extends ExpressionParser {
 
   case class JsonParseError(message: String, override val details: Option[CoordinatesBasedTextRange])
       extends ExpressionParseError
-
-}
-
-case class JsonExpressionTypingInfo(json: Json) extends ExpressionTypingInfo {
-
-  override val typingResult: TypingResult = {
-    Typed.fromInstance(FromJsonSimpleDecoder.jsonToAny(json))
-  }
 
 }

@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.RuntimeMode.{Live, Test}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -27,17 +28,17 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{canonicalnode, CanonicalProcess}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -127,7 +128,11 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val parts = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
+      failOnErrors(
+        processCompilerData.subPartCompiler
+          .compile(part.node, SingleInputNodeInputValidationContext(part.validationContext))
+          .result
+      )
 
     val initialCtx                    = Context.dummy.withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
@@ -197,11 +202,13 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           ComponentsUiConfig.Empty,
           id => DesignerWideComponentId(id.toString),
           Map.empty,
+          GlobalParametersConfig.default,
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default,
       allowEndingScenarioWithoutSink = false,
+      globalParametersConfig = GlobalParametersConfig.default,
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
@@ -1188,8 +1195,6 @@ object InterpreterSpec {
   case class Transaction(msisdn: String = "123", accountId: String = "123")
 
   case class Account(marketingAgreement1: Boolean, name: String, name2: String)
-
-  case class LiteralExpressionTypingInfo(typingResult: TypingResult) extends ExpressionTypingInfo
 
   object AccountService extends Service {
 

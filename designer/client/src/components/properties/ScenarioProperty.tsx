@@ -1,18 +1,17 @@
 import { get } from "lodash";
 import React, { useCallback } from "react";
 
-import type { NodeValidationError, PropertiesType } from "../../types";
+import type { NodeValidationError, PropertiesType, UIScenarioProperty } from "../../types";
 import EditableEditor from "../graph/node-modal/editors/EditableEditor";
 import type { ExpressionObj } from "../graph/node-modal/editors/expression/types";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
-import type { ParamType } from "../graph/node-modal/editors/types";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 
 interface Props {
     showSwitch: boolean;
     showValidation: boolean;
     propertyName: string;
-    propertyConfig: ParamType;
+    propertyConfig: UIScenarioProperty;
     editedNode: PropertiesType;
     onChange: <K extends keyof PropertiesType["additionalFields"]["properties"]>(
         property: K,
@@ -35,7 +34,8 @@ export default function ScenarioProperty(props: Props) {
 
     return (
         <EditableEditor
-            param={propertyConfig}
+            editors={[propertyConfig.editor]}
+            defaultValue={propertyConfig.defaultValue}
             fieldLabel={propertyConfig.label || propertyName}
             onValueChange={onValueChange}
             expressionObj={expressionObj}

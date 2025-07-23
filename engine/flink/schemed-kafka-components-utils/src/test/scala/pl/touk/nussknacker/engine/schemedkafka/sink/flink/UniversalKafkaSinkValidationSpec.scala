@@ -19,7 +19,11 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  DynamicNodeValidator,
+  SingleInputNodeInputValidationContext,
+  TransformationResult
+}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -65,8 +69,9 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
         paramsList,
         Nil,
         Some(VariableConstants.InputVariableName),
-        Map.empty
-      )(ValidationContext())
+        Map.empty,
+        SingleInputNodeInputValidationContext(ValidationContext.empty)
+      )
       .toOption
       .get
   }

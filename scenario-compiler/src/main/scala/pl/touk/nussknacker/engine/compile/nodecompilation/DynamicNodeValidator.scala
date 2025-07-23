@@ -5,6 +5,7 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context._
@@ -26,7 +27,8 @@ import scala.util.{Failure, Success, Try}
 class DynamicNodeValidator(
     expressionCompiler: ExpressionCompiler,
     globalVariablesPreparer: GlobalVariablesPreparer,
-    parameterEvaluator: ParameterEvaluator
+    parameterEvaluator: ParameterEvaluator,
+    globalParametersConfig: GlobalParametersConfig
 ) {
 
   private implicit val lazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
@@ -36,17 +38,21 @@ class DynamicNodeValidator(
       parametersFromNode: List[NodeParameter],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      parametersConfig: Map[ParameterName, ParameterConfig]
-  )(
-      inputContext: component.InputContext
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      nodeInputValidationContext: NodeInputValidationContext,
   )(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
+
       val processor =
-        new TransformationStepsProcessor(component, branchParametersFromNode, outputVariable, parametersConfig)(
-          inputContext
+        new TransformationStepsProcessor(
+          component,
+          branchParametersFromNode,
+          outputVariable,
+          parametersConfig,
+          nodeInputValidationContext
         )
       processor.processRemainingTransformationSteps(Nil, None, Nil, parametersFromNode)
     }(nodeId, scenarioCompilationDependencies.metaData)
@@ -57,12 +63,18 @@ class DynamicNodeValidator(
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       parametersConfig: Map[ParameterName, ParameterConfig],
-  )(inputContextRaw: Any)(implicit nodeId: NodeId, scenarioCompilationDependencies: ScenarioCompilationDependencies)
+      nodeInputValidationContext: NodeInputValidationContext,
+  )(implicit nodeId: NodeId, scenarioCompilationDependencies: ScenarioCompilationDependencies)
       extends LazyLogging {
 
     import scenarioCompilationDependencies._
 
-    private val inputContext = inputContextRaw.asInstanceOf[component.InputContext]
+    private val inputContext = nodeInputValidationContext match {
+      case SingleInputNodeInputValidationContext(validationContext) =>
+        validationContext.asInstanceOf[component.InputContext]
+      case MultipleInputBranchesNodeInputValidationContext(validationContextByBranchId, _) =>
+        validationContextByBranchId.asInstanceOf[component.InputContext]
+    }
 
     private val outputVariableDependency = outputVariable.map(OutputVariableNameValue)
 
@@ -131,7 +143,11 @@ class DynamicNodeValidator(
               returnUnmatchedFallback
             case component.NextParameters(newParametersDefinitions, newParameterErrors, state) =>
               val enrichedParametersDefinitions =
-                StandardParameterEnrichment.enrichParameterDefinitions(newParametersDefinitions, parametersConfig)
+                StandardParameterEnrichment.enrichParameterDefinitions(
+                  newParametersDefinitions,
+                  parametersConfig,
+                  globalParametersConfig
+                )
               // We assume that the developer of component split parameter transformation steps this way because
               // the last parameter in the step can cause changes in parameter definitions for the next step
               val newParametersDefinition =
@@ -185,14 +201,15 @@ class DynamicNodeValidator(
     ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[NodeParameter])] = {
       val compiledParameter = compileParameter(parameterDefinition, nodeParameters)
       compiledParameter.map { case (typedParameter, extraNodeParamOpt) =>
-        val definedParam = parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition) match {
-          case SingleEagerParameterEvaluationResult(value, returnType) => DefinedEagerParameter(value, returnType)
-          case SingleLazyParameterEvaluationResult(lazyParameter)      => DefinedLazyParameter(lazyParameter.returnType)
-          case BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId) =>
-            DefinedEagerBranchParameter(valueByBranchId, returnTypeByBranchId)
-          case BranchLazyParameterEvaluationResult(lazyParamByBranchId) =>
-            DefinedLazyBranchParameter(lazyParamByBranchId.mapValuesNow(_.returnType))
-        }
+        val definedParam =
+          parameterEvaluator.evaluateParameter(typedParameter, parameterDefinition) match {
+            case SingleEagerParameterEvaluationResult(value, returnType) => DefinedEagerParameter(value, returnType)
+            case SingleLazyParameterEvaluationResult(lazyParameter) => DefinedLazyParameter(lazyParameter.returnType)
+            case BranchEagerParameterEvaluationResult(valueByBranchId, returnTypeByBranchId) =>
+              DefinedEagerBranchParameter(valueByBranchId, returnTypeByBranchId)
+            case BranchLazyParameterEvaluationResult(lazyParamByBranchId) =>
+              DefinedLazyBranchParameter(lazyParamByBranchId.mapValuesNow(_.returnType))
+          }
         (definedParam, extraNodeParamOpt)
       }
     }
@@ -278,7 +295,8 @@ object DynamicNodeValidator {
       new ParameterEvaluator(
         globalVariablesPreparer,
         Seq.empty,
-      )
+      ),
+      modelData.modelConfig.globalParametersConfig
     )
   }
 

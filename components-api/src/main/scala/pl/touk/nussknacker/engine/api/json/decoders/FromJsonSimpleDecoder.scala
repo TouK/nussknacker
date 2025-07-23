@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.json.decoders
 
 import io.circe.{Json, JsonNumber}
-import pl.touk.nussknacker.engine.util.Implicits._
 
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
@@ -22,12 +21,15 @@ object FromJsonSimpleDecoder {
       ).asJava
   )
 
-  private def toNumber(jsonNumber: JsonNumber): Any = {
+  private def toNumber(jsonNumber: JsonNumber): Number = {
     // we pick the narrowest type as possible to reduce the amount of memory and computations overheads
-    (jsonNumber.toInt orElse
-      jsonNumber.toLong orElse
-      // We prefer java big decimal over float/double
-      jsonNumber.toBigDecimal.map(_.bigDecimal))
+    jsonNumber.toInt
+      .map(i => i: Number)
+      .orElse(jsonNumber.toLong.map(l => l: Number))
+      .orElse(
+        // We prefer java big decimal over float/double
+        jsonNumber.toBigDecimal.map(_.bigDecimal)
+      )
       .getOrElse(throw new IllegalArgumentException(s"Not supported json number: $jsonNumber"))
   }
 

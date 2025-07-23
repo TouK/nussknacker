@@ -15,20 +15,22 @@ import io.circe.Json.{
   fromString,
   Null
 }
+import pl.touk.nussknacker.engine.api.DisplayJson
 
 import java.math.BigInteger
+import java.nio.charset.Charset
 import java.time._
 import java.time.format.DateTimeFormatter
-import java.util.UUID
+import java.util.{Currency, Locale, UUID}
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
-object ToJsonEncoderWithFallback {
+private[encoders] trait ToJsonEncoderWithFallback {
 
   @tailrec
-  def encodeValue(value: Any, fallback: Any => Option[Json] = _ => None): ValidatedNel[String, Json] = value match {
+  final def encodeValue(value: Any): ValidatedNel[String, Json] = value match {
     case null                        => Json.Null.validNel
-    case Some(a)                     => encodeValue(a, fallback)
+    case Some(a)                     => encodeValue(a)
     case None                        => Null.validNel
     case value: Json                 => value.validNel
     case value: Int                  => fromInt(value).validNel
@@ -65,38 +67,50 @@ object ToJsonEncoderWithFallback {
       fromString(value.toString).validNel // Duration uses ISO-8601 format by default
     case value: Period =>
       fromString(value.toString).validNel // Period uses ISO-8601 format by default
+    case value: ZoneId =>
+      fromString(value.toString).validNel
+    case value: Locale =>
+      fromString(value.toString).validNel
+    case value: Charset =>
+      fromString(value.toString).validNel
+    case value: Currency =>
+      fromString(value.toString).validNel
     case map: Map[_, _] =>
-      encodeMap(map, fallback)
+      encodeMap(map)
     case map: scala.collection.Map[_, _] =>
-      encodeMap(map.toMap, fallback)
+      encodeMap(map.toMap)
     case map: java.util.Map[_, _] =>
-      encodeMap(map.asScala.toMap, fallback)
+      encodeMap(map.asScala.toMap)
     case vals: java.util.Collection[_] =>
-      encodeIterable(vals.asScala, fallback)
+      encodeIterable(vals.asScala)
     case vals: Array[_] =>
-      encodeIterable(vals, fallback)
+      encodeIterable(vals)
     case vals: Iterable[_] =>
-      encodeIterable(vals, fallback)
+      encodeIterable(vals)
     case value: Enum[_] =>
       fromString(value.toString).validNel
+    case value: DisplayJson =>
+      value.asJson.validNel
     case value =>
-      fallback(value) match {
+      handleUnknownValue(value) match {
         case Some(json) => json.validNel
         case None => s"Encoding of value [$value] of class [${value.getClass.getName}] is not supported".invalidNel
       }
   }
 
-  private def encodeIterable(vals: Iterable[_], fallback: Any => Option[Json]) = {
-    val encodedValues = vals.map(elem => encodeValue(elem, fallback)).toList.sequence
+  protected def handleUnknownValue(value: Any): Option[Json]
+
+  private def encodeIterable(vals: Iterable[_]) = {
+    val encodedValues = vals.map(elem => encodeValue(elem)).toList.sequence
     encodedValues.map(values => Json.fromValues(values))
   }
 
-  private def encodeMap(map: Map[_, _], fallback: Any => Option[Json]) = {
+  private def encodeMap(map: Map[_, _]) = {
     val encodedFields = map.toList.map { case (key, value) =>
-      encodeValue(key, fallback).andThen(encodedKey =>
+      encodeValue(key).andThen(encodedKey =>
         encodedKey.asString match {
           case Some(encodedKeyString) =>
-            encodeValue(value, fallback).map(encodedValue => encodedKeyString -> encodedValue)
+            encodeValue(value).map(encodedValue => encodedKeyString -> encodedValue)
           case None =>
             s"Failed to encode Record key '$encodedKey' as String".invalidNel
         }

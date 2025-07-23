@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.spel.ast.{
   SpelSubstitutionsCollector,
   TypedTreeLevel
 }
-import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
+import pl.touk.nussknacker.engine.spel.ast.SpelAst.{RichSpelNode, SpelNodeId}
 
 class ProcessDictSubstitutor(
     dictRegistry: DictRegistry,
@@ -133,7 +133,7 @@ object ProcessDictSubstitutor extends LazyLogging {
   private def prepareSubstitutionsCollector(typingInfo: ExpressionTypingInfo, replacingStrategy: ReplacingStrategy) =
     typingInfo match {
       case SpelExpressionTypingInfo(intermediateResults, _) =>
-        Some(new SpelSubstitutionsCollector(n => intermediateResults.get(SpelNodeId(n)), replacingStrategy))
+        Some(new SpelSubstitutionsCollector(n => intermediateResults.get(n.textRange), replacingStrategy))
       case _ =>
         None
     }

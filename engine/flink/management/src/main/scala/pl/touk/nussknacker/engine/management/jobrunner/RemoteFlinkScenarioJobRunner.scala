@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.engine.management.jobrunner
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.BaseModelDataProvider
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{
-  DMRunDeploymentCommand,
-  LiveDataPreviewSupport,
-  NoLiveDataPreviewSupport
-}
+import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
@@ -19,7 +16,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, client: FlinkClient)(
     implicit ec: ExecutionContext
-) extends FlinkScenarioJobRunner {
+) extends FlinkScenarioJobRunner
+    with LazyLogging {
 
   private val modelJarProvider = new FlinkModelJarProvider(modelDataProvider.modelClassLoader.getURLs.toList)
 
@@ -42,9 +40,6 @@ class RemoteFlinkScenarioJobRunner(modelDataProvider: BaseModelDataProvider, cli
       command.deploymentData.deploymentId.toNewDeploymentIdOpt.map(_.toJobID)
     )
   }
-
-  override def liveDataPreviewSupport: LiveDataPreviewSupport =
-    NoLiveDataPreviewSupport
 
 }
 

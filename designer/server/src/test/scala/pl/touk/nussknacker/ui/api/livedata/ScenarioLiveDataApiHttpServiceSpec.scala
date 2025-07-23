@@ -7,12 +7,16 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.{ContextId, NodeId}
-import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewSupported, NoLiveDataPreviewSupport}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported._
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.component.ComponentType.Source
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.deployment.{LiveDataPreviewStoredInDesignerJvm, NoLiveDataPreviewSupport}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListener
 import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   PatientScalaFutures,
@@ -27,7 +31,8 @@ import pl.touk.nussknacker.test.config.{
 }
 
 import java.time.Instant
-import scala.concurrent.Future
+import java.util.UUID
+import scala.util.Try
 
 class ScenarioLiveDataApiHttpServiceSpec
     extends AnyFreeSpecLike
@@ -43,9 +48,9 @@ class ScenarioLiveDataApiHttpServiceSpec
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val exampleScenario: CanonicalProcess =
+  private def createExampleScenario(): CanonicalProcess =
     ScenarioBuilder
-      .streaming("scenario_2")
+      .streaming(UUID.randomUUID().toString)
       .source(
         "Event Generator",
         "event-generator",
@@ -55,30 +60,22 @@ class ScenarioLiveDataApiHttpServiceSpec
       )
       .emptySink("end", "dead-end")
 
-  private val mockedInstant = Instant.ofEpochSecond(1748382500)
-
   "The endpoint for live data should" - {
     "return present, but empty live data" in {
-      val mockedResults = LiveData(mockedInstant, Map.empty, Map.empty, Map.empty, Map.empty)
+      val exampleScenario = createExampleScenario()
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
-          MockableDeploymentManager.configureLiveDataPreviewSupport(
-            new LiveDataPreviewSupported {
-              override def getLiveData(
-                  processIdWithName: ProcessIdWithName
-              ): Future[Either[LiveDataError, LiveData]] = Future.successful(Right(mockedResults))
-            }
-          )
+          MockableDeploymentManager.configureLiveDataPreviewSupport(LiveDataPreviewStoredInDesignerJvm)
         }
         .when()
         .basicAuthAllPermUser()
         .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
         .Then()
         .statusCode(StatusCodes.OK.intValue)
-        .equalsJsonBody(
+        .matchJsonWithRegexValuesBody(
           s"""{
-             |  "timestamp": "2025-05-27T21:48:20Z",
+             |  "timestamp": "${regexes.zuluDateRegex}",
              |  "results": {
              |    "nodeResults": null,
              |    "nodeTransitionResults": [],
@@ -103,74 +100,73 @@ class ScenarioLiveDataApiHttpServiceSpec
         )
     }
     "return present data" in {
-      val mockedResults = LiveData(
-        timestamp = mockedInstant,
-        nodeTransitions = Map(
-          NodeTransition("start", Some("variable")) -> LiveDataForNodeTransition(
-            samples = List(
-              LiveDataSample(
-                contextId =
-                  ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
-                timestamp = mockedInstant,
-                variables = Map(
-                  "v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson)
-                ),
-              )
-            ),
-            totalCount = 101,
-            currentThroughput = 0.9811,
-          )
+      val exampleScenario = createExampleScenario()
+      val listener = LiveDataCollectingListener.createListenerFor(
+        processIdWithName = ProcessIdWithName(ProcessId(1), exampleScenario.name),
+        deploymentIdOpt = None,
+        liveDataEnabledConfig = LiveDataPreviewMode.Enabled(
+          maxNumberOfRecords = 10,
+          throughputTimeWindowInSeconds = 10,
+          liveDataStorage = LiveDataPreviewMode.LiveDataStorage.DesignerJvm
         ),
-        invocationResults = Map(
-          NodeId("start") -> List(
-            InvocationResult(
-              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
-              mockedInstant,
-              "var",
-              Json.obj("pretty" -> 1.asJson)
-            )
-          )
-        ),
-        externalInvocationResults = Map(
-          NodeId("start") -> List(
-            InvocationResult(
-              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
-              mockedInstant,
-              "var",
-              Json.obj("pretty" -> 1.asJson)
-            ),
-          )
-        ),
-        exceptions = Map(
-          NodeId("start") -> List(
-            ExceptionResult(
-              ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
-              mockedInstant,
-              Map("var1" -> Json.obj("pretty" -> "abc".asJson)),
-              new Exception("Something bad happened")
-            ),
-          )
-        ),
+        skipLiveDataUploaderWithReason = None
       )
+      listener.transitionToNextNode(
+        nodeId = "start",
+        nextNodeId = "variable",
+        context = Context(
+          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          Map("v1" -> Json.obj("a" -> "aaa".asJson, "b" -> 1.asJson))
+        ),
+        processMetaData = exampleScenario.metaData
+      )
+      listener.expressionEvaluated(
+        nodeId = "start",
+        expressionId = "var",
+        expression = "ignored_by_live_data_collector",
+        context = Context(
+          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          Map.empty
+        ),
+        processMetaData = exampleScenario.metaData,
+        result = 1
+      )
+      listener.serviceInvoked(
+        nodeId = "start",
+        id = "var",
+        context = Context(
+          ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+          Map.empty
+        ),
+        processMetaData = exampleScenario.metaData,
+        result = Try(1),
+      )
+      listener.exceptionThrown(
+        NuExceptionInfo(
+          nodeComponentInfo = Some(NodeComponentInfo("start", Source, "start")),
+          throwable = new Exception("Something bad happened"),
+          context = Context(
+            ContextId(scenarioId = "mocked-scenario-id", originatingNodeId = "source", taskId = 0, index = 0),
+            Map("var1" -> Json.obj("pretty" -> "abc".asJson))
+          ),
+          input = "ignored_by_live_data_collector",
+          timestamp = Instant.now,
+        )
+      )
+
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
-          MockableDeploymentManager.configureLiveDataPreviewSupport(
-            new LiveDataPreviewSupported {
-              override def getLiveData(
-                  processIdWithName: ProcessIdWithName
-              ): Future[Either[LiveDataError, LiveData]] = Future.successful(Right(mockedResults))
-            }
-          )
+          MockableDeploymentManager.configureLiveDataPreviewSupport(LiveDataPreviewStoredInDesignerJvm)
         }
         .when()
         .basicAuthAllPermUser()
         .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
         .Then()
         .statusCode(StatusCodes.OK.intValue)
-        .equalsJsonBody(
+        .matchJsonWithRegexValuesBody(
           s"""{
-             |  "timestamp": "2025-05-27T21:48:20Z",
+             |  "timestamp": "${regexes.zuluDateRegex}",
              |  "results": {
              |    "nodeResults": null,
              |    "nodeTransitionResults": [
@@ -187,7 +183,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |              ]
              |            },
              |            "id": "mocked-scenario-id-source-0-0",
-             |            "timestamp": "2025-05-27T21:48:20Z",
+             |            "timestamp": "${regexes.zuluDateRegex}",
              |            "variables": {
              |              "v1": {
              |                "a": "aaa",
@@ -196,8 +192,8 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            }
              |          }
              |        ],
-             |        "totalCount": 101,
-             |        "currentThroughput": 0.9811
+             |        "totalCount": 1,
+             |        "currentThroughput": "${regexes.decimalRegex}"
              |      }
              |    ],
              |    "invocationResults": {
@@ -211,7 +207,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            ]
              |          },
              |          "contextId": "mocked-scenario-id-source-0-0",
-             |          "timestamp": "2025-05-27T21:48:20Z",
+             |          "timestamp": "${regexes.zuluDateRegex}",
              |          "name": "var",
              |          "value": {
              |            "pretty": 1
@@ -230,7 +226,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            ]
              |          },
              |          "contextId": "mocked-scenario-id-source-0-0",
-             |          "timestamp": "2025-05-27T21:48:20Z",
+             |          "timestamp": "${regexes.zuluDateRegex}",
              |          "name": "var",
              |          "value": {
              |            "pretty": 1
@@ -249,7 +245,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |            ]
              |          },
              |          "id": "mocked-scenario-id-source-0-0",
-             |          "timestamp": "2025-05-27T21:48:20Z",
+             |          "timestamp": "${regexes.zuluDateRegex}",
              |          "variables": {
              |            "var1": {
              |              "pretty": "abc"
@@ -272,7 +268,7 @@ class ScenarioLiveDataApiHttpServiceSpec
              |              ]
              |            },
              |            "id": "mocked-scenario-id-source-0-0",
-             |            "timestamp": "2025-05-27T21:48:20Z",
+             |            "timestamp": "${regexes.zuluDateRegex}",
              |            "variables": {
              |              "var1": {
              |                "pretty": "abc"
@@ -302,26 +298,8 @@ class ScenarioLiveDataApiHttpServiceSpec
              |}""".stripMargin
         )
     }
-    "return not present live data" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-          MockableDeploymentManager.configureLiveDataPreviewSupport(
-            new LiveDataPreviewSupported {
-              override def getLiveData(
-                  processIdWithName: ProcessIdWithName
-              ): Future[Either[LiveDataError, LiveData]] =
-                Future.successful(Left(LiveDataError.NoLiveDataAvailableForScenario))
-            }
-          )
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/liveData/${exampleScenario.name}")
-        .Then()
-        .statusCode(StatusCodes.NoContent.intValue)
-    }
     "return live data not supported error" in {
+      val exampleScenario = createExampleScenario()
       given()
         .applicationState {
           createSavedScenario(exampleScenario)

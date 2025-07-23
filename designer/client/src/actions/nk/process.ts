@@ -3,7 +3,8 @@ import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
-import { getProcessDefinitionData } from "../../reducers/selectors/processDefinitionData";
+import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
+import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import type { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
@@ -35,7 +36,6 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
         dispatch({ type: "PROCESS_FETCH" });
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
-            dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,
@@ -55,14 +55,20 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
         );
 }
 
+const getTestCapabilities = memoizeByArgsWithTTL((processName: ProcessName, scenarioGraph: ScenarioGraph) => {
+    return HttpService.getTestCapabilities(processName, scenarioGraph);
+}, 1000);
+
 export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph): ThunkAction {
-    return (dispatch) =>
-        HttpService.getTestCapabilities(processName, scenarioGraph).then(({ data }) =>
-            dispatch({
+    return (dispatch) => {
+        if (getTestCapabilities.isCached(processName, scenarioGraph)) return;
+        getTestCapabilities(processName, scenarioGraph).then(({ data }) => {
+            return dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,
-            }),
-        );
+            });
+        });
+    };
 }
 
 export function displayCurrentProcessVersion(processName: ProcessName): ThunkAction {
@@ -87,7 +93,7 @@ export function clearProcess(): ThunkAction {
 export function hideRunProcessDetails(): ThunkAction {
     replaceSearchQuery(omit(["from", "to", "refresh"]));
     return (dispatch, getState) => {
-        dispatch(stopLiveData(Initiator.button));
+        dispatch(stopLiveData());
         dispatch({ type: "HIDE_RUN_PROCESS_DETAILS" });
     };
 }

@@ -4742,6 +4742,7 @@ paths:
                           requiredParam: true
                           category: Standard
                           changesCanReloadParameters: false
+                          nonImportantForExecution: false
                       status: AVAILABLE
                     testWithGeneratedData:
                       status: AVAILABLE
@@ -7865,6 +7866,7 @@ components:
       - label
       - category
       - changesCanReloadParameters
+      - nonImportantForExecution
       properties:
         name:
           type: string
@@ -7906,6 +7908,8 @@ components:
         category:
           $ref: '#/components/schemas/ParameterCategory'
         changesCanReloadParameters:
+          type: boolean
+        nonImportantForExecution:
           type: boolean
     UIValueParameterDto:
       title: UIValueParameterDto

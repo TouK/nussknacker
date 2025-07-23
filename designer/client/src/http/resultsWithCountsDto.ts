@@ -36,11 +36,14 @@ export type NodeTransitionResult = {
 };
 
 export interface TestResultsDto {
+    /** @deprecated Use nodeTransitionResults instead */
     nodeResults?: Record<NodeId, ResultContextJson[]> | null;
     nodeTransitionResults?: NodeTransitionResult[] | null;
     invocationResults: Record<NodeId, ExpressionInvocationResultJson[]>;
     externalInvocationResults: Record<NodeId, ExternalInvocationResultJson[]>;
+    /** @deprecated Use exceptionsByNodeId instead */
     exceptions: ExceptionResultJson[];
+    exceptionsByNodeId: Record<NodeId, ExceptionResultJson[]>;
 }
 
 export interface NodeCounts {

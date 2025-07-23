@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import cats.implicits.catsSyntaxSemigroup
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.JoinContextTransformation
@@ -33,14 +34,16 @@ object ComponentDefinitionExtractor {
       inputComponentDefinition: ComponentDefinition,
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      globalParametersConfig: GlobalParametersConfig
   ): Option[ComponentDefinitionWithImplementation] = {
     val configBasedOnDefinition = ComponentConfig.zero
       .copy(
         docsUrl = inputComponentDefinition.docsUrl,
         icon = inputComponentDefinition.icon,
         componentId = inputComponentDefinition.designerWideId,
-        label = inputComponentDefinition.label
+        label = inputComponentDefinition.label,
+        componentGroup = inputComponentDefinition.componentGroup,
       )
     ComponentDefinitionExtractor
       .extract(
@@ -49,7 +52,8 @@ object ComponentDefinitionExtractor {
         configBasedOnDefinition,
         additionalConfigs,
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
+        globalParametersConfig
       )
   }
 
@@ -59,7 +63,8 @@ object ComponentDefinitionExtractor {
       configFromDefinition: ComponentConfig,
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      globalParametersConfig: GlobalParametersConfig
   ): Option[ComponentDefinitionWithImplementation] = {
     val (
       methodDefinitionExtractor: MethodDefinitionExtractor[Component],
@@ -144,7 +149,8 @@ object ComponentDefinitionExtractor {
           .extractMethodDefinition(
             component,
             findMainComponentMethod(component),
-            componentConfigForParametersExtraction.params.getOrElse(Map.empty)
+            componentConfigForParametersExtraction.params.getOrElse(Map.empty),
+            globalParametersConfig
           )
           .map { methodDef =>
             def notReturnAnything(typ: TypingResult) =

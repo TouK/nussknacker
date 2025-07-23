@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.util.functions
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import scala.annotation.nowarn
 
@@ -26,28 +26,30 @@ trait ConversionUtils extends HideToString {
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number =
     numeric.toNumber(stringOrNumber)
 
-  @Documentation(description = "Convert String value to JSON")
+  // TODO 1: We should probable rename toJson/toJsonOrNull to parseJson/parseJsonOrNull
+  // TODO 2: We should extract a separate helper JSON and shorten parseJson/parseJsonOrNull to just parse/parseOrNull
+  // TODO 3: toJsonString can be a extension method like other toXYZ methods
+  // TODO 4: We should consider exposing Circe's Json class or similar interface. Thanks to that user could do: #value.toJson.spaces2
+  @Documentation(description = "Parse String value as JSON")
   def toJson(@ParamName("value") value: String): Any = {
-    toJsonEither(value).toTry.get
+    parseJsonEither(value).toTry.get
   }
 
-  @Documentation(description = "Convert String value to JSON or null in case of failure")
+  @Documentation(description = "Parse String value as JSON. It returns null in case of failure")
   def toJsonOrNull(@ParamName("value") value: String): Any = {
-    toJsonEither(value).getOrElse(null)
+    parseJsonEither(value).getOrElse(null)
   }
 
-  @Documentation(description = "Convert JSON to String")
+  @Documentation(description = "Convert value to JSON String")
   def toJsonString(@ParamName("value") value: Any): String = {
-    jsonEncoder.encode(value).noSpaces
+    ToJsonEncoder.default.encodeUnsafe(value).noSpaces
   }
 
-  private def toJsonEither(value: String): Either[Throwable, Any] = {
+  private def parseJsonEither(value: String): Either[Throwable, Any] = {
     io.circe.parser.parse(value) match {
       case Right(json) => Right(FromJsonSimpleDecoder.jsonToAny(json))
       case Left(ex)    => Left(new IllegalArgumentException(s"Cannot convert [$value] to JSON", ex))
     }
   }
-
-  private lazy val jsonEncoder = new ToJsonEncoder(true, this.getClass.getClassLoader)
 
 }

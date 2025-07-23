@@ -27,7 +27,7 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
             {props.children}
             <FormControl>
                 <FormLabel>
-                    <InfoTooltip title={"Value evaluated in test case"} variant={"hover"}>
+                    <InfoTooltip title={"Expression evaluation result"} variant={"hover"}>
                         <InfoIcon sx={() => ({ alignSelf: "center" })} />
                     </InfoTooltip>
                     {testValue.pretty && !fitsMaxHeight ? (

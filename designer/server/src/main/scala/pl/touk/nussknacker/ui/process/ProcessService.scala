@@ -222,7 +222,7 @@ class DBProcessService(
       new FetchScenarioFun[Id] {
         override def apply[PS: ScenarioShapeFetchStrategy]: Future[Id[ScenarioWithDetailsEntity[PS]]] =
           fetchingProcessRepository
-            .fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id)
+            .fetchLatestProcessDetails[PS](processIdWithName.id)
             .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.name)))
       },
       options
@@ -241,7 +241,7 @@ class DBProcessService(
       new FetchScenarioFun[Id] {
         override def apply[PS: ScenarioShapeFetchStrategy]: Future[ScenarioWithDetailsEntity[PS]] =
           fetchingProcessRepository
-            .fetchProcessDetailsForId[PS](processIdWithName.id, versionId)
+            .fetchProcessDetailsForVersion[PS](processIdWithName.id, versionId)
             .map(_.getOrElse(throw ProcessVersionNotFoundError(processIdWithName.name, versionId)))
       },
       options

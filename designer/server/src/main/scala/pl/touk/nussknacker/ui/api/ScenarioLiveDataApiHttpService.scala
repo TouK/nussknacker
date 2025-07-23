@@ -3,11 +3,15 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, LiveDataPreviewSupported, NoLiveDataPreviewSupport}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveData
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.LiveDataError.NoLiveDataAvailableForScenario
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentManager,
+  LiveDataPreviewStoredInDesignerDb,
+  LiveDataPreviewStoredInDesignerJvm,
+  NoLiveDataPreviewSupport
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcessConverter
+import pl.touk.nussknacker.engine.livedata.{CollectedLiveData, LiveDataCollectingListenerStorageHolder}
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -21,6 +25,8 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.livedata.LiveDataRepository
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
@@ -32,6 +38,8 @@ class ScenarioLiveDataApiHttpService(
     dmDispatcher: DeploymentManagerDispatcher,
     protected override val scenarioService: ProcessService,
     processCounter: ProcessCounter,
+    liveDataRepository: LiveDataRepository,
+    dbioActionRunner: DBIOActionRunner,
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with ScenarioHttpServiceExtensions
@@ -60,22 +68,34 @@ class ScenarioLiveDataApiHttpService(
               case None                    => Left(NoScenario)
             }
           }
-          liveData <- EitherT[Future, LiveDataError, LiveData] {
+          liveData <- EitherT[Future, LiveDataError, CollectedLiveData] {
             deploymentManager.liveDataPreviewSupport match {
-              case supported: LiveDataPreviewSupported =>
-                supported.getLiveData(processIdWithName).map {
-                  case Right(liveData)                      => Right(liveData)
-                  case Left(NoLiveDataAvailableForScenario) => Left(LiveDataNotAvailable)
+              case LiveDataPreviewStoredInDesignerJvm =>
+                Future(LiveDataCollectingListenerStorageHolder.getLiveDataPreview(processIdWithName.name)).map {
+                  case Some(liveData) => Right(liveData)
+                  case None           => Right(CollectedLiveData.empty)
                 }
+              case LiveDataPreviewStoredInDesignerDb(maxSamples, uploadIntervalInSeconds) =>
+                dbioActionRunner
+                  .run(liveDataRepository.fetchLiveData(processIdWithName, maxSamples, uploadIntervalInSeconds))
+                  .map {
+                    case Right(liveData) =>
+                      Right(liveData)
+                    case Left(error) =>
+                      logger.warn(s"Could not fetch live data for [$processIdWithName], [$error]")
+                      Left(LiveDataNotAvailable)
+                  }
               case NoLiveDataPreviewSupport =>
-                Future.successful(Left(LiveDataNotSupported))
+                Future.successful(
+                  Left(LiveDataNotSupported)
+                )
             }
           }
         } yield ResultsWithCountsDto.from(liveData, computeCounts(scenarioWithDetails, liveData))
       }
   }
 
-  private def computeCounts(scenarioWithDetails: ScenarioWithDetails, liveData: LiveData)(
+  private def computeCounts(scenarioWithDetails: ScenarioWithDetails, liveData: CollectedLiveData)(
       implicit loggedUser: LoggedUser
   ): Map[String, NodeCount] = {
     val incomingCounts =

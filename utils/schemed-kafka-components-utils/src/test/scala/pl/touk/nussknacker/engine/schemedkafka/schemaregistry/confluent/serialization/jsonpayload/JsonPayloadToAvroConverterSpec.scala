@@ -7,8 +7,8 @@ import org.apache.avro.generic.GenericRecord
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.schemedkafka.encode.AvroToJsonEncoderCustomisation
-import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.nio.charset.StandardCharsets
 import java.time.{Instant, LocalDate, LocalTime}
@@ -19,7 +19,7 @@ import scala.util.{Failure, Try}
 class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   val avroToJsonEncoder: PartialFunction[Any, Json] =
-    new AvroToJsonEncoderCustomisation().encoder(ToJsonEncoder.defaultForTests.encode)
+    new AvroToJsonEncoderCustomisation().encoder(ToJsonEncoder.default.encodeUnsafe)
 
   test("date logical type") {
     val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""", defaultOpt = Some("124"))

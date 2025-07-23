@@ -1,6 +1,7 @@
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { DefaultComponents as Window } from "@touk/window-manager";
 import type { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
+import type { HeaderButtonCloseProps } from "@touk/window-manager/cjs/components/window/header/HeaderButtonClose";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,7 +11,6 @@ import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk";
 import { useUserSettings } from "../../../../common/userSettings";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
-import { parseWindowsQueryParams } from "../../../../containers/hooks/useSearchQuery";
 import type { RootState } from "../../../../reducers";
 import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
@@ -28,7 +28,8 @@ import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubhead
 import { EditStateFeedback } from "./EditStateFeedback";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import { mergeQuery, useNodeState } from "./useNodeState";
+import type { EditState } from "./useNodeState";
+import { useNodeState } from "./useNodeState";
 
 export type NodeDetailsMeta = {
     node: NodeType;
@@ -65,7 +66,6 @@ export function useNodeDetailsButtons({
             title: t("dialog.button.apply", "apply"),
             action: () =>
                 performNodeEdit(editedNode, outputEdges).then(() => {
-                    mergeQuery(parseWindowsQueryParams({}, { nodeId: editedNode.id }));
                     close();
                 }),
             disabled: !editedNode["$id" in editedNode ? "$id" : "id"]?.length,
@@ -99,12 +99,26 @@ function useTitleData(node: NodeType) {
     };
 }
 
+const CloseButton = ({ closeDialog, editStateRef }: HeaderButtonCloseProps & { editStateRef: React.RefObject<EditState> }) => {
+    return (
+        <Window.HeaderButtonClose
+            closeDialog={() => {
+                function close(i = 0) {
+                    if (editStateRef?.current === "idle" || i >= 10) return closeDialog();
+                    setTimeout(() => close(++i), 200);
+                }
+                close();
+            }}
+        />
+    );
+};
+
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
     const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
-    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState } = useNodeState(data.meta);
+    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
 
     const nodeIsFragment = useMemo(() => NodeUtils.nodeIsFragment(editedNode), [editedNode]);
@@ -125,20 +139,20 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     const [settings] = useUserSettings();
     const [PortalWrapper, portalRef] = usePortal();
-    const components: DefaultContentProps["components"] = useMemo(
-        () =>
-            settings["node.showInputsAndOutputs"]
-                ? {
-                      Content: (props) => <InputOutputContent {...props} ref={portalRef} />,
-                      Footer: (props) => (
-                          <PortalWrapper>
-                              <Window.Footer {...props} />
-                          </PortalWrapper>
-                      ),
-                  }
-                : undefined,
-        [settings, portalRef, PortalWrapper],
-    );
+
+    const components: DefaultContentProps["components"] = useMemo(() => {
+        return settings["node.showInputsAndOutputs"]
+            ? {
+                  Content: (props) => <InputOutputContent {...props} ref={portalRef} />,
+                  Footer: (props) => (
+                      <PortalWrapper>
+                          <Window.Footer {...props} />
+                      </PortalWrapper>
+                  ),
+                  HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} />,
+              }
+            : { HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} /> };
+    }, [settings, portalRef, PortalWrapper, editStateRef]);
 
     const dispatch = useDispatch();
     useEffect(() => {

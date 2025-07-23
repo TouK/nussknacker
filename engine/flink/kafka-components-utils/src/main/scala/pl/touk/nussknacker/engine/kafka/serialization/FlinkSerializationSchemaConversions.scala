@@ -1,12 +1,9 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.typeutils.ResultTypeQueryable
 import org.apache.flink.streaming.connectors.kafka
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
@@ -15,7 +12,6 @@ import pl.touk.nussknacker.engine.kafka.serialization
 
 import java.lang
 import scala.annotation.nowarn
-import scala.reflect.classTag
 
 object FlinkSerializationSchemaConversions extends LazyLogging {
 
@@ -31,7 +27,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
       typeInformation: TypeInformation[T]
   ) extends kafka.KafkaDeserializationSchema[T] {
 
-    protected var exceptionHandlingData: (ExceptionHandler, ContextIdGenerator, NodeId) = _
+    private var exceptionHandlingData: (ExceptionHandler, ContextIdGenerator, NodeId) = _
 
     // We pass exception handler from SourceFunction instead of init it in open because KafkaDeserializationSchema has no close() method
     private[kafka] def setExceptionHandlingData(

@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.deployment.reconciliation.{
 }
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.livedata.{DbLiveDataRepository, LiveDataRepository}
 import pl.touk.nussknacker.ui.process.newdeployment
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
@@ -90,6 +91,7 @@ final class DomainServices(
     val processAuthorizer: AuthorizeProcess,
     val limitsService: LimitsService,
     val processCounter: ProcessCounter,
+    val liveDataRepository: LiveDataRepository,
 )
 
 object DomainServices extends LazyLogging {
@@ -325,6 +327,7 @@ object DomainServices extends LazyLogging {
         deploymentRepository,
         dbioRunner
       )
+      liveDataRepository = new DbLiveDataRepository(dbRef)
       _ = Initialization.init(
         migrations,
         dbRef,
@@ -358,6 +361,7 @@ object DomainServices extends LazyLogging {
       processAuthorizer = processAuthorizer,
       limitsService = limitsService,
       processCounter = counter,
+      liveDataRepository = liveDataRepository,
     )
   }
 

@@ -47,7 +47,6 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.Instant
 import java.util.{Date, UUID}
-import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.implicitConversions

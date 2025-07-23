@@ -77,6 +77,8 @@ object PekkoRoutesFactory {
         processingTypeServicesProvider.mapValues(_.additionalComponentConfigs),
         limitsService,
         processingTypeServicesProvider.mapValues(_.actionInfoService),
+        liveDataRepository,
+        dbioRunner,
       )
       new ManagementResources(
         processAuthorizer,

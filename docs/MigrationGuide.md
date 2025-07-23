@@ -153,6 +153,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#8054](https://github.com/TouK/nussknacker/pull/8054) `ProcessObjectDependencies` class was replaced by `ModelConfig`
 * [#8256](https://github.com/TouK/nussknacker/pull/8256) The support for kafka source generating custom classes (`KafkaSourceFactory`) was removed
   We recommend a migration to more generic approach: `UniversalKafkaSourceFactory`
+* [#8308](https://github.com/TouK/nussknacker/pull/8308) `ToJsonEncoder` refactor:
+  * `ToJsonEncoder` was moved to `pl.touk.nussknacker.engine.api.json.encoders` package
+  * `ToJsonEncoder` is a sealed trait, if you want to extend it, use either `StrictToJsonEncoder` (old `failOnUnknown = true`) 
+    or `LooseToJsonEncoder` (old `failOnUnknown = false`)
+  * `highPriority` become a method instead of parameter
+  * `ToJsonEncoder.encode` method now returns `Validated` and is available only for `StrictToJsonEncoder`
+  * `ToJsonEncoder.encodeUnsafe` method behave as the previous `ToJsonEncoder.encode` (errors are thrown as Exceptions)
 
 ### Other changes
 
@@ -212,7 +219,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Also, if you provide one element in `groupBy` expression, it will be presented as one element list instead of scalar.
 * [#8011](https://github.com/TouK/nussknacker/pull/8011) During scenario compilation, redundant parameters used in node are treated only as warning now. They are skipped and compilation passes.
 * [#8198](https://github.com/TouK/nussknacker/pull/8198) Support for test data without `sourceId` specified is removed - now, you always have to specify it
-* [#7137](https://github.com/TouK/nussknacker/pull/7137) Updated Flink 1.19.2 -> 1.20.1.
+* [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink 1.19.2 -> 1.20.2.
 * [#8209](https://github.com/TouK/nussknacker/pull/8209) Nussknacker now requires flink to be run with replaced `lib/flink-scala_2.12-x.x.x.jar` by `pl.touk:flink-scala` lib for the same scala version as used Nussknacker distribution. We provide prebuild flink docker images on [Docker Hub](https://hub.docker.com/r/touk/flink)    
 
 ## In version 1.18.0

@@ -19,8 +19,8 @@ package pl.touk.nussknacker.engine.spel.parser;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ParseException;
 import org.springframework.expression.ParserContext;
-import org.springframework.expression.common.CompositeStringExpression;
 import org.springframework.expression.common.LiteralExpression;
+import org.springframework.expression.spel.SpelParseException;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
@@ -63,25 +63,21 @@ public class NuSpelExpressionParser {
         if (context != null && context.isTemplate()) {
             return parseTemplate(expressionString, context);
         } else {
-            return ExpressionWithTextRange.forSingleExpression(doParseExpression(expressionString), expressionString.length());
+            IndexBasedTextRange textRange = new IndexBasedTextRange(0, expressionString.length());
+            return ExpressionWithTextRange.forSingleExpression(doParseExpression(expressionString, textRange), textRange);
         }
     }
 
 
     private ExpressionWithTextRange parseTemplate(String expressionString, ParserContext context) throws ParseException {
         if (expressionString.isEmpty()) {
-            return ExpressionWithTextRange.forSingleExpression(new LiteralExpression(""), 0);
+            IndexBasedTextRange textRange = new IndexBasedTextRange(0, 0);
+            return ExpressionWithTextRange.forSingleExpression(new LiteralExpression(""), textRange);
         }
 
         SingleExpressionWithTextRange[] expressions = parseExpressions(expressionString, context);
         if (expressions.length == 1) {
-            SingleExpressionWithTextRange singleExpression = expressions[0];
-            if (singleExpression.getExpression() instanceof LiteralExpression || singleExpression.getExpression() instanceof CompositeStringExpression) {
-                return singleExpression;
-            } else {
-                // HERE is another difference. In some cases, Spring returns another expression's type than StringExpression (SpelExpression) for the template context, we fix it by this trick
-                return ExpressionWithTextRange.forSingleExpression(new CompositeStringExpression(expressionString, new Expression[]{singleExpression.getExpression()}), expressionString.length());
-            }
+            return expressions[0];
         } else {
             return ExpressionWithTextRange.forCompositeStringExpression(expressionString, expressions);
         }
@@ -122,14 +118,12 @@ public class NuSpelExpressionParser {
                 int afterPrefixIndex = prefixIndex + prefix.length();
                 int suffixIndex = skipToCorrectEndSuffix(suffix, expressionString, afterPrefixIndex);
                 if (suffixIndex == -1) {
-                    throw new ParseException(expressionString, prefixIndex,
-                            "No ending suffix '" + suffix + "' for expression starting at character " +
-                                    prefixIndex + ": " + expressionString.substring(prefixIndex));
+                    throw new ExceptionWithExpressionTextRange("Placeholder is not finished correctly, missing closing " + suffix,
+                            new IndexBasedTextRange(prefixIndex, afterPrefixIndex));
                 }
                 if (suffixIndex == afterPrefixIndex) {
-                    throw new ParseException(expressionString, prefixIndex,
-                            "No expression defined within delimiter '" + prefix + suffix +
-                                    "' at character " + prefixIndex);
+                    throw new ExceptionWithExpressionTextRange("Empty placeholder",
+                            new IndexBasedTextRange(prefixIndex, suffixIndex + suffix.length() + 1));
                 }
                 String expr = expressionString.substring(prefixIndex + prefix.length(), suffixIndex);
                 // expr.trim() replaced with this code to calculate actual start and end (without leading/trailing spaces)
@@ -137,12 +131,13 @@ public class NuSpelExpressionParser {
                 String exprStripBoth = exprStripLeading.stripTrailing();
                 int leadingWhitespaces = expr.length() - exprStripLeading.length();
                 int trailingWhitespaces = exprStripLeading.length() - exprStripBoth.length();
-                if (expr.isEmpty()) {
-                    throw new ParseException(expressionString, prefixIndex,
-                            "No expression defined within delimiter '" + prefix + suffix +
-                                    "' at character " + prefixIndex);
+                if (exprStripBoth.isEmpty()) {
+                    throw new ExceptionWithExpressionTextRange("Empty placeholder",
+                            new IndexBasedTextRange(prefixIndex, suffixIndex + suffix.length() + 1));
                 }
-                expressions.add(new SingleExpressionWithTextRange(doParseExpression(exprStripBoth), new IndexBasedTextRange(prefixIndex + prefix.length() + leadingWhitespaces, suffixIndex - trailingWhitespaces)));
+                IndexBasedTextRange textRange = new IndexBasedTextRange(prefixIndex + prefix.length() + leadingWhitespaces, suffixIndex - trailingWhitespaces);
+                Expression parsedExpression = doParseExpression(exprStripBoth, textRange);
+                expressions.add(new SingleExpressionWithTextRange(parsedExpression, textRange));
                 startIdx = suffixIndex + suffix.length();
             } else {
                 // no more ${expressions} found in string, add rest as static text
@@ -186,8 +181,7 @@ public class NuSpelExpressionParser {
      *                         matching end suffix is being sought
      * @return the position of the correct matching nextSuffix or -1 if none can be found
      */
-    private int skipToCorrectEndSuffix(String suffix, String expressionString, int afterPrefixIndex)
-            throws ParseException {
+    private int skipToCorrectEndSuffix(String suffix, String expressionString, int afterPrefixIndex) throws ParseException {
 
         // Chew on the expression text - relying on the rules:
         // brackets must be in pairs: () [] {}
@@ -214,15 +208,11 @@ public class NuSpelExpressionParser {
                 case ']':
                 case ')':
                     if (stack.isEmpty()) {
-                        throw new ParseException(expressionString, pos, "Found closing '" + ch +
-                                "' at position " + pos + " without an opening '" +
-                                Bracket.theOpenBracketFor(ch) + "'");
+                        throw new ParseException(expressionString, pos, "Illegal syntax: closing '" + ch + "' without an opening '" + Bracket.theOpenBracketFor(ch) + "'");
                     }
                     Bracket p = stack.pop();
                     if (!p.compatibleWithCloseBracket(ch)) {
-                        throw new ParseException(expressionString, pos, "Found closing '" + ch +
-                                "' at position " + pos + " but most recent opening is '" + p.bracket +
-                                "' at position " + p.pos);
+                        throw new ParseException(expressionString, p.pos, "Illegal syntax: unclosed '" +  p.bracket + "'");
                     }
                     break;
                 case '\'':
@@ -230,8 +220,7 @@ public class NuSpelExpressionParser {
                     // jump to the end of the literal
                     int endLiteral = expressionString.indexOf(ch, pos + 1);
                     if (endLiteral == -1) {
-                        throw new ParseException(expressionString, pos,
-                                "Found non terminating string literal starting at position " + pos);
+                        throw new ParseException(expressionString, pos, "String literal is not finished correctly, missing closing '\"'");
                     }
                     pos = endLiteral;
                     break;
@@ -240,8 +229,7 @@ public class NuSpelExpressionParser {
         }
         if (!stack.isEmpty()) {
             Bracket p = stack.pop();
-            throw new ParseException(expressionString, p.pos, "Missing closing '" +
-                    Bracket.theCloseBracketFor(p.bracket) + "' for '" + p.bracket + "' at position " + p.pos);
+            throw new ParseException(expressionString, p.pos, "Illegal syntax: unclosed '" + p.bracket + "'");
         }
         if (!isSuffixHere(expressionString, pos, suffix)) {
             return -1;
@@ -250,10 +238,32 @@ public class NuSpelExpressionParser {
         return pos;
     }
 
-    protected Expression doParseExpression(String expressionString) throws ParseException {
-        return underlyingParser.parseRaw(expressionString);
+    // It returns AST nodes with position local to spel expression
+    private Expression doParseExpression(String expressionString, IndexBasedTextRange expressionTextRange) throws ParseException {
+        try {
+            return underlyingParser.parseRaw(expressionString);
+        } catch (ParseException exception) {
+            throw adjustErrorPosition(exception, expressionTextRange);
+        } catch (RuntimeException exception) {
+            throw new ExceptionWithExpressionTextRange(exception, expressionTextRange);
+        }
     }
 
+    private ParseException adjustErrorPosition(ParseException exception, IndexBasedTextRange expressionTextRange) {
+        int adjustedPosition = exception.getPosition() + expressionTextRange.start();
+        if (exception instanceof SpelParseException) {
+            SpelParseException spelEx = (SpelParseException) exception;
+            if (spelEx.getCause() == null) {
+                return new SpelParseException(spelEx.getExpressionString(), adjustedPosition, spelEx.getMessageCode(), spelEx.getInserts());
+            } else {
+                return new SpelParseException(adjustedPosition, spelEx.getCause(), spelEx.getMessageCode(), spelEx.getInserts());
+            }
+        } else if (exception.getCause() == null) {
+            return new ParseException(exception.getExpressionString(), adjustedPosition, exception.getMessage());
+        } else {
+            return new ParseException(adjustedPosition, exception.getMessage(), exception.getCause());
+        }
+    }
 
     /**
      * This captures a type of bracket and the position in which it occurs in the
