@@ -303,6 +303,7 @@ case class Parameter(
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
 //  // TODO: all three methods below could be removed when we split this class into api class and domain model class
+  // todomkp assert non empty list of editors
   def editorsWithDefault: List[ParameterEditor] = editors match {
     case Nil => List(SpelParameterEditor)
     case nel => nel

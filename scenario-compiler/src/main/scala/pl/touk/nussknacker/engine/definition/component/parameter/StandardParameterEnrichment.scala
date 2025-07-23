@@ -46,7 +46,6 @@ object StandardParameterEnrichment {
     val parameterData = ParameterData(original.typ, Nil)
     val finalEditors = original.editors
       .orElseIfEmpty(EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig))
-      .orElseIfEmpty(List(SpelParameterEditor))
     val finalValidators =
       (original.validators ++
         parameterConfig.validators.toList.flatten ++
