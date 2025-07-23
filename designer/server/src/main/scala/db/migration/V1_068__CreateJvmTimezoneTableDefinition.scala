@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 // Information about current JVM ZoneId.systemDefault() is needed by the next migration and must be available on SQL level
 // (it migrates some columns representing LocalDateTime without timezone information to UTC)
 // The jvm_timezone table is used and then dropped by the next migration.
-trait V1_067__CreateJvmTimezoneTableDefinition extends SlickMigration with LazyLogging {
+trait V1_068__CreateJvmTimezoneTableDefinition extends SlickMigration with LazyLogging {
 
   import profile.apiWithEnforcedSchema._
 
