@@ -22,15 +22,15 @@ object propertyAccessors {
       set: ClassDefinitionSet
   ): Seq[PropertyAccessor] = {
     Seq(
-      MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
-      new CheckedReflectivePropertyAccessor(accessChecker),
-      NullPropertyAccessor,                                 // must be before other non-standard ones
+      MapPropertyAccessor,  // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
+      NullPropertyAccessor, // must be before other non-standard ones
       new ScalaOptionOrNullPropertyAccessor(accessChecker), // must be before scalaPropertyAccessor
       new JavaOptionalOrNullPropertyAccessor(accessChecker),
       new PrimitiveOrWrappersPropertyAccessor(accessChecker),
       new StaticPropertyAccessor(accessChecker),
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
       new NoParamMethodPropertyAccessor(accessChecker),
+      new CheckedReflectivePropertyAccessor(accessChecker),
       new ExtensionMethodsPropertyAccessor(accessChecker, set),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,

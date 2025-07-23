@@ -20,7 +20,6 @@ interface Props {
 }
 export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: Props) => {
     const { sourceId, sourceParameters } = useSourceParameters();
-    const [showInfoAfterSendData, setShowInfoAfterSendData] = useState<boolean>(false);
     const scenarioName = useSelector(getProcessName);
     const dispatch = useDispatch();
     const { t } = useTranslation();
@@ -39,7 +38,6 @@ export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: P
                     }),
                 );
             }
-            setShowInfoAfterSendData(true);
         } catch (error) {
             console.error("Error sending request:", error);
         }
@@ -55,29 +53,6 @@ export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: P
                 />
                 {infoTooltip && <InfoTooltip title={infoTooltip} variant={"hover"} />}
             </Box>
-
-            <Collapse sx={{ width: "80%" }} in={showInfoAfterSendData} timeout="auto">
-                <Alert
-                    icon={false}
-                    sx={{ width: "100%" }}
-                    severity="success"
-                    onClose={() => {
-                        setShowInfoAfterSendData(false);
-                    }}
-                >
-                    <MarkdownStyled>
-                        {t(
-                            "node.actions.sendRequest.successMessage",
-                            `
-The message has been sent. You can now check the processing outcome by:
-- Reviewing the metrics,
-- Using counts,
-- Using the logging component to inspect the message content.
-`,
-                        )}
-                    </MarkdownStyled>
-                </Alert>
-            </Collapse>
         </Box>
     );
 };
