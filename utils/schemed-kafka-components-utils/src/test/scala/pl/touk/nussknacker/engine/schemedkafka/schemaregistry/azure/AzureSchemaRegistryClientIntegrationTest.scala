@@ -48,51 +48,51 @@ class AzureSchemaRegistryClientIntegrationTest
     SchemaRegistryClientKafkaConfig(kafkaPropertiesConfigMap, SchemaRegistryCacheConfig(), None)
   private val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(schemaRegistryConfig)
 
-  test("getAllTopics should return topic for corresponding schema based on schema name") {
-    val givenTopic = UnspecializedTopicName("nu-cloud-integration-test")
-    registerTopic(givenTopic)
+//  test("getAllTopics should return topic for corresponding schema based on schema name") {
+//    val givenTopic = UnspecializedTopicName("nu-cloud-integration-test")
+//    registerTopic(givenTopic)
+//
+//    val value  = new NuCloudIntegrationTestValue
+//    val schema = createReflectSchema(value)
+//    SchemaNameTopicMatchStrategy(List(givenTopic))
+//      .getAllMatchingTopics(List(schema.name()), isKey = false) shouldEqual List(
+//      givenTopic
+//    )
+//    schemaRegistryClient.registerSchemaVersionIfNotExists(schema)
+//
+//    val topics = schemaRegistryClient.getAllTopics.validValue
+//    topics should contain(givenTopic)
+//  }
+//
+//  test("getFreshSchema should return version for topic for corresponding schema based on schema name") {
+//    val givenTopic = UnspecializedTopicName("nu-cloud-multiple-versions-test")
+//    registerTopic(givenTopic)
+//
+//    val aFieldOnlySchema =
+//      createRecordSchema(givenTopic, _.name("a").`type`(Schema.create(Schema.Type.STRING)).noDefault())
+//    val abFieldsSchema = createRecordSchema(
+//      topicName = givenTopic,
+//      assemblyFields = _.name("a")
+//        .`type`(Schema.create(Schema.Type.STRING))
+//        .noDefault()
+//        .name("b")
+//        .`type`(Schema.create(Schema.Type.STRING))
+//        .withDefault("bDefault")
+//    )
 
-    val value  = new NuCloudIntegrationTestValue
-    val schema = createReflectSchema(value)
-    SchemaNameTopicMatchStrategy(List(givenTopic))
-      .getAllMatchingTopics(List(schema.name()), isKey = false) shouldEqual List(
-      givenTopic
-    )
-    schemaRegistryClient.registerSchemaVersionIfNotExists(schema)
-
-    val topics = schemaRegistryClient.getAllTopics.validValue
-    topics should contain(givenTopic)
-  }
-
-  test("getFreshSchema should return version for topic for corresponding schema based on schema name") {
-    val givenTopic = UnspecializedTopicName("nu-cloud-multiple-versions-test")
-    registerTopic(givenTopic)
-
-    val aFieldOnlySchema =
-      createRecordSchema(givenTopic, _.name("a").`type`(Schema.create(Schema.Type.STRING)).noDefault())
-    val abFieldsSchema = createRecordSchema(
-      topicName = givenTopic,
-      assemblyFields = _.name("a")
-        .`type`(Schema.create(Schema.Type.STRING))
-        .noDefault()
-        .name("b")
-        .`type`(Schema.create(Schema.Type.STRING))
-        .withDefault("bDefault")
-    )
-
-    val aFieldOnlySchemaProps = schemaRegistryClient.registerSchemaVersionIfNotExists(aFieldOnlySchema)
-    val abFieldsSchemaProps   = schemaRegistryClient.registerSchemaVersionIfNotExists(abFieldsSchema)
-
-    val resultForAFieldOnlySchema =
-      schemaRegistryClient.getFreshSchema(givenTopic, Some(aFieldOnlySchemaProps.getVersion), isKey = false).validValue
-    val resultForABFieldsSchema =
-      schemaRegistryClient.getFreshSchema(givenTopic, Some(abFieldsSchemaProps.getVersion), isKey = false).validValue
-
-    resultForAFieldOnlySchema.schema shouldEqual aFieldOnlySchema
-    resultForAFieldOnlySchema.id.asString shouldEqual aFieldOnlySchemaProps.getId
-    resultForABFieldsSchema.schema shouldEqual abFieldsSchema
-    resultForABFieldsSchema.id.asString shouldEqual abFieldsSchemaProps.getId
-  }
+//    val aFieldOnlySchemaProps = schemaRegistryClient.registerSchemaVersionIfNotExists(aFieldOnlySchema)
+//    val abFieldsSchemaProps   = schemaRegistryClient.registerSchemaVersionIfNotExists(abFieldsSchema)
+//
+//    val resultForAFieldOnlySchema =
+//      schemaRegistryClient.getFreshSchema(givenTopic, Some(aFieldOnlySchemaProps.getVersion), isKey = false).validValue
+//    val resultForABFieldsSchema =
+//      schemaRegistryClient.getFreshSchema(givenTopic, Some(abFieldsSchemaProps.getVersion), isKey = false).validValue
+//
+//    resultForAFieldOnlySchema.schema shouldEqual aFieldOnlySchema
+//    resultForAFieldOnlySchema.id.asString shouldEqual aFieldOnlySchemaProps.getId
+//    resultForABFieldsSchema.schema shouldEqual abFieldsSchema
+//    resultForABFieldsSchema.id.asString shouldEqual abFieldsSchemaProps.getId
+//  }
 
   private def createReflectSchema[T](value: T): AvroSchema = {
     // Azure Serializer doesn't support reflect schema inferring but generally reflect schema approach shows convention

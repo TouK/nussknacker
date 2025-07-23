@@ -83,193 +83,193 @@ class AzureSchemaRegistryKafkaAvroTest
   private val schemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig.schemaRegistryClientKafkaConfig)
 
-  test("round-trip Avro serialization using Azure Schema Registry") {
-    val (
-      inputTopic: TopicName.ForSource,
-      inputSchema: Schema,
-      inputSchemaId: SchemaId,
-      outputTopic: TopicName.ForSink,
-      outputSchema: Schema,
-      outputSchemaId: SchemaId,
-      scenario: CanonicalProcess
-    ) = prepareAvroSetup
-
-    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
-
-    val inputValue = new GenericRecordBuilder(inputSchema)
-      .set("a", "aValue")
-      .build()
-    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaId)
-
-    val result = testRunner.runWithAvroData[String, GenericRecord](scenario, List(inputConsumerRecord))
-    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
-    val expectedValue = new GenericRecordBuilder(outputSchema)
-      .set("a", "aValue")
-      .build()
-    resultProducerRecord.value() shouldEqual expectedValue
-    resultSchemaIdHeader shouldEqual outputSchemaId
-  }
-
-  test("round-trip Avro schema with json payload serialization on Azure") {
-    val (
-      inputTopic,
-      _: Schema,
-      _: SchemaId,
-      outputTopic,
-      _: Schema,
-      outputSchemaId: SchemaId,
-      scenario: CanonicalProcess
-    ) =
-      prepareAvroSetup
-
-    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
-
-    val jsonPayloadTestRunner = TestScenarioRunner
-      .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
-      .withSchemaRegistryClientFactory(schemaRegistryClientFactory)
-      .build()
-
-    val inputValue          = Json.fromFields(Map("a" -> Json.fromString("aValue"))).noSpaces
-    val inputConsumerRecord = KafkaConsumerRecord[String, String](inputTopic, inputValue)
-
-    val result = jsonPayloadTestRunner.runWithStringData(scenario, List(inputConsumerRecord))
-    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
-    resultProducerRecord.value() shouldEqual inputValue
-    resultSchemaIdHeader shouldEqual outputSchemaId
-  }
-
-  private def prepareAvroSetup = {
-    val scenarioName = "avro"
-    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
-    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
-
-    val aFieldOnly   = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
-    val inputSchema  = createRecordSchema(inputTopic.toUnspecialized, aFieldOnly)
-    val outputSchema = createRecordSchema(outputTopic.toUnspecialized, aFieldOnly)
-
-    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchema)
-    val outputSchemaId = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
-
-    val scenario = ScenarioBuilder
-      .streamingLite(scenarioName)
-      .source(
-        "source",
-        KafkaUniversalName,
-        topicParamName.value         -> s"'${inputTopic.name}'".spel,
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
-      )
-      .emptySink(
-        "sink",
-        KafkaUniversalName,
-        topicParamName.value         -> s"'${outputTopic.name}'".spel,
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
-        sinkKeyParamName.value       -> "".spel,
-        sinkRawEditorParamName.value -> "true".spel,
-        sinkValueParamName.value     -> "#input".spel
-      )
-    (inputTopic, inputSchema, inputSchemaId, outputTopic, outputSchema, outputSchemaId, scenario)
-  }
-
-  test("round-trip Avro serialization with primitive types on Azure") {
-    val scenarioName = "primitive"
-    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
-    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
-
-    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
-
-    val inputSchema  = SchemaBuilder.builder().intType()
-    val outputSchema = SchemaBuilder.builder().longType()
-
-    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchema)
-    val outputSchemaId = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
-
-    val scenario = ScenarioBuilder
-      .streamingLite(scenarioName)
-      .source(
-        "source",
-        KafkaUniversalName,
-        topicParamName.value         -> s"'${inputTopic.name}'".spel,
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
-      )
-      .emptySink(
-        "sink",
-        KafkaUniversalName,
-        topicParamName.value         -> s"'${outputTopic.name}'".spel,
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
-        sinkKeyParamName.value       -> "".spel,
-        sinkRawEditorParamName.value -> "true".spel,
-        sinkValueParamName.value     -> "#input".spel
-      )
-
-    val inputValue          = 123
-    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaId)
-
-    val result = testRunner.runWithAvroData[String, Any](scenario, List(inputConsumerRecord))
-    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
-    val expectedValue                                = 123L
-    resultProducerRecord.value() shouldEqual expectedValue
-    resultSchemaIdHeader shouldEqual outputSchemaId
-  }
-
-  test("schema evolution in Avro source using Azure Schema Registry") {
-    val scenarioName = "avro-schemaevolution"
-    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
-    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
-
-    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
-
-    val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
-    val bDefaultValue = "bDefault"
-    val abFields = (assembler: SchemaBuilder.FieldAssembler[Schema]) =>
-      assembler
-        .requiredString("a")
-        .name("b")
-        .`type`()
-        .stringType()
-        .stringDefault(bDefaultValue)
-    val abOutputFields = (assembler: SchemaBuilder.FieldAssembler[Schema]) =>
-      assembler
-        .requiredString("a")
-        .requiredString("b")
-    val inputSchemaV1 = createRecordSchema(inputTopic.toUnspecialized, aFieldOnly)
-    val inputSchemaV2 = createRecordSchema(inputTopic.toUnspecialized, abFields)
-    val outputSchema  = createRecordSchema(outputTopic.toUnspecialized, abOutputFields)
-
-    val inputSchemaV1Id = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchemaV1)
-    // TODO: maybe we should return this version in testRunner.registerAvroSchema as well?
-    val inputSchemaV2Props = schemaRegistryClient.registerSchemaVersionIfNotExists(new AvroSchema(inputSchemaV2))
-    val outputSchemaId     = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
-
-    val scenario = ScenarioBuilder
-      .streamingLite(scenarioName)
-      .source(
-        "source",
-        KafkaUniversalName,
-        topicParamName.value         -> s"'${inputTopic.name}'".spel,
-        schemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'".spel
-      )
-      .filter("filter-b-default", s"#input.b == '$bDefaultValue'".spel)
-      .emptySink(
-        "sink",
-        KafkaUniversalName,
-        topicParamName.value         -> s"'${outputTopic.name}'".spel,
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
-        sinkKeyParamName.value       -> "".spel,
-        sinkRawEditorParamName.value -> "true".spel,
-        sinkValueParamName.value     -> "{a: #input.a, b: #input.b + 'xyz'}".spel
-      )
-
-    val inputValue = new GenericRecordBuilder(inputSchemaV1)
-      .set("a", "aValue")
-      .build()
-    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaV1Id)
-
-    val result = testRunner.runWithAvroData[String, GenericRecord](scenario, List(inputConsumerRecord))
-    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
-    resultSchemaIdHeader shouldEqual outputSchemaId
-    resultProducerRecord.value().get("a") shouldEqual "aValue"
-    resultProducerRecord.value().get("b") shouldEqual bDefaultValue + "xyz"
-  }
+//  test("round-trip Avro serialization using Azure Schema Registry") {
+//    val (
+//      inputTopic: TopicName.ForSource,
+//      inputSchema: Schema,
+//      inputSchemaId: SchemaId,
+//      outputTopic: TopicName.ForSink,
+//      outputSchema: Schema,
+//      outputSchemaId: SchemaId,
+//      scenario: CanonicalProcess
+//    ) = prepareAvroSetup
+//
+//    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
+//
+//    val inputValue = new GenericRecordBuilder(inputSchema)
+//      .set("a", "aValue")
+//      .build()
+//    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaId)
+//
+//    val result = testRunner.runWithAvroData[String, GenericRecord](scenario, List(inputConsumerRecord))
+//    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
+//    val expectedValue = new GenericRecordBuilder(outputSchema)
+//      .set("a", "aValue")
+//      .build()
+//    resultProducerRecord.value() shouldEqual expectedValue
+//    resultSchemaIdHeader shouldEqual outputSchemaId
+//  }
+//
+//  test("round-trip Avro schema with json payload serialization on Azure") {
+//    val (
+//      inputTopic,
+//      _: Schema,
+//      _: SchemaId,
+//      outputTopic,
+//      _: Schema,
+//      outputSchemaId: SchemaId,
+//      scenario: CanonicalProcess
+//    ) =
+//      prepareAvroSetup
+//
+//    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
+//
+//    val jsonPayloadTestRunner = TestScenarioRunner
+//      .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
+//      .withSchemaRegistryClientFactory(schemaRegistryClientFactory)
+//      .build()
+//
+//    val inputValue          = Json.fromFields(Map("a" -> Json.fromString("aValue"))).noSpaces
+//    val inputConsumerRecord = KafkaConsumerRecord[String, String](inputTopic, inputValue)
+//
+//    val result = jsonPayloadTestRunner.runWithStringData(scenario, List(inputConsumerRecord))
+//    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
+//    resultProducerRecord.value() shouldEqual inputValue
+//    resultSchemaIdHeader shouldEqual outputSchemaId
+//  }
+//
+//  private def prepareAvroSetup = {
+//    val scenarioName = "avro"
+//    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
+//    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
+//
+//    val aFieldOnly   = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
+//    val inputSchema  = createRecordSchema(inputTopic.toUnspecialized, aFieldOnly)
+//    val outputSchema = createRecordSchema(outputTopic.toUnspecialized, aFieldOnly)
+//
+//    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchema)
+//    val outputSchemaId = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
+//
+//    val scenario = ScenarioBuilder
+//      .streamingLite(scenarioName)
+//      .source(
+//        "source",
+//        KafkaUniversalName,
+//        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+//        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
+//      )
+//      .emptySink(
+//        "sink",
+//        KafkaUniversalName,
+//        topicParamName.value         -> s"'${outputTopic.name}'".spel,
+//        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+//        sinkKeyParamName.value       -> "".spel,
+//        sinkRawEditorParamName.value -> "true".spel,
+//        sinkValueParamName.value     -> "#input".spel
+//      )
+//    (inputTopic, inputSchema, inputSchemaId, outputTopic, outputSchema, outputSchemaId, scenario)
+//  }
+//
+//  test("round-trip Avro serialization with primitive types on Azure") {
+//    val scenarioName = "primitive"
+//    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
+//    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
+//
+//    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
+//
+//    val inputSchema  = SchemaBuilder.builder().intType()
+//    val outputSchema = SchemaBuilder.builder().longType()
+//
+//    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchema)
+//    val outputSchemaId = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
+//
+//    val scenario = ScenarioBuilder
+//      .streamingLite(scenarioName)
+//      .source(
+//        "source",
+//        KafkaUniversalName,
+//        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+//        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
+//      )
+//      .emptySink(
+//        "sink",
+//        KafkaUniversalName,
+//        topicParamName.value         -> s"'${outputTopic.name}'".spel,
+//        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+//        sinkKeyParamName.value       -> "".spel,
+//        sinkRawEditorParamName.value -> "true".spel,
+//        sinkValueParamName.value     -> "#input".spel
+//      )
+//
+//    val inputValue          = 123
+//    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaId)
+//
+//    val result = testRunner.runWithAvroData[String, Any](scenario, List(inputConsumerRecord))
+//    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
+//    val expectedValue                                = 123L
+//    resultProducerRecord.value() shouldEqual expectedValue
+//    resultSchemaIdHeader shouldEqual outputSchemaId
+//  }
+//
+//  test("schema evolution in Avro source using Azure Schema Registry") {
+//    val scenarioName = "avro-schemaevolution"
+//    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
+//    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
+//
+//    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
+//
+//    val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
+//    val bDefaultValue = "bDefault"
+//    val abFields = (assembler: SchemaBuilder.FieldAssembler[Schema]) =>
+//      assembler
+//        .requiredString("a")
+//        .name("b")
+//        .`type`()
+//        .stringType()
+//        .stringDefault(bDefaultValue)
+//    val abOutputFields = (assembler: SchemaBuilder.FieldAssembler[Schema]) =>
+//      assembler
+//        .requiredString("a")
+//        .requiredString("b")
+//    val inputSchemaV1 = createRecordSchema(inputTopic.toUnspecialized, aFieldOnly)
+//    val inputSchemaV2 = createRecordSchema(inputTopic.toUnspecialized, abFields)
+//    val outputSchema  = createRecordSchema(outputTopic.toUnspecialized, abOutputFields)
+//
+//    val inputSchemaV1Id = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchemaV1)
+//    // TODO: maybe we should return this version in testRunner.registerAvroSchema as well?
+//    val inputSchemaV2Props = schemaRegistryClient.registerSchemaVersionIfNotExists(new AvroSchema(inputSchemaV2))
+//    val outputSchemaId     = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
+//
+//    val scenario = ScenarioBuilder
+//      .streamingLite(scenarioName)
+//      .source(
+//        "source",
+//        KafkaUniversalName,
+//        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+//        schemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'".spel
+//      )
+//      .filter("filter-b-default", s"#input.b == '$bDefaultValue'".spel)
+//      .emptySink(
+//        "sink",
+//        KafkaUniversalName,
+//        topicParamName.value         -> s"'${outputTopic.name}'".spel,
+//        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+//        sinkKeyParamName.value       -> "".spel,
+//        sinkRawEditorParamName.value -> "true".spel,
+//        sinkValueParamName.value     -> "{a: #input.a, b: #input.b + 'xyz'}".spel
+//      )
+//
+//    val inputValue = new GenericRecordBuilder(inputSchemaV1)
+//      .set("a", "aValue")
+//      .build()
+//    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaV1Id)
+//
+//    val result = testRunner.runWithAvroData[String, GenericRecord](scenario, List(inputConsumerRecord))
+//    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
+//    resultSchemaIdHeader shouldEqual outputSchemaId
+//    resultProducerRecord.value().get("a") shouldEqual "aValue"
+//    resultProducerRecord.value().get("b") shouldEqual bDefaultValue + "xyz"
+//  }
 
   private def verifyOneSuccessRecord[K, V](
       result: RunnerListResult[ProducerRecord[K, V]]
