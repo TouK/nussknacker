@@ -79,6 +79,9 @@
         ]
     },
     "main": "index.js",
+    "overrides": {
+        "stylus": "github:stylus/stylus#0.54.8"
+    },
     "private": true,
     "scripts": {
         "prepare": "cd ../.. && husky install",
