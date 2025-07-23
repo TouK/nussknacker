@@ -61,6 +61,7 @@ export const ActivityItem = forwardRef(
                 ref={ref}
                 onMouseEnter={() => handleSetIsActivityHovered(true)}
                 onMouseLeave={() => handleSetIsActivityHovered(false)}
+                aria-selected={activity.isActiveFound}
             >
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
                     <ActivityItemHeader

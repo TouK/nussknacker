@@ -22,12 +22,28 @@ export type Comment = {
 };
 
 export type ProcessActivityState = {
+    searchQuery: string;
     activities: UIActivity[];
 };
 
 const emptyProcessActivity: ProcessActivityState = {
+    searchQuery: "",
     activities: [],
 };
+
+export type ProcessActivityActions =
+    | {
+          type: "GET_SCENARIO_ACTIVITIES";
+          activities: UIActivity[];
+      }
+    | {
+          type: "UPDATE_SCENARIO_ACTIVITIES";
+          activities: UIActivity[];
+      }
+    | {
+          type: "UPDATE_SEARCH_QUERY";
+          searchQuery: string;
+      };
 
 export function reducer(state: ProcessActivityState = emptyProcessActivity, action: Action): ProcessActivityState {
     switch (action.type) {
@@ -41,6 +57,12 @@ export function reducer(state: ProcessActivityState = emptyProcessActivity, acti
             return {
                 ...state,
                 activities: action.activities,
+            };
+        }
+        case "UPDATE_SEARCH_QUERY": {
+            return {
+                ...state,
+                searchQuery: action.searchQuery,
             };
         }
         default:
