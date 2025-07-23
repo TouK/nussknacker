@@ -47,7 +47,12 @@ object RequestResponseDeploymentStrategy {
   def slugForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] =
     metaData.typeSpecificData match {
       case RequestResponseMetaData(slug) => Valid(slug.getOrElse(defaultSlug(metaData.name)))
-      case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
+      case _ =>
+        Invalid(
+          NonEmptyList.of(
+            FatalUnknownError(message = s"Wrong scenario metadata: ${metaData.typeSpecificData}", nodeId = None)
+          )
+        )
     }
 
   // should it be compatible with k8s version?
