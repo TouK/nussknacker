@@ -70,10 +70,18 @@ object Parameter {
     Parameter(name, typ, validators = List(MandatoryParameterValidator))
 
   def apply(name: ParameterName, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
+    Parameter(name, typ, validators, editors = List.empty)
+
+  def apply(
+      name: ParameterName,
+      typ: TypingResult,
+      validators: List[ParameterValidator],
+      editors: List[ParameterEditor]
+  ): Parameter =
     Parameter(
       name = name,
       typ = typ,
-      editors = Nil,
+      editors = editors,
       validators = validators,
       defaultValue = None,
       additionalVariables = Map.empty,
