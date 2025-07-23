@@ -1,6 +1,6 @@
-ARG FLINK_VERSION
+ARG TOUK_FLINK_VERSION
 
-FROM flink:${FLINK_VERSION}
+FROM touk/flink:${TOUK_FLINK_VERSION}
 
 USER root
 RUN echo '#!/bin/sh' > /ex-docker-entrypoint.sh && \
