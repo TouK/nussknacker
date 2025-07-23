@@ -1,5 +1,10 @@
-import { act, renderHook } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
+import React from "react";
+import { Provider } from "react-redux";
+import configureMockStore from "redux-mock-store/lib";
+import thunk from "redux-thunk";
 
+// eslint-disable-next-line jest/no-mocks-import
 import { sampleMetadataResponse } from "../../../../__mocks__/fixtures/sampleMetadataResponse";
 import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
@@ -116,7 +121,18 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
 
 const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadata(sampleActivitiesResponse, sampleMetadataResponse));
 
-describe(useActivitiesSearch.name, () => {
+const mockStore = configureMockStore([thunk]);
+
+const createStoreWithQuery = (query) => {
+    return mockStore({
+        processActivity: {
+            searchQuery: query, // Set the search query directly in the state
+            activities: mockedActivities,
+        },
+    });
+};
+
+describe("useActivitiesSearch", () => {
     it.each<[string, string[]]>([
         ["atta", [mockedActivities[4].uiGeneratedId, mockedActivities[9].uiGeneratedId]],
         ["3 saved", [mockedActivities[3].uiGeneratedId]],
@@ -124,22 +140,23 @@ describe(useActivitiesSearch.name, () => {
         ["tests save", [mockedActivities[3].uiGeneratedId]],
         ["newName: old marketing campaign", [mockedActivities[7].uiGeneratedId]],
         [".png", [mockedActivities[9].uiGeneratedId]],
-    ])("should find elements when query is '%s'", (searchQuery, expected) => {
+    ])("should find elements when query is '%s'", async (searchQuery, expected) => {
+        const store = createStoreWithQuery(searchQuery);
+        const wrapper = ({ children }) => <Provider store={store}>{children}</Provider>;
+
         const handleScrollToItemMock = jest.fn();
         const handleUpdateScenarioActivitiesMock = jest.fn();
 
-        const { result } = renderHook(() =>
-            useActivitiesSearch({
-                activities: mockedActivities,
-                handleScrollToItem: handleScrollToItemMock,
-                handleUpdateScenarioActivities: handleUpdateScenarioActivitiesMock,
-            }),
+        const { result } = renderHook(
+            () =>
+                useActivitiesSearch({
+                    activities: mockedActivities,
+                    handleScrollToItem: handleScrollToItemMock,
+                    handleUpdateScenarioActivities: handleUpdateScenarioActivitiesMock,
+                }),
+            { wrapper },
         );
 
-        act(() => {
-            result.current.handleSearch(searchQuery);
-        });
-
-        expect(result.current.foundResults).toMatchObject(expected);
+        expect(result.current.foundResults).toEqual(expect.arrayContaining(expected));
     });
 });

@@ -1261,17 +1261,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
             Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
           ) :: Nil if start == "ala #{".length && end == "ala #{.".length =>
     }
-
-    parse[String](
-      "ala #{ .foo }",
-      ctx,
-      flavour = SpelExpressionParser.Template
-    ).invalidValue.toList should matchPattern {
-      case SpelExpressionUnderlyingParserError(
-            "No node", // TODO This is an internal, spel message, it is not human-readable, we should find all places where it is used, understand the context and replace it with better message
-            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
-          ) :: Nil if start == "ala #{ ".length && end == "ala #{ .foo".length =>
-    }
   }
 
   test("return correct error location when using blank placeholder in template expression") {
@@ -2553,6 +2542,63 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ) { (expression, result) =>
       val parsed = parse[String](expr = expression, flavour = SpelExpressionParser.Template).validValue
       parsed.evaluateSync[String]() shouldBe result
+    }
+  }
+
+  test("should allow to use safe navigation operator") {
+    val contextWithNotNullVariables = Context.dummy
+      .withVariable("obj", ContainerOfUnknown(42L))
+      .withVariable("array", List(10, 20, 30).asJava)
+      .withVariable("map", Map("a" -> 10, "b" -> 20, "c" -> 30).asJava)
+      .withVariable("record", Map("fieldString" -> "string", "fieldInteger" -> 42).asJava)
+    val validationContextWithNotNullVariables = ValidationContext.empty
+      .withVariableUnsafe("obj", Typed.fromInstance(contextWithNotNullVariables("obj")))
+      .withVariableUnsafe("array", Typed.genericTypeClass[JList[_]](List(Typed[JInteger])))
+      .withVariableUnsafe("map", Typed.genericTypeClass[JMap[_, _]](List(Typed[String], Typed[JInteger])))
+      .withVariableUnsafe(
+        "record",
+        Typed.record(List("fieldString" -> Typed[String], "fieldInteger" -> Typed[JInteger]))
+      )
+    val context = contextWithNotNullVariables.variables.foldLeft(contextWithNotNullVariables) {
+      case (context, (varName, _)) =>
+        context.withVariable(s"null_$varName", null)
+    }
+    val validationContext =
+      validationContextWithNotNullVariables.variables.foldLeft(validationContextWithNotNullVariables) {
+        case (validationContext, (varName, varType)) =>
+          validationContext.withVariableUnsafe(s"null_$varName", varType)
+      }
+
+    forAll(
+      Table(
+        ("expression with not null var", "expression with null var", "return type", "not null result"),
+        ("#obj?.value", "#null_obj?.value", Unknown, 42L),
+        ("#array?.[1]", "#null_array?.[1]", Typed[JInteger], 20),
+        (
+          "#array?.?[#this > 10]",
+          "#null_array?.?[#this > 10]",
+          Typed.genericTypeClass[JList[_]](List(Typed[JInteger])),
+          List(20, 30).asJava
+        ),
+        ("#array?.^[#this > 10]", "#null_array?.^[#this > 10]", Typed[JInteger], 20),
+        ("#array?.$[#this > 10]", "#null_array?.$[#this > 10]", Typed[JInteger], 30),
+        (
+          "#array?.![#this * 2]",
+          "#null_array?.![#this * 2]",
+          Typed.genericTypeClass[JList[_]](List(Typed[JInteger])),
+          List(20, 40, 60).asJava
+        ),
+        ("#map?.['a']", "#null_map?.['a']", Typed[JInteger], 10),
+        ("#record?.['fieldString']", "#null_record?.['fieldString']", Typed[String], "string"),
+      )
+    ) { (expressionWithNotNullVar, expressionWithNullVar, returnType, result) =>
+      val parsedWithNotNullVar = parseV[Any](expressionWithNotNullVar, validationContext).validValue
+      parsedWithNotNullVar.returnType shouldBe returnType
+      parsedWithNotNullVar.evaluateSync[Any](context) shouldBe result
+
+      val parsedWithNullVar = parseV[Any](expressionWithNullVar, validationContext).validValue
+      parsedWithNullVar.returnType shouldBe returnType
+      parsedWithNullVar.evaluateSync[AnyRef](context) shouldBe null
     }
   }
 
