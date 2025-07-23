@@ -183,9 +183,9 @@ protected trait ProcessCompilerBase {
     source match {
       case SourcePart(splittednode.SourceNode(sourceData: SourceNodeData, _), _, _) =>
         compileSourcePart(source, sourceData)
-      case SourcePart(srcNode @ splittednode.SourceNode(data: Join, _), _, _) =>
+      case SourcePart(srcNode @ splittednode.SourceNode(_: Join, _), _, _) =>
         val node = srcNode.asInstanceOf[splittednode.SourceNode[Join]]
-        compileCustomNodePart(source, node, data, Right(branchEndContexts))
+        compileCustomNodePart(source, node, Right(branchEndContexts))
     }
 
   }
@@ -210,10 +210,10 @@ protected trait ProcessCompilerBase {
     part match {
       case SinkPart(node) =>
         compileSinkPart(node, partInputContext)
-      case CustomNodePart(node @ splittednode.EndingNode(data), _, _) =>
-        compileEndingCustomNodePart(node, data, partInputContext)
-      case CustomNodePart(node @ splittednode.OneOutputSubsequentNode(data, _), _, _) =>
-        compileCustomNodePart(part, node, data, Left(partInputContext))
+      case CustomNodePart(node @ splittednode.EndingNode(_), _, _) =>
+        compileEndingCustomNodePart(node, partInputContext)
+      case CustomNodePart(node @ splittednode.OneOutputSubsequentNode(_, _), _, _) =>
+        compileCustomNodePart(part, node, Left(partInputContext))
     }
   }
 
@@ -267,13 +267,12 @@ protected trait ProcessCompilerBase {
 
   private def compileEndingCustomNodePart(
       node: splittednode.EndingNode[CustomNode],
-      data: CustomNodeData,
       ctx: ValidationContext
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
-      nodeCompiler.compileCustomNodeObject(data, SingleInputNodeInputValidationContext(ctx), ending = true)
+      nodeCompiler.compileCustomNodeObject(node, SingleInputNodeInputValidationContext(ctx))
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
 
     CompilationResult
@@ -296,7 +295,6 @@ protected trait ProcessCompilerBase {
   private def compileCustomNodePart(
       part: ProcessPart,
       node: splittednode.OneOutputNode[CustomNodeData],
-      data: CustomNodeData,
       ctx: Either[ValidationContext, BranchEndContexts]
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
@@ -307,13 +305,13 @@ protected trait ProcessCompilerBase {
       case Left(singleContext) => SingleInputNodeInputValidationContext(singleContext)
       case Right(branchEndContexts) =>
         MultipleInputBranchesNodeInputValidationContext(
-          branchEndContexts.contextsForJoin(data.id),
+          branchEndContexts.contextsForJoin(node.id),
           contextWithOnlyGlobalVariables
         )
     }
 
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) =
-      nodeCompiler.compileCustomNodeObject(data, nodeInputValidationContext, ending = false)
+      nodeCompiler.compileCustomNodeObject(node, nodeInputValidationContext)
 
     val nextPartInputValidationContext = validatedNextCtx.map(SingleInputNodeInputValidationContext(_)).getOrElse {
       ctx match {
