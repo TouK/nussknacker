@@ -82,7 +82,7 @@ trait ProcessValidator extends LazyLogging {
     } catch {
       case NonFatal(e) =>
         logger.warn(s"Unexpected error during compilation of ${process.name}", e)
-        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
+        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage, nodeId = None))))
     }
   }
 

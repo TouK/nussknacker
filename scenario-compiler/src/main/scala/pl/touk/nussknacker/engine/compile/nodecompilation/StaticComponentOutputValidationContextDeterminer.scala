@@ -115,7 +115,10 @@ class StaticComponentOutputValidationContextDeterminer(
             .map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
         case (Some(transformation), ctx) =>
           Invalid(
-            FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")
+            FatalUnknownError(
+              message = s"Invalid ContextTransformation class $transformation for contexts: $ctx",
+              nodeId = Some(nodeId.id)
+            )
           ).toValidatedNel
         case (None, _) =>
           handleNonContextTransformingExecutor(executor)
