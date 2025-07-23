@@ -1,9 +1,7 @@
 import { ExpandMore } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import type { PropsWithChildren } from "react";
-import { memo } from "react";
-import { useRef } from "react";
-import React, { useLayoutEffect } from "react";
+import React, { memo, useLayoutEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
