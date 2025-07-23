@@ -1,120 +1,78 @@
 package pl.touk.nussknacker.defaultmodel
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{parser, Json}
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.EmptyMandatoryParameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.PatientScalaFutures
-
-import java.nio.charset.StandardCharsets
-import java.time.Instant
-import java.util.UUID
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 class ExpressionEvaluationItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
-  test("should produce a message when variable with empty spelTemplate expression is passed") {
-    val inputTopic  = createRandomTopic("input-topic")
-    val outputTopic = createRandomTopic("output-topic")
+  private lazy val flinkMiniClusterWithServices = FlinkMiniClusterFactory.createUnitTestsMiniClusterWithServices()
 
-    sendAsJson("message", ForSource(inputTopic), Instant.now.toEpochMilli)
-
-    val scenario = createScenario(inputTopic, outputTopic, Expression.spelTemplate(""))
-    run(scenario) {
-      val parsedOutput: Json = consumeOneMessage(outputTopic)
-
-      parsedOutput shouldBe Json.fromString("message-empty")
-    }
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    flinkMiniClusterWithServices.close()
   }
 
-  test("should produce a message when variable with non-empty spelTemplate expression is passed") {
-    val inputTopic  = createRandomTopic("input-topic")
-    val outputTopic = createRandomTopic("output-topic")
+  test("should run scenario when sink value is empty spelTemplate expression") {
+    val scenario = createScenario(Expression.spelTemplate(""))
 
-    sendAsJson("message", ForSource(inputTopic), Instant.now.toEpochMilli)
-
-    val scenario = createScenario(inputTopic, outputTopic, Expression.spelTemplate("value"))
-    run(scenario) {
-      val parsedOutput: Json = consumeOneMessage(outputTopic)
-
-      parsedOutput shouldBe Json.fromString("message-value")
-    }
+    val runResults = runScenario(scenario, List(""))
+    runResults.validValue.successes shouldBe List("")
   }
 
-  test("should produce a message when variable with non-empty string spel expression is passed") {
-    val inputTopic  = createRandomTopic("input-topic")
-    val outputTopic = createRandomTopic("output-topic")
+  test("should run scenario when sink value is non-empty spelTemplate expression") {
+    val scenario = createScenario(Expression.spelTemplate("value"))
 
-    sendAsJson("message", ForSource(inputTopic), Instant.now.toEpochMilli)
-
-    val scenario = createScenario(inputTopic, outputTopic, Expression.spel("'value'"))
-    run(scenario) {
-      val parsedOutput: Json = consumeOneMessage(outputTopic)
-
-      parsedOutput shouldBe Json.fromString("message-value")
-    }
+    val runResults = runScenario(scenario, List(""))
+    runResults.validValue.successes shouldBe List("value")
   }
 
-  test("should throw a compilation error when variable with empty spel expression is passed") {
-    val inputTopic  = createRandomTopic("input-topic")
-    val outputTopic = createRandomTopic("output-topic")
+  test("should run scenario when sink value is empty string spel expression") {
+    val scenario = createScenario(Expression.spel("''"))
 
-    val scenario = createScenario(inputTopic, outputTopic, Expression.spel(""))
-
-    val caughtException = intercept[IllegalArgumentException] {
-      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
-        registrar.register(env, scenario, ProcessVersion.empty, DeploymentData.empty)
-      }
-    }
-
-    caughtException.getMessage should startWith(
-      "Compilation errors: EmptyMandatoryParameter(Field: $expression is mandatory and can not be empty,Please fill field for this parameter,$expression,id)"
-    )
+    val runResults = runScenario(scenario, List(""))
+    runResults.validValue.successes shouldBe List("")
   }
 
-  private def createRandomTopic(prefix: String) = {
-    val topicName = prefix + UUID.randomUUID().toString
-    kafkaClient.createTopic(topicName, 1)
-    topicName
+  test("should run scenario when sink value is non-empty string spel expression") {
+    val scenario = createScenario(Expression.spel("'value'"))
+
+    val runResults = runScenario(scenario, List(""))
+    runResults.validValue.successes shouldBe List("value")
+  }
+
+  test("should return error when sink value is empty spel expression") {
+    val scenario = createScenario(Expression.spel(""))
+
+    val result = runScenario(scenario, List(""))
+    result.invalidValue should matchPattern {
+      case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("value"), "end"), Nil) =>
+    }
   }
 
   private def createScenario(
-      inputTopic: String,
-      outputTopic: String,
-      variableExpression: Expression,
+      sinkValue: Expression,
   ) = {
     ScenarioBuilder
-      .streaming("test-scenario")
-      .parallelism(1)
-      .source(
-        "start",
-        "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$inputTopic'".spel,
-        KafkaUniversalComponentTransformer.contentTypeParamName.value -> "'JSON'".spel
-      )
-      .buildSimpleVariable("id", "varName", variableExpression)
-      .emptySink(
-        "end",
-        "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value       -> s"'$outputTopic'".spel,
-        KafkaUniversalComponentTransformer.contentTypeParamName.value -> "'JSON'".spel,
-        KafkaUniversalComponentTransformer.sinkKeyParamName.value     -> "".spel,
-        KafkaUniversalComponentTransformer.sinkValueParamName.value -> Expression
-          .spel("#input + (#varName.length == 0 ? '-empty' : '-' + #varName)"),
-      )
+      .streaming(getClass.getName)
+      .source("start", TestScenarioRunner.testDataSource)
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> sinkValue)
   }
 
-  private def consumeOneMessage(outputTopic: String) = {
-    val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
-    val parsedOutput = parser
-      .parse(new String(outputRecord.value(), StandardCharsets.UTF_8))
-      .fold(throw _, identity)
-    parsedOutput
+  private def runScenario(scenario: CanonicalProcess, data: List[String]) = {
+    TestScenarioRunner
+      .flinkBased(config, flinkMiniClusterWithServices)
+      .build()
+      .runWithData[String, String](scenario, data)
   }
 
 }
