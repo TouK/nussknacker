@@ -77,6 +77,23 @@ object node {
     def id: String
 
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
+
+    // TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
+
+    import shapeless.syntax.typeable._
+
+    def asSource: Option[Source] = this.cast[Source]
+
+    def asFragmentInputDefinition: Option[FragmentInputDefinition] =
+      this.cast[FragmentInputDefinition]
+
+    def asProcessor: Option[Processor] = this.cast[Processor]
+
+    lazy val parametersOrEmpty: List[NodeParameter] = this.cast[WithParameters].map(_.parameters).getOrElse(List.empty)
+
+    lazy val branchParametersOrEmpty: List[BranchParameters] =
+      this.cast[Join].map(_.branchParameters).getOrElse(List.empty)
+
   }
 
   object NodeData {
@@ -93,13 +110,23 @@ object node {
     def isDisabled: Option[Boolean]
   }
 
-  sealed trait CustomNodeData extends NodeData with WithComponent with RealNodeData with WithParameters {
+  trait WithOptionalOutputVar { self: NodeData =>
+
+    def outputVar: Option[String]
+
+  }
+
+  sealed trait CustomNodeData
+      extends NodeData
+      with WithComponent
+      with RealNodeData
+      with WithParameters
+      with WithOptionalOutputVar {
     // TODO: rename to componentId
     def nodeType: String
 
     def parameters: List[NodeParameter]
 
-    def outputVar: Option[String]
   }
 
   trait WithComponent {
@@ -200,18 +227,30 @@ object node {
       extends NodeData
       with RealNodeData
 
+  sealed trait ServiceNodeData
+      extends OneOutputSubsequentNodeData
+      with WithComponent
+      with WithParameters
+      with WithOptionalOutputVar {
+
+    val service: ServiceRef
+
+    override def componentId: String = service.id
+
+    override def parameters: List[NodeParameter] = service.parameters
+
+  }
+
   case class Enricher(
       id: String,
-      service: ServiceRef,
+      override val service: ServiceRef,
       output: String,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
       mockExpression: Option[Expression] = None
-  ) extends OneOutputSubsequentNodeData
-      with WithComponent
-      with WithParameters {
-    override val componentId: String = service.id
+  ) extends ServiceNodeData {
 
-    override def parameters: List[NodeParameter] = service.parameters
+    override def outputVar: Option[String] = Some(output)
+
   }
 
   case class CustomNode(
@@ -232,14 +271,12 @@ object node {
       service: ServiceRef,
       isDisabled: Option[Boolean] = None,
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
-  ) extends OneOutputSubsequentNodeData
+  ) extends ServiceNodeData
       with EndingNodeData
-      with Disableable
-      with WithComponent
-      with WithParameters {
-    override val componentId: String = service.id
+      with Disableable {
 
-    override def parameters: List[NodeParameter] = service.parameters
+    override def outputVar: Option[String] = None
+
   }
 
   case class BranchEndData(definition: BranchEndDefinition) extends EndingNodeData {
@@ -372,12 +409,7 @@ object node {
 
     }
 
-    @JsonCodec case class FragmentClazzRef(refClazzName: String) {
-
-      def toRuntimeClass(classLoader: ClassLoader): Try[Class[_]] =
-        Try(ClassUtils.getClass(classLoader, refClazzName))
-
-    }
+    @JsonCodec case class FragmentClazzRef(refClazzName: String)
 
   }
 
@@ -405,20 +437,5 @@ object node {
 
   def recordKeyFieldName(index: Int)   = s"$$fields-$index-$$key"
   def recordValueFieldName(index: Int) = s"$$fields-$index-$$value"
-
-  // TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
-
-  import shapeless.syntax.typeable._
-
-  def asSource(nodeData: NodeData): Option[Source] = nodeData.cast[Source]
-
-  def asCustomNode(nodeData: NodeData): Option[CustomNode] = nodeData.cast[CustomNode]
-
-  def asFragmentInput(nodeData: NodeData): Option[FragmentInput] = nodeData.cast[FragmentInput]
-
-  def asFragmentInputDefinition(nodeData: NodeData): Option[FragmentInputDefinition] =
-    nodeData.cast[FragmentInputDefinition]
-
-  def asProcessor(nodeData: NodeData): Option[Processor] = nodeData.cast[Processor]
 
 }

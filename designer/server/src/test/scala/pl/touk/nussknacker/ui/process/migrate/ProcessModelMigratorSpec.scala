@@ -6,7 +6,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessUtil}
@@ -86,7 +85,7 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
     val service = for {
       node      <- migrationResult.process.nodes.find(_.id == "processor")
       flatNode  <- node.cast[FlatNode]
-      processor <- asProcessor(flatNode.data)
+      processor <- flatNode.data.asProcessor
     } yield processor.service
     service.get
   }

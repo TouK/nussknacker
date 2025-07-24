@@ -31,9 +31,7 @@ class StubbedFragmentSourceDefinitionPreparer(
     FragmentComponentDefinition(
       name = name,
       implementationInvoker = (_: Params, _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
-      // We don't want to pass input parameters definition as parameters to definition of factory creating stubbed source because
-      // use them only for testParametersDefinition which are used in the runtime not in compile-time.
-      parameters = List.empty,
+      parameters = inputParameters,
       outputNames = List.empty,
       docsUrl = None,
       componentGroupName = None,
