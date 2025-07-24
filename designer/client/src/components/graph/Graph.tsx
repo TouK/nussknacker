@@ -771,7 +771,7 @@ export class Graph extends React.Component<Props> {
                     let position: g.Point;
                     if (isTooShortToDisplay) {
                         position = cell.position().offset(0, (isLinkReversed ? -3 : 3) * RECT_HEIGHT);
-                        while (paper.findViewsFromPoint(position, 0).length > 0) {
+                        while (paper.findViewsFromPoint(position).length > 0) {
                             position = position.offset(RECT_HEIGHT);
                         }
                     } else {
