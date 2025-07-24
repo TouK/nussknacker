@@ -122,7 +122,11 @@ object PrettyValidationErrors {
           message = s"Node parameters not filled: ${params.mkString(", ")}",
           description = s"Please fill missing node parameters: : ${params.mkString(", ")}"
         )
-
+      case DuplicatedParameters(params, _) =>
+        node(
+          message = s"Node parameters duplicated: ${params.mkString(", ")}",
+          description = s"Please remove duplicated node parameters: : ${params.mkString(", ")}"
+        )
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
       // exceptions below should not really happen (unless services change and process becomes invalid)
