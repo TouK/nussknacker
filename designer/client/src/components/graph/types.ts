@@ -76,6 +76,7 @@ export enum Events {
     CELL_RESIZED = "cellCustom:resized",
     CELL_CONTENT_UPDATED = "cellCustom:contentUpdated",
     BLANK_POINTERCLICK = "blank:pointerclick",
+    BLANK_POINTERDBLCLICK = "blank:pointerdblclick",
     BLANK_POINTERDOWN = "blank:pointerdown",
     BLANK_POINTERUP = "blank:pointerup",
     BLANK_POINTERMOVE = "blank:pointermove",

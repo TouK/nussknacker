@@ -1,4 +1,5 @@
-import type React, { Ref } from "react";
+import type React from "react";
+import type { Ref } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForkRef, useMutationObserver } from "rooks";
 
