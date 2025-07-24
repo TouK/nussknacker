@@ -76,13 +76,13 @@ class StaticComponentOutputValidationContextDeterminer(
           inputContext,
           (executor: ComponentExecutor) =>
             outputContextBasedOnResultType(
-              returnTypeFromExecutor(staticComponent.returnType, executor) orElse staticComponent.returnType
+              returnTypeFromExecutor(executor) orElse staticComponent.returnType
             )
         )
     )
   }
 
-  private def returnTypeFromExecutor(componentExecutor: Any): Option[TypingResult] =
+  private def returnTypeFromExecutor(componentExecutor: ComponentExecutor): Option[TypingResult] =
     componentExecutor.cast[ReturningType].map(_.returnType)
 
   private def contextAfterMethodBasedCreatedComponentExecutor[ComponentExecutor](
