@@ -262,10 +262,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
             ParameterName("paramStringEditor") -> ParameterAdditionalUIConfig(
               required = false,
               initialValue = Some(
-                FixedExpressionValue(
-                  "default-from-additional-ui-config-provider",
-                  "default-from-additional-ui-config-provider"
-                )
+                ParameterInitialValue.AnyValue(Expression.spelTemplate("default-from-additional-ui-config-provider"))
               ),
               hintText = None,
               valueEditor = None,
@@ -336,6 +333,40 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       "paramRawEditor"        -> definition.ParameterCategory.Advanced,
       "paramNoExplicitEditor" -> definition.ParameterCategory.Standard
     )
+  }
+
+  test("should override default parameter value for string type parameters when defined in config") {
+    val model: ModelData = LocalModelData(
+      inputConfig = ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
+        .getConfig("modelConfig")
+        .withValue(
+          "globalParametersConfig.editorsForStringType",
+          ConfigValueFactory.fromIterable(
+            List(
+              ConfigValueFactory.fromMap(Map("type" -> "SpelParameterEditor").asJava),
+              ConfigValueFactory.fromMap(Map("type" -> "SpelTemplateParameterEditor").asJava)
+            ).asJava
+          )
+        ),
+      components = List(ComponentDefinition("enricher", TestService))
+    )
+
+    val definitions = prepareDefinitions(model, List.empty)
+
+    definitions
+      .components(ComponentId(ComponentType.Service, "enricher"))
+      .parameters
+      .map(p => (p.name, p.editors))
+      .toMap shouldBe
+      Map(
+        "paramDualEditor" -> List(
+          FixedValuesParameterEditor(possibleValues = List(FixedExpressionValue("expression", "label"))),
+          SpelParameterEditor
+        ),
+        "paramStringEditor"     -> List(SpelTemplateParameterEditor),
+        "paramRawEditor"        -> List(SpelParameterEditor),
+        "paramNoExplicitEditor" -> List(SpelParameterEditor, SpelTemplateParameterEditor)
+      )
   }
 
   test("should override default editors for string type parameters when defined in config") {

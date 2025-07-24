@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.flink.util.source.{
   ReturningClassInstanceSource,
   ReturningTestCaseClass
 }
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{
   ConsumerRecordToJsonFormatterFactory,
   FixedValueDeserializationSchemaFactory
@@ -171,7 +172,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           ComponentConfig.zero.copy(
             params = Some(
               Map(
-                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(
+                  defaultValue = Some(Expression.spelTemplate("barValueFromProviderCode")),
+                  editors = None,
+                  validators = None,
+                  label = None,
+                  hintText = None,
+                  category = None
+                )
               )
             )
           )

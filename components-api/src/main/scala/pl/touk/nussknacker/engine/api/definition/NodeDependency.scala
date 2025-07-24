@@ -70,10 +70,18 @@ object Parameter {
     Parameter(name, typ, validators = List(MandatoryParameterValidator))
 
   def apply(name: ParameterName, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
+    Parameter(name, typ, validators, editors = List.empty)
+
+  def apply(
+      name: ParameterName,
+      typ: TypingResult,
+      validators: List[ParameterValidator],
+      editors: List[ParameterEditor]
+  ): Parameter =
     Parameter(
-      name,
-      typ,
-      editors = Nil,
+      name = name,
+      typ = typ,
+      editors = editors,
       validators = validators,
       defaultValue = None,
       additionalVariables = Map.empty,
@@ -295,8 +303,9 @@ case class Parameter(
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
 //  // TODO: all three methods below could be removed when we split this class into api class and domain model class
-  def editorsWithDefault: List[ParameterEditor] = editors match {
-    case Nil => List(SpelParameterEditor)
+  def finalEditors: List[ParameterEditor] = editors match {
+    case Nil =>
+      throw new IllegalArgumentException(s"No editor was determined for parameter $name with type ${typ.display}")
     case nel => nel
   }
 
