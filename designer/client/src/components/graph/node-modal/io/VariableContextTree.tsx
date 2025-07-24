@@ -12,6 +12,7 @@ import { ContextAccordion } from "./ContextAccordion";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";
 import { useInputOutputContext } from "./InputOutputContext";
+import { useNewlyAddedContexts } from "./useNewlyAddedContexts";
 
 export type Direction = "input" | "output";
 type ValuesContextTreeProps = {
@@ -92,6 +93,8 @@ export const VariableContextTree = memo(function ValuesContextTree({
 }: ValuesContextTreeProps): JSX.Element {
     const { availableContexts, hiddenAvailableContexts, setContext, inputVariables, transitionNodesIds, selectedContextCache } =
         useVariableContext(direction);
+
+    const isContextHighlighted = useNewlyAddedContexts(availableContexts);
 
     const { t } = useTranslation();
     const dispatch = useDispatch();
@@ -185,6 +188,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
                         onToggle={setContext}
                         locked={index >= availableContexts.length}
                         showNodes={showNodes}
+                        newlyAdded={isContextHighlighted(r.id)}
                     >
                         {direction === "output" ? <>{r.error}</> : null}
                         <ContextTree context={r} oldFields={direction === "output" ? inputVariables : []} />

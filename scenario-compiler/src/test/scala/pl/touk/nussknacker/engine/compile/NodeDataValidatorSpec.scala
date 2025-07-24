@@ -1566,13 +1566,18 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           SpelTemplateParameterEditor,
           SpelParameterEditor,
         ),
-        defaultValue = Some("realDefault".spelTemplate),
+        defaultValue = Some("realDefault".spel),
         labelOpt = Some("Parameter 1")
       ),
     Parameter[Long](ParameterName("lazyPar1"))
-      .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
-    Parameter[Any](ParameterName("a")),
-    Parameter[Any](ParameterName("b"))
+      .copy(
+        isLazyParameter = true,
+        editors = List(SpelParameterEditor),
+        defaultValue = Some("0".spel),
+        changesCanReloadParameters = true
+      ),
+    Parameter[Any](ParameterName("a")).copy(editors = List(SpelParameterEditor)),
+    Parameter[Any](ParameterName("b")).copy(editors = List(SpelParameterEditor))
   )
 
   private def validate(

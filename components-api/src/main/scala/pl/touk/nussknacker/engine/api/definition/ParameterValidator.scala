@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 import java.util.ServiceLoader
 import java.util.regex.Pattern
@@ -42,8 +43,16 @@ case object MandatoryParameterValidator extends ParameterValidator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] =
-    if (!expression.expression.isBlank) valid(()) else invalid(error(paramName, nodeId.id))
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    expression.language match {
+      case Language.Spel | Language.DictKeyWithLabel | Language.TabularDataDefinition | Language.Json |
+          Language.JsonTemplate =>
+        Validated.cond(!expression.expression.isBlank, (), error(paramName, nodeId.id))
+      case Language.SpelTemplate =>
+        valid(())
+    }
+
+  }
 
   private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
     message = s"Field: ${paramName.value} is mandatory and can not be empty",
