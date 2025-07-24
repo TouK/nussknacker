@@ -7,16 +7,12 @@ import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.{compiledgraph, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.compile.nodecompilation.{
-  NodeCompiler,
-  NodeInputValidationContext,
-  SingleInputNodeInputValidationContext
-}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, SingleInputNodeInputValidationContext}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{FragmentUsageEnd, Node}
@@ -233,7 +229,7 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
 
       case enricher @ Enricher(id, _, output, _, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, validatedServiceRef, _) =
-          nodeCompiler.compileEnricher(enricher, inputContext, outputVar = OutputVar.enricher(output))
+          nodeCompiler.compileEnricher(enricher, inputContext)
 
         CompilationResult.map3(
           toCompilationResult(validatedServiceRef, typingInfo, parameters),

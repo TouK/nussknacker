@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.compiledgraph.{node => compiledNode, CompiledNodesCollector}
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart, SourcePart}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.{asFragmentInputDefinition, asSource, SourceNodeData}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -49,11 +49,6 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
     nodeCompiler,
     modelData.customProcessValidator
   )
-
-  def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
-    val allNodes = scenario.collectAllNodes
-    allNodes.flatMap(asSource) ++ allNodes.flatMap(asFragmentInputDefinition)
-  }
 
   def compileSourceNode(
       source: SourceNodeData

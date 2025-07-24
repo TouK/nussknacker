@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.IorNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
-import pl.touk.nussknacker.engine.api.{NodeId, Params, Service}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, Params, Service}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.transformation.{OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
+import pl.touk.nussknacker.engine.compile.ComponentExecutorFactory.ComponentExecutorDependencies
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -17,40 +18,15 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithIm
 class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends LazyLogging {
 
   def createComponentExecutor[ComponentExecutor](
-      component: ComponentDefinitionWithImplementation,
-      compiledParameters: List[(TypedParameter, Parameter)],
-      outputVariableNameOpt: Option[String],
-      additionalDependencies: Seq[AnyRef],
-      componentUseContext: ComponentUseContext,
-      nonServicesLazyParamStrategy: LazyParameterCreationStrategy
-  )(
-      implicit nodeId: NodeId,
-      scenarioCompilationDependencies: ScenarioCompilationDependencies
+      deps: ComponentExecutorDependencies
   ): IorNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
-      doCreateComponentExecutor[ComponentExecutor](
-        component,
-        compiledParameters,
-        outputVariableNameOpt,
-        additionalDependencies,
-        componentUseContext,
-        nonServicesLazyParamStrategy
-      )
-    }(nodeId, scenarioCompilationDependencies.metaData).toIor
+      doCreateComponentExecutor[ComponentExecutor](deps)
+    }(deps.nodeId, deps.metaData).toIor
   }
 
-  private def doCreateComponentExecutor[ComponentExecutor](
-      componentDefinition: ComponentDefinitionWithImplementation,
-      params: List[(TypedParameter, Parameter)],
-      outputVariableNameOpt: Option[String],
-      additional: Seq[AnyRef],
-      componentUseContext: ComponentUseContext,
-      nonServicesLazyParamStrategy: LazyParameterCreationStrategy,
-  )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
-  ): ComponentExecutor = {
-    import scenarioCompilationDependencies._
+  private def doCreateComponentExecutor[ComponentExecutor](deps: ComponentExecutorDependencies): ComponentExecutor = {
+    import deps._
     implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
       componentDefinition.component match {
         // Services are created within Interpreter so for every engine, lazy parameters can be evaluable. Other component types
@@ -60,7 +36,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         case _          => nonServicesLazyParamStrategy
       }
     val paramsMap = Params.fromParameterEvaluationResultMap(
-      params.map { case (tp, p) =>
+      compiledParameters.map { case (tp, p) =>
         p.name -> parameterEvaluator.evaluateParameter(tp, p)
       }.toMap
     )
@@ -76,9 +52,28 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       .invokeMethod(
         paramsMap,
         outputVariableNameOpt,
-        nodeDependenciesRaw ++ Seq(nodeId, componentUseContext) ++ additional
+        nodeDependenciesRaw ++ Seq(deps.nodeId, componentUseContext) ++ additionalDependencies
       )
       .asInstanceOf[ComponentExecutor]
+  }
+
+}
+
+object ComponentExecutorFactory {
+
+  final case class ComponentExecutorDependencies(
+      componentDefinition: ComponentDefinitionWithImplementation,
+      compiledParameters: List[(TypedParameter, Parameter)],
+      outputVariableNameOpt: Option[String],
+      additionalDependencies: Seq[AnyRef],
+      componentUseContext: ComponentUseContext,
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy
+  )(
+      implicit val nodeId: NodeId,
+      val scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ) {
+    implicit def metaData: MetaData = jobData.metaData
+    implicit def jobData: JobData   = scenarioCompilationDependencies.jobData
   }
 
 }

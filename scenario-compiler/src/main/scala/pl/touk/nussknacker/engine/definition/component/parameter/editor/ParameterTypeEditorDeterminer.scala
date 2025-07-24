@@ -57,7 +57,7 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult, globalParametersConfi
             SpelParameterEditor
           )
       }
-      .getOrElse(Nil)
+      .getOrElse(List(SpelParameterEditor))
   }
 
 }

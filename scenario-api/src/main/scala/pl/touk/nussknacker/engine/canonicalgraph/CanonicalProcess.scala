@@ -106,6 +106,11 @@ case class CanonicalProcess(
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
 
+  def collectAllSources: List[SourceNodeData] = {
+    val allNodes = collectAllNodes
+    allNodes.flatMap(_.asSource) ++ allNodes.flatMap(_.asFragmentInputDefinition)
+  }
+
   def collectAllNodes: List[NodeData] = allStartNodes.toList.flatten.flatMap(canonicalnode.collectAllNodes)
 
   def toScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(this)

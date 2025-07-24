@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.graph
 
-import io.circe.{Decoder, Encoder, HCursor}
+import io.circe.{Codec, Decoder, Encoder, HCursor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
@@ -9,13 +9,37 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.node.{NodeData, StickyNote}
 
-@JsonCodec final case class ScenarioGraph(
+final case class ScenarioGraph(
     properties: ProcessProperties,
     nodes: List[NodeData],
     edges: List[Edge],
     stickyNotes: List[StickyNote] = Nil
 ) {
   def toMetaData(name: ProcessName): MetaData = properties.toMetaData(name)
+}
+
+object ScenarioGraph {
+
+  implicit val scenarioGraphCodec: Codec[ScenarioGraph] = {
+    val encoder: Encoder[ScenarioGraph] = io.circe.generic.semiauto.deriveEncoder
+    // decoder with fallback for stickyNotes
+    // Legacy format handling required for scenarios migration to the remote env
+    val decoder: Decoder[ScenarioGraph] = Decoder.instance { c =>
+      for {
+        properties  <- c.downField("properties").as[ProcessProperties]
+        nodes       <- c.downField("nodes").as[List[NodeData]]
+        edges       <- c.downField("edges").as[List[Edge]]
+        stickyNotes <- c.downField("stickyNotes").as[Option[List[StickyNote]]]
+      } yield ScenarioGraph(
+        properties,
+        nodes,
+        edges,
+        stickyNotes.getOrElse(List.empty)
+      )
+    }
+    Codec.from(decoder, encoder)
+  }
+
 }
 
 @JsonCodec final case class Edge(from: String, to: String, edgeType: Option[EdgeType])

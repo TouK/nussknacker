@@ -14,9 +14,11 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
+import pl.touk.nussknacker.engine.compile.nodecompilation.ImplicitSourceOutputVariableHandler.NodeDataExt
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.Implicits.{RichIterable, RichScalaMap}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -34,10 +36,28 @@ class DynamicNodeValidator(
   private implicit val lazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
 
   def validateNode(
+      nodeData: NodeData,
       component: DynamicComponent[_],
+      parametersConfig: Map[ParameterName, ParameterConfig],
+      nodeInputValidationContext: NodeInputValidationContext,
+  )(
+      implicit nodeId: NodeId,
+      scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): ValidatedNel[ProcessCompilationError, TransformationResult] =
+    validateNode(
+      parametersFromNode = nodeData.parametersOrEmpty,
+      branchParametersFromNode = nodeData.branchParametersOrEmpty,
+      outputVariable = nodeData.outputVariableNameHandlingInputSourceVariableName,
+      component = component,
+      parametersConfig = parametersConfig,
+      nodeInputValidationContext = nodeInputValidationContext
+    )
+
+  def validateNode(
       parametersFromNode: List[NodeParameter],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
+      component: DynamicComponent[_],
       parametersConfig: Map[ParameterName, ParameterConfig],
       nodeInputValidationContext: NodeInputValidationContext,
   )(
