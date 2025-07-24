@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData}
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
-import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestServiceInvocationCollector}
 
@@ -27,7 +26,7 @@ object FlinkScenarioTestingJob {
     new FlinkScenarioTestingJob(modelData).run(
       scenario,
       scenarioTestData,
-      collectingListener.asInstanceOf[ResultsCollectingListener[Json]],
+      collectingListener,
       streamExecutionEnv
     )
   }
@@ -70,7 +69,7 @@ private class FlinkScenarioTestingJob(modelData: ModelData) extends LazyLogging 
       processVersion: ProcessVersion,
   ): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(
-      TestFlinkProcessCompilerDataFactory(
+      new TestFlinkProcessCompilerDataFactory(
         process,
         scenarioTestData,
         modelData,

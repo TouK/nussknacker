@@ -145,16 +145,14 @@ class FlinkProcessCompilerDataFactory(
     )
     val adjustedDefinitions = adjustDefinitions(
       modelDefinitionWithTypes.modelDefinition,
-      definitionContext,
-      modelDefinitionWithTypes.classDefinitions
+      definitionContext
     )
     (ModelDefinitionWithClasses(adjustedDefinitions), dictRegistry)
   }
 
   protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
-      definitionContext: ComponentDefinitionContext,
-      classDefinitions: ClassDefinitionSet,
+      definitionContext: ComponentDefinitionContext
   ): ModelDefinition = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {

@@ -36,7 +36,7 @@ final case class MethodBasedComponentDefinitionWithImplementation(
 
 object MethodBasedComponentDefinitionWithImplementation {
 
-  def withNullImplementation(
+  def withDumbImplementation(
       name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
@@ -45,7 +45,7 @@ object MethodBasedComponentDefinitionWithImplementation {
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
       name = name,
-      implementationInvoker = ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
+      implementationInvoker = ComponentImplementationInvoker.dumbImplementationInvoker,
       component = new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
       componentTypeSpecificData = componentTypeSpecificData,
       staticDefinition = staticDefinition,
