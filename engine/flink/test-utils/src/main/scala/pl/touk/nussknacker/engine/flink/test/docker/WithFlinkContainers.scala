@@ -44,7 +44,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with Strict
         //  Nu requires a little bit more metaspace than Flink default allocate based on process size
         "FLINK_PROPERTIES" ->
           s"""jobmanager.memory.jvm-metaspace.size: 400m
-             |state.savepoints.dir: ${savepointDir.toFile.toURI.toString}""".stripMargin,
+             |execution.checkpointing.savepoint-dir: ${savepointDir.toFile.toURI.toString}""".stripMargin,
         "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString
       ),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
