@@ -13,8 +13,6 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -79,7 +77,7 @@ class FlinkProcessCompilerDataFactory(
         modelConfig.underlyingConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
       )
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelConfig)
-    val listenersToUse   = adjustListeners(defaultListeners, modelConfig) ++ processListeners
+    val listenersToUse   = adjustListeners(defaultListeners) ++ processListeners
 
     val (definitionWithTypes, dictRegistry) = definitions(modelConfig, userCodeClassLoader)
 
@@ -137,11 +135,10 @@ class FlinkProcessCompilerDataFactory(
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
       modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries
     )
-    val definitionContext = ComponentDefinitionContext(
+    val definitionContext = new ComponentDefinitionContext(
       userCodeClassLoader,
       dictRegistry,
-      modelDefinitionWithTypes.modelDefinition.expressionConfig,
-      modelDefinitionWithTypes.classDefinitions
+      modelDefinitionWithTypes
     )
     val adjustedDefinitions = adjustDefinitions(
       modelDefinitionWithTypes.modelDefinition,
@@ -160,10 +157,7 @@ class FlinkProcessCompilerDataFactory(
     DictServicesFactoryLoader.justOne(userCodeClassLoader)
   }
 
-  protected def adjustListeners(
-      defaults: List[ProcessListener],
-      modelConfig: ModelConfig
-  ): List[ProcessListener] = defaults
+  protected def adjustListeners(defaults: List[ProcessListener]): List[ProcessListener] = defaults
 
   protected def exceptionHandler(
       metaData: MetaData,
@@ -186,10 +180,9 @@ object UsedNodes {
   val empty: UsedNodes = UsedNodes(Nil, Nil)
 }
 
-case class ComponentDefinitionContext(
-    userCodeClassLoader: ClassLoader,
+class ComponentDefinitionContext(
+    val userCodeClassLoader: ClassLoader,
     // below are for purpose of TestDataPreparer
-    dictRegistry: EngineDictRegistry,
-    expressionConfig: ExpressionConfigDefinition,
-    classDefinitions: ClassDefinitionSet
+    val dictRegistry: EngineDictRegistry,
+    val modelDefinitionWithClasses: ModelDefinitionWithClasses
 )

@@ -85,10 +85,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           )
       }
 
-      override protected def adjustListeners(
-          defaults: List[ProcessListener],
-          modelConfig: ModelConfig
-      ): List[ProcessListener] = defaults :+ resultsCollectingListener
+      override protected def adjustListeners(defaults: List[ProcessListener]): List[ProcessListener] =
+        defaults :+ resultsCollectingListener
 
       override protected def exceptionHandler(
           metaData: MetaData,

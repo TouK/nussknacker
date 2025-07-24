@@ -7,7 +7,7 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{api, compiledgraph, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -670,7 +670,7 @@ class NodeCompiler(
 
     def compile(
         serviceNodeData: ServiceNodeData,
-        objWithMethod: MethodBasedComponentDefinitionWithImplementation,
+        componentDefinition: MethodBasedComponentDefinitionWithImplementation,
         inputContext: SingleInputNodeInputValidationContext
     )(
         implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
@@ -679,24 +679,17 @@ class NodeCompiler(
       import scenarioCompilationDependencies._
       val computedParameters =
         expressionCompiler.compileExecutorComponentNodeParameters(
-          objWithMethod.parameters,
+          componentDefinition.parameters,
           serviceNodeData.parameters,
           inputContext
         )
-      val outputVar = serviceNodeData.outputVar.map(OutputVar.enricher)
-      val outputCtx = outputVar match {
-        case Some(output) =>
-          objWithMethod.returnType
-            .map(inputContext.validationContext.withVariable(output, _))
-            .getOrElse {
-              logger.warn(
-                s"Scenario [${scenarioCompilationDependencies.metaData.name}] node [$nodeId] compilation warning. " +
-                  s"Found ${output.fieldName} = ${output.outputName} but service [${serviceNodeData.componentId}] used by the node doesn't need it. It will be skipped."
-              )
-              Valid(inputContext.validationContext)
-            }
-        case None => Valid(inputContext.validationContext)
-      }
+      val outputVar                                 = serviceNodeData.outputVar.map(OutputVar.enricher)
+      implicit val implicitComponentId: ComponentId = componentDefinition.id
+      val outputCtx = StaticComponentOutputValidationContextDeterminer.conntextAfterService(
+        inputContext,
+        outputVar,
+        componentDefinition.returnType
+      )
 
       val compiledServiceRef = computedParameters.map { params =>
         val evaluateParams = { context: Context =>
@@ -708,7 +701,7 @@ class NodeCompiler(
         compiledgraph.service.ServiceRef(
           id = serviceNodeData.service.id,
           invoker = new MethodBasedServiceInvoker(
-            objWithMethod,
+            componentDefinition,
             createNodeCompilationDependencies(serviceNodeData),
             evaluateParams
           ),

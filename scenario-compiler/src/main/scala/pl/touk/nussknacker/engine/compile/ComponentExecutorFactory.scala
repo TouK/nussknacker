@@ -63,8 +63,8 @@ object ComponentExecutorFactory {
       val invocationContext: Option[ComponentImplementationSpecificInvocationContext],
   ) {
     implicit def nodeId: NodeId     = nodeCompilationDependencies.nodeId
-    implicit def metaData: MetaData = nodeCompilationDependencies.scenarioCompilationDependencies.metaData
-    implicit def jobData: JobData   = nodeCompilationDependencies.scenarioCompilationDependencies.jobData
+    implicit def metaData: MetaData = nodeCompilationDependencies.metaData
+    implicit def jobData: JobData   = nodeCompilationDependencies.jobData
   }
 
 }

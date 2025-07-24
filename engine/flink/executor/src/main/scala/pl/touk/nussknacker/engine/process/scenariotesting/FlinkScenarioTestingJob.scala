@@ -69,7 +69,7 @@ private class FlinkScenarioTestingJob(modelData: ModelData) extends LazyLogging 
       processVersion: ProcessVersion,
   ): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(
-      new TestFlinkProcessCompilerDataFactory(
+      TestFlinkProcessCompilerDataFactory(
         process,
         scenarioTestData,
         modelData,

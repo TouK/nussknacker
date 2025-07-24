@@ -57,7 +57,7 @@ private class FlinkScenarioStateVerificationJob(modelData: ModelData) {
 
   protected def prepareRegistrar(scenario: CanonicalProcess): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(
-      VerificationFlinkProcessCompilerDataFactory(scenario, modelData),
+      VerificationFlinkProcessCompilerDataFactory(modelData),
       FlinkJobConfig.parse(modelData.modelConfig),
       ExecutionConfigPreparer.defaultChain(modelData)
     )

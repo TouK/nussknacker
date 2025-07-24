@@ -32,26 +32,31 @@ abstract class StubbedComponentImplementationInvoker(
       compilationDependencies: NodeCompilationDependencies,
       invocationContext: Option[ComponentImplementationSpecificInvocationContext]
   ): Any = {
-    def transform(impl: Any): Any = {
-      // Correct TypingResult is important for method based components, because even for testing and verification
-      // purpose, ImplementationInvoker is used also to determine output types. Dynamic components don't use it during
-      // scenario validation so we pass Unknown for them
-      val typingResult =
-        impl
+    // Correct TypingResult is important for method-based components, because even for testing and verification
+    // purpose, ImplementationInvoker is used also to determine output types. Dynamic components don't use it during
+    // scenario validation so we can pass Unknown for them
+    def withReturnType[T](invocationResult: Any)(f: TypingResult => T): Any = {
+      f(
+        invocationResult
           .cast[ReturningType]
           .map(rt => rt.returnType)
           .orElse(originalDefinitionReturnType)
           .getOrElse(Unknown)
-
-      transformOriginalInvocationResult(impl, typingResult, compilationDependencies)
+      )
     }
 
-    val originalCompilationResult = invokeOriginalInvoker(params, compilationDependencies, invocationContext)
-    originalCompilationResult match {
+    val originalInvocationResult = invokeOriginalInvoker(params, compilationDependencies, invocationContext)
+    originalInvocationResult match {
       case contextTransformation: ContextTransformation =>
-        contextTransformation.copy(implementation = transform(contextTransformation.implementation))
+        contextTransformation.copy(implementation =
+          withReturnType(contextTransformation.implementation)(
+            transformOriginalInvocationResult(contextTransformation.implementation, _, compilationDependencies)
+          )
+        )
       case componentExecutor =>
-        transform(componentExecutor)
+        withReturnType(componentExecutor)(
+          transformOriginalInvocationResult(componentExecutor, _, compilationDependencies)
+        )
     }
   }
 
@@ -63,7 +68,7 @@ abstract class StubbedComponentImplementationInvoker(
     original.invokeMethod(params, compilationDependencies, invocationContext)
 
   def transformOriginalInvocationResult(
-      impl: Any,
+      originalInvocationResult: Any,
       typingResult: TypingResult,
       compilationDependencies: NodeCompilationDependencies
   ): Any

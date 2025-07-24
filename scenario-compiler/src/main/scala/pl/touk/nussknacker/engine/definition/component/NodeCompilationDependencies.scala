@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
 final class NodeCompilationDependencies(
-    val scenarioCompilationDependencies: ScenarioCompilationDependencies,
+    scenarioCompilationDependencies: ScenarioCompilationDependencies,
     val nodeData: NodeData,
     val componentUseContext: ComponentUseContext,
 ) {
