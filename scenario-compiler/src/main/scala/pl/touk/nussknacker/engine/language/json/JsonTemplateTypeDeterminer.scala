@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.language.json.JsonParser.CompiledJsonExpression
 import pl.touk.nussknacker.engine.language.json.JsonTemplateTypeDeterminer._
 import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelExpressionParser, SpelExpressionRepr}
-import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
+import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.math.{BigDecimal => JBigDecimal}
 import java.nio.charset.Charset
@@ -182,11 +182,11 @@ private object JsonTemplateTypeDeterminer {
     JBigDecimal.valueOf(0.6568369117280035) -> Typed.typedClass[Locale],
     JBigDecimal.valueOf(0.6568369117280036) -> Typed.typedClass[UUID],
     JBigDecimal.valueOf(0.6568369117280037) -> Typed.typedClass[Charset],
-  ).map { case (key, value) => key.toString -> value } toMapCheckingDuplicates
+  ).map { case (key, value) => key.toString -> value } toMapCheckingDuplicatesUnsafe
 
   private object TypeMarkedUsingSpecialMarker {
     private val specialMarkersForLogicalTypesSwapped =
-      specialMarkersForLogicalTypes.toList.map(_.swap).toMapCheckingDuplicates
+      specialMarkersForLogicalTypes.toList.map(_.swap).toMapCheckingDuplicatesUnsafe
 
     def unapply(typ: TypedClass): Option[String] = specialMarkersForLogicalTypesSwapped.get(typ)
   }
