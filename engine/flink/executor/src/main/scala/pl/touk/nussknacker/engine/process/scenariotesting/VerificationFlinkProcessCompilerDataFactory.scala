@@ -1,13 +1,16 @@
-package pl.touk.nussknacker.engine.process.compiler
+package pl.touk.nussknacker.engine.process.scenariotesting
 
-import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
-import pl.touk.nussknacker.engine.ModelConfig
-import pl.touk.nussknacker.engine.api.{NodeId, ProcessListener}
+import pl.touk.nussknacker.engine.{ModelConfig, ModelData, RuntimeMode}
+import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  NodeCompilationDependencies
+}
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
+import pl.touk.nussknacker.engine.process.compiler.{ComponentDefinitionContext, FlinkProcessCompilerDataFactory}
 
 object VerificationFlinkProcessCompilerDataFactory {
 
@@ -33,7 +36,11 @@ object VerificationFlinkProcessCompilerDataFactory {
           context: ComponentDefinitionContext
       ): ComponentDefinitionWithImplementation =
         service.withImplementationInvoker(new StubbedComponentImplementationInvoker(service) {
-          override def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any = null
+          override def transformOriginalInvocationResult(
+              impl: Any,
+              typingResult: TypingResult,
+              compilationDependencies: NodeCompilationDependencies
+          ): Any = null
         })
 
       override protected def prepareSourceFactory(
@@ -41,7 +48,11 @@ object VerificationFlinkProcessCompilerDataFactory {
           context: ComponentDefinitionContext
       ): ComponentDefinitionWithImplementation =
         sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
-          override def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any =
+          override def transformOriginalInvocationResult(
+              impl: Any,
+              typingResult: TypingResult,
+              compilationDependencies: NodeCompilationDependencies
+          ): Any =
             EmptySource(typingResult)
         })
 

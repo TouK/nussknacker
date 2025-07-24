@@ -12,14 +12,18 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext.LiveRuntime
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   DynamicNodeValidator,
   SingleInputNodeInputValidationContext,
   TransformationResult
 }
+import pl.touk.nussknacker.engine.definition.component.NodeCompilationDependencies
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
   schemaVersionParamName,
@@ -379,20 +383,20 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   }
 
   private def validate(params: (String, Expression)*): TransformationResult = {
-    val modelData = LocalModelData(ConfigFactory.empty(), List.empty)
-    val validator = DynamicNodeValidator(modelData)
-    val metaData  = MetaData("processId", StreamMetaData())
-
-    val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
-    implicit val nodeId: NodeId = NodeId("id")
-    val paramsList              = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
+    val modelData  = LocalModelData(ConfigFactory.empty(), List.empty)
+    val validator  = DynamicNodeValidator(modelData)
+    val metaData   = MetaData("processId", StreamMetaData())
+    val jobData    = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
+    val paramsList = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
+    val nodeCompilationDependencies = new NodeCompilationDependencies(
+      scenarioCompilationDependencies =
+        new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty),
+      nodeData = Source("id", SourceRef("typ", paramsList)),
+      componentUseContext = LiveRuntime(None)
+    )
     validator
       .validateNode(
-        parametersFromNode = paramsList,
-        branchParametersFromNode = Nil,
-        outputVariable = Some(VariableConstants.InputVariableName),
+        compilationDependencies = nodeCompilationDependencies,
         component = universalSourceFactory(useStringForKey = true),
         parametersConfig = Map.empty,
         nodeInputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)

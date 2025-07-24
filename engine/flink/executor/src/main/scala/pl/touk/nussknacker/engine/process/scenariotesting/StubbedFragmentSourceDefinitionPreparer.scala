@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.process.compiler
+package pl.touk.nussknacker.engine.process.scenariotesting
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
@@ -10,7 +10,11 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  NodeCompilationDependencies
+}
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.FragmentIcon
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
@@ -30,14 +34,16 @@ class StubbedFragmentSourceDefinitionPreparer(
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
     FragmentComponentDefinition(
       name = name,
-      implementationInvoker = (_: Params, _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
+      implementationInvoker =
+        (_: Params, _: NodeCompilationDependencies, _: Option[ComponentImplementationSpecificInvocationContext]) =>
+          buildSource(inputParameters),
       parameters = inputParameters,
       outputNames = List.empty,
       docsUrl = None,
       componentGroupName = None,
       icon = Some(FragmentIcon),
       translateGroupName = Some(_),
-      designerWideId = DesignerWideComponentId("dumpId"),
+      designerWideId = DesignerWideComponentId("dumbId"),
       allowedProcessingModes = AllowedProcessingModes.All,
     )
   }
