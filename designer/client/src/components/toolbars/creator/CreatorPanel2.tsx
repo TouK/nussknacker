@@ -21,7 +21,7 @@ import { AddGroupElement } from "./CreatorPanel";
 import { globalEventBus } from "./globalEventBus";
 import type { ToolBoxProps } from "./ToolBox";
 import ToolBox from "./ToolBox";
-import { useOutsideInteractionRef } from "./useOutsideInteractionRef";
+import { useOutsideInteraction } from "./useOutsideInteraction";
 
 type CreatorPanelProps2 = ToolbarPanelProps & {
     additionalParams?: {
@@ -44,12 +44,13 @@ export function CreatorPanel2({ additionalParams, ...props }: CreatorPanelProps2
     }, [dispatch, isCloud, settings]);
     const searchRef = useRef<Focusable>();
 
-    const { isOpened, toggleCollapse, side } = useSidePanel();
+    const { isOpened, toggleCollapse, side, ref } = useSidePanel();
 
     const [filters, setFilters] = useState<ToolBoxProps["filters"]>([]);
     useEffect(() => {
         return globalEventBus.on("openNodeSelector", (filters) => {
             setFilters(filters);
+            setTextFilter("");
             if (!isOpened) {
                 toggleCollapse();
             }
@@ -65,12 +66,6 @@ export function CreatorPanel2({ additionalParams, ...props }: CreatorPanelProps2
         });
     }, [toggleCollapse]);
 
-    useEffect(() => {
-        if (!isOpened) {
-            setFilters([]);
-        }
-    }, [isOpened]);
-
     const { componentGroups } = useSelector(getProcessDefinitionData);
 
     const closeHandler = useCallback(
@@ -80,11 +75,11 @@ export function CreatorPanel2({ additionalParams, ...props }: CreatorPanelProps2
         [side],
     );
 
-    const [interactionRef] = useOutsideInteractionRef(closeHandler, isOpened);
-    useKey("Escape", closeHandler, { when: isOpened });
+    useOutsideInteraction(ref, closeHandler, isOpened);
+    useKey("Escape", () => closeHandler(), { when: isOpened });
 
     return (
-        <div ref={interactionRef}>
+        <>
             <ToolbarWrapper {...props} onExpand={() => searchRef.current?.focus()}>
                 <SearchInputWithIcon
                     ref={searchRef}
@@ -124,6 +119,6 @@ export function CreatorPanel2({ additionalParams, ...props }: CreatorPanelProps2
                     }}
                 />
             </ToolbarWrapper>
-        </div>
+        </>
     );
 }

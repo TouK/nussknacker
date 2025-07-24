@@ -15,10 +15,11 @@ export type CollapsibleScrollPanelProps = PropsWithChildren<{
     className?: string;
     side?: PanelSide;
     onScrollToggle?: (isEnabled: boolean) => void;
+    disabled?: boolean;
 }>;
 
 const CollapsibleScrollPanel = forwardRef<HTMLDivElement, CollapsibleScrollPanelProps>(function ScrollTogglePanel(props, ref) {
-    const { children, side, isExpanded, onScrollToggle, className } = props;
+    const { children, side, isExpanded, onScrollToggle, disabled, className } = props;
     const [scrollVisible, setScrollVisible] = useState(true);
 
     const scrollToggle = useCallback(
@@ -37,6 +38,7 @@ const CollapsibleScrollPanel = forwardRef<HTMLDivElement, CollapsibleScrollPanel
             isExpanded={isExpanded}
             className={className}
             scrollVisible={scrollVisible}
+            disabled={disabled}
         >
             <ScrollbarsExtended onScrollToggle={scrollToggle} side={side}>
                 <ErrorBoundary FallbackComponent={ToolbarErrorFallbackComponent}>

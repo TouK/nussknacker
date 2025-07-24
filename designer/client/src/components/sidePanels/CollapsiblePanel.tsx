@@ -11,19 +11,25 @@ type CollapsiblePanelProps = PropsWithChildren<{
     side: PanelSide;
     className?: string;
     scrollVisible?: boolean;
+    disabled?: boolean;
 }>;
 
-const CollapsiblePanelRoot = styled("div")<CollapsiblePanelProps>(({ side, theme }) => ({
+const CollapsiblePanelRoot = styled("div")<CollapsiblePanelProps>(({ side, disabled, theme }) => ({
     pointerEvents: "none",
     userSelect: "none",
     width: PANEL_WIDTH,
     position: "relative",
     overflow: "hidden",
     willChange: "width",
-    transition: theme.transitions.create("width", {
+    transition: theme.transitions.create(["width", "filter", "transform"], {
         easing: theme.transitions.easing.easeOut,
         duration: theme.transitions.duration.enteringScreen,
     }),
+    filter: disabled ? "contrast(0.8) saturate(1) brightness(0.4) blur(1px)" : null,
+    "& *": {
+        pointerEvents: disabled ? "none" : null,
+    },
+    transform: disabled ? `translateX(${(side !== PanelSide.Left ? 1 : -1) * 1}em)` : null,
 }));
 
 const CollapsiblePanelContent = styled("div")<CollapsiblePanelProps>(({ side, isExpanded, theme }) => ({

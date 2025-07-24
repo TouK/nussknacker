@@ -167,7 +167,7 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
             return { paddingTop: padding, paddingBottom: padding };
         case ToolbarsSide.LeftDynamic:
         case ToolbarsSide.RightDynamic:
-            return { paddingTop: padding, paddingBottom: padding };
+            return { paddingTop: padding, paddingBottom: padding, justifyContent: "flex-start" };
         default:
             return {
                 padding: theme.spacing(0.5),
