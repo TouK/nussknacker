@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{Ior, IorNel, NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.{invalid, invalidNel, valid, Invalid, Valid}
+import cats.data.{IorNel, NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalid, invalidNel, valid, Valid}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, NodeId}
@@ -159,33 +159,39 @@ class ExpressionCompiler(
       implicit nodeId: NodeId,
       jobData: JobData
   ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
+    def compileParameters(parameterByName: Map[ParameterName, NodeParameter]) = {
+      val adjustedParameters = NodeParametersAdjuster.adjustNonBranchParameters(
+        parameterDefinitions,
+        parameterByName
+      )
+      val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
 
-    val adjustedParameters = NodeParametersAdjuster.adjustNonBranchParameters(
-      parameterDefinitions,
-      nodeParameters
-    )
-    val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions, ctx.globalVariables)
-    val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
-
-    val compiledParams = adjustedParameters
-      .flatMap { nodeParam =>
-        paramDefMap
-          .get(nodeParam.name)
-          .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy).map((_, paramDef)))
+      val compiledParams = adjustedParameters
+        .flatMap { nodeParam =>
+          paramDefMap
+            .get(nodeParam.name)
+            .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy).map((_, paramDef)))
+        }
+      val compiledBranchParams = (for {
+        branchParams <- nodeBranchParameters
+        p            <- branchParams.parameters
+      } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.flatMap {
+        case (paramName, branchIdAndExpressions) =>
+          paramDefMap
+            .get(paramName)
+            .map(paramDef => compileBranchParam(branchIdAndExpressions, branchContexts, paramDef).map((_, paramDef)))
       }
-    val compiledBranchParams = (for {
-      branchParams <- nodeBranchParameters
-      p            <- branchParams.parameters
-    } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.flatMap {
-      case (paramName, branchIdAndExpressions) =>
-        paramDefMap
-          .get(paramName)
-          .map(paramDef => compileBranchParam(branchIdAndExpressions, branchContexts, paramDef).map((_, paramDef)))
+      val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
+      allCompiledParams
     }
-    val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
-
     for {
-      compiledParams <- allCompiledParams.toIor
+      parameterByName <- nodeParameters
+        .map(param => (param.name, param))
+        .toMapCheckingDuplicates
+        .leftMap(duplicatedKeys => NonEmptyList.of(DuplicatedParameters(duplicatedKeys.toList.toSet, nodeId.id)))
+        .toIor
+      compiledParams <- compileParameters(parameterByName).toIor
+      paramValidatorsMap     = parameterValidatorsMap(parameterDefinitions, ctx.globalVariables)
       customValidatorsResult = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap)
       // We want to accumulate errors from custom validators, but also preserve typing information from allCompiledParams
       // even if custom validators return some errors
