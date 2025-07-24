@@ -26,7 +26,7 @@ const CollapsiblePanelRoot = styled("div")<CollapsiblePanelProps>(({ side, theme
     }),
 }));
 
-const CollapsiblePanelContent = styled("div")<CollapsiblePanelProps>(({ side, theme }) => ({
+const CollapsiblePanelContent = styled("div")<CollapsiblePanelProps>(({ side, isExpanded, theme }) => ({
     width: PANEL_WIDTH,
     position: "absolute",
     top: 0,
@@ -38,15 +38,19 @@ const CollapsiblePanelContent = styled("div")<CollapsiblePanelProps>(({ side, th
     }),
 }));
 
+const isDynamic = (side: PanelSide) => {
+    return [PanelSide.RightDynamic, PanelSide.LeftDynamic].includes(side);
+};
+
 export const CollapsiblePanel = forwardRef<HTMLDivElement, CollapsiblePanelProps>(function CollapsiblePanel(
     { children, className, scrollVisible, ...props },
     forwardedRef,
 ) {
     const [visible, setVisible] = useState(props.isExpanded);
-    const width = props.isExpanded ? (scrollVisible ? PANEL_WIDTH : SIDEBAR_WIDTH) : 0;
+    const width = props.isExpanded ? (scrollVisible || isDynamic(props.side) ? PANEL_WIDTH : SIDEBAR_WIDTH) : 0;
 
     const [ref] = useGraphViewportAdjustment({
-        side: props.side !== PanelSide.Left ? "right" : "left",
+        side: props.side === PanelSide.Left ? "left" : props.side === PanelSide.Right ? "right" : null,
         width,
         forwardedRef,
     });
@@ -64,7 +68,8 @@ export const CollapsiblePanel = forwardRef<HTMLDivElement, CollapsiblePanelProps
         >
             <CollapsiblePanelContent
                 style={{
-                    [props.side === PanelSide.Left ? "right" : "left"]: scrollVisible ? 0 : -1 * SCROLL_THUMB_SIZE,
+                    [[PanelSide.Left, PanelSide.LeftDynamic].includes(props.side) ? "right" : "left"]:
+                        scrollVisible || isDynamic(props.side) ? 0 : -1 * SCROLL_THUMB_SIZE,
                 }}
                 {...props}
             >

@@ -1,6 +1,6 @@
 import { cx } from "@emotion/css";
 import { cloneDeep } from "lodash";
-import React, { useEffect, useState, useLayoutEffect } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
@@ -37,19 +37,20 @@ const useIsTruncated = (label: string) => {
     return isTruncated;
 };
 
-type OwnProps = {
+export type ToolProps = {
     nodeModel: NodeType;
     label: string;
     highlights?: string[];
     disabled?: boolean;
     tooltip?: string;
+    onClick?: (event: React.MouseEvent<HTMLElement>, item: NodeType) => void;
 };
 
-export default function Tool(props: OwnProps): React.JSX.Element {
-    const { label, nodeModel, highlights = [], disabled, tooltip } = props;
+function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick }: ToolProps): React.JSX.Element {
+    const item: NodeType = useMemo(() => ({ ...cloneDeep(nodeModel), id: label }), [label, nodeModel]);
     const [, drag, preview] = useDrag(() => ({
         type: DndTypes.ELEMENT,
-        item: { ...cloneDeep(nodeModel), id: label },
+        item,
         options: { dropEffect: "copy" },
         canDrag: !disabled,
         tooltip: tooltip,
@@ -66,7 +67,12 @@ export default function Tool(props: OwnProps): React.JSX.Element {
 
     return (
         <InfoTooltip title={isTruncated ? label : ""} variant={"hover"}>
-            <div className={cx("tool", { disabled })} ref={drag} data-testid={`component:${label}`}>
+            <div
+                className={cx("tool", { disabled })}
+                ref={drag}
+                onClick={onClick && ((e) => onClick(e, item))}
+                data-testid={`component:${label}`}
+            >
                 <div className="toolWrapper">
                     <ComponentIcon node={nodeModel} className="toolIcon" />
                     <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
@@ -76,3 +82,5 @@ export default function Tool(props: OwnProps): React.JSX.Element {
         </InfoTooltip>
     );
 }
+
+export default Tool;

@@ -135,7 +135,7 @@ export function LiveDataThroughputs() {
 
             const transitionThroughput = transitionResults.find(
                 ({ sourceNodeId, destinationNodeId }) =>
-                    sourceNodeId === model.attributes.edgeData.from && destinationNodeId === model.attributes.edgeData.to,
+                    sourceNodeId === model.attributes.edgeData?.from && destinationNodeId === model.attributes.edgeData?.to,
             );
 
             const recentEvent = recentEvents.find(

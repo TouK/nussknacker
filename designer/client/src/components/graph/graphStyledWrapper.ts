@@ -168,7 +168,8 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
                     strokeWidth: 1,
                 },
                 // simple method to get dragging state
-                '&[style*="pointer"]': {
+                '&[style*="pointer"], &.temporary': {
+                    opacity: 0,
                     ".connection": {
                         strokeWidth: "3",
                         strokeDasharray: "3 0 3",

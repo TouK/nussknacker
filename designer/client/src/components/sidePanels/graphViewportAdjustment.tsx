@@ -1,5 +1,4 @@
-import type { Ref } from "react";
-import type React from "react";
+import type React, { Ref } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForkRef, useMutationObserver } from "rooks";
 
@@ -35,7 +34,7 @@ export function useGraphViewportAdjustment({
     forwardedRef,
 }: {
     width: number;
-    side: keyof Graph["viewportAdjustment"];
+    side: keyof Graph["viewportAdjustment"] | null;
     forwardedRef?: Ref<HTMLDivElement>;
 }): [ref: Ref<HTMLDivElement>] {
     const [rectRef, rect] = useRectObserver();
@@ -53,6 +52,7 @@ export function useGraphViewportAdjustment({
     }, [rect?.height, rectRef]);
 
     useEffect(() => {
+        if (!side) return;
         getGraph?.()?.adjustViewport({
             [side]: calcOccupiedPart() * width,
         });

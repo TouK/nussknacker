@@ -193,12 +193,12 @@ export function stickyNoteSetErrors(stickyNoteErrors: Record<string, NodeValidat
     };
 }
 
-export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[]): ThunkAction {
+export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[], isCopy = true): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
         const processDefinitionData = getProcessDefinitionData(state);
         const scenarioGraph = getScenarioGraph(state);
-        const { nodes, layout, idMapping } = prepareNewNodesWithLayout(scenarioGraph.nodes, nodesWithPositions, true);
+        const { nodes, layout, idMapping } = prepareNewNodesWithLayout(scenarioGraph.nodes, nodesWithPositions, isCopy);
 
         batchGroupBy.startOrContinue();
         dispatch({

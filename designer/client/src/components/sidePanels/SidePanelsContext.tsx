@@ -12,6 +12,7 @@ export function SideContextProvider({ side, children }: PropsWithChildren<{ side
 }
 
 type SideState = {
+    side: PanelSide;
     isOpened: boolean;
     toggleCollapse: () => void;
     toggleFullSize: (fullSize: boolean) => void;
@@ -20,13 +21,14 @@ type SideState = {
 
 const SidePanelsContext = createContext<Record<PanelSide, SideState>>(null);
 
-function useSideState(configId: string, side: PanelSide) {
+function useSideState(configId: string, side: PanelSide): SideState {
     const dispatch = useDispatch();
     const state = useSelector(panelsState);
     const [fullSize, setFullSize] = useState(true);
 
     return useMemo(
         () => ({
+            side,
             isOpened: state[side],
             switchVisible: !state[side] || fullSize,
             toggleCollapse: () => {
@@ -45,13 +47,17 @@ function useSideState(configId: string, side: PanelSide) {
 export function SidePanelsContextProvider({ configId, children }: PropsWithChildren<{ configId: string }>) {
     const leftState = useSideState(configId, PanelSide.Left);
     const rightState = useSideState(configId, PanelSide.Right);
+    const leftDynamicState = useSideState(configId, PanelSide.LeftDynamic);
+    const rightDynamicState = useSideState(configId, PanelSide.RightDynamic);
 
     const value = useMemo(
         () => ({
             [PanelSide.Left]: leftState,
             [PanelSide.Right]: rightState,
+            [PanelSide.LeftDynamic]: leftDynamicState,
+            [PanelSide.RightDynamic]: rightDynamicState,
         }),
-        [leftState, rightState],
+        [leftDynamicState, leftState, rightDynamicState, rightState],
     );
 
     return <SidePanelsContext.Provider value={value}>{children}</SidePanelsContext.Provider>;
@@ -62,12 +68,12 @@ export function useSidePanel(side?: PanelSide) {
     const sideContext = useContext(SideContext);
 
     if (!panelsContext) {
-        throw new Error(`${useSidePanel.name} was used outside of ${SidePanelsContext.displayName} provider`);
+        throw new Error(`${useSidePanel.name} was used outside of SidePanelsContext provider`);
     }
 
     if (side) return panelsContext[side];
 
     if (sideContext) return panelsContext[sideContext];
 
-    throw new Error(`${useSidePanel.name} was used outside of ${SideContext.displayName} provider`);
+    throw new Error(`${useSidePanel.name} was used outside of SideContext provider`);
 }

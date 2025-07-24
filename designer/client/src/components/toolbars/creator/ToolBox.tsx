@@ -2,11 +2,15 @@ import { lighten, styled } from "@mui/material";
 import { getLuminance } from "@mui/system/colorManipulator";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-
 import "react-treeview/react-treeview.css";
+import { useSelector } from "react-redux";
+
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
+import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import type { ComponentGroup } from "../../../types";
+import NodeUtils from "../../graph/NodeUtils";
+import type { ToolProps } from "./Tool";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
@@ -103,20 +107,42 @@ const StyledToolbox = styled("div")(({ theme }) => ({
     },
 }));
 
-type ToolBoxProps = {
-    filter: string;
+type ComponentFilter = "removeNoInputs" | "removeNoOutputs";
+export type ToolBoxProps = {
+    textFilter: string;
+    filters?: ComponentFilter[];
     addTreeElement?: (group: ComponentGroup) => React.ReactElement | null;
     addGroupLabelElement?: (group: ComponentGroup) => React.ReactElement | null;
     data: ComponentGroup[];
+    onSelect?: ToolProps["onClick"];
 };
 
-export default function ToolBox({ data = [], ...props }: ToolBoxProps): JSX.Element {
+export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxProps): JSX.Element {
     const { t } = useTranslation();
+    const definitionData = useSelector(getProcessDefinitionData);
 
-    const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
-    const groups = useMemo(() => {
-        return data.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);
-    }, [data, filters]);
+    const textFilters = useMemo(() => props.textFilter?.toLowerCase().split(/\s/).filter(Boolean), [props.textFilter]);
+
+    const groups = useMemo(
+        () =>
+            data
+                .map((group) => ({
+                    ...group,
+                    components: group.components.filter((component) =>
+                        filters.every((f) => {
+                            switch (f) {
+                                case "removeNoInputs":
+                                    return NodeUtils.hasInputs(component.node);
+                                case "removeNoOutputs":
+                                    return NodeUtils.hasOutputs(component.node, definitionData);
+                            }
+                        }),
+                    ),
+                }))
+                .map((group) => filterComponentsByLabel(textFilters)(group))
+                .filter((g) => g.components.length > 0),
+        [data, definitionData, filters, textFilters],
+    );
 
     return (
         <StyledToolbox id="toolbox">
@@ -125,14 +151,20 @@ export default function ToolBox({ data = [], ...props }: ToolBoxProps): JSX.Elem
                     <ToolboxComponentGroup
                         key={componentGroup.name}
                         componentGroup={componentGroup}
-                        highlights={filters}
+                        highlights={textFilters}
                         flatten={groups.length === 1}
                         addTreeElement={props.addTreeElement?.(componentGroup)}
                         addGroupLabelElement={props.addGroupLabelElement?.(componentGroup)}
+                        onSelect={props.onSelect}
                     />
                 ))
             ) : (
-                <Tool nodeModel={null} label={t("panels.creator.filter.noMatch", "no matching components")} disabled />
+                <Tool
+                    nodeModel={null}
+                    label={t("panels.creator.filter.noMatch", "no matching components")}
+                    onClick={props.onSelect}
+                    disabled
+                />
             )}
         </StyledToolbox>
     );

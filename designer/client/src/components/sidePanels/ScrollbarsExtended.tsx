@@ -21,8 +21,8 @@ const trackStyleProps = (side: PanelSide) => ({
     top: TOOLBARS_GAP - SCROLL_THUMB_SIZE / 3,
     bottom: TOOLBARS_GAP - SCROLL_THUMB_SIZE / 3,
     height: CLEAN_STYLE,
-    right: side === PanelSide.Left ? 0 : null,
-    left: side === PanelSide.Right ? 0 : null,
+    right: [PanelSide.Left, PanelSide.LeftDynamic].includes(side) ? 0 : null,
+    left: [PanelSide.Right, PanelSide.RightDynamic].includes(side) ? 0 : null,
 });
 
 const thumbYStyleProps = (theme: Theme) => ({
@@ -33,13 +33,13 @@ const thumbYStyleProps = (theme: Theme) => ({
 
 const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
 
-const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({ theme }) => ({
+const ScrollbarsWrapper = styled("div")(({ opaque }: { opaque: boolean }) => ({ theme }) => ({
     minHeight: "100%",
     display: "flex",
     transition: "all .25s",
     overflow: "hidden",
-    background: isScrollPossible && blendDarken(theme.palette.common.white, 0.75),
-    pointerEvents: isScrollPossible ? "auto" : "inherit",
+    background: opaque && blendDarken(theme.palette.common.white, 0.75),
+    pointerEvents: opaque ? "auto" : "inherit",
 }));
 
 interface ScrollbarsExtended {
@@ -69,7 +69,9 @@ export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWith
             scrollerProps={{ style: { marginRight: -SCROLLBAR_WIDTH } }}
             onUpdate={({ scrollYPossible }) => setScrollPossible(scrollYPossible)}
         >
-            <ScrollbarsWrapper isScrollPossible={isScrollPossible}>{children}</ScrollbarsWrapper>
+            <ScrollbarsWrapper opaque={isScrollPossible && ![PanelSide.RightDynamic, PanelSide.LeftDynamic].includes(side)}>
+                {children}
+            </ScrollbarsWrapper>
         </Scrollbars>
     );
 }

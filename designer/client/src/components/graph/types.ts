@@ -6,6 +6,7 @@ import type {
     nodeAdded,
     nodesConnected,
     nodesDisconnected,
+    nodesWithEdgesAdded,
     replaceNode,
     resetSelection,
     toggleSelection,
@@ -23,6 +24,7 @@ type ScenarioGraphProps = {
     editNode: typeof editNode;
     replaceNode: typeof replaceNode;
     nodeAdded: typeof nodeAdded;
+    nodesWithEdgesAdded: typeof nodesWithEdgesAdded;
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
 

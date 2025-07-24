@@ -8,7 +8,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
-import type { ValidationResult } from "../../types";
+import type { Edge, ValidationResult } from "../../types";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
@@ -60,6 +60,8 @@ export function updateValidationResult(state: GraphState, action: { validationRe
 }
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
+    const currentNodes = state.scenario.scenarioGraph.nodes;
+    const currentEdges = state.scenario.scenarioGraph.edges;
     switch (action.type) {
         case "PROCESS_FETCH":
         case "PROCESS_LOADING": {
@@ -75,7 +77,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
-            const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
+            const oldNodeIds = sortBy(currentNodes.map((n) => n.id));
             const scenarioWithStickyNotes: Scenario = addStickyNotesToNodes(action.scenario);
             const newNodeids = sortBy(scenarioWithStickyNotes.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
@@ -224,7 +226,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     ...state.scenario,
                     scenarioGraph: {
                         ...state.scenario.scenarioGraph,
-                        nodes: state.scenario.scenarioGraph.nodes.map((n) =>
+                        nodes: currentNodes.map((n) =>
                             action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges),
                         ),
                         edges: newEdges,
@@ -233,14 +235,14 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "NODES_DISCONNECTED": {
-            const nodesToSet = adjustBranchParametersAfterDisconnect(state.scenario.scenarioGraph.nodes, [action]);
+            const nodesToSet = adjustBranchParametersAfterDisconnect(currentNodes, [action]);
             return {
                 ...state,
                 scenario: {
                     ...state.scenario,
                     scenarioGraph: {
                         ...state.scenario.scenarioGraph,
-                        edges: state.scenario.scenarioGraph.edges
+                        edges: currentEdges
                             .map((e) => (e.from === action.from && e.to === action.to ? { ...e, to: "" } : e))
                             .filter(Boolean),
                         nodes: nodesToSet,
@@ -301,19 +303,41 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;
 
-            const edgesWithValidIds = edges.map((edge) => ({
-                ...edge,
-                from: idMapping[edge.from],
-                to: idMapping[edge.to],
-            }));
+            let adjustedEdges: Edge[];
 
-            const adjustedEdges = edgesWithValidIds.reduce((edges, edge) => {
-                const fromNode = nodes.find((n) => n.id === edge.from);
-                const toNode = nodes.find((n) => n.id === edge.to);
-                const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
-                const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, processDefinitionData);
-                return edges.concat(newEdge);
-            }, state.scenario.scenarioGraph.edges);
+            if (nodes.length === 1 && edges.length === 1) {
+                adjustedEdges = edges.map((edge) => {
+                    const nextEdge = {
+                        ...edge,
+                        from: edge.from ? edge.from : nodes[0].id,
+                        to: edge.to ? edge.to : nodes[0].id,
+                    };
+                    return nextEdge;
+                });
+                adjustedEdges = edges.reduce((edges, edge) => {
+                    const fromNode = edge.from ? currentNodes.find((n) => n.id === edge.from) : nodes[0];
+                    const toNode = edge.to ? currentNodes.find((n) => n.id === edge.to) : nodes[0];
+                    const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
+                    const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, processDefinitionData);
+                    return edges.concat(newEdge);
+                }, currentEdges);
+            } else {
+                const edgesWithValidIds = edges.map((edge) => {
+                    return {
+                        ...edge,
+                        from: idMapping[edge.from],
+                        to: idMapping[edge.to],
+                    };
+                });
+
+                adjustedEdges = edgesWithValidIds.reduce((edges, edge) => {
+                    const fromNode = [...currentNodes, ...nodes].find((n) => n.id === edge.from);
+                    const toNode = [...currentNodes, ...nodes].find((n) => n.id === edge.to);
+                    const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
+                    const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, processDefinitionData);
+                    return edges.concat(newEdge);
+                }, currentEdges);
+            }
 
             return addNodesWithLayout(state, {
                 nodes,

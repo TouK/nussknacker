@@ -21,6 +21,8 @@ export type LayoutChangedAction = {
 export const enum PanelSide {
     Right = "RIGHT",
     Left = "LEFT",
+    RightDynamic = "RIGHT_DYNAMIC",
+    LeftDynamic = "LEFT_DYNAMIC",
 }
 
 type TogglePanelAction = {

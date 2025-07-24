@@ -7,7 +7,7 @@ import TreeView from "react-treeview";
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import type { ComponentGroup } from "../../../types";
-import Tool from "./Tool";
+import Tool, { type ToolProps } from "./Tool";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
     return componentGroup.components.length == 0;
@@ -31,10 +31,17 @@ interface Props {
     flatten?: boolean;
     addTreeElement?: React.ReactElement | null;
     addGroupLabelElement?: React.ReactElement | null;
+    onSelect?: ToolProps["onClick"];
 }
 
-export function ToolboxComponentGroup(props: Props): JSX.Element {
-    const { componentGroup, highlights = [], flatten, addGroupLabelElement, addTreeElement } = props;
+export function ToolboxComponentGroup({
+    addGroupLabelElement,
+    addTreeElement,
+    componentGroup,
+    flatten,
+    highlights = [],
+    onSelect,
+}: Props): JSX.Element {
     const dispatch = useDispatch();
     const closedComponentGroups = useSelector(getClosedComponentGroups);
     const { name } = componentGroup;
@@ -80,9 +87,10 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
                     key={component.componentId}
                     highlights={highlights}
                     disabled={component.disabled ? component.disabled() : false}
+                    onClick={onSelect}
                 />
             )),
-        [highlights, componentGroup.components],
+        [componentGroup.components, highlights, onSelect],
     );
 
     const collapsed = useMemo(

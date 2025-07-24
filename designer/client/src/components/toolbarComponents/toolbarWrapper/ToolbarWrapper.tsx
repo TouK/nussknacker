@@ -67,6 +67,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
             data-testid={id}
             {...(isCollapsible || noDrag ? {} : handlerProps)}
         >
+            {noDrag ? <span {...handlerProps} /> : null /*fake drag handler*/}
             {(isCollapsible || onClose) && (
                 <PanelHeader
                     {...(isCollapsible && !noDrag ? handlerProps : {})}

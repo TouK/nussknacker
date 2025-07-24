@@ -14,6 +14,8 @@ export enum ToolbarsSide {
     CenterTop = "topCenter",
     CenterBottom = "bottomCenter",
     AboveNodeWindow = "aboveNodeWindow",
+    LeftDynamic = "dynamicLeft",
+    RightDynamic = "dynamicRight",
 }
 
 type ComponentGroupToolbox = {

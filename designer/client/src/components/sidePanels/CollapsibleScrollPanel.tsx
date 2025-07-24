@@ -47,19 +47,26 @@ const CollapsibleScrollPanel = forwardRef<HTMLDivElement, CollapsibleScrollPanel
     );
 });
 
-export const StyledCollapsibleScrollPanel = styled(CollapsibleScrollPanel)(({ theme, side }) => ({
-    [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
-        alignItems: side === PanelSide.Left ? "flex-start" : "flex-end",
-        margin: theme.spacing(-0.125),
-        [side === PanelSide.Left ? "marginRight" : "marginLeft"]: 0,
-    },
-    [`.${DRAGGABLE_CLASSNAME}`]: {
-        margin: theme.spacing(0.125),
-    },
-    [`.${TOOLBAR_WRAPPER_CLASSNAME}`]: {
-        borderBottomRightRadius: side === PanelSide.Right ? 0 : null,
-        borderTopRightRadius: side === PanelSide.Right ? 0 : null,
-        borderBottomLeftRadius: side === PanelSide.Left ? 0 : null,
-        borderTopLeftRadius: side === PanelSide.Left ? 0 : null,
-    },
-}));
+export const StyledCollapsibleScrollPanel = styled(CollapsibleScrollPanel)(({ theme, side }) => {
+    const isLeft = [PanelSide.Left, PanelSide.LeftDynamic].includes(side);
+    const isRight = [PanelSide.Right, PanelSide.RightDynamic].includes(side);
+    return {
+        [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
+            alignItems: isLeft ? "flex-start" : "flex-end",
+            margin: theme.spacing(-0.125),
+            [isLeft ? "marginRight" : "marginLeft"]: 0,
+        },
+        [`.${DRAGGABLE_CLASSNAME}`]: {
+            margin: theme.spacing(0.125),
+        },
+        [`.${TOOLBAR_WRAPPER_CLASSNAME}`]: {
+            borderBottomRightRadius: isRight ? 0 : null,
+            borderTopRightRadius: isRight ? 0 : null,
+            borderBottomLeftRadius: isLeft ? 0 : null,
+            borderTopLeftRadius: isLeft ? 0 : null,
+            boxShadow: [PanelSide.RightDynamic, PanelSide.LeftDynamic].includes(side)
+                ? "0 0 2px rgba(0,0,0,0.8),0 0 6px rgba(0,0,0,0.8)"
+                : null,
+        },
+    };
+});

@@ -22,8 +22,10 @@ type Props = {
 export function SidePanelToggleButton({ type, ...props }: Props) {
     const { t } = useTranslation();
     const { isOpened, switchVisible, toggleCollapse } = useSidePanel(type);
-    const left = type === PanelSide.Left ? isOpened : !isOpened;
-    const title = type === PanelSide.Left ? t("panel.toggle.left", "toggle left panel") : t("panel.toggle.right", "toggle right panel");
+    const left = [PanelSide.Left, PanelSide.LeftDynamic].includes(type) ? isOpened : !isOpened;
+    const title = [PanelSide.Left, PanelSide.LeftDynamic].includes(type)
+        ? t("panel.toggle.left", "toggle left panel")
+        : t("panel.toggle.right", "toggle right panel");
 
     return (
         <Fade in={switchVisible}>

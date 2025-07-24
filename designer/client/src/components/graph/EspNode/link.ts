@@ -7,6 +7,7 @@ import { blendLighten, getBorderColor } from "../../../containers/theme/helpers"
 import type { Edge, ProcessDefinitionData, ScenarioGraph } from "../../../types";
 import { EdgeKind } from "../../../types";
 import NodeUtils from "../NodeUtils";
+import { portSize, RECT_HEIGHT } from "./esp";
 
 function makeLabels(theme: Theme, label = "", prefix = ""): dia.Link.Label[] {
     const havePrefix = prefix.length > 0;
@@ -113,14 +114,21 @@ export function getDefaultLinkCreator(
             },
         });
 
-        link.on("change:target", (link) => {
-            const model = cellView?.model;
+        link.on("change:target", (link: dia.Link) => {
+            if (!cellView) return;
+            const { model, paper } = cellView;
+            const { end, start } = link.getPolyline();
+            const linkView = link.findView(paper);
+
+            if (!linkView?.el) return;
+            linkView.el.style.opacity = Math.max(0, Math.min(1, (start.distance(end) - portSize) / RECT_HEIGHT)).toFixed(2);
             const sourceId = isReversed ? link.target()?.id : model?.id;
             const targetId = isReversed ? model?.id : link.target()?.id;
+            linkView.el.classList.toggle("temporary", !(sourceId && targetId));
             if (sourceId) {
                 const edge = NodeUtils.getEdgeForConnection({
-                    fromNode: NodeUtils.getNodeById(sourceId, scenarioGraph),
-                    toNode: NodeUtils.getNodeById(targetId, scenarioGraph),
+                    fromNode: NodeUtils.getNodeById(sourceId?.toString(), scenarioGraph),
+                    toNode: NodeUtils.getNodeById(targetId?.toString(), scenarioGraph),
                     processDefinition,
                     scenarioGraph,
                 });

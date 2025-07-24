@@ -22,6 +22,7 @@ import type { Scenario } from "../Process/types";
 import { globalEventBus } from "../toolbars/creator/globalEventBus";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
+import { portSize, RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import { applyCellChanges, calcLayout, createPaper, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
@@ -39,8 +40,7 @@ import { prepareSvg } from "./svg-export/prepareSvg";
 import type { GraphProps } from "./types";
 import { Events } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
-import { canInjectNode as graphUtilsCanInjectNode } from "./utils/graphUtils";
-import { handleGraphEvent } from "./utils/graphUtils";
+import { canInjectNode as graphUtilsCanInjectNode, handleGraphEvent } from "./utils/graphUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";
 
 function clamp(number: number, max: number) {
@@ -744,15 +744,55 @@ export class Graph extends React.Component<Props> {
             })
             .on(Events.CELL_POINTERUP, (cellView, event, x, y) => {
                 const link = cellView.model;
-                if (link.isLink()) {
-                    const source = link.get("source");
-                    const target = link.get("target");
-                    if (!source.id || !target.id) {
-                        globalEventBus.emit("creatorSearchFocus");
-                        console.log(link.attributes.edgeData, x, y);
-                        // link.remove();
-                    }
+                if (!link.isLink()) return;
+
+                const target = link.target();
+                if (target.id) return;
+
+                const graph = link.graph;
+                const paper = cellView.paper;
+                const source = link.source();
+                const cell = graph.getCell(source.id);
+                const isLinkReversed = source.port === "In";
+                const [from, to] = isLinkReversed ? [undefined, source.id.toString()] : [source.id.toString(), undefined];
+
+                const { end, start } = link.getPolyline();
+                const isTooShortToDisplay = start.distance(end) < RECT_HEIGHT;
+                if (isTooShortToDisplay) {
+                    link.remove();
                 }
+
+                globalEventBus.emit("openNodeSelector", [isLinkReversed ? "removeNoOutputs" : "removeNoInputs"]);
+
+                globalEventBus.once("closeNodeSelector", ({ item }) => {
+                    if (!item) return link.remove();
+                    if (this.props.isFragment === true) return;
+
+                    let position: g.Point;
+                    if (isTooShortToDisplay) {
+                        position = cell.position().offset(0, (isLinkReversed ? -3 : 3) * RECT_HEIGHT);
+                        while (paper.findViewsFromPoint(position, 0).length > 0) {
+                            position = position.offset(RECT_HEIGHT);
+                        }
+                    } else {
+                        position = new g.Point(x, y).offset(
+                            RECT_WIDTH * -0.8,
+                            isLinkReversed ? portSize * -0.75 - RECT_HEIGHT : portSize * 0.75,
+                        );
+                    }
+
+                    const edgeData = link.prop("edgeData");
+                    this.props.nodesWithEdgesAdded(
+                        [
+                            {
+                                node: item,
+                                position: position.snapToGrid(1, 1),
+                            },
+                        ],
+                        [{ ...edgeData, from, to }],
+                        false,
+                    );
+                });
             });
     }
 

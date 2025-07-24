@@ -14,5 +14,5 @@ export const ScrollPanelContent = styled("div")<ScrollToggle>(({ side }) => ({
     display: "flex",
     flexDirection: "column",
     pointerEvents: "none",
-    alignItems: side === PanelSide.Left ? "flex-start" : "flex-end",
+    alignItems: [PanelSide.Left, PanelSide.LeftDynamic].includes(side) ? "flex-start" : "flex-end",
 }));
