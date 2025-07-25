@@ -27,6 +27,10 @@ class UniversalSchemaSupportDispatcher private (kafkaComponentsConfig: KafkaComp
   def forSchemaType(schemaType: String): UniversalSchemaSupport =
     supportBySchemaType.getOrElse(schemaType, throw new UnsupportedSchemaType(schemaType))
 
+  def forTypingResult(typingResult: TypingResult): JsonTypingResultSchemaSupport = new JsonTypingResultSchemaSupport(
+    typingResult
+  )
+
   def forParsedSchema(parsedSchema: ParsedSchema): UniversalSchemaSupport = parsedSchema match {
     // For ad hoc tests we want to present the user with json editor when topic has no schema and content type Json was selected
     case ContentTypesSchemas.schemaForJson  => NoSchemaJsonSupport
