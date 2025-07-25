@@ -174,6 +174,18 @@ const aceEditorStyles = (theme: Theme) => ({
         overflowX: "auto",
         whiteSpace: "pre",
     },
+
+    ".expressionEvaluationResult .ace_static_highlight": {
+        backgroundColor: "rgb(39, 40, 34)",
+    },
+
+    ".expressionEvaluationResult .ace_string": {
+        color: "rgb(166, 226, 46)",
+    },
+
+    ".expressionEvaluationResult .ace_numeric, .expressionEvaluationResult .ace_boolean": {
+        color: "rgb(253, 151, 31)",
+    },
 });
 
 const DTPickerStyles = (theme: Theme) => ({

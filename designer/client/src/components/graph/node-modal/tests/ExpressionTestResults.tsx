@@ -1,12 +1,14 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
-import { FormControl, FormLabel } from "@mui/material";
+import { Box, FormControl, FormLabel } from "@mui/material";
 import React, { useRef, useState } from "react";
 import type { PropsWithChildren } from "react";
 
 import type { NodeResultsForContext } from "../../../../common/TestResultUtils";
+import { useUserSettings } from "../../../../common/userSettings";
 import { InfoTooltip } from "../editors/InfoTooltip";
-import { HIDDEN_TEXTAREA_PIXEL_HEIGHT } from "../NodeDetailsContent/NodeTableStyled";
+import { HIDDEN_TEXTAREA_PIXEL_HEIGHT, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { ExpressionEvaluationResult } from "./ExpressionEvaluationResult";
 import TestValue from "./TestValue";
 
 interface ExpressionTestResultsProps {
@@ -21,21 +23,34 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
     const [collapsedTestResults, setCollapsedTestResults] = useState(true);
     const testValue = fieldName ? resultsToShow && resultsToShow.expressionResults[fieldName] : null;
     const PrettyIconComponent = collapsedTestResults ? VisibilityOff : Visibility;
+    const [userSettings] = useUserSettings();
+    const showInputsAndOutputs = userSettings["node.showInputsAndOutputs"];
 
     return testValue ? (
         <div>
             {props.children}
-            <FormControl>
-                <FormLabel>
-                    <InfoTooltip title={"Expression evaluation result"} variant={"hover"}>
-                        <InfoIcon sx={() => ({ alignSelf: "center" })} />
-                    </InfoTooltip>
-                    {testValue.pretty && !fitsMaxHeight ? (
-                        <PrettyIconComponent sx={{ cursor: "pointer" }} onClick={() => setCollapsedTestResults((s) => !s)} />
-                    ) : null}
-                </FormLabel>
-                <TestValue ref={testValueRef} value={testValue} shouldHideTestResults={collapsedTestResults && !fitsMaxHeight} />
-            </FormControl>
+            {showInputsAndOutputs ? (
+                <FormControl>
+                    <FormLabel>
+                        <Box />
+                    </FormLabel>
+                    <Box className={nodeValue} maxWidth={"80%"}>
+                        <ExpressionEvaluationResult value={testValue} />
+                    </Box>
+                </FormControl>
+            ) : (
+                <FormControl>
+                    <FormLabel>
+                        <InfoTooltip title={"Expression evaluation result"} variant={"hover"}>
+                            <InfoIcon sx={() => ({ alignSelf: "center" })} />
+                        </InfoTooltip>
+                        {testValue.pretty && !fitsMaxHeight ? (
+                            <PrettyIconComponent sx={{ cursor: "pointer" }} onClick={() => setCollapsedTestResults((s) => !s)} />
+                        ) : null}
+                    </FormLabel>
+                    <TestValue ref={testValueRef} value={testValue} shouldHideTestResults={collapsedTestResults && !fitsMaxHeight} />
+                </FormControl>
+            )}
         </div>
     ) : (
         <>{props.children}</>
