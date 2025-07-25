@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../reducers/selectors/graph";
 import type { Graph } from "./Graph";
+import { isModelElement } from "./GraphPartialsInTS";
 import NodeUtils from "./NodeUtils";
 import { Events } from "./types";
 
@@ -16,7 +17,7 @@ export function usePortMagnetToggle(graphRef: React.MutableRefObject<Graph>) {
         const graph = graphRef.current;
         const callback = (cellView: dia.CellView) => {
             const model = cellView.model;
-            if (model.isElement()) {
+            if (isModelElement(model)) {
                 const node = NodeUtils.getNodeById(model.id.toString(), scenarioGraph);
                 const nodeOutputs = NodeUtils.nodeOutputs(node.id, scenarioGraph);
                 const canHaveMoreOutputs = NodeUtils.canHaveMoreOutputs(node, nodeOutputs, processDefinitionData);

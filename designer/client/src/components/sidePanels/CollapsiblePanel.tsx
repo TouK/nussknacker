@@ -44,7 +44,7 @@ const CollapsiblePanelContent = styled("div")<CollapsiblePanelProps>(({ side, is
     }),
 }));
 
-const isDynamic = (side: PanelSide) => {
+export const isDynamic = (side: PanelSide) => {
     return [PanelSide.RightDynamic, PanelSide.LeftDynamic].includes(side);
 };
 

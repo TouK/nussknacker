@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
-import type { ComponentGroup } from "../../../types";
+import type { ComponentGroup, NodeType } from "../../../types";
 import NodeUtils from "../../graph/NodeUtils";
 import type { ToolProps } from "./Tool";
 import Tool from "./Tool";
@@ -114,7 +114,7 @@ export type ToolBoxProps = {
     addTreeElement?: (group: ComponentGroup) => React.ReactElement | null;
     addGroupLabelElement?: (group: ComponentGroup) => React.ReactElement | null;
     data: ComponentGroup[];
-    onSelect?: ToolProps["onClick"];
+    onSelect?: (item: NodeType) => void;
 };
 
 export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxProps): JSX.Element {
@@ -159,12 +159,7 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
                     />
                 ))
             ) : (
-                <Tool
-                    nodeModel={null}
-                    label={t("panels.creator.filter.noMatch", "no matching components")}
-                    onClick={props.onSelect}
-                    disabled
-                />
+                <Tool nodeModel={null} label={t("panels.creator.filter.noMatch", "no matching components")} disabled />
             )}
         </StyledToolbox>
     );

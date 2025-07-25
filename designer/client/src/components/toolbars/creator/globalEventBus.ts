@@ -1,13 +1,28 @@
+import type { g } from "jointjs";
 import type { Unsubscribe } from "nanoevents";
 import { createNanoEvents } from "nanoevents";
 
 import type { PanelSide } from "../../../actions/nk";
-import type { NodeType } from "../../../types";
+import type { Edge, NodeType } from "../../../types";
 import type { ToolBoxProps } from "./ToolBox";
 
+export type OpenNodeSelectorParams = {
+    side?: PanelSide;
+    point?: g.PlainPoint;
+    edge?: Edge;
+    filters?: ToolBoxProps["filters"];
+};
+
+export type CloseNodeSelectorParams = {
+    side?: PanelSide;
+    point?: g.PlainPoint;
+    edge?: Edge;
+    item?: NodeType;
+};
+
 type NuEvents = {
-    openNodeSelector: (filter: ToolBoxProps["filters"]) => void;
-    closeNodeSelector: <E extends Event>(data: { event: E; side?: PanelSide; item?: NodeType }) => void;
+    openNodeSelector: (data: OpenNodeSelectorParams) => void;
+    closeNodeSelector: (data: CloseNodeSelectorParams) => void;
 };
 
 class GlobalEventBus {

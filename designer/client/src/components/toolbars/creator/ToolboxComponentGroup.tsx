@@ -6,8 +6,8 @@ import TreeView from "react-treeview";
 
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import type { ComponentGroup } from "../../../types";
-import Tool, { type ToolProps } from "./Tool";
+import type { ComponentGroup, NodeType } from "../../../types";
+import Tool from "./Tool";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
     return componentGroup.components.length == 0;
@@ -31,7 +31,7 @@ interface Props {
     flatten?: boolean;
     addTreeElement?: React.ReactElement | null;
     addGroupLabelElement?: React.ReactElement | null;
-    onSelect?: ToolProps["onClick"];
+    onSelect?: (item?: NodeType) => void;
 }
 
 export function ToolboxComponentGroup({
@@ -88,6 +88,11 @@ export function ToolboxComponentGroup({
                     highlights={highlights}
                     disabled={component.disabled ? component.disabled() : false}
                     onClick={onSelect}
+                    onDragEnd={(item, monitor) => {
+                        if (monitor.didDrop()) {
+                            onSelect();
+                        }
+                    }}
                 />
             )),
         [componentGroup.components, highlights, onSelect],

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 type EventType = MouseEvent | TouchEvent | PointerEvent | FocusEvent;
 
@@ -12,35 +12,30 @@ type EventType = MouseEvent | TouchEvent | PointerEvent | FocusEvent;
  * - pointerdown / pointerup / click (general input)
  * - focusin (keyboard/programmatic focus)
  *
+ * @param ref - Ref object of the target element.
  * @param handler - Function to call when an outside interaction is detected.
  * @param when - Whether detection is active (defaults to true).
- * @returns A callback ref to attach to the target element.
  *
  * @see https://github.com/imbhargav5/rooks/blob/main/packages/use-outside-click-ref/src/index.ts
  */
-function useOutsideInteractionRef(handler: (event: EventType) => void, when = true): [(node: HTMLElement | null) => void] {
+function useOutsideInteraction(ref: React.RefObject<HTMLElement | null>, handler: () => void, when = true): void {
     const savedHandler = useRef(handler);
-    const nodeRef = useRef<HTMLElement | null>(null);
 
     useEffect(() => {
         savedHandler.current = handler;
     }, [handler]);
 
-    const refCallback = useCallback((node: HTMLElement | null) => {
-        nodeRef.current = node;
-    }, []);
-
     useEffect(() => {
         if (!when) return;
 
         const isOutside = (event: Event) => {
-            const node = nodeRef.current;
+            const node = ref.current;
             return !node || !node.contains(event.target as Node);
         };
 
         const handleEvent = (event: EventType) => {
             if (isOutside(event)) {
-                savedHandler.current(event);
+                savedHandler.current();
             }
         };
 
@@ -55,9 +50,7 @@ function useOutsideInteractionRef(handler: (event: EventType) => void, when = tr
                 document.removeEventListener(type, handleEvent, true);
             });
         };
-    }, [when]);
-
-    return [refCallback];
+    }, [ref, when]);
 }
 
-export { useOutsideInteractionRef };
+export { useOutsideInteraction };

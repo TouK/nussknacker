@@ -1,12 +1,14 @@
 import { cx } from "@emotion/css";
 import { cloneDeep } from "lodash";
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import type { DragSourceMonitor } from "react-dnd";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
 import type { NodeType } from "../../../types";
 import { DndTypes } from "../../DndTypes";
 import { InfoTooltip } from "../../graph/node-modal/editors/InfoTooltip";
+import type { ElementDropResult } from "../../graph/ProcessGraph";
 import { ComponentIcon } from "./ComponentIcon";
 import { SearchHighlighter } from "./SearchHighlighter";
 
@@ -43,10 +45,11 @@ export type ToolProps = {
     highlights?: string[];
     disabled?: boolean;
     tooltip?: string;
-    onClick?: (event: React.MouseEvent<HTMLElement>, item: NodeType) => void;
+    onClick?: (item: NodeType, event: React.MouseEvent<HTMLElement>) => void;
+    onDragEnd?: (item: NodeType, monitor: DragSourceMonitor<NodeType, ElementDropResult | null>) => void;
 };
 
-function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick }: ToolProps): React.JSX.Element {
+function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick, onDragEnd }: ToolProps): React.JSX.Element {
     const item: NodeType = useMemo(() => ({ ...cloneDeep(nodeModel), id: label }), [label, nodeModel]);
     const [, drag, preview] = useDrag(() => ({
         type: DndTypes.ELEMENT,
@@ -54,6 +57,7 @@ function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick }:
         options: { dropEffect: "copy" },
         canDrag: !disabled,
         tooltip: tooltip,
+        end: onDragEnd,
     }));
 
     const isTruncated = useIsTruncated(label);
@@ -70,7 +74,7 @@ function Tool({ label, nodeModel, highlights = [], disabled, tooltip, onClick }:
             <div
                 className={cx("tool", { disabled })}
                 ref={drag}
-                onClick={onClick && ((e) => onClick(e, item))}
+                onClick={onClick && ((e) => onClick(item, e))}
                 data-testid={`component:${label}`}
             >
                 <div className="toolWrapper">

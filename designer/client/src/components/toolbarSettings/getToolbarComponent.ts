@@ -7,7 +7,6 @@ import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
 import { ButtonsToolbar } from "../toolbarComponents/ButtonsToolbar";
 import { ActivitiesPanel } from "../toolbars/activities";
 import { CreatorPanel } from "../toolbars/creator/CreatorPanel";
-import { CreatorPanel2 } from "../toolbars/creator/CreatorPanel2";
 import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
 import ScenarioStatusPanel from "../toolbars/scenarioDetails/ScenarioStatusPanel";
@@ -27,9 +26,8 @@ export function getToolbarComponent(config?: ToolbarConfig): ComponentType<Toolb
         case "tips-panel":
             return TipsPanel;
         case "creator-panel":
-            return CreatorPanel;
         case "creator-panel2":
-            return CreatorPanel2;
+            return CreatorPanel;
         case "search-panel":
             return SearchPanel;
         case "user-settings-panel":

@@ -1,3 +1,4 @@
+import { mapValues } from "lodash";
 import React from "react";
 
 import type { ToolbarButton } from "./buttons";
@@ -16,6 +17,14 @@ export type ToolbarSelectorProps = ToolbarConfig & {
     horizontal?: boolean;
 };
 
+function saveParse(value: string) {
+    try {
+        return JSON.parse(value);
+    } catch {
+        return value;
+    }
+}
+
 export const toolbarSelector = ({ horizontal, ...props }: ToolbarSelectorProps): JSX.Element => {
     const Component = horizontal ? getToolbarHorizontalComponent(props) : getToolbarComponent(props);
 
@@ -23,7 +32,7 @@ export const toolbarSelector = ({ horizontal, ...props }: ToolbarSelectorProps):
 
     const { buttons, additionalParams, ...passProps } = props;
     return (
-        <Component {...passProps} {...additionalParams}>
+        <Component {...passProps} {...mapValues(additionalParams, saveParse)}>
             {buttons?.map(buttonSelector)}
         </Component>
     );

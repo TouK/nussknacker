@@ -5,6 +5,7 @@ import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lo
 import React from "react";
 import type { UseTranslationResponse } from "react-i18next";
 
+import { PanelSide } from "../../actions/nk";
 import type { Layout, NodePosition, Position, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
@@ -742,6 +743,29 @@ export class Graph extends React.Component<Props> {
             .on(Events.LINK_DISCONNECT, ({ model }) => {
                 this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to);
             })
+            .on("blank:contextmenu", (event, x, y) => {
+                globalEventBus.emit("openNodeSelector", {
+                    point: new g.Point(x, y).offset(RECT_WIDTH * -0.5, RECT_HEIGHT * -0.5),
+                    side: PanelSide.RightDynamic,
+                });
+                const unsubscribe = globalEventBus.on("closeNodeSelector", ({ item, point, side }) => {
+                    if (!item) return;
+                    if (this.props.isFragment === true) return;
+                    if (side !== PanelSide.RightDynamic) return;
+
+                    unsubscribe();
+                    this.props.nodesWithEdgesAdded(
+                        [
+                            {
+                                node: item,
+                                position: new g.Point(point).snapToGrid(1, 1),
+                            },
+                        ],
+                        [],
+                        false,
+                    );
+                });
+            })
             .on(Events.CELL_POINTERUP, (cellView, event, x, y) => {
                 const link = cellView.model;
                 if (!link.isLink()) return;
@@ -758,38 +782,49 @@ export class Graph extends React.Component<Props> {
 
                 const { end, start } = link.getPolyline();
                 const isTooShortToDisplay = start.distance(end) < RECT_HEIGHT;
+
                 if (isTooShortToDisplay) {
                     link.remove();
                 }
 
-                globalEventBus.emit("openNodeSelector", [isLinkReversed ? "removeNoOutputs" : "removeNoInputs"]);
+                let position: g.Point;
+                if (isTooShortToDisplay) {
+                    position = cell.position().offset(0, (isLinkReversed ? -3 : 3) * RECT_HEIGHT);
+                    while (paper.findViewsFromPoint(position).length > 0) {
+                        position = position.offset(RECT_HEIGHT);
+                    }
+                } else {
+                    position = new g.Point(x, y).offset(
+                        RECT_WIDTH * -0.8,
+                        isLinkReversed ? portSize * -0.75 - RECT_HEIGHT : portSize * 0.75,
+                    );
+                }
 
-                globalEventBus.once("closeNodeSelector", ({ item }) => {
+                const edgeData = link.prop("edgeData");
+                const edge = { ...edgeData, from, to };
+
+                globalEventBus.emit("openNodeSelector", {
+                    filters: [isLinkReversed ? "removeNoOutputs" : "removeNoInputs"],
+                    point: position,
+                    edge,
+                    side: PanelSide.RightDynamic,
+                });
+
+                const unsubscribe = globalEventBus.on("closeNodeSelector", ({ item, point, edge, side }) => {
                     if (!item) return link.remove();
                     if (this.props.isFragment === true) return;
+                    if (side !== PanelSide.RightDynamic) return;
 
-                    let position: g.Point;
-                    if (isTooShortToDisplay) {
-                        position = cell.position().offset(0, (isLinkReversed ? -3 : 3) * RECT_HEIGHT);
-                        while (paper.findViewsFromPoint(position).length > 0) {
-                            position = position.offset(RECT_HEIGHT);
-                        }
-                    } else {
-                        position = new g.Point(x, y).offset(
-                            RECT_WIDTH * -0.8,
-                            isLinkReversed ? portSize * -0.75 - RECT_HEIGHT : portSize * 0.75,
-                        );
-                    }
+                    unsubscribe();
 
-                    const edgeData = link.prop("edgeData");
                     this.props.nodesWithEdgesAdded(
                         [
                             {
                                 node: item,
-                                position: position.snapToGrid(1, 1),
+                                position: new g.Point(point).snapToGrid(1, 1),
                             },
                         ],
-                        [{ ...edgeData, from, to }],
+                        [edge].filter(Boolean),
                         false,
                     );
                 });
