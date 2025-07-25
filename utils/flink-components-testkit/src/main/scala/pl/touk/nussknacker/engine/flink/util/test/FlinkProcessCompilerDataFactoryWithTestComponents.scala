@@ -10,17 +10,13 @@ import pl.touk.nussknacker.engine.api.component.{
   NodesDeploymentData
 }
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
-import pl.touk.nussknacker.engine.process.compiler.{
-  ComponentDefinitionContext,
-  FlinkProcessCompilerDataFactory,
-  TestFlinkExceptionHandler
-}
+import pl.touk.nussknacker.engine.process.compiler.{ComponentDefinitionContext, FlinkProcessCompilerDataFactory}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
+import pl.touk.nussknacker.engine.process.scenariotesting.TestFlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -67,7 +63,6 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       override protected def adjustDefinitions(
           originalModelDefinition: ModelDefinition,
           definitionContext: ComponentDefinitionContext,
-          classDefinitions: ClassDefinitionSet,
       ): ModelDefinition = {
         val testComponents =
           ComponentDefinitionWithImplementation.forList(
@@ -90,10 +85,8 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           )
       }
 
-      override protected def adjustListeners(
-          defaults: List[ProcessListener],
-          modelConfig: ModelConfig
-      ): List[ProcessListener] = defaults :+ resultsCollectingListener
+      override protected def adjustListeners(defaults: List[ProcessListener]): List[ProcessListener] =
+        defaults :+ resultsCollectingListener
 
       override protected def exceptionHandler(
           metaData: MetaData,
