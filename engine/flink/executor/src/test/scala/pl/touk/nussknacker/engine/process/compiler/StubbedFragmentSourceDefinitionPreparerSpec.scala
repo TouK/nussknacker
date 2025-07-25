@@ -49,7 +49,7 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
         Typed.apply[String],
         List(SpelTemplateParameterEditor, SpelParameterEditor),
       ),
-      SimplifiedParam("age", Typed.apply[Long], Nil),
+      SimplifiedParam("age", Typed.apply[Long], List(SpelParameterEditor)),
     )
     parameters.map(p =>
       SimplifiedParam(p.name.value, p.typ, p.editors)

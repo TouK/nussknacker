@@ -9,7 +9,7 @@ import { getBorderColor } from "../containers/theme/helpers";
 interface Props {
     language: string;
     customStyle?: React.CSSProperties;
-    staticHighlightOptions: Record<string, unknown>;
+    staticHighlightOptions?: Record<string, unknown>;
 }
 
 export const SyntaxHighlighter = ({ language, customStyle, children, staticHighlightOptions = {} }: PropsWithChildren<Props>) => {
@@ -22,13 +22,19 @@ export const SyntaxHighlighter = ({ language, customStyle, children, staticHighl
             containerRef.current.textContent = children as string;
 
             // Highlight the code
-            ace.require("ace/ext/static_highlight").highlight(containerRef.current, {
-                mode: `ace/mode/${language}`,
-                theme: "ace/theme/nussknacker",
-                startLineNumber: 1,
-                showGutter: true,
-                ...staticHighlightOptions,
-            });
+            ace.require("ace/ext/static_highlight").highlight(
+                containerRef.current,
+                {
+                    mode: `ace/mode/${language}`,
+                    theme: "ace/theme/nussknacker",
+                    startLineNumber: 1,
+                    showGutter: true,
+                    ...staticHighlightOptions,
+                },
+                function (result) {
+                    console.log("Code highlighted successfully", result);
+                },
+            );
         }
     }, [children, language, staticHighlightOptions]);
 

@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-object ConfigParameterDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
+object ConfigParameterDefaultValueDeterminer extends ParameterDefaultValueDeterminer with LazyLogging {
 
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] = {
-    val language = EditorBasedLanguageDeterminer.determineLanguageOf(parameters.determinedEditors.headOption)
-    parameters.parameterConfig.defaultValue.map(Expression(language, _))
+    parameters.parameterConfig.defaultValue
   }
 
 }

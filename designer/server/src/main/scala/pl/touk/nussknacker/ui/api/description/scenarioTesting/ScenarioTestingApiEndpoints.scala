@@ -2,12 +2,13 @@ package pl.touk.nussknacker.ui.api.description.scenarioTesting
 
 import pl.touk.nussknacker.engine.api.{NodeId, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, SpelParameterEditor}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.SpelTemplate
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
@@ -90,7 +91,14 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                           UISourceParameters(
                             "source",
                             List(
-                              DefinitionsService.createUIParameter(Parameter(ParameterName("name"), Typed[String]))
+                              DefinitionsService.createUIParameter(
+                                Parameter(
+                                  name = ParameterName("name"),
+                                  typ = Typed[String],
+                                  validators = List(MandatoryParameterValidator),
+                                  editors = List(SpelParameterEditor)
+                                )
+                              )
                             )
                           )
                         )

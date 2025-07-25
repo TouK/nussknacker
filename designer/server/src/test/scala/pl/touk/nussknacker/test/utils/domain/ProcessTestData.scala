@@ -85,16 +85,25 @@ object ProcessTestData {
       .withSink(monitorSink)
       .withSink(
         existingSinkFactoryKafkaString,
-        Parameter[String](TopicParamName),
-        Parameter[Any](SinkValueParamName).copy(isLazyParameter = true)
+        Parameter[String](TopicParamName).copy(editors = List(SpelTemplateParameterEditor)),
+        Parameter[Any](SinkValueParamName).copy(isLazyParameter = true, editors = List(SpelParameterEditor))
       )
       .withService(existingServiceId)
       .withService(otherExistingServiceId)
       .withService(processorId, None)
       .withService(logProcessorId, None)
-      .withService(otherExistingServiceId2, Parameter[Any](ParameterName("expression")))
-      .withService(otherExistingServiceId3, Parameter[String](ParameterName("expression")))
-      .withService(notBlankExistingServiceId, NotBlankParameter(ParameterName("expression"), Typed[String]))
+      .withService(
+        otherExistingServiceId2,
+        Parameter[Any](ParameterName("expression")).copy(editors = List(SpelParameterEditor))
+      )
+      .withService(
+        otherExistingServiceId3,
+        Parameter[String](ParameterName("expression")).copy(editors = List(SpelParameterEditor))
+      )
+      .withService(
+        notBlankExistingServiceId,
+        NotBlankParameter(ParameterName("expression"), Typed[String]).copy(editors = List(SpelTemplateParameterEditor))
+      )
       .withService(
         otherExistingServiceId4,
         Parameter[JavaSampleEnum](ParameterName("expression")).copy(

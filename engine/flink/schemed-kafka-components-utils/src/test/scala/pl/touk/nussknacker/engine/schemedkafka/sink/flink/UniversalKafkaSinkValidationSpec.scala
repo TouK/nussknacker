@@ -65,12 +65,12 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val paramsList = params.toList.map(p => NodeParameter(p._1, p._2))
     validator
       .validateNode(
-        universalSinkFactory,
-        paramsList,
-        Nil,
-        Some(VariableConstants.InputVariableName),
-        Map.empty,
-        SingleInputNodeInputValidationContext(ValidationContext.empty)
+        parametersFromNode = paramsList,
+        branchParametersFromNode = Nil,
+        outputVariable = Some(VariableConstants.InputVariableName),
+        component = universalSinkFactory,
+        parametersConfig = Map.empty,
+        nodeInputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
       )
       .toOption
       .get

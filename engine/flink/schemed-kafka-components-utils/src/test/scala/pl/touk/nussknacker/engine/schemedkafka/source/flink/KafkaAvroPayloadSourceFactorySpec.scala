@@ -390,12 +390,12 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val paramsList              = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
     validator
       .validateNode(
-        universalSourceFactory(useStringForKey = true),
-        paramsList,
-        Nil,
-        Some(VariableConstants.InputVariableName),
-        Map.empty,
-        SingleInputNodeInputValidationContext(ValidationContext.empty)
+        parametersFromNode = paramsList,
+        branchParametersFromNode = Nil,
+        outputVariable = Some(VariableConstants.InputVariableName),
+        component = universalSourceFactory(useStringForKey = true),
+        parametersConfig = Map.empty,
+        nodeInputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
       )
       .toOption
       .get

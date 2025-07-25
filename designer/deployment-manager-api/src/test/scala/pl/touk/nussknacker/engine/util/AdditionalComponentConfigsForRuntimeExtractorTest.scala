@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   ComponentGroupName,
   DesignerWideComponentId,
-  ParameterAdditionalUIConfig
+  ParameterAdditionalUIConfig,
+  ParameterInitialValue
 }
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
@@ -39,7 +40,9 @@ object AdditionalComponentConfigsForRuntimeExtractorTest {
     ParameterName("parameterA"),
     ParameterAdditionalUIConfig(
       required = true,
-      initialValue = Some(FixedExpressionValue("'someInitialValueExpression'", "someInitialValueLabel")),
+      initialValue = Some(
+        ParameterInitialValue.FixedValue(FixedExpressionValue("'someInitialValueExpression'", "someInitialValueLabel"))
+      ),
       hintText = None,
       valueEditor = Some(ValueInputWithDictEditor("someDictA", allowOtherValue = true)),
       valueCompileTimeValidation = None
