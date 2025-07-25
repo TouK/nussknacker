@@ -25,8 +25,7 @@
             }
         ],
         "paths": {
-            "*": ["*", "types/@remote/*", "types/*"],
-            "@/hooks/*": ["node_modules/rooks/dist/esm/hooks/*"]
+            "*": ["*", "types/@remote/*", "types/*"]
         },
         "typeRoots": ["node_modules/@types", "types/@remote", "types"]
     },
