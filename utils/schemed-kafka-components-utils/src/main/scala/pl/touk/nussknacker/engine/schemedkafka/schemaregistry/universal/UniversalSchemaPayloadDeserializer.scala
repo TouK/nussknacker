@@ -4,14 +4,20 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
+import org.json.JSONTokener
+import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
+import pl.touk.nussknacker.engine.util.json.JsonSchemaUtils
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 trait UniversalSchemaPayloadDeserializer {
 
@@ -79,6 +85,36 @@ object JsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer 
     val bytes = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
     jsonSchema.deserializer.deserialize(bytes)
+  }
+
+}
+
+class JsonTypingResultPayloadDeserializer(typingResult: TypingResult) extends UniversalSchemaPayloadDeserializer {
+  import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
+
+  override def deserialize(
+      expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
+      writerSchemaData: RuntimeSchemaData[ParsedSchema],
+      buffer: ByteBuffer
+  ): Any = {
+    val jsonSchema =
+      expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[OpenAPIJsonSchema]].schema
+
+    val bytes = new Array[Byte](buffer.remaining())
+    buffer.get(bytes)
+    val string = new String(bytes, StandardCharsets.UTF_8)
+
+    val inputJson = new JSONTokener(string).nextValue()
+    val validatedJson = jsonSchema
+      .rawSchema()
+      .validateData(inputJson)
+      .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
+
+    val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
+
+    FromJsonTypingResultBasedDecoder
+      .decodeValue(typingResult, circeJson.hcursor)
+      .fold(e => throw CustomNodeValidationException(e.getMessage(), None), identity)
   }
 
 }

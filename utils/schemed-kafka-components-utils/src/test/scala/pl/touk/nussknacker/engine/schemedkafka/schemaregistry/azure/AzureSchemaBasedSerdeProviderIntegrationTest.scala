@@ -76,7 +76,7 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
       Optional.empty[Integer]()
     )
     val deserialized = serdeProvider.deserializationSchemaFactory
-      .create[String, IndexedRecord](keySchemaDataOpt = None, Some(valueSchemaData))
+      .create[String, IndexedRecord](keySchemaDataOpt = None, Some(valueSchemaData), dataSampleTypingResult = None)
       .deserialize(cr)
 
     deserialized.key() shouldEqual key

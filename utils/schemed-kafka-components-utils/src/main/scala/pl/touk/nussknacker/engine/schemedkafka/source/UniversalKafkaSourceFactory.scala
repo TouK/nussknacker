@@ -78,14 +78,23 @@ class UniversalKafkaSourceFactory(
           (`dataSampleParamName`, DefinedEagerParameter(_, typingResult)) :: _,
           _
         ) if contentType == ContentTypes.JSON.toString =>
-      val preparedTopic = prepareTopic(topic)
+      val preparedTopic          = prepareTopic(topic)
+      val dataSampleTypingResult = TypingResultFromJsonSampleTypeDeterminer(typingResult)
       val valueValidationResult = Valid(
         (
           Some(runtimeDataForJsonSchema),
-          TypingResultFromJsonSampleTypeDeterminer(typingResult)
+          dataSampleTypingResult
         )
       )
-      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
+      prepareSourceFinalResults(
+        preparedTopic,
+        valueValidationResult,
+        Some(dataSampleTypingResult),
+        context,
+        dependencies,
+        step.parameters,
+        Nil
+      )
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
@@ -109,7 +118,7 @@ class UniversalKafkaSourceFactory(
           )
         )
       }
-      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
+      prepareSourceFinalResults(preparedTopic, valueValidationResult, None, context, dependencies, step.parameters, Nil)
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: _,
@@ -129,7 +138,7 @@ class UniversalKafkaSourceFactory(
             )
         }
 
-      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
+      prepareSourceFinalResults(preparedTopic, valueValidationResult, None, context, dependencies, step.parameters, Nil)
     case step @ TransformationStep((`topicParamName`, _) :: (`schemaVersionParamName`, _) :: _, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
@@ -164,6 +173,7 @@ class UniversalKafkaSourceFactory(
         ProcessCompilationError,
         (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)
       ],
+      dataSampleTypingResult: Option[TypingResult],
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
       parameters: List[(ParameterName, DefinedParameter)],
@@ -184,7 +194,12 @@ class UniversalKafkaSourceFactory(
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
         val finalState =
-          ImplementationUniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+          ImplementationUniversalKafkaSourceFactoryState(
+            keyRuntimeSchema,
+            valueRuntimeSchema,
+            finalInitializer,
+            dataSampleTypingResult
+          )
         FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
         prepareSourceFinalErrors(
@@ -236,12 +251,13 @@ class UniversalKafkaSourceFactory(
     val ImplementationUniversalKafkaSourceFactoryState(
       keySchemaDataUsedInRuntime,
       valueSchemaUsedInRuntime,
-      kafkaContextInitializer
+      kafkaContextInitializer,
+      dataSampleTypingResult
     ) = finalState.get
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
     val deserializationSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
-      .create[Any, Any](keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+      .create[Any, Any](keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, dataSampleTypingResult)
 
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create(schemaRegistryClient)
 
@@ -391,7 +407,8 @@ object UniversalKafkaSourceFactory {
   case class ImplementationUniversalKafkaSourceFactoryState(
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]]
+      contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]],
+      dataSampleTypingResult: Option[TypingResult]
   ) extends UniversalKafkaSourceFactoryState
 
   case class PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(

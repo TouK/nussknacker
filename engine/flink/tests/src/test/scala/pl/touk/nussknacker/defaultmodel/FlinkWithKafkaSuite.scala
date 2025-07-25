@@ -33,7 +33,9 @@ import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   UnoptimizedSerializationPreparer
 }
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
@@ -47,9 +49,9 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.TestRunId
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.test.{KafkaConfigProperties, WithConfig}
+import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures, WithConfig}
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
@@ -62,6 +64,7 @@ abstract class FlinkWithKafkaSuite
     with BeforeAndAfterAll
     with BeforeAndAfter
     with WithConfig
+    with PatientScalaFutures
     with Matchers
     with WithKafkaComponentsConfig {
 
@@ -71,6 +74,7 @@ abstract class FlinkWithKafkaSuite
   protected var schemaRegistryMockClient: MockSchemaRegistryClient = _
   protected var valueSerializer: KafkaAvroSerializer               = _
   protected var valueDeserializer: KafkaAvroDeserializer           = _
+  protected var modelData: LocalModelData                          = _
 
   protected lazy val additionalComponents: List[ComponentDefinition] = Nil
 
@@ -85,8 +89,7 @@ abstract class FlinkWithKafkaSuite
         .create(kafkaComponentsConfig, ComponentDependencies(ModelConfig.parse(config), designerDbRef = None)) :::
         FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components :::
         additionalComponents
-    val modelData =
-      LocalModelData(config, components, configCreator = creator)
+    modelData = LocalModelData(config, components, configCreator = creator)
     registrar = FlinkProcessRegistrar(
       new FlinkProcessCompilerDataFactory(modelData, DeploymentData.empty, List.empty),
       FlinkJobConfig.parse(modelData.modelConfig),
@@ -161,6 +164,18 @@ abstract class FlinkWithKafkaSuite
     Map("first" -> "Jan", "last" -> "Kowalski"),
     RecordSchemaV1
   )
+
+  protected def withScenarioRunning(
+      canonicalProcess: CanonicalProcess
+  )(actionToInvokeWithScenarioRunning: ResultsCollectingListener[Any] => Unit): Unit =
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val modelWithCollectingListener =
+        modelData.copy(configCreator = new ConfigCreatorWithCollectingListener(collectingListener))
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val executionResult = new FlinkScenarioUnitTestJob(modelWithCollectingListener).run(canonicalProcess, env)
+        flinkMiniCluster.withRunningJob(executionResult.getJobID)(actionToInvokeWithScenarioRunning(collectingListener))
+      }
+    }
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>

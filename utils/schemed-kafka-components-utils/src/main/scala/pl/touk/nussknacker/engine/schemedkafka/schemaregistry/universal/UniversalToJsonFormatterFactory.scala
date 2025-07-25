@@ -29,10 +29,14 @@ class UniversalToJsonFormatterFactory(
     val schemaIdFromMessageExtractor = createSchemaIdFromMessageExtractor(schemaRegistryClient)
     // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
     val kafkaSourceDeserializationSchema =
-      deserializationSchemaFactory.create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None)
+      deserializationSchemaFactory.create[Any, Any](
+        keySchemaDataOpt = None,
+        valueSchemaDataOpt = None,
+        dataSampleTypingResult = None
+      )
     val jsonPayloadToJsonDeserializationSchema =
       new KafkaJsonKeyValueDeserializationSchemaFactory(kafkaConfig)
-        .create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None)
+        .create[Any, Any](keySchemaDataOpt = None, valueSchemaDataOpt = None, dataSampleTypingResult = None)
     new UniversalToJsonFormatter(
       kafkaConfig,
       schemaRegistryClient,

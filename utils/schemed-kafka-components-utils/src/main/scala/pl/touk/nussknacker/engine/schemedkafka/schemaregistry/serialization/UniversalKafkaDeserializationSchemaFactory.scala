@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
@@ -15,21 +16,23 @@ import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKey
 class UniversalKafkaDeserializationSchemaFactory(
     override protected val kafkaConfig: KafkaConfig,
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
-    createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor
+    createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor,
 ) extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
 
   override protected def createKeyDeserializer[K](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
   ): Deserializer[K] =
-    createDeserializer[K](schemaDataOpt, isKey = true)
+    createDeserializer[K](schemaDataOpt, None, isKey = true)
 
   override protected def createValueDeserializer[V](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      dataSampleTypingResult: Option[TypingResult]
   ): Deserializer[V] =
-    createDeserializer[V](schemaDataOpt, isKey = false)
+    createDeserializer[V](schemaDataOpt, dataSampleTypingResult, isKey = false)
 
   private final def createDeserializer[T](
       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      dataSampleTypingResult: Option[TypingResult],
       isKey: Boolean
   ): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
@@ -38,7 +41,8 @@ class UniversalKafkaDeserializationSchemaFactory(
       kafkaConfig,
       createSchemaIdFromMessageExtractor(schemaRegistryClient),
       schemaDataOpt,
-      isKey
+      isKey,
+      dataSampleTypingResult
     )
   }
 

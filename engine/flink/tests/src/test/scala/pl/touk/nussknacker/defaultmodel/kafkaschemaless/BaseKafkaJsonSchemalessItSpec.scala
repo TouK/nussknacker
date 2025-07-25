@@ -4,12 +4,14 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.{parser, Json}
 import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -222,6 +224,52 @@ abstract class BaseKafkaJsonSchemalessItSpec extends FlinkWithKafkaSuite {
         .fold(throw _, identity)
 
       parsedOutput shouldBe jsonRecord
+    }
+  }
+
+  def shouldThrowIfJsonMessageCannotBeDeserializedBasedOnTheInferredDataSampleType(): Unit = {
+    def assertDecodingFailureException(e: ExceptionResult[Any])(value: String) = {
+      e.nodeId shouldBe Some("start")
+      e.throwable shouldBe a[CustomNodeValidationException]
+      e.throwable.getMessage shouldBe s"DecodingFailure at : Got value '$value' with wrong type, expecting object"
+    }
+
+    val dataSampleJson = Json.obj(
+      "name" -> Json.fromString("Jan"),
+      "age"  -> Json.fromInt(30),
+    )
+
+    val inputTopic = "input-topic-for-data-sample-json"
+    kafkaClient.createTopic(inputTopic, 1)
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("without-schema")
+        .parallelism(1)
+        .source(
+          "start",
+          "kafka",
+          KafkaUniversalComponentTransformer.topicParamName.value       -> Expression.spel(s"'$inputTopic'"),
+          KafkaUniversalComponentTransformer.contentTypeParamName.value -> s"'${ContentTypes.JSON.toString}'".spel,
+          KafkaUniversalComponentTransformer.dataSampleParamName.value  -> Expression.json(dataSampleJson.toString())
+        )
+        // We add some flink operator to enforce flink messages serialization
+        .customNode("foo", "previousOutput", "previousValue", "Key" -> "''".spel, "Value" -> "''".spel)
+        .emptySink("stop", "dead-end")
+
+    withScenarioRunning(scenario) { collectingListener =>
+      sendAsJson("[YOUR JSON]", ForSource(inputTopic), Instant.now.toEpochMilli)
+      sendAsJson("\"name\"", ForSource(inputTopic), Instant.now.toEpochMilli)
+      sendAsJson("123456", ForSource(inputTopic), Instant.now.toEpochMilli)
+
+      eventually {
+        val exceptions = collectingListener.results.exceptions
+        exceptions.size should be(3)
+
+        assertDecodingFailureException(exceptions(0))("[\"YOUR JSON\"]")
+        assertDecodingFailureException(exceptions(1))("\"name\"")
+        assertDecodingFailureException(exceptions(2))("123456")
+      }
     }
   }
 
