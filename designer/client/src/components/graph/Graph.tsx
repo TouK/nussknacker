@@ -22,6 +22,7 @@ import type { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
+import { getNeighbors } from "./getNeighbors";
 import { applyCellChanges, calcLayout, createPaper, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
@@ -280,13 +281,22 @@ export class Graph extends React.Component<Props> {
             }
         });
 
-        //we want to inject node during 'Drag and Drop' from toolbox
         this.graph.on(Events.ADD, (cell: dia.Element) => {
-            if (isModelElement(cell)) {
-                const cellBelow = this.lastHoveredCell;
-                this.handleInjectBetweenNodes(cell, cellBelow);
-                setLinksHovered(cell.graph);
-            }
+            if (!isModelElement(cell)) return;
+
+            setTimeout(() => {
+                const viewBox = this.viewport.clone().inflate(-50, -50);
+                const cellBox = this.processGraphPaper.findViewByModel(cell.id).getBBox();
+                if (!viewBox.containsRect(cellBox)) {
+                    const cellsToFit = getNeighbors(this.graph, cell, { depth: 2, withSelf: true });
+                    this.fit(cellsToFit.length > 1 ? cellsToFit : null);
+                }
+            }, 0);
+
+            //we want to inject node during 'Drag and Drop' from toolbox
+            const cellBelow = this.lastHoveredCell;
+            this.handleInjectBetweenNodes(cell, cellBelow);
+            setLinksHovered(cell.graph);
         });
 
         this.fit();
