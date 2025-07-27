@@ -89,9 +89,7 @@ export function ToolboxComponentGroup({
                     disabled={component.disabled ? component.disabled() : false}
                     onClick={onSelect}
                     onDragEnd={(item, monitor) => {
-                        if (monitor.didDrop()) {
-                            onSelect();
-                        }
+                        if (monitor.didDrop()) onSelect();
                     }}
                 />
             )),

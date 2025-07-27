@@ -4,10 +4,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { useKey } from "rooks";
 
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { NodeCreationHandler } from "../../../containers/NodeCreationHandler";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
@@ -24,7 +24,6 @@ import type { OpenNodeSelectorParams } from "./globalEventBus";
 import { globalEventBus } from "./globalEventBus";
 import type { ToolBoxProps } from "./ToolBox";
 import ToolBox from "./ToolBox";
-import { useOutsideInteraction } from "./useOutsideInteraction";
 
 type CreatorPanelProps = ToolbarPanelProps & {
     additionalParams?: {
@@ -71,7 +70,6 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
 
     const dataRef = useRef<OpenNodeSelectorParams>();
     useEffect(() => {
-        if (!isDynamic(side)) return;
         return globalEventBus.on("openNodeSelector", (data) => {
             if (data.side !== side) return;
             dataRef.current = data;
@@ -85,13 +83,6 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             }, 500);
         });
     }, [side, isOpened, toggleCollapse]);
-
-    useEffect(() => {
-        return globalEventBus.on("closeNodeSelector", (data) => {
-            if (data.side !== side) return;
-            toggleCollapse();
-        });
-    }, [side, toggleCollapse]);
 
     const { componentGroups } = useSelector(getProcessDefinitionData);
 
@@ -146,6 +137,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                     closeHandler(item);
                 }}
             />
+            {isDynamic(side) ? <NodeCreationHandler panelSide={side} /> : null}
         </ToolbarWrapper>
     );
 }

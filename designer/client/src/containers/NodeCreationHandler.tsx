@@ -3,17 +3,17 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useKey } from "rooks";
 
-import { nodesWithEdgesAdded, PanelSide } from "../actions/nk";
+import type { PanelSide } from "../actions/nk";
+import { nodesWithEdgesAdded } from "../actions/nk";
 import { portSize, RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/esp";
 import { useGraph } from "../components/graph/GraphContext";
 import { useSidePanel } from "../components/sidePanels/SidePanelsContext";
 import { globalEventBus } from "../components/toolbars/creator/globalEventBus";
 import { useOutsideInteraction } from "../components/toolbars/creator/useOutsideInteraction";
 
-export function NodeCreationHandler() {
+export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
     const dispatch = useDispatch();
     const graphGetter = useGraph();
-    const panelSide = PanelSide.RightDynamic;
 
     useEffect(() => {
         const paper = graphGetter()?.processGraphPaper;
@@ -73,9 +73,9 @@ export function NodeCreationHandler() {
                     withEdge: { ...edgeData, from, to },
                 });
 
-                // globalEventBus.once("closeNodeSelector", () => {
-                //     link.remove();
-                // });
+                globalEventBus.once("closeNodeSelector", () => {
+                    link.remove();
+                });
             },
             context,
         );
@@ -84,11 +84,15 @@ export function NodeCreationHandler() {
         };
     }, [graphGetter, panelSide]);
 
+    const { isOpened, toggleCollapse, ref } = useSidePanel(panelSide);
+
     useEffect(
         () =>
             globalEventBus.on("closeNodeSelector", ({ node, onPoint, side, edge }) => {
+                if (side !== panelSide) return;
+                toggleCollapse();
+
                 if (!node) return;
-                if (side !== PanelSide.RightDynamic) return;
                 dispatch(
                     nodesWithEdgesAdded(
                         [
@@ -102,12 +106,11 @@ export function NodeCreationHandler() {
                     ),
                 );
             }),
-        [dispatch],
+        [dispatch, panelSide, toggleCollapse],
     );
 
     const justClose = () => globalEventBus.emit("closeNodeSelector", { side: panelSide });
 
-    const { isOpened, ref } = useSidePanel(panelSide);
     useOutsideInteraction(ref, justClose, isOpened);
     useKey("Escape", justClose, { when: isOpened });
 

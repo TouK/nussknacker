@@ -35,7 +35,6 @@ import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
 import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
-import { NodeCreationHandler } from "./NodeCreationHandler";
 import { GraphPage } from "./Page";
 import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
@@ -217,7 +216,6 @@ function Visualization() {
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
-                            <NodeCreationHandler />
                             <ScenarioDescription />
                         </Toolbars>
                     </SelectionContextProvider>
