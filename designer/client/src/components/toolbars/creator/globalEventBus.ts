@@ -8,16 +8,16 @@ import type { ToolBoxProps } from "./ToolBox";
 
 export type OpenNodeSelectorParams = {
     side?: PanelSide;
-    point?: g.PlainPoint;
-    edge?: Edge;
+    fromPoint?: g.PlainPoint;
+    withEdge?: Edge;
     filters?: ToolBoxProps["filters"];
 };
 
 export type CloseNodeSelectorParams = {
     side?: PanelSide;
-    point?: g.PlainPoint;
+    onPoint?: g.PlainPoint;
+    node?: NodeType;
     edge?: Edge;
-    item?: NodeType;
 };
 
 type NuEvents = {

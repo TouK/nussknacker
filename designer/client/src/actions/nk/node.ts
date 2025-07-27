@@ -116,12 +116,12 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
 
         dispatch({
             type: "NODES_DISCONNECTED",
-            from: from.id,
-            to: to.id,
+            from: from?.id,
+            to: to?.id,
         });
 
         const inputs = NodeUtils.nodeInputs(middle.id, scenarioGraph);
-        if (NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
+        if (from && NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
                 fromNode: from,
@@ -132,7 +132,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
         }
 
         const outputs = NodeUtils.nodeOutputs(middle.id, scenarioGraph);
-        if (NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
+        if (to && NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
                 fromNode: middle,

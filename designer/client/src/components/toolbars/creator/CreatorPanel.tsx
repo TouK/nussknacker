@@ -67,7 +67,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     }, [dispatch, isCloud, settings]);
     const searchRef = useRef<Focusable>();
 
-    const { isOpened, toggleCollapse, side, ref } = useSidePanel();
+    const { isOpened, toggleCollapse, side } = useSidePanel();
 
     const dataRef = useRef<OpenNodeSelectorParams>();
     useEffect(() => {
@@ -87,7 +87,6 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     }, [side, isOpened, toggleCollapse]);
 
     useEffect(() => {
-        if (!isDynamic(side)) return;
         return globalEventBus.on("closeNodeSelector", (data) => {
             if (data.side !== side) return;
             toggleCollapse();
@@ -97,19 +96,16 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const { componentGroups } = useSelector(getProcessDefinitionData);
 
     const closeHandler = useCallback(
-        (item?: NodeType) => {
+        (node?: NodeType) => {
             globalEventBus.emit("closeNodeSelector", {
                 side,
-                item,
-                point: dataRef.current?.point,
-                edge: dataRef.current?.edge,
+                node,
+                onPoint: dataRef.current?.fromPoint,
+                edge: dataRef.current?.withEdge,
             });
         },
         [side],
     );
-
-    useOutsideInteraction(ref, () => closeHandler(), isOpened);
-    useKey("Escape", () => closeHandler(), { when: isOpened });
 
     return (
         <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")} onExpand={() => searchRef.current?.focus()}>

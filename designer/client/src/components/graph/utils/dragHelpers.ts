@@ -5,10 +5,9 @@ import { getNodeData } from "../Graph";
 import { isModelElement } from "../GraphPartialsInTS";
 import { rafThrottle } from "../rafThrottle";
 
-export function getLinkNodes(link: dia.Link): { sourceNode: NodeType; targetNode: NodeType } {
-    const { graph } = link;
-    const source = graph.getCell(link.getSourceElement()?.id);
-    const target = graph.getCell(link.getTargetElement()?.id);
+export function getLinkNodes(link: dia.Link, graph = link.graph): { sourceNode: NodeType; targetNode: NodeType } {
+    const source = graph.getCell(link.source()?.id);
+    const target = graph.getCell(link.target()?.id);
 
     return {
         sourceNode: getNodeData(source),

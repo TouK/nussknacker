@@ -5,7 +5,6 @@ import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lo
 import React from "react";
 import type { UseTranslationResponse } from "react-i18next";
 
-import { PanelSide } from "../../actions/nk";
 import type { Layout, NodePosition, Position, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
@@ -20,10 +19,8 @@ import type { UserSettings } from "../../reducers/userSettings";
 import type { Edge, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import type { Scenario } from "../Process/types";
-import { globalEventBus } from "../toolbars/creator/globalEventBus";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
-import { portSize, RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import { applyCellChanges, calcLayout, createPaper, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
@@ -120,12 +117,13 @@ export class Graph extends React.Component<Props> {
 
         const cells = this.graph.getCells();
         cells.forEach((l) => this.#unhighlightCell(l, dragHovered));
+        this.lastHoveredCell = null;
 
         if (!forceDisable) {
             const [active] = filterDragHovered(cells);
             if (active) {
                 this.#highlightCell(active, dragHovered);
-                active.toBack();
+                this.lastHoveredCell = active.toBack();
             }
         }
 
@@ -145,6 +143,7 @@ export class Graph extends React.Component<Props> {
         left: 0,
         right: 0,
     };
+    private lastHoveredCell: dia.Cell;
 
     constructor(props: Props) {
         super(props);
@@ -284,7 +283,7 @@ export class Graph extends React.Component<Props> {
         //we want to inject node during 'Drag and Drop' from toolbox
         this.graph.on(Events.ADD, (cell: dia.Element) => {
             if (isModelElement(cell)) {
-                const cellBelow = this.getCellBelowCell();
+                const cellBelow = this.lastHoveredCell;
                 this.handleInjectBetweenNodes(cell, cellBelow);
                 setLinksHovered(cell.graph);
             }
@@ -332,7 +331,7 @@ export class Graph extends React.Component<Props> {
             });
         }
 
-        const cellBelow = this.getCellBelowCell();
+        const cellBelow = this.lastHoveredCell;
         if (isModelElement(cellBelow) && node.type != StickyNoteType) {
             const currentNodes = this.props.scenario.scenarioGraph.nodes;
             const { nodes } = prepareNewNodesWithLayout(
@@ -423,13 +422,13 @@ export class Graph extends React.Component<Props> {
             if (this.props.isFragment === true) return;
             const { scenario, injectNode, processDefinitionData } = this.props;
             const nodeData = getNodeData(cell, scenario.scenarioGraph);
-            const { sourceNode, targetNode } = getLinkNodes(cellBelow);
+            const { sourceNode, targetNode } = getLinkNodes(cellBelow, cell.graph);
 
             const canInjectNode = graphUtilsCanInjectNode(
                 scenario.scenarioGraph,
                 sourceNode.id,
                 nodeData?.id,
-                targetNode.id,
+                targetNode?.id,
                 processDefinitionData,
             );
 
@@ -715,7 +714,7 @@ export class Graph extends React.Component<Props> {
             .on(Events.CELL_MOVED, (cellView: dia.CellView) => {
                 if (isModelElement(cellView.model)) {
                     const group = batchGroupBy.startOrContinue();
-                    const cellBelow = this.getCellBelowCell();
+                    const cellBelow = this.lastHoveredCell;
                     if (isModelElement(cellBelow)) {
                         const nodeData = getNodeData(cellView.model, this.props.scenario.scenarioGraph);
                         this.handleReplaceNodes(nodeData, cellBelow);
@@ -742,101 +741,8 @@ export class Graph extends React.Component<Props> {
             })
             .on(Events.LINK_DISCONNECT, ({ model }) => {
                 this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to);
-            })
-            .on("blank:contextmenu", (event, x, y) => {
-                globalEventBus.emit("openNodeSelector", {
-                    point: new g.Point(x, y).offset(RECT_WIDTH * -0.5, RECT_HEIGHT * -0.5),
-                    side: PanelSide.RightDynamic,
-                });
-                const unsubscribe = globalEventBus.on("closeNodeSelector", ({ item, point, side }) => {
-                    if (!item) return;
-                    if (this.props.isFragment === true) return;
-                    if (side !== PanelSide.RightDynamic) return;
-
-                    unsubscribe();
-                    this.props.nodesWithEdgesAdded(
-                        [
-                            {
-                                node: item,
-                                position: new g.Point(point).snapToGrid(1, 1),
-                            },
-                        ],
-                        [],
-                        false,
-                    );
-                });
-            })
-            .on(Events.CELL_POINTERUP, (cellView, event, x, y) => {
-                const link = cellView.model;
-                if (!link.isLink()) return;
-
-                const target = link.target();
-                if (target.id) return;
-
-                const graph = link.graph;
-                const paper = cellView.paper;
-                const source = link.source();
-                const cell = graph.getCell(source.id);
-                const isLinkReversed = source.port === "In";
-                const [from, to] = isLinkReversed ? [undefined, source.id.toString()] : [source.id.toString(), undefined];
-
-                const { end, start } = link.getPolyline();
-                const isTooShortToDisplay = start.distance(end) < RECT_HEIGHT;
-
-                if (isTooShortToDisplay) {
-                    link.remove();
-                }
-
-                let position: g.Point;
-                if (isTooShortToDisplay) {
-                    position = cell.position().offset(0, (isLinkReversed ? -3 : 3) * RECT_HEIGHT);
-                    while (paper.findViewsFromPoint(position).length > 0) {
-                        position = position.offset(RECT_HEIGHT);
-                    }
-                } else {
-                    position = new g.Point(x, y).offset(
-                        RECT_WIDTH * -0.8,
-                        isLinkReversed ? portSize * -0.75 - RECT_HEIGHT : portSize * 0.75,
-                    );
-                }
-
-                const edgeData = link.prop("edgeData");
-                const edge = { ...edgeData, from, to };
-
-                globalEventBus.emit("openNodeSelector", {
-                    filters: [isLinkReversed ? "removeNoOutputs" : "removeNoInputs"],
-                    point: position,
-                    edge,
-                    side: PanelSide.RightDynamic,
-                });
-
-                const unsubscribe = globalEventBus.on("closeNodeSelector", ({ item, point, edge, side }) => {
-                    if (!item) return link.remove();
-                    if (this.props.isFragment === true) return;
-                    if (side !== PanelSide.RightDynamic) return;
-
-                    unsubscribe();
-
-                    this.props.nodesWithEdgesAdded(
-                        [
-                            {
-                                node: item,
-                                position: new g.Point(point).snapToGrid(1, 1),
-                            },
-                        ],
-                        [edge].filter(Boolean),
-                        false,
-                    );
-                });
             });
     }
-
-    private getCellBelowCell() {
-        const cells = this.graph.getCells();
-        const [cell] = filterDragHovered(cells);
-        return cell;
-    }
-
     private handleReplaceNodes(nodeData: NodeType, cellBelow: shapes.devs.Model) {
         if (this.props.isFragment === true) return;
         const { replaceNode, scenario } = this.props;
