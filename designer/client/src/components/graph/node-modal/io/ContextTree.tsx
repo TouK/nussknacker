@@ -8,6 +8,7 @@ import { getEmptyImage } from "react-dnd-html5-backend";
 import type { KeyPath } from "react-json-tree";
 import { JSONTree } from "react-json-tree";
 
+import { useJsonTreeTheme } from "../../../../containers/theme/useJsonTreeTheme";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { DndTypes } from "../../../DndTypes";
 
@@ -74,6 +75,7 @@ function DraggableValue({
 export function ContextTree({ context, oldFields = [] }: { context: ResultContextJson; oldFields?: string[] }): JSX.Element {
     const data = useMemo(() => mapValues(context?.variables, (v) => v?.pretty), [context?.variables]);
     const keys = useMemo(() => Object.keys(data), [data]);
+    const { extend, treeStyle } = useJsonTreeTheme();
 
     const expandedFields = useMemo(
         () => keys.filter((key) => !oldFields.includes(key) || (key !== "inputMeta" && keys.length === oldFields.length)),
@@ -91,8 +93,10 @@ export function ContextTree({ context, oldFields = [] }: { context: ResultContex
             hideRoot
             sortObjectKeys
             theme={{
-                extend: "monokai",
+                extend,
                 tree: {
+                    ...treeStyle,
+                    fontSize: "1rem",
                     margin: 0,
                     padding: ".25em .5em",
                 },

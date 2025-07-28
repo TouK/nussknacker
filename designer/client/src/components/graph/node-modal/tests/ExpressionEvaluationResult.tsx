@@ -1,12 +1,13 @@
-import { cx } from "@emotion/css";
 import { ExpandMore } from "@mui/icons-material";
 import { Accordion, AccordionSummary, Box, Typography } from "@mui/material";
 import { isObject } from "lodash";
 import React, { useCallback, useState } from "react";
+import type { Styling } from "react-base16-styling/src/types";
 import { useTranslation } from "react-i18next";
 import { JSONTree } from "react-json-tree";
 
 import { SyntaxHighlighter } from "../../../../common/SyntaxHighlighter";
+import { useJsonTreeTheme } from "../../../../containers/theme/useJsonTreeTheme";
 import type { Variable } from "../../../../http/resultsWithCountsDto";
 
 interface Props {
@@ -17,6 +18,7 @@ export const ExpressionEvaluationResult = (props: Props) => {
     const { t } = useTranslation();
     const { value } = props;
     const [expanded, setExpanded] = useState(true);
+    const { extend, treeStyle } = useJsonTreeTheme();
 
     const handleExpandedChange = useCallback((event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpanded(isExpanded);
@@ -36,12 +38,19 @@ export const ExpressionEvaluationResult = (props: Props) => {
                         sortObjectKeys
                         data={dataToShow}
                         theme={{
-                            extend: "monokai",
+                            extend,
                             tree: {
-                                fontSize: "12px",
+                                ...treeStyle,
+                                lineHeight: "19px",
                                 margin: 0,
                                 padding: ".25em .5em",
                             },
+                            value: ({ style }: Styling) => ({
+                                style: {
+                                    ...style,
+                                    paddingTop: 0,
+                                },
+                            }),
                         }}
                     />
                 ) : (

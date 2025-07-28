@@ -30,6 +30,10 @@ interface WindowPalette {
     color: string;
 }
 
+interface AceEditorPalette {
+    color: string;
+}
+
 export interface CustomPalette {
     nodes: {
         [type: string]: NodePalette;
@@ -40,6 +44,11 @@ export interface CustomPalette {
     windows: {
         [type: string]: WindowPalette;
         default: WindowPalette;
+    };
+    aceEditor: {
+        string: AceEditorPalette;
+        numeric: AceEditorPalette;
+        objectKeys: AceEditorPalette;
     };
 }
 
