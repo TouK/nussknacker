@@ -3,9 +3,12 @@ package pl.touk.nussknacker.ui.api
 import io.circe.{DecodingFailure, Json}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
+import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 
 object TestingApiErrorMessages {
 
@@ -23,6 +26,17 @@ object TestingApiErrorMessages {
             TestingApiErrorMessages.problemInSample(recordIndex).parsingError(serializedTestRecord)
           case DeserializationError.RecordsParsingError(message) =>
             TestingApiErrorMessages.passedTestData.parsingError(message)
+        }
+      case PerformTestError.ExpressionsToTestDataConversionError(cause) =>
+        cause match {
+          case TestDataFormatHandler.MissingInputVariablesParameter =>
+            TestingApiErrorMessages.passedParameters.missingInputVariablesParameter
+          case TestDataFormatHandler.IllegalInputVariablesExpressionLanguage(language) =>
+            TestingApiErrorMessages.passedParameters.illegalInputVariablesExpressionLanguage(language)
+          case TestDataFormatHandler.InputVariablesExpressionJsonParseError(message) =>
+            TestingApiErrorMessages.passedParameters.inputVariablesExpressionJsonParseError(message)
+          case TestDataFormatHandler.InputVariablesExpressionDecodingError(message) =>
+            TestingApiErrorMessages.passedParameters.inputVariablesExpressionDecodingError(message)
         }
       case PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
         TestingApiErrorMessages
@@ -75,6 +89,21 @@ object TestingApiErrorMessages {
 
     def tooManyRecords(count: Int, limit: Int) =
       s"Test data has too many records ($count). The maximum number of records permitted is $limit. Contact the system administrator to increase this limit."
+  }
+
+  object passedParameters {
+
+    val missingInputVariablesParameter: String = s"Missing [$InputVariablesParameterName] parameter"
+
+    def illegalInputVariablesExpressionLanguage(language: Expression.Language): String =
+      s"Illegal [$InputVariablesParameterName] parameter expression language: $language. Should be ${Expression.Language.Json}"
+
+    def inputVariablesExpressionJsonParseError(message: String): String =
+      s"[$InputVariablesParameterName] parameter expression can't be parsed to json: $message"
+
+    def inputVariablesExpressionDecodingError(message: String): String =
+      s"[$InputVariablesParameterName] parameter expression can't be decoded as map of variables: $message"
+
   }
 
   object testingWithCustomInput {

@@ -14,6 +14,7 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
 import java.util.UUID
 
@@ -41,21 +42,9 @@ class ManagementResourcesBatchBusinessSpec
                      |   "sourceParameters": {
                      |     "sourceId": "sourceId",
                      |     "parameterExpressions": {
-                     |       "datetime": {
-                     |         "language": "spel",
-                     |         "expression": "T(java.time.LocalDateTime).parse('2020-12-31T10:15')"
-                     |       },
-                     |       "client_id": {
-                     |         "language": "spel",
-                     |         "expression": "'client1'"
-                     |       },
-                     |       "amount": {
-                     |         "language": "spel",
-                     |         "expression": "50"
-                     |       },
-                     |       "date": {
-                     |         "language": "spel",
-                     |         "expression": "'2020-12-31'"
+                     |       "$InputVariablesParameterName": {
+                     |         "language": "json",
+                     |         "expression": "{\\"input\\": {\\"datetime\\": \\"2020-12-31T10:15\\", \\"client_id\\": \\"client1\\", \\"amount\\": 50, \\"date\\": \\"2020-12-31\\"}}"
                      |       }
                      |     }
                      |   }

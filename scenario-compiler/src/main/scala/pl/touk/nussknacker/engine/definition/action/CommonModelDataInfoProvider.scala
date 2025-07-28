@@ -54,10 +54,10 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
       source: SourceNodeData
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): ValidatedNel[ProcessCompilationError, Source] = {
+  ): NodeCompiler.NodeCompilationResult[Source] = {
     // We have to wrap this block with model's class loader because it invokes node compilation
     modelData.withModelClassloaderAsContextClassLoader {
-      nodeCompiler.compileSource(source).compiledObject
+      nodeCompiler.compileSource(source)
     }
   }
 

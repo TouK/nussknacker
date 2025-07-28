@@ -33,6 +33,13 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
       case (Language.Spel, Some(`ListClass` | `ArrayClass`))                                 => "{}".spel
       case (Language.Spel, Some(`MapClass`))                                                 => "{:}".spel
       case (Language.Spel, _)                                                                => "".spel
+      case (Language.Json | Language.JsonTemplate, _) =>
+        Expression(
+          firstEditorLanguage,
+          InitialJsonFromTypingResultDeterminer
+            .initialJson(typ)
+            .spaces2
+        )
     }
   }
 
