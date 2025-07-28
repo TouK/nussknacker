@@ -105,7 +105,7 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
             </ExternalLayerWrapper>
 
             <SidePanelsContextProvider configId={configId}>
-                <OverlayGrid9>
+                <OverlayGrid9 sx={{ overflow: "hidden" }}>
                     <Box gridArea="left" component={SidePanel} side={PanelSide.Left}>
                         <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.LeftTop} />
                         <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.LeftBottom} />
