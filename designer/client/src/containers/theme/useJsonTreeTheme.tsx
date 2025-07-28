@@ -18,12 +18,12 @@ export const useJsonTreeTheme = () => {
         base06: "#f5f4f1",
         base07: "#f9f8f5",
         base08: "#f92672",
-        base09: MuiTheme.palette.custom.aceEditor.numeric.color, // numbers
+        base09: MuiTheme.palette.custom.codeEditor.numeric.color, // numbers
         base0A: "#f4bf75",
-        base0B: MuiTheme.palette.custom.aceEditor.string.color, // Strings
+        base0B: MuiTheme.palette.custom.codeEditor.string.color, // Strings
         base0C: "#a1efe4",
-        base0D: MuiTheme.palette.custom.aceEditor.objectKeys.color, // Object keys
-        base0E: MuiTheme.palette.custom.aceEditor.numeric.color, // booleans
+        base0D: MuiTheme.palette.custom.codeEditor.objectKeys.color, // Object keys
+        base0E: MuiTheme.palette.custom.codeEditor.numeric.color, // booleans
         base0F: "#cc6633",
     };
 
@@ -33,6 +33,7 @@ export const useJsonTreeTheme = () => {
         border: `1px solid ${getBorderColor(MuiTheme)}`,
         paddingTop: MuiTheme.spacing(1),
         paddingBottom: MuiTheme.spacing(1),
+        backgroundColor: MuiTheme.palette.custom.codeEditor.readonly.backgroundColor,
     };
 
     return { extend, treeStyle };

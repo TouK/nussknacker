@@ -30,7 +30,7 @@ interface WindowPalette {
     color: string;
 }
 
-interface AceEditorPalette {
+interface CodeEditorPalette {
     color: string;
 }
 
@@ -45,10 +45,13 @@ export interface CustomPalette {
         [type: string]: WindowPalette;
         default: WindowPalette;
     };
-    aceEditor: {
-        string: AceEditorPalette;
-        numeric: AceEditorPalette;
-        objectKeys: AceEditorPalette;
+    codeEditor: {
+        string: CodeEditorPalette;
+        numeric: CodeEditorPalette;
+        objectKeys: CodeEditorPalette;
+        readonly: {
+            backgroundColor: string;
+        };
     };
 }
 

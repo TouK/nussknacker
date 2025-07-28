@@ -110,7 +110,7 @@ export const darkModePalette: PaletteOptions = {
                 color: "white",
             },
         },
-        aceEditor: {
+        codeEditor: {
             string: {
                 color: "#a6e22e",
             },
@@ -119,6 +119,9 @@ export const darkModePalette: PaletteOptions = {
             },
             objectKeys: {
                 color: "#BDBDBD",
+            },
+            readonly: {
+                backgroundColor: "#272822",
             },
         },
     },

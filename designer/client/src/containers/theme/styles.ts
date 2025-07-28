@@ -84,7 +84,7 @@ const aceEditorStyles = (theme: Theme) => ({
     },
     ".ace-nussknacker .ace_constant.ace_character, .ace-nussknacker .ace_constant.ace_language, .ace-nussknacker .ace_constant.ace_numeric, .ace-nussknacker .ace_constant.ace_other":
         {
-            color: theme.palette.custom.aceEditor.numeric.color,
+            color: theme.palette.custom.codeEditor.numeric.color,
         },
     ".ace-nussknacker .ace_invalid": {
         color: "#F8F8F0",
@@ -107,7 +107,7 @@ const aceEditorStyles = (theme: Theme) => ({
     },
     ".ace-nussknacker .ace_entity.ace_name.ace_function, .ace-nussknacker .ace_entity.ace_other, .ace-nussknacker .ace_entity.ace_other.ace_attribute-name, .ace-nussknacker .ace_variable":
         {
-            color: theme.palette.custom.aceEditor.objectKeys.color,
+            color: theme.palette.custom.codeEditor.objectKeys.color,
         },
     ".ace-nussknacker .ace_method": {
         color: "#66d9ef",
@@ -117,7 +117,7 @@ const aceEditorStyles = (theme: Theme) => ({
         color: "#FD971F",
     },
     ".ace-nussknacker .ace_string": {
-        color: theme.palette.custom.aceEditor.string.color,
+        color: theme.palette.custom.codeEditor.string.color,
     },
     ".ace-nussknacker .ace_comment": {
         color: "#75715E",
@@ -183,11 +183,11 @@ const aceEditorStyles = (theme: Theme) => ({
     },
 
     ".expressionEvaluationResult .ace_string": {
-        color: theme.palette.custom.aceEditor.string.color,
+        color: theme.palette.custom.codeEditor.string.color,
     },
 
     ".expressionEvaluationResult .ace_numeric, .expressionEvaluationResult .ace_boolean": {
-        color: theme.palette.custom.aceEditor.numeric.color,
+        color: theme.palette.custom.codeEditor.numeric.color,
     },
 });
 

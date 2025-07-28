@@ -54,7 +54,7 @@ export const ExpressionEvaluationResult = (props: Props) => {
                         }}
                     />
                 ) : (
-                    <Box bgcolor={"rgb(39, 40, 34) !important"} p={1}>
+                    <Box bgcolor={(theme) => theme.palette.custom.codeEditor.readonly.backgroundColor} p={1}>
                         <SyntaxHighlighter
                             language={"plain_text"}
                             customStyle={{ border: 0, backgroundColor: "inherit" }}
