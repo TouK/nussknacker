@@ -184,7 +184,7 @@ final case class ModelDefinitionBuilder(
         name
       )
       .map { case (uiDefinition, _) =>
-        MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+        MethodBasedComponentDefinitionWithImplementation.withDumbImplementation(
           name,
           componentTypeSpecificData,
           staticDefinition,

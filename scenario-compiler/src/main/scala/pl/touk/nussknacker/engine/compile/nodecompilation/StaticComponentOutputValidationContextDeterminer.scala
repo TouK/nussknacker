@@ -12,14 +12,9 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.NodeValidationExceptionHandler
+import pl.touk.nussknacker.engine.compile.nodecompilation.StaticComponentOutputValidationContextDeterminer.conntextAfterService
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.graph.node.{
-  CustomNodeData,
-  FragmentInputDefinition,
-  NodeData,
-  Source,
-  WithOptionalOutputVar
-}
+import pl.touk.nussknacker.engine.graph.node.{CustomNodeData, FragmentInputDefinition, NodeData, WithOptionalOutputVar}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import shapeless.syntax.typeable.typeableOps
 
@@ -40,29 +35,32 @@ class StaticComponentOutputValidationContextDeterminer(
   ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     implicit val implicitComponentId: ComponentId = staticComponent.id
     implicit val nodeId: NodeId                   = NodeId(nodeData.id)
-    val outputContextBasedOnResultType
-        : Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] =
+    def outputContextBasedOnResultType(
+        returnTypeOpt: Option[TypingResult]
+    ): ValidatedNel[ProcessCompilationError, ValidationContext] =
       (staticComponent.componentType, nodeData, inputContext) match {
         case (ComponentType.Source, _, _) =>
-          contextAfterSource()
+          contextAfterSource(returnTypeOpt)
         case (ComponentType.Fragment, _: FragmentInputDefinition, _) =>
-          _ => Valid(contextAfterFragmentInputDefinition(staticComponent.parameters))
+          Valid(contextAfterFragmentInputDefinition(staticComponent.parameters))
         case (ComponentType.Sink, _, singleInputContext: SingleInputNodeInputValidationContext) =>
-          contextAfterSink(singleInputContext)
+          Valid(singleInputContext.validationContext)
         case (
               ComponentType.Service,
               serviceData: NodeData with WithOptionalOutputVar,
               singleInputContext: SingleInputNodeInputValidationContext,
             ) =>
-          conntextAfterEagerService(
+          conntextAfterService(
             singleInputContext,
-            serviceData.outputVar.map(OutputVar.enricher)
+            serviceData.outputVar.map(OutputVar.enricher),
+            returnTypeOpt
           )
         case (ComponentType.CustomComponent, customNodeData: CustomNodeData, _) =>
           contextAfterCustomComponent(
             customNodeData,
             customNodeIsEndingNode,
-            inputContext
+            inputContext,
+            returnTypeOpt
           )
         case _ =>
           throw new IllegalStateException(
@@ -77,18 +75,15 @@ class StaticComponentOutputValidationContextDeterminer(
           executor,
           inputContext,
           (executor: ComponentExecutor) =>
-            outputContextBasedOnResultType(returnType(staticComponent.returnType, executor))
+            outputContextBasedOnResultType(
+              returnTypeFromExecutor(executor) orElse staticComponent.returnType
+            )
         )
     )
   }
 
-  private def returnType(definitionReturnType: Option[TypingResult], componentExecutor: Any): Option[TypingResult] =
-    componentExecutor match {
-      case returningType: ReturningType =>
-        Some(returningType.returnType)
-      case _ =>
-        definitionReturnType
-    }
+  private def returnTypeFromExecutor(componentExecutor: ComponentExecutor): Option[TypingResult] =
+    componentExecutor.cast[ReturningType].map(_.returnType)
 
   private def contextAfterMethodBasedCreatedComponentExecutor[ComponentExecutor](
       executor: ComponentExecutor,
@@ -128,10 +123,10 @@ class StaticComponentOutputValidationContextDeterminer(
     }(nodeId, jobData.metaData)
   }
 
-  private def contextAfterSource()(
+  private def contextAfterSource(returnTypeOpt: Option[TypingResult])(
       implicit nodeId: NodeId,
       jobData: JobData
-  ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = { returnTypeOpt =>
+  ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     contextWithOnlyGlobalVariables.withVariable(
       VariableConstants.InputVariableName,
       returnTypeOpt.getOrElse(Unknown),
@@ -142,46 +137,63 @@ class StaticComponentOutputValidationContextDeterminer(
   private def contextAfterCustomComponent(
       data: CustomNodeData,
       customNodeIsEndingNode: Option[Boolean],
-      branchCtx: NodeInputValidationContext
+      branchCtx: NodeInputValidationContext,
+      returnTypeOpt: Option[TypingResult]
   )(
       implicit nodeId: NodeId,
       jobData: JobData
-  ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] =
-    returnTypeOpt => {
-      val validationContext = branchCtx match {
-        case SingleInputNodeInputValidationContext(validationContext) => validationContext
-        case MultipleInputBranchesNodeInputValidationContext(_, validationContextWithGlobalVariablesOnly) =>
-          validationContextWithGlobalVariablesOnly
-      }
-
-      def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = validationContext
-        .withVariable(outputVar, typ)
-        // ble... NonEmptyList is invariant...
-        .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
-
-      (data.outputVar, returnTypeOpt, customNodeIsEndingNode) match {
-        case (Some(varName), Some(typ), _) => ctxWithVar(OutputVar.customNode(varName), typ)
-        case (None, None, _)               => Valid(validationContext)
-        case (Some(outputVarValue), None, _) =>
-          logger.warn(
-            s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
-              s"Found outputVar = $outputVarValue but custom node [${data.id}] used by the node doesn't need it. It will be skipped."
-          )
-          Valid(validationContext)
-        case (None, Some(_), Some(false)) =>
-          Invalid(NonEmptyList.of(MissingParameters(Set(ParameterName("OutputVariable")))))
-        case (None, Some(_), _) => Valid(validationContext)
-      }
+  ): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+    val validationContext = branchCtx match {
+      case SingleInputNodeInputValidationContext(validationContext) => validationContext
+      case MultipleInputBranchesNodeInputValidationContext(_, validationContextWithGlobalVariablesOnly) =>
+        validationContextWithGlobalVariablesOnly
     }
 
-  private def conntextAfterEagerService(
+    def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = validationContext
+      .withVariable(outputVar, typ)
+      // ble... NonEmptyList is invariant...
+      .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
+
+    (data.outputVar, returnTypeOpt, customNodeIsEndingNode) match {
+      case (Some(varName), Some(typ), _) => ctxWithVar(OutputVar.customNode(varName), typ)
+      case (None, None, _)               => Valid(validationContext)
+      case (Some(outputVarValue), None, _) =>
+        logger.warn(
+          s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
+            s"Found outputVar = $outputVarValue but custom node [${data.id}] used by the node doesn't need it. It will be skipped."
+        )
+        Valid(validationContext)
+      case (None, Some(_), Some(false)) =>
+        Invalid(NonEmptyList.of(MissingParameters(Set(ParameterName("OutputVariable")))))
+      case (None, Some(_), _) => Valid(validationContext)
+    }
+  }
+
+  private[nodecompilation] def contextAfterFragmentInputDefinition(
+      parameterDefinitions: List[Parameter]
+  )(implicit jobData: JobData): ValidationContext = {
+    val variables: Map[String, TypingResult] = parameterDefinitions.map(a => a.name.value -> a.typ).toMap
+    contextWithOnlyGlobalVariables.copy(localVariables = variables)
+  }
+
+  private def contextWithOnlyGlobalVariables(
+      implicit jobData: JobData
+  ): ValidationContext =
+    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
+
+}
+
+object StaticComponentOutputValidationContextDeterminer extends LazyLogging {
+
+  private[nodecompilation] def conntextAfterService(
       inputContext: SingleInputNodeInputValidationContext,
-      outputVarName: Option[OutputVar]
+      outputVarName: Option[OutputVar],
+      returnTypeOpt: Option[TypingResult]
   )(
       implicit nodeId: NodeId,
       componentId: ComponentId,
       jobData: JobData
-  ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = returnTypeOpt =>
+  ): ValidatedNel[ProcessCompilationError, ValidationContext] =
     outputVarName match {
       case Some(out) =>
         returnTypeOpt
@@ -195,22 +207,5 @@ class StaticComponentOutputValidationContextDeterminer(
           }
       case None => Valid(inputContext.validationContext)
     }
-
-  private def contextAfterSink(
-      inputContext: SingleInputNodeInputValidationContext
-  ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = _ =>
-    Valid(inputContext.validationContext)
-
-  def contextAfterFragmentInputDefinition(
-      parameterDefinitions: List[Parameter]
-  )(implicit jobData: JobData): ValidationContext = {
-    val variables: Map[String, TypingResult] = parameterDefinitions.map(a => a.name.value -> a.typ).toMap
-    contextWithOnlyGlobalVariables.copy(localVariables = variables)
-  }
-
-  private def contextWithOnlyGlobalVariables(
-      implicit jobData: JobData
-  ): ValidationContext =
-    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
 
 }

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.process.compiler
+package pl.touk.nussknacker.engine.process.scenariotesting
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
@@ -21,9 +21,10 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDataFactoryTest.mockServiceResultsHolder
+import pl.touk.nussknacker.engine.process.compiler.UsedNodes
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.process.scenariotesting.StubbedFlinkProcessCompilerDataFactoryTest.mockServiceResultsHolder
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -83,10 +84,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     )
 
   test("stubbing for verification purpose should stub all sources") {
-    val verificationCompilerFactory = VerificationFlinkProcessCompilerDataFactory(
-      scenarioWithMultipleSources,
-      modelData
-    )
+    val verificationCompilerFactory = VerificationFlinkProcessCompilerDataFactory(modelData)
     val compiledProcess = verificationCompilerFactory
       .prepareCompilerData(scenarioWithMultipleSources.metaData, ProcessVersion.empty, PreventInvocationCollector)(
         UsedNodes.empty,
