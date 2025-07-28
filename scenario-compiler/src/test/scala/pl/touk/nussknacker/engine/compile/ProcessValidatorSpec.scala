@@ -10,7 +10,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
@@ -25,8 +24,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
+  CustomComponentSpecificData,
+  NodeCompilationDependencies
 }
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
@@ -1328,9 +1329,15 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         base.components.copy(
           base.components.components.map {
             case component if component.componentType == ComponentType.Source =>
-              component.withImplementationInvoker((_: Params, _: Option[String], _: Seq[AnyRef]) => {
-                throw new RuntimeException("You passed incorrect parameter, cannot proceed")
-              })
+              component.withImplementationInvoker(
+                (
+                    _: Params,
+                    _: NodeCompilationDependencies,
+                    _: Option[ComponentImplementationSpecificInvocationContext]
+                ) => {
+                  throw new RuntimeException("You passed incorrect parameter, cannot proceed")
+                }
+              )
             case other => other
           }
         )

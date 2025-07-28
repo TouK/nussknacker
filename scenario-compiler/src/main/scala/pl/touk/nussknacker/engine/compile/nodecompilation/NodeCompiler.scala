@@ -7,7 +7,7 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{api, compiledgraph, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -18,14 +18,17 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonize.MissingSinkHandler
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.ComponentExecutorFactory.ComponentExecutorDependencies
-import pl.touk.nussknacker.engine.compile.nodecompilation.ImplicitSourceOutputVariableHandler.NodeDataExt
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{
   EnricherCompilationResult,
   MockExpressionParameterName,
   NodeCompilationResult
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  NodeCompilationDependencies
+}
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.DynamicComponentInvocationContext
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,
   FinalStateValue
@@ -48,7 +51,6 @@ import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import shapeless.Typeable
 
 object NodeCompiler {
 
@@ -456,7 +458,6 @@ class NodeCompiler(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    import scenarioCompilationDependencies._
 
     definitions.getComponent(ComponentType.Service, serviceNodeData.componentId) match {
       case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
@@ -539,13 +540,13 @@ class NodeCompiler(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
-
     componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
+        val nodeCompilationDependencies = createNodeCompilationDependencies(nodeData)
         val afterValidation =
           dynamicNodeValidator
             .validateNode(
-              nodeData = nodeData,
+              compilationDependencies = nodeCompilationDependencies,
               component = dynamicComponent.component,
               parametersConfig = dynamicComponent.parametersConfig,
               nodeInputValidationContext = inputContext
@@ -562,13 +563,12 @@ class NodeCompiler(
                 ) { compiledParameters =>
                   factory
                     .createComponentExecutor[ComponentExecutor](
-                      ComponentExecutorDependencies(
+                      new ComponentExecutorDependencies(
                         componentDefinition = componentDefinition,
                         compiledParameters = compiledParameters,
-                        outputVariableNameOpt = nodeData.outputVariableNameHandlingInputSourceVariableName,
-                        additionalDependencies = Seq(FinalStateValue(finalState)),
-                        componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(nodeId)),
-                        nonServicesLazyParamStrategy = nonServicesLazyParamStrategy
+                        nodeCompilationDependencies = nodeCompilationDependencies,
+                        nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
+                        invocationContext = Some(DynamicComponentInvocationContext(FinalStateValue(finalState))),
                       )
                     )
                 }
@@ -602,13 +602,12 @@ class NodeCompiler(
         ) { compiledParameters =>
           factory
             .createComponentExecutor[ComponentExecutor](
-              ComponentExecutorDependencies(
+              new ComponentExecutorDependencies(
                 componentDefinition = componentDefinition,
+                nodeCompilationDependencies = createNodeCompilationDependencies(nodeData),
                 compiledParameters = compiledParameters,
-                outputVariableNameOpt = nodeData.outputVariableNameHandlingInputSourceVariableName,
-                additionalDependencies = Seq.empty,
-                componentUseContext = runtimeMode.createContext(nodesDeploymentData.get(nodeId)),
-                nonServicesLazyParamStrategy = nonServicesLazyParamStrategy
+                nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
+                invocationContext = None,
               )
             )
         }
@@ -667,33 +666,30 @@ class NodeCompiler(
 
   // This class is extracted to a separate object, as handling service needs serious refactor (see comment in ServiceReturningType), and we don't want
   // methods that will probably be replaced to be mixed with others
-  object ServiceCompiler {
+  private object ServiceCompiler {
 
     def compile(
         serviceNodeData: ServiceNodeData,
-        objWithMethod: MethodBasedComponentDefinitionWithImplementation,
+        componentDefinition: MethodBasedComponentDefinitionWithImplementation,
         inputContext: SingleInputNodeInputValidationContext
-    )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    )(
+        implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
+        nodeId: NodeId
+    ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+      import scenarioCompilationDependencies._
       val computedParameters =
         expressionCompiler.compileExecutorComponentNodeParameters(
-          objWithMethod.parameters,
+          componentDefinition.parameters,
           serviceNodeData.parameters,
           inputContext
         )
-      val outputVar = serviceNodeData.outputVar.map(OutputVar.enricher)
-      val outputCtx = outputVar match {
-        case Some(output) =>
-          objWithMethod.returnType
-            .map(inputContext.validationContext.withVariable(output, _))
-            .getOrElse {
-              logger.warn(
-                s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
-                  s"Found ${output.fieldName} = ${output.outputName} but service [${serviceNodeData.componentId}] used by the node doesn't need it. It will be skipped."
-              )
-              Valid(inputContext.validationContext)
-            }
-        case None => Valid(inputContext.validationContext)
-      }
+      val outputVar                                 = serviceNodeData.outputVar.map(OutputVar.enricher)
+      implicit val implicitComponentId: ComponentId = componentDefinition.id
+      val outputCtx = StaticComponentOutputValidationContextDeterminer.conntextAfterService(
+        inputContext,
+        outputVar,
+        componentDefinition.returnType
+      )
 
       val compiledServiceRef = computedParameters.map { params =>
         val evaluateParams = { context: Context =>
@@ -704,7 +700,11 @@ class NodeCompiler(
         }
         compiledgraph.service.ServiceRef(
           id = serviceNodeData.service.id,
-          invoker = new MethodBasedServiceInvoker(jobData.metaData, nodeId, outputVar, objWithMethod, evaluateParams),
+          invoker = new MethodBasedServiceInvoker(
+            componentDefinition,
+            createNodeCompilationDependencies(serviceNodeData),
+            evaluateParams
+          ),
           resultCollector = resultCollector
         )
       }
@@ -717,6 +717,16 @@ class NodeCompiler(
       )
     }
 
+  }
+
+  private def createNodeCompilationDependencies(
+      nodeData: NodeData
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies) = {
+    new NodeCompilationDependencies(
+      scenarioCompilationDependencies,
+      nodeData,
+      runtimeMode.createContext(nodesDeploymentData.get(NodeId(nodeData.id)))
+    )
   }
 
 }

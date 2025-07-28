@@ -39,7 +39,6 @@ import javax.validation.constraints.Min
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-// TODO: add testing capabilities
 object EventGeneratorSourceFactory
     extends EventGeneratorSourceFactory(
       new StandardTimestampWatermarkHandler[ValueWithContext[AnyRef]](

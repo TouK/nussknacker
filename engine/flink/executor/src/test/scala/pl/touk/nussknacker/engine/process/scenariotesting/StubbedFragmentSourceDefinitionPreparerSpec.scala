@@ -1,19 +1,16 @@
-package pl.touk.nussknacker.engine.process.compiler
+package pl.touk.nussknacker.engine.process.scenariotesting
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
-import pl.touk.nussknacker.engine.api.Params
-import pl.touk.nussknacker.engine.api.definition.{
-  Parameter,
-  ParameterEditor,
-  SpelParameterEditor,
-  SpelTemplateParameterEditor
-}
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.TestWithParametersSupport
+import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.definition.component.NodeCompilationDependencies
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -40,7 +37,18 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
     val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition("foo", fragmentInputDefinition)
       .implementationInvoker
-      .invokeMethod(Params.empty, None, Seq.empty)
+      .invokeMethod(
+        Params.empty,
+        new NodeCompilationDependencies(
+          scenarioCompilationDependencies = new ScenarioCompilationDependencies(
+            JobData(MetaData("dumb", FragmentSpecificData()), ProcessVersion.empty),
+            EngineScenarioCompilationDependencies.empty
+          ),
+          nodeData = fragmentInputDefinition,
+          componentUseContext = ComponentUseContext.ScenarioTesting,
+        ),
+        invocationContext = None
+      )
       .asInstanceOf[TestWithParametersSupport[Map[String, Any]]]
       .testParametersDefinition
     val expectedParameters = List(
