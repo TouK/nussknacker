@@ -105,7 +105,7 @@ export const lightModePalette: PaletteOptions = {
             },
             default: { backgroundColor: "#2D8E54", color: "white" },
         },
-        aceEditor: {
+        codeEditor: {
             string: {
                 color: "#a6e22e",
             },
@@ -114,6 +114,9 @@ export const lightModePalette: PaletteOptions = {
             },
             objectKeys: {
                 color: "#BDBDBD",
+            },
+            readonly: {
+                backgroundColor: "#272822",
             },
         },
     },
