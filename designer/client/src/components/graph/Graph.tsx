@@ -285,7 +285,7 @@ export class Graph extends React.Component<Props> {
             if (!isModelElement(cell)) return;
 
             setTimeout(() => {
-                const viewBox = this.viewport.clone().inflate(-50, -50);
+                const viewBox = this.viewport.clone().inflate(this.viewport.width * -0.2, this.viewport.height * -0.2);
                 const cellBox = this.processGraphPaper.findViewByModel(cell.id).getBBox();
                 if (!viewBox.containsRect(cellBox)) {
                     const cellsToFit = getNeighbors(this.graph, cell, { depth: 2, withSelf: true });

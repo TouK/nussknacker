@@ -9,6 +9,7 @@ import { portSize, RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/e
 import { useGraph } from "../components/graph/GraphContext";
 import { useSidePanel } from "../components/sidePanels/SidePanelsContext";
 import { globalEventBus } from "../components/toolbars/creator/globalEventBus";
+import { ComponentFilter } from "../components/toolbars/creator/ToolBox";
 import { useOutsideInteraction } from "../components/toolbars/creator/useOutsideInteraction";
 
 export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
@@ -26,7 +27,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
             (event, x, y) => {
                 globalEventBus.emit("openNodeSelector", {
                     side: panelSide,
-                    fromPoint: new g.Point(x, y).offset(RECT_WIDTH * -0.5, RECT_HEIGHT * -0.5),
+                    fromPoint: new g.Point(x, y).offset(RECT_WIDTH * -0.5),
                 });
             },
             context,
@@ -55,9 +56,6 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
                 if (isTooShortToDisplay) {
                     link.remove();
                     position = cell.position().offset(0, (isLinkReversed ? -3 : 3) * RECT_HEIGHT);
-                    while (paper.findViewsFromPoint(position).length > 0) {
-                        position = position.offset(RECT_HEIGHT);
-                    }
                 } else {
                     position = new g.Point(x, y).offset(
                         RECT_WIDTH * -0.8,
@@ -69,7 +67,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
                 globalEventBus.emit("openNodeSelector", {
                     side: panelSide,
                     fromPoint: position,
-                    filters: [isLinkReversed ? "removeNoOutputs" : "removeNoInputs"],
+                    filters: [isLinkReversed ? ComponentFilter.removeNoOutputs : ComponentFilter.removeNoInputs],
                     withEdge: { ...edgeData, from, to },
                 });
 
@@ -86,28 +84,33 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
 
     const { isOpened, toggleCollapse, ref } = useSidePanel(panelSide);
 
-    useEffect(
-        () =>
-            globalEventBus.on("closeNodeSelector", ({ node, onPoint, side, edge }) => {
-                if (side !== panelSide) return;
-                toggleCollapse();
+    useEffect(() => {
+        return globalEventBus.on("closeNodeSelector", ({ node, onPoint, side, edge }) => {
+            if (side !== panelSide) return;
+            toggleCollapse();
 
-                if (!node) return;
-                dispatch(
-                    nodesWithEdgesAdded(
-                        [
-                            {
-                                node,
-                                position: new g.Point(onPoint).snapToGrid(1, 1),
-                            },
-                        ],
-                        [edge].filter(Boolean),
-                        false,
-                    ),
-                );
-            }),
-        [dispatch, panelSide, toggleCollapse],
-    );
+            if (!node) return;
+
+            const graph = graphGetter();
+            const paper = graph.processGraphPaper;
+
+            function adjustPoint(plainPoint: g.PlainPoint): g.Point {
+                const rect = new g.Rect(plainPoint.x, plainPoint.y, RECT_WIDTH, RECT_HEIGHT);
+                if (paper.findViewsInArea(rect.clone().inflate(10)).length > 0) {
+                    return adjustPoint(rect.offset(RECT_HEIGHT).topLeft());
+                }
+                return rect.topLeft();
+            }
+
+            const position: g.Point = adjustPoint(onPoint).snapToGrid(1, 1);
+
+            if (graph.isFragmentCreator(node)) {
+                return graph.createFragment(position);
+            }
+
+            dispatch(nodesWithEdgesAdded([{ node, position }], [edge].filter(Boolean), false));
+        });
+    }, [dispatch, graphGetter, panelSide, toggleCollapse]);
 
     const justClose = () => globalEventBus.emit("closeNodeSelector", { side: panelSide });
 

@@ -122,9 +122,9 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     />
 
                     <OverlayGrid9 gridArea="body" m={0.5}>
-                        <Overlay gridArea="top/left / top/right" position="relative">
+                        <OverlayGrid9 gridRow="top/span 2" gridColumn="left/right" position="relative">
                             {children}
-                        </Overlay>
+                        </OverlayGrid9>
                         <Box component={SidePanelToggleButton} type={PanelSide.Left} gridArea="bottom/left" />
                         <Box component={SidePanelToggleButton} type={PanelSide.Right} gridArea="bottom/right" />
                     </OverlayGrid9>

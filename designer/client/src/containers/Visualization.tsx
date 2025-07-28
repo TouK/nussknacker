@@ -1,3 +1,4 @@
+import { Box, Fade } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
 import { isEmpty } from "lodash";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,7 +17,9 @@ import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
 import SelectionContextProvider from "../components/graph/SelectionContextProvider";
 import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
+import { SidePanelToggleButton2 } from "../components/SidePanelToggleButton";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
+import { Overlay } from "../components/toolbarComponents/Overlay";
 import Toolbars from "../components/toolbars/Toolbars";
 import { getProcessDefinitionData } from "../reducers/selectors/getProcessDefinitionData";
 import {
@@ -216,7 +219,26 @@ function Visualization() {
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
-                            <ScenarioDescription />
+                            <Overlay gridArea="left" gridRow="top">
+                                <ScenarioDescription />
+                            </Overlay>
+                            <Overlay gridArea="right" gridRow="top">
+                                <SidePanelToggleButton2 />
+                            </Overlay>
+                            <Overlay
+                                gridRow="top/span 2"
+                                gridColumn="left/right"
+                                sx={{
+                                    justifyItems: "center",
+                                    alignContent: "center",
+                                }}
+                            >
+                                <Fade in={!scenario.scenarioGraph.nodes.length}>
+                                    <Box>
+                                        <SidePanelToggleButton2 placeholder />
+                                    </Box>
+                                </Fade>
+                            </Overlay>
                         </Toolbars>
                     </SelectionContextProvider>
                 </GraphProvider>

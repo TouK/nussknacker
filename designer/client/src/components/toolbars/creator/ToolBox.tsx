@@ -10,7 +10,6 @@ import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import type { ComponentGroup, NodeType } from "../../../types";
 import NodeUtils from "../../graph/NodeUtils";
-import type { ToolProps } from "./Tool";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
@@ -107,7 +106,12 @@ const StyledToolbox = styled("div")(({ theme }) => ({
     },
 }));
 
-type ComponentFilter = "removeNoInputs" | "removeNoOutputs";
+export enum ComponentFilter {
+    sourcesOnly,
+    removeNoInputs,
+    removeNoOutputs,
+}
+
 export type ToolBoxProps = {
     textFilter: string;
     filters?: ComponentFilter[];
@@ -131,10 +135,15 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
                     components: group.components.filter((component) =>
                         filters.every((f) => {
                             switch (f) {
-                                case "removeNoInputs":
+                                case ComponentFilter.removeNoInputs:
                                     return NodeUtils.hasInputs(component.node);
-                                case "removeNoOutputs":
+                                case ComponentFilter.removeNoOutputs:
                                     return NodeUtils.hasOutputs(component.node, definitionData);
+                                case ComponentFilter.sourcesOnly:
+                                    return (
+                                        ["Source", "FragmentInputDefinition"].includes(component.node.type) ||
+                                        component.node.additionalFields?.creatorType
+                                    );
                             }
                         }),
                     ),
