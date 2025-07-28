@@ -89,7 +89,8 @@ export const isRunOffSchedulePossible = createSelector(
 );
 export const isMigrationPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state)),
+    (saveDisabled, error, state, fragment) =>
+        saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state) || ProcessStateUtils.canRedeploy(state)),
 );
 export const isArchivePossible = createSelector(
     [getProcessState, isFragment],

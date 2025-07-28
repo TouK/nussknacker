@@ -200,7 +200,8 @@ export default function RedeployButton(props: ToolbarButtonProps) {
                 ) : (
                     <ToolbarButton
                         name={t("panels.actions.redeploy.button", "redeploy")}
-                        disabled={!available}
+                        disabled={!available || isLoading}
+                        isLoading={isLoading}
                         icon={<Icon />}
                         title={deployToolTip}
                         onClick={handleOpenRedeployDialog}
