@@ -10,6 +10,8 @@ trait SpelExtension {
     def spelTemplate: Expression = Expression.spelTemplate(expression)
 
     def jsonTemplate: Expression = Expression.jsonTemplate(expression)
+
+    def jsonExpression: Expression = Expression.json(expression)
   }
 
 }

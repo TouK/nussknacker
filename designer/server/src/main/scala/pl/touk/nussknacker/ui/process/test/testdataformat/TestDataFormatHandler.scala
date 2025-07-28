@@ -3,13 +3,21 @@ package pl.touk.nussknacker.ui.process.test.testdataformat
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.Source
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.ui.api.TestDataFormat
 import pl.touk.nussknacker.ui.process.test.{
   PreliminaryScenarioRecord,
   PreliminaryScenarioRecords,
   SerializedScenarioRecordsContent
 }
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ParametersDefinitionError
+import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler.ExpressionsToTestDataConversionError
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatSerDe.DeserializationError
 
 trait TestDataFormatHandler {
@@ -20,11 +28,23 @@ trait TestDataFormatHandler {
 
   def canBeTested(compiledSource: Source): Boolean
 
+  def canTestWithForm(compiledSource: Source): Boolean
+
   def fetchLiveData(
       sourceId: NodeId,
       compiledSource: Source,
       maxNumberOfRecords: Int
   ): Either[TestDataFormatHandler.LiveDataFetchingNotSupportedError.type, List[PreliminaryScenarioRecord]]
+
+  def getTestParametersDefinition(
+      sourceId: NodeId,
+      sourceCompilationResult: NodeCompilationResult[Source],
+  ): Either[ParametersDefinitionError, List[Parameter]]
+
+  def convertToTestData(
+      sourceId: String,
+      parameterExpressions: Map[ParameterName, Expression]
+  ): Either[ExpressionsToTestDataConversionError, ScenarioTestData]
 
 }
 
@@ -50,6 +70,17 @@ object TestDataFormatHandler extends LazyLogging {
   }
 
   case object LiveDataFetchingNotSupportedError
+
+  sealed trait ExpressionsToTestDataConversionError
+
+  case object MissingInputVariablesParameter extends ExpressionsToTestDataConversionError
+
+  final case class IllegalInputVariablesExpressionLanguage(language: Language)
+      extends ExpressionsToTestDataConversionError
+
+  final case class InputVariablesExpressionJsonParseError(message: String) extends ExpressionsToTestDataConversionError
+
+  final case class InputVariablesExpressionDecodingError(message: String) extends ExpressionsToTestDataConversionError
 
 }
 

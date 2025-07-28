@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.inputParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.{
@@ -39,6 +38,7 @@ import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
 import java.util.{Collections, UUID}
 import java.util.Arrays.asList
@@ -80,7 +80,9 @@ class SchemalessKafkaJsonTypeTests
   override val container: Container = MultipleContainers(kafkaContainer, schemaRegistryContainer)
 
   private val validJson = """|{
-                             |  "name": "FooBar"
+                             |  "input": {
+                             |    "name": "FooBar"
+                             |  }
                              |}""".stripMargin
 
   private val invalidJson = """|{
@@ -128,10 +130,10 @@ class SchemalessKafkaJsonTypeTests
   }
 
   override protected val validParameters: TestSourceParameters =
-    TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(validJson)))
+    TestSourceParameters(exampleScenarioSourceId, Map(InputVariablesParameterName -> Expression.json(validJson)))
 
   override protected val invalidParameters: TestSourceParameters =
-    TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(invalidJson)))
+    TestSourceParameters(exampleScenarioSourceId, Map(InputVariablesParameterName -> Expression.json(invalidJson)))
 
   override protected val expectedValidationErrorsOnInvalidParametersJson: String =
     s"""
@@ -139,26 +141,231 @@ class SchemalessKafkaJsonTypeTests
        |  {
        |    "typ": "ExpressionParserCompilationError",
        |    "message": "expected } or , got 'a0.00}...'",
-       |    "description": "There is problem with expression in field [Input] - it could not be parsed.",
-       |    "fieldName": "Input",
+       |    "description": "There is problem with expression in field [$InputVariablesParameterName] - it could not be parsed.",
+       |    "fieldName": "$InputVariablesParameterName",
        |    "errorType": "SaveAllowed",
        |    "details": {"start":{"column":44,"row":2},"end":{"column":45,"row":2},"type":"CoordinatesBasedTextRange"}
        |  }
        |]""".stripMargin
 
   override protected def expectedTestParametersJson: String = {
-    s"""
-       |[
+    s"""[
        |  {
-       |    "sourceId": "$exampleScenarioSourceId",
+       |    "sourceId": "start",
        |    "parameters": [
        |      {
-       |        "name": "Input",
+       |        "name": "$InputVariablesParameterName",
        |        "typ": {
-       |          "display": "Json",
-       |          "type": "Unknown",
-       |          "refClazzName": "java.lang.Object",
-       |          "params": []
+       |          "display": "Record{input: Record{name: String}, inputMeta: InputMeta[String]}",
+       |          "type": "TypedObjectTypingResult",
+       |          "fields": {
+       |            "input": {
+       |              "display": "Record{name: String}",
+       |              "type": "TypedObjectTypingResult",
+       |              "fields": {
+       |                "name": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                }
+       |              },
+       |              "refClazzName": "java.util.Map",
+       |              "params": [
+       |                {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                }
+       |              ]
+       |            },
+       |            "inputMeta": {
+       |              "display": "InputMeta[String]",
+       |              "type": "TypedObjectTypingResult",
+       |              "fields": {
+       |                "timestamp": {
+       |                  "display": "Long",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Long",
+       |                  "params": []
+       |                },
+       |                "partition": {
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Integer",
+       |                  "params": []
+       |                },
+       |                "timestampType": {
+       |                  "display": "TimestampType",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "org.apache.kafka.common.record.TimestampType",
+       |                  "params": []
+       |                },
+       |                "key": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "offset": {
+       |                  "display": "Long",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Long",
+       |                  "params": []
+       |                },
+       |                "leaderEpoch": {
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Integer",
+       |                  "params": []
+       |                },
+       |                "topic": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "headers": {
+       |                  "display": "Map[String,String]",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.util.Map",
+       |                  "params": [
+       |                    {
+       |                      "display": "String",
+       |                      "type": "TypedClass",
+       |                      "refClazzName": "java.lang.String",
+       |                      "params": []
+       |                    },
+       |                    {
+       |                      "display": "String",
+       |                      "type": "TypedClass",
+       |                      "refClazzName": "java.lang.String",
+       |                      "params": []
+       |                    }
+       |                  ]
+       |                }
+       |              },
+       |              "refClazzName": "java.util.Map",
+       |              "params": [
+       |                {
+       |                  "display": "Unknown",
+       |                  "type": "Unknown",
+       |                  "refClazzName": "java.lang.Object",
+       |                  "params": []
+       |                },
+       |                {
+       |                  "display": "Unknown",
+       |                  "type": "Unknown",
+       |                  "refClazzName": "java.lang.Object",
+       |                  "params": []
+       |                }
+       |              ]
+       |            }
+       |          },
+       |          "refClazzName": "java.util.Map",
+       |          "params": [
+       |            {
+       |              "display": "String",
+       |              "type": "TypedClass",
+       |              "refClazzName": "java.lang.String",
+       |              "params": []
+       |            },
+       |            {
+       |              "display": "Record{headers: Map[String,String], key: String, leaderEpoch: Integer, name: String, offset: Long, partition: Integer, timestamp: Long, timestampType: TimestampType, topic: String}",
+       |              "type": "TypedObjectTypingResult",
+       |              "fields": {
+       |                "name": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "timestamp": {
+       |                  "display": "Long",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Long",
+       |                  "params": []
+       |                },
+       |                "partition": {
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Integer",
+       |                  "params": []
+       |                },
+       |                "timestampType": {
+       |                  "display": "TimestampType",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "org.apache.kafka.common.record.TimestampType",
+       |                  "params": []
+       |                },
+       |                "key": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "offset": {
+       |                  "display": "Long",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Long",
+       |                  "params": []
+       |                },
+       |                "leaderEpoch": {
+       |                  "display": "Integer",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.Integer",
+       |                  "params": []
+       |                },
+       |                "topic": {
+       |                  "display": "String",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.lang.String",
+       |                  "params": []
+       |                },
+       |                "headers": {
+       |                  "display": "Map[String,String]",
+       |                  "type": "TypedClass",
+       |                  "refClazzName": "java.util.Map",
+       |                  "params": [
+       |                    {
+       |                      "display": "String",
+       |                      "type": "TypedClass",
+       |                      "refClazzName": "java.lang.String",
+       |                      "params": []
+       |                    },
+       |                    {
+       |                      "display": "String",
+       |                      "type": "TypedClass",
+       |                      "refClazzName": "java.lang.String",
+       |                      "params": []
+       |                    }
+       |                  ]
+       |                }
+       |              },
+       |              "refClazzName": "java.util.Map",
+       |              "params": [
+       |                {
+       |                  "display": "Unknown",
+       |                  "type": "Unknown",
+       |                  "refClazzName": "java.lang.Object",
+       |                  "params": []
+       |                },
+       |                {
+       |                  "display": "Unknown",
+       |                  "type": "Unknown",
+       |                  "refClazzName": "java.lang.Object",
+       |                  "params": []
+       |                }
+       |              ]
+       |            }
+       |          ]
        |        },
        |        "editors": [
        |          {
@@ -167,13 +374,13 @@ class SchemalessKafkaJsonTypeTests
        |        ],
        |        "defaultValue": {
        |          "language": "json",
-       |          "expression": "{\\n  \\"name\\" : \\"Tom\\"\\n}"
+       |          "expression": "{\\n  \\"input\\" : {\\n    \\"name\\" : \\"\\"\\n  },\\n  \\"inputMeta\\" : {\\n    \\"key\\" : \\"\\",\\n    \\"topic\\" : \\"\\",\\n    \\"partition\\" : 0,\\n    \\"offset\\" : 0,\\n    \\"timestamp\\" : 0,\\n    \\"timestampType\\" : {\\n      \\n    },\\n    \\"headers\\" : {\\n      \\"field\\" : \\"\\"\\n    },\\n    \\"leaderEpoch\\" : 0\\n  }\\n}"
        |        },
        |        "additionalVariables": {},
        |        "variablesToHide": [],
        |        "branchParam": false,
        |        "hintText": null,
-       |        "label": "Input",
+       |        "label": "$InputVariablesParameterName",
        |        "requiredParam": true,
        |        "category": "Standard",
        |        "changesCanReloadParameters": false,
@@ -181,8 +388,7 @@ class SchemalessKafkaJsonTypeTests
        |      }
        |    ]
        |  }
-       |]
-       |""".stripMargin
+       |]""".stripMargin
   }
 
   override protected def beforeAll(): Unit = {

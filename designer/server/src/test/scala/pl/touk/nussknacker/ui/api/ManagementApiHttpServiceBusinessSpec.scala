@@ -18,6 +18,7 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
 import java.util.UUID
 
@@ -57,13 +58,9 @@ class ManagementApiHttpServiceBusinessSpec
             |   "sourceParameters": {
             |     "sourceId": "1",
             |     "parameterExpressions": {
-            |       "param1": {
-            |         "language": "spel",
-            |         "expression": "1"
-            |       },
-            |       "param2": {
-            |         "language": "spel",
-            |         "expression": "test"
+            |       "$InputVariablesParameterName": {
+        |             "language": "json",
+        |             "expression": "{\\"input\\": 123}"
             |       }
             |     }
             |   }

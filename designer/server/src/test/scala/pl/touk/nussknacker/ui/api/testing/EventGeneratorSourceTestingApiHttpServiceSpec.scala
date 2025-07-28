@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import sttp.client3.Response
 
 trait EventGeneratorSourceTestingApiHttpServiceSpec
@@ -43,20 +42,6 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec
       .emptySink("end", "dead-end")
 
   protected def filteringExpression: Expression
-
-  override protected def validParameters: TestSourceParameters =
-    TestSourceParameters(exampleScenarioSourceId, Map.empty)
-
-  override protected def expectedTestParametersJson: String = {
-    s"""
-       |[
-       |  {
-       |    "sourceId": "$exampleScenarioSourceId",
-       |    "parameters": []
-       |  }
-       |]
-       |""".stripMargin
-  }
 
   override protected def verifyTestFromFileWithCorrectTestDataResponse(response: Response[String]): Assertion = {
     response.bodyAsJson.hcursor
