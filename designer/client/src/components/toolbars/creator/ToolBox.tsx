@@ -1,6 +1,7 @@
-import { lighten, styled } from "@mui/material";
+import { Box, lighten } from "@mui/material";
+import type { BoxProps } from "@mui/material/Box/Box";
 import { getLuminance } from "@mui/system/colorManipulator";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import "react-treeview/react-treeview.css";
 import { useSelector } from "react-redux";
@@ -13,98 +14,109 @@ import NodeUtils from "../../graph/NodeUtils";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
-const StyledToolbox = styled("div")(({ theme }) => ({
-    fontSize: "14px",
-    fontWeight: "600",
-    padding: 0,
-    minHeight: "2.5em",
-    ".tree-view": {
-        backgroundColor: theme.palette.background.paper,
-    },
+const StyledToolbox = function StyledToolbox(props: Omit<BoxProps, "sx" | "ref">) {
+    const ref = useRef<HTMLDivElement>();
+    return (
+        <Box
+            {...props}
+            ref={ref}
+            sx={(theme) => {
+                const color =
+                    (ref.current && getComputedStyle(ref.current).getPropertyValue("--panelColor").trim()) ||
+                    theme.palette.background.paper;
+                return {
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    padding: 0,
+                    minHeight: "2.5em",
+                    ".tree-view": {
+                        backgroundColor: "var(--panelColor)",
+                    },
 
-    ".tree-view_item": {
-        backgroundColor:
-            getLuminance(theme.palette.background.paper) > 0.5
-                ? blendDarken(theme.palette.background.paper, 0.04)
-                : blendLighten(theme.palette.background.paper, 0.04),
-        border: "none",
-        borderLeft: 0,
-        borderRight: 0,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        padding: theme.spacing(0, 2),
-        height: "28px",
-        lineHeight: "28px",
+                    ".tree-view_item": {
+                        backgroundColor: getLuminance(color) > 0.5 ? blendDarken(color, 0.04) : blendLighten(color, 0.04),
+                        border: "none",
+                        borderLeft: 0,
+                        borderRight: 0,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: theme.spacing(0, 2),
+                        height: "28px",
+                        lineHeight: "28px",
 
-        "&:hover": {
-            backgroundColor: theme.palette.action.hover,
-            color: theme.palette.text.primary,
-        },
-    },
+                        "&:hover": {
+                            backgroundColor: theme.palette.action.hover,
+                            color: theme.palette.text.primary,
+                        },
+                    },
 
-    ".tree-view_children": {
-        backgroundColor: theme.palette.background.paper,
-        margin: theme.spacing(0.5, 0, 0.5, 0),
-        "&:hover": {
-            backgroundColor: theme.palette.background.paper,
-            color: theme.palette.text.primary,
-        },
-        "&-collapsed": {
-            margin: 0,
-        },
-    },
-    ".tree-view_arrow": {
-        cursor: "inherit",
-        transform: "rotate(-90deg)",
-        marginRight: 0,
-        position: "absolute",
-        "&:after": {
-            content: "'‹'",
-        },
-        "&-collapsed": {
-            transform: "rotate(-180deg)",
-        },
-    },
-    ".toolWrapper": {
-        fontWeight: 400,
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-    },
+                    ".tree-view_children": {
+                        backgroundColor: "var(--panelColor)",
+                        margin: theme.spacing(0.5, 0, 0.5, 0),
+                        "&:hover": {
+                            backgroundColor: "var(--panelColor)",
+                            color: theme.palette.text.primary,
+                        },
+                        "&-collapsed": {
+                            margin: 0,
+                        },
+                    },
+                    ".tree-view_arrow": {
+                        cursor: "inherit",
+                        transform: "rotate(-90deg)",
+                        marginRight: 0,
+                        position: "absolute",
+                        "&:after": {
+                            content: "'‹'",
+                        },
+                        "&-collapsed": {
+                            transform: "rotate(-180deg)",
+                        },
+                    },
+                    ".toolWrapper": {
+                        fontWeight: 400,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    },
 
-    ".tool": {
-        ...theme.typography.body2,
-        paddingLeft: theme.spacing(4),
-        padding: theme.spacing(0.75, 0.5, 0.75, 4),
-        border: "none",
-        borderRight: 0,
-        userSelect: "none",
-        "&.disabled": {
-            opacity: 0.4,
-            cursor: "not-allowed !important",
-        },
-        "&:not(.disabled)": {
-            cursor: "grab",
-            "&:active": {
-                cursor: "grabbing",
-            },
+                    ".tool": {
+                        ...theme.typography.body2,
+                        paddingLeft: theme.spacing(4),
+                        padding: theme.spacing(0.75, 0.5, 0.75, 4),
+                        border: "none",
+                        borderRight: 0,
+                        userSelect: "none",
+                        "&.disabled": {
+                            opacity: 0.4,
+                            cursor: "not-allowed !important",
+                        },
+                        "&:not(.disabled)": {
+                            cursor: "grab",
+                            "&:active": {
+                                cursor: "grabbing",
+                            },
 
-            "&:hover, &:focus-within": {
-                backgroundColor: theme.palette.action.hover,
-                color: lighten(theme.palette.text.primary, 0.2),
-            },
-        },
-    },
-    ".toolIcon": {
-        height: "16px",
-        width: "16px",
-        display: "inline-flex",
-        verticalAlign: "middle",
-        marginRight: "5px",
-        marginBottom: "2px",
-    },
-}));
+                            "&:hover, &:focus-within": {
+                                backgroundColor: theme.palette.action.hover,
+                                color: lighten(theme.palette.text.primary, 0.2),
+                            },
+                        },
+                    },
+                    ".toolIcon": {
+                        height: "16px",
+                        width: "16px",
+                        display: "inline-flex",
+                        verticalAlign: "middle",
+                        marginRight: "5px",
+                        marginBottom: "2px",
+                    },
+                };
+            }}
+        />
+    );
+};
 
 export enum ComponentFilter {
     sourcesOnly,

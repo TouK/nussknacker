@@ -9,7 +9,7 @@ export const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
     height: "36px !important",
     color: theme.palette.text.secondary,
     padding: "6px 12px !important",
-    backgroundColor: `${theme.palette.background.paper} !important`,
+    backgroundColor: `var(--panelColor, ${theme.palette.background.paper}) !important`,
     border: "none",
     outline: "none !important",
     "&:focus": {

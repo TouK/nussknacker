@@ -20,6 +20,7 @@ export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) 
 
 export const Panel = styled("div")<{ expanded?: boolean; color?: string; width?: number | string }>(
     ({ expanded, color, width = 200, theme }) => ({
+        "--panelColor": color,
         pointerEvents: "auto",
         width,
         borderColor: blendDarken(color, 0.25),
