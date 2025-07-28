@@ -22,19 +22,13 @@ export const SyntaxHighlighter = ({ language, customStyle, children, staticHighl
             containerRef.current.textContent = children as string;
 
             // Highlight the code
-            ace.require("ace/ext/static_highlight").highlight(
-                containerRef.current,
-                {
-                    mode: `ace/mode/${language}`,
-                    theme: "ace/theme/nussknacker",
-                    startLineNumber: 1,
-                    showGutter: true,
-                    ...staticHighlightOptions,
-                },
-                function (result) {
-                    console.log("Code highlighted successfully", result);
-                },
-            );
+            ace.require("ace/ext/static_highlight").highlight(containerRef.current, {
+                mode: `ace/mode/${language}`,
+                theme: "ace/theme/nussknacker",
+                startLineNumber: 1,
+                showGutter: true,
+                ...staticHighlightOptions,
+            });
         }
     }, [children, language, staticHighlightOptions]);
 
