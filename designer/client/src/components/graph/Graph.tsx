@@ -332,13 +332,12 @@ export class Graph extends React.Component<Props> {
         if (this.props.isFragment === true) return;
         if (!this.props.capabilities.editFrontend) return;
 
+        if (this.isFragmentCreator(node)) {
+            return this.createFragment(position);
+        }
+
         if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) {
-            if (node.ref.id !== FRAGMENT_TEMPLATE_ID) return;
-            const { nodeAdded, createFragment } = this.props;
-            return createFragment?.((node) => {
-                if (!node) return;
-                return nodeAdded(node, position);
-            });
+            return;
         }
 
         const cellBelow = this.lastHoveredCell;
@@ -360,6 +359,21 @@ export class Graph extends React.Component<Props> {
         }
         return;
     }
+
+    isFragmentCreator = (node: NodeType): boolean => {
+        const { processDefinitionData } = this.props;
+        if (NodeUtils.isAvailable(node, processDefinitionData)) return false;
+        return node.ref.id === FRAGMENT_TEMPLATE_ID;
+    };
+
+    createFragment = (position: Position): void => {
+        if (this.props.isFragment === true) return;
+        const { nodeAdded, createFragment } = this.props;
+        return createFragment?.((node) => {
+            if (!node) return;
+            nodeAdded(node, position);
+        });
+    };
 
     fitToNode = (nodeId: NodeId): void => {
         const cellToFit = this.graph.getCells().find((c) => c.id === nodeId);
