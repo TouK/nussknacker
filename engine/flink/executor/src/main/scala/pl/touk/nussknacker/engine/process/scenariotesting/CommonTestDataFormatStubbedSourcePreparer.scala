@@ -4,44 +4,48 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.Valid
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.typeutils.ListTypeInfo
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import pl.touk.nussknacker.engine.api.{Context, ContextIdPathPart, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.livedata.DataRecord
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ContextVariables}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestCommonFormatJsonRecord
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
-import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers.contextIdPathPartInfo
 import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaListMap
 
-import scala.annotation.nowarn
+import java.util.{Map => JMap}
 import scala.jdk.CollectionConverters._
 
 object CommonTestDataFormatStubbedSourcePreparer {
+
+  import NonMapBasedRecordTypesHandler._
 
   def prepareSubbedSource(
       testRecords: NonEmptyList[(ScenarioTestCommonFormatJsonRecord, Int)],
       sourceOutputValidationContext: ValidationContext
   ): FlinkSource = {
+    // We change record type because for now, we can't decode non-Map records from json - see FromJsonTypingResultBasedDecoder for details
+    val outputValidationContextWithRecordsAsMaps = sourceOutputValidationContext.mapTypes(_.toMapBasedRecordTypes)
+
     val decodedRecords = testRecords.map { case (record, testRecordIndex) =>
       val decodedVariables =
         CommonTestDataFormatVariablesDecoder.decode(
           record.variables,
-          sourceOutputValidationContext,
+          outputValidationContextWithRecordsAsMaps,
           record.sourceId,
           testRecordIndex
         )
       DataRecord(decodedVariables, record.timestamp)
     }
 
-    CommonTestDataFormatStubbedSource(decodedRecords.toList, sourceOutputValidationContext)
+    CommonTestDataFormatStubbedSource(decodedRecords.toList, outputValidationContextWithRecordsAsMaps)
   }
 
   private case class CommonTestDataFormatStubbedSource(
@@ -108,6 +112,41 @@ object CommonTestDataFormatStubbedSourcePreparer {
         ("variables", TypeInformationDetection.instance.forVariables(sourceOutputValidationContext.localVariables)),
         ("timestamp", TypeInformation.of(classOf[Option[String]]))
       )
+
+  }
+
+  private object NonMapBasedRecordTypesHandler {
+
+    implicit class TypingResultExt(typingResult: TypingResult) {
+
+      def toMapBasedRecordTypes: TypingResult = typingResult match {
+        case union: TypedUnion          => Typed(union.possibleTypes.map(_.toMapBasedRecordTypes))
+        case TypedNull                  => TypedNull
+        case single: SingleTypingResult => single.toMapBasedRecordTypes
+        case unknown: Unknown           => unknown
+      }
+
+    }
+
+    private implicit class SingleTypingResultExt(single: SingleTypingResult) {
+
+      def toMapBasedRecordTypes: SingleTypingResult = single match {
+        case record @ TypedObjectTypingResult(fields, runtimeObjType, _)
+            if runtimeObjType.klass == classOf[JMap[String @unchecked, _]] =>
+          record.copy(fields = fields.mapValuesNow(_.toMapBasedRecordTypes))
+        case TypedObjectTypingResult(fields, _, _) =>
+          Typed.record(fields.mapValuesNow(_.toMapBasedRecordTypes).toList)
+        case dict @ TypedDict(_, valueType)                  => dict.copy(valueType = valueType.toMapBasedRecordTypes)
+        case tagged @ TypedTaggedValue(underlying, _)        => tagged.copy(underlying.toMapBasedRecordTypes)
+        case withValue @ TypedObjectWithValue(underlying, _) => withValue.copy(underlying.toMapBasedRecordTypes)
+        case clazz: TypedClass                               => clazz.toMapBasedRecordTypes
+      }
+
+    }
+
+    private implicit class TypedClassExt(clazz: TypedClass) {
+      def toMapBasedRecordTypes: TypedClass = clazz.copy(params = clazz.params.map(_.toMapBasedRecordTypes))
+    }
 
   }
 

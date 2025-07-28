@@ -11,6 +11,7 @@ import java.math.BigInteger
 import java.nio.charset.Charset
 import java.time._
 import java.util.{Currency, Locale, UUID}
+import java.util.{Map => JMap}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
@@ -112,18 +113,25 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
           case None =>
             Left(DecodingFailure(s"Expected encoded Array to be a Json array", cursor.history))
         }
-      case record: TypedObjectTypingResult =>
+      case TypedObjectTypingResult(fields, runtimeObjType, _)
+          if runtimeObjType.klass == classOf[JMap[String @unchecked, _]] =>
         for {
           fieldsJson <- cursor.as[Map[String, Json]]
           decodedFields <-
             fieldsJson.toList.traverse { case (fieldName, fieldJson) =>
-              val fieldType = record.fields.getOrElse(fieldName, Unknown)
+              val fieldType = fields.getOrElse(fieldName, Unknown)
               decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
             }
-          // We don't check runtimeObjType and assume that the runtime type is java Map which is wrong in some cases (Avro, table-api) and might cause Flink serialization problems
-          // TODO: We should either accept any supported record type during serialization/deserialization in every place or respect runtimeObjType
           javaMap = decodedFields.toMap.asJava
         } yield javaMap
+      case TypedObjectTypingResult(_, nonMapRuntimeObjType, _) =>
+        // To decode other types than Map (Avro's GenericRecords or Table APIs Row), we should add schema to type
+        Left(
+          DecodingFailure(
+            s"Decoding of non-Map based records (runtime type: ${nonMapRuntimeObjType.display}) is not supported.",
+            cursor.history
+          )
+        )
       case unknown @ Unknown(_) =>
         /// For Unknown we fallback to generic json to any conversion. It won't work for some types such as LocalDate but for others should work correctly
         cursor.as[Json].map { json =>

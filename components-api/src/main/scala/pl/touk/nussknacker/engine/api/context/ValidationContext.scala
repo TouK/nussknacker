@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ValidationContext {
 
@@ -76,6 +77,14 @@ case class ValidationContext(
 
   def popContextOrEmptyWithGlobals(): ValidationContext =
     parent.getOrElse(empty.copy(globalVariables = globalVariables))
+
+  def mapTypes(f: TypingResult => TypingResult): ValidationContext = {
+    copy(
+      localVariables = localVariables.mapValuesNow(f),
+      parent = parent.map(_.mapTypes(f))
+    )
+  }
+
 }
 
 /**
