@@ -20,6 +20,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
         const paper = graphGetter()?.processGraphPaper;
         if (!paper) return;
 
+        paper.options.linkPinning = true;
         const context = {};
 
         paper.on(
@@ -79,6 +80,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
         );
         return () => {
             paper.off(null, null, context);
+            paper.options.linkPinning = false;
         };
     }, [graphGetter, panelSide]);
 
@@ -105,7 +107,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
             const position: g.Point = adjustPoint(onPoint).snapToGrid(1, 1);
 
             if (graph.isFragmentCreator(node)) {
-                return graph.createFragment(position);
+                return graph.createFragment(position, edge);
             }
 
             dispatch(nodesWithEdgesAdded([{ node, position }], [edge].filter(Boolean), false));

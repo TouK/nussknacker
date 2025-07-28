@@ -28,7 +28,7 @@ const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }:
         {
             id: "creator-panel2",
             disableCollapse: true,
-            color: "#28401c",
+            color: "#301c40",
             additionalParams: { noDrag: "true" },
         },
     ],

@@ -186,7 +186,6 @@ export class Graph extends React.Component<Props> {
             el: this.getEspGraphRef(),
             validateConnection: this.twoWayValidateConnection,
             cellViewNamespace: nuGraphNamespace,
-            linkPinning: true,
             validateMagnet: this.validateMagnet,
             interactive: (cellView: dia.CellView) => {
                 const { model } = cellView;
@@ -366,12 +365,12 @@ export class Graph extends React.Component<Props> {
         return node.ref.id === FRAGMENT_TEMPLATE_ID;
     };
 
-    createFragment = (position: Position): void => {
+    createFragment = (position: Position, edge?: Edge): void => {
         if (this.props.isFragment === true) return;
-        const { nodeAdded, createFragment } = this.props;
+        const { createFragment, nodesWithEdgesAdded } = this.props;
         return createFragment?.((node) => {
             if (!node) return;
-            nodeAdded(node, position);
+            nodesWithEdgesAdded([{ node, position }], [edge].filter(Boolean), false);
         });
     };
 

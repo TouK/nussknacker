@@ -36,11 +36,20 @@ const nodeStyles = (theme: Theme) => {
         ".joint-type-esp-model": {
             "&, .body, .background, .joint-port-body": {
                 strokeWidth: 0.5,
-                transition: "filter 0.25s, fill 0.25s, stroke 0.25s",
+                transition: theme.transitions.create(["filter", "fill", "stroke", "stroke-width"]),
+            },
+            "&:hover": {
+                ".joint-port-body": {
+                    "&[magnet=true]": {
+                        strokeWidth: 3,
+                    },
+                },
             },
             ".joint-port-body": {
                 "&[magnet=true]": {
                     "&:hover": {
+                        opacity: 1,
+                        cursor: "copy",
                         fill: getNodeBorderColor(theme),
                     },
                 },
