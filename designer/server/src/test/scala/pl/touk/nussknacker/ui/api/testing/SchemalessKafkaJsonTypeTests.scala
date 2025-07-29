@@ -39,7 +39,6 @@ import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
-import pl.touk.nussknacker.ui.api.testing.SchemalessKafkaJsonTypeTests._
 
 import java.util.{Collections, UUID}
 import java.util.Arrays.asList
@@ -53,12 +52,144 @@ class SchemalessKafkaJsonTypeTests
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
     with WithAdHocTestsLogic
-    with WithSchemalessAdHocTestsLogic
     with WithAdHocInvalidParametersTestsLogic
     with WithDockerContainers
     with ForAllTestContainer
     with StrictLogging
     with NuRestAssureExtensions {
+
+  private val kafkaContainerAlias = "kafka"
+
+  protected val kafkaContainer: KafkaContainer =
+    KafkaContainer().configure { self =>
+      self.setNetwork(network)
+      self.setNetworkAliases(asList(kafkaContainerAlias))
+      self.setPortBindings(List("8070:9093").asJava)
+    }
+
+  private val schemaRegistryContainer: SchemaRegistryContainer =
+    SchemaRegistryContainer(network, kafkaContainerAlias).configure { self =>
+      self.setPortBindings(List("8069:8081").asJava)
+    }
+
+  private lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
+    kafkaProperties = Some(Map("bootstrap.servers" -> kafkaContainer.bootstrapServers)),
+    kafkaEspProperties = None,
+  )
+
+  override val container: Container = MultipleContainers(kafkaContainer, schemaRegistryContainer)
+
+  private val validJson = """|{
+                             |  "name": "FooBar"
+                             |}""".stripMargin
+
+  private val invalidJson = """|{
+                               |  "products": [
+                               |    {"id": 1, "name": "Laptop", "price": 120a0.00},
+                               |    {"id": 2, "name": "Smartphone", "price": 800.50},
+                               |    {"id": 3, "name": "Tablet", "price": 450.75}
+                               |  ]
+                               |}""".stripMargin
+
+  private val sourceTopicName = "someInputTopic"
+
+  private val sinkTopicName = "someOutputTopic"
+
+  private val variablesNodeName = "vars"
+  private val nameVariable      = "name"
+  private val ageVariable       = "age"
+  private val isAdultVariable   = "isAdult"
+
+  override protected val exampleScenarioSourceId: String = "start"
+
+  override protected val exampleScenario: CanonicalProcess = {
+    ScenarioBuilder
+      .streaming("without-schema")
+      .parallelism(1)
+      .source(
+        exampleScenarioSourceId,
+        "kafka",
+        "Topic"        -> s"'$sourceTopicName'".spel,
+        "Content type" -> "'JSON'".spel,
+        "Data sample"  -> Expression.json("{\"name\": \"Tom\"}")
+      )
+      // We add filtering logic to ensure that types are correctly verified during testing
+      .filter("filter", "#input.name != 'asdf'".spel)
+      .emptySink(
+        "end",
+        "kafka",
+        "Key"                   -> "".spel,
+        "Raw editor"            -> "true".spel,
+        "Value"                 -> "#input".spel,
+        "Topic"                 -> s"'$sinkTopicName'".spel,
+        "Content type"          -> "'JSON'".spel,
+        "Value validation mode" -> s"'${ValidationMode.lax.name}'".spel
+      )
+  }
+
+  override protected val validParameters: TestSourceParameters =
+    TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(validJson)))
+
+  override protected val invalidParameters: TestSourceParameters =
+    TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(invalidJson)))
+
+  override protected val parametersProvidedForDryRun: String =
+    ScenarioTestValidationRequest(
+      testData = ScenarioTestData.WithParameters(validParameters),
+      scenarioGraph = exampleScenario.toScenarioGraph
+    ).asJson.toString()
+
+  override protected val expectedValidationErrorsOnInvalidParametersJson: String =
+    s"""
+       |[
+       |  {
+       |    "typ": "ExpressionParserCompilationError",
+       |    "message": "expected } or , got 'a0.00}...'",
+       |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
+       |    "fieldName": "Input",
+       |    "errorType": "SaveAllowed",
+       |    "details": {"start":{"column":44,"row":2},"end":{"column":45,"row":2},"type":"CoordinatesBasedTextRange"}
+       |  }
+       |]""".stripMargin
+
+  override protected def expectedTestParametersJson: String = {
+    s"""
+       |[
+       |  {
+       |    "sourceId": "$exampleScenarioSourceId",
+       |    "parameters": [
+       |      {
+       |        "name": "Input",
+       |        "typ": {
+       |          "display": "Json",
+       |          "type": "Unknown",
+       |          "refClazzName": "java.lang.Object",
+       |          "params": []
+       |        },
+       |        "editors": [
+       |          {
+       |            "type": "JsonParameterEditor"
+       |          }
+       |        ],
+       |        "defaultValue": {
+       |          "language": "json",
+       |          "expression": "{\\n  \\"name\\" : \\"Tom\\"\\n}"
+       |        },
+       |        "additionalVariables": {},
+       |        "variablesToHide": [],
+       |        "branchParam": false,
+       |        "hintText": null,
+       |        "label": "Input",
+       |        "requiredParam": true,
+       |        "category": "Standard",
+       |        "changesCanReloadParameters": false,
+       |        "nonImportantForExecution": false
+       |      }
+       |    ]
+       |  }
+       |]
+       |""".stripMargin
+  }
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -198,20 +329,6 @@ class SchemalessKafkaJsonTypeTests
     }
   }
 
-  protected val kafkaContainer: KafkaContainer =
-    KafkaContainer().configure { self =>
-      self.setNetwork(network)
-      self.setNetworkAliases(asList(kafkaContainerAlias))
-      self.setPortBindings(List("8070:9093").asJava)
-    }
-
-  private val schemaRegistryContainer: SchemaRegistryContainer =
-    SchemaRegistryContainer(network, kafkaContainerAlias).configure { self =>
-      self.setPortBindings(List("8069:8081").asJava)
-    }
-
-  override def container: Container = MultipleContainers(kafkaContainer, schemaRegistryContainer)
-
   override def designerRawConfig: Config = super.designerRawConfig
     .withoutPath("scenarioTypes.streaming.modelConfig.components.kafka.disabled")
     .withValue(
@@ -222,11 +339,6 @@ class SchemalessKafkaJsonTypeTests
       "scenarioTypes.streaming.modelConfig.components.kafka.config.useDataSampleParamForSchemalessJsonTopicBasedKafkaSource",
       ConfigValueFactory.fromAnyRef(true)
     )
-
-  lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
-    kafkaProperties = Some(Map("bootstrap.servers" -> kafkaContainer.bootstrapServers)),
-    kafkaEspProperties = None,
-  )
 
   private def createKafkaTopics(): Unit = {
     val sourceTopic = new NewTopic(sourceTopicName, Collections.emptyMap())
@@ -270,131 +382,6 @@ class SchemalessKafkaJsonTypeTests
        |  "scenarioGraph": $scenarioGraphStr,
        |  "numberOfSamples": $numberOfSamples
        |}""".stripMargin
-
-}
-
-object SchemalessKafkaJsonTypeTests {
-
-  private[SchemalessKafkaJsonTypeTests] trait WithSchemalessAdHocTestsLogic
-      extends WithAdHocTestsLogic
-      with WithAdHocInvalidParametersTestsLogic {
-    self: WithSimplifiedConfigScenarioHelper with NuItTest =>
-
-    override protected def exampleScenarioSourceId: String = "start"
-
-    override protected def exampleScenario: CanonicalProcess = {
-      ScenarioBuilder
-        .streaming("without-schema")
-        .parallelism(1)
-        .source(
-          exampleScenarioSourceId,
-          "kafka",
-          "Topic"        -> s"'$sourceTopicName'".spel,
-          "Content type" -> "'JSON'".spel,
-          "Data sample"  -> Expression.json("{\"name\": \"Tom\"}")
-        )
-        // We add filtering logic to ensure that types are correctly verified during testing
-        .filter("filter", "#input.name != 'asdf'".spel)
-        .emptySink(
-          "end",
-          "kafka",
-          "Key"                   -> "".spel,
-          "Raw editor"            -> "true".spel,
-          "Value"                 -> "#input".spel,
-          "Topic"                 -> s"'$sinkTopicName'".spel,
-          "Content type"          -> "'JSON'".spel,
-          "Value validation mode" -> s"'${ValidationMode.lax.name}'".spel
-        )
-    }
-
-    override protected def validParameters: TestSourceParameters =
-      TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(validJson)))
-
-    override protected def invalidParameters: TestSourceParameters =
-      TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(invalidJson)))
-
-    override protected def parametersProvidedForDryRun: String =
-      ScenarioTestValidationRequest(
-        testData = ScenarioTestData.WithParameters(validParameters),
-        scenarioGraph = exampleScenario.toScenarioGraph
-      ).asJson.toString()
-
-    override protected def expectedValidationErrorsOnInvalidParametersJson: String =
-      s"""
-         |[
-         |  {
-         |    "typ": "ExpressionParserCompilationError",
-         |    "message": "expected } or , got 'a0.00}...'",
-         |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
-         |    "fieldName": "Input",
-         |    "errorType": "SaveAllowed",
-         |    "details": {"start":{"column":44,"row":2},"end":{"column":45,"row":2},"type":"CoordinatesBasedTextRange"}
-         |  }
-         |]""".stripMargin
-
-    override protected def expectedTestParametersJson: String = {
-      s"""
-         |[
-         |  {
-         |    "sourceId": "$exampleScenarioSourceId",
-         |    "parameters": [
-         |      {
-         |        "name": "Input",
-         |        "typ": {
-         |          "display": "Json",
-         |          "type": "Unknown",
-         |          "refClazzName": "java.lang.Object",
-         |          "params": []
-         |        },
-         |        "editors": [
-         |          {
-         |            "type": "JsonParameterEditor"
-         |          }
-         |        ],
-         |        "defaultValue": {
-         |          "language": "json",
-         |          "expression": "{\\n  \\"name\\" : \\"Tom\\"\\n}"
-         |        },
-         |        "additionalVariables": {},
-         |        "variablesToHide": [],
-         |        "branchParam": false,
-         |        "hintText": null,
-         |        "label": "Input",
-         |        "requiredParam": true,
-         |        "category": "Standard",
-         |        "changesCanReloadParameters": false,
-         |        "nonImportantForExecution": false
-         |      }
-         |    ]
-         |  }
-         |]
-         |""".stripMargin
-    }
-
-    private val validJson = """|{
-                               |  "name": "FooBar"
-                               |}""".stripMargin
-
-    private val invalidJson = """|{
-                                 |  "products": [
-                                 |    {"id": 1, "name": "Laptop", "price": 120a0.00},
-                                 |    {"id": 2, "name": "Smartphone", "price": 800.50},
-                                 |    {"id": 3, "name": "Tablet", "price": 450.75}
-                                 |  ]
-                                 |}""".stripMargin
-
-  }
-
-  private val sourceTopicName = "someInputTopic"
-
-  private val sinkTopicName = "someOutputTopic"
-
-  private val kafkaContainerAlias = "kafka"
-
-  private val variablesNodeName = "vars"
-  private val nameVariable      = "name"
-  private val ageVariable       = "age"
-  private val isAdultVariable   = "isAdult"
 
   private def getScenarioWithDataSample(dataSample: String) =
     ScenarioBuilder

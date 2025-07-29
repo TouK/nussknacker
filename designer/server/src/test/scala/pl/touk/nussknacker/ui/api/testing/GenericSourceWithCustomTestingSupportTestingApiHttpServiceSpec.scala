@@ -4,7 +4,6 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
