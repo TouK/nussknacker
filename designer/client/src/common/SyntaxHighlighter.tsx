@@ -9,9 +9,10 @@ import { getBorderColor } from "../containers/theme/helpers";
 interface Props {
     language: string;
     customStyle?: React.CSSProperties;
+    staticHighlightOptions?: Record<string, unknown>;
 }
 
-export const SyntaxHighlighter = ({ language, customStyle, children }: PropsWithChildren<Props>) => {
+export const SyntaxHighlighter = ({ language, customStyle, children, staticHighlightOptions = {} }: PropsWithChildren<Props>) => {
     const containerRef = useRef<HTMLPreElement>(null);
     const theme = useTheme();
 
@@ -26,9 +27,10 @@ export const SyntaxHighlighter = ({ language, customStyle, children }: PropsWith
                 theme: "ace/theme/nussknacker",
                 startLineNumber: 1,
                 showGutter: true,
+                ...staticHighlightOptions,
             });
         }
-    }, [children, language]);
+    }, [children, language, staticHighlightOptions]);
 
     return <pre ref={containerRef} style={{ margin: 0, border: `1px solid ${getBorderColor(theme)}`, ...customStyle }} />;
 };
