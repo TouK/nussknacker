@@ -24,14 +24,6 @@ const appendDefaultToolbars = ({ topRight = [], bottomRight = [], ...toolbars }:
             buttons: [{ type: BuiltinButtonTypes.viewReset }],
         },
     ],
-    [ToolbarsSide.RightDynamic]: [
-        {
-            id: "creator-panel2",
-            disableCollapse: true,
-            color: "#301c40",
-            additionalParams: { noDrag: "true" },
-        },
-    ],
 });
 
 export const getToolbarsConfig = createSelector(getSettings, isFragment, isArchived, (settings, fragment, archived) => {
