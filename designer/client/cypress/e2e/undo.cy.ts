@@ -12,7 +12,7 @@ describe("Undo/Redo", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed, force: true });
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
@@ -32,7 +32,7 @@ describe("Undo/Redo", () => {
         cy.contains(/^paste$/i).as("paste");
     });
 
-    it.only("should work for add and move to edge", () => {
+    it("should work for add and move to edge", () => {
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("[data-testid='component:Customfilter']")
             .should("be.visible")
