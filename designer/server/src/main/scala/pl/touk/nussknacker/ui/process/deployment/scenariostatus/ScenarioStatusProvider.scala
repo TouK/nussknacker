@@ -45,7 +45,7 @@ class ScenarioStatusProvider(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[StateStatus] = {
     dbioRunner.run(for {
-      processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
+      processDetailsOpt     <- processRepository.fetchLatestProcessDetails[Unit](processIdWithName.id)
       processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
       scenarioStatus <- getScenarioStatusFetchingDeploymentsStatusesFromManager(

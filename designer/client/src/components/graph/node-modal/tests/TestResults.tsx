@@ -14,7 +14,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
     const { t } = useTranslation();
     const results = useTestResults();
 
-    if (!results.testResultsToShow || isEmpty(results.testResultsToShow.context.variables)) {
+    if (!results.testResultsToShow || isEmpty(results.testResultsToShow?.context?.variables)) {
         return null;
     }
 

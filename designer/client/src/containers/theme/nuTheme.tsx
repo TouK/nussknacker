@@ -30,6 +30,10 @@ interface WindowPalette {
     color: string;
 }
 
+interface CodeEditorPalette {
+    color: string;
+}
+
 export interface CustomPalette {
     nodes: {
         [type: string]: NodePalette;
@@ -40,6 +44,14 @@ export interface CustomPalette {
     windows: {
         [type: string]: WindowPalette;
         default: WindowPalette;
+    };
+    codeEditor: {
+        string: CodeEditorPalette;
+        numeric: CodeEditorPalette;
+        objectKeys: CodeEditorPalette;
+        readonly: {
+            backgroundColor: string;
+        };
     };
 }
 

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.testing
 
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -183,7 +184,7 @@ final case class ModelDefinitionBuilder(
         name
       )
       .map { case (uiDefinition, _) =>
-        MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+        MethodBasedComponentDefinitionWithImplementation.withDumbImplementation(
           name,
           componentTypeSpecificData,
           staticDefinition,
@@ -203,10 +204,11 @@ final case class ModelDefinitionBuilder(
 
     val componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition
     ModelDefinition(
-      Components.empty(componentDefinitionExtractionMode).withComponents(components),
-      emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
-      ClassExtractionSettings.Default,
+      components = Components.empty(componentDefinitionExtractionMode).withComponents(components),
+      expressionConfig = emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
+      classExtractionSettings = ClassExtractionSettings.Default,
       allowEndingScenarioWithoutSink = false,
+      globalParametersConfig = GlobalParametersConfig.default
     )
   }
 

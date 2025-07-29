@@ -2,17 +2,20 @@ package pl.touk.nussknacker.engine.definition.action
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode, ScenarioCompilationDependencies}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompiler, ProcessCompiler}
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  LazyParameterCreationStrategy,
+  NodeCompiler,
+  SingleInputNodeInputValidationContext
+}
 import pl.touk.nussknacker.engine.compiledgraph.{node => compiledNode, CompiledNodesCollector}
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart, SourcePart}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.{asFragmentInputDefinition, asSource, SourceNodeData}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -26,6 +29,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
     new FragmentParametersDefinitionExtractor(
       modelData.modelClassLoader,
       modelData.modelDefinitionWithClasses.classDefinitions,
+      modelData.modelConfig.globalParametersConfig
     ),
     expressionCompiler,
     modelData.modelClassLoader,
@@ -45,11 +49,6 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
     nodeCompiler,
     modelData.customProcessValidator
   )
-
-  def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
-    val allNodes = scenario.collectAllNodes
-    allNodes.flatMap(asSource) ++ allNodes.flatMap(asFragmentInputDefinition)
-  }
 
   def compileSourceNode(
       source: SourceNodeData
@@ -98,7 +97,7 @@ class CommonModelDataInfoProvider(modelData: ModelData) {
       part: ProcessPart
   )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies): Map[NodeComponentInfo, Any] =
     subGraphCompiler
-      .compile(part.node, part.validationContext)
+      .compile(part.node, SingleInputNodeInputValidationContext(part.validationContext))
       .result
       .toList
       .flatMap(n => CompiledNodesCollector.collectAllNodes(n))

@@ -70,7 +70,12 @@ private[engine] object TypeConversionHandler {
     StringConversion(LocalDate.parse),
     StringConversion(LocalDateTime.parse),
     StringConversion[ChronoLocalDate](LocalDate.parse),
-    StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
+    StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse),
+    StringConversion[ZonedDateTime](ZonedDateTime.parse),
+    StringConversion[OffsetDateTime](OffsetDateTime.parse),
+    StringConversion[Instant](Instant.parse),
+    StringConversion[Period](Period.parse),
+    StringConversion[Duration](Duration.parse),
   )
 
   def canBeConverted(from: SingleTypingResult, to: TypedClass)(

@@ -184,15 +184,35 @@ description: Stay informed with detailed changelogs covering new features, impro
       ```hocon
       liveDataPreview {              // optional config section, functionality disabled by default
         enabled: true                // disabled by default
-        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned
-        throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated
+        maxNumberOfRecords: 20       // max number of latest live data samples that will be returned, optional, default is 20
+        throughputTimeWindowInSeconds: 60 // the time windows, for which the node transition throughput will be calculated, optional, default is 60
+      }
+      ```
+    * [#8208](https://github.com/TouK/nussknacker/pull/8208) added functionality of collecting live data for scenarios running on standalone Flink with synchronisation in Designer DB  
+      * DB uploader must be configured in order to use the live data feature for standalone Flink  
+      * at the moment it supports only streaming scenarios - batch processing is not supported
+      ```hocon
+      liveDataPreview {              
+        enabled: true               
+        maxNumberOfSamples: 20      
+        throughputTimeWindowInSeconds: 60
+        storage {  // This section must be configured for standalone FLink
+          type: "DESIGNER_DB" // The only storage type available for now
+           // Small `uploadIntervalInSeconds` values make the live data preview look more smooth and similar to the Flink MiniCluster version, bigger values are easier on the db
+          uploadIntervalInSeconds: 3 
+           // Designer db url, the same as the one provided for the Nussknacker app
+          url: "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF"  
+          user: "NU"       // db user
+          password: "NU"   // db password
+          schema: "public" // db schema must be always provided, even if it is "public"
+        }
       }
       ```
 * [#7982](https://github.com/TouK/nussknacker/pull/7982) Mock expression added to enrichers (except decision-table) which can be used to hardcode enricher output in tests without calling external services.
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
 * [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
-* [#7137](https://github.com/TouK/nussknacker/pull/7137) Updated Flink dependency to 1.20.1
+* [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink dependency to 1.20.2
 * [#8239](https://github.com/TouK/nussknacker/pull/8239) Added a DB reference to the set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
 * [#8242](https://github.com/TouK/nussknacker/pull/8242) Toolbar buttons can be disabled and their tooltip can be customized based on user roles
     * Example of button configuration, using new settings:
@@ -215,6 +235,49 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8209](https://github.com/TouK/nussknacker/pull/8209) Support for jdk 1.17. Scala 2.12.10 -> 2.12.20 and 2.13.15 -> 2.13.16 migration. Using the own flink-scala library also for 2.12 builds.  
 * [8304](https://github.com/TouK/nussknacker/pull/8304) Added functionality of setting component group in ComponentDefinition using `withComponentGroup`.
 * [#8319](https://github.com/TouK/nussknacker/pull/8319) Set default Kafka serializer/deserializer in `KafkaUtils` as class names to be compatible with Flink's `KafkaSource`
+* [#8343](https://github.com/TouK/nussknacker/pull/8343) During compilation of lazy parameters expressions, node input variable types now are provided
+  Thanks to that expression parsers can leverage this information for preparing better evaluation logic. It is used in `json-template` expressions
+  where users can now use logical types such as `OffsetDateTime`, `Duration` etc.
+* [#8349](https://github.com/TouK/nussknacker/pull/8349) Added ability to configure a default editors for the String type parameters
+  * You can now configure default editors by setting the `modelConfig.globalParametersConfig` of a scenarioType in the `scenarioTypes` config section
+  ```hocon
+     modelConfig {
+       globalParametersConfig {
+         editorsForStringType: [
+           {
+             type: "SpelParameterEditor"
+           }
+           {
+             type: "SpelTemplateParameterEditor"
+           }          
+         ] 
+       }
+     }
+  ```
+  * This setting is optional. If not specified, the default editors remain `SpelTemplateParameterEditor` and `SpelParameterEditor` (no change in behavior).
+* [#8366](https://github.com/TouK/nussknacker/pull/8366) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9.
+  * [Safe navigation operator ?.](https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/operator-safe-navigation.html)
+    is supported for collections, maps and strings.
+* [#8375](https://github.com/TouK/nussknacker/pull/8375) Explicit definition of expression language for default parameter values in component configuration
+  * Default value expressions must now explicitly define the expression language using the language field. 
+  * If no language is specified, the expression will be interpreted as a SPeL expression by default.
+  ```hocon
+     componentsUiConfig {
+       enricher {
+         params {
+           param1 {
+             defaultValue: {
+               expression: "default value 1"
+               language: "spelTemplate"
+             }
+           }
+           param2 {
+             defaultValue: "'default value 2'" // This syntax will be interpreted as a SpEL expression
+           }
+         }
+       }
+     }
+  ```
 
 ## 1.18
 

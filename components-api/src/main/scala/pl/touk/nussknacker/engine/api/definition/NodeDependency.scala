@@ -70,10 +70,18 @@ object Parameter {
     Parameter(name, typ, validators = List(MandatoryParameterValidator))
 
   def apply(name: ParameterName, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
+    Parameter(name, typ, validators, editors = List.empty)
+
+  def apply(
+      name: ParameterName,
+      typ: TypingResult,
+      validators: List[ParameterValidator],
+      editors: List[ParameterEditor]
+  ): Parameter =
     Parameter(
-      name,
-      typ,
-      editors = Nil,
+      name = name,
+      typ = typ,
+      editors = editors,
       validators = validators,
       defaultValue = None,
       additionalVariables = Map.empty,
@@ -86,6 +94,7 @@ object Parameter {
       labelOpt = None,
       category = ParameterCategory.Standard,
       changesCanReloadParameters = false,
+      nonImportantForExecution = false,
     )
 
   def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
@@ -95,8 +104,8 @@ object Parameter {
   // you should redefine scalaOptionParameter and javaOptionalParameter
   def optional(name: ParameterName, typ: TypingResult): Parameter =
     Parameter(
-      name,
-      typ,
+      name = name,
+      typ = typ,
       editors = Nil,
       validators = List.empty,
       defaultValue = None,
@@ -110,6 +119,7 @@ object Parameter {
       labelOpt = None,
       category = ParameterCategory.Standard,
       changesCanReloadParameters = false,
+      nonImportantForExecution = false,
     )
 
 }
@@ -142,7 +152,8 @@ case class Parameter(
     hintText: Option[String],
     labelOpt: Option[String],
     category: ParameterCategory,
-    changesCanReloadParameters: Boolean
+    changesCanReloadParameters: Boolean,
+    nonImportantForExecution: Boolean
 ) extends NodeDependency {
 
   def copy(
@@ -159,17 +170,17 @@ case class Parameter(
       javaOptionalParameter: Boolean,
   ): Parameter = {
     copy(
-      name,
-      typ,
-      editors,
-      validators,
-      defaultValue,
-      additionalVariables,
-      variablesToHide,
-      branchParam,
-      isLazyParameter,
-      scalaOptionParameter,
-      javaOptionalParameter,
+      name = name,
+      typ = typ,
+      editors = editors,
+      validators = validators,
+      defaultValue = defaultValue,
+      additionalVariables = additionalVariables,
+      variablesToHide = variablesToHide,
+      branchParam = branchParam,
+      isLazyParameter = isLazyParameter,
+      scalaOptionParameter = scalaOptionParameter,
+      javaOptionalParameter = javaOptionalParameter,
       hintText = None,
       labelOpt = None
     )
@@ -190,24 +201,26 @@ case class Parameter(
       hintText: Option[String] = this.hintText,
       labelOpt: Option[String] = this.labelOpt,
       category: ParameterCategory = this.category,
-      changesCanReloadParameters: Boolean = this.changesCanReloadParameters
+      changesCanReloadParameters: Boolean = this.changesCanReloadParameters,
+      nonImportantForExecution: Boolean = this.nonImportantForExecution,
   ): Parameter = {
     new Parameter(
-      name,
-      typ,
-      editors,
-      validators,
-      defaultValue,
-      additionalVariables,
-      variablesToHide,
-      branchParam,
-      isLazyParameter,
-      scalaOptionParameter,
-      javaOptionalParameter,
-      hintText,
-      labelOpt,
-      category,
-      changesCanReloadParameters
+      name = name,
+      typ = typ,
+      editors = editors,
+      validators = validators,
+      defaultValue = defaultValue,
+      additionalVariables = additionalVariables,
+      variablesToHide = variablesToHide,
+      branchParam = branchParam,
+      isLazyParameter = isLazyParameter,
+      scalaOptionParameter = scalaOptionParameter,
+      javaOptionalParameter = javaOptionalParameter,
+      hintText = hintText,
+      labelOpt = labelOpt,
+      category = category,
+      changesCanReloadParameters = changesCanReloadParameters,
+      nonImportantForExecution = nonImportantForExecution,
     )
   }
 
@@ -226,24 +239,26 @@ case class Parameter(
       hintText: Option[String],
       labelOpt: Option[String],
       category: ParameterCategory,
-      changesCanReloadParameters: Boolean
+      changesCanReloadParameters: Boolean,
+      nonImportantForExecution: Boolean,
   ): Parameter = {
     new Parameter(
-      name,
-      typ,
-      editors,
-      validators,
-      defaultValue,
-      additionalVariables,
-      variablesToHide,
-      branchParam,
-      isLazyParameter,
-      scalaOptionParameter,
-      javaOptionalParameter,
-      hintText,
-      labelOpt,
-      category,
-      changesCanReloadParameters
+      name = name,
+      typ = typ,
+      editors = editors,
+      validators = validators,
+      defaultValue = defaultValue,
+      additionalVariables = additionalVariables,
+      variablesToHide = variablesToHide,
+      branchParam = branchParam,
+      isLazyParameter = isLazyParameter,
+      scalaOptionParameter = scalaOptionParameter,
+      javaOptionalParameter = javaOptionalParameter,
+      hintText = hintText,
+      labelOpt = labelOpt,
+      category = category,
+      changesCanReloadParameters = changesCanReloadParameters,
+      nonImportantForExecution = nonImportantForExecution,
     )
   }
 
@@ -261,21 +276,22 @@ case class Parameter(
       javaOptionalParameter: Boolean,
   ): Parameter = {
     new Parameter(
-      name,
-      typ,
-      editors,
-      validators,
-      defaultValue,
-      additionalVariables,
-      variablesToHide,
-      branchParam,
-      isLazyParameter,
-      scalaOptionParameter,
-      javaOptionalParameter,
+      name = name,
+      typ = typ,
+      editors = editors,
+      validators = validators,
+      defaultValue = defaultValue,
+      additionalVariables = additionalVariables,
+      variablesToHide = variablesToHide,
+      branchParam = branchParam,
+      isLazyParameter = isLazyParameter,
+      scalaOptionParameter = scalaOptionParameter,
+      javaOptionalParameter = javaOptionalParameter,
       hintText = None,
       labelOpt = None,
       category = ParameterCategory.Standard,
       changesCanReloadParameters = false,
+      nonImportantForExecution = false,
     )
   }
 
@@ -295,8 +311,9 @@ case class Parameter(
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
 //  // TODO: all three methods below could be removed when we split this class into api class and domain model class
-  def editorsWithDefault: List[ParameterEditor] = editors match {
-    case Nil => List(SpelParameterEditor)
+  def finalEditors: List[ParameterEditor] = editors match {
+    case Nil =>
+      throw new IllegalArgumentException(s"No editor was determined for parameter $name with type ${typ.display}")
     case nel => nel
   }
 

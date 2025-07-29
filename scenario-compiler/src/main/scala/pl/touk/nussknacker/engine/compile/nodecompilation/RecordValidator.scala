@@ -24,10 +24,11 @@ object RecordValidator {
 
   def validate(
       compiledRecord: ValidatedNel[PartSubGraphCompilationError, List[CompiledIndexedRecordField]],
-      indexedFields: List[IndexedRecordKey]
+      indexedFields: List[IndexedRecordKey],
+      inputContext: SingleInputNodeInputValidationContext
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
     val emptyValuesResult = compiledRecord match {
-      case Valid(fields) => validateRecordEmptyValues(fields)
+      case Valid(fields) => validateRecordEmptyValues(fields, inputContext)
       case Invalid(_)    => valid(())
     }
     val uniqueKeysResult = validateUniqueKeys(indexedFields)
@@ -35,10 +36,15 @@ object RecordValidator {
   }
 
   private def validateRecordEmptyValues(
-      fields: List[CompiledIndexedRecordField]
+      fields: List[CompiledIndexedRecordField],
+      inputContext: SingleInputNodeInputValidationContext
   )(implicit nodeId: NodeId) = {
     fields.map { field =>
-      validateVariableValue(Valid(field.typedExpression), ParameterName(recordValueFieldName(field.index)))
+      validateVariableValue(
+        Valid(field.typedExpression),
+        ParameterName(recordValueFieldName(field.index)),
+        inputContext
+      )
     }.combineAll
   }
 

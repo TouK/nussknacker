@@ -17,7 +17,7 @@ const addAttachmentActivity = (path: string) => {
 
 const findActivity = (query: string) => {
     cy.contains("Activities").scrollIntoView();
-    cy.get('input[placeholder="type here to find past event"]').should("be.visible").clear().type(query);
+    cy.get('input[placeholder="type here to find past event"]').should("be.visible").clear().realType(query);
 };
 
 const makeScreenshot = () => {
@@ -111,5 +111,24 @@ describe("Activities", () => {
         cy.get("[data-testid=window]").find("button").contains(/^Edit/i).click();
         cy.wait("@editComment");
         cy.get("@editCommentRow").contains("test comment new comment").should("be.visible");
+    });
+
+    it("should select and scroll to running version when running version in scenario actions click", () => {
+        cy.window().then((win) => {
+            const original = win.HTMLElement.prototype.scrollIntoView;
+
+            // Cypress doesn't support scrollIntoView options in the same way as browsers do, smooth option is not supported.
+            win.HTMLElement.prototype.scrollIntoView = function (options) {
+                if (options && typeof options === "object") {
+                    options.behavior = "auto";
+                }
+                original.call(this, options);
+            };
+        });
+
+        cy.deployScenario();
+        cy.get('[data-testid="runningVersion"]').click();
+        cy.get('[aria-selected="true"]').find('[aria-label="tool:Deployment"]').should("be.visible");
+        cy.cancelScenario();
     });
 });

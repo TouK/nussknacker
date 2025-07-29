@@ -6,6 +6,7 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
@@ -70,11 +71,13 @@ class GenericTransformationValidationSpec
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty,
+        GlobalParametersConfig.default,
         ComponentDefinitionExtractionMode.FinalDefinition
       ),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default,
     allowEndingScenarioWithoutSink = false,
+    globalParametersConfig = GlobalParametersConfig.default,
   )
 
   private val validator = ProcessValidator.default(
@@ -104,10 +107,18 @@ class GenericTransformationValidationSpec
         defaultValue = Some("".spelTemplate)
       ),
     Parameter[Long](ParameterName("lazyPar1"))
-      .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
-    Parameter(ParameterName("val1"), Unknown),
-    Parameter(ParameterName("val2"), Unknown),
-    Parameter(ParameterName("val3"), Unknown).copy(changesCanReloadParameters = lastParameterChangesCanReloadParameters)
+      .copy(
+        isLazyParameter = true,
+        defaultValue = Some("0".spel),
+        editors = List(
+          SpelParameterEditor,
+        ),
+        changesCanReloadParameters = true,
+      ),
+    Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor)),
+    Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor)),
+    Parameter(ParameterName("val3"), Unknown)
+      .copy(editors = List(SpelParameterEditor), changesCanReloadParameters = lastParameterChangesCanReloadParameters)
   )
 
   test("should validate happy path") {
@@ -262,9 +273,14 @@ class GenericTransformationValidationSpec
           defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1"))
-        .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
-      Parameter(ParameterName("val1"), Unknown),
-      Parameter(ParameterName("val2"), Unknown)
+        .copy(
+          isLazyParameter = true,
+          editors = List(SpelParameterEditor),
+          defaultValue = Some("0".spel),
+          changesCanReloadParameters = true
+        ),
+      Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor)),
+      Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor))
     )
   }
 
@@ -329,9 +345,14 @@ class GenericTransformationValidationSpec
           defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1"))
-        .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
-      Parameter(ParameterName("val1"), Unknown),
-      Parameter(ParameterName("val2"), Unknown)
+        .copy(
+          isLazyParameter = true,
+          editors = List(SpelParameterEditor),
+          defaultValue = Some("0".spel),
+          changesCanReloadParameters = true
+        ),
+      Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor)),
+      Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor))
     )
   }
 
@@ -402,7 +423,7 @@ class GenericTransformationValidationSpec
       Parameter
         .optional[CharSequence](ParameterName("optionalParameter"))
         .copy(
-          editors = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(),
+          editors = new ParameterTypeEditorDeterminer(Typed[CharSequence], GlobalParametersConfig.default).determine(),
           defaultValue = Some("".spelTemplate)
         )
     )

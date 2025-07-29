@@ -52,7 +52,14 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
 
   test("template") {
     typeTemplate("result: #{#x + 2}", "x" -> 2) shouldBe Valid(
-      CollectedTypingResult(Map.empty, TypingResultWithContext(Typed[String]))
+      CollectedTypingResult(
+        Map(
+          IndexBasedTextRange(10, 12) -> TypingResultWithContext(Typed.fromInstance(2)),
+          IndexBasedTextRange(13, 14) -> TypingResultWithContext(Typed.fromInstance(4)),
+          IndexBasedTextRange(15, 16) -> TypingResultWithContext(Typed.fromInstance(2))
+        ),
+        TypingResultWithContext(Typed[String])
+      )
     )
   }
 

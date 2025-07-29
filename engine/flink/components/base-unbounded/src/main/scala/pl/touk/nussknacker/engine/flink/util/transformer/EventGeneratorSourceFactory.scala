@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDec
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -40,7 +39,6 @@ import javax.validation.constraints.Min
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-// TODO: add testing capabilities
 object EventGeneratorSourceFactory
     extends EventGeneratorSourceFactory(
       new StandardTimestampWatermarkHandler[ValueWithContext[AnyRef]](
@@ -77,7 +75,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @DefaultValue(
         value =
-          "{\n\t\"sampleField\": \"#{ #UTIL.uuid() }\",\n\t\"dateTime\": \"#{ #DATE_FORMAT.format(#DATE.now) }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
+          "{\n\t\"sampleField\": \"#{ #UTIL.uuid }\",\n\t\"dateTime\": \"#{ #DATE.now }\",\n\t\"type\": \"example\",\n\t\"value\": 100\n}",
         language = ExpressionLanguage.JSON_TEMPLATE
       )
       @ParamName("value")
@@ -136,10 +134,12 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       }
 
       // This is a custom ContextInitializer, which initializes Context ignoring input.
-      // It is required, because in EventGenerator we fist initialize Context, and only then generate input.
+      // It is required, because in EventGenerator we first initialize Context, and only then generate input.
       private def contextInitializer[T]: ContextInitializer[T] = new ContextInitializer[T] {
-        override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[T] =
-          (_: T) => Context(contextIdGenerator.nextContextId())
+        override def convertToInitialVariables(raw: T): ContextVariables = {
+          ContextVariables(Map.empty)
+        }
+
         override def validationContext(
             context: ValidationContext
         )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] =

@@ -4,21 +4,13 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration.{Configuration, PipelineOptionsInternal}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.BaseModelDataProvider
-import pl.touk.nussknacker.engine.ModelConfig.LiveDataPreviewMode
-import pl.touk.nussknacker.engine.api.deployment.{
-  DMRunDeploymentCommand,
-  LiveDataPreviewSupport,
-  LiveDataPreviewSupported,
-  NoLiveDataPreviewSupport
-}
-import pl.touk.nussknacker.engine.api.deployment.LiveDataPreviewSupported.{LiveData, LiveDataError}
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterWithServices
-import pl.touk.nussknacker.engine.livedata.LiveDataCollectingListenerHolder
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.DeploymentIdOps
 import pl.touk.nussknacker.engine.util.ReflectiveMethodInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 
 class FlinkMiniClusterScenarioJobRunner(
     miniClusterWithServices: FlinkMiniClusterWithServices,
@@ -49,19 +41,6 @@ class FlinkMiniClusterScenarioJobRunner(
           conf.set(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID, jobId.toHexString)
         }
         env.configure(conf)
-        val liveDataCollectingListener =
-          modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
-            case LiveDataPreviewMode.Disabled =>
-              None
-            case LiveDataPreviewMode.Enabled(maxNumberOfRecords, throughputTimeWindowInSeconds) =>
-              Some(
-                LiveDataCollectingListenerHolder.createListenerFor(
-                  command.processVersion.processName,
-                  maxNumberOfRecords,
-                  throughputTimeWindowInSeconds
-                )
-              )
-          }
         val jobID = jobInvoker
           .invokeStaticMethod(
             modelDataProvider.getCurrentModelData(),
@@ -69,23 +48,12 @@ class FlinkMiniClusterScenarioJobRunner(
             command.processVersion,
             command.deploymentData,
             env,
-            liveDataCollectingListener.toList,
+            List.empty,                                    // processListeners
+            Some("MiniCluster is used for the deployment") // skipLiveDataUploaderWithReason
           )
           .getJobID
         Some(jobID)
       }
-    }
-  }
-
-  override def liveDataPreviewSupport: LiveDataPreviewSupport = {
-    modelDataProvider.getCurrentModelData().modelConfig.liveDataPreviewMode match {
-      case LiveDataPreviewMode.Enabled(_, _) =>
-        new LiveDataPreviewSupported {
-          override def getLiveData(processIdWithName: ProcessIdWithName): Future[Either[LiveDataError, LiveData]] =
-            Future(LiveDataCollectingListenerHolder.getLiveDataPreview(processIdWithName.name))
-        }
-      case LiveDataPreviewMode.Disabled =>
-        NoLiveDataPreviewSupport
     }
   }
 

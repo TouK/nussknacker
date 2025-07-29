@@ -52,7 +52,10 @@ MODULES_OPEN_OPTS="--add-exports=java.base/sun.net.util=ALL-UNNAMED \
 --add-opens=java.base/java.math=ALL-UNNAMED \
 --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
 --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
---add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED"
+--add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED \
+--add-opens=java.base/java.nio.charset=ALL-UNNAMED \
+--add-opens=java.base/sun.nio.cs=ALL-UNNAMED \
+--add-opens=java.sql/java.sql=ALL-UNNAMED"
 
 mkdir -p ${STORAGE_DIR}/db
 

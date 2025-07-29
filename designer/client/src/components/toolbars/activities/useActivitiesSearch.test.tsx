@@ -1,0 +1,162 @@
+import { renderHook } from "@testing-library/react";
+import React from "react";
+import { Provider } from "react-redux";
+import configureMockStore from "redux-mock-store/lib";
+import thunk from "redux-thunk";
+
+// eslint-disable-next-line jest/no-mocks-import
+import { sampleMetadataResponse } from "../../../../__mocks__/fixtures/sampleMetadataResponse";
+import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
+import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
+import type { ActivitiesResponse } from "./types";
+import { useActivitiesSearch } from "./useActivitiesSearch";
+
+const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
+    {
+        id: "56a7dd49-778b-468b-8e33-99bd176218aa",
+        user: "admin",
+        date: "2024-09-25T06:09:03.470213Z",
+        scenarioVersionId: 1,
+        comment: {
+            content: {
+                value: "test",
+                status: "AVAILABLE",
+            },
+            lastModifiedBy: "admin",
+            lastModifiedAt: "2024-09-25T06:09:03.470213Z",
+        },
+        additionalFields: [],
+        type: "COMMENT_ADDED",
+    },
+    {
+        id: "48f383f9-ccdd-46b6-9b33-5f6693165755",
+        user: "admin",
+        date: "2024-09-25T06:09:44.313094Z",
+        scenarioVersionId: 1,
+        comment: null,
+        attachment: {
+            file: {
+                id: 1,
+                status: "AVAILABLE",
+            },
+            filename: "324.log",
+            lastModifiedBy: "admin",
+            lastModifiedAt: "2024-09-25T06:09:44.313094Z",
+        },
+        additionalFields: [],
+        overrideIcon: null,
+        overrideDisplayableName: null,
+        overrideSupportedActions: null,
+        type: "ATTACHMENT_ADDED",
+    },
+    {
+        id: "a2576467-9bf9-4a92-b71f-be95b84d59f6",
+        user: "admin",
+        date: "2024-09-25T09:53:40.875721Z",
+        scenarioVersionId: 3,
+        comment: {
+            content: {
+                value: "tests save",
+                status: "AVAILABLE",
+            },
+            lastModifiedBy: "admin",
+            lastModifiedAt: "2024-09-25T09:53:40.875721Z",
+        },
+        additionalFields: [],
+        overrideDisplayableName: "Version 3 saved",
+        type: "SCENARIO_MODIFIED",
+    },
+    {
+        id: "15c0e8a9-d1c5-47dd-bf28-8a08217fff5b",
+        user: "admin",
+        date: "2024-09-27T09:55:04.309Z",
+        scenarioVersionId: 4,
+        comment: {
+            content: {
+                value: "122",
+                status: "AVAILABLE",
+            },
+            lastModifiedBy: "admin",
+            lastModifiedAt: "2024-09-27T09:55:04.309Z",
+        },
+        additionalFields: [],
+        overrideDisplayableName: "Version 4 saved",
+        type: "SCENARIO_MODIFIED",
+    },
+    {
+        id: "da3d1f78-7d73-4ed9-b0e5-95538e150d0d",
+        user: "some user",
+        date: "2022-12-17T14:21:17Z",
+        scenarioVersionId: 1,
+        additionalFields: [
+            {
+                name: "oldName",
+                value: "marketing campaign",
+            },
+            {
+                name: "newName",
+                value: "old marketing campaign",
+            },
+        ],
+        type: "SCENARIO_NAME_CHANGED",
+    },
+    {
+        id: "524adff3-fb7d-42d1-bf92-f0903d548d00",
+        user: "writer",
+        date: "2022-11-07T11:55:53.127796Z",
+        scenarioVersionId: 7,
+        attachment: {
+            file: {
+                status: "DELETED",
+            },
+            filename: "Screenshot 2022-10-21 at 08.07.38.png",
+            lastModifiedBy: "writer",
+            lastModifiedAt: "2022-11-07T11:55:53.127796Z",
+        },
+        additionalFields: [],
+        overrideDisplayableName: "File removed",
+        type: "ATTACHMENT_ADDED",
+    },
+];
+
+const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadata(sampleActivitiesResponse, sampleMetadataResponse));
+
+const mockStore = configureMockStore([thunk]);
+
+const createStoreWithQuery = (query) => {
+    return mockStore({
+        processActivity: {
+            searchQuery: query, // Set the search query directly in the state
+            activities: mockedActivities,
+        },
+    });
+};
+
+describe("useActivitiesSearch", () => {
+    it.each<[string, string[]]>([
+        ["atta", [mockedActivities[4].uiGeneratedId, mockedActivities[9].uiGeneratedId]],
+        ["3 saved", [mockedActivities[3].uiGeneratedId]],
+        ["2024-09-27", [mockedActivities[1].uiGeneratedId]],
+        ["tests save", [mockedActivities[3].uiGeneratedId]],
+        ["newName: old marketing campaign", [mockedActivities[7].uiGeneratedId]],
+        [".png", [mockedActivities[9].uiGeneratedId]],
+    ])("should find elements when query is '%s'", async (searchQuery, expected) => {
+        const store = createStoreWithQuery(searchQuery);
+        const wrapper = ({ children }) => <Provider store={store}>{children}</Provider>;
+
+        const handleScrollToItemMock = jest.fn();
+        const handleUpdateScenarioActivitiesMock = jest.fn();
+
+        const { result } = renderHook(
+            () =>
+                useActivitiesSearch({
+                    activities: mockedActivities,
+                    handleScrollToItem: handleScrollToItemMock,
+                    handleUpdateScenarioActivities: handleUpdateScenarioActivitiesMock,
+                }),
+            { wrapper },
+        );
+
+        expect(result.current.foundResults).toEqual(expect.arrayContaining(expected));
+    });
+});

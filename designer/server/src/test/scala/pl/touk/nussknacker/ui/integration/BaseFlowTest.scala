@@ -128,6 +128,7 @@ class BaseFlowTest
             "requiredParam"              -> fromBoolean(true),
             "category"                   -> fromString("Standard"),
             "changesCanReloadParameters" -> fromBoolean(false),
+            "nonImportantForExecution"   -> fromBoolean(false),
           ),
           obj(
             "name"  -> fromString("tariffType"),
@@ -155,6 +156,7 @@ class BaseFlowTest
             "requiredParam"              -> fromBoolean(true),
             "category"                   -> fromString("Standard"),
             "changesCanReloadParameters" -> fromBoolean(false),
+            "nonImportantForExecution"   -> fromBoolean(false),
           ),
         ),
         "icon"    -> fromString("/assets/components/Filter.svg"),
@@ -175,6 +177,7 @@ class BaseFlowTest
             "requiredParam"              -> fromBoolean(true),
             "category"                   -> fromString("Standard"),
             "changesCanReloadParameters" -> fromBoolean(false),
+            "nonImportantForExecution"   -> fromBoolean(false),
           ),
           obj(
             "name"         -> fromString("bar"),
@@ -189,6 +192,7 @@ class BaseFlowTest
             "requiredParam"              -> fromBoolean(true),
             "category"                   -> fromString("Standard"),
             "changesCanReloadParameters" -> fromBoolean(false),
+            "nonImportantForExecution"   -> fromBoolean(false),
           ),
           obj(
             "name"         -> fromString("baz"),
@@ -205,6 +209,7 @@ class BaseFlowTest
             "requiredParam"              -> fromBoolean(true),
             "category"                   -> fromString("Standard"),
             "changesCanReloadParameters" -> fromBoolean(false),
+            "nonImportantForExecution"   -> fromBoolean(false),
           ),
           obj(
             "name"         -> fromString("quax"),
@@ -220,6 +225,7 @@ class BaseFlowTest
             "requiredParam"              -> fromBoolean(true),
             "category"                   -> fromString("Standard"),
             "changesCanReloadParameters" -> fromBoolean(false),
+            "nonImportantForExecution"   -> fromBoolean(false),
           ),
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -246,6 +252,7 @@ class BaseFlowTest
             "requiredParam"              -> fromBoolean(true),
             "category"                   -> fromString("Standard"),
             "changesCanReloadParameters" -> fromBoolean(false),
+            "nonImportantForExecution"   -> fromBoolean(false),
           )
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),

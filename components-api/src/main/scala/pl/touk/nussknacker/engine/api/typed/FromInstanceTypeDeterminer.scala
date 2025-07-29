@@ -1,17 +1,23 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.{genericTypeClass, typedListWithElementValues}
 
+import java.nio.charset.Charset
+import java.time.{ZoneId, ZoneOffset}
 import scala.jdk.CollectionConverters._
 
-object FromInstanceTypeDeterminer {
+object FromInstanceTypeDeterminer extends FromInstanceTypeDeterminer
+
+trait FromInstanceTypeDeterminer {
+
+  protected val highPriorityTypeDeterminer: PartialFunction[Any, TypingResult] = PartialFunction.empty
 
   def fromInstance(obj: Any): TypingResult = {
     obj match {
+      case _ if highPriorityTypeDeterminer.isDefinedAt(obj) => highPriorityTypeDeterminer(obj)
       case null =>
         TypedNull
       case map: Map[String @unchecked, _] =>
@@ -35,14 +41,26 @@ object FromInstanceTypeDeterminer {
       case other =>
         Typed(other.getClass) match {
           case typedClass: TypedClass =>
-            ToJsonEncoder.default.encode(other) match {
-              case Valid(_)   => TypedObjectWithValue(typedClass, other)
-              case Invalid(_) => typedClass
-            }
+            val adjustedType = replaceWithGenericTypeIfNeeded(typedClass)
+            if (ToJsonEncoder.default.encode(other).isValid)
+              TypedObjectWithValue(adjustedType, other)
+            else
+              adjustedType
           case notTypedClass => notTypedClass
         }
     }
   }
+
+  // We don't want to present very specific types such as ZoneRegion or sun.nio.cs.UTF_8
+  private def replaceWithGenericTypeIfNeeded(typedClass: TypedClass) =
+    typedClass.klass match {
+      case c if classOf[ZoneId].isAssignableFrom(c) && !classOf[ZoneOffset].isAssignableFrom(c) =>
+        Typed.typedClass(classOf[ZoneId])
+      case c if classOf[Charset].isAssignableFrom(c) =>
+        Typed.typedClass(classOf[Charset])
+      case _ =>
+        typedClass
+    }
 
   private def typeMapFields(iterable: Iterable[(String, Any)]) = iterable.map { case (k, v) =>
     k -> fromInstance(v)

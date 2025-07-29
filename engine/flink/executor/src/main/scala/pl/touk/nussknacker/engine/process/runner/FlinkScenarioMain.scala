@@ -39,11 +39,12 @@ class FlinkScenarioMain(preprocessArgs: Array[String] => Array[String]) extends 
       val modelConfig = readModelConfigFromArgs(preprocessedArgs)
       val modelData   = ModelData.duringFlinkExecution(ModelConfigs(modelConfig, deploymentData.additionalModelConfigs))
       new FlinkScenarioJob(modelData).run(
-        scenario,
-        processVersion,
-        deploymentData,
-        StreamExecutionEnvironment.getExecutionEnvironment,
-        List.empty,
+        scenario = scenario,
+        processVersion = processVersion,
+        deploymentData = deploymentData,
+        env = StreamExecutionEnvironment.getExecutionEnvironment,
+        processListeners = List.empty,
+        skipLiveDataUploaderWithReason = None
       )
     } catch {
       // marker exception for graph optimalization

@@ -14,12 +14,13 @@ import pl.touk.nussknacker.engine.api.validation.Validations.isVariableNameValid
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
+import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
 import pl.touk.nussknacker.engine.extension.CastOrConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
-import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
+import pl.touk.nussknacker.engine.spel.ast.SpelAst.{RichSpelNode, SpelNodeId}
 import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -146,10 +147,9 @@ class SpelExpressionSuggester(
         p: PropertyOrFieldReference
     ): Future[Iterable[ExpressionSuggestion]] = {
 
-      val nuSpelNodeParentOpt = nodeInPosition.parent.map(_.node)
-      val parentIsIndexer     = nuSpelNodeParentOpt.exists(_.spelNode.isInstanceOf[Indexer])
+      val parentIsIndexer = nodeInPosition.parentNode.exists(_.spelNode.isInstanceOf[Indexer])
 
-      val typedNode = nuSpelNodeParentOpt.flatMap {
+      val typedNode = nodeInPosition.parentNode.flatMap {
         case nuSpelNodeParent if parentIsIndexer =>
           nuSpelNodeParent.prevNode().flatMap(_.typingResultWithContext)
         case _ =>
@@ -247,19 +247,19 @@ class SpelExpressionSuggester(
       }.toList
     }
 
-    val suggestions = for {
-      (parsedSpelNode, adjustedPosition) <- nuSpelNodeParser
+    for {
+      rootSpelNode <- nuSpelNodeParser
         .parse(input, expression.language, normalizedCaretPosition, validationContext)
         .toOption
         .flatten
-      nodeInPosition <- parsedSpelNode.findNodeInPosition(adjustedPosition)
+      nodeInPosition <- rootSpelNode.findNodeInPosition(normalizedCaretPosition)
     } yield {
       nodeInPosition.spelNode match {
         // variable is typed (#foo), so we need to return filtered list of all variables that match currently typed name
         case v: VariableReference =>
           // if the caret is inside projection or selection (eg #list.?[#<HERE>]) we add `this` to list of variables
           val thisTypingResult = for {
-            parent   <- nodeInPosition.parent.map(_.node)
+            parent   <- nodeInPosition.parentNode
             prevNode <- parent.prevNode().flatMap(_.typingResultWithContext)
           } yield {
             parent.spelNode match {
@@ -285,7 +285,7 @@ class SpelExpressionSuggester(
         // 2. for MethodReference and Cast methods - e.g. #variable.castTo('<here comes suggestions>')
         case s: StringLiteral =>
           val y = for {
-            parent               <- nodeInPosition.parent.map(_.node)
+            parent               <- nodeInPosition.parentNode
             parentPrevNode       <- parent.prevNode()
             parentPrevNodeTyping <- parentPrevNode.typingResultWithContext.map(_.typingResult)
           } yield {
@@ -302,7 +302,9 @@ class SpelExpressionSuggester(
                       )
                       .getOrElse(successfulNil)
                   case TypedObjectTypingResult(fields, _, _) =>
-                    Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
+                    Future.successful(
+                      fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil))
+                    )
                   case _ => successfulNil
                 }
               case m: MethodReference if CastOrConversionExt.isCastOrConversionMethod(m.getName) =>
@@ -320,10 +322,10 @@ class SpelExpressionSuggester(
         // suggestions for full class name inside TypeReference, eg T(java.time.Duration)
         case _: Identifier =>
           val r = for {
-            parentNode      <- nodeInPosition.parent
-            grandparentNode <- parentNode.node.parent
+            parentNode      <- nodeInPosition.parentNode
+            grandparentNode <- parentNode.parentNode
           } yield {
-            (parentNode.node.spelNode, grandparentNode.node.spelNode) match {
+            (parentNode.spelNode, grandparentNode.spelNode) match {
               case (q: QualifiedIdentifier, _: TypeReference) =>
                 val name = if (shouldInsertDummyVariable) {
                   q.toStringAST.stripSuffix("x")
@@ -352,8 +354,6 @@ class SpelExpressionSuggester(
         case _ => successfulNil
       }
     }
-
-    suggestions
   }
 
   private def castOrConversionMethodsSuggestions(
@@ -452,7 +452,7 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
       language: Language,
       position: Int,
       validationContext: ValidationContext
-  ): Try[Option[(NuSpelNode, Int)]] = {
+  ): Try[Option[NuSpelNode]] = {
     val rawExpression = language match {
       case Language.Spel                        => Try(parser.parseExpression(input, null))
       case Language.SpelTemplate | JsonTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
@@ -461,12 +461,12 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
     }
     rawExpression
       .map { parsedExpressions =>
-        parsedExpressions.findSubexpressionByPosition(position).toScala.flatMap { e =>
-          e.getExpression match {
-            case s: SpringSpelExpression =>
-              val collectedTypingResult =
-                typer.doTypeExpression(s, validationContext)._2
-              Some((new NuSpelNode(s.getAST, collectedTypingResult), position - e.getTextRange.start))
+        val astTypingResults =
+          typer.typeExpressionWithTextRange(parsedExpressions, validationContext)._2.intermediateResults
+        parsedExpressions.findSubexpressionByPosition(position).toScala.flatMap { expressionWithTextRange =>
+          expressionWithTextRange.getExpression match {
+            case springExpression: SpringSpelExpression =>
+              Some(createNuSpelNode(springExpression.getAST, astTypingResults, expressionWithTextRange.getTextRange))
             case _ => None
           }
         }
@@ -477,24 +477,54 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
       }
   }
 
+  private def createNuSpelNode(
+      spelNode: SpelNode,
+      astTypingResults: Map[SpelNodeId, TypingResultWithContext],
+      spelExpressionTextRange: IndexBasedTextRange
+  ): NuSpelNode = {
+    val children = (0 until spelNode.getChildCount).map { i =>
+      createNuSpelNode(spelNode.getChild(i), astTypingResults, spelExpressionTextRange)
+    }.toList
+    new NuSpelNode(
+      spelNode,
+      children,
+      astTypingResults.get(spelNode.adjustedTextRange(spelExpressionTextRange)),
+      spelExpressionTextRange
+    )
+  }
+
 }
 
-private class NuSpelNode(
+private class NuSpelNode private (
     val spelNode: SpelNode,
-    collectedTypingResult: CollectedTypingResult,
-    val parent: Option[NuSpelNodeParent] = None
+    private var parent: Option[NuSpelNodeParent],
+    private val children: List[NuSpelNode],
+    val typingResultWithContext: Option[TypingResultWithContext],
+    // We have to pass spelExpressionTextRange to adjust node's text range - see adjustedTextRange
+    spelExpressionTextRange: IndexBasedTextRange,
 ) {
 
-  val children: List[NuSpelNode] = (0 until spelNode.getChildCount).map { i =>
-    new NuSpelNode(spelNode.getChild(i), collectedTypingResult, Some(NuSpelNodeParent(this, i)))
-  }.toList
+  def this(
+      spelNode: SpelNode,
+      children: List[NuSpelNode],
+      typingResultWithContext: Option[TypingResultWithContext],
+      spelExpressionTextRange: IndexBasedTextRange
+  ) = {
+    this(spelNode, parent = None, children, typingResultWithContext, spelExpressionTextRange)
+    children.zipWithIndex.map { case (child, index) =>
+      child.parent = Some(NuSpelNodeParent(this, index))
+    }
+  }
 
-  val typingResultWithContext: Option[Typer.TypingResultWithContext] =
-    collectedTypingResult.intermediateResults.get(SpelNodeId(spelNode))
+  def parentNode: Option[NuSpelNode] = this.parent.map(_.node)
+
+  def prevNode(): Option[NuSpelNode] = {
+    parent.filter(_.nodeIndex > 0).map(p => p.node.children(p.nodeIndex - 1))
+  }
 
   def findNodeInPosition(position: Int): Option[NuSpelNode] = {
-    val allInPosition = (this :: children.flatMap(c => c.findNodeInPosition(position)))
-      .filter(e => e.isInPosition(position))
+    val allInPosition = (this :: children.flatMap(_.findNodeInPosition(position)))
+      .filter(_.adjustedTextRange.containsPosition(position))
     for {
       // scala 2.12 is missing minOption and findLast
       shortest <- minOption(allInPosition.map(e => e.positionLength))
@@ -502,18 +532,13 @@ private class NuSpelNode(
     } yield last
   }
 
-  def prevNode(): Option[NuSpelNode] = {
-    parent.filter(_.nodeIndex > 0).map(p => p.node.children(p.nodeIndex - 1))
-  }
+  private val adjustedTextRange = spelNode.adjustedTextRange(spelExpressionTextRange)
 
   private def minOption(seq: Seq[Int]): Option[Int] = if (seq.isEmpty) {
     None
   } else {
     Some(seq.min)
   }
-
-  private def isInPosition(position: Int): Boolean =
-    spelNode.getStartPosition <= position && position <= spelNode.getEndPosition
 
   private def positionLength: Int = spelNode.getEndPosition - spelNode.getStartPosition
 

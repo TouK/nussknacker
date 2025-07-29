@@ -264,18 +264,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       }
       .map(_.runtimeObjType.klass)
     val customClasses = Seq(
-      classOf[String],
       classOf[java.text.NumberFormat],
-      classOf[java.lang.Long],
-      classOf[java.lang.Integer],
-      classOf[java.math.BigInteger],
       classOf[java.math.MathContext],
-      classOf[java.math.BigDecimal],
-      classOf[LocalDate],
-      classOf[ChronoLocalDate],
-      classOf[Locale],
-      classOf[Charset],
-      classOf[Currency],
       classOf[SampleValue],
       classOf[JavaClassWithStaticParameterlessMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
@@ -1264,6 +1254,85 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String]("#{'raz'},#{12345}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
   }
 
+  test("return correct error location when parsing expression with template context") {
+    parse[String]("ala #{.}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Unexpectedly ran out of input",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{".length && end == "ala #{.".length =>
+    }
+  }
+
+  test("return correct error location when using blank placeholder in template expression") {
+    parse[String]("ala #{}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Empty placeholder",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{}".length =>
+    }
+    parse[String]("ala #{  }", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Empty placeholder",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{  }".length =>
+    }
+  }
+
+  test("return correct error location when placeholder is not finished correctly in template expression") {
+    parse[String]("ala #{ aaa", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Placeholder is not finished correctly, missing closing }",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala ".length && end == "ala #{".length =>
+    }
+  }
+
+  test("return comprehensive error message when invalid syntax is used inside placeholder") {
+    parse[String](
+      "ala #{ aaa) }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Illegal syntax: closing ')' without an opening '('",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ aaa".length && end == "ala #{ aaa)".length =>
+    }
+    parse[String](
+      "ala #{ (aaa }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "Illegal syntax: unclosed '('",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ (".length =>
+    }
+    parse[String](
+      "ala #{ \" }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionUnderlyingParserError(
+            "String literal is not finished correctly, missing closing '\"'",
+            Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
+          ) :: Nil if start == "ala #{ ".length && end == "ala #{ \"".length =>
+    }
+  }
+
+  test("return correct error location when typing expression with template context") {
+    parse[String](
+      "#{ #notExisting }",
+      ctx,
+      flavour = SpelExpressionParser.Template
+    ).invalidValue.toList should matchPattern {
+      case SpelExpressionTypingParseError(
+            _,
+            CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0))
+          ) :: Nil if start == "#{ ".length && end == "#{ #notExisting".length =>
+    }
+  }
+
   test("evaluates expression with template context") {
     parse[TemplateEvaluationResult]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
@@ -2000,29 +2069,27 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("unknownListOfTuples", ContainerOfUnknown(listOfTuples))
       .withVariable("unknownEmptyList", ContainerOfUnknown(emptyList))
       .withVariable("unknownEmptyTuplesList", ContainerOfUnknown(emptyTuplesList))
-    val byteTyping                = Typed.typedClass[JByte]
-    val shortTyping               = Typed.typedClass[JShort]
-    val integerTyping             = Typed.typedClass[JInteger]
-    val longTyping                = Typed.typedClass[JLong]
-    val floatTyping               = Typed.typedClass[JFloat]
-    val doubleTyping              = Typed.typedClass[JDouble]
-    val bigDecimalTyping          = Typed.typedClass[JBigDecimal]
-    val bigIntegerTyping          = Typed.typedClass[JBigInteger]
-    val booleanTyping             = Typed.typedClass[JBoolean]
-    val stringTyping              = Typed.typedClass[String]
-    val mapTyping                 = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
-    val listTyping                = Typed.genericTypeClass[JList[_]](List(Unknown))
-    val zoneOffsetTyping          = Typed.typedClass[ZoneOffset]
-    val zoneIdTyping              = Typed.typedClass[ZoneId]
-    val localeTyping              = Typed.typedClass[Locale]
-    val charsetTyping             = Typed.typedClass[Charset]
-    val currencyTyping            = Typed.typedClass[Currency]
-    val uuidTyping                = Typed.typedClass[UUID]
-    val localTimeTyping           = Typed.typedClass[LocalTime]
-    val localDateTyping           = Typed.typedClass[LocalDate]
-    val localDateTimeTyping       = Typed.typedClass[LocalDateTime]
-    val chronoLocalDateTyping     = Typed.typedClass[ChronoLocalDate]
-    val chronoLocalDateTimeTyping = Typed.typedClass[ChronoLocalDateTime[_]]
+    val byteTyping          = Typed.typedClass[JByte]
+    val shortTyping         = Typed.typedClass[JShort]
+    val integerTyping       = Typed.typedClass[JInteger]
+    val longTyping          = Typed.typedClass[JLong]
+    val floatTyping         = Typed.typedClass[JFloat]
+    val doubleTyping        = Typed.typedClass[JDouble]
+    val bigDecimalTyping    = Typed.typedClass[JBigDecimal]
+    val bigIntegerTyping    = Typed.typedClass[JBigInteger]
+    val booleanTyping       = Typed.typedClass[JBoolean]
+    val stringTyping        = Typed.typedClass[String]
+    val mapTyping           = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    val listTyping          = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val zoneOffsetTyping    = Typed.typedClass[ZoneOffset]
+    val zoneIdTyping        = Typed.typedClass[ZoneId]
+    val localeTyping        = Typed.typedClass[Locale]
+    val charsetTyping       = Typed.typedClass[Charset]
+    val currencyTyping      = Typed.typedClass[Currency]
+    val uuidTyping          = Typed.typedClass[UUID]
+    val localTimeTyping     = Typed.typedClass[LocalTime]
+    val localDateTyping     = Typed.typedClass[LocalDate]
+    val localDateTimeTyping = Typed.typedClass[LocalDateTime]
     forAll(
       Table(
         ("expression", "expectedType", "expectedResult"),
@@ -2126,8 +2193,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("'10:15:30'.to('LocalTime')", localTimeTyping, localTime),
         ("'2024-11-04'.to('LocalDate')", localDateTyping, localDate),
         ("'2024-11-04T10:15:30'.to('LocalDateTime')", localDateTimeTyping, localDateTime),
-        ("'2024-11-04'.to('ChronoLocalDate')", chronoLocalDateTyping, localDate),
-        ("'2024-11-04T10:15:30'.to('ChronoLocalDateTime')", chronoLocalDateTimeTyping, localDateTime),
         ("#unknownString.value.to('String')", stringTyping, "unknown"),
         ("#unknownMap.value.to('Map')", mapTyping, map),
         ("#unknownMap.value.toOrNull('Map')", mapTyping, map),
@@ -2477,6 +2542,63 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ) { (expression, result) =>
       val parsed = parse[String](expr = expression, flavour = SpelExpressionParser.Template).validValue
       parsed.evaluateSync[String]() shouldBe result
+    }
+  }
+
+  test("should allow to use safe navigation operator") {
+    val contextWithNotNullVariables = Context.dummy
+      .withVariable("obj", ContainerOfUnknown(42L))
+      .withVariable("array", List(10, 20, 30).asJava)
+      .withVariable("map", Map("a" -> 10, "b" -> 20, "c" -> 30).asJava)
+      .withVariable("record", Map("fieldString" -> "string", "fieldInteger" -> 42).asJava)
+    val validationContextWithNotNullVariables = ValidationContext.empty
+      .withVariableUnsafe("obj", Typed.fromInstance(contextWithNotNullVariables("obj")))
+      .withVariableUnsafe("array", Typed.genericTypeClass[JList[_]](List(Typed[JInteger])))
+      .withVariableUnsafe("map", Typed.genericTypeClass[JMap[_, _]](List(Typed[String], Typed[JInteger])))
+      .withVariableUnsafe(
+        "record",
+        Typed.record(List("fieldString" -> Typed[String], "fieldInteger" -> Typed[JInteger]))
+      )
+    val context = contextWithNotNullVariables.variables.foldLeft(contextWithNotNullVariables) {
+      case (context, (varName, _)) =>
+        context.withVariable(s"null_$varName", null)
+    }
+    val validationContext =
+      validationContextWithNotNullVariables.variables.foldLeft(validationContextWithNotNullVariables) {
+        case (validationContext, (varName, varType)) =>
+          validationContext.withVariableUnsafe(s"null_$varName", varType)
+      }
+
+    forAll(
+      Table(
+        ("expression with not null var", "expression with null var", "return type", "not null result"),
+        ("#obj?.value", "#null_obj?.value", Unknown, 42L),
+        ("#array?.[1]", "#null_array?.[1]", Typed[JInteger], 20),
+        (
+          "#array?.?[#this > 10]",
+          "#null_array?.?[#this > 10]",
+          Typed.genericTypeClass[JList[_]](List(Typed[JInteger])),
+          List(20, 30).asJava
+        ),
+        ("#array?.^[#this > 10]", "#null_array?.^[#this > 10]", Typed[JInteger], 20),
+        ("#array?.$[#this > 10]", "#null_array?.$[#this > 10]", Typed[JInteger], 30),
+        (
+          "#array?.![#this * 2]",
+          "#null_array?.![#this * 2]",
+          Typed.genericTypeClass[JList[_]](List(Typed[JInteger])),
+          List(20, 40, 60).asJava
+        ),
+        ("#map?.['a']", "#null_map?.['a']", Typed[JInteger], 10),
+        ("#record?.['fieldString']", "#null_record?.['fieldString']", Typed[String], "string"),
+      )
+    ) { (expressionWithNotNullVar, expressionWithNullVar, returnType, result) =>
+      val parsedWithNotNullVar = parseV[Any](expressionWithNotNullVar, validationContext).validValue
+      parsedWithNotNullVar.returnType shouldBe returnType
+      parsedWithNotNullVar.evaluateSync[Any](context) shouldBe result
+
+      val parsedWithNullVar = parseV[Any](expressionWithNullVar, validationContext).validValue
+      parsedWithNullVar.returnType shouldBe returnType
+      parsedWithNullVar.evaluateSync[AnyRef](context) shouldBe null
     }
   }
 

@@ -354,6 +354,7 @@ class UniversalKafkaSourceFactory(
           hintText = Some(
             "Provide an example JSON data sample. It will be analyzed to determine field types and generate a schema for easier data access in the subsequent nodes."
           ),
+          nonImportantForExecution = true
         )
       )
   }

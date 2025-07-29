@@ -90,7 +90,8 @@ export const isRunOffSchedulePossible = createSelector(
 );
 export const isMigrationPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state)),
+    (saveDisabled, error, state, fragment) =>
+        saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state) || ProcessStateUtils.canRedeploy(state)),
 );
 export const isArchivePossible = createSelector(
     [getProcessState, isFragment],
@@ -127,15 +128,11 @@ export const isCurrentVersionDeployed = createSelector(getProcessVersionId, getR
     return runningVersion === `${version}`;
 });
 
-export const getScenarioGraphSource = createSelector(
-    [isSaveDisabled, getGraph, getScenarioLabels, getProcessVersionId],
-    (isSaveDisabled, graph, labels, versionId) =>
-        isSaveDisabled
-            ? { type: ScenarioGraphSourceType.LATEST_VERSION }
-            : {
-                  type: ScenarioGraphSourceType.FROM_GRAPH,
-                  scenarioGraph: graph?.scenario?.scenarioGraph,
-                  scenarioLabels: labels,
-                  baseScenarioVersionId: versionId,
-              },
-);
+export const getScenarioGraphSource = createSelector([getGraph, getScenarioLabels, getProcessVersionId], (graph, labels, versionId) => {
+    return {
+        type: ScenarioGraphSourceType.FROM_GRAPH,
+        scenarioGraph: graph?.scenario?.scenarioGraph,
+        scenarioLabels: labels,
+        baseScenarioVersionId: versionId,
+    };
+});

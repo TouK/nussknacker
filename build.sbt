@@ -174,15 +174,11 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-release",
-        "11"
+        "11",
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 12) =>
           Seq(
             "-Ypartial-unification",
-            // We use jdk standard lib classes from java 11, but Scala 2.12 does not support target > 8 and
-            // -release option has no influence on class version so we at least setup target to 8 and check java version
-            // at the begining of our Apps
-            "-target:jvm-1.8",
           )
         case (2, 13) =>
           Seq(
@@ -262,7 +258,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                  = "1.20.1"
+val flinkV                  = "1.20.2"
 val flinkConnectorKafkaV    = "3.3.0-1.20" // 3.4.0-1.20 breaks compilation with Scala 2.12
 val jdbcFlinkConnectorV     = "3.3.0-1.20"
 val flinkCommonsCompressV   = "1.26.0"
@@ -275,10 +271,9 @@ val calciteV                = "1.32.0"
 val avroV                   = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV                  = "3.8.1"
-// to update we need configurable SpEL length limit from 6.0.9, but 6.x requires JDK 17
 // when updating note that we have copied and modified class org.springframework.expression.spel.ast.Projection
 // and org.springframework.util.NumberUtils and org.springframework.expression.spel.ast.Selection
-val springV                 = "5.2.23.RELEASE"
+val springV                 = "6.2.9"
 val scalaTestV              = "3.2.18"
 val scalaCheckV             = "1.17.1"
 val scalaCheckVshort        = scalaCheckV.take(4).replace(".", "-")
@@ -294,7 +289,7 @@ val jwtCirceV               = "10.0.1"
 val jacksonV                = "2.17.2"
 val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
-val everitSchemaV           = "1.14.4"
+val everitSchemaV           = "1.14.5"
 val fastParseV              = "3.1.1"
 val slf4jV                  = "1.7.36"
 val scalaLoggingV           = "3.9.5"
@@ -347,14 +342,11 @@ val retryV                    = "0.3.6"
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[Configuration] = None) =
   Seq(
-    "pl.touk" %% "flink-scala" % "1.1.3"
+    "pl.touk" %% "flink-scala" % "1.1.4"
   ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
   Seq(
-    // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java and we want to have same jre in both designer and lite-runner
-    // to make analysis of problems with jre compatibility easier using testing mechanism and embedded server
-    // TODO: we want to support jre17+ but before that flink must be compatible with jre17+ and we should handle opening of modules for spel reflectional access to java modules classes
     dockerBaseImage       := "eclipse-temurin:17-jre-jammy",
     dockerUsername        := dockerUserName,
     dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
@@ -777,6 +769,7 @@ lazy val flinkExecutor = (project in flink("executor"))
     }.toList,
   )
   .dependsOn(
+    liveDataCollector,
     scenarioCompilerFlinkDeps,
     flinkComponentsUtils,
     flinkExtensionsApi,
@@ -990,6 +983,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
       Seq(
         "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
+        "org.apache.flink" % "flink-connector-base"  % flinkV     % Test,
         "org.scalatest"   %% "scalatest"             % scalaTestV % Test
       )
     }
@@ -1995,7 +1989,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
   )
   .dependsOn(extensionsApi, testUtils % Test)
 
-lazy val liveDataCollector = (project in file("designer/live-data-collector"))
+lazy val liveDataCollector = (project in file("live-data-collector"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-live-data-collector",
@@ -2004,9 +1998,8 @@ lazy val liveDataCollector = (project in file("designer/live-data-collector"))
     ),
   )
   .dependsOn(
-    deploymentManagerApi % Provided,
     // For testResultsVariableEncoder purpose
-    scenarioCompiler     % Provided,
+    scenarioCompiler % Provided,
   )
 
 lazy val prepareDesignerTests     = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")

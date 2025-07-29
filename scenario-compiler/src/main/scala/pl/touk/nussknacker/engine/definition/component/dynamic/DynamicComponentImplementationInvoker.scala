@@ -1,38 +1,54 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
-import pl.touk.nussknacker.engine.api.Params
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
   OutputVariableNameValue,
   TypedNodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, TypedNodeDependency}
-import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext
+import pl.touk.nussknacker.engine.compile.nodecompilation.ImplicitSourceOutputVariableHandler.NodeDataExt
+import pl.touk.nussknacker.engine.definition.component.{ComponentImplementationInvoker, NodeCompilationDependencies}
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.{
+  ComponentImplementationSpecificInvocationContext,
+  DynamicComponentInvocationContext
+}
 
 class DynamicComponentImplementationInvoker(obj: DynamicComponent[_]) extends ComponentImplementationInvoker {
 
   override def invokeMethod(
       params: Params,
-      outputVariableNameOpt: Option[String],
-      additional: Seq[AnyRef]
+      compilationDependencies: NodeCompilationDependencies,
+      invocationContext: Option[ComponentImplementationSpecificInvocationContext]
   ): Any = {
+    // TODO: pass typed NodeCompilationDependencies to implementation instead of additionalParams
     val additionalParams = obj.nodeDependencies.map {
+      case TypedNodeDependency(klazz) if klazz == classOf[NodeId] =>
+        TypedNodeDependencyValue(compilationDependencies.nodeId)
+      case TypedNodeDependency(klazz) if klazz == classOf[MetaData] =>
+        TypedNodeDependencyValue(compilationDependencies.metaData)
+      case TypedNodeDependency(klazz) if klazz == classOf[ComponentUseContext] =>
+        TypedNodeDependencyValue(compilationDependencies.componentUseContext)
       case TypedNodeDependency(klazz) =>
-        additional
-          .find(klazz.isInstance)
-          .map(TypedNodeDependencyValue)
+        compilationDependencies.engineScenarioCompilationDependencies.nodeCompilationDependencies
+          .collectFirst {
+            case typedValue @ TypedNodeDependencyValue(value) if klazz.isInstance(value) => typedValue
+          }
           .getOrElse(throw new IllegalArgumentException(s"Failed to find dependency: $klazz"))
       case OutputVariableNameDependency =>
-        outputVariableNameOpt
+        compilationDependencies.nodeData.outputVariableNameHandlingInputSourceVariableName
           .map(OutputVariableNameValue)
           .getOrElse(throw new IllegalArgumentException("Output variable not defined"))
       case other => throw new IllegalArgumentException(s"Cannot handle dependency $other")
     }
-    val finalStateValue = additional
-      .collectFirst { case FinalStateValue(value) => value }
-      .getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
+    val rawFinalStateValue = invocationContext match {
+      case Some(DynamicComponentInvocationContext(finalStateValue)) =>
+        finalStateValue.value.asInstanceOf[Option[obj.State]]
+      case other => throw new IllegalArgumentException(s"Illegal implementation specific context: $other")
+    }
     // we assume parameters were already validated!
-    obj.implementation(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
+    obj.implementation(params, additionalParams, rawFinalStateValue)
   }
 
 }

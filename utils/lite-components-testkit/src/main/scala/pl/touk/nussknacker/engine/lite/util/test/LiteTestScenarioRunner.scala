@@ -137,12 +137,8 @@ private[test] class SimpleSourceFactory(result: TypingResult)
     new BaseLiteSource[Any] {
       override val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
 
-      override def transform(record: Any): Context =
-        Context(
-          contextIdGenerator.nextContextId(),
-          Map(VariableConstants.InputVariableName -> record),
-          None
-        )
+      override def transform(record: Any): ContextVariables =
+        ContextVariables(Map(VariableConstants.InputVariableName -> record))
     }
   }
 

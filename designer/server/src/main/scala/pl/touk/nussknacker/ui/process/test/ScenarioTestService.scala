@@ -57,7 +57,7 @@ class ScenarioTestService(
   ): Either[TestingCapabilitiesError, TestingCapabilities] = {
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     val jobData   = JobData(canonical.metaData, processVersion)
-    val sources   = commonModelDataInfoProvider.collectAllSources(canonical)
+    val sources   = canonical.collectAllSources
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
@@ -102,7 +102,7 @@ class ScenarioTestService(
   )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[NodeId, List[Parameter]]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     val jobData   = JobData(canonical.metaData, processVersion)
-    val sources   = commonModelDataInfoProvider.collectAllSources(canonical)
+    val sources   = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
         compiledSourcesById <-
@@ -120,7 +120,13 @@ class ScenarioTestService(
       compiledSource: Source,
   ): Either[ParametersDefinitionError, List[Parameter]] = {
     getTestParameters(sourceId, compiledSource)
-      .map(StandardParameterEnrichment.enrichParameterDefinitions(_, Map.empty))
+      .map(
+        StandardParameterEnrichment.enrichParameterDefinitions(
+          _,
+          Map.empty,
+          modelData.modelConfig.globalParametersConfig
+        )
+      )
   }
 
   // Currently we rely on the assumption that client always call scenarioTesting / {scenarioName} / parameters endpoint
@@ -151,8 +157,7 @@ class ScenarioTestService(
       for {
         _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
 
-        compiledSources <- commonModelDataInfoProvider
-          .collectAllSources(canonical)
+        compiledSources <- canonical.collectAllSources
           .map(compileSource)
           .sequence
           .leftMap[FetchLiveDataError](FetchLiveDataError.SourcesCompilationError)
@@ -284,7 +289,7 @@ class ScenarioTestService(
   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
-    val allScenarioSourceIds = commonModelDataInfoProvider.collectAllSources(scenario).map(_.id).toSet
+    val allScenarioSourceIds = scenario.collectAllSources.map(_.id).toSet
     preliminaryScenarioRecords.records.zipWithIndex
       .map {
         case (PreliminaryScenarioRecord(sourceId, record, timestamp), _) if allScenarioSourceIds.contains(sourceId) =>

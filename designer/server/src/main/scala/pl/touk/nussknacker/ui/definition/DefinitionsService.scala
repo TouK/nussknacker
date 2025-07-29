@@ -168,7 +168,7 @@ object DefinitionsService {
     UIParameter(
       name = parameter.name.value,
       typ = toUIType(parameter.typ),
-      editors = parameter.editorsWithDefault,
+      editors = parameter.finalEditors,
       defaultValue = parameter.finalDefaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,
@@ -177,7 +177,8 @@ object DefinitionsService {
       label = parameter.label,
       requiredParam = Some(!parameter.isOptional),
       category = parameter.category,
-      changesCanReloadParameters = parameter.changesCanReloadParameters
+      changesCanReloadParameters = parameter.changesCanReloadParameters,
+      nonImportantForExecution = parameter.nonImportantForExecution
     )
   }
 

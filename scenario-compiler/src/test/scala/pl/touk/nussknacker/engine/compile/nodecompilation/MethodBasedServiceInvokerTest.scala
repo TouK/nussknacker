@@ -3,11 +3,17 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  NodeCompilationDependencies
+}
+import pl.touk.nussknacker.engine.graph.node.Processor
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.util.definition.WithJobData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -23,18 +29,23 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   private implicit val componentUseContext: ComponentUseContext = ComponentUseContext.LiveRuntime(None)
   private val context: Context                                  = Context.dummy
 
-  private val nodeId           = NodeId("id")
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty.copy(processName = metadata.name))
+  private val scenarioCompilationDependencies =
+    new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
+
+  private val nodeCompilationContext = new NodeCompilationDependencies(
+    scenarioCompilationDependencies,
+    Processor("id", ServiceRef("id", List.empty)),
+    componentUseContext
+  )
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
     val invoker =
       new MethodBasedServiceInvoker(
-        metaData = metadata,
-        nodeId = nodeId,
-        outputVariableNameOpt = None,
         componentDefinition = definition,
+        nodeCompilationContext = nodeCompilationContext,
         parametersProvider = _ => Params.fromRawValuesMap(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> 1))
       )
 
@@ -47,10 +58,8 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
     val invoker = new MethodBasedServiceInvoker(
-      metaData = metadata,
-      nodeId = nodeId,
-      outputVariableNameOpt = None,
       componentDefinition = definition,
+      nodeCompilationContext = nodeCompilationContext,
       parametersProvider =
         _ => Params.fromRawValuesMap(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> "terefere"))
     )

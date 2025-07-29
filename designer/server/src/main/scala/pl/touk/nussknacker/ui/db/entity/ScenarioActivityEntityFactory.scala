@@ -101,9 +101,6 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
   implicit def scenarioIdMapper: BaseColumnType[ScenarioId] =
     MappedColumnType.base[ScenarioId, Long](_.value, ScenarioId.apply)
 
-  implicit def scenarioActivityIdMapper: BaseColumnType[ScenarioActivityId] =
-    MappedColumnType.base[ScenarioActivityId, UUID](_.value, ScenarioActivityId.apply)
-
   implicit def scenarioVersionIdMapper: BaseColumnType[ScenarioVersionId] =
     MappedColumnType.base[ScenarioVersionId, Long](_.value, ScenarioVersionId.apply)
 

@@ -1,31 +1,34 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
+import cats.data._
 import cats.data.Validated.{invalid, valid, Invalid, Valid}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{api, compiledgraph, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.transformation.{JoinDynamicComponent, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.Source
-import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonize.MissingSinkHandler
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.ComponentExecutorFactory.ComponentExecutorDependencies
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{
   EnricherCompilationResult,
   MockExpressionParameterName,
   NodeCompilationResult
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  NodeCompilationDependencies
+}
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.DynamicComponentInvocationContext
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,
   FinalStateValue
@@ -34,17 +37,20 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.expression.parse.{
+  CompiledExpression,
+  MultipleBranchesTypedValue,
+  SingleBranchTypedValue,
+  TypedExpression
+}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import shapeless.Typeable
-import shapeless.syntax.typeable._
 
 object NodeCompiler {
 
@@ -113,18 +119,24 @@ class NodeCompiler(
     )
   }
 
-  private type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
-
-  private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
-  private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
   private val expressionConfig: ExpressionConfigDefinition =
     definitions.expressionConfig
+  private val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
+  private val staticComponentOutputValidationContextDeterminer =
+    new StaticComponentOutputValidationContextDeterminer(globalVariablesPreparer)
 
   private val parametersEvaluator =
     new ParameterEvaluator(globalVariablesPreparer, listeners)
   private val factory = new ComponentExecutorFactory(parametersEvaluator)
+
   private val dynamicNodeValidator =
-    new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
+    new DynamicNodeValidator(
+      expressionCompiler,
+      globalVariablesPreparer,
+      parametersEvaluator,
+      definitions.globalParametersConfig
+    )
+
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
 
   private val fragmentParameterValidator = FragmentParameterValidator(fragmentDefinitionExtractor.classDefinitions)
@@ -134,28 +146,17 @@ class NodeCompiler(
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
   ): NodeCompilationResult[Source] = {
-    implicit val nodeId: NodeId = NodeId(nodeData.id)
     import scenarioCompilationDependencies._
+    implicit val nodeId: NodeId = NodeId(nodeData.id)
     nodeData match {
-      case a @ Source(_, ref, _) =>
+      case source @ Source(_, ref, _) =>
         definitions.getComponent(ComponentType.Source, ref.typ) match {
           case Some(definition) =>
-            def defaultCtxForMethodBasedCreatedComponentExecutor(
-                returnType: Option[TypingResult]
-            ) =
-              contextWithOnlyGlobalVariables.withVariable(
-                VariableConstants.InputVariableName,
-                returnType.getOrElse(Unknown),
-                paramName = None
-              )
-
             compileComponentWithContextTransformation[Source](
-              a.parameters,
-              Nil,
-              Left(contextWithOnlyGlobalVariables),
-              Some(VariableConstants.InputVariableName),
-              definition,
-              defaultCtxForMethodBasedCreatedComponentExecutor
+              nodeData = source,
+              customNodeIsEndingNode = None,
+              inputContext = SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables),
+              componentDefinition = definition
             ).map(_._1)
           case None =>
             val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
@@ -169,27 +170,30 @@ class NodeCompiler(
             NodeCompilationResult(Map.empty, None, defaultCtx, error)
         }
       case frag @ FragmentInputDefinition(id, _, _) =>
-        val parameterDefinitions                 = fragmentDefinitionExtractor.extractParametersDefinition(frag)
-        val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name.value -> a.typ).toMap
-        val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
+        val parameterDefinitions = fragmentDefinitionExtractor.extractParametersDefinition(frag)
 
         val compilationResult = definitions.getComponent(ComponentType.Fragment, id) match {
-          // This case is when fragment is stubbed with test data
+          // This case is when the fragment is stubbed with test data
           case Some(definition) =>
             compileComponentWithContextTransformation[Source](
-              Nil,
-              Nil,
-              Left(contextWithOnlyGlobalVariables),
-              None,
-              definition,
-              _ => Valid(validationContext)
+              nodeData = frag,
+              customNodeIsEndingNode = None,
+              inputContext = SingleInputNodeInputValidationContext(contextWithOnlyGlobalVariables),
+              componentDefinition = definition
             ).map(_._1)
 
-          // For default case, we creates source that support test with parameters
+          // For default case, we create a source that supports test with parameters
           case None =>
+            val validationContext =
+              staticComponentOutputValidationContextDeterminer.contextAfterFragmentInputDefinition(
+                parameterDefinitions.value
+              )
             val validatorsCompilationResult = parameterDefinitions.value.flatMap { paramDef =>
               paramDef.validators.map(v =>
-                expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ, validationContext.globalVariables)
+                expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ, validationContext.globalVariables)(
+                  nodeId,
+                  scenarioCompilationDependencies.jobData
+                )
               )
             }.sequence
 
@@ -208,17 +212,19 @@ class NodeCompiler(
         // by relying on name for the field names used on FE, we display the same errors under all fields with the
         // duplicated name
         // TODO: display all errors when switching to field name errors not reliant on parameter name
-        val displayUniqueNameReliantErrors = parameterNameValidation.fold(
+        lazy val displayUniqueNameReliantErrors = parameterNameValidation.fold(
           errors => !errors.exists(_.isInstanceOf[DuplicateFragmentInputParameter]),
           _ => true
         )
 
-        val displayableErrors = parameterNameValidation |+| {
-          if (displayUniqueNameReliantErrors)
+        val validatedUniqueNameReliantErrorsV = compilationResult.validationContext match {
+          case Valid(validationContext) if displayUniqueNameReliantErrors =>
             uniqueNameReliantErrors(frag, parameterDefinitions, validationContext)
-          else
+          case _ =>
             Valid(())
         }
+
+        val displayableErrors = parameterNameValidation |+| validatedUniqueNameReliantErrorsV
 
         compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
     }
@@ -259,30 +265,40 @@ class NodeCompiler(
     parameterExtractionValidation |+| fixedValuesErrors |+| dictValueEditorErrors
   }
 
-  def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(
+  def compileCustomNodeObject(node: SplittedNode[CustomNodeData], ctx: NodeInputValidationContext)(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): NodeCompilationResult[AnyRef] = compileCustomNodeObject(node.data, ctx, Some(node.isEnding))
+
+  def compileCustomNodeObject(
+      data: CustomNodeData,
+      ctx: NodeInputValidationContext,
+      customNodeIsEndingNode: Option[Boolean]
+  )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
   ): NodeCompilationResult[AnyRef] = {
     implicit val nodeId: NodeId = NodeId(data.id)
-    import scenarioCompilationDependencies._
 
-    val outputVar       = data.outputVar.map(OutputVar.customNode)
-    val defaultCtx      = ctx.fold(identity, _ => contextWithOnlyGlobalVariables)
+    val outputVar = data.outputVar.map(OutputVar.customNode)
+    val defaultCtx = ctx match {
+      case SingleInputNodeInputValidationContext(validationContext) => validationContext
+      case MultipleInputBranchesNodeInputValidationContext(_, validationContextWithGlobalVariablesOnly) =>
+        validationContextWithGlobalVariablesOnly
+    }
     val defaultCtxToUse = outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
     definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
       case Some(componentDefinition)
-          if ending && !scenarioIsAllowedToEndWithoutSink && !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
+          if customNodeIsEndingNode.contains(
+            true
+          ) && !scenarioIsAllowedToEndWithoutSink && !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some(componentDefinition) =>
-        val default = defaultContextAfter(data, ending, ctx)
         compileComponentWithContextTransformation[AnyRef](
-          data.parameters,
-          data.cast[Join].map(_.branchParameters).getOrElse(Nil),
-          ctx,
-          outputVar.map(_.outputName),
-          componentDefinition,
-          default
+          nodeData = data,
+          customNodeIsEndingNode = customNodeIsEndingNode,
+          inputContext = ctx,
+          componentDefinition = componentDefinition
         ).map(_._1)
       case None =>
         val error = Invalid(NonEmptyList.of(MissingCustomNodeExecutor(data.nodeType)))
@@ -292,7 +308,7 @@ class NodeCompiler(
 
   def compileSink(
       sink: Sink,
-      ctx: ValidationContext
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[api.process.Sink] = {
@@ -302,20 +318,23 @@ class NodeCompiler(
     definitions.getComponent(ComponentType.Sink, ref.typ) match {
       case Some(definition) =>
         compileComponentWithContextTransformation[api.process.Sink](
-          sink.parameters,
-          Nil,
-          Left(ctx),
-          None,
-          definition,
-          _ => Valid(ctx)
+          nodeData = sink,
+          customNodeIsEndingNode = None,
+          inputContext = inputContext,
+          componentDefinition = definition
         ).map(_._1)
       case None =>
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
-        NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
+        NodeCompilationResult(
+          Map.empty[String, ExpressionTypingInfo],
+          None,
+          Valid(inputContext.validationContext),
+          error
+        )
     }
   }
 
-  def compileFragmentInput(fragmentInput: FragmentInput, ctx: ValidationContext)(
+  def compileFragmentInput(fragmentInput: FragmentInput, inputContext: SingleInputNodeInputValidationContext)(
       implicit jobData: JobData
   ): NodeCompilationResult[List[CompiledParameter]] = {
     implicit val nodeId: NodeId = NodeId(fragmentInput.id)
@@ -323,13 +342,13 @@ class NodeCompiler(
     val ref            = fragmentInput.ref
     val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
 
-    val childCtx = ctx.pushNewContext()
+    val childCtx = inputContext.validationContext.pushNewContext()
     val newCtx =
       validParamDefs.value.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
         case (acc, paramDef) => acc.andThen(_.withVariable(OutputVar.variable(paramDef.name.value), paramDef.typ))
       }
     val validParams =
-      expressionCompiler.compileExecutorComponentNodeParameters(validParamDefs.value, ref.parameters, ctx)
+      expressionCompiler.compileExecutorComponentNodeParameters(validParamDefs.value, ref.parameters, inputContext)
     val validParamsCombinedErrors = validParams
       .fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
       .combine(
@@ -349,64 +368,70 @@ class NodeCompiler(
   def compileSwitch(
       switch: Switch,
       choices: List[(String, Expression)],
-      ctx: ValidationContext,
+      inputContext: SingleInputNodeInputValidationContext,
   ): NodeCompilationResult[(Option[CompiledExpression], List[CompiledExpression])] = {
     implicit val nodeId: NodeId                     = NodeId(switch.id)
     val expressionRaw: Option[(String, Expression)] = Applicative[Option].product(switch.exprVal, switch.expression)
-    builtInNodeCompiler.compileSwitch(expressionRaw, choices, ctx)
+    builtInNodeCompiler.compileSwitch(expressionRaw, choices, inputContext)
   }
 
-  def compileFilter(filter: Filter, ctx: ValidationContext): NodeCompilationResult[CompiledExpression] = {
+  def compileFilter(
+      filter: Filter,
+      inputContext: SingleInputNodeInputValidationContext
+  ): NodeCompilationResult[CompiledExpression] = {
     implicit val nodeId: NodeId = NodeId(filter.id)
-    builtInNodeCompiler.compileFilter(filter, ctx)
+    builtInNodeCompiler.compileFilter(filter, inputContext)
   }
 
-  def compileVariable(variable: Variable, ctx: ValidationContext): NodeCompilationResult[CompiledExpression] = {
+  def compileVariable(
+      variable: Variable,
+      inputContext: SingleInputNodeInputValidationContext
+  ): NodeCompilationResult[CompiledExpression] = {
     implicit val nodeId: NodeId = NodeId(variable.id)
-    builtInNodeCompiler.compileVariable(variable, ctx)
+    builtInNodeCompiler.compileVariable(variable, inputContext)
   }
 
   def compileFragmentOutputDefinition(
       fod: FragmentOutputDefinition,
-      ctx: ValidationContext
+      inputContext: SingleInputNodeInputValidationContext
   ): ValidatedNel[PartSubGraphCompilationError, Map[String, TypedExpression]] = {
     implicit val nodeId: NodeId = NodeId(fod.id)
     fod.fields.map { field =>
       expressionCompiler
-        .compile(field.expression, Some(ParameterName(field.name)), ctx, Unknown)
+        .compile(field.expression, Some(ParameterName(field.name)), inputContext.validationContext, Unknown)
         .map(typedExpr => field.name -> typedExpr)
     }
   }.sequence.map(_.toMap)
 
   def compileFields(
       fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
-      ctx: ValidationContext,
+      inputContext: SingleInputNodeInputValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
-    builtInNodeCompiler.compileFields(fields, ctx, outputVar)
+    builtInNodeCompiler.compileFields(fields, inputContext, outputVar)
   }
 
   def compileProcessor(
-      n: Processor,
-      ctx: ValidationContext
+      processor: Processor,
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    implicit val nodeId: NodeId = NodeId(n.id)
-    compileService(n.service, ctx, None)
+    implicit val nodeId: NodeId = NodeId(processor.id)
+    compileService(processor, inputContext)
   }
 
-  def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: OutputVar)(
+  def compileEnricher(enricher: Enricher, inputContext: SingleInputNodeInputValidationContext)(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[EnricherCompilationResult] = {
-    implicit val nodeId: NodeId  = NodeId(n.id)
-    val serviceCompilationResult = compileService(n.service, ctx, Some(outputVar))
+    implicit val nodeId: NodeId  = NodeId(enricher.id)
+    val serviceCompilationResult = compileService(enricher, inputContext)
 
-    val expressionCompilationResult = n.mockExpression match {
+    val expressionCompilationResult = enricher.mockExpression match {
       case Some(mockExpression) =>
         val expectedType =
-          serviceCompilationResult.validationContext.map(_.localVariables(outputVar.outputName)).getOrElse(Unknown)
-        compileEnricherMockExpression(mockExpression, expectedType, ctx)
+          serviceCompilationResult.validationContext.map(_.localVariables(enricher.output)).getOrElse(Unknown)
+        compileEnricherMockExpression(mockExpression, expectedType, inputContext.validationContext)
           .map(Some(_))
       case None => Validated.validNel(None)
     }
@@ -426,17 +451,19 @@ class NodeCompiler(
       .map(_.expression)
   }
 
-  private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
+  private def compileService(
+      serviceNodeData: ServiceNodeData,
+      inputContext: SingleInputNodeInputValidationContext
+  )(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    import scenarioCompilationDependencies._
 
-    definitions.getComponent(ComponentType.Service, n.id) match {
+    definitions.getComponent(ComponentType.Service, serviceNodeData.componentId) match {
       case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
-        compileEagerService(n, componentDefinition, validationContext, outputVar)
+        compileEagerService(serviceNodeData, componentDefinition, inputContext)
       case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
-        ServiceCompiler.compile(n, outputVar, static, validationContext)
+        ServiceCompiler.compile(serviceNodeData, static, inputContext)
       case Some(_: DynamicComponentDefinitionWithImplementation) =>
         val error = invalid(
           CustomNodeError(
@@ -444,58 +471,49 @@ class NodeCompiler(
             None
           )
         ).toValidatedNel
-        NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
+        NodeCompilationResult(
+          Map.empty[String, ExpressionTypingInfo],
+          None,
+          Valid(inputContext.validationContext),
+          error
+        )
       case Some(notSupportedComponentDefinition) =>
         throw new IllegalStateException(
           s"Not supported ${classOf[ComponentDefinitionWithImplementation].getName}: ${notSupportedComponentDefinition.getClass}"
         )
       case None =>
-        val error = invalid(MissingService(n.id)).toValidatedNel
-        NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
+        val error = invalid(MissingService(serviceNodeData.componentId)).toValidatedNel
+        NodeCompilationResult(
+          Map.empty[String, ExpressionTypingInfo],
+          None,
+          Valid(inputContext.validationContext),
+          error
+        )
     }
   }
 
   private def compileEagerService(
-      serviceRef: ServiceRef,
+      nodeData: ServiceNodeData,
       componentDefinition: ComponentDefinitionWithImplementation,
-      validationContext: ValidationContext,
-      outputVar: Option[OutputVar]
+      inputContext: SingleInputNodeInputValidationContext
   )(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    val defaultCtxForMethodBasedCreatedComponentExecutor
-        : Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = returnTypeOpt =>
-      outputVar match {
-        case Some(out) =>
-          returnTypeOpt
-            .map(validationContext.withVariable(out, _))
-            .getOrElse {
-              logger.warn(
-                s"Scenario [${scenarioCompilationDependencies.metaData.name}] node [$nodeId] compilation warning. " +
-                  s"Found ${out.fieldName} = ${out.outputName} but service [${serviceRef.id}] used by the node doesn't need it. It will be skipped."
-              )
-              Valid(validationContext)
-            }
-        case None => Valid(validationContext)
-      }
-
     def createService(invoker: ServiceInvoker) =
       compiledgraph.service.ServiceRef(
-        id = serviceRef.id,
+        id = nodeData.service.id,
         invoker = invoker,
         resultCollector = resultCollector
       )
 
     val compilationResult = compileComponentWithContextTransformation[ServiceInvoker](
-      parameters = serviceRef.parameters,
-      branchParameters = Nil,
-      ctx = Left(validationContext),
-      outputVar = outputVar.map(_.outputName),
-      componentDefinition = componentDefinition,
-      defaultCtxForMethodBasedCreatedComponentExecutor = defaultCtxForMethodBasedCreatedComponentExecutor
+      nodeData = nodeData,
+      customNodeIsEndingNode = None,
+      inputContext = inputContext,
+      componentDefinition = componentDefinition
     )
-    compilationResult.map { case (serviceInvoker, nodeParams) =>
+    compilationResult.map { case (serviceInvoker, _) =>
       // TODO: Currently in case of object compilation failures we prefer to create "dumb" service invoker, with empty parameters list
       //       instead of return Invalid - I assume that it is probably because of errors accumulation purpose.
       //       We should clean up this compilation process by some NodeCompilationResult refactor like introduction of WriterT monad transformer
@@ -508,85 +526,67 @@ class NodeCompiler(
     case a                         => a
   }).asInstanceOf[T]
 
-  private def contextWithOnlyGlobalVariables(implicit jobData: JobData): ValidationContext =
-    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
-
-  private def defaultContextAfter(
-      node: CustomNodeData,
-      ending: Boolean,
-      branchCtx: GenericValidationContext
-  )(
-      implicit nodeId: NodeId,
-      jobData: JobData
-  ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] =
-    returnTypeOpt => {
-      val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
-
-      def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = validationContext
-        .withVariable(outputVar, typ)
-        // ble... NonEmptyList is invariant...
-        .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
-
-      (node.outputVar, returnTypeOpt) match {
-        case (Some(varName), Some(typ)) => ctxWithVar(OutputVar.customNode(varName), typ)
-        case (None, None)               => Valid(validationContext)
-        case (Some(outputVarValue), None) =>
-          logger.warn(
-            s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
-              s"Found outputVar = ${outputVarValue} but custom node [${node.id}] used by the node doesn't need it. It will be skipped."
-          )
-          Valid(validationContext)
-        case (None, Some(_)) if ending => Valid(validationContext)
-        case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set(ParameterName("OutputVariable")))))
-      }
-    }
+  private def contextWithOnlyGlobalVariables(
+      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies
+  ): ValidationContext =
+    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(scenarioCompilationDependencies.jobData)
 
   private def compileComponentWithContextTransformation[ComponentExecutor](
-      parameters: List[NodeParameter],
-      branchParameters: List[BranchParameters],
-      ctx: GenericValidationContext,
-      outputVar: Option[String],
-      componentDefinition: ComponentDefinitionWithImplementation,
-      defaultCtxForMethodBasedCreatedComponentExecutor: Option[TypingResult] => ValidatedNel[
-        ProcessCompilationError,
-        ValidationContext
-      ]
+      nodeData: NodeData,
+      customNodeIsEndingNode: Option[Boolean],
+      inputContext: NodeInputValidationContext,
+      componentDefinition: ComponentDefinitionWithImplementation
   )(
       implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
-    import scenarioCompilationDependencies._
     componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
+        val nodeCompilationDependencies = createNodeCompilationDependencies(nodeData)
         val afterValidation =
-          validateDynamicTransformer(ctx, parameters, branchParameters, outputVar, dynamicComponent).map {
-            case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
-              val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
-              val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
-              val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
-                componentDefinition,
-                withoutRedundant,
-                branchParameters,
-                outputVar,
-                ctx,
-                computedParameters,
-                Seq(FinalStateValue(finalState))
-              )
-              (
-                typingInfo,
-                Some(computedParameters),
-                outputContext,
-                validComponentExecutor.map((_, withoutRedundant))
-              )
-            case TransformationResult(h :: t, computedParameters, outputContext, _, _) =>
-              // TODO: typing info here??
-              (
-                Map.empty[String, ExpressionTypingInfo],
-                Some(computedParameters),
-                outputContext,
-                Invalid(NonEmptyList(h, t))
-              )
-          }
+          dynamicNodeValidator
+            .validateNode(
+              compilationDependencies = nodeCompilationDependencies,
+              component = dynamicComponent.component,
+              parametersConfig = dynamicComponent.parametersConfig,
+              nodeInputValidationContext = inputContext
+            )
+            .map {
+              case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
+                val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
+                val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
+                val (typingInfo, validComponentExecutor) = withCompiledParameters[ComponentExecutor](
+                  parameterDefinitionsToUse = computedParameters,
+                  nodeParameters = withoutRedundant,
+                  nodeBranchParameters = nodeData.branchParametersOrEmpty,
+                  nodeInputValidationContext = inputContext
+                ) { compiledParameters =>
+                  factory
+                    .createComponentExecutor[ComponentExecutor](
+                      new ComponentExecutorDependencies(
+                        componentDefinition = componentDefinition,
+                        compiledParameters = compiledParameters,
+                        nodeCompilationDependencies = nodeCompilationDependencies,
+                        nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
+                        invocationContext = Some(DynamicComponentInvocationContext(FinalStateValue(finalState))),
+                      )
+                    )
+                }
+                (
+                  typingInfo,
+                  Some(computedParameters),
+                  outputContext,
+                  validComponentExecutor.map((_, withoutRedundant))
+                )
+              case TransformationResult(h :: t, computedParameters, outputContext, _, _) =>
+                // TODO: typing info here??
+                (
+                  Map.empty[String, ExpressionTypingInfo],
+                  Some(computedParameters),
+                  outputContext,
+                  Invalid(NonEmptyList(h, t))
+                )
+            }
         NodeCompilationResult(
           afterValidation.map(_._1).valueOr(_ => Map.empty),
           afterValidation.map(_._2).valueOr(_ => None),
@@ -594,189 +594,102 @@ class NodeCompiler(
           afterValidation.andThen(_._4)
         )
       case staticComponent: MethodBasedComponentDefinitionWithImplementation =>
-        val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
-          componentDefinition,
-          parameters,
-          branchParameters,
-          outputVar,
-          ctx,
-          staticComponent.parameters,
-          Seq.empty
-        )
-        val nextCtx = validComponentExecutor.fold(
-          _ => defaultCtxForMethodBasedCreatedComponentExecutor(staticComponent.returnType),
-          executor =>
-            contextAfterMethodBasedCreatedComponentExecutor(
-              executor,
-              ctx,
-              (executor: ComponentExecutor) =>
-                defaultCtxForMethodBasedCreatedComponentExecutor(returnType(staticComponent.returnType, executor))
+        val (typingInfo, validComponentExecutor) = withCompiledParameters[ComponentExecutor](
+          parameterDefinitionsToUse = staticComponent.parameters,
+          nodeParameters = nodeData.parametersOrEmpty,
+          nodeBranchParameters = nodeData.branchParametersOrEmpty,
+          nodeInputValidationContext = inputContext
+        ) { compiledParameters =>
+          factory
+            .createComponentExecutor[ComponentExecutor](
+              new ComponentExecutorDependencies(
+                componentDefinition = componentDefinition,
+                nodeCompilationDependencies = createNodeCompilationDependencies(nodeData),
+                compiledParameters = compiledParameters,
+                nonServicesLazyParamStrategy = nonServicesLazyParamStrategy,
+                invocationContext = None,
+              )
             )
-        )
+        }
+        val nextCtx = staticComponentOutputValidationContextDeterminer.contextAfterNode(
+          nodeData = nodeData,
+          customNodeIsEndingNode = customNodeIsEndingNode,
+          staticComponent = staticComponent,
+          validComponentExecutor = validComponentExecutor,
+          inputContext = inputContext
+        )(scenarioCompilationDependencies.jobData)
         val unwrappedComponentExecutor =
-          validComponentExecutor.map(unwrapContextTransformation[ComponentExecutor](_)).map((_, parameters))
+          validComponentExecutor
+            .map(unwrapContextTransformation[ComponentExecutor](_))
+            .map((_, nodeData.parametersOrEmpty))
         NodeCompilationResult(typingInfo, Some(staticComponent.parameters), nextCtx, unwrappedComponentExecutor)
     }
   }
 
-  private def returnType(definitionReturnType: Option[TypingResult], componentExecutor: Any): Option[TypingResult] =
-    componentExecutor match {
-      case returningType: ReturningType =>
-        Some(returningType.returnType)
-      case _ =>
-        definitionReturnType
-    }
-
-  private def createComponentExecutor[ComponentExecutor](
-      componentDefinition: ComponentDefinitionWithImplementation,
+  private def withCompiledParameters[T](
+      parameterDefinitionsToUse: List[Parameter],
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
-      outputVariableNameOpt: Option[String],
-      ctxOrBranches: GenericValidationContext,
-      parameterDefinitionsToUse: List[Parameter],
-      additionalDependencies: Seq[AnyRef]
-  )(
+      nodeInputValidationContext: NodeInputValidationContext,
+  )(f: List[(TypedParameter, Parameter)] => IorNel[ProcessCompilationError, T])(
       implicit nodeId: NodeId,
       scenarioCompilationDependencies: ScenarioCompilationDependencies
-  ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ComponentExecutor]) = {
+  ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
     import scenarioCompilationDependencies._
-    val ctx            = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
-    val branchContexts = ctxOrBranches.getOrElse(Map.empty)
 
-    val compiledObjectWithTypingInfo = expressionCompiler
-      .compileNodeParameters(
-        parameterDefinitionsToUse,
-        nodeParameters,
-        nodeBranchParameters,
-        ctx,
-        branchContexts
-      )
-      .flatMap { compiledParameters =>
-        factory
-          .createComponentExecutor[ComponentExecutor](
-            componentDefinition,
-            compiledParameters,
-            outputVariableNameOpt,
-            additionalDependencies,
-            runtimeMode.createContext(nodesDeploymentData.get(nodeId)),
-            nonServicesLazyParamStrategy
-          )
-          .map { componentExecutor =>
-            val typingInfo = compiledParameters.flatMap {
-              case (TypedParameter(name, TypedExpression(_, typingInfo)), _) =>
-                List(name.value -> typingInfo)
-              case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
-                valueByBranch.map { case (branch, TypedExpression(_, typingInfo)) =>
-                  val expressionId = branchParameterExpressionId(paramName, branch)
-                  expressionId -> typingInfo
-                }
-            }.toMap
-            (typingInfo, componentExecutor)
+    val compiledExecutorWithTypingInfo = for {
+      compiledParameters <- expressionCompiler
+        .compileNodeParameters(
+          parameterDefinitions = parameterDefinitionsToUse,
+          nodeParameters = nodeParameters,
+          nodeBranchParameters = nodeBranchParameters,
+          inputContext = nodeInputValidationContext,
+        )
+      result <- f(compiledParameters)
+    } yield {
+      val typingInfo = compiledParameters.flatMap {
+        case (TypedParameter(name, SingleBranchTypedValue(TypedExpression(_, typingInfo), _)), _) =>
+          List(name.value -> typingInfo)
+        case (TypedParameter(paramName, MultipleBranchesTypedValue(valueByBranch)), _) =>
+          valueByBranch.map { case (branch, SingleBranchTypedValue(TypedExpression(_, typingInfo), _)) =>
+            val expressionId = branchParameterExpressionId(paramName, branch)
+            expressionId -> typingInfo
           }
-      }
+      }.toMap
+      (typingInfo, result)
+    }
     (
-      compiledObjectWithTypingInfo.map(_._1).getOrElse(Map.empty),
-      compiledObjectWithTypingInfo.map(_._2).fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
+      compiledExecutorWithTypingInfo.map(_._1).getOrElse(Map.empty),
+      compiledExecutorWithTypingInfo.map(_._2).fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
     )
   }
 
-  private def contextAfterMethodBasedCreatedComponentExecutor[ComponentExecutor](
-      executor: ComponentExecutor,
-      validationContexts: GenericValidationContext,
-      handleNonContextTransformingExecutor: ComponentExecutor => ValidatedNel[
-        ProcessCompilationError,
-        ValidationContext
-      ]
-  )(implicit nodeId: NodeId, jobData: JobData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    NodeValidationExceptionHandler.handleExceptionsInValidation {
-      val contextTransformationDefOpt = executor.cast[AbstractContextTransformation].map(_.definition)
-      (contextTransformationDefOpt, validationContexts) match {
-        case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
-          // copying global variables because custom transformation may override them -> TODO: in ValidationContext
-          transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
-        case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
-          // copying global variables because custom transformation may override them -> TODO: in ValidationContext
-          transformation
-            .transform(branchEndContexts)
-            .map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
-        case (Some(transformation), ctx) =>
-          Invalid(
-            FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")
-          ).toValidatedNel
-        case (None, _) =>
-          handleNonContextTransformingExecutor(executor)
-      }
-    }(nodeId, jobData.metaData)
-  }
-
-  private def validateDynamicTransformer(
-      eitherSingleOrJoin: GenericValidationContext,
-      parameters: List[NodeParameter],
-      branchParameters: List[BranchParameters],
-      outputVar: Option[String],
-      dynamicDefinition: DynamicComponentDefinitionWithImplementation
-  )(
-      implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
-      nodeId: NodeId
-  ): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (dynamicDefinition.component, eitherSingleOrJoin) match {
-      case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
-        dynamicNodeValidator.validateNode(
-          single,
-          parameters,
-          branchParameters,
-          outputVar,
-          dynamicDefinition.parametersConfig
-        )(
-          singleCtx
-        )
-      case (join: JoinDynamicComponent[_], Right(joinCtx)) =>
-        dynamicNodeValidator.validateNode(
-          join,
-          parameters,
-          branchParameters,
-          outputVar,
-          dynamicDefinition.parametersConfig
-        )(
-          joinCtx
-        )
-      case (_: SingleInputDynamicComponent[_], Right(_)) =>
-        Invalid(
-          NonEmptyList.of(CustomNodeError("Invalid scenario structure: single input component used as a join", None))
-        )
-      case (_: JoinDynamicComponent[_], Left(_)) =>
-        Invalid(
-          NonEmptyList.of(
-            CustomNodeError("Invalid scenario structure: join component used as with single, not named input", None)
-          )
-        )
-    }
-
-  // This class is extracted to separate object, as handling service needs serious refactor (see comment in ServiceReturningType), and we don't want
+  // This class is extracted to a separate object, as handling service needs serious refactor (see comment in ServiceReturningType), and we don't want
   // methods that will probably be replaced to be mixed with others
-  object ServiceCompiler {
+  private object ServiceCompiler {
 
     def compile(
-        serviceRef: ServiceRef,
-        outputVar: Option[OutputVar],
-        objWithMethod: MethodBasedComponentDefinitionWithImplementation,
-        ctx: ValidationContext
-    )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+        serviceNodeData: ServiceNodeData,
+        componentDefinition: MethodBasedComponentDefinitionWithImplementation,
+        inputContext: SingleInputNodeInputValidationContext
+    )(
+        implicit scenarioCompilationDependencies: ScenarioCompilationDependencies,
+        nodeId: NodeId
+    ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+      import scenarioCompilationDependencies._
       val computedParameters =
-        expressionCompiler.compileExecutorComponentNodeParameters(objWithMethod.parameters, serviceRef.parameters, ctx)
-      val outputCtx = outputVar match {
-        case Some(output) =>
-          objWithMethod.returnType
-            .map(ctx.withVariable(output, _))
-            .getOrElse {
-              logger.warn(
-                s"Scenario [${jobData.metaData.name}] node [$nodeId] compilation warning. " +
-                  s"Found ${output.fieldName} = ${output.outputName} but service [${serviceRef.id}] used by the node doesn't need it. It will be skipped."
-              )
-              Valid(ctx)
-            }
-        case None => Valid(ctx)
-      }
+        expressionCompiler.compileExecutorComponentNodeParameters(
+          componentDefinition.parameters,
+          serviceNodeData.parameters,
+          inputContext
+        )
+      val outputVar                                 = serviceNodeData.outputVar.map(OutputVar.enricher)
+      implicit val implicitComponentId: ComponentId = componentDefinition.id
+      val outputCtx = StaticComponentOutputValidationContextDeterminer.conntextAfterService(
+        inputContext,
+        outputVar,
+        componentDefinition.returnType
+      )
 
       val compiledServiceRef = computedParameters.map { params =>
         val evaluateParams = { context: Context =>
@@ -786,8 +699,12 @@ class NodeCompiler(
           Params.fromRawValuesMap(nameToRawValueMap)
         }
         compiledgraph.service.ServiceRef(
-          id = serviceRef.id,
-          invoker = new MethodBasedServiceInvoker(jobData.metaData, nodeId, outputVar, objWithMethod, evaluateParams),
+          id = serviceNodeData.service.id,
+          invoker = new MethodBasedServiceInvoker(
+            componentDefinition,
+            createNodeCompilationDependencies(serviceNodeData),
+            evaluateParams
+          ),
           resultCollector = resultCollector
         )
       }
@@ -800,6 +717,16 @@ class NodeCompiler(
       )
     }
 
+  }
+
+  private def createNodeCompilationDependencies(
+      nodeData: NodeData
+  )(implicit scenarioCompilationDependencies: ScenarioCompilationDependencies) = {
+    new NodeCompilationDependencies(
+      scenarioCompilationDependencies,
+      nodeData,
+      runtimeMode.createContext(nodesDeploymentData.get(NodeId(nodeData.id)))
+    )
   }
 
 }

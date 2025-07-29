@@ -6,6 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
+import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -57,11 +58,13 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       ComponentsUiConfig.Empty,
       id => DesignerWideComponentId(id.toString),
       Map.empty,
+      GlobalParametersConfig.default,
       ComponentDefinitionExtractionMode.FinalDefinition
     ),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default,
     allowEndingScenarioWithoutSink = false,
+    globalParametersConfig = GlobalParametersConfig.default,
   )
 
   private val validator = ProcessValidator.default(

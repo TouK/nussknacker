@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.{
   ScenarioCompilationDependencies
 }
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentDefinition,
@@ -24,6 +25,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -56,7 +58,7 @@ class InterpreterSetup[T: ClassTag] {
     def compileNode(part: ProcessPart) =
       failOnErrors(
         compilerData.subPartCompiler
-          .compile(part.node, part.validationContext)
+          .compile(part.node, SingleInputNodeInputValidationContext(part.validationContext))
           .result
       )
 
@@ -73,6 +75,8 @@ class InterpreterSetup[T: ClassTag] {
       ComponentDefinition("sink", SinkFactory.noParam(new Sink {}))
     ) ::: additionalComponents
 
+    val globalParametersConfig = GlobalParametersConfig.default
+
     val definitions = ModelDefinition(
       Components
         .forList(
@@ -80,11 +84,13 @@ class InterpreterSetup[T: ClassTag] {
           ComponentsUiConfig.Empty,
           id => DesignerWideComponentId(id.toString),
           Map.empty,
+          globalParametersConfig,
           ComponentDefinitionExtractionMode.FinalDefinition
         ),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default,
       allowEndingScenarioWithoutSink = false,
+      globalParametersConfig
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 

@@ -5,6 +5,7 @@ import cats.data.Validated.Invalid
 import org.apache.avro.SchemaBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{Parameter, SpelParameterEditor, SpelTemplateParameterEditor}
@@ -61,7 +62,8 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
       .asInstanceOf[SchemaBasedRecordParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(
       result.toParameters,
-      Map.empty
+      Map.empty,
+      GlobalParametersConfig.default
     ) shouldBe List(
       Parameter(name = ParameterName("a"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
@@ -69,16 +71,25 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
         defaultValue = Some(Expression.spelTemplate(""))
       ),
       Parameter(name = ParameterName("b.c"), typ = typing.Typed[Long])
-        .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0"))),
+        .copy(
+          isLazyParameter = true,
+          editors = List(SpelParameterEditor),
+          defaultValue = Some(Expression.spel("0"))
+        ),
       Parameter(name = ParameterName("c"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
         defaultValue = Some(Expression.spelTemplate("c-field-default")),
         editors = List(SpelTemplateParameterEditor, SpelParameterEditor),
       ),
       Parameter(name = ParameterName("d"), typ = typing.Typed[Long])
-        .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("42L"))),
+        .copy(isLazyParameter = true, editors = List(SpelParameterEditor), defaultValue = Some(Expression.spel("42L"))),
       Parameter(name = ParameterName("e"), typ = typing.Typed[Long])
-        .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("null")), validators = Nil)
+        .copy(
+          isLazyParameter = true,
+          editors = List(SpelParameterEditor),
+          defaultValue = Some(Expression.spel("null")),
+          validators = Nil
+        )
     )
   }
 
@@ -89,10 +100,11 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
       .asInstanceOf[SingleSchemaBasedParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(
       result.toParameters,
-      Map.empty
+      Map.empty,
+      GlobalParametersConfig.default
     ) shouldBe List(
       Parameter(name = sinkValueParamName, typ = typing.Typed[Long])
-        .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0")))
+        .copy(isLazyParameter = true, editors = List(SpelParameterEditor), defaultValue = Some(Expression.spel("0")))
     )
   }
 

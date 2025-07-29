@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -132,7 +133,10 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val parts  = compilerData.compile(process).value
     val source = parts.sources.head
     val compiledNode =
-      compilerData.subPartCompiler.compile(source.node, source.validationContext).result.value
+      compilerData.subPartCompiler
+        .compile(source.node, SingleInputNodeInputValidationContext(source.validationContext))
+        .result
+        .value
 
     val inputContext                = Context.dummy.withVariable(VariableConstants.InputVariableName, inputValue)
     implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global

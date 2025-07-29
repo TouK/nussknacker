@@ -12,6 +12,7 @@ import "../../../../../brace/mode/spel";
 import "../../../../../brace/mode/spelTemplate";
 import "../../../../../brace/mode/jsonTemplate";
 import "../../../../../brace/mode/sql";
+import "../../../../../brace/mode/plainText";
 import "../../../../../brace/theme/nussknacker";
 
 export default AceEditor;

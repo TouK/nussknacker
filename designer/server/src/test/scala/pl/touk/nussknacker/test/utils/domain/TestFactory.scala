@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, Pro
 import pl.touk.nussknacker.ui.process.deployment.{ActionInfoService, DeploymentManagerDispatcher, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.deployment.scenariostatus.ScenarioStatusProvider
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.livedata.DbLiveDataRepository
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.processingtype.{
   ScenarioParametersService,
@@ -168,6 +169,8 @@ object TestFactory {
     newDBIOActionRunner(dummyDbRef)
 
   def newScenarioActivityRepository(dbRef: DbRef, clock: Clock) = DbScenarioActivityRepository.create(dbRef, clock)
+
+  def newLiveDataRepository(dbRef: DbRef) = new DbLiveDataRepository(dbRef)
 
   def newScenarioLabelsRepository(dbRef: DbRef) = new ScenarioLabelsRepository(dbRef)
 

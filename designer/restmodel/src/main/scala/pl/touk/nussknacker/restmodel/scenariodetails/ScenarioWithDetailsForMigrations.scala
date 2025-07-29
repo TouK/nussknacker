@@ -4,7 +4,11 @@ import io.circe.{Codec, Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, ProcessName, ScenarioVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  ValidationErrors,
+  ValidationResult,
+  ValidationWarnings
+}
 
 // It is a minimal set of information used by migration mechanism
 final case class ScenarioWithDetailsForMigrations(
@@ -33,6 +37,16 @@ object ScenarioWithDetailsForMigrations {
 
   implicit val codec: Codec[ScenarioWithDetailsForMigrations] = {
     implicit val labelsCodec: Codec[List[String]] = safeLabelsCodec
+    // custom codec because nodeResults are not needed for migrations, and the nodeResults schema is evolving
+    implicit val validationResultCodec: Codec[ValidationResult] = {
+      val decoder = Decoder.instance { c =>
+        for {
+          errors   <- c.downField("errors").as[ValidationErrors]
+          warnings <- c.downField("warnings").as[ValidationWarnings]
+        } yield ValidationResult(errors, warnings, nodeResults = Map.empty)
+      }
+      Codec.from(decoder, Encoder.forProduct2("errors", "warnings")(r => (r.errors, r.warnings)))
+    }
     io.circe.generic.semiauto.deriveCodec
   }
 

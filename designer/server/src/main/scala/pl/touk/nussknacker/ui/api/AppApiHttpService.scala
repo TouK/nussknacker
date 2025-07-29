@@ -152,7 +152,7 @@ class AppApiHttpService(
             .map { case (processingType, category) =>
               category -> processingType
             }
-            .toMapCheckingDuplicates
+            .toMapCheckingDuplicatesUnsafe
           UserCategoriesWithProcessingTypesDto(processingTypeByCategory)
         }
       }

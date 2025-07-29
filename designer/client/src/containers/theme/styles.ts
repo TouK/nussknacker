@@ -77,14 +77,14 @@ const aceEditorStyles = (theme: Theme) => ({
     },
     ".ace-nussknacker .ace_entity.ace_name.ace_tag, .ace-nussknacker .ace_keyword, .ace-nussknacker .ace_meta.ace_tag, .ace-nussknacker .ace_storage":
         {
-            color: "#db7e3a",
+            color: "#FF9447",
         },
     ".ace-nussknacker .ace_punctuation, .ace-nussknacker .ace_punctuation.ace_tag": {
         color: "#fff",
     },
     ".ace-nussknacker .ace_constant.ace_character, .ace-nussknacker .ace_constant.ace_language, .ace-nussknacker .ace_constant.ace_numeric, .ace-nussknacker .ace_constant.ace_other":
         {
-            color: "#AE81FF",
+            color: theme.palette.custom.codeEditor.numeric.color,
         },
     ".ace-nussknacker .ace_invalid": {
         color: "#F8F8F0",
@@ -107,20 +107,23 @@ const aceEditorStyles = (theme: Theme) => ({
     },
     ".ace-nussknacker .ace_entity.ace_name.ace_function, .ace-nussknacker .ace_entity.ace_other, .ace-nussknacker .ace_entity.ace_other.ace_attribute-name, .ace-nussknacker .ace_variable":
         {
-            color: "#9876AA",
+            color: theme.palette.custom.codeEditor.objectKeys.color,
         },
+    ".ace-nussknacker .ace_method": {
+        color: "#66d9ef",
+    },
     ".ace-nussknacker .ace_variable.ace_parameter": {
         fontStyle: "italic",
         color: "#FD971F",
     },
     ".ace-nussknacker .ace_string": {
-        color: "#6A8759",
+        color: theme.palette.custom.codeEditor.string.color,
     },
     ".ace-nussknacker .ace_comment": {
         color: "#75715E",
     },
-    ".ace-nussknacker .ace_spel": {
-        color: "#337AB7",
+    ".ace-nussknacker .ace_spel, .ace-nussknacker .ace_jsonTemplate, .ace-nussknacker .ace_spelTemplate": {
+        color: "#52AEFF",
     },
     ".ace-nussknacker .ace_paren": {
         fontWeight: "bold",
@@ -168,14 +171,23 @@ const aceEditorStyles = (theme: Theme) => ({
             },
         },
     },
-    ".ace-nussknacker .ace_jsonTemplate, .ace-nussknacker .ace_spelTemplate": {
-        color: "#00BFA5",
-    },
 
     ".ace-nussknacker .ace_static_highlight": {
         padding: theme.spacing(0.5),
         overflowX: "auto",
         whiteSpace: "pre",
+    },
+
+    ".expressionEvaluationResult .ace_static_highlight": {
+        backgroundColor: "rgb(39, 40, 34)",
+    },
+
+    ".expressionEvaluationResult .ace_string": {
+        color: theme.palette.custom.codeEditor.string.color,
+    },
+
+    ".expressionEvaluationResult .ace_numeric, .expressionEvaluationResult .ace_boolean": {
+        color: theme.palette.custom.codeEditor.numeric.color,
     },
 });
 

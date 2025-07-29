@@ -170,6 +170,10 @@ object ProcessCompilationError {
       extends PartSubGraphCompilationError
       with InASingleNode
 
+  case class DuplicatedParameters(params: Set[ParameterName], nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class UnresolvedFragment(nodeId: String) extends PartSubGraphCompilationError with InASingleNode
 
   object MissingParameters {
