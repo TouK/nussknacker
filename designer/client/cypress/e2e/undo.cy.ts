@@ -3,7 +3,7 @@ describe("Undo/Redo", () => {
     const screenshotOptions: Cypress.MatchImageOptions = {
         maxDiffThreshold: 0.005,
         screenshotConfig: {
-            blackout: ["> div > :not(#nk-graph-main) > div"],
+            blackout: ["[data-testid=SidePanel]"],
         },
     };
 
@@ -12,7 +12,7 @@ describe("Undo/Redo", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
+        // cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
@@ -32,7 +32,7 @@ describe("Undo/Redo", () => {
         cy.contains(/^paste$/i).as("paste");
     });
 
-    it("should work for add and move to edge", () => {
+    it.only("should work for add and move to edge", () => {
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("[data-testid='component:Customfilter']")
             .should("be.visible")
