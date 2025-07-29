@@ -38,6 +38,7 @@ import { useInterval } from "./Interval";
 import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
 import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
 import { GraphPage } from "./Page";
+import { PanToNodes } from "./PanToNodes";
 import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
 
@@ -215,6 +216,7 @@ function Visualization() {
 
                 <GraphProvider graph={getGraphInstance}>
                     <LiveDataThroughputs />
+                    <PanToNodes />
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>

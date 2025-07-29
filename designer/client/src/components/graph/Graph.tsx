@@ -282,16 +282,6 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.ADD, (cell: dia.Element) => {
             if (!isModelElement(cell)) return;
-
-            setTimeout(() => {
-                const viewBox = this.viewport.clone().inflate(this.viewport.width * -0.2, this.viewport.height * -0.2);
-                const cellBox = this.processGraphPaper.findViewByModel(cell.id).getBBox();
-                if (!viewBox.containsRect(cellBox)) {
-                    const cellsToFit = getNeighbors(this.graph, cell, { depth: 2, withSelf: true });
-                    this.fit(cellsToFit.length > 1 ? cellsToFit : null);
-                }
-            }, 0);
-
             //we want to inject node during 'Drag and Drop' from toolbox
             const cellBelow = this.lastHoveredCell;
             this.handleInjectBetweenNodes(cell, cellBelow);
@@ -313,11 +303,14 @@ export class Graph extends React.Component<Props> {
         applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme);
 
         if (isEmpty(layout)) {
-            this.forceLayout();
-        } else {
-            updateLayout(this.graph, layout);
-            this.redrawing = false;
+            if (scenarioGraph.nodes.length > 0) {
+                this.forceLayout();
+            }
+            return;
         }
+
+        updateLayout(this.graph, layout);
+        this.redrawing = false;
     };
 
     setEspGraphRef = (instance: HTMLElement): void => {
