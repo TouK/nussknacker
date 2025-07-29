@@ -1,8 +1,6 @@
 import { useTheme } from "@mui/material";
 import type { CSSProperties } from "react";
 
-import { getBorderColor } from "./helpers";
-
 export const useJsonTreeTheme = () => {
     const MuiTheme = useTheme();
 
@@ -30,7 +28,6 @@ export const useJsonTreeTheme = () => {
     const treeStyle: CSSProperties = {
         font: `'Roboto Mono','Monaco',monospace`,
         fontSize: "0.875rem",
-        border: `1px solid ${getBorderColor(MuiTheme)}`,
         paddingTop: MuiTheme.spacing(1),
         paddingBottom: MuiTheme.spacing(1),
         backgroundColor: MuiTheme.palette.custom.codeEditor.readonly.backgroundColor,
