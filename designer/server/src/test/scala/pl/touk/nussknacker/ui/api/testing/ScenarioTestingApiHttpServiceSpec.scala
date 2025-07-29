@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api.testing
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
 import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -9,7 +8,6 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.scalatest.Assertion
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -53,8 +51,6 @@ trait ScenarioTestingApiHttpServiceSpec
 
   protected val generatedSamplesCount = 3
 
-  protected def expectedSourceTestingParametersJson: String
-
   protected def expectedTestDataJson: String
 
   protected val inputValueNotMatchingExpectedType = "false"
@@ -67,7 +63,7 @@ trait ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(exampleScenarioGraphStr)
+        .jsonBody(exampleScenarioGraph.asJson.spaces2)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
         .Then()
         .statusCode(200)
@@ -93,7 +89,7 @@ trait ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthWriter()
-        .jsonBody(exampleScenarioGraphStr)
+        .jsonBody(exampleScenarioGraph.asJson.spaces2)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
         .Then()
         .statusCode(200)
@@ -123,7 +119,7 @@ trait ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthNoPermUser()
-        .jsonBody(exampleScenarioGraphStr)
+        .jsonBody(exampleScenarioGraph.asJson.spaces2)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
         .Then()
         .statusCode(403)
@@ -138,7 +134,7 @@ trait ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, generatedSamplesCount))
+        .jsonBody(testDataGenerationRequest(exampleScenarioGraph.asJson.spaces2, generatedSamplesCount))
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(200)
@@ -151,7 +147,7 @@ trait ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, 100))
+        .jsonBody(testDataGenerationRequest(exampleScenarioGraph.asJson.spaces2, 100))
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(StatusCodes.BadRequest.intValue)
@@ -163,27 +159,7 @@ trait ScenarioTestingApiHttpServiceSpec
 
   "The endpoint for generating test parameters should" - {
     "properly generate parameters for source with support of testParametersDefinition" in {
-      given()
-        .applicationState {
-          createSavedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(exampleScenarioGraphStr)
-        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/capabilities")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          responseWithParameters(
-            s"""[
-             |    {
-             |        "sourceId": "$exampleScenarioSourceId",
-             |        "parameters": [$expectedSourceTestingParametersJson]
-             |    }
-             |]
-             |""".stripMargin
-          )
-        )
+      shouldProperlyGetTestParameters()
     }
     "return error if scenario does not exists" in {
       val notExistingScenarioName = exampleScenario.name.value + "_2"
@@ -194,7 +170,7 @@ trait ScenarioTestingApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(s"""{
-              |  "scenarioGraph": $exampleScenarioGraphStr,
+              |  "scenarioGraph": ${exampleScenarioGraph.asJson.spaces2},
               |  "numberOfSamples": 100
               |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/$notExistingScenarioName/generatedTestData")
@@ -310,12 +286,6 @@ trait ScenarioTestingApiHttpServiceSpec
     }
   }
 
-  "The endpoint for adhoc test parameters should" - {
-    "return test parameters" in {
-      shouldProperlyGetTestParameters()
-    }
-  }
-
   "The endpoint for test with live data should" - {
     "return error if trying to test with 0 samples" in {
       given()
@@ -340,8 +310,6 @@ trait ScenarioTestingApiHttpServiceSpec
   }
 
   protected def verifyTestFromFileWithCorrectTestDataResponse(response: Response[String]): Assertion
-
-  private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
 
   private def testDataGenerationRequest(
       scenarioGraphStr: String,
