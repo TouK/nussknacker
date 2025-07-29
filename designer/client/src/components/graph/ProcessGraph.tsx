@@ -35,7 +35,7 @@ import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import type { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
 import NodeUtils from "./NodeUtils";
-import { setLinksHovered } from "./utils/dragHelpers";
+import { setDraggedOver } from "./utils/dragHelpers";
 
 export type ElementDropResult = {
     item: NodeType;
@@ -65,7 +65,7 @@ export const ProcessGraph = forwardRef<
             // to make node horizontally aligned
             const nodeInputRelOffset = relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
             graph.current.addNode(item, mapValues(nodeInputRelOffset, Math.round));
-            setLinksHovered(graph.current.graph);
+            setDraggedOver(graph.current.graph);
             return {
                 paper,
                 item,
@@ -87,9 +87,9 @@ export const ProcessGraph = forwardRef<
                     .inflate(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-                setLinksHovered(graph.current.graph, rect, null, item);
+                setDraggedOver(graph.current.graph, rect, null, item);
             } else {
-                setLinksHovered(graph.current.graph);
+                setDraggedOver(graph.current.graph);
             }
         },
         collect: (monitor) => ({

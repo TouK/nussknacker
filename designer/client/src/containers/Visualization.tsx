@@ -9,6 +9,7 @@ import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProces
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
+import { RECT_HEIGHT } from "../components/graph/EspNode/esp";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
 import { usePortal } from "../components/graph/node-modal/io/usePortal";
@@ -168,14 +169,12 @@ function Visualization() {
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
-        const { x, y } = paper?.getArea()?.center() || {
-            x: 300,
-            y: 100,
-        };
-        return {
-            x: Math.floor(x),
-            y: Math.floor(y),
-        };
+        return (
+            paper?.getContentArea()?.topRight().offset(RECT_HEIGHT).snapToGrid(1, 1) || {
+                x: 300,
+                y: 100,
+            }
+        );
     }, [getGraphInstance]);
 
     useEffect(() => {

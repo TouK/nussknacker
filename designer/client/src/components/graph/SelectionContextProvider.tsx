@@ -179,15 +179,13 @@ export default function SelectionContextProvider(
 
     const parse = useClipboardParse();
 
-    function calculatePastedNodePosition(node, pasteX, minNodeX, pasteY, minNodeY, random) {
+    function calculatePastedNodePosition(node, pasteX, minNodeX, pasteY, minNodeY) {
         const currentNodePosition = node.additionalFields.layoutData;
         const pasteNodePosition = { x: currentNodePosition.x + pasteX, y: currentNodePosition.y + pasteY };
-        const selectionLayoutNodePosition = { x: pasteNodePosition.x - minNodeX, y: pasteNodePosition.y - minNodeY };
-        const randomizedNodePosition = {
-            x: selectionLayoutNodePosition.x + random,
-            y: selectionLayoutNodePosition.y + random,
+        return {
+            x: pasteNodePosition.x - minNodeX,
+            y: pasteNodePosition.y - minNodeY,
         };
-        return randomizedNodePosition;
     }
 
     const [parseInsertNodes] = useDebounceFn((clipboardText) => {
@@ -196,10 +194,9 @@ export default function SelectionContextProvider(
             const { x, y } = props.pastePosition();
             const minNodeX: number = min(selection.nodes.map((node) => node.additionalFields.layoutData.x));
             const minNodeY: number = min(selection.nodes.map((node) => node.additionalFields.layoutData.y));
-            const random = Math.floor(Math.random() * 20) + 1;
             const nodesWithPositions = selection.nodes.map((node) => ({
                 node,
-                position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY, random),
+                position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY),
             }));
             dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges));
         } else {

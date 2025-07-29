@@ -13,7 +13,7 @@ import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
 import NodeUtils from "../NodeUtils";
 import { Events } from "../types";
-import { setLinksHovered } from "../utils/dragHelpers";
+import { setDraggedOver } from "../utils/dragHelpers";
 import { EspNodeShape } from "./esp";
 
 const maxLineLength = 24;
@@ -177,7 +177,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     // avoid calling on init
                     after(2, (el: dia.Element) => {
                         if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
-                            setLinksHovered(el.graph, el.getBBox(), el);
+                            setDraggedOver(el.graph, el.getBBox(), el);
                         }
                     }),
                 );

@@ -38,7 +38,7 @@ import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import type { GraphProps } from "./types";
 import { Events } from "./types";
-import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
+import { filterDragHovered, getLinkNodes, setDraggedOver } from "./utils/dragHelpers";
 import { canInjectNode as graphUtilsCanInjectNode, handleGraphEvent } from "./utils/graphUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";
 
@@ -285,7 +285,7 @@ export class Graph extends React.Component<Props> {
             //we want to inject node during 'Drag and Drop' from toolbox
             const cellBelow = this.lastHoveredCell;
             this.handleInjectBetweenNodes(cell, cellBelow);
-            setLinksHovered(cell.graph);
+            setDraggedOver(cell.graph);
         });
 
         this.fit();

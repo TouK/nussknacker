@@ -1,3 +1,4 @@
+import type { dia } from "jointjs";
 import { g } from "jointjs";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
@@ -11,6 +12,14 @@ import { useSidePanel } from "../components/sidePanels/SidePanelsContext";
 import { globalEventBus } from "../components/toolbars/creator/globalEventBus";
 import { ComponentFilter } from "../components/toolbars/creator/ToolBox";
 import { useOutsideInteraction } from "../components/toolbars/creator/useOutsideInteraction";
+
+const adjustPoint = (paper: dia.Paper, plainPoint: g.PlainPoint): g.Point => {
+    const rect = new g.Rect(plainPoint.x, plainPoint.y, RECT_WIDTH, RECT_HEIGHT);
+    if (paper.findViewsInArea(rect.clone().inflate(10)).length > 0) {
+        return adjustPoint(paper, rect.offset(RECT_HEIGHT).topLeft());
+    }
+    return rect.topLeft().snapToGrid(1, 1);
+};
 
 export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
     const dispatch = useDispatch();
@@ -96,15 +105,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
             const graph = graphGetter();
             const paper = graph.processGraphPaper;
 
-            function adjustPoint(plainPoint: g.PlainPoint): g.Point {
-                const rect = new g.Rect(plainPoint.x, plainPoint.y, RECT_WIDTH, RECT_HEIGHT);
-                if (paper.findViewsInArea(rect.clone().inflate(10)).length > 0) {
-                    return adjustPoint(rect.offset(RECT_HEIGHT).topLeft());
-                }
-                return rect.topLeft();
-            }
-
-            const position: g.Point = adjustPoint(onPoint).snapToGrid(1, 1);
+            const position: g.Point = adjustPoint(paper, onPoint);
 
             if (graph.isFragmentCreator(node)) {
                 return graph.createFragment(position, edge);
