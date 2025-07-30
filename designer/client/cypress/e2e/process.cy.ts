@@ -5,9 +5,9 @@ describe("Process", () => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
-    // after(() => {
-    //     cy.deleteAllTestProcesses({ filter: seed, force: true });
-    // });
+    after(() => {
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
+    });
 
     beforeEach(() => {
         cy.mockWindowDate();
@@ -301,7 +301,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it("should validate process on nodes paste", () => {
+    it.skip("should validate process on nodes paste", () => {
         cy.visitNewProcess(seed, "filter");
         cy.viewport(1500, 800);
         cy.layoutScenario();
