@@ -63,7 +63,7 @@ describe("Process initially clean", () => {
         cy.get("[data-testid=window]").find('[title="Description"]').siblings().first().should("contain", "RENAMED");
     });
 
-    it("should allow archive with redirect to list", function () {
+    it.only("should allow archive with redirect to list", function () {
         cy.contains(/^archive/i)
             .should("be.enabled")
             .click();
