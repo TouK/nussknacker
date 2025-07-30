@@ -1,4 +1,4 @@
-describe.skip("Process initially clean", () => {
+describe("Process initially clean", () => {
     const seed = "process";
 
     before(() => {
@@ -14,7 +14,7 @@ describe.skip("Process initially clean", () => {
         cy.visitNewProcess(seed).as("processName");
     });
 
-    it("should allow rename", () => {
+    it.only("should allow rename", () => {
         cy.intercept("PUT", "/api/processes/*").as("save");
 
         cy.contains(/^properties/i)

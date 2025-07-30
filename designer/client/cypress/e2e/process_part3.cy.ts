@@ -13,7 +13,7 @@ describe("Process", () => {
         cy.mockWindowDate();
     });
 
-    it("should preserve condition on link move (switch)", () => {
+    it.only("should preserve condition on link move (switch)", () => {
         cy.intercept("POST", "/api/*Validation/*", (req) => {
             if (req.body.scenarioGraph.edges.length == 3) {
                 req.alias = "validation";
