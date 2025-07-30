@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{validNel, Invalid, Valid}
+import cats.data.ValidatedNel
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{HCursor, Json}
+import io.circe.{parser, HCursor, Json, ParsingFailure}
 import io.circe.Decoder.Result
 import org.springframework.expression.{Expression => SpringExpression}
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.{FromInstanceTypeDeterminer, Standar
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
-import pl.touk.nussknacker.engine.language.json.JsonParser.CompiledJsonExpression
+import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.ParsingFailureExt
 import pl.touk.nussknacker.engine.language.json.JsonTemplateTypeDeterminer._
 import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelExpressionParser, SpelExpressionRepr}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -40,18 +40,12 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
             s"Expression [${spelTemplateExpression.original}] was transformed to json with placeholders filled [$jsonWithPlaceholdersFilled] for the expression typing purpose"
           )
           // This step may generate a wrong error position because we fill placeholders but it not a problem because we abandon validation result
-          JsonParser
-            .parse(jsonWithPlaceholdersFilled, validationContext, Unknown)
-            .fold(
-              handleJsonWithPlaceholdersFilledParseError(spelExpression, _),
-              typedJsonExpression =>
-                Valid(
-                  computeTypeForJsonWithPlaceholdersFilled(
-                    typedJsonExpression.expression.asInstanceOf[CompiledJsonExpression].json,
-                    expectedType
-                  )
-                )
-            )
+          parser.parse(jsonWithPlaceholdersFilled) match {
+            case Left(err) =>
+              handleJsonWithPlaceholdersFilledParseError(spelExpression, err)
+            case Right(json) =>
+              Valid(computeTypeForJsonWithPlaceholdersFilled(json, expectedType))
+          }
         }
     }
   }
@@ -104,11 +98,11 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
 
   private def handleJsonWithPlaceholdersFilledParseError(
       spelExpression: SpringExpression,
-      errors: NonEmptyList[ExpressionParseError]
+      error: ParsingFailure
   ) = {
     def abandonErrors() = {
       logger.debug(
-        s"Found validation errors [${errors.toList.mkString(", ")}] during json with placeholders validation. " +
+        s"Found paring error [${error.getMessage()}] during json with placeholders validation. " +
           s"We can't be sure that they are real errors, so we be ignore them and return ${Typed.json} type instead"
       )
       Valid(Typed.json)
@@ -116,7 +110,7 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
 
     spelExpression match {
       // No placeholder filled - we can return errors
-      case _: LiteralExpression => Invalid(errors)
+      case _: LiteralExpression => Invalid(error.toExpressionParseError).toValidatedNel
       // When any expression was used, we have to be loose, json-structure-based types are only a hint for further validation.
       // In general, we should allow every templating logic
       case _: CompositeStringExpression =>

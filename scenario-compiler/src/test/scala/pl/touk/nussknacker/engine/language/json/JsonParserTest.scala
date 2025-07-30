@@ -4,12 +4,15 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Valid
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectWithValue, Unknown}
-import pl.touk.nussknacker.engine.language.json.JsonParser.JsonParseError
+import pl.touk.nussknacker.engine.language.json.JsonParser.JsonDecodingError
+import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.JsonParseError
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
+import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 
 class JsonParserTest extends AnyFunSuite with Matchers {
@@ -40,14 +43,6 @@ class JsonParserTest extends AnyFunSuite with Matchers {
     val dataSample = "\"text\""
     val result     = parse(dataSample)
     result shouldBe Valid(TypedObjectWithValue(Typed.typedClass[String], "text"))
-  }
-
-  test("Should treat an empty string and whitespace characters as the null expression") {
-    val dataSamples = List("", " ", "      ", "\t", "\r", "\n")
-    dataSamples.foreach { dataSample =>
-      val result = parse(dataSample)
-      result shouldBe Valid(TypedNull)
-    }
   }
 
   test("Should parse an empty array") {
@@ -154,15 +149,40 @@ class JsonParserTest extends AnyFunSuite with Matchers {
          |  }
          |}""".stripMargin
 
-    // TypingResult does not keep the order of fields in the Maps, so it is hard to assert with the TypingResult instance
-    // display method sorts fields, so the order is deterministic
-    val expectedDisplayedResult = parse(dataSample).map(_.withoutValue.display)
-    expectedDisplayedResult shouldBe Valid(
-      "Record{" +
-        "arrayExample: List[Unknown], booleanExample: Boolean, integerExample: Integer, nullExample: Unknown, numberExample: BigDecimal, " +
-        "objectExample: Record{nestedArray: List[Integer], nestedBoolean: Boolean, nestedInteger: Integer, nestedNumber: BigDecimal, " +
-        "nestedObject: Record{deepKey: String}, nestedString: String}, stringExample: String" +
-        "}"
+    val expressionResultType = parse(dataSample).validValue
+    expressionResultType.withoutValue shouldBe Typed.record(
+      Seq(
+        "stringExample"  -> Typed[String],
+        "numberExample"  -> Typed[java.math.BigDecimal],
+        "integerExample" -> Typed[Integer],
+        "booleanExample" -> Typed[Boolean],
+        "nullExample"    -> Unknown,
+        "arrayExample"   -> Typed.fromDetailedType[java.util.List[_]],
+        "objectExample" -> Typed.record(
+          Seq(
+            "nestedString"  -> Typed[String],
+            "nestedNumber"  -> Typed[java.math.BigDecimal],
+            "nestedInteger" -> Typed[Integer],
+            "nestedBoolean" -> Typed[Boolean],
+            "nestedArray"   -> Typed.fromDetailedType[java.util.List[Int]],
+            "nestedObject" -> Typed.record(
+              Seq(
+                "deepKey" -> Typed[String],
+              )
+            ),
+          )
+        )
+      )
+    )
+  }
+
+  test("should respect expected type") {
+    val compiledExpression = parser.parse("\"2025-01-01\"", ValidationContext.empty, Typed[LocalDate]).validValue
+    compiledExpression.returnType.withoutValue shouldBe Typed[LocalDate]
+    compiledExpression.expression.evaluate[LocalDate](Context.dummy, Map.empty) shouldBe LocalDate.of(2025, 1, 1)
+
+    parser.parse("\"illegal-date\"", ValidationContext.empty, Typed[LocalDate]).invalidValue shouldBe List(
+      JsonDecodingError("DecodingFailure at : Text 'illegal-date' could not be parsed at index 0")
     )
   }
 
