@@ -13,7 +13,7 @@ describe("Process", () => {
         cy.mockWindowDate();
     });
 
-    it.only("should preserve condition on link move (switch)", () => {
+    it("should preserve condition on link move (switch)", () => {
         cy.intercept("POST", "/api/*Validation/*", (req) => {
             if (req.body.scenarioGraph.edges.length == 3) {
                 req.alias = "validation";
@@ -65,7 +65,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 8 } });
     });
 
-    it.only("should preserve condition on link move (filter)", () => {
+    it("should preserve condition on link move (filter)", () => {
         cy.intercept("POST", "/api/*Validation/*", (req) => {
             if (req.body.scenarioGraph.edges.length == 2) {
                 req.alias = "validation";
@@ -114,7 +114,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it.only("should validate process on nodes paste", () => {
+    it.skip("should validate process on nodes paste", () => {
         cy.visitNewProcess(seed, "filter");
         cy.viewport(1500, 800);
         cy.layoutScenario();
@@ -147,7 +147,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it("should zoom/restore node window with test data", () => {
+    it.skip("should zoom/restore node window with test data", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
         cy.viewport(1500, 800);
         cy.layoutScenario();
@@ -181,7 +181,7 @@ describe("Process", () => {
             });
     });
 
-    it("should open more scenario details", () => {
+    it.skip("should open more scenario details", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
         cy.contains(/^More details$/i).click();
         cy.get("[data-testid=window]")

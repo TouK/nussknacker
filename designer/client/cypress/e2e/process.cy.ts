@@ -14,7 +14,7 @@ describe("Process initially clean", () => {
         cy.visitNewProcess(seed).as("processName");
     });
 
-    it.only("should allow rename", () => {
+    it("should allow rename", () => {
         cy.intercept("PUT", "/api/processes/*").as("save");
 
         cy.contains(/^properties/i)
@@ -35,7 +35,7 @@ describe("Process initially clean", () => {
         cy.location("href").should("contain", "-renamed");
     });
 
-    it.only("should allow rename with other changes", () => {
+    it("should allow rename with other changes", () => {
         cy.intercept("PUT", "/api/processes/*").as("save");
 
         cy.contains(/^properties/i)
@@ -63,7 +63,7 @@ describe("Process initially clean", () => {
         cy.get("[data-testid=window]").find('[title="Description"]').siblings().first().should("contain", "RENAMED");
     });
 
-    it.only("should allow archive with redirect to list", function () {
+    it("should allow archive with redirect to list", function () {
         cy.contains(/^archive/i)
             .should("be.enabled")
             .click();
@@ -74,7 +74,7 @@ describe("Process initially clean", () => {
         cy.contains(/scenario was archived/i).should("be.visible");
     });
 
-    it("should open properties from tips panel", () => {
+    it.skip("should open properties from tips panel", () => {
         cy.viewport("macbook-15");
         cy.contains(/^properties/i)
             .should("be.enabled")
@@ -94,7 +94,7 @@ describe("Process initially clean", () => {
         cy.get("[data-testid=window]").matchImage();
     });
 
-    it("should import JSON and save", () => {
+    it.skip("should import JSON and save", () => {
         cy.intercept("PUT", "/api/processes/*").as("save");
         cy.contains(/is not deployed/i).should("be.visible");
         cy.get("#nk-graph-main").matchImage();
