@@ -26,7 +26,7 @@ export function getToolbarComponent(config?: ToolbarConfig): ComponentType<Toolb
         case "tips-panel":
             return TipsPanel;
         case "creator-panel":
-        case "creator-panel2":
+        case "creator-panel-dynamic":
             return CreatorPanel;
         case "search-panel":
             return SearchPanel;

@@ -42,7 +42,7 @@ export function SidePanelToggleButton({ type, ...props }: Props) {
 }
 export function SidePanelToggleButton2({ placeholder }: { placeholder?: boolean }) {
     const { t } = useTranslation();
-    const title = t("panel.toggle.left", "toggle left panel");
+    const title = placeholder ? t("panels.creator.openSelectFirst", "add source node") : t("panels.creator.openSelect", "add new node");
     const graphGetter = useGraph();
 
     return (

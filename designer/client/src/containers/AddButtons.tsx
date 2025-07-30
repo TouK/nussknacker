@@ -12,7 +12,7 @@ export const AddButtons = () => {
     const scenario = useSelector(getScenario);
     const toolbars = useSelector(getToolbarsConfig);
 
-    if (!toolbars[ToolbarsSide.RightDynamic]?.find((t) => t.id === "creator-panel2")) {
+    if (!toolbars[ToolbarsSide.RightDynamic]?.find((t) => ["creator-panel", "creator-panel-dynamic"].includes(t.id))) {
         return null;
     }
 
@@ -25,11 +25,13 @@ export const AddButtons = () => {
                 gridRow="top/span 2"
                 gridColumn="left/right"
                 sx={{
-                    justifyItems: "center",
+                    display: "flex",
+                    flexWrap: "wrap",
                     alignContent: "center",
+                    justifyContent: "center",
                 }}
             >
-                <Fade in={!scenario.scenarioGraph.nodes.length}>
+                <Fade in={!scenario.scenarioGraph.nodes.length} unmountOnExit mountOnEnter>
                     <Box>
                         <SidePanelToggleButton2 placeholder />
                     </Box>
