@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import type { Dictionary } from "lodash";
 import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
@@ -8,7 +9,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
-import type { Edge, ValidationResult } from "../../types";
+import type { Edge, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
@@ -57,6 +58,35 @@ export function updateValidationResult(state: GraphState, action: { validationRe
             ...action.validationResult.nodeResults,
         },
     };
+}
+
+// fix added/pasted edges port names after fixing duplicated node names
+function adjustEdges(
+    addedNodes: NodeType[],
+    addedEdges: Edge[],
+    currentNodes: NodeType[],
+    currentEdges: Edge[],
+    processDefinitionData: ProcessDefinitionData,
+    idMapping: Dictionary<string>,
+): Edge[] {
+    if (addedEdges.length < 1) return currentEdges;
+    const nodes = [...currentNodes, ...addedNodes];
+
+    const getId = (rawId: string) => {
+        // one "to be connected" node
+        if (addedNodes.length === 1 && addedEdges.length === 1 && !rawId) {
+            return addedNodes[0].id;
+        }
+        return idMapping[rawId] || rawId;
+    };
+
+    return addedEdges.reduce((adjustedEdges, { edgeType, from, to }) => {
+        const fromNode = nodes.find(({ id }) => id === getId(from));
+        const toNode = nodes.find(({ id }) => id === getId(to));
+        const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, adjustedEdges);
+        const newEdge = createEdge(fromNode, toNode, edgeType, currentNodeEdges, processDefinitionData);
+        return adjustedEdges.concat(newEdge);
+    }, currentEdges);
 }
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
@@ -302,47 +332,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;
-
-            let adjustedEdges: Edge[];
-
-            if (nodes.length === 1 && edges.length === 1) {
-                adjustedEdges = edges.map((edge) => {
-                    const nextEdge = {
-                        ...edge,
-                        from: edge.from ? edge.from : nodes[0].id,
-                        to: edge.to ? edge.to : nodes[0].id,
-                    };
-                    return nextEdge;
-                });
-                adjustedEdges = edges.reduce((edges, edge) => {
-                    const fromNode = edge.from ? currentNodes.find((n) => n.id === edge.from) : nodes[0];
-                    const toNode = edge.to ? currentNodes.find((n) => n.id === edge.to) : nodes[0];
-                    const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
-                    const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, processDefinitionData);
-                    return edges.concat(newEdge);
-                }, currentEdges);
-            } else {
-                const edgesWithValidIds = edges.map((edge) => {
-                    return {
-                        ...edge,
-                        from: idMapping[edge.from],
-                        to: idMapping[edge.to],
-                    };
-                });
-
-                adjustedEdges = edgesWithValidIds.reduce((edges, edge) => {
-                    const fromNode = [...currentNodes, ...nodes].find((n) => n.id === edge.from);
-                    const toNode = [...currentNodes, ...nodes].find((n) => n.id === edge.to);
-                    const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
-                    const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, processDefinitionData);
-                    return edges.concat(newEdge);
-                }, currentEdges);
-            }
-
             return addNodesWithLayout(state, {
                 nodes,
                 layout,
-                edges: adjustedEdges,
+                edges: adjustEdges(nodes, edges, currentNodes, currentEdges, processDefinitionData, idMapping),
             });
         }
         case "VALIDATION_RESULT": {
