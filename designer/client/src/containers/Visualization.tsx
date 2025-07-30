@@ -32,7 +32,7 @@ import {
 } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { useWindows } from "../windowManager";
-import { AddButtons } from "./AddButtons";
+import { AddComponentsButtons } from "./AddComponentsButtons";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
@@ -222,7 +222,7 @@ function Visualization() {
                             <Overlay gridArea="left" gridRow="top">
                                 <ScenarioDescription />
                             </Overlay>
-                            <AddButtons />
+                            <AddComponentsButtons />
                         </Toolbars>
                     </SelectionContextProvider>
                 </GraphProvider>
