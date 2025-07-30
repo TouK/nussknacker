@@ -2,7 +2,7 @@ import { styled } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { forwardRef, useState } from "react";
 
-import { PanelSide } from "../../actions/nk";
+import { isDynamic, isLeft, PanelSide } from "../../actions/nk/ui/panelSide";
 import { PANEL_WIDTH, SCROLL_THUMB_SIZE, SIDEBAR_WIDTH } from "../../stylesheets/variables";
 import { useGraphViewportAdjustment } from "./graphViewportAdjustment";
 
@@ -44,10 +44,6 @@ const CollapsiblePanelContent = styled("div")<CollapsiblePanelProps>(({ side, is
     }),
 }));
 
-export const isDynamic = (side: PanelSide) => {
-    return [PanelSide.RightDynamic, PanelSide.LeftDynamic].includes(side);
-};
-
 export const CollapsiblePanel = forwardRef<HTMLDivElement, CollapsiblePanelProps>(function CollapsiblePanel(
     { children, className, scrollVisible, ...props },
     forwardedRef,
@@ -74,8 +70,7 @@ export const CollapsiblePanel = forwardRef<HTMLDivElement, CollapsiblePanelProps
         >
             <CollapsiblePanelContent
                 style={{
-                    [[PanelSide.Left, PanelSide.LeftDynamic].includes(props.side) ? "right" : "left"]:
-                        scrollVisible || isDynamic(props.side) ? 0 : -1 * SCROLL_THUMB_SIZE,
+                    [isLeft(props.side) ? "right" : "left"]: scrollVisible || isDynamic(props.side) ? 0 : -1 * SCROLL_THUMB_SIZE,
                 }}
                 {...props}
             >

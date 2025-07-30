@@ -2,7 +2,7 @@ import type { g } from "jointjs";
 import type { Unsubscribe } from "nanoevents";
 import { createNanoEvents } from "nanoevents";
 
-import type { PanelSide } from "../../../actions/nk";
+import type { PanelSide } from "../../../actions/nk/ui/panelSide";
 import type { Edge, NodeType } from "../../../types";
 import type { ToolBoxProps } from "./ToolBox";
 

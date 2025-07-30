@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useKey } from "rooks";
 
-import type { PanelSide } from "../actions/nk";
 import { nodesWithEdgesAdded } from "../actions/nk";
+import type { PanelSide } from "../actions/nk/ui/panelSide";
 import { portSize, RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/esp";
 import { useGraph } from "../components/graph/GraphContext";
 import { useSidePanel } from "../components/sidePanels/SidePanelsContext";

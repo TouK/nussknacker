@@ -5,7 +5,8 @@ import type { PropsWithChildren } from "react";
 import React, { useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
 
-import { PanelSide } from "../../actions/nk";
+import type { PanelSide } from "../../actions/nk/ui/panelSide";
+import { isDynamic, isLeft, isRight } from "../../actions/nk/ui/panelSide";
 import { blendDarken } from "../../containers/theme/helpers";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
@@ -21,8 +22,8 @@ const trackStyleProps = (side: PanelSide) => ({
     top: TOOLBARS_GAP - SCROLL_THUMB_SIZE / 3,
     bottom: TOOLBARS_GAP - SCROLL_THUMB_SIZE / 3,
     height: CLEAN_STYLE,
-    right: [PanelSide.Left, PanelSide.LeftDynamic].includes(side) ? 0 : null,
-    left: [PanelSide.Right, PanelSide.RightDynamic].includes(side) ? 0 : null,
+    right: isLeft(side) ? 0 : null,
+    left: isRight(side) ? 0 : null,
 });
 
 const thumbYStyleProps = (theme: Theme) => ({
@@ -69,9 +70,7 @@ export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWith
             scrollerProps={{ style: { marginRight: -SCROLLBAR_WIDTH } }}
             onUpdate={({ scrollYPossible }) => setScrollPossible(scrollYPossible)}
         >
-            <ScrollbarsWrapper opaque={isScrollPossible && ![PanelSide.RightDynamic, PanelSide.LeftDynamic].includes(side)}>
-                {children}
-            </ScrollbarsWrapper>
+            <ScrollbarsWrapper opaque={isScrollPossible && !isDynamic(side)}>{children}</ScrollbarsWrapper>
         </Scrollbars>
     );
 }

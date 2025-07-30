@@ -3,7 +3,7 @@ import { Fade, IconButton, styled } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { PanelSide } from "../actions/nk";
+import { isLeft, PanelSide } from "../actions/nk/ui/panelSide";
 import LeftIcon from "../assets/img/arrows/arrow-left.svg";
 import RightIcon from "../assets/img/arrows/arrow-right.svg";
 import { RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
@@ -27,10 +27,8 @@ type Props = {
 export function SidePanelToggleButton({ type, ...props }: Props) {
     const { t } = useTranslation();
     const { isOpened, switchVisible, toggleCollapse } = useSidePanel(type);
-    const left = [PanelSide.Left, PanelSide.LeftDynamic].includes(type) ? isOpened : !isOpened;
-    const title = [PanelSide.Left, PanelSide.LeftDynamic].includes(type)
-        ? t("panel.toggle.left", "toggle left panel")
-        : t("panel.toggle.right", "toggle right panel");
+    const left = isLeft(type) ? isOpened : !isOpened;
+    const title = isLeft(type) ? t("panel.toggle.left", "toggle left panel") : t("panel.toggle.right", "toggle right panel");
 
     return (
         <Fade in={switchVisible}>

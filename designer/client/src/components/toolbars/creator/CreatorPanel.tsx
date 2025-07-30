@@ -5,6 +5,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { isDynamic } from "../../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { NodeCreationHandler } from "../../../containers/NodeCreationHandler";
@@ -13,7 +14,6 @@ import { getProcessDefinitionData } from "../../../reducers/selectors/getProcess
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
 import type { NodeType } from "../../../types";
 import { RemoteComponent } from "../../RemoteComponent";
-import { isDynamic } from "../../sidePanels/CollapsiblePanel";
 import { useSidePanel } from "../../sidePanels/SidePanelsContext";
 import { SearchIcon } from "../../table/SearchFilter";
 import type { Focusable } from "../../themed/InputWithIcon";

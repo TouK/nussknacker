@@ -5,8 +5,8 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
+import { PanelSide } from "../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";

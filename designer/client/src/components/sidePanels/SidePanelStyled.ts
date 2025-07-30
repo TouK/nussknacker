@@ -1,6 +1,7 @@
 import { styled } from "@mui/material";
 
-import { PanelSide } from "../../actions/nk";
+import type { PanelSide } from "../../actions/nk/ui/panelSide";
+import { isLeft } from "../../actions/nk/ui/panelSide";
 import { PANEL_WIDTH } from "../../stylesheets/variables";
 
 type ScrollToggle = {
@@ -14,5 +15,5 @@ export const ScrollPanelContent = styled("div")<ScrollToggle>(({ side }) => ({
     display: "flex",
     flexDirection: "column",
     pointerEvents: "none",
-    alignItems: [PanelSide.Left, PanelSide.LeftDynamic].includes(side) ? "flex-start" : "flex-end",
+    alignItems: isLeft(side) ? "flex-start" : "flex-end",
 }));

@@ -1,4 +1,4 @@
-import { PanelSide } from "../actions/nk";
+import { PanelSide } from "../actions/nk/ui/panelSide";
 import type { Reducer } from "../actions/reduxTypes";
 
 export type Panels = Record<PanelSide, boolean>;
