@@ -47,9 +47,7 @@ object StandardParameterEnrichment {
     val finalEditors = original.editors
       .orElseIfEmpty(EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig))
     val finalValidators =
-      (original.validators ++
-        parameterConfig.validators.toList.flatten ++
-        extractAdditionalValidator(parameterData, parameterConfig, finalEditors)).distinct
+      (original.validators ++ parameterConfig.validators.toList.flatten)
     val isOptional = !finalValidators.contains(MandatoryParameterValidator)
     val finalDefaultValue = original.defaultValue.orElse(
       DefaultValueDeterminerChain.determineParameterDefaultValue(
@@ -66,16 +64,6 @@ object StandardParameterEnrichment {
       hintText = finalHintText,
       labelOpt = finalLabel
     )
-  }
-
-  private def extractAdditionalValidator(
-      parameterData: ParameterData,
-      parameterConfig: ParameterConfig,
-      finalEditors: List[ParameterEditor]
-  ): Option[ParameterValidator] = {
-    val validatorExtractorParameters =
-      ValidatorExtractorParameters(parameterData, isOptional = true, parameterConfig, finalEditors)
-    EditorBasedValidatorExtractor.extract(validatorExtractorParameters)
   }
 
 }
