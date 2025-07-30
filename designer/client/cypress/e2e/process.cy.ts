@@ -74,7 +74,7 @@ describe("Process initially clean", () => {
         cy.contains(/scenario was archived/i).should("be.visible");
     });
 
-    it.skip("should open properties from tips panel", () => {
+    it("should open properties from tips panel", () => {
         cy.viewport("macbook-15");
         cy.contains(/^properties/i)
             .should("be.enabled")
