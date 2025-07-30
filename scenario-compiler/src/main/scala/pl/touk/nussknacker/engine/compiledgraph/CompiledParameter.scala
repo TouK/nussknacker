@@ -11,7 +11,7 @@ object CompiledParameter {
       typedExpression: TypedExpression,
       parameterDefinition: Parameter
   ): CompiledParameter = {
-    CompiledParameter(
+    new CompiledParameter(
       parameterDefinition.name,
       typedExpression.expression,
       parameterDefinition.scalaOptionParameter,
@@ -22,17 +22,10 @@ object CompiledParameter {
 
 }
 
-final case class CompiledParameter(
-    override val name: ParameterName,
-    override val expression: CompiledExpression,
-    override val shouldBeWrappedWithScalaOption: Boolean,
-    override val shouldBeWrappedWithJavaOptional: Boolean,
-    typingInfo: ExpressionTypingInfo
-) extends BaseCompiledParameter
-
-trait BaseCompiledParameter {
-  def name: ParameterName
-  def expression: CompiledExpression
-  def shouldBeWrappedWithScalaOption: Boolean
-  def shouldBeWrappedWithJavaOptional: Boolean
-}
+final class CompiledParameter(
+    val name: ParameterName,
+    val expression: CompiledExpression,
+    val shouldBeWrappedWithScalaOption: Boolean,
+    val shouldBeWrappedWithJavaOptional: Boolean,
+    val typingInfo: ExpressionTypingInfo
+)

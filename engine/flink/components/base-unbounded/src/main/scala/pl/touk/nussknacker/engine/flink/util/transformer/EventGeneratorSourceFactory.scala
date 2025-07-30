@@ -35,7 +35,6 @@ import pl.touk.nussknacker.engine.util.TimestampUtils
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util
-import javax.annotation.Nullable
 import javax.validation.constraints.Min
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
@@ -66,13 +65,11 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @DefaultValue("T(java.time.Duration).parse('PT1M')")
       schedule: Duration,
-      // TODO: @DefaultValue(1) instead of nullable
       @ParamName("count")
-      @Nullable
       @DefaultValue("1")
       @Min(1)
       @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
-      nullableCount: Integer,
+      count: Int,
       @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR)
       @Editor(`type` = EditorType.SPEL_EDITOR)
       @DefaultValue(
@@ -105,7 +102,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStream[Context] = {
         // Without this local variable, flatMap function is not serializable
-        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        val localCount = count
         val streamOfRaw =
           env
             .addSource(new PeriodicFunction(schedule))
@@ -114,7 +111,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
                 // This empty String is a dummy value. It has to exist for each event, but its value is completely ignored.
                 // The type is not important too, it just has to be serializable by Flink.
                 // For each of those dummy values, a new Context will be created.
-                (1 to count).foreach(_ => out.collect(""))
+                (1 to localCount).foreach(_ => out.collect(""))
               },
               TypeInformationDetection.instance.forClass[String]
             )

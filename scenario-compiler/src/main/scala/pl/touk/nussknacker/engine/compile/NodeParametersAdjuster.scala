@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDefiniti
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.CompilationLoggerExtensions.Ops
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 object NodeParametersAdjuster extends LazyLogging {
 
@@ -48,6 +49,11 @@ object NodeParametersAdjuster extends LazyLogging {
     val (missingParameterNames, adjustedParameters) = parameterDefinitions.traverse { parameterDefinition =>
       parameterByName
         .get(parameterDefinition.name)
+        .filterNot { parameter =>
+          // We treat blank SpEL expressions the same as missing parameters. Thanks to that, we can leverage the default value
+          // also for them
+          parameter.expression.language == Language.Spel && parameter.expression.expression.isBlank
+        }
         .map(parameter => Writer.value[Set[ParameterName], NodeParameter](parameter))
         .getOrElse {
           Writer(

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.process.runner.FlinkScenarioUnitTestJob
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
 import java.nio.charset.StandardCharsets
 import java.time._
@@ -25,7 +25,8 @@ class EventGeneratorSourceFactorySpec
     with FlinkSpec
     with PatientScalaFutures
     with Matchers
-    with Inside {
+    with Inside
+    with ValidatedValuesDetailedMessage {
 
   test("should produce results for each element in list") {
     val sinkId = "sinkId"
@@ -59,6 +60,39 @@ class EventGeneratorSourceFactorySpec
       }
     }
 
+  }
+
+  test("should accept not filled count") {
+    val sinkId = "sinkId"
+    val input  = "some value"
+
+    ResultsCollectingListenerHolder.withListener { collectingListener =>
+      val model = LocalModelData(
+        ConfigFactory.empty(),
+        FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
+        configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
+      )
+      val scenario = ScenarioBuilder
+        .streaming("test")
+        .source(
+          "event-generator",
+          "event-generator",
+          "schedule" -> "T(java.time.Duration).ofSeconds(1)".spel,
+          "count"    -> "".spel,
+          "value"    -> s"'$input'".spel
+        )
+        .emptySink(sinkId, "dead-end")
+
+      flinkMiniCluster.withDetachedStreamExecutionEnvironment { env =>
+        val executionResult = new FlinkScenarioUnitTestJob(model).run(scenario, env)
+        flinkMiniCluster.withRunningJob(executionResult.getJobID) {
+          eventually {
+            val results = collectingListener.results.nodeResults.get(sinkId)
+            results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
+          }
+        }
+      }
+    }
   }
 
   test("should produce n individually evaluated results for n count") {

@@ -4,32 +4,10 @@ import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.parameter.{
-  ParameterValueInput,
-  ValueInputWithDictEditor,
-  ValueInputWithFixedValuesProvided
-}
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 object EditorExtractor {
-
-  def extract(valueInput: ParameterValueInput): List[ParameterEditor] = {
-    val innerEditor = valueInput match {
-      case ValueInputWithFixedValuesProvided(fixedValuesList, _) =>
-        FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
-      case ValueInputWithDictEditor(dictId, _) =>
-        DictParameterEditor(dictId)
-    }
-
-    if (valueInput.allowOtherValue)
-      List(
-        innerEditor,
-        SpelParameterEditor,
-      )
-    else
-      List(innerEditor)
-  }
 
   def extract(
       param: ParameterData,
