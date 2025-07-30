@@ -14,7 +14,7 @@ export function SideContextProvider({ side, children }: PropsWithChildren<{ side
 type SideState = {
     side: PanelSide;
     isOpened: boolean;
-    isBackground?: boolean;
+    isCovered?: boolean;
     toggleCollapse: () => void;
     toggleFullSize: (fullSize: boolean) => void;
     switchVisible: boolean;
@@ -33,7 +33,7 @@ function useSideState(configId: string, side: PanelSide): SideState {
         () => ({
             side,
             isOpened: state[side],
-            isBackground:
+            isCovered:
                 (side === PanelSide.Left && state[PanelSide.LeftDynamic]) || (side === PanelSide.Right && state[PanelSide.RightDynamic]),
             switchVisible: !state[side] || fullSize,
             toggleCollapse: () => {

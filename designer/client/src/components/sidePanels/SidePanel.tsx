@@ -7,7 +7,7 @@ import { SideContextProvider, useSidePanel } from "./SidePanelsContext";
 type SidePanelProps = PropsOf<typeof StyledCollapsibleScrollPanel>;
 
 export const SidePanel = ({ side, ...props }: SidePanelProps) => {
-    const { isOpened, isBackground, toggleFullSize, ref } = useSidePanel(side);
+    const { isOpened, isCovered, toggleFullSize, ref } = useSidePanel(side);
 
     return (
         <SideContextProvider side={side}>
@@ -16,7 +16,7 @@ export const SidePanel = ({ side, ...props }: SidePanelProps) => {
                 onScrollToggle={toggleFullSize}
                 isExpanded={isOpened}
                 side={side}
-                disabled={isBackground}
+                disabled={isCovered}
                 {...props}
             />
         </SideContextProvider>
