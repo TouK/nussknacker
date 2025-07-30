@@ -314,7 +314,7 @@ describe("Process", () => {
         };
 
         const copyAndPasteWholeScenario = () => {
-            cy.get("#nk-graph-main").type("{ctrl}a");
+            cy.realPress(["Meta", "A"]);
             cy.contains("button", "copy").click();
             cy.contains("button", "delete").click();
             cy.contains("Loose node: filter (copy 1)").should("not.exist");
