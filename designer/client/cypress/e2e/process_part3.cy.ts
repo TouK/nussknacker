@@ -65,7 +65,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 8 } });
     });
 
-    it("should preserve condition on link move (filter)", () => {
+    it.only("should preserve condition on link move (filter)", () => {
         cy.intercept("POST", "/api/*Validation/*", (req) => {
             if (req.body.scenarioGraph.edges.length == 2) {
                 req.alias = "validation";

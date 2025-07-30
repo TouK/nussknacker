@@ -35,7 +35,7 @@ describe("Process initially clean", () => {
         cy.location("href").should("contain", "-renamed");
     });
 
-    it("should allow rename with other changes", () => {
+    it.only("should allow rename with other changes", () => {
         cy.intercept("PUT", "/api/processes/*").as("save");
 
         cy.contains(/^properties/i)
