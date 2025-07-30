@@ -28,6 +28,7 @@ object JsonParser extends ExpressionParser {
       expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
     parseJson(jsonString).map { json =>
+      // FIXME abr use FromJsonSimpleDecoder
       val typ = Typed.fromInstance(FromJsonSimpleDecoder.jsonToAny(json))
       TypedExpression(
         CompiledJsonExpression(jsonString, json),
@@ -37,29 +38,23 @@ object JsonParser extends ExpressionParser {
   }
 
   private def parseJson(jsonString: String): Validated[NonEmptyList[JsonParseError], Json] =
-    if (shouldBeTreatedAsNull(jsonString)) {
-      Valid(Json.Null)
-    } else {
-      parser.parse(jsonString) match {
-        case Left(ParsingFailure(message, underlying: ParseException)) =>
-          val messageWithoutCoordinates = messageWithCoordinatesRegex.replaceFirstIn(message, "")
-          invalidNel(
-            JsonParseError(
-              messageWithoutCoordinates,
-              Some(
-                CoordinatesBasedTextRange(
-                  TextCoordinates(underlying.col - 1, underlying.line - 1),
-                  TextCoordinates(underlying.col, underlying.line - 1)
-                )
+    parser.parse(jsonString) match {
+      case Left(ParsingFailure(message, underlying: ParseException)) =>
+        val messageWithoutCoordinates = messageWithCoordinatesRegex.replaceFirstIn(message, "")
+        invalidNel(
+          JsonParseError(
+            messageWithoutCoordinates,
+            Some(
+              CoordinatesBasedTextRange(
+                TextCoordinates(underlying.col - 1, underlying.line - 1),
+                TextCoordinates(underlying.col, underlying.line - 1)
               )
             )
           )
-        case Left(ParsingFailure(message, _)) => invalidNel(JsonParseError(message, None))
-        case Right(json)                      => Valid(json)
-      }
+        )
+      case Left(ParsingFailure(message, _)) => invalidNel(JsonParseError(message, None))
+      case Right(json)                      => Valid(json)
     }
-
-  private def shouldBeTreatedAsNull(jsonString: String) = StringUtils.isBlank(jsonString)
 
   case class CompiledJsonExpression(originalJsonString: String, json: Json) extends CompiledExpression {
 
