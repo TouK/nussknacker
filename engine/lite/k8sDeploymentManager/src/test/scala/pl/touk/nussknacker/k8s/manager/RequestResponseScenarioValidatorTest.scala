@@ -17,8 +17,8 @@ class RequestResponseScenarioValidatorTest extends AnyFunSuite with Matchers {
   test("validate against service name for not defined instance name") {
     val scenarioWithLongName = ScenarioBuilder
       .requestResponse(notImportantScenarioName.value, invalidK8sServiceName)
-      .source("source", "dumb")
-      .emptySink("sink", "dumb")
+      .source("source", "dummy")
+      .emptySink("sink", "dummy")
     noInstanceNameValidator.validate(scenarioWithLongName) shouldBe Symbol("invalid")
     noInstanceNameValidator.validateRequestResponse(
       notImportantScenarioName,

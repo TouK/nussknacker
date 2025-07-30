@@ -1,14 +1,18 @@
 package pl.touk.nussknacker.ui.api.testing
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.syntax._
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.scalatest.Assertion
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -18,7 +22,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails,
   WithTestHttpClient
 }
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -30,7 +33,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
 import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import sttp.client3.{quickRequest, UriContext}
+import sttp.client3.{quickRequest, Response, UriContext}
 import sttp.model.{MediaType, StatusCode}
 
 trait ScenarioTestingApiHttpServiceSpec
@@ -44,13 +47,19 @@ trait ScenarioTestingApiHttpServiceSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures
-    with WithAdHocTestsLogic {
+    with WithAdHocTestsLogic
+    with Matchers
+    with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  protected val generatedSamplesCount = 3
 
   protected def expectedSourceTestingParametersJson: String
 
   protected def expectedTestDataJson: String
+
+  protected val inputValueNotMatchingExpectedType = "false"
 
   private val fragmentFixedParameter = FragmentParameter(
     ParameterName("paramFixedString"),
@@ -161,11 +170,11 @@ trait ScenarioTestingApiHttpServiceSpec
         }
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, 3))
+        .jsonBody(testDataGenerationRequest(exampleScenarioGraphStr, generatedSamplesCount))
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/generatedTestData")
         .Then()
         .statusCode(200)
-        .equalsPlainBody(expectedTestDataJson)
+        .equalsJsonBody(expectedTestDataJson)
     }
     "refuses to generate too much data" in {
       given()
@@ -407,16 +416,42 @@ trait ScenarioTestingApiHttpServiceSpec
 
       val response = runTestsFromFile(expectedTestDataJson)
 
+      logger.debug(s"The response from the endpoint running scenario test from files was: $response")
       response.code shouldEqual StatusCode.Ok
+      verifyTestFromFileWithCorrectTestDataResponse(response)
     }
 
     "return error for empty test data" in {
       createSavedScenario(exampleScenario)
 
-      val response = runTestsFromFile("")
+      val response = runTestsFromFile("[]")
 
       response.code shouldEqual StatusCode.BadRequest
       response.body shouldEqual "Test data is empty"
+    }
+
+    "return error for test data containing non existing variable" in {
+      createSavedScenario(exampleScenario)
+
+      val response = runTestsFromFile(s"""[
+          |  {"sourceId":"$exampleScenarioSourceId","variables":{"nonExistingVariable": 123},"timestamp":123}
+          |]""".stripMargin)
+
+      response.code shouldEqual StatusCode.BadRequest
+      response.body shouldEqual s"Problem in sample 1 detected: Unexpected variable [nonExistingVariable] for source [$exampleScenarioSourceId]"
+    }
+
+    "return error for test data containing variable that doesn't match expected type" in {
+      createSavedScenario(exampleScenario)
+
+      val response = runTestsFromFile(s"""[
+                                         |  {"sourceId":"$exampleScenarioSourceId","variables":{"input":$inputValueNotMatchingExpectedType},"timestamp":123}
+                                         |]""".stripMargin)
+
+      response.code shouldEqual StatusCode.BadRequest
+      response.body should startWith(
+        s"""Problem in sample 1 detected: Variable [name=input, type=${exampleScenarioInputVariableType.display}, encoded value=$inputValueNotMatchingExpectedType] decoding error for source [$exampleScenarioSourceId]: """
+      )
     }
   }
 
@@ -493,6 +528,8 @@ trait ScenarioTestingApiHttpServiceSpec
     }
   }
 
+  protected def verifyTestFromFileWithCorrectTestDataResponse(response: Response[String]): Assertion
+
   private def exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
 
   private def testDataGenerationRequest(
@@ -506,4 +543,7 @@ trait ScenarioTestingApiHttpServiceSpec
 
   private def canonicalGraphStr(canonical: CanonicalProcess) =
     Encoder[ScenarioGraph].apply(canonical.toScenarioGraph).toString()
+
+  protected def exampleScenarioInputVariableType: TypingResult
+
 }

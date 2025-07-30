@@ -5,8 +5,12 @@ import io.circe.Json
 import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
+import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.util.json.SampleEnum
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
@@ -116,6 +120,43 @@ class FromJsonTypingResultBasedDecoderSpec
     val typedRecord = Typed.typedClass(classOf[String])
 
     FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(null)
+  }
+
+  test("decodeValue should return error when boolean is used in context where numeric value was expected") {
+    val json = Json.fromBoolean(false)
+
+    val typedRecord = Typed[Int]
+
+    FromJsonTypingResultBasedDecoder.decodeValue(typedRecord, json.hcursor) shouldBe Symbol("left")
+  }
+
+  test("should decode enum class") {
+    val givenValue  = SampleEnum.DOLOR
+    val encodedJson = ToJsonEncoder.default.encodeUnsafe(givenValue)
+    encodedJson shouldEqual Json.fromString("DOLOR")
+    val decodedValue = FromJsonTypingResultBasedDecoder.decodeValue(Typed[SampleEnum], encodedJson.hcursor).rightValue
+    decodedValue shouldBe givenValue
+  }
+
+  test("should return error when enum has invalid value") {
+    FromJsonTypingResultBasedDecoder
+      .decodeValue(Typed[SampleEnum], Json.fromString("illegal-value").hcursor)
+      .leftValue
+      .message shouldBe "No enum constant pl.touk.nussknacker.engine.util.json.SampleEnum.illegal-value"
+  }
+
+  test("should decode Map") {
+    forAll(
+      Table(
+        ("givenMap", "givenType"),
+        (Map("foo" -> 123).asJava, Typed.fromDetailedType[java.util.Map[String, Any]]),
+        (Map(123 -> "foo").asJava, Typed.fromDetailedType[java.util.Map[Int, Any]]),
+      )
+    ) { case (givenMap, givenType) =>
+      val encodedJson  = ToJsonEncoder.default.encodeUnsafe(givenMap)
+      val decodedValue = FromJsonTypingResultBasedDecoder.decodeValue(givenType, encodedJson.hcursor).rightValue
+      decodedValue shouldBe givenMap
+    }
   }
 
 }

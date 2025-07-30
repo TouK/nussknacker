@@ -44,7 +44,7 @@ object NuRuntimeDockerTestUtils {
       "/opt/nussknacker/conf/deploymentData.json",
       BindMode.READ_ONLY
     )
-    val waitStrategy = if (checkReady) Wait.forHttp("/ready").forPort(runtimeApiPort) else DumbWaitStrategy
+    val waitStrategy = if (checkReady) Wait.forHttp("/ready").forPort(runtimeApiPort) else DummyWaitStrategy
     runtimeContainer.underlyingUnsafeContainer.setWaitStrategy(waitStrategy)
     val logConsumer: Consumer[OutputFrame] = new Slf4jLogConsumer(logger)
     runtimeContainer.underlyingUnsafeContainer.setLogConsumers((logConsumer :: Nil).asJava)
@@ -52,7 +52,7 @@ object NuRuntimeDockerTestUtils {
     runtimeContainer
   }
 
-  private object DumbWaitStrategy extends WaitStrategy {
+  private object DummyWaitStrategy extends WaitStrategy {
     override def waitUntilReady(waitStrategyTarget: WaitStrategyTarget): Unit = {}
     override def withStartupTimeout(startupTimeout: Duration): WaitStrategy   = this
   }

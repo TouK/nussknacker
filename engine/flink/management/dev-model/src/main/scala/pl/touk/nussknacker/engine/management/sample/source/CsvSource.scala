@@ -6,9 +6,12 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.{CirceUtil, VariableConstants}
+import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.typed.{typing, ReturningType}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
@@ -16,24 +19,35 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSourceFunctionUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 
 import scala.annotation.nowarn
 
-class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
+class CsvSource
+    extends StandardFlinkSource[Array[String]]
+    with FlinkSourceTestSupport[Array[String]]
+    with TestDataGenerator
+    with LiveDataProvider
+    with ReturningType {
 
   @nowarn("cat=deprecation")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[CsvRecord] = StandardFlinkSourceFunctionUtils.createSourceStream(
+  ): DataStreamSource[Array[String]] = StandardFlinkSourceFunctionUtils.createSourceStream(
     env = env,
-    sourceFunction = new SourceFunction[CsvRecord] {
+    sourceFunction = new SourceFunction[Array[String]] {
       override def cancel(): Unit = {}
 
-      override def run(ctx: SourceContext[CsvRecord]): Unit = {}
+      override def run(ctx: SourceContext[Array[String]]): Unit = {}
     },
-    typeInformation = TypeInformation.of(classOf[CsvRecord])
+    typeInformation = TypeInformation.of(classOf[Array[String]])
+  )
+
+  override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords(
+    List(
+      DataRecord(Map(VariableConstants.InputVariableName -> Array("record1", "field2")), timestamp = None),
+      DataRecord(Map(VariableConstants.InputVariableName -> Array("record2", "field3")), timestamp = None)
+    )
   )
 
   override def generateTestData(size: Int): TestData = TestData(
@@ -43,10 +57,13 @@ class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSuppo
     )
   )
 
-  override def testRecordParser: TestRecordParser[CsvRecord] = (testRecords: List[TestRecord]) =>
+  override def testRecordParser: TestRecordParser[Array[String]] = (testRecords: List[TestRecord]) =>
     testRecords.map { testRecord =>
-      CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)
+      CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
     }
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[CsvRecord]] = timestampAssigner
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Array[String]]] = timestampAssigner
+
+  override def returnType: typing.TypingResult = Typed.fromDetailedType[Array[String]]
+
 }

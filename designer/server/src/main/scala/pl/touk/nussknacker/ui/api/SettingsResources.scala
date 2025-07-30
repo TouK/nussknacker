@@ -100,8 +100,18 @@ final case class EmptyDeploymentCommentSettingsError(message: String) extends Ex
 @JsonCodec final case class TestDataSettings(
     maxSamplesCount: Option[Int],
     testDataMaxLength: Option[Int],
-    resultsMaxBytes: Option[Long]
+    resultsMaxBytes: Option[Long],
+    testDataFormat: TestDataFormat.Value
 )
+
+object TestDataFormat extends Enumeration {
+
+  implicit val decoder: Decoder[TestDataFormat.Value] = Decoder.decodeEnumeration(TestDataFormat)
+  implicit val encoder: Encoder[TestDataFormat.Value] = Encoder.encodeEnumeration(TestDataFormat)
+
+  val SourceSpecific, CommonFormat = Value
+
+}
 
 object TopTabType extends Enumeration {
 

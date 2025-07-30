@@ -4,10 +4,9 @@ import cats.data._
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.{Interpreter, RuntimeMode, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 }
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
-import pl.touk.nussknacker.engine.flink.FlinkScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -67,8 +65,8 @@ class FlinkProcessCompilerData(
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
-    case Valid(r)     => r
-    case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
+    case Valid(r)        => r
+    case Invalid(errors) => throw ScenarioCompilationErrors(errors.toList)
   }
 
   def jobData: JobData = compilerData.jobData

@@ -16588,48 +16588,6 @@
     }
   },
   {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.CsvRecord"},
-    "methods": {
-      "asJson": [
-        {
-          "name": "asJson",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "io.circe.Json"}
-          }
-        }
-      ],
-      "firstField": [
-        {
-          "name": "firstField",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "originalDisplay": [
-        {
-          "name": "originalDisplay",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.RichObject"},
     "methods": {
       "field1": [

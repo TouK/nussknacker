@@ -1,15 +1,8 @@
 package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentDefinition,
-  ComponentDependencies,
-  ComponentProvider,
-  NussknackerVersion,
-  StaticParameterConfig
-}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, WithActionParametersSupport}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext

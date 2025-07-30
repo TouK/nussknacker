@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.ModelConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ContextTransformation.DummyStreamTransformerImplementation
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
   FixedExpressionValue,
@@ -162,7 +163,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
     val helperDef = definition("helper")
-    helperDef.objectWithType(MetaData("dumb", StreamMetaData())).obj shouldBe SampleHelper
+    helperDef.objectWithType(MetaData("dummyId", StreamMetaData())).obj shouldBe SampleHelper
     helperDef.typ shouldBe Typed(SampleHelper.getClass)
   }
 
@@ -170,7 +171,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
     val typedGlobalDef = definition("typedGlobal")
-    val objectWithType = typedGlobalDef.objectWithType(MetaData("dumb", StreamMetaData()))
+    val objectWithType = typedGlobalDef.objectWithType(MetaData("dummyId", StreamMetaData()))
     objectWithType.obj shouldBe SampleTypedVariable.Value
     objectWithType.typ shouldBe Typed.fromInstance(SampleTypedVariable.Value)
   }
@@ -305,7 +306,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     def invoke(@OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       ContextTransformation
         .definedBy((in: ValidationContext) => in.withVariable(variableName, Typed[String], None))
-        .implementedBy(null)
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }
@@ -316,7 +317,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     def invoke(): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
-        .implementedBy(null)
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }

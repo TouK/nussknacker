@@ -4,6 +4,9 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
+
+import scala.reflect.ClassTag
 
 /**
   * Wrapper for tuple of definition and implementation of variable context transformation
@@ -105,6 +108,12 @@ object ContextTransformation {
     })
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
+    // Use this method if you want to experiment with component's definition, and you don't want to provide
+    // a real implementation of component's executor, yet
+    // As a generic parameter you can pass: Source/Sink/ServiceInvoker or DummyStreamTransformerImplementation
+    def notImplemented[T: NotNothing: ClassTag]: ContextTransformation =
+      ContextTransformation(definition, ReflectUtils.createADummyInstanceOf[T])
+
     def implementedBy(implementation: Any): ContextTransformation =
       ContextTransformation(definition, implementation)
   }
@@ -128,9 +137,19 @@ object ContextTransformation {
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
+    // Use this method if you want to experiment with component's definition, and you don't want to provide
+    // a real implementation of component's executor, yet
+    // As a generic parameter you can pass: Source/Sink/ServiceInvoker or DummyStreamTransformerImplementation
+    def notImplemented[T: NotNothing: ClassTag]: JoinContextTransformation =
+      JoinContextTransformation(definition, ReflectUtils.createADummyInstanceOf[T])
+
     def implementedBy(implementation: Any): JoinContextTransformation =
       JoinContextTransformation(definition, implementation)
   }
+
+  object DummyStreamTransformerImplementation extends DummyStreamTransformerImplementation
+
+  trait DummyStreamTransformerImplementation
 
 }
 

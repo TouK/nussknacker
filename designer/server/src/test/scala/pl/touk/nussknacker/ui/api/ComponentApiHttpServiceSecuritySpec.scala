@@ -269,7 +269,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-source-communicationsource",
     "streaming1-source-csv-source",
     "streaming1-source-csv-source-lite",
-    "streaming1-source-genericsourcewithcustomvariables",
+    "streaming1-source-genericsourcewithcustomtestingsupport",
     "streaming1-source-kafka-transaction",
     "streaming1-source-onesource",
     "streaming1-source-sql-source"
@@ -337,7 +337,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-source-communicationsource",
     "streaming2-source-csv-source",
     "streaming2-source-csv-source-lite",
-    "streaming2-source-genericsourcewithcustomvariables",
+    "streaming2-source-genericsourcewithcustomtestingsupport",
     "streaming2-source-kafka-transaction",
     "streaming2-source-onesource",
     "streaming2-source-sql-source"
@@ -404,7 +404,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-source-communicationsource",
     "streaming1-source-csv-source",
     "streaming1-source-csv-source-lite",
-    "streaming1-source-genericsourcewithcustomvariables",
+    "streaming1-source-genericsourcewithcustomtestingsupport",
     "streaming1-source-kafka-transaction",
     "streaming1-source-onesource",
     "streaming1-source-sql-source",
@@ -464,7 +464,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-source-communicationsource",
     "streaming2-source-csv-source",
     "streaming2-source-csv-source-lite",
-    "streaming2-source-genericsourcewithcustomvariables",
+    "streaming2-source-genericsourcewithcustomtestingsupport",
     "streaming2-source-kafka-transaction",
     "streaming2-source-onesource",
     "streaming2-source-sql-source"

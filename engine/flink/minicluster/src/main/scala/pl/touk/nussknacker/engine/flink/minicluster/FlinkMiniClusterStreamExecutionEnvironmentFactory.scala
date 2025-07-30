@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.minicluster
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobSubmissionResult}
 import org.apache.flink.api.dag.Pipeline
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, PipelineOptions, PipelineOptionsInternal}
@@ -7,13 +8,17 @@ import org.apache.flink.core.execution.{PipelineExecutor, PipelineExecutorFactor
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterJobClient}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.graph.StreamGraph
+import org.apache.flink.streaming.api.graph.{StreamConfig, StreamGraph}
+import org.apache.flink.util.ChildFirstClassLoader
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 
+import java.lang.{Boolean => JBoolean}
 import java.util.{stream => jstream}
+import java.util.function.Consumer
 import scala.jdk.CollectionConverters._
+import scala.util.Try
 
-object FlinkMiniClusterStreamExecutionEnvironmentFactory {
+object FlinkMiniClusterStreamExecutionEnvironmentFactory extends LazyLogging {
 
   private val pipelineExecutorName = "minicluster"
 
@@ -53,6 +58,7 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory {
                   val jobId = Option(configuration.get(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID))
                     .map(JobID.fromHexString)
                     .orNull
+                  ensureCorrectClassloaderForExtendedDebugInfo(modelClassLoader)
                   val jobGraph = streamGraph.getJobGraph(userCodeClassloader, jobId)
                   jobGraph.setClasspaths(modelClassLoader.getURLs.toList.asJava)
                   if (jobGraph.getSavepointRestoreSettings == SavepointRestoreSettings.none)
@@ -76,5 +82,27 @@ object FlinkMiniClusterStreamExecutionEnvironmentFactory {
 
       override def getExecutorNames: jstream.Stream[String] = List(pipelineExecutorName).asJava.stream()
     }
+
+  private val extendedDebugInfoPropertyName = "sun.io.serialization.extendedDebugInfo"
+
+  // When running tests, sometimes StreamConfig is loaded with AppClassLoader or sbt.internal.LayeredClassLoader instead of ModelClassLoader
+  // It causes ClassCastException because in StreamConfig.toString is used this.getClass.getClassloader
+  private def ensureCorrectClassloaderForExtendedDebugInfo(modelClassLoader: ModelClassLoader): Unit = {
+    logger.whenWarnEnabled {
+      Try(Class.forName("org.apache.flink.streaming.api.graph.StreamConfig", true, modelClassLoader)).foreach {
+        streamConfigClass =>
+          if (JBoolean.getBoolean(
+              extendedDebugInfoPropertyName
+            ) && streamConfigClass.getClassLoader != modelClassLoader) {
+            logger.warn(
+              s"You have enabled [$extendedDebugInfoPropertyName] property in a run environment where [${streamConfigClass.getName}] " +
+                s"class was loaded with other classloader (${streamConfigClass.getClassLoader}) than model class loader. " +
+                s"It may cause ${classOf[ClassCastException].getSimpleName} errors. To avoid this problem, disable this flag " +
+                s"or run job in other environment"
+            )
+          }
+      }
+    }
+  }
 
 }

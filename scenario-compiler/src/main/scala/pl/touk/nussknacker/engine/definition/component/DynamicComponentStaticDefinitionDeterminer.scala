@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
   JoinDynamicComponent,
@@ -57,7 +58,12 @@ class DynamicComponentStaticDefinitionDeterminer(
         else None
       val fakeNode = CustomNode("fakeNodeId", outputVariableName, dynamic.name, List.empty)
       val nodeCompilationDependencies =
-        new NodeCompilationDependencies(scenarioCompilationDependencies, fakeNode, LiveRuntime(None))
+        new NodeCompilationDependencies(
+          scenarioCompilationDependencies = scenarioCompilationDependencies,
+          nodeData = fakeNode,
+          componentUseContext = LiveRuntime(None),
+          inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
+        )
       nodeValidator
         .validateNode(
           compilationDependencies = nodeCompilationDependencies,

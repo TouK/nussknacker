@@ -43,7 +43,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       componentGroupName = None,
       icon = Some(FragmentIcon),
       translateGroupName = Some(_),
-      designerWideId = DesignerWideComponentId("dumbId"),
+      designerWideId = DesignerWideComponentId("dummyId"),
       allowedProcessingModes = AllowedProcessingModes.All,
     )
   }

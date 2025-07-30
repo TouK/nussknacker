@@ -225,7 +225,7 @@ class DeploymentService(
   ): EitherT[Future, RunDeploymentError, Unit] = {
     val runtimeVersionData = processVersionFor(scenarioMetadata, scenarioGraphVersion)
     // TODO: It shouldn't be needed
-    val dumbDeploymentData = createDeploymentData(
+    val dummyDeploymentData = createDeploymentData(
       LegacyDeploymentId(""),
       user,
       NodesDeploymentData.empty,
@@ -238,7 +238,7 @@ class DeploymentService(
           .processCommand(
             DMValidateScenarioCommand(
               runtimeVersionData,
-              dumbDeploymentData,
+              dummyDeploymentData,
               scenarioGraphVersion.jsonUnsafe,
               DeploymentUpdateStrategy.DontReplaceDeployment
             )
