@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import cats.data.ValidatedNel
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
@@ -22,39 +21,6 @@ object GenericSourceWithCustomTestingSupport
     extends SourceFactory
     with SingleInputDynamicComponent[Source]
     with UnboundedStreamComponent {
-
-  private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
-
-    override def validationContext(
-        context: ValidationContext
-    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-      // Append variable "input"
-      val contextWithInput = super.validationContext(context)
-
-      // Specify additional variables
-      val additionalVariables = Map(
-        "additionalOne" -> Typed[String],
-        "additionalTwo" -> Typed[Int]
-      )
-
-      // Append additional variables to ValidationContext
-      additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
-        acc.andThen(_.withVariable(name, typingResult, None))
-      }
-    }
-
-    override def convertToInitialVariables(input: String): ContextVariables = {
-      // perform some transformations and/or computations
-      val additionalVariables = Map[String, Any](
-        "additionalOne" -> s"transformed:$input",
-        "additionalTwo" -> input.length()
-      )
-      // initialize context with input variable and append computed values
-      val superVariables = super.convertToInitialVariables(input)
-      ContextVariables(superVariables.variables ++ additionalVariables)
-    }
-
-  }
 
   override type State = Nothing
 
