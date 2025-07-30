@@ -181,7 +181,7 @@ describe("Process", () => {
             });
     });
 
-    it.skip("should open more scenario details", () => {
+    it("should open more scenario details", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
         cy.contains(/^More details$/i).click();
         cy.get("[data-testid=window]")

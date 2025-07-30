@@ -94,7 +94,7 @@ describe("Process initially clean", () => {
         cy.get("[data-testid=window]").matchImage();
     });
 
-    it.skip("should import JSON and save", () => {
+    it("should import JSON and save", () => {
         cy.intercept("PUT", "/api/processes/*").as("save");
         cy.contains(/is not deployed/i).should("be.visible");
         cy.get("#nk-graph-main").matchImage();
