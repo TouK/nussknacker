@@ -74,8 +74,8 @@ function adjustEdges(
 
     const getId = (rawId: string) => {
         // one "to be connected" node
-        if (addedNodes.length === 1 && addedEdges.length === 1 && !rawId) {
-            return addedNodes[0].id;
+        if (addedNodes.length === 1 && addedEdges.length === 1) {
+            return rawId || addedNodes[0].id;
         }
         return idMapping[rawId] || rawId;
     };
