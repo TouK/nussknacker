@@ -27,7 +27,9 @@ class SourceSpecificDataFormatHandler(modelData: ModelData) extends TestDataForm
       sourceId: NodeId,
       compiledSource: Source,
       maxNumberOfRecords: Int
-  ): Either[TestDataFormatHandler.LiveDataFetchingNotSupportedError.type, List[PreliminaryScenarioRecord]] = {
+  ): Either[TestDataFormatHandler.LiveDataFetchingNotSupportedError.type, List[
+    SourceSpecificFormatPreliminaryScenarioRecord
+  ]] = {
     compiledSource
       .cast[TestDataGenerator]
       .map { testDataGenerator =>
@@ -58,10 +60,10 @@ object SourceSpecificDataFormatSerDe extends TestDataFormatSerDe {
 
   override def deserializeRecords(
       content: SerializedScenarioRecordsContent
-  ): Either[DeserializationError, List[PreliminaryScenarioRecord]] = {
+  ): Either[DeserializationError, List[SourceSpecificFormatPreliminaryScenarioRecord]] = {
     val serializedScenarioRecords = content.content.linesIterator.toList
     serializedScenarioRecords.mapWithIndex { (rawTestRecord, recordIndex) =>
-      val parsedRecord = parser.decode[PreliminaryScenarioRecord](rawTestRecord)
+      val parsedRecord = parser.decode[SourceSpecificFormatPreliminaryScenarioRecord](rawTestRecord)
       parsedRecord.leftMap(_ => DeserializationError.RecordParsingError(rawTestRecord, recordIndex))
     }.sequence
   }

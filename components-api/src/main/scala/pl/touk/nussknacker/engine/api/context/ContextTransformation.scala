@@ -108,6 +108,9 @@ object ContextTransformation {
     })
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
+    // Use this method if you want to experiment with component's definition, and you don't want to provide
+    // a real implementation of component's executor, yet
+    // As a generic parameter you can pass: Source/Sink/ServiceInvoker or DummyStreamTransformerImplementation
     def notImplemented[T: NotNothing: ClassTag]: ContextTransformation =
       ContextTransformation(definition, ReflectUtils.createADummyInstanceOf[T])
 
@@ -134,6 +137,9 @@ object ContextTransformation {
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
+    // Use this method if you want to experiment with component's definition, and you don't want to provide
+    // a real implementation of component's executor, yet
+    // As a generic parameter you can pass: Source/Sink/ServiceInvoker or DummyStreamTransformerImplementation
     def notImplemented[T: NotNothing: ClassTag]: JoinContextTransformation =
       JoinContextTransformation(definition, ReflectUtils.createADummyInstanceOf[T])
 

@@ -26,15 +26,17 @@ final case class CommonFormatPreliminaryScenarioRecord(
 
 object PreliminaryScenarioRecord {
 
-  private val sourceSpecificFormatEncoder =
+  implicit val sourceSpecificFormatEncoder: Encoder[SourceSpecificFormatPreliminaryScenarioRecord] =
     deriveEncoder[SourceSpecificFormatPreliminaryScenarioRecord].mapJson(_.dropNullValues)
 
-  private val commonFormatEncoder = deriveEncoder[CommonFormatPreliminaryScenarioRecord].mapJson(_.dropNullValues)
+  implicit val commonFormatEncoder: Encoder[CommonFormatPreliminaryScenarioRecord] =
+    deriveEncoder[CommonFormatPreliminaryScenarioRecord].mapJson(_.dropNullValues)
 
-  private val sourceSpecificFormatDecoder =
+  implicit val sourceSpecificFormatDecoder: Decoder[SourceSpecificFormatPreliminaryScenarioRecord] =
     deriveDecoder[SourceSpecificFormatPreliminaryScenarioRecord]
 
-  private val commonFormatDecoder = deriveDecoder[CommonFormatPreliminaryScenarioRecord]
+  implicit val commonFormatDecoder: Decoder[CommonFormatPreliminaryScenarioRecord] =
+    deriveDecoder[CommonFormatPreliminaryScenarioRecord]
 
   implicit val encoder: Encoder[PreliminaryScenarioRecord] = {
     case sourceSpecificFormatRecord: SourceSpecificFormatPreliminaryScenarioRecord =>

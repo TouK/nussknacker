@@ -33,7 +33,7 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
       sourceId: NodeId,
       compiledSource: Source,
       maxNumberOfRecords: Int
-  ): Either[TestDataFormatHandler.LiveDataFetchingNotSupportedError.type, List[PreliminaryScenarioRecord]] =
+  ): Either[TestDataFormatHandler.LiveDataFetchingNotSupportedError.type, List[CommonFormatPreliminaryScenarioRecord]] =
     compiledSource match {
       case liveDataProvider: LiveDataProvider =>
         val records = modelData.withModelClassloaderAsContextClassLoader {
@@ -64,9 +64,9 @@ object CommonDataFormatSerDe extends TestDataFormatSerDe {
 
   override def deserializeRecords(
       content: SerializedScenarioRecordsContent
-  ): Either[DeserializationError, List[PreliminaryScenarioRecord]] = {
+  ): Either[DeserializationError, List[CommonFormatPreliminaryScenarioRecord]] = {
     parser
-      .decode[List[PreliminaryScenarioRecord]](content.content)
+      .decode[List[CommonFormatPreliminaryScenarioRecord]](content.content)
       .leftMap(err => DeserializationError.RecordsParsingError(err.getMessage))
   }
 
