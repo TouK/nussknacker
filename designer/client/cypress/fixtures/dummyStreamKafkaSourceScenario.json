@@ -1,6 +1,6 @@
 {
     "metaData": {
-        "id": "dumbStreamKafkaSourceScenario",
+        "id": "dummyStreamKafkaSourceScenario",
         "additionalFields": {
             "description": null,
             "properties": {

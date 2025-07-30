@@ -44,7 +44,7 @@ class FragmentComponentDefinitionExtractor(
 
       FragmentComponentDefinition(
         name = fragment.name.value,
-        implementationInvoker = ComponentImplementationInvoker.dumbImplementationInvoker[Source],
+        implementationInvoker = ComponentImplementationInvoker.dummyImplementationInvoker[Source],
         parameters = parameters,
         outputNames = outputNames,
         docsUrl = fragmentSpecificData.docsUrl,

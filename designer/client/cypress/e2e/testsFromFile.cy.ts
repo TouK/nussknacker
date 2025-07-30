@@ -14,7 +14,7 @@ describe("Process tests from file", () => {
         cy.viewport(1440, 1200);
         cy.createSchema(`${transactionsTopic}-value`, "transactionsAvroSchema.json");
         cy.createKafkaTopic(transactionsTopic);
-        cy.visitNewProcess(scenarioName, "dumbStreamKafkaSourceScenario", "DevelopmentTests");
+        cy.visitNewProcess(scenarioName, "dummyStreamKafkaSourceScenario", "DevelopmentTests");
         cy.get("[aria-label='run test on data from file']")
             .first()
             .next("[type=file]")

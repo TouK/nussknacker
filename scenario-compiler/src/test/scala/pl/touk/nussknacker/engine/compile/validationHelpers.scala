@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.ContextTransformation.DumbStreamTransformerImplementation
+import pl.touk.nussknacker.engine.api.context.ContextTransformation.DummyStreamTransformerImplementation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
@@ -40,7 +40,7 @@ object validationHelpers {
           Array(new api.AdditionalVariable(name = "additionalVar1", clazz = classOf[String]))
         )
         stringVal: LazyParameter[String]
-    ) = DumbStreamTransformerImplementation
+    ) = DummyStreamTransformerImplementation
 
   }
 
@@ -60,7 +60,7 @@ object validationHelpers {
     def execute(@OutputVariableName variableName: String)(implicit nodeId: NodeId) = {
       ContextTransformation
         .definedBy(_.withVariable(variableName, Typed[String], paramName = None))
-        .notImplemented[DumbStreamTransformerImplementation]
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }
@@ -71,7 +71,7 @@ object validationHelpers {
     def execute() = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .notImplemented[DumbStreamTransformerImplementation]
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }
@@ -89,7 +89,7 @@ object validationHelpers {
           })
           context.withVariable(variableName, newType, paramName = None)
         }
-        .notImplemented[DumbStreamTransformerImplementation]
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }
@@ -111,7 +111,7 @@ object validationHelpers {
           })
           Valid(ValidationContext(Map(variableName -> newType)))
         }
-        .notImplemented[DumbStreamTransformerImplementation]
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }
@@ -142,7 +142,7 @@ object validationHelpers {
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
         }
-        .notImplemented[DumbStreamTransformerImplementation]
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }
@@ -153,7 +153,7 @@ object validationHelpers {
     def execute(@ParamName("stringVal") stringVal: String): ContextTransformation = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .notImplemented[DumbStreamTransformerImplementation]
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
     override def canBeEnding: Boolean = false
@@ -170,7 +170,7 @@ object validationHelpers {
   object OptionalEndingStreamTransformer extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@ParamName("stringVal") stringVal: String) = DumbStreamTransformerImplementation
+    def execute(@ParamName("stringVal") stringVal: String) = DummyStreamTransformerImplementation
 
     override def canBeEnding: Boolean = true
   }
@@ -179,7 +179,7 @@ object validationHelpers {
 
     @MethodToInvoke
     def execute(@ParamName("stringVal") stringVal: String, @OutputVariableName variableName: String) =
-      DumbStreamTransformerImplementation
+      DummyStreamTransformerImplementation
 
     override def canBeEnding: Boolean = true
   }
@@ -196,7 +196,7 @@ object validationHelpers {
             case _          => Invalid(CustomNodeError("Validation contexts do not match", Option.empty)).toValidatedNel
           }
         })
-        .notImplemented[DumbStreamTransformerImplementation]
+        .notImplemented[DummyStreamTransformerImplementation]
     }
 
   }
@@ -223,7 +223,7 @@ object validationHelpers {
 
   object GenericParametersTransformer
       extends CustomStreamTransformer
-      with GenericParameters[DumbStreamTransformerImplementation] {
+      with GenericParameters[DummyStreamTransformerImplementation] {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -241,8 +241,8 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] =
       List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseContext])
 
-    override protected def classTagT: ClassTag[DumbStreamTransformerImplementation] =
-      classTag[DumbStreamTransformerImplementation]
+    override protected def classTagT: ClassTag[DummyStreamTransformerImplementation] =
+      classTag[DummyStreamTransformerImplementation]
 
   }
 
@@ -528,7 +528,7 @@ object validationHelpers {
         finalState: Option[State]
     ): T = {
       implicit val implicitClassTagT: ClassTag[T] = classTagT
-      ReflectUtils.createADumbInstanceOf[T]
+      ReflectUtils.createADummyInstanceOf[T]
     }
 
     override def nodeDependencies: List[NodeDependency] =

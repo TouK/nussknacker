@@ -37,13 +37,13 @@ trait ComponentImplementationInvoker extends Serializable {
 
 object ComponentImplementationInvoker {
 
-  def dumbImplementationInvoker[ComponentExecutor: NotNothing: ClassTag]: ComponentImplementationInvoker = {
+  def dummyImplementationInvoker[ComponentExecutor: NotNothing: ClassTag]: ComponentImplementationInvoker = {
     (_: Params, _: NodeCompilationDependencies, _: Option[ComponentImplementationSpecificInvocationContext]) =>
-      // We create a dumb instance, because NodeCompiler even during scenario validation checks what class was returned
-      ReflectUtils.createADumbInstanceOf[ComponentExecutor]
+      // We create a dummy instance, because NodeCompiler even during scenario validation checks what class was returned
+      ReflectUtils.createADummyInstanceOf[ComponentExecutor]
   }
 
-  trait DumbImplementation
+  trait DummyImplementation
 
   sealed trait ComponentImplementationSpecificInvocationContext
 

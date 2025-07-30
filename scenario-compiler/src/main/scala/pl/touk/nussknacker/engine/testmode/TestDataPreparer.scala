@@ -37,7 +37,7 @@ class TestDataPreparer(
     jobData: JobData
 ) {
 
-  private lazy val dumbContext             = Context.dummy
+  private lazy val dummyContext            = Context.dummy
   private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
   private lazy val validationContext = globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
   private lazy val evaluator: ExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
@@ -104,7 +104,7 @@ class TestDataPreparer(
       .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
       .map { typedExpression =>
         val param = CompiledParameter(typedExpression, parameter)
-        evaluator.evaluateParameter(param, dumbContext)(nodeId, jobData).value
+        evaluator.evaluateParameter(param, dummyContext)(nodeId, jobData).value
       }
   }
 

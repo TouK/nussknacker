@@ -43,7 +43,7 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
         Params.empty,
         new NodeCompilationDependencies(
           scenarioCompilationDependencies = new ScenarioCompilationDependencies(
-            JobData(MetaData("dumb", FragmentSpecificData()), ProcessVersion.empty),
+            JobData(MetaData("dummyId", FragmentSpecificData()), ProcessVersion.empty),
             EngineScenarioCompilationDependencies.empty
           ),
           nodeData = fragmentInputDefinition,

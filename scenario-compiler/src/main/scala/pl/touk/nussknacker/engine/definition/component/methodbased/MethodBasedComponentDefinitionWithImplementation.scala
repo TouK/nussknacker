@@ -39,7 +39,7 @@ final case class MethodBasedComponentDefinitionWithImplementation(
 
 object MethodBasedComponentDefinitionWithImplementation {
 
-  def withDumbImplementation[ComponentExecutor: NotNothing: ClassTag](
+  def withDummyImplementation[ComponentExecutor: NotNothing: ClassTag](
       name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
@@ -48,7 +48,7 @@ object MethodBasedComponentDefinitionWithImplementation {
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
       name = name,
-      implementationInvoker = ComponentImplementationInvoker.dumbImplementationInvoker[ComponentExecutor],
+      implementationInvoker = ComponentImplementationInvoker.dummyImplementationInvoker[ComponentExecutor],
       component = new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
       componentTypeSpecificData = componentTypeSpecificData,
       staticDefinition = staticDefinition,

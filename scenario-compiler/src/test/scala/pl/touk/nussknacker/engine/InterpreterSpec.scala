@@ -379,11 +379,11 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     object TransactionCustomComponent extends CustomStreamTransformer {
       @MethodToInvoke
-      def create(): DumbTransformer.type = DumbTransformer
+      def create(): DummyTransformer.type = DummyTransformer
 
       override def canBeEnding: Boolean = true
 
-      object DumbTransformer
+      object DummyTransformer
     }
     val components = List(ComponentDefinition("transactionCustomComponent", TransactionCustomComponent))
     interpretProcess(process, Transaction(accountId = accountId), components)

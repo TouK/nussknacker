@@ -36,7 +36,7 @@ case class ValidationContext(
   def contains(name: String): Boolean = variables.contains(name)
 
   def withVariableUnsafe(name: String, value: TypingResult): ValidationContext =
-    withVariable(name, value, None)(NodeId("dumbNodeId")).valueOr(err =>
+    withVariable(name, value, None)(NodeId("dummyNodeId")).valueOr(_ =>
       throw new IllegalStateException(s"ValidationContext with duplicated variable [$KeyVariableName]")
     )
 

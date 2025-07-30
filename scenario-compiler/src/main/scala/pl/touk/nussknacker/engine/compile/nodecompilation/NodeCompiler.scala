@@ -516,9 +516,6 @@ class NodeCompiler(
       componentDefinition = componentDefinition
     )
     compilationResult.map { case (serviceInvoker, _) =>
-      // TODO: Currently in case of object compilation failures we prefer to create "dumb" service invoker, with empty parameters list
-      //       instead of return Invalid - I assume that it is probably because of errors accumulation purpose.
-      //       We should clean up this compilation process by some NodeCompilationResult refactor like introduction of WriterT monad transformer
       createService(serviceInvoker)
     }
   }

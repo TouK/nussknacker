@@ -109,7 +109,7 @@ object ContextTransformation {
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
     def notImplemented[T: NotNothing: ClassTag]: ContextTransformation =
-      ContextTransformation(definition, ReflectUtils.createADumbInstanceOf[T])
+      ContextTransformation(definition, ReflectUtils.createADummyInstanceOf[T])
 
     def implementedBy(implementation: Any): ContextTransformation =
       ContextTransformation(definition, implementation)
@@ -135,15 +135,15 @@ object ContextTransformation {
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
     def notImplemented[T: NotNothing: ClassTag]: JoinContextTransformation =
-      JoinContextTransformation(definition, ReflectUtils.createADumbInstanceOf[T])
+      JoinContextTransformation(definition, ReflectUtils.createADummyInstanceOf[T])
 
     def implementedBy(implementation: Any): JoinContextTransformation =
       JoinContextTransformation(definition, implementation)
   }
 
-  object DumbStreamTransformerImplementation extends DumbStreamTransformerImplementation
+  object DummyStreamTransformerImplementation extends DummyStreamTransformerImplementation
 
-  trait DumbStreamTransformerImplementation
+  trait DummyStreamTransformerImplementation
 
 }
 

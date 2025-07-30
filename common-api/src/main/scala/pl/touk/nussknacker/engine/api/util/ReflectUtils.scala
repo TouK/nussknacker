@@ -13,7 +13,7 @@ object ReflectUtils {
     }
   }
 
-  def createADumbInstanceOf[T: NotNothing: ClassTag]: T = {
+  def createADummyInstanceOf[T: NotNothing: ClassTag]: T = {
     val runtimeClass = classTag[T].runtimeClass.asInstanceOf[Class[T]]
     Try(runtimeClass.getConstructor()).map(_.newInstance()).getOrElse {
       JavaProxy
@@ -21,7 +21,7 @@ object ReflectUtils {
           getClass.getClassLoader,
           Array(runtimeClass),
           (_: Any, _: Method, _: Array[AnyRef]) =>
-            throw new IllegalAccessException("This is a dumb implementation. It shouldn't be used!")
+            throw new IllegalAccessException("This is a dummy implementation. It shouldn't be used!")
         )
         .asInstanceOf[T]
     }

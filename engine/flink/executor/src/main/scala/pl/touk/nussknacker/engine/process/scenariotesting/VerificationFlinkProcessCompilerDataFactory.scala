@@ -50,7 +50,7 @@ object VerificationFlinkProcessCompilerDataFactory {
           case component if component.componentType == ComponentType.Service =>
             // We don't want to open services
             component.withImplementationInvoker(
-              ComponentImplementationInvoker.dumbImplementationInvoker[ServiceInvoker]
+              ComponentImplementationInvoker.dummyImplementationInvoker[ServiceInvoker]
             )
           case other => other
         }

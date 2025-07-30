@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.definition.component._
-import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.DumbImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.DummyImplementation
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
@@ -190,7 +190,7 @@ final case class ModelDefinitionBuilder(
       )
       .map { case (uiDefinition, _) =>
         def wrapWithImplementation[ComponentExecutor: NotNothing: ClassTag] =
-          MethodBasedComponentDefinitionWithImplementation.withDumbImplementation[ComponentExecutor](
+          MethodBasedComponentDefinitionWithImplementation.withDummyImplementation[ComponentExecutor](
             name = name,
             componentTypeSpecificData = componentTypeSpecificData,
             staticDefinition = staticDefinition,
@@ -202,9 +202,9 @@ final case class ModelDefinitionBuilder(
           case ComponentType.Source          => wrapWithImplementation[Source]
           case ComponentType.Sink            => wrapWithImplementation[Sink]
           case ComponentType.Service         => wrapWithImplementation[ServiceInvoker]
-          case ComponentType.CustomComponent => wrapWithImplementation[DumbImplementation]
-          case ComponentType.Fragment        => wrapWithImplementation[DumbImplementation]
-          case ComponentType.BuiltIn         => wrapWithImplementation[DumbImplementation]
+          case ComponentType.CustomComponent => wrapWithImplementation[DummyImplementation]
+          case ComponentType.Fragment        => wrapWithImplementation[DummyImplementation]
+          case ComponentType.BuiltIn         => wrapWithImplementation[DummyImplementation]
         }
       }
       .map { component =>

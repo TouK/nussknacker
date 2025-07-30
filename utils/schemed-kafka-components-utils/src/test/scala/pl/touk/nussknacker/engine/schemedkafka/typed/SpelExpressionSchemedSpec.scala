@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class SpelExpressionSchemedSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
-  private implicit val nodeId: NodeId = NodeId("dumbId")
+  private implicit val nodeId: NodeId = NodeId("dummyId")
 
   private val parser = SpelExpressionParser.default(
     getClass.getClassLoader,
