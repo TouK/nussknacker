@@ -31,14 +31,7 @@ type CreatorPanelProps = ToolbarPanelProps & {
     };
 };
 
-export const AddGroupElement = <
-    P extends NonNullable<{
-        url: ModuleUrl;
-        componentGroup: string;
-    }>,
->(
-    props: P,
-) => {
+const AddGroupElement = <P extends NonNullable<{ url: ModuleUrl; componentGroup: string }>>(props: P) => {
     const { t } = useTranslation();
     return props.url ? (
         <ErrorBoundary fallback={null}>

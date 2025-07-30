@@ -1,10 +1,12 @@
 import { Box, lighten } from "@mui/material";
 import type { BoxProps } from "@mui/material/Box/Box";
 import { getLuminance } from "@mui/system/colorManipulator";
+import { cloneDeep } from "lodash";
 import React, { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import "react-treeview/react-treeview.css";
 import { useSelector } from "react-redux";
+import { useKey } from "rooks";
 
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
@@ -14,7 +16,7 @@ import NodeUtils from "../../graph/NodeUtils";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
-const StyledToolbox = function StyledToolbox(props: Omit<BoxProps, "sx" | "ref">) {
+function StyledToolbox(props: Omit<BoxProps, "sx" | "ref">) {
     const ref = useRef<HTMLDivElement>();
     return (
         <Box
@@ -116,7 +118,7 @@ const StyledToolbox = function StyledToolbox(props: Omit<BoxProps, "sx" | "ref">
             }}
         />
     );
-};
+}
 
 export enum ComponentFilter {
     sourcesOnly,

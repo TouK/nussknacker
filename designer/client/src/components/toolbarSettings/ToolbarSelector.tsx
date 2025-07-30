@@ -17,7 +17,7 @@ export type ToolbarSelectorProps = ToolbarConfig & {
     horizontal?: boolean;
 };
 
-function saveParse(value: string) {
+function safeParse(value: string) {
     try {
         return JSON.parse(value);
     } catch {
@@ -32,7 +32,7 @@ export const toolbarSelector = ({ horizontal, ...props }: ToolbarSelectorProps):
 
     const { buttons, additionalParams, ...passProps } = props;
     return (
-        <Component {...passProps} {...mapValues(additionalParams, saveParse)}>
+        <Component {...passProps} {...mapValues(additionalParams, safeParse)}>
             {buttons?.map(buttonSelector)}
         </Component>
     );
