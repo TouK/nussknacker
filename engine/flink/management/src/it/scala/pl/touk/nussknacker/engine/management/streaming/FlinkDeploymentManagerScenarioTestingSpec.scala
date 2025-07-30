@@ -9,9 +9,11 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.{ContextId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingSinkFactory
+import pl.touk.nussknacker.engine.api.context.ScenarioCompilationErrors
 import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
@@ -45,7 +47,7 @@ class FlinkDeploymentManagerScenarioTestingSpec
   }
 
   private val scenarioTestData = ScenarioTestData(
-    List(ScenarioTestJsonRecord("startProcess", Json.fromString("terefere")))
+    List(ScenarioTestSourceSpecificFormatJsonRecord("startProcess", Json.fromString("terefere")))
   )
 
   private lazy val (deploymentManager, releaseDeploymentMangerResources) =
@@ -116,13 +118,13 @@ class FlinkDeploymentManagerScenarioTestingSpec
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 
-    val caught = intercept[IllegalArgumentException] {
+    the[ScenarioCompilationErrors] thrownBy {
       Await.result(
         deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData)),
         patienceConfig.timeout
       )
+    } should matchPattern { case ScenarioCompilationErrors(MissingSinkFactory("sendSmsNotExist", "endSend") :: Nil) =>
     }
-    caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }
 
   private def variable(value: String): Json =

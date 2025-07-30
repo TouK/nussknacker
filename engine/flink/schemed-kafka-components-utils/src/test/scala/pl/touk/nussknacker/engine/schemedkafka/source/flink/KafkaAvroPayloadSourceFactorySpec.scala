@@ -392,7 +392,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
       scenarioCompilationDependencies =
         new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty),
       nodeData = Source("id", SourceRef("typ", paramsList)),
-      componentUseContext = LiveRuntime(None)
+      componentUseContext = LiveRuntime(None),
+      inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
     )
     validator
       .validateNode(

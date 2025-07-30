@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import cats.data.ValidatedNel
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params}
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterDeclaration}
+import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
@@ -17,43 +17,10 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 import scala.jdk.CollectionConverters._
 
-object GenericSourceWithCustomVariablesSample
+object GenericSourceWithCustomTestingSupport
     extends SourceFactory
     with SingleInputDynamicComponent[Source]
     with UnboundedStreamComponent {
-
-  private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
-
-    override def validationContext(
-        context: ValidationContext
-    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-      // Append variable "input"
-      val contextWithInput = super.validationContext(context)
-
-      // Specify additional variables
-      val additionalVariables = Map(
-        "additionalOne" -> Typed[String],
-        "additionalTwo" -> Typed[Int]
-      )
-
-      // Append additional variables to ValidationContext
-      additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
-        acc.andThen(_.withVariable(name, typingResult, None))
-      }
-    }
-
-    override def convertToInitialVariables(input: String): ContextVariables = {
-      // perform some transformations and/or computations
-      val additionalVariables = Map[String, Any](
-        "additionalOne" -> s"transformed:$input",
-        "additionalTwo" -> input.length()
-      )
-      // initialize context with input variable and append computed values
-      val superVariables = super.convertToInitialVariables(input)
-      ContextVariables(superVariables.variables ++ additionalVariables)
-    }
-
-  }
 
   override type State = Nothing
 
@@ -62,11 +29,11 @@ object GenericSourceWithCustomVariablesSample
   private val elementsParamDeclaration =
     ParameterDeclaration.mandatory[java.util.List[String]](elementsParamName).withCreator()
 
-  private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
+  private val customContextInitializer: ContextInitializer[String] = new BasicContextInitializer[String](Typed[String])
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): GenericSourceWithCustomVariablesSample.ContextTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(elementsParamDeclaration.createParameter() :: Nil)
     case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
@@ -84,8 +51,19 @@ object GenericSourceWithCustomVariablesSample
       list = elementsValue,
       timestampAssigner = None,
       returnType = Typed[ProcessingType],
-    ) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] with TestWithParametersSupport[String] {
+    ) with TestDataGenerator
+      with FlinkSourceTestSupport[ProcessingType]
+      with TestWithParametersSupport[ProcessingType]
+      with LiveDataProvider {
       override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
+
+      override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = DataRecords(
+        (0 until maxNumberOfRecords).flatMap { index =>
+          elementsValue.map { el =>
+            DataRecord(variables = Map(VariableConstants.InputVariableName -> (el + s"-$index")), timestamp = Some(123))
+          }
+        }.toList
+      )
 
       override def generateTestData(size: Int): TestData = TestData(
         (0 until size).flatMap(index => elementsValue.map(el => TestRecord(Json.fromString(el + s"-$index")))).toList

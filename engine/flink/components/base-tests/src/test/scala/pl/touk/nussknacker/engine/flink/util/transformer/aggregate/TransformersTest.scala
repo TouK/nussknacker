@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.context.ScenarioCompilationErrors
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
@@ -503,10 +504,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b"))
         )
 
-      val ex = the[IllegalArgumentException] thrownBy {
+      the[ScenarioCompilationErrors] thrownBy {
         runScenario(model, resolvedScenario)
+      } should matchPattern {
+        case ScenarioCompilationErrors(
+              ExpressionParserCompilationError("Unresolved reference 'input'", "inputVarAccessTest", _, _, _) :: Nil
+            ) =>
       }
-      ex should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input,Some(CoordinatesBasedTextRange(TextCoordinates(0,0),TextCoordinates(6,0))))"
     }
 
   }

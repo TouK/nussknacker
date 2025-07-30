@@ -12,19 +12,17 @@ import pl.touk.nussknacker.engine.definition.component.{
 import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.process.scenariotesting.StubbedComponentImplementationInvoker.returnType
 import shapeless.syntax.typeable.typeableOps
 
 abstract class StubbedComponentImplementationInvoker(
-    protected val original: ComponentImplementationInvoker,
-    originalDefinitionReturnType: Option[TypingResult]
+    protected val componentDefinition: ComponentDefinitionWithImplementation
 ) extends ComponentImplementationInvoker {
 
-  def this(componentDefinition: ComponentDefinitionWithImplementation) = {
-    this(
-      componentDefinition.implementationInvoker,
-      returnType(componentDefinition)
-    )
+  private lazy val originalDefinitionReturnType: Option[TypingResult] = {
+    componentDefinition match {
+      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
+      case _: DynamicComponentDefinitionWithImplementation                         => None
+    }
   }
 
   override def invokeMethod(
@@ -50,12 +48,24 @@ abstract class StubbedComponentImplementationInvoker(
       case contextTransformation: ContextTransformation =>
         contextTransformation.copy(implementation =
           withReturnType(contextTransformation.implementation)(
-            transformOriginalInvocationResult(contextTransformation.implementation, _, compilationDependencies)
+            transformOriginalInvocationResult(
+              contextTransformation.implementation,
+              originalInvocationResultWasWrappedInContextTransformation = true,
+              _,
+              compilationDependencies,
+              invocationContext
+            )
           )
         )
       case componentExecutor =>
         withReturnType(componentExecutor)(
-          transformOriginalInvocationResult(componentExecutor, _, compilationDependencies)
+          transformOriginalInvocationResult(
+            componentExecutor,
+            originalInvocationResultWasWrappedInContextTransformation = false,
+            _,
+            compilationDependencies,
+            invocationContext
+          )
         )
     }
   }
@@ -65,23 +75,14 @@ abstract class StubbedComponentImplementationInvoker(
       compilationDependencies: NodeCompilationDependencies,
       invocationContext: Option[ComponentImplementationSpecificInvocationContext]
   ): Any =
-    original.invokeMethod(params, compilationDependencies, invocationContext)
+    componentDefinition.implementationInvoker.invokeMethod(params, compilationDependencies, invocationContext)
 
   def transformOriginalInvocationResult(
       originalInvocationResult: Any,
+      originalInvocationResultWasWrappedInContextTransformation: Boolean,
       typingResult: TypingResult,
-      compilationDependencies: NodeCompilationDependencies
+      compilationDependencies: NodeCompilationDependencies,
+      invocationContext: Option[ComponentImplementationSpecificInvocationContext]
   ): Any
-
-}
-
-object StubbedComponentImplementationInvoker {
-
-  private def returnType(componentDefinition: ComponentDefinitionWithImplementation): Option[TypingResult] = {
-    componentDefinition match {
-      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
-      case _: DynamicComponentDefinitionWithImplementation                         => None
-    }
-  }
 
 }

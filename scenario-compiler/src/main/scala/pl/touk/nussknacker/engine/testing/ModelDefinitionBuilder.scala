@@ -1,19 +1,22 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
-import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
+import pl.touk.nussknacker.engine.api.{Service, ServiceInvoker, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,
+  ComponentType,
   DesignerWideComponentId,
   ProcessingMode
 }
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Sink, Source}
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.definition.component._
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.DummyImplementation
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
@@ -24,6 +27,8 @@ import pl.touk.nussknacker.engine.definition.globalvariables.{
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.emptyExpressionConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
+import scala.reflect.ClassTag
 
 final case class ModelDefinitionBuilder(
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
@@ -184,13 +189,23 @@ final case class ModelDefinitionBuilder(
         name
       )
       .map { case (uiDefinition, _) =>
-        MethodBasedComponentDefinitionWithImplementation.withDumbImplementation(
-          name,
-          componentTypeSpecificData,
-          staticDefinition,
-          uiDefinition,
-          allowedProcessingModes
-        )
+        def wrapWithImplementation[ComponentExecutor: NotNothing: ClassTag] =
+          MethodBasedComponentDefinitionWithImplementation.withDummyImplementation[ComponentExecutor](
+            name = name,
+            componentTypeSpecificData = componentTypeSpecificData,
+            staticDefinition = staticDefinition,
+            uiDefinition = uiDefinition,
+            allowedProcessingModes = allowedProcessingModes
+          )
+
+        componentTypeSpecificData.componentType match {
+          case ComponentType.Source          => wrapWithImplementation[Source]
+          case ComponentType.Sink            => wrapWithImplementation[Sink]
+          case ComponentType.Service         => wrapWithImplementation[ServiceInvoker]
+          case ComponentType.CustomComponent => wrapWithImplementation[DummyImplementation]
+          case ComponentType.Fragment        => wrapWithImplementation[DummyImplementation]
+          case ComponentType.BuiltIn         => wrapWithImplementation[DummyImplementation]
+        }
       }
       .map { component =>
         copy(components = component :: components)

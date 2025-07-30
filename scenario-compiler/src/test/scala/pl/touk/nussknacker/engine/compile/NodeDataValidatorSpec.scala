@@ -276,7 +276,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         Map("input" -> Typed[String])
       )
     ) {
-      case ValidationPerformed(CannotCreateObjectError("Some exception", "tst1") :: Nil, parameters, _)
+      case ValidationPerformed(CannotCreateObjectError("Some exception", "tst1", _) :: Nil, parameters, _)
           if parameters.nonEmpty =>
     }
   }

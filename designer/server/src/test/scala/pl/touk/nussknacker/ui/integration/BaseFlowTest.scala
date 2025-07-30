@@ -427,7 +427,7 @@ class BaseFlowTest
 
     saveProcess(process)
 
-    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
+    val testDataContent = """[{"sourceId":"source","variables":{"input":["field1","field2"]}}]"""
 
     val response = httpClient.send(
       quickRequest
@@ -509,7 +509,7 @@ class BaseFlowTest
     val saveProcessResult = saveProcess(processWithService())
     saveProcessResult.errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    val testDataContent                      = """{"sourceId":"start","record":"field1|field2"}"""
+    val testDataContent                      = """[{"sourceId":"start","variables":{"input":["field1","field2"]}}]"""
 
     firstInvocationResult(testProcess(processWithService(), testDataContent)) shouldBe Some("")
 
@@ -542,7 +542,7 @@ class BaseFlowTest
       parameterUUID
     )
     firstInvocationResult(
-      testProcess(processWithService(parameterUUID -> "#input.firstField".spel), testDataContent)
+      testProcess(processWithService(parameterUUID -> "#input[0]".spel), testDataContent)
     ) shouldBe Some("field1")
   }
 

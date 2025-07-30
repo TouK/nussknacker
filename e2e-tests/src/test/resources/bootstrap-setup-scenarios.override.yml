@@ -13,8 +13,7 @@ services:
       EXAMPLE_SCENARIOS_LIBRARY_SERVICE_NAME: bootstrap-setup
       SCHEMA_REGISTRY_CACHE_TTL: "0 seconds"
       CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf,/opt/nussknacker/conf/batch-customizations.conf,/opt/nussknacker/conf/detect-large-transactions-customizations.conf,/opt/nussknacker/conf/additional/additional-configuration.conf"
-      # Batch adds 2 new processing types, each of them add MiniCluster for scenario testing purpose. Also batch components itself use MiniCluster.
-      # It increases memory footprint significantly
+      # Batch adds extra processing type. It increases memory footprint
       JDK_JAVA_OPTIONS: "-Xmx400M -XX:MaxMetaspaceSize=500M -XX:MaxDirectMemorySize=200M"
     volumes:
       - nussknacker_designer_shared_configuration:/opt/nussknacker/conf/additional
@@ -23,6 +22,7 @@ services:
       - ../../e2e-tests/src/test/resources/batch-data-generation/batch-customizations.conf:/opt/nussknacker/conf/batch-customizations.conf
       # detect-large-transactions-customizations.conf needs to be added on Nu startup, and not later by nussknacker-example-scenarios-library, because it modifies live data settings
       - ../../e2e-tests/src/test/resources/detect-large-transactions-customizations.conf:/opt/nussknacker/conf/detect-large-transactions-customizations.conf
+      - ../../e2e-tests/src/test/resources/application-customizations.conf:/opt/nussknacker/conf/application-customizations.conf
     deploy:
       resources:
         limits:
@@ -54,4 +54,6 @@ services:
 
 volumes:
   nussknacker_designer_shared_configuration:
-    name: nussknacker_designer_shared_configuration
+    name: nussknacker_e2e_tests_designer_shared_configuration
+  nussknacker_flink_data:
+    name: nussknacker_e2e_tests_flink_data

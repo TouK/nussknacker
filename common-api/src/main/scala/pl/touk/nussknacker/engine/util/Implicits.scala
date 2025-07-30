@@ -10,6 +10,12 @@ import scala.util.{Failure, Success}
 
 object Implicits {
 
+  implicit class RichScalaListMap[K <: Any, V <: Any](m: ListMap[K, V]) {
+
+    def mapValuesNow[VV](f: V => VV): ListMap[K, VV] = m.map { case (k, v) => k -> f(v) }
+
+  }
+
   implicit class RichScalaMap[K <: Any, V <: Any](m: Map[K, V]) {
 
     def mapValuesNow[VV](f: V => VV): Map[K, VV] = m.map { case (k, v) => k -> f(v) }

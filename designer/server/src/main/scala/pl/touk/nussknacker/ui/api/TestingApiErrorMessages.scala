@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
+import io.circe.{DecodingFailure, Json}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.ui.process.test.PreliminaryScenarioRecordsSerDe.DeserializationError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError
@@ -19,7 +21,30 @@ object TestingApiErrorMessages {
             TestingApiErrorMessages.passedTestData.empty
           case DeserializationError.RecordParsingError(serializedTestRecord, recordIndex) =>
             TestingApiErrorMessages.problemInSample(recordIndex).parsingError(serializedTestRecord)
+          case DeserializationError.RecordsParsingError(message) =>
+            TestingApiErrorMessages.passedTestData.parsingError(message)
         }
+      case PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
+        TestingApiErrorMessages
+          .problemInSample(testRecordIndex)
+          .unexpectedVariableInTestRecordError(variableName, sourceId)
+      case PerformTestError.TestRecordVariableDecodingError(
+            variableName,
+            variableType,
+            encodedVariable,
+            cause,
+            sourceId,
+            testRecordIndex
+          ) =>
+        TestingApiErrorMessages
+          .problemInSample(testRecordIndex)
+          .testRecordVariableDecodingError(
+            variableName,
+            variableType,
+            encodedVariable,
+            cause,
+            sourceId
+          )
       case PerformTestError.MissingSourceError(sourceId, recordIndex) =>
         TestingApiErrorMessages.problemInSample(recordIndex).missingSource(sourceId.id)
       case PerformTestError.TestResultsSizeExceededError(approxSizeInBytes, maxBytes) =>
@@ -42,6 +67,8 @@ object TestingApiErrorMessages {
 
   object passedTestData {
     val empty = "Test data is empty"
+
+    def parsingError(message: String) = s"Test data are in invalid format: $message"
 
     def tooManyCharacters(length: Int, limit: Int) =
       s"Test data has too many characters ($length). The maximum numbers of permitted characters is $limit. Contact the system administrator to increase this limit."
@@ -71,8 +98,23 @@ object TestingApiErrorMessages {
     def missingSource(sourceId: String): String =
       messageForSample(s"source with id '$sourceId' doesn't exist in the scenario")
 
+    def unexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId): String =
+      messageForSample(s"Unexpected variable [$variableName] for source [$sourceId]")
+
+    def testRecordVariableDecodingError(
+        variableName: String,
+        variableType: TypingResult,
+        encodedVariable: Json,
+        cause: DecodingFailure,
+        sourceId: NodeId
+    ): String =
+      messageForSample(
+        s"Variable [name=$variableName, type=${variableType.display}, encoded value=${encodedVariable.noSpaces}] decoding error for source [$sourceId]: ${cause.message}"
+      )
+
     private def messageForSample(message: String) =
       s"Problem in sample ${recordIndex + 1} detected: $message"
+
   }
 
   def testResultsSizeExceeded(approxSizeInBytes: Long, maxBytes: Long) =

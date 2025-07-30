@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentStaticDefinition
 }
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.DummyImplementation
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -28,7 +29,7 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
         .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName, id.name)
         .map { case (uiDefinition, _) =>
           // Currently built-in components are represented as method-based component, probably we should change it to some dedicated type
-          MethodBasedComponentDefinitionWithImplementation.withDumbImplementation(
+          MethodBasedComponentDefinitionWithImplementation.withDummyImplementation[DummyImplementation](
             id.name,
             BuiltInComponentSpecificData,
             ComponentStaticDefinition(List.empty, None),

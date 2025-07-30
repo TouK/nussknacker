@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{ContextIdPathPart, DisplayJsonWithEncoder, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
@@ -203,7 +203,10 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   }
 
   private def createTestRecord(field1: String, field2: String) = {
-    ScenarioTestJsonRecord(sourceId, Json.obj("field1" -> Json.fromString(field1), "field2" -> Json.fromString(field2)))
+    ScenarioTestSourceSpecificFormatJsonRecord(
+      sourceId,
+      Json.obj("field1" -> Json.fromString(field1), "field2" -> Json.fromString(field2))
+    )
   }
 
   private def contextIdGenForFirstSource(scenario: CanonicalProcess): IncContextIdGenerator =

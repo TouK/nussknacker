@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.process.scenariotesting
 
 import pl.touk.nussknacker.engine.{ModelData, RuntimeMode}
-import pl.touk.nussknacker.engine.api.ProcessListener
+import pl.touk.nussknacker.engine.api.{ProcessListener, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component.{ComponentImplementationInvoker, NodeCompilationDependencies}
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 import pl.touk.nussknacker.engine.process.compiler.{ComponentDefinitionContext, FlinkProcessCompilerDataFactory}
@@ -35,16 +36,21 @@ object VerificationFlinkProcessCompilerDataFactory {
               new StubbedComponentImplementationInvoker(component) {
                 override def transformOriginalInvocationResult(
                     originalInvocationResult: Any,
+                    originalInvocationResultWasWrappedInContextTransformation: Boolean,
                     typingResult: TypingResult,
-                    compilationDependencies: NodeCompilationDependencies
-                ): Any =
+                    compilationDependencies: NodeCompilationDependencies,
+                    invocationContext: Option[ComponentImplementationSpecificInvocationContext]
+                ): Any = {
+                  // TODO: This probably doesn't work correctly for sources with custom ContextInitializer -
+                  //       we should recover validation context, see TestFlinkProcessCompilerDataFactory.recoverOutputValidationContextIfNeeded
                   EmptySource(typingResult)
+                }
               }
             )
           case component if component.componentType == ComponentType.Service =>
             // We don't want to open services
             component.withImplementationInvoker(
-              ComponentImplementationInvoker.dumbImplementationInvoker
+              ComponentImplementationInvoker.dummyImplementationInvoker[ServiceInvoker]
             )
           case other => other
         }

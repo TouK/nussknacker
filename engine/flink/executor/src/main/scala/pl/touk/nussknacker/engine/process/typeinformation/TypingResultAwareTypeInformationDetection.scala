@@ -45,17 +45,20 @@ import scala.jdk.CollectionConverters._
  */
 class TypingResultAwareTypeInformationDetection extends TypeInformationDetection {
 
-  def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
-    val variables = forType(
-      Typed.record(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
-    )
-      .asInstanceOf[TypeInformation[Map[String, Any]]]
+  override def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
+    val variables = forVariables(validationContext.localVariables)
     val parentCtx = validationContext.parent.map(forContext)
 
     ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
-  def forType[T](typingResult: TypingResult): TypeInformation[T] = {
+  override def forVariables(variables: Map[String, TypingResult]): TypeInformation[Map[String, Any]] = {
+    forType(
+      Typed.record(variables, Typed.typedClass[Map[String, AnyRef]])
+    ).asInstanceOf[TypeInformation[Map[String, Any]]]
+  }
+
+  override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case FlinkBelow119AdditionalTypeInfo(typeInfo) => typeInfo
       case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
@@ -127,7 +130,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
   private def createJavaMapTypeInformation(typingResult: TypedObjectTypingResult) =
     TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
 
-  def forValueWithContext[T](
+  override def forValueWithContext[T](
       validationContext: ValidationContext,
       value: TypeInformation[T]
   ): TypeInformation[ValueWithContext[T]] = {

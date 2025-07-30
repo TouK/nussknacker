@@ -67,7 +67,8 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       scenarioCompilationDependencies =
         new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty),
       nodeData = Source("id", SourceRef("typ", params.toList.map(p => NodeParameter(p._1, p._2)))),
-      componentUseContext = LiveRuntime(None)
+      componentUseContext = LiveRuntime(None),
+      inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
     )
     validator
       .validateNode(

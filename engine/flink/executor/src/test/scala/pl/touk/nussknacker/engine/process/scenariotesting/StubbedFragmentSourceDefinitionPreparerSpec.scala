@@ -5,10 +5,12 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.ScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ComponentUseContext, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.SingleInputNodeInputValidationContext
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.component.NodeCompilationDependencies
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
@@ -41,11 +43,12 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
         Params.empty,
         new NodeCompilationDependencies(
           scenarioCompilationDependencies = new ScenarioCompilationDependencies(
-            JobData(MetaData("dumb", FragmentSpecificData()), ProcessVersion.empty),
+            JobData(MetaData("dummyId", FragmentSpecificData()), ProcessVersion.empty),
             EngineScenarioCompilationDependencies.empty
           ),
           nodeData = fragmentInputDefinition,
           componentUseContext = ComponentUseContext.ScenarioTesting,
+          inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
         ),
         invocationContext = None
       )

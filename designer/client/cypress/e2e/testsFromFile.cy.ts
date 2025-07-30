@@ -14,12 +14,12 @@ describe("Process tests from file", () => {
         cy.viewport(1440, 1200);
         cy.createSchema(`${transactionsTopic}-value`, "transactionsAvroSchema.json");
         cy.createKafkaTopic(transactionsTopic);
-        cy.visitNewProcess(scenarioName, "dumbStreamKafkaSourceScenario", "DevelopmentTests");
+        cy.visitNewProcess(scenarioName, "dummyStreamKafkaSourceScenario", "DevelopmentTests");
         cy.get("[aria-label='run test on data from file']")
             .first()
             .next("[type=file]")
             .should("exist")
-            .selectFile("cypress/fixtures/transactionsTestData.txt", { force: true });
+            .selectFile("cypress/fixtures/transactionsTestData.json", { force: true });
         cy.get("text[joint-selector='testResultsSummary']").eq(0).contains("1");
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");
         cy.get("[model-id='kafka']").should("be.visible").trigger("dblclick");
