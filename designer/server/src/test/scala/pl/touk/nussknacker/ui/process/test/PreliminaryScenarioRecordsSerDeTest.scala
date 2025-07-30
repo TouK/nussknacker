@@ -19,7 +19,7 @@ class PreliminaryScenarioRecordsSerDeTest extends AnyFunSuite with Matchers with
   private def createSerDe(testDataFormat: TestDataFormat.Value) = new PreliminaryScenarioRecordsSerDe(
     serializedContentMaxLength = Some(testDataMaxLength),
     maxRecordsCount = Some(maxSamplesCount),
-    testDataFormatSerDe = TestDataFormatSerDe(testDataFormat)
+    testDataFormatSerDe = TestTestDataFormatSerDeFactory.create(testDataFormat)
   )
 
   private val correctSourceSpecificFormatRecord = SourceSpecificFormatPreliminaryScenarioRecord(

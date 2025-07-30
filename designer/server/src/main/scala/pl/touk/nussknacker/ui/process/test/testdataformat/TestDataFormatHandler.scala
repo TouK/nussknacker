@@ -55,11 +55,6 @@ object TestDataFormatHandler extends LazyLogging {
 
 object TestDataFormatSerDe {
 
-  def apply(testDataFormat: TestDataFormat.Value): TestDataFormatSerDe = testDataFormat match {
-    case TestDataFormat.SourceSpecific => SourceSpecificDataFormatSerDe
-    case TestDataFormat.CommonFormat   => CommonDataFormatSerDe
-  }
-
   sealed trait DeserializationError
 
   object DeserializationError {

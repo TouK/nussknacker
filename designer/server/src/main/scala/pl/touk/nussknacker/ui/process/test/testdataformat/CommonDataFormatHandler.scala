@@ -33,10 +33,9 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
       sourceId: NodeId,
       compiledSource: Source,
       maxNumberOfRecords: Int
-  ): Either[TestDataFormatHandler.LiveDataFetchingNotSupportedError.type, List[PreliminaryScenarioRecord]] = {
-    compiledSource
-      .cast[LiveDataProvider]
-      .map { liveDataProvider =>
+  ): Either[TestDataFormatHandler.LiveDataFetchingNotSupportedError.type, List[PreliminaryScenarioRecord]] =
+    compiledSource match {
+      case liveDataProvider: LiveDataProvider =>
         val records = modelData.withModelClassloaderAsContextClassLoader {
           val sourceRecords = liveDataProvider.fetchLiveData(maxNumberOfRecords).records
 
@@ -47,9 +46,9 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
             }
         }
         Right(records)
-      }
-      .getOrElse(Left(TestDataFormatHandler.LiveDataFetchingNotSupportedError))
-  }
+      case _ =>
+        Left(TestDataFormatHandler.LiveDataFetchingNotSupportedError)
+    }
 
 }
 

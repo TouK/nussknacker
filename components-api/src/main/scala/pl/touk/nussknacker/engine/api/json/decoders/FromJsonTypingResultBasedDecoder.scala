@@ -92,7 +92,10 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
         } yield verifiedLocale
       case `uuidClass` =>
         cursor.as[String].flatMap { source =>
-          if (StringUtils.hasLength(source)) handleExceptionAsDecodingFailureF(UUID.fromString)(source.trim) else null
+          if (StringUtils.hasLength(source))
+            handleExceptionAsDecodingFailureF(UUID.fromString)(source.trim)
+          else
+            Right(null)
         }
 
       case TypedClass(klass, List(elementType: TypingResult)) if klass == classOf[java.util.List[_]] =>
@@ -149,9 +152,10 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
     case single: SingleTypingResult =>
       val reflectiveCreatedArray =
         java.lang.reflect.Array.newInstance(single.runtimeObjType.klass, list.size).asInstanceOf[Array[Any]]
+      // noinspection ScalaUnusedExpression
       list.copyToArray(
         reflectiveCreatedArray
-      ) // Idea marks this line as unused code, but it is not true - it produces a side effect that is important for us
+      )
       reflectiveCreatedArray
     case _ =>
       list.toArray[Any]

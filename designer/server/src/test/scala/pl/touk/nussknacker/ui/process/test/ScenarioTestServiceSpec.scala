@@ -234,7 +234,8 @@ class ScenarioTestServiceSpec
   test("should fetch live data for a scenario with single source") {
     val scenario = createScenarioWithSingleSource()
     forAll(allFormats) { format =>
-      val liveDataRecords = TestDataFormatSerDe(format)
+      val liveDataRecords = TestTestDataFormatSerDeFactory
+        .create(format)
         .deserializeRecords(
           prepareScenarioTestService(format)
             .fetchSourcesLiveData(scenario.toScenarioGraph, processVersionFor(scenario), isFragment = false, 3)
@@ -274,7 +275,8 @@ class ScenarioTestServiceSpec
   test("should fetch live data for a scenario with single source not providing record timestamps") {
     val scenario = createScenarioWithSingleSource("sourceEmptyTimestamp")
     forAll(allFormats) { format =>
-      val liveDataRecords = TestDataFormatSerDe(format)
+      val liveDataRecords = TestTestDataFormatSerDeFactory
+        .create(format)
         .deserializeRecords(
           prepareScenarioTestService(format)
             .fetchSourcesLiveData(scenario.toScenarioGraph, processVersionFor(scenario), isFragment = false, 3)
@@ -346,7 +348,8 @@ class ScenarioTestServiceSpec
     val scenario = createScenarioWithMultipleSources()
     forAll(allFormats) { format =>
       val liveDataRecords =
-        TestDataFormatSerDe(format)
+        TestTestDataFormatSerDeFactory
+          .create(format)
           .deserializeRecords(
             prepareScenarioTestService(format)
               .fetchSourcesLiveData(scenario.toScenarioGraph, processVersionFor(scenario), isFragment = false, 8)
@@ -429,7 +432,7 @@ class ScenarioTestServiceSpec
 
     forAll(allFormats) { format =>
       val testService = prepareScenarioTestService(format)
-      val serde       = TestDataFormatSerDe(format)
+      val serde       = TestTestDataFormatSerDeFactory.create(format)
       forEvery(testCases) { (scenario, size, expectedSize, expectedSizeBySourceId) =>
         val liveDataRecords =
           testService
