@@ -108,7 +108,9 @@ private[encoders] trait ToJsonEncoderWithFallback {
   private def encodeMap(map: Map[_, _]) = {
     val encodedFields = map.toList.map { case (key, value) =>
       encodeValue(key).andThen(encodedKey =>
-        encodedKey.asString match {
+        encodedKey.asString orElse encodedKey.asNumber.map(_.toString) orElse encodedKey.asBoolean.map(
+          _.toString
+        ) match {
           case Some(encodedKeyString) =>
             encodeValue(value).map(encodedValue => encodedKeyString -> encodedValue)
           case None =>

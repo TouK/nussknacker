@@ -6,6 +6,7 @@ import io.circe._
 import org.apache.commons.lang3.LocaleUtils
 import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 
 import java.math.BigInteger
 import java.nio.charset.Charset
@@ -98,7 +99,13 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
             Right(null)
         }
 
-      case TypedClass(klass, List(elementType: TypingResult)) if klass == classOf[java.util.List[_]] =>
+      case TypedClass(klass, _) if klass.isEnum =>
+        cursor
+          .as[String]
+          .flatMap(
+            handleExceptionAsDecodingFailureF(ReflectUtils.javaEnumValueOf(klass.asInstanceOf[Class[Enum[_]]], _))
+          )
+      case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
         cursor.values match {
           case Some(values) =>
             values.toList
@@ -107,7 +114,7 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
           case None =>
             Left(DecodingFailure(s"Expected encoded List to be a Json array", cursor.history))
         }
-      case TypedClass(klass, List(elementType: TypingResult)) if klass == Typed.KlassForArrays =>
+      case TypedClass(klass, elementType :: Nil) if klass == Typed.KlassForArrays =>
         cursor.values match {
           case Some(values) =>
             values.toList
@@ -116,6 +123,17 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
           case None =>
             Left(DecodingFailure(s"Expected encoded Array to be a Json array", cursor.history))
         }
+      case TypedClass(klass, keyType :: valueType :: Nil) if klass == classOf[JMap[_, _]] =>
+        for {
+          mapOfJsons <- cursor.as[Map[String, Json]]
+          listOfDecodedKeyAndValues <-
+            mapOfJsons.toList.map { case (key, value) =>
+              for {
+                decodedKey   <- decodeValue(keyType, Json.fromString(key).hcursor)
+                decodedValue <- decodeValue(valueType, value.hcursor)
+              } yield decodedKey -> decodedValue
+            }.sequence
+        } yield listOfDecodedKeyAndValues.toMap.asJava
       case TypedObjectTypingResult(fields, runtimeObjType, _)
           if runtimeObjType.klass == classOf[JMap[String @unchecked, _]] =>
         for {

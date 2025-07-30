@@ -486,7 +486,7 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(process)
 
     val tooManyRecords = List
-      .fill(50)("""{"sourceId":"startProcess","record":"a json string"}""")
+      .fill(50)("""{"sourceId":"startProcess","variables":{"input":[]}}""")
       .mkString("[", ",", "]")
     testScenario(process, tooManyRecords) ~> check {
       status shouldEqual StatusCodes.BadRequest
@@ -497,13 +497,13 @@ class ManagementResourcesSpec
 
     val longString = "a long json string".repeat(50)
     val tooManyCharacters = List
-      .fill(20)(s"""{"sourceId":"startProcess","record":"$longString"}""")
+      .fill(20)(s"""{"sourceId":"startProcess","variables":{"input":"["$longString"]"}}""")
       .mkString("[", ",", "]")
     testScenario(process, tooManyCharacters) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[
         String
-      ] shouldBe "Test data has too many characters (18801). The maximum numbers of permitted characters is 10000. Contact the system administrator to increase this limit."
+      ] shouldBe "Test data has too many characters (19141). The maximum numbers of permitted characters is 10000. Contact the system administrator to increase this limit."
     }
   }
 
@@ -527,7 +527,7 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(process)
 
     val testDataContent = List
-      .fill(10)("""{"sourceId":"startProcess","record":"a json string"}""")
+      .fill(10)("""{"sourceId":"startProcess","variables":{"input":[]}}""")
       .mkString("[", ",", "]")
     testScenario(process, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
@@ -542,8 +542,8 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     val testDataContent =
       """[
-        |  {"sourceId":"startProcess","record":"ala"},
-        |  {"sourceId":"unknown","record":"bela"}
+        |  {"sourceId":"startProcess","variables":{"input":[]}},
+        |  {"sourceId":"unknown","variables":{"input":"foo"}}
         |]""".stripMargin
 
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
