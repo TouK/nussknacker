@@ -1,29 +1,31 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { render, screen } from "@testing-library/react";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import * as React from "react";
 import { DndProvider } from "react-dnd-multi-backend";
 import { Provider } from "react-redux";
-import configureMockStore from "redux-mock-store/lib";
 
 import { SpelEditor } from "../../src/components/graph/node-modal/editors/expression/SpelEditor";
 import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { mockFieldErrors, mockValueChange } from "./helpers";
 
-const mockStore = configureMockStore();
-
-const store = mockStore({
-    settings: {
-        processDefinitionData: {
-            componentGroups: [],
-            processDefinition: {},
-            componentsConfig: {},
-            additionalPropertiesConfig: {},
-            edgesForNodes: [],
-            defaultAsyncInterpretation: true,
+const store = configureStore({
+    reducer: (state) => state,
+    preloadedState: {
+        settings: {
+            processDefinitionData: {
+                componentGroups: [],
+                processDefinition: {},
+                componentsConfig: {},
+                additionalPropertiesConfig: {},
+                edgesForNodes: [],
+                defaultAsyncInterpretation: true,
+            },
         },
+        graphReducer: { present: { scenario: {} } },
     },
-    graphReducer: { present: { scenario: {} } },
+    devTools: false,
 });
 
 describe("SpelEditor", () => {
