@@ -1,16 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
+import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
-import { applyMiddleware, createStore } from "redux";
-import { composeWithDevTools } from "redux-devtools-extension";
 import { persistStore } from "redux-persist";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
-import thunk from "redux-thunk";
 
-import type { Action, ThunkDispatch } from "../actions/reduxTypes";
-import { reducer } from "../reducers";
+import type { Action } from "../actions/reduxTypes";
+import { rootReducer } from "../reducers";
 import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
-export default function configureStore() {
+export default function init() {
     // avoid polluting devtools with frequent refresh actions
     const actionsBlacklist: Action["type"][] = [
         "PROCESS_STATE_LOADED",
@@ -19,11 +17,11 @@ export default function configureStore() {
         "FETCH_LIVE_DATA",
         "DISPLAY_LIVE_DATA",
     ];
-    const store = createStore(
-        reducer,
-        composeWithDevTools({ actionsBlacklist: ["RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION", ...actionsBlacklist] })(
-            applyMiddleware(
-                thunk,
+
+    const store = configureStore({
+        reducer: rootReducer,
+        middleware: (getDefaultMiddleware) =>
+            getDefaultMiddleware().concat(
                 createStateSyncMiddleware({
                     whitelist: [
                         "TOGGLE_SETTINGS",
@@ -46,8 +44,11 @@ export default function configureStore() {
                     "STICKY_NOTE_UPDATED",
                 ]),
             ),
-        ),
-    );
+        devTools: {
+            actionsDenylist: ["RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION", ...actionsBlacklist],
+        },
+    });
+
     const persistor = persistStore(store);
     initMessageListener(store);
 
@@ -62,6 +63,7 @@ export default function configureStore() {
     return { store, persistor };
 }
 
-export function useThunkDispatch() {
-    return useDispatch<ThunkDispatch>();
-}
+type Store = ReturnType<typeof init>["store"];
+
+export type AppDispatch = Store["dispatch"];
+export const useAppDispatch = () => useDispatch<AppDispatch>();
