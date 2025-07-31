@@ -27,7 +27,7 @@ import { reducer as ui } from "./ui";
 import type { UserSettings } from "./userSettings";
 import { userSettings } from "./userSettings";
 
-export const reducer = combineReducers<RootState>({
+export const rootReducer = combineReducers<RootState>({
     httpErrorHandler,
     graphReducer,
     liveData,
@@ -63,4 +63,4 @@ export type RootState = {
     nodeWindowIdMap: ReturnType<typeof nodeWindowIdMap>;
 };
 
-export default reducer;
+export default rootReducer;

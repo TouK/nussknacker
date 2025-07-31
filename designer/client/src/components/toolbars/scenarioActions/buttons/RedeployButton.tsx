@@ -1,10 +1,9 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
-import type { ThunkDispatch } from "../../../../actions/reduxTypes";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
@@ -16,11 +15,11 @@ import {
     hasError,
     isRedeployPossible,
     isRedeployVisible,
-    isSaveDisabled,
     isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
+import { useAppDispatch } from "../../../../store/configureStore";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
@@ -42,10 +41,9 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const [settings] = useUserSettings();
     const allowQuickRedeploy = settings["scenario.allowQuickDeploy"];
 
-    const dispatch: ThunkDispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const isVisible = useSelector(isRedeployVisible);
     const isPossible = useSelector(isRedeployPossible);
-    const saveDisabled = useSelector(isSaveDisabled);
     const hasErrors = useSelector(hasError);
     const validationResultPresent = useSelector(isValidationResultPresent);
     const processName = useSelector(getProcessName);

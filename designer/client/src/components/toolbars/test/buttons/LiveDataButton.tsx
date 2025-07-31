@@ -1,17 +1,18 @@
 import { Insights } from "@mui/icons-material";
 import React, { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useIntervalWhen } from "rooks";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
-import type { ThunkAction, ThunkDispatch } from "../../../../actions/reduxTypes";
+import type { ThunkAction } from "../../../../actions/reduxTypes";
 import {
     getIsLiveDataWorking,
     getLiveDataLastUpdate,
     getLiveDataNextUpdate,
     isReadyForLiveData,
 } from "../../../../reducers/selectors/getLiveData";
+import { useAppDispatch } from "../../../../store/configureStore";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
@@ -21,7 +22,7 @@ function adjustProgress(percent: number) {
 }
 
 export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonProps) {
-    const dispatch = useDispatch<ThunkDispatch>();
+    const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
     const nextIn = useSelector(getLiveDataNextUpdate);
