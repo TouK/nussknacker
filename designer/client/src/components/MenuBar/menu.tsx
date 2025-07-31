@@ -3,7 +3,6 @@ import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import FocusLock from "react-focus-lock";
-import { useSelector } from "react-redux";
 import { TruncatedList } from "react-truncate-list";
 import { useIntersectionObserverRef, useKey } from "rooks";
 
@@ -11,6 +10,7 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
 import { blendLighten } from "../../containers/theme/helpers";
 import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
+import { useAppSelector } from "../../store/configureStore";
 import { TabElement } from "./TabElement";
 import { useStateWithRevertTimeout } from "./useStateWithRevertTimeout";
 
@@ -116,8 +116,8 @@ const Spacer = styled("span")(({ theme }) => ({
 }));
 
 export function Menu(): JSX.Element {
-    const tabs = useSelector(getTabs);
-    const loggedUser = useSelector(getLoggedUser);
+    const tabs = useAppSelector(getTabs);
+    const loggedUser = useAppSelector(getLoggedUser);
 
     const elements = useMemo(
         () =>

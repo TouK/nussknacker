@@ -2,11 +2,10 @@ import { Box, FormLabel } from "@mui/material";
 import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { testScenarioWithGeneratedData } from "../../../actions/nk/displayTestResults";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
 import { NodeInput } from "../../FormElements";
 import {
     extendErrors,
@@ -30,7 +29,7 @@ export function TestWithLiveDataForm({ closeDialog }: TestWithLiveDataFormProps)
 
     const { handleSetAction, handleIsValid } = useTestingContext();
 
-    const liveDataMaxSamples = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
+    const liveDataMaxSamples = useAppSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ liveDataTestSampleSize }, setState] = useState({
         liveDataTestSampleSize: "10",

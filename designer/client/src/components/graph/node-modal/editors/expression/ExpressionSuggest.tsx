@@ -1,11 +1,11 @@
 import "ace-builds/src-noconflict/ace";
 import { isEmpty, isEqual } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
 
 import HttpService from "../../../../../http/HttpService";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/getProcessDefinitionData";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../../store/configureStore";
 import type { VariableTypes } from "../../../../../types";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import type { CustomCompleterAceEditorProps } from "./CustomCompleterAceEditor";
@@ -35,9 +35,9 @@ function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
 export function ExpressionSuggest(props: ExpressionSuggestProps): JSX.Element {
     const { className, isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
 
-    const definitionData = useSelector(getProcessDefinitionData);
+    const definitionData = useAppSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
-    const processingType = useSelector(getProcessingType);
+    const processingType = useAppSelector(getProcessingType);
 
     const { language } = inputProps;
 

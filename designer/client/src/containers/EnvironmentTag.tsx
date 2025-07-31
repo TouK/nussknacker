@@ -1,9 +1,9 @@
 import type { Theme } from "@mui/material";
 import { styled, Typography } from "@mui/material";
 import React from "react";
-import { useSelector } from "react-redux";
 
 import { getEnvironmentAlert } from "../reducers/selectors/settings";
+import { useAppSelector } from "../store/configureStore";
 
 // TODO: get rid of 'indicator-', maybe rename to "warn", "prod" etc.
 export enum EnvironmentTagColor {
@@ -41,7 +41,7 @@ const Tag = styled(Typography)<{ color: EnvironmentTagColor }>(({ color, theme }
 });
 
 export function EnvironmentTag() {
-    const { content, color } = useSelector(getEnvironmentAlert);
+    const { content, color } = useAppSelector(getEnvironmentAlert);
 
     if (!content) {
         return null;

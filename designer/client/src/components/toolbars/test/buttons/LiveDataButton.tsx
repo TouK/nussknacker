@@ -1,7 +1,6 @@
 import { Insights } from "@mui/icons-material";
 import React, { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { useIntervalWhen } from "rooks";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
@@ -12,7 +11,7 @@ import {
     getLiveDataNextUpdate,
     isReadyForLiveData,
 } from "../../../../reducers/selectors/getLiveData";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
@@ -25,10 +24,10 @@ export const LiveDataButton = memo(function LiveDataButton(props: ToolbarButtonP
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
-    const nextIn = useSelector(getLiveDataNextUpdate);
-    const last = useSelector(getLiveDataLastUpdate);
-    const working = useSelector(getIsLiveDataWorking);
-    const readyForLiveData = useSelector(isReadyForLiveData);
+    const nextIn = useAppSelector(getLiveDataNextUpdate);
+    const last = useAppSelector(getLiveDataLastUpdate);
+    const working = useAppSelector(getIsLiveDataWorking);
+    const readyForLiveData = useAppSelector(isReadyForLiveData);
 
     const { disabled, type, title } = props;
 

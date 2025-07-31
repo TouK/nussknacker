@@ -2,7 +2,6 @@ import { useWindowManager } from "@touk/window-manager";
 import { isEmpty } from "lodash";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useErrorBoundary } from "react-error-boundary";
-import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
@@ -29,7 +28,7 @@ import {
     isPristine,
 } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
-import { useAppDispatch } from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/configureStore";
 import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
@@ -60,8 +59,8 @@ function useUnmountCleanup() {
 
 function useProcessState(refreshTime = 10000) {
     const dispatch = useAppDispatch();
-    const scenario = useSelector(getScenario);
-    const versionId = useSelector(getProcessVersionId);
+    const scenario = useAppSelector(getScenario);
+    const versionId = useAppSelector(getProcessVersionId);
     const { isFragment, isArchived, name } = scenario || {};
 
     const fetch = useCallback(() => dispatch(loadProcessState(name, versionId)), [dispatch, name, versionId]);
@@ -75,8 +74,8 @@ function useProcessState(refreshTime = 10000) {
 
 function useCountsIfNeeded() {
     const dispatch = useAppDispatch();
-    const scenario = useSelector(getScenario);
-    const scenarioGraph = useSelector(getScenarioGraph);
+    const scenario = useAppSelector(getScenario);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
 
     const [searchParams] = useSearchParams();
     const from = searchParams.get("from");
@@ -102,9 +101,9 @@ function useCountsIfNeeded() {
 }
 
 function useVersionSwitchIfNeeded(processName: string, version: string) {
-    const isLatestVersion = useSelector(isLatestProcessVersion);
-    const currentVersionId = useSelector(getProcessVersionId);
-    const [latestVersion, ...otherVersions] = useSelector(getVersions);
+    const isLatestVersion = useAppSelector(isLatestProcessVersion);
+    const currentVersionId = useAppSelector(getProcessVersionId);
+    const [latestVersion, ...otherVersions] = useAppSelector(getVersions);
     const navigate = useNavigate();
     // const dispatch = useAppDispatch();
 
@@ -156,13 +155,13 @@ function Visualization() {
         [dispatch, showBoundary],
     );
 
-    const scenarioLoading = useSelector(getScenarioLoading);
-    const scenario = useSelector(getScenario);
+    const scenarioLoading = useAppSelector(getScenarioLoading);
+    const scenario = useAppSelector(getScenario);
     const graphNotReady = useMemo(() => !dataResolved || isEmpty(scenario) || scenarioLoading, [dataResolved, scenario, scenarioLoading]);
 
-    const processDefinitionData = useSelector(getProcessDefinitionData);
-    const capabilities = useSelector(getCapabilities);
-    const nothingToSave = useSelector(isPristine);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
+    const capabilities = useAppSelector(getCapabilities);
+    const nothingToSave = useAppSelector(isPristine);
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;

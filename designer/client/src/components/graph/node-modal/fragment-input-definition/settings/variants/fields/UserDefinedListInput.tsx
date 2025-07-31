@@ -4,11 +4,11 @@ import React, { useMemo, useRef, useState } from "react";
 import type AceEditor from "react-ace";
 import type { IAceEditor } from "react-ace/lib/types";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import type { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
 import HttpService from "../../../../../../../http/HttpService";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../../../../store/configureStore";
 import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";
@@ -153,7 +153,7 @@ export const UserDefinedListInput = ({
         },
     };
 
-    const processingType = useSelector(getProcessingType);
+    const processingType = useAppSelector(getProcessingType);
     const temporaryItemName: FieldName = `$param.${name}.$fixedValuesListTemporaryItem`;
 
     const validateTemporaryListItem = useMemo(() => {

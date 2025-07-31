@@ -1,18 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";
 import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities } from "../../../../reducers/selectors/graph";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 function FromFileButton(props: ToolbarButtonProps) {
     const dispatch = useAppDispatch();
-    const testCapabilities = useSelector(getTestCapabilities);
+    const testCapabilities = useAppSelector(getTestCapabilities);
     const { disabled, type } = props;
     const { t } = useTranslation();
 

@@ -2,10 +2,10 @@ import { Box, Button, Typography } from "@mui/material";
 import { uniq } from "lodash";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getScenario } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/configureStore";
 import NodeUtils from "../../graph/NodeUtils";
 import { SearchLabel } from "../../sidePanels/SearchLabel";
 import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
@@ -27,8 +27,8 @@ export function AdvancedSearchFilters({
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
     const { t } = useTranslation();
-    const { componentGroups } = useSelector(getProcessDefinitionData);
-    const { scenarioGraph } = useSelector(getScenario);
+    const { componentGroups } = useAppSelector(getProcessDefinitionData);
+    const { scenarioGraph } = useAppSelector(getScenario);
     const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
 
     const displayNames = useMemo(

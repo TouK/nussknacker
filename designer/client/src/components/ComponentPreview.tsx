@@ -2,13 +2,13 @@ import { css, cx } from "@emotion/css";
 import { alpha, styled, useTheme } from "@mui/material";
 import { blend } from "@mui/system";
 import React from "react";
-import { useSelector } from "react-redux";
 import { usePreviousDifferent } from "rooks";
 
 import { blendLighten, getBorderColor } from "../containers/theme/helpers";
 import type { RootState } from "../reducers";
 import { getIdMapping } from "../reducers/graph/utils";
 import { getNodes } from "../reducers/selectors/graph";
+import { useAppSelector } from "../store/configureStore";
 import type { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
@@ -87,7 +87,7 @@ export function ComponentPreview({ node, isActive, isOver }: ComponentPreviewPro
 
     const colors = isOver ? nodeColorsHover : nodeColors;
 
-    const getId = useSelector((s: RootState) => {
+    const getId = useAppSelector((s: RootState) => {
         const nodes = getNodes(s);
         return (id: string) => {
             const idMapping = getIdMapping(nodes, [{ id }]);

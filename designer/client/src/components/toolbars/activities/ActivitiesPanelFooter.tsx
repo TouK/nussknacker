@@ -1,10 +1,10 @@
 import { Box, Button, lighten, styled } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getCapabilities } from "../../../reducers/selectors/other";
+import { useAppSelector } from "../../../store/configureStore";
 import { useWindows, WindowKind } from "../../../windowManager";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
@@ -22,7 +22,7 @@ const StyledFooterButton = styled(Button)(({ theme }) => ({
 export const ActivitiesPanelFooter = () => {
     const { t } = useTranslation();
     const { open } = useWindows();
-    const { write } = useSelector(getCapabilities);
+    const { write } = useAppSelector(getCapabilities);
 
     const handleOpenAddComment = useCallback(() => {
         open({

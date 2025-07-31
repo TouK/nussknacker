@@ -1,17 +1,16 @@
 import { Link, styled, Typography } from "@mui/material";
 import React, { useCallback } from "react";
-import { useSelector } from "react-redux";
 
 import { updateSearchQuery } from "../actions/nk/scenarioActivities";
 import { getProcessVersionId, getRunningVersion, isCurrentVersionDeployed, isLatestProcessVersion } from "../reducers/selectors/graph";
-import { useAppDispatch } from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/configureStore";
 import { predefinedQueries } from "./toolbars/activities/useActivitiesSearch";
 
 const Span = styled("span")({});
 
 export function RunningVersion() {
-    const runningVersion = useSelector(getRunningVersion);
-    const currentVersionDeployed = useSelector(isCurrentVersionDeployed);
+    const runningVersion = useAppSelector(getRunningVersion);
+    const currentVersionDeployed = useAppSelector(isCurrentVersionDeployed);
     const dispatch = useAppDispatch();
 
     const handleGoToRunningVersion = useCallback(() => {
@@ -44,8 +43,8 @@ export function RunningVersion() {
 }
 
 export function ScenarioVersion() {
-    const currentVersionId = useSelector(getProcessVersionId);
-    const isLatestVersion = useSelector(isLatestProcessVersion);
+    const currentVersionId = useAppSelector(getProcessVersionId);
+    const isLatestVersion = useAppSelector(isLatestProcessVersion);
     if (isLatestVersion || !currentVersionId) return null;
 
     return (

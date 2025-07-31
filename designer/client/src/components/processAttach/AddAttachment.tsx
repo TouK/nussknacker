@@ -2,10 +2,10 @@ import { Typography } from "@mui/material";
 import React, { useCallback } from "react";
 import Dropzone from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import ButtonUpload from "../../assets/img/icons/buttonUpload.svg";
 import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { useAppSelector } from "../../store/configureStore";
 import { NodeInput } from "../FormElements";
 import { AddAttachmentsWrapper, AttachmentButton, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
 
@@ -21,8 +21,8 @@ interface Props {
 
 export function AddAttachment({ handleSetAttachment }: Props) {
     const { t } = useTranslation();
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
+    const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
 
     const addFiles = useCallback(
         (files: File[]) => files.forEach((file) => handleSetAttachment({ processName, processVersionId, file })),

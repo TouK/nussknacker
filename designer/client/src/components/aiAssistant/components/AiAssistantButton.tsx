@@ -2,11 +2,11 @@ import { Box, styled, Typography } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
 import { blendDarken } from "../../../containers/theme/helpers";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
+import { useAppSelector } from "../../../store/configureStore";
 import { useWindows, WindowKind } from "../../../windowManager";
 
 function convertViewportUnitToPixels(unitString: string): number {
@@ -60,7 +60,7 @@ export const AiAssistantButton = () => {
     const { t } = useTranslation();
     const { open } = useWindows();
     const { windows, close } = useWindowManager();
-    const featureSettings = useSelector(getFeatureSettings);
+    const featureSettings = useAppSelector(getFeatureSettings);
     const openedAiAssistantDialog = useMemo(() => windows.find((window) => window.id === AI_ASSISTANT_MODAL_ID), [windows]);
 
     const handleClick = useCallback(() => {

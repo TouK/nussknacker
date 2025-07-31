@@ -1,8 +1,8 @@
 import React, { useCallback } from "react";
-import { useSelector } from "react-redux";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { RootState } from "../../../reducers";
+import { useAppSelector } from "../../../store/configureStore";
 import type { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import EditableEditor from "./editors/EditableEditor";
@@ -43,7 +43,7 @@ export default function Variable({
 }: Props): JSX.Element {
     const onExpressionChange = useCallback((value: ExpressionObj) => setProperty("value", value), [setProperty]);
     const [isMarked] = useDiffMark();
-    const inferredVariableType = useSelector((state: RootState) => {
+    const inferredVariableType = useAppSelector((state: RootState) => {
         const expressionType = getExpressionType(state)(node.id);
         const nodeTypingInfo = getNodeTypingInfo(state)(node.id);
         const varExprType = getTypingResult(expressionType, nodeTypingInfo);

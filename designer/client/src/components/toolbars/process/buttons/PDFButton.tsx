@@ -1,20 +1,20 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/PDF.svg";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/configureStore";
 import { useGraph } from "../../../graph/GraphContext";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
 export default function PDFButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;
-    const processName = useSelector(getProcessName);
-    const versionId = useSelector(getProcessVersionId);
-    const canExport = useSelector(ProcessUtils.canExport);
+    const processName = useAppSelector(getProcessName);
+    const versionId = useAppSelector(getProcessVersionId);
+    const canExport = useAppSelector(ProcessUtils.canExport);
 
     const available = !disabled && canExport;
     const { t } = useTranslation();

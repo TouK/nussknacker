@@ -1,17 +1,16 @@
 import { useEffect, useMemo } from "react";
-import { useSelector } from "react-redux";
 
 import { Initiator, startLiveData, stopLiveData } from "../../actions/nk/liveData";
 import { useUserSettings } from "../../common/userSettings";
 import { VisibleDataType } from "../../reducers/graph";
 import { getHasPauseReasons, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getHasOpenedNodeWindows } from "../../reducers/selectors/getWindowsIdMapping";
-import { useAppDispatch } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/configureStore";
 
 export function useLiveDataIfNeeded() {
     const dispatch = useAppDispatch();
 
-    const visibleDataType = useSelector(getVisibleDataType);
+    const visibleDataType = useAppSelector(getVisibleDataType);
     useEffect(() => {
         if (visibleDataType === VisibleDataType.test || visibleDataType === VisibleDataType.counts) {
             dispatch(stopLiveData(Initiator.tests));
@@ -20,9 +19,9 @@ export function useLiveDataIfNeeded() {
 
     const [settings] = useUserSettings();
     const autoEnableLiveData = settings["scenario.autoEnableLiveData"];
-    const readyForResults = useSelector(isReadyForLiveData);
-    const hasOpenedNodeWindow = useSelector(getHasOpenedNodeWindows);
-    const hasPauseReasons = useSelector(getHasPauseReasons);
+    const readyForResults = useAppSelector(isReadyForLiveData);
+    const hasOpenedNodeWindow = useAppSelector(getHasOpenedNodeWindows);
+    const hasPauseReasons = useAppSelector(getHasPauseReasons);
 
     const shouldStart = useMemo(() => {
         return autoEnableLiveData && readyForResults && !hasOpenedNodeWindow && !hasPauseReasons;

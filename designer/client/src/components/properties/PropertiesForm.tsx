@@ -1,9 +1,9 @@
 import { sortBy } from "lodash";
 import type { ComponentProps } from "react";
 import React, { useMemo } from "react";
-import { useSelector } from "react-redux";
 
 import HttpService from "../../http/HttpService";
+import { useAppSelector } from "../../store/configureStore";
 import type { NodeValidationError, PropertiesType } from "../../types";
 import { DescriptionField } from "../graph/node-modal/DescriptionField";
 import { FieldType } from "../graph/node-modal/editors/field/Field";
@@ -23,7 +23,7 @@ interface Props {
 }
 export const PropertiesForm = ({ errors = [], handleSetEditedProperties, editedProperties, showSwitch = false }: Props) => {
     const readOnly = !handleSetEditedProperties;
-    const scenarioProperties = useSelector(getScenarioPropertiesConfig);
+    const scenarioProperties = useAppSelector(getScenarioPropertiesConfig);
     const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
 
     //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)

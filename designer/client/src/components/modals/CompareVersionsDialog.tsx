@@ -6,7 +6,6 @@ import i18next from "i18next";
 import { keys } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import { formatAbsolutely } from "../../common/DateUtils";
@@ -14,6 +13,7 @@ import { flattenObj, objectDiff } from "../../common/JsonUtils";
 import HttpService from "../../http/HttpService";
 import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
+import { useAppSelector } from "../../store/configureStore";
 import type { NodeType, StickyNoteNodeType } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
@@ -48,10 +48,10 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const remotePrefix = "remote-";
 
     const [state, setState] = useState<State>(initState);
-    const processName = useSelector(getProcessName);
-    const version = useSelector(getProcessVersionId);
-    const otherEnvironment = useSelector(getTargetEnvironmentId);
-    const versions = useSelector(getVersions);
+    const processName = useAppSelector(getProcessName);
+    const version = useAppSelector(getProcessVersionId);
+    const otherEnvironment = useAppSelector(getTargetEnvironmentId);
+    const versions = useAppSelector(getVersions);
 
     useEffect(() => {
         if (processName && otherEnvironment) {

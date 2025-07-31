@@ -1,13 +1,12 @@
 import { Typography, useTheme } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 
 import { toggleToolbar } from "../../../actions/nk/toolbars";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import type { RootState } from "../../../reducers";
 import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
 import { SIDEBAR_WIDTH } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
 import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../../common/error-boundary";
@@ -33,11 +32,11 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
     const handlerProps = useDragHandler();
 
     const dispatch = useAppDispatch();
-    const toolbarsConfigId = useSelector(getToolbarsConfigId);
+    const toolbarsConfigId = useAppSelector(getToolbarsConfigId);
 
     const isCollapsible = !!id && !disableCollapse && !onClose;
 
-    const isCollapsedStored = useSelector((state: RootState) => getIsCollapsed(state)(id));
+    const isCollapsedStored = useAppSelector((state: RootState) => getIsCollapsed(state)(id));
     const storeIsCollapsed = useCallback(
         (isCollapsed: boolean) => id && dispatch(toggleToolbar(id, toolbarsConfigId, isCollapsed)),
         [dispatch, id, toolbarsConfigId],

@@ -3,12 +3,11 @@ import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
 import type { MouseEvent } from "react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { getPauseReasons } from "../../../../reducers/selectors/getLiveData";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";
@@ -53,7 +52,7 @@ function useVariableContext(direction: "input" | "output") {
 
     const [selectedContextCache, setSelectedContextCache] = useState<VariableContextType>(null);
 
-    const liveDataPausedBy = useSelector(getPauseReasons);
+    const liveDataPausedBy = useAppSelector(getPauseReasons);
     useEffect(() => {
         setSelectedContextCache((selected) => {
             if (enabledContexts.find((r) => r.id === selected?.id)) return selected;

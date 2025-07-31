@@ -1,14 +1,13 @@
 import { identity, isEqual } from "lodash";
 import type React from "react";
 import { type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 import { useDebounce } from "rooks";
 
 import { editNode, nodeValidationDynamicParametersLoaded } from "../../../../actions/nk";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import { useUserSettings } from "../../../../common/userSettings";
 import { getScenario } from "../../../../reducers/selectors/graph";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
 import type { Edge, NodeType } from "../../../../types";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
@@ -42,7 +41,7 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
     const [settings] = useUserSettings();
     const autoApply = settings["node.autoApply"];
 
-    const scenarioFromGlobalStore = useSelector(getScenario);
+    const scenarioFromGlobalStore = useAppSelector(getScenario);
     const nodeFromGlobalStore = useMemo(
         () => NodeUtils.getNodeById(nodeId, scenarioFromGlobalStore.scenarioGraph),
         [nodeId, scenarioFromGlobalStore.scenarioGraph],

@@ -1,8 +1,8 @@
 import { isEmpty } from "lodash";
 import React, { useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/configureStore";
 import type { NodeOrPropertiesType, NodeType, NodeValidationError } from "../../../types";
 import Field, { FieldType } from "./editors/field/Field";
 import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
@@ -35,7 +35,7 @@ export function applyIdFromFakeName({ id, ...editedNode }: EditedNode): NodeType
 }
 
 export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
-    const nodes = useSelector(getProcessNodesIds);
+    const nodes = useAppSelector(getProcessNodesIds);
     const [otherNodes] = useState(() => nodes.filter((n) => n !== node[propName]));
 
     const [isMarked] = useDiffMark();

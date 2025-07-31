@@ -2,9 +2,9 @@ import { Chip, Stack, styled, useTheme } from "@mui/material";
 import { blend } from "@mui/system";
 import type { CSSProperties } from "react";
 import React from "react";
-import { useSelector } from "react-redux";
 
 import { getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/configureStore";
 import NodeUtils from "../../NodeUtils";
 
 const NULL_OUTPUT_NAME = "Void";
@@ -27,7 +27,7 @@ type NodeCount = {
 
 const useNodeColors = () => {
     const theme = useTheme();
-    const scenarioGraph = useSelector(getScenarioGraph);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
 
     return (id: string): CSSProperties => {
         if (id === null) {
