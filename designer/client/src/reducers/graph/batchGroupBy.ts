@@ -1,8 +1,8 @@
-import type { Action, AnyAction } from "redux";
-import type { GroupByFunction } from "redux-undo";
+import type { Action } from "redux";
+import type { StateWithHistory } from "redux-undo";
 import { v4 as uuid4 } from "uuid";
 
-class BatchGroupBy<S = any, A extends Action = AnyAction> {
+class BatchGroupBy {
     private group: string = null;
 
     startOrContinue = (group = uuid4()): string => {
@@ -18,9 +18,7 @@ class BatchGroupBy<S = any, A extends Action = AnyAction> {
         }
     };
 
-    init = (groupBy?: GroupByFunction<S, A>): GroupByFunction<S, A> => {
-        return (...args) => this.group || groupBy?.(...args);
-    };
+    init = <S, A extends Action>(action: A, currentState: S, previousHistory: StateWithHistory<S>) => this.group;
 }
 
 export const batchGroupBy = new BatchGroupBy();
