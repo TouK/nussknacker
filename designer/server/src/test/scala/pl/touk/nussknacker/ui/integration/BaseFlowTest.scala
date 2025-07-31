@@ -148,8 +148,7 @@ class BaseFlowTest
                       FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).GOLD", "gold")
                     )
                   )
-                ),
-                encodeEditor(SpelParameterEditor),
+                )
               )
             ),
             "hintText"                   -> Null,

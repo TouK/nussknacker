@@ -32,7 +32,12 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
     case SpelTemplateParameterEditor | SqlParameterEditor => Some(Expression.spelTemplate(""))
     case TabularTypedDataEditor => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
     case _: DictParameterEditor => Some(Expression(Language.DictKeyWithLabel, ""))
-    // These editors are handled on FE side
+    // These are handled above in defaultForFixedParameterEditor
+    case _: FixedValuesParameterEditor | _: FixedValuesWithIconParameterEditor |
+        _: FixedValuesWithRadioParameterEditor =>
+      None
+    // These are handled in TypeRelatedParameterValueDeterminer
+    case SpelParameterEditor        => None
     case _: DurationParameterEditor => None
     case _: PeriodParameterEditor   => None
     case CronParameterEditor        => None
@@ -41,12 +46,6 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
     case DateTimeParameterEditor    => None
     case BoolParameterEditor        => None
     case TextareaParameterEditor    => None
-    // These are handled in TypeRelatedParameterValueDeterminer
-    case SpelParameterEditor => None
-    // These are handled above in defaultForFixedParameterEditor
-    case _: FixedValuesParameterEditor | _: FixedValuesWithIconParameterEditor |
-        _: FixedValuesWithRadioParameterEditor =>
-      None
   }
 
 }

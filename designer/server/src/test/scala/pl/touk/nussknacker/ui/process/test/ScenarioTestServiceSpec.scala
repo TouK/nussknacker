@@ -14,13 +14,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.{
-  ScenarioTestCommonFormatJsonRecord,
-  ScenarioTestSourceSpecificFormatJsonRecord,
-  TestData,
-  TestRecord,
-  TestRecordParser
-}
+import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{
@@ -37,7 +31,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
-import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatSerDe
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ScenarioTestServiceSpec
@@ -126,12 +119,11 @@ class ScenarioTestServiceSpec
     val scenario = createScenarioWithSingleSource()
     forAll(allFormats) { format =>
       val capabilities =
-        prepareScenarioTestService(format)
-          .getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
-          .rightValue
+        prepareScenarioTestService(format).getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
-      capabilities.canBeTested shouldBe true
-      capabilities.canFetchLiveData shouldBe true
+      capabilities shouldBe Right(
+        TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
+      )
     }
   }
 
@@ -156,14 +148,14 @@ class ScenarioTestServiceSpec
   }
 
   test(
-    "should detect capabilities for common format: every source canBeTested and canTestWithForm but only implementing LiveDataProvider canFetchLiveData"
+    "should detect capabilities for common format: every source canBeTested but only implementing LiveDataProvider canFetchLiveData"
   ) {
     val scenario = createScenarioWithSingleSource("genericSourceNoSupport")
     val capabilities =
       commonFormatTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = true)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = false)
     )
   }
 
@@ -202,12 +194,11 @@ class ScenarioTestServiceSpec
 
     forAll(allFormats) { format =>
       val capabilities =
-        prepareScenarioTestService(format)
-          .getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
-          .rightValue
+        prepareScenarioTestService(format).getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
-      capabilities.canBeTested shouldBe true
-      capabilities.canFetchLiveData shouldBe true
+      capabilities shouldBe Right(
+        TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
+      )
     }
   }
 
