@@ -133,12 +133,6 @@ class SchemalessKafkaJsonTypeTests
   override protected val invalidParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(invalidJson)))
 
-  override protected val parametersProvidedForDryRun: String =
-    ScenarioTestValidationRequest(
-      testData = ScenarioTestData.WithParameters(validParameters),
-      scenarioGraph = exampleScenario.toScenarioGraph
-    ).asJson.toString()
-
   override protected val expectedValidationErrorsOnInvalidParametersJson: String =
     s"""
        |[

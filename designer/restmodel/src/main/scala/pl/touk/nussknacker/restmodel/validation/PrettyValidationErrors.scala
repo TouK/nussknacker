@@ -31,7 +31,7 @@ object PrettyValidationErrors {
         node(
           message = message,
           description =
-            s"There is problem with expression in field ${paramName.map(_.value)} - it could not be parsed.",
+            s"There is problem with expression in field [${paramName.map(_.value).getOrElse("<missing>")}] - it could not be parsed.",
           paramName = paramName,
           details = details
         )

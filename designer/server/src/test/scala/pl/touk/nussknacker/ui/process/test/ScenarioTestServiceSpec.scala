@@ -126,11 +126,12 @@ class ScenarioTestServiceSpec
     val scenario = createScenarioWithSingleSource()
     forAll(allFormats) { format =>
       val capabilities =
-        prepareScenarioTestService(format).getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+        prepareScenarioTestService(format)
+          .getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+          .rightValue
 
-      capabilities shouldBe Right(
-        TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
-      )
+      capabilities.canBeTested shouldBe true
+      capabilities.canFetchLiveData shouldBe true
     }
   }
 
@@ -155,14 +156,14 @@ class ScenarioTestServiceSpec
   }
 
   test(
-    "should detect capabilities for common format: every source canBeTested but only implementing LiveDataProvider canFetchLiveData"
+    "should detect capabilities for common format: every source canBeTested and canTestWithForm but only implementing LiveDataProvider canFetchLiveData"
   ) {
     val scenario = createScenarioWithSingleSource("genericSourceNoSupport")
     val capabilities =
       commonFormatTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = false)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = true)
     )
   }
 
@@ -201,11 +202,12 @@ class ScenarioTestServiceSpec
 
     forAll(allFormats) { format =>
       val capabilities =
-        prepareScenarioTestService(format).getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+        prepareScenarioTestService(format)
+          .getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+          .rightValue
 
-      capabilities shouldBe Right(
-        TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
-      )
+      capabilities.canBeTested shouldBe true
+      capabilities.canFetchLiveData shouldBe true
     }
   }
 

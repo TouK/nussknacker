@@ -7,6 +7,7 @@ import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.json.encoders.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses.{ArrayClass, ListClass}
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
 import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
@@ -318,7 +319,7 @@ object typing {
         elementValues: java.util.List[T]
     ): TypedObjectWithValue =
       TypedObjectWithValue(
-        Typed.genericTypeClass(classOf[java.util.List[_]], List(elementType)),
+        Typed.genericTypeClass(ListClass, List(elementType)),
         elementValues
       )
 
@@ -342,18 +343,15 @@ object typing {
         determineStandardClassType(klass, parametersOpt)
       }
 
-    // to not have separate class for each array, we pass Array of Objects
-    val KlassForArrays: Class[Array[Object]] = classOf[Array[Object]]
-
     private def determineArrayType(klass: Class[_], parameters: Option[List[TypingResult]]): TypedClass = {
       val determinedComponentType = Typed(klass.getComponentType)
       parameters match {
         // it may happen that parameter will be decoded via other means, we have to to sanity check if they match
         case None | Some(`determinedComponentType` :: Nil) =>
-          TypedClass(KlassForArrays, List(determinedComponentType))
+          TypedClass(ArrayClass, List(determinedComponentType))
         // When type is deserialized, in component type will be always Unknown, because we use Array[Object] so we need to use parameters instead
         case Some(notComponentType :: Nil) if determinedComponentType == Unknown =>
-          TypedClass(KlassForArrays, List(notComponentType))
+          TypedClass(ArrayClass, List(notComponentType))
         case Some(others) =>
           throw new IllegalArgumentException(
             s"Array generic parameters: $others doesn't match parameters from component type: ${klass.getComponentType}"

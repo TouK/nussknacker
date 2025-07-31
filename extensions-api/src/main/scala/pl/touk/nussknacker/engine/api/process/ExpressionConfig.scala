@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.api.process
 import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 
-import java.nio.charset.{Charset, StandardCharsets}
-import java.time._
-import java.util.{Currency, Locale, UUID}
+import java.nio.charset.StandardCharsets
 
 //TODO: move most of this things to some separate expression field inside ModelConfig
 case class ExpressionConfig(
@@ -32,21 +31,21 @@ object ExpressionConfig {
   val empty = ExpressionConfig(Map.empty, Nil)
 
   val defaultAdditionalClasses: List[Class[_]] = List(
-    classOf[Instant],
-    classOf[ZonedDateTime],
-    classOf[OffsetDateTime],
-    classOf[LocalDateTime],
-    classOf[LocalDate],
-    classOf[LocalTime],
-    classOf[Duration],
-    classOf[Period],
-    classOf[ZoneOffset],
-    classOf[ZoneId],
-    classOf[Currency],
-    classOf[Locale],
+    InstantClass,
+    ZonedDateTimeClass,
+    OffsetDateTimeClass,
+    LocalDateTimeClass,
+    LocalDateClass,
+    LocalTimeClass,
+    DurationClass,
+    PeriodClass,
+    ZoneOffsetClass,
+    ZoneIdClass,
+    CurrencyClass,
+    LocaleClass,
     classOf[StandardCharsets],
-    classOf[Charset],
-    classOf[UUID],
+    CharsetClass,
+    UUIDClass,
   )
 
   val defaultStrictMethodsChecking            = true

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.validator
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
@@ -14,5 +15,5 @@ case class ValidatorExtractorParameters(
     parameterData: ParameterData,
     isOptional: Boolean,
     parameterConfig: ParameterConfig,
-    extractedEditors: List[ParameterEditor]
+    determinedEditors: NonEmptyList[ParameterEditor]
 )

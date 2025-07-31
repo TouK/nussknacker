@@ -61,7 +61,7 @@ object ParameterExtractor {
     Parameter(
       name = name,
       typ = paramType,
-      editors = editors,
+      editors = editors.toList,
       validators = validators,
       defaultValue = defaultValue,
       additionalVariables = additionalVariables(p, isLazyParameter),

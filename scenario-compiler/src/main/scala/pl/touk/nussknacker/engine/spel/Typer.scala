@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
@@ -251,7 +252,7 @@ private[spel] class Typer(
           if (dynamicPropertyAccessAllowed) Unknown.validTypingResult
           else
             record.runtimeObjType.params match {
-              case _ :: value :: Nil if record.runtimeObjType.klass == classOf[java.util.Map[_, _]] =>
+              case _ :: value :: Nil if record.runtimeObjType.klass == MapClass =>
                 value.validTypingResult
               case _ => Unknown.validTypingResult
             }
@@ -271,10 +272,10 @@ private[spel] class Typer(
     def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
       typingResult match {
         case TypedClass(clazz, param :: Nil)
-            if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
+            if clazz.isAssignableFrom(ListClass) || clazz.isAssignableFrom(ArrayClass) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
           withTypedChildren(_ => param.validTypingResult)
-        case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
+        case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(MapClass) =>
           withTypedChildren {
             // Spel implementation of map indexer (in class org.springframework.expression.spel.ast.Indexer, line 154) tries to convert
             // indexer to key type of map, but this conversion can be accomplished only if key type of map is known to spel.

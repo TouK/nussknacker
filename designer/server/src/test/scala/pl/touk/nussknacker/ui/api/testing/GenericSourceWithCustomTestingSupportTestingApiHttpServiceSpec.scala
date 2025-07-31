@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api.testing
 
-import io.circe.syntax.EncoderOps
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -10,8 +9,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import sttp.client3.Response
 
 class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
@@ -29,12 +26,6 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
       .emptySink("end", "monitor")
 
   override protected def exampleScenarioInputVariableType: TypingResult = Typed[String]
-
-  override protected def parametersProvidedForDryRun: String =
-    ScenarioTestValidationRequest(
-      testData = ScenarioTestData.WithParameters(validParameters),
-      scenarioGraph = exampleScenario.toScenarioGraph
-    ).asJson.toString()
 
   override protected def expectedTestDataJson: String =
     s"""[

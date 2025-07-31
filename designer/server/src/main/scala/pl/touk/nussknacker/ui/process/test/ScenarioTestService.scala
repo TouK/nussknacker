@@ -252,6 +252,26 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean,
+      parameterTestData: TestSourceParameters,
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    (for {
+      testResults <- EitherT(
+        performTestWithDeserializedRecords(
+          processVersion,
+          canonical,
+          ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
+        )
+      )
+
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
+  }
+
+  def performTest(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
       serializedTestRecordsContent: SerializedScenarioRecordsContent,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     (for {
@@ -352,25 +372,6 @@ class ScenarioTestService(
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
-  }
-
-  def performTest(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-      parameterTestData: TestSourceParameters,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
-    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    (for {
-      testResults <- EitherT.liftF(
-        testExecutorService.testProcess(
-          processVersion,
-          canonical,
-          ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
-        )
-      )
-      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def resultsWithCounts(

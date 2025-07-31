@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import org.apache.commons.lang3.LocaleUtils
 import org.springframework.util.StringUtils
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 
@@ -12,11 +13,14 @@ import java.math.BigInteger
 import java.nio.charset.Charset
 import java.time._
 import java.util.{Currency, Locale, UUID}
-import java.util.{Map => JMap}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
-object FromJsonTypingResultBasedDecoder extends LazyLogging {
+import StandardTypesClasses._
+
+object FromJsonTypingResultBasedDecoder extends FromJsonTypingResultBasedDecoder
+
+class FromJsonTypingResultBasedDecoder extends LazyLogging {
   private val intClass        = Typed.typedClass[Int]
   private val shortClass      = Typed.typedClass[Short]
   private val longClass       = Typed.typedClass[Long]
@@ -46,23 +50,23 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
   private val localeClass   = Typed.typedClass[Locale]
   private val uuidClass     = Typed.typedClass[UUID]
 
-  def decodeValue(typ: TypingResult, cursor: ACursor): Decoder.Result[Any] = {
+  def decodeValue(typ: TypingResult, cursor: HCursor): Decoder.Result[Any] = {
     def handleExceptionAsDecodingFailureF[I, O] =
       handleExceptionAsDecodingFailure[I, O](cursor) _
     typ match {
-      case _ if cursor.isInstanceOf[HCursor] && cursor.asInstanceOf[HCursor].value == Json.Null => Right(null)
-      case TypedNull                                                                            => Right(null)
-      case TypedObjectWithValue(_, value)                                                       => Right(value)
-      case `intClass`                                                                           => cursor.as[Int]
-      case `shortClass`                                                                         => cursor.as[Short]
-      case `longClass`                                                                          => cursor.as[Long]
-      case `floatClass`                                                                         => cursor.as[Float]
-      case `doubleClass`                                                                        => cursor.as[Double]
-      case `booleanClass`                                                                       => cursor.as[Boolean]
-      case `stringClass`                                                                        => cursor.as[String]
-      case `byteClass`                                                                          => cursor.as[Byte]
-      case `bigIntegerClass`                                                                    => cursor.as[BigInteger]
-      case `bigDecimalClass` => cursor.as[java.math.BigDecimal]
+      case _ if cursor.value == Json.Null => Right(null)
+      case TypedNull                      => Right(null)
+      case TypedObjectWithValue(_, value) => Right(value)
+      case `intClass`                     => cursor.as[Int]
+      case `shortClass`                   => cursor.as[Short]
+      case `longClass`                    => cursor.as[Long]
+      case `floatClass`                   => cursor.as[Float]
+      case `doubleClass`                  => cursor.as[Double]
+      case `booleanClass`                 => cursor.as[Boolean]
+      case `stringClass`                  => cursor.as[String]
+      case `byteClass`                    => cursor.as[Byte]
+      case `bigIntegerClass`              => cursor.as[BigInteger]
+      case `bigDecimalClass`              => cursor.as[java.math.BigDecimal]
 
       // date-time types
       case `instantClass`        => cursor.as[String].flatMap(handleExceptionAsDecodingFailureF(Instant.parse))
@@ -88,7 +92,7 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
             if (LocaleUtils.isAvailableLocale(locale)) {
               Right(locale)
             } else {
-              Left(DecodingFailure(s"Not supported Locale: $localeString", cursor.history))
+              handleDecodingError(s"Not supported Locale: $localeString", cursor)
             }
         } yield verifiedLocale
       case `uuidClass` =>
@@ -105,25 +109,25 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
           .flatMap(
             handleExceptionAsDecodingFailureF(ReflectUtils.javaEnumValueOf(klass.asInstanceOf[Class[Enum[_]]], _))
           )
-      case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
+      case TypedClass(`ListClass`, elementType :: Nil) =>
         cursor.values match {
           case Some(values) =>
             values.toList
               .traverse(v => decodeValue(elementType, v.hcursor))
               .map(_.asJava)
           case None =>
-            Left(DecodingFailure(s"Expected encoded List to be a Json array", cursor.history))
+            handleDecodingError(s"Expected encoded List to be a Json array", cursor)
         }
-      case TypedClass(klass, elementType :: Nil) if klass == Typed.KlassForArrays =>
+      case TypedClass(`ArrayClass`, elementType :: Nil) =>
         cursor.values match {
           case Some(values) =>
             values.toList
               .traverse(v => decodeValue(elementType, v.hcursor))
               .map(convertToArray(_, elementType))
           case None =>
-            Left(DecodingFailure(s"Expected encoded Array to be a Json array", cursor.history))
+            handleDecodingError(s"Expected encoded Array to be a Json array", cursor)
         }
-      case TypedClass(klass, keyType :: valueType :: Nil) if klass == classOf[JMap[_, _]] =>
+      case TypedClass(`MapClass`, keyType :: valueType :: Nil) =>
         for {
           mapOfJsons <- cursor.as[Map[String, Json]]
           listOfDecodedKeyAndValues <-
@@ -134,8 +138,7 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
               } yield decodedKey -> decodedValue
             }.sequence
         } yield listOfDecodedKeyAndValues.toMap.asJava
-      case TypedObjectTypingResult(fields, runtimeObjType, _)
-          if runtimeObjType.klass == classOf[JMap[String @unchecked, _]] =>
+      case TypedObjectTypingResult(fields, runtimeObjType, _) if runtimeObjType.klass == MapClass =>
         for {
           fieldsJson <- cursor.as[Map[String, Json]]
           decodedFields <-
@@ -147,11 +150,9 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
         } yield javaMap
       case TypedObjectTypingResult(_, nonMapRuntimeObjType, _) =>
         // To decode other types than Map (Avro's GenericRecords or Table APIs Row), we should add schema to type
-        Left(
-          DecodingFailure(
-            s"Decoding of non-Map based records (runtime type: ${nonMapRuntimeObjType.display}) is not supported.",
-            cursor.history
-          )
+        handleDecodingError(
+          s"Decoding of non-Map based records (runtime type: ${nonMapRuntimeObjType.display}) is not supported.",
+          cursor
         )
       case unknown @ Unknown(_) =>
         /// For Unknown we fallback to generic json to any conversion. It won't work for some types such as LocalDate but for others should work correctly
@@ -162,7 +163,7 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
           )
           result
         }
-      case typ => Left(DecodingFailure(s"Decoding of type [$typ] is not supported.", cursor.history))
+      case typ => handleDecodingError(s"Decoding of type [$typ] is not supported.", cursor)
     }
   }
 
@@ -179,14 +180,18 @@ object FromJsonTypingResultBasedDecoder extends LazyLogging {
       list.toArray[Any]
   }
 
-  private def handleExceptionAsDecodingFailure[I, O](cursor: ACursor)(f: I => O): I => Decoder.Result[O] =
+  private def handleExceptionAsDecodingFailure[I, O](cursor: HCursor)(f: I => O): I => Decoder.Result[O] =
     (input: I) => {
       try {
         Right(f(input))
       } catch {
         case NonFatal(ex) =>
-          Left(DecodingFailure(ex.getMessage, cursor.history))
+          handleDecodingError(ex.getMessage, cursor)
       }
     }
+
+  private def handleDecodingError(message: String, cursor: HCursor): Decoder.Result[Nothing] = {
+    Left(DecodingFailure(message, cursor.history))
+  }
 
 }

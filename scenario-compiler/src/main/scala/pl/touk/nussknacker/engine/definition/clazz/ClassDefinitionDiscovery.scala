@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.clazz
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.generics.Parameter
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.util.logging.ExecutionTimeMeasuring
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -30,12 +31,12 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
   // TODO: Here, this static list of mandatory classes, should be replaced by mechanizm that allows
   // to plug in mandatory classes from other modules, e.g. BaseKafkaInputMetaVariables from kafka-util
   private val mandatoryClasses = (Set(
-    classOf[java.util.List[_]],
-    classOf[java.util.Map[_, _]],
+    ListClass,
+    MapClass,
     classOf[java.util.Map.Entry[_, _]],
-    classOf[java.math.BigDecimal],
-    classOf[Number],
-    classOf[String],
+    BigDecimalClass,
+    NumberClass,
+    StringClass,
     classOf[MetaVariables],
     classOf[Any]
   ) ++

@@ -1,26 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
-import pl.touk.nussknacker.engine.api.definition.{
-  BoolParameterEditor,
-  CronParameterEditor,
-  DateParameterEditor,
-  DateTimeParameterEditor,
-  DictParameterEditor,
-  DurationParameterEditor,
-  FixedValuesParameterEditor,
-  FixedValuesWithIconParameterEditor,
-  FixedValuesWithRadioParameterEditor,
-  JsonParameterEditor,
-  JsonTemplateParameterEditor,
-  ParameterEditor,
-  PeriodParameterEditor,
-  SpelParameterEditor,
-  SpelTemplateParameterEditor,
-  SqlParameterEditor,
-  TabularTypedDataEditor,
-  TextareaParameterEditor,
-  TimeParameterEditor
-}
+import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.graph.expression.{Expression, TabularTypedData}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
@@ -29,12 +10,10 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] =
     defaultFor(parameters.determinedEditors)
 
-  private def defaultFor(editors: List[ParameterEditor]) = {
+  private def defaultFor(editors: NonEmptyList[ParameterEditor]) = {
     editors
       .collectFirst[Expression](defaultForFixedParameterEditor)
-      .orElse(
-        editors.headOption.flatMap(defaultForEditor)
-      )
+      .orElse(defaultForEditor(editors.head))
   }
 
   private def defaultForFixedParameterEditor: PartialFunction[ParameterEditor, Expression] = {
@@ -47,21 +26,24 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
     case FixedValuesWithRadioParameterEditor(Nil)             => Expression.spel("")
   }
 
-  private def defaultForEditor(editor: ParameterEditor): Option[Expression] = editor match {
+  private def defaultForEditor(firstEditor: ParameterEditor): Option[Expression] = firstEditor match {
     case JsonParameterEditor                              => Some(Expression.json("{}"))
     case JsonTemplateParameterEditor                      => Some(Expression.jsonTemplate("{}"))
     case SpelTemplateParameterEditor | SqlParameterEditor => Some(Expression.spelTemplate(""))
-    case TabularTypedDataEditor     => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
-    case _: DictParameterEditor     => Some(Expression(Language.DictKeyWithLabel, ""))
+    case TabularTypedDataEditor => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
+    case _: DictParameterEditor => Some(Expression(Language.DictKeyWithLabel, ""))
+    // These editors are handled on FE side
     case _: DurationParameterEditor => None
     case _: PeriodParameterEditor   => None
     case CronParameterEditor        => None
     case DateParameterEditor        => None
     case TimeParameterEditor        => None
     case DateTimeParameterEditor    => None
-    case SpelParameterEditor        => None
     case BoolParameterEditor        => None
     case TextareaParameterEditor    => None
+    // These are handled in TypeRelatedParameterValueDeterminer
+    case SpelParameterEditor => None
+    // These are handled above in defaultForFixedParameterEditor
     case _: FixedValuesParameterEditor | _: FixedValuesWithIconParameterEditor |
         _: FixedValuesWithRadioParameterEditor =>
       None

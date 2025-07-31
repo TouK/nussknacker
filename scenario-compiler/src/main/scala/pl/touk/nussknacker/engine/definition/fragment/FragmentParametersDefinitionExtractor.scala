@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.Id
-import cats.data.{Writer, WriterT}
+import cats.data.{NonEmptyList, Writer, WriterT}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
@@ -89,7 +89,7 @@ class FragmentParametersDefinitionExtractor(
           nodeIds = Set(nodeId.id)
         ) match {
           case Valid(editors) => (editors, List.empty)
-          case Invalid(e)     => (Nil, e.toList)
+          case Invalid(e)     => (NonEmptyList.one(SpelParameterEditor), e.toList)
         }
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty, globalParametersConfig), List.empty))
@@ -111,7 +111,7 @@ class FragmentParametersDefinitionExtractor(
     val param = Parameter
       .optional(fragmentParameter.name, typ)
       .copy(
-        editors = extractedEditors,
+        editors = extractedEditors.toList,
         validators = validators.toList,
         defaultValue = fragmentParameter.initialValue
           .map(initialValue =>

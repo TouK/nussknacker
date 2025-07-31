@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
-import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 object EditorExtractor {
 
@@ -35,25 +35,23 @@ object EditorExtractor {
       param: ParameterData,
       parameterConfig: ParameterConfig,
       globalParametersConfig: GlobalParametersConfig
-  ): List[ParameterEditor] = {
+  ): NonEmptyList[ParameterEditor] = {
     parameterConfig.editors
-      .getOrElse(Nil)
-      .orElseIfEmpty(extractFromAnnotation(param))
-      .orElseIfEmpty(extractFromAnnotations(param))
-      .orElseIfEmpty(new ParameterTypeEditorDeterminer(param.typing, globalParametersConfig).determine())
+      .flatMap(NonEmptyList.fromList)
+      .orElse(extractFromAnnotation(param))
+      .orElse(extractFromAnnotations(param))
+      .getOrElse(new ParameterTypeEditorDeterminer(param.typing, globalParametersConfig).determine())
   }
 
-  private def extractFromAnnotation(param: ParameterData): List[ParameterEditor] =
+  private def extractFromAnnotation(param: ParameterData): Option[NonEmptyList[ParameterEditor]] =
     param
       .getAnnotation[Editor]
-      .map(editor => List(parameterEditor(editor)))
-      .getOrElse(Nil)
+      .map(editor => NonEmptyList.one(parameterEditor(editor)))
 
-  private def extractFromAnnotations(param: ParameterData): List[ParameterEditor] =
+  private def extractFromAnnotations(param: ParameterData): Option[NonEmptyList[ParameterEditor]] =
     param
       .getAnnotation[Editors]
-      .map(_.value().map(parameterEditor).toList)
-      .getOrElse(Nil)
+      .flatMap(editors => NonEmptyList.fromList(editors.value().map(parameterEditor).toList))
 
   private def parameterEditor(editor: Editor): ParameterEditor = {
     editor.`type`() match {
