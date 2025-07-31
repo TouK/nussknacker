@@ -4,7 +4,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.syntax.EncoderOps
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -53,8 +52,6 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec
       testData = ScenarioTestData.WithParameters(validParameters),
       scenarioGraph = exampleScenario.toScenarioGraph
     ).asJson.toString()
-
-  override protected def expectedSourceTestingParametersJson: String = ""
 
   override protected def validParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map.empty)

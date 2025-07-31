@@ -4,7 +4,6 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -36,47 +35,6 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
       testData = ScenarioTestData.WithParameters(validParameters),
       scenarioGraph = exampleScenario.toScenarioGraph
     ).asJson.toString()
-
-  override protected def expectedSourceTestingParametersJson: String =
-    """
-      |  {
-      |    "name": "elements",
-      |    "typ": {
-      |      "display": "List[String]",
-      |      "type": "TypedClass",
-      |      "refClazzName": "java.util.List",
-      |      "params": [
-      |        {
-      |          "display": "String",
-      |          "type": "TypedClass",
-      |          "refClazzName": "java.lang.String",
-      |          "params": [
-      |          ]
-      |        }
-      |      ]
-      |    },
-      |    "editors": [
-      |      {
-      |        "type": "SpelParameterEditor"
-      |      }
-      |    ],
-      |    "defaultValue": {
-      |      "language": "spel",
-      |      "expression": "{}"
-      |    },
-      |    "additionalVariables": {
-      |    },
-      |    "variablesToHide": [
-      |    ],
-      |    "branchParam": false,
-      |    "requiredParam": true,
-      |    "hintText": null,
-      |    "label": "elements",
-      |    "category": "Standard",
-      |    "changesCanReloadParameters": false,
-      |    "nonImportantForExecution": false
-      |  }
-      |""".stripMargin
 
   override protected def expectedTestDataJson: String =
     s"""[
