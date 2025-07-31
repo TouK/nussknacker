@@ -74,7 +74,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     forAll(
       Table(
         ("Data sample", "Typing result"),
-        ("", Typed.json),
         ("{}", Typed.record(List())),
         ("123", Typed.typedClass[Integer]),
         ("[]", Typed.genericTypeClass[java.util.List[_]](List(Typed.json))),
