@@ -1,6 +1,5 @@
 import { Box, CircularProgress, styled } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
 import AutoSizer from "react-virtualized-auto-sizer";
 import type { Align } from "react-window";
 import { VariableSizeList } from "react-window";
@@ -9,7 +8,7 @@ import { getScenarioActivities, updateScenarioActivities } from "../../../action
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getVisibleActivities } from "../../../reducers/selectors/activities";
 import { getProcessName } from "../../../reducers/selectors/graph";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
@@ -74,8 +73,8 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
      **/
     const rowHeights = useRef({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const scenarioName = useSelector(getProcessName);
-    const uiActivities = useSelector(getVisibleActivities);
+    const scenarioName = useAppSelector(getProcessName);
+    const uiActivities = useAppSelector(getVisibleActivities);
 
     const dispatch = useAppDispatch();
 

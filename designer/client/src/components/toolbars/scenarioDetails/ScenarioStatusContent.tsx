@@ -1,16 +1,16 @@
 import React, { memo, type PropsWithChildren } from "react";
-import { useSelector } from "react-redux";
 
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getLoggedUser } from "../../../reducers/selectors/settings";
+import { useAppSelector } from "../../../store/configureStore";
 import { ScenarioState } from "../scenarioActions/ScenarioState";
 import { PanelScenarioDetails, ScenarioDetailsItemWrapper } from "./ScenarioDetailsComponents";
 import { ScenarioLabels } from "./ScenarioLabels";
 import { ScenarioNameItem } from "./ScenarioNameItem";
 
 export const ScenarioStatusContent = memo(function ScenarioDetailsContent2({ children }: PropsWithChildren) {
-    const loggedUser = useSelector(getLoggedUser);
-    const { isFragment } = useSelector(getScenario);
+    const loggedUser = useAppSelector(getLoggedUser);
+    const { isFragment } = useAppSelector(getScenario);
 
     return (
         <PanelScenarioDetails sx={{ position: "relative" }}>

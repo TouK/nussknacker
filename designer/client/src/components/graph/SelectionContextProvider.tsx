@@ -2,7 +2,6 @@ import { min } from "lodash";
 import type { PropsWithChildren, ReactElement } from "react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { useDebounceFn } from "rooks";
 
@@ -27,7 +26,7 @@ import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHi
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { useAppDispatch } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/configureStore";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
@@ -46,7 +45,7 @@ interface UserActions {
 }
 
 function useClipboardParse() {
-    const processDefinitionData = useSelector(getProcessDefinitionData);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
     return useCallback(
         (text) => {
             const selection = tryParseOrNull(text);
@@ -118,7 +117,7 @@ export const useSelectionActions = (): UserActions => {
 
 function useUndoRedoActions(disabled?: boolean) {
     const dispatch = useAppDispatch();
-    const [past, future] = useSelector(getHistoryCounts);
+    const [past, future] = useAppSelector(getHistoryCounts);
     return useMemo(() => {
         return {
             undo: past <= 0 || disabled ? null : () => dispatch(UndoActionCreators.undo() as Action),
@@ -135,10 +134,10 @@ export default function SelectionContextProvider(
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
-    const selectionState = useSelector(getSelectionState);
-    const capabilities = useSelector(getCapabilities);
-    const selection = useSelector(getSelection);
-    const canModifySelected = useSelector(canModifySelectedNodes);
+    const selectionState = useAppSelector(getSelectionState);
+    const capabilities = useAppSelector(getCapabilities);
+    const selection = useAppSelector(getSelection);
+    const canModifySelected = useAppSelector(canModifySelectedNodes);
 
     const [hasSelection, setHasSelection] = useState(hasTextSelection);
 
@@ -226,7 +225,7 @@ export default function SelectionContextProvider(
 
     const canAccessClipboard = useClipboardPermission();
 
-    const graphLocked = useSelector(getGraphLocked);
+    const graphLocked = useAppSelector(getGraphLocked);
     const undoRedoActions = useUndoRedoActions(graphLocked);
     const userActions: UserActions = useMemo(
         () => ({

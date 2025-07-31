@@ -1,12 +1,12 @@
 import { useCallback } from "react";
-import { useSelector } from "react-redux";
 
 import type { SurveySettings } from "../../actions/nk";
 import { useUserSettings } from "../../common/userSettings";
 import { getSurveySettings } from "../../reducers/selectors/settings";
+import { useAppSelector } from "../../store/configureStore";
 
 export function useSurvey(): [SurveySettings | false, () => void] {
-    const survey = useSelector(getSurveySettings);
+    const survey = useAppSelector(getSurveySettings);
     const [userSettings, , setSettings] = useUserSettings();
     const settingsKey = `survey.${survey?.key}.closed`;
 

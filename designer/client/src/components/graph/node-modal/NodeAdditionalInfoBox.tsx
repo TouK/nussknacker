@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { useDebouncedValue } from "rooks";
 
+import { useAppSelector } from "../../../store/configureStore";
 import type { NodeOrPropertiesType } from "../../../types";
 import { MarkdownStyled } from "./MarkdownStyled";
 import { getProcessName } from "./NodeDetailsContent/selectors";
@@ -25,7 +25,7 @@ interface MarkdownAdditionalInfo {
 
 export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     const { node, handleGetAdditionalInfo } = props;
-    const processName = useSelector(getProcessName);
+    const processName = useAppSelector(getProcessName);
 
     const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo>(null);
 

@@ -1,10 +1,10 @@
 import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { useLocalstorageState } from "rooks";
 
 import httpService from "../http/HttpService";
 import { getFeatureSettings } from "../reducers/selectors/settings";
+import { useAppSelector } from "../store/configureStore";
 
 const getLockReleaseDate = (createdAt: number | null, statisticLockReleaseTime: number) =>
     moment(createdAt).add(statisticLockReleaseTime, "minute");
@@ -55,7 +55,7 @@ const useStatisticsLock = (statisticsLockReleaseTime: number) => {
 };
 
 export function useAnonymousStatistics(statisticsLockReleaseTime = STATISTICS_LOCK_RELEASE_IN_MINUTES) {
-    const featuresSettings = useSelector(getFeatureSettings);
+    const featuresSettings = useAppSelector(getFeatureSettings);
     const statisticsReadyToRefetch = useStatisticsLock(statisticsLockReleaseTime);
 
     const handleUsageStatistics = useCallback(() => {

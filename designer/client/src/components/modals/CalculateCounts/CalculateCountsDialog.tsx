@@ -5,12 +5,11 @@ import moment from "moment";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
 import Icon from "../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessName } from "../../../reducers/selectors/graph";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
@@ -33,7 +32,7 @@ const initState = (): State => {
 export function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
     const { t } = useTranslation();
     const [state, setState] = useState(initState);
-    const processName = useSelector(getProcessName);
+    const processName = useAppSelector(getProcessName);
     const dispatch = useAppDispatch();
 
     const from = useMemo(() => moment(state?.from), [state?.from]);

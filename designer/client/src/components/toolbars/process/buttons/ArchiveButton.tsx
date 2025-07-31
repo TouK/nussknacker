@@ -1,19 +1,19 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/archive.svg";
 import DialogMessages from "../../../../common/DialogMessages";
 import { getProcessName, isArchivePossible } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/configureStore";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 import { useArchiveHelper } from "./useArchiveHelper";
 
 function ArchiveButton({ disabled, type }: ToolbarButtonProps): JSX.Element {
-    const processName = useSelector(getProcessName);
+    const processName = useAppSelector(getProcessName);
     const { confirmArchiveCallback } = useArchiveHelper(processName);
-    const archivePossible = useSelector(isArchivePossible);
+    const archivePossible = useAppSelector(isArchivePossible);
     const available = !disabled && archivePossible;
     const { t } = useTranslation();
     const { confirm } = useWindows();

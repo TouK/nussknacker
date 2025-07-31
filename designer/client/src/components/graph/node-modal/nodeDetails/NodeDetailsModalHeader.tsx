@@ -2,11 +2,11 @@ import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import type { PropsWithChildren, ReactElement } from "react";
 import React, { useMemo } from "react";
-import { useSelector } from "react-redux";
 
 import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
+import { useAppSelector } from "../../../../store/configureStore";
 import type { NodeType } from "../../../../types";
 import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 import { IconModalTitle } from "./IconModalTitle";
@@ -46,7 +46,7 @@ export const getNodeDetailsModalTitle = (node: NodeType): string => {
 };
 
 export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactElement => {
-    const { components = {} } = useSelector(getProcessDefinitionData);
+    const { components = {} } = useAppSelector(getProcessDefinitionData);
 
     const docsUrl = useMemo(() => {
         return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;

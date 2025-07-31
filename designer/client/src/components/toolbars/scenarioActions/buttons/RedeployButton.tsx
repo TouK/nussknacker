@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
@@ -19,7 +18,7 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
@@ -42,15 +41,15 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const allowQuickRedeploy = settings["scenario.allowQuickDeploy"];
 
     const dispatch = useAppDispatch();
-    const isVisible = useSelector(isRedeployVisible);
-    const isPossible = useSelector(isRedeployPossible);
-    const hasErrors = useSelector(hasError);
-    const validationResultPresent = useSelector(isValidationResultPresent);
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
-    const capabilities = useSelector(getCapabilities);
-    const isRedeploying = useSelector(getIsRedeploying);
-    const scenarioGraphSource = useSelector(getScenarioGraphSource);
+    const isVisible = useAppSelector(isRedeployVisible);
+    const isPossible = useAppSelector(isRedeployPossible);
+    const hasErrors = useAppSelector(hasError);
+    const validationResultPresent = useAppSelector(isValidationResultPresent);
+    const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
+    const capabilities = useAppSelector(getCapabilities);
+    const isRedeploying = useAppSelector(getIsRedeploying);
+    const scenarioGraphSource = useAppSelector(getScenarioGraphSource);
 
     const { disabled, type, titleOverride } = props;
 

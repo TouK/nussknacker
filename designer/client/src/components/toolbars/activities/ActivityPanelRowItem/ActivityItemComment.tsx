@@ -1,7 +1,6 @@
 import { Box } from "@mui/material";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
 
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
@@ -11,7 +10,7 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getFeatureSettings, getLoggedUser } from "../../../../reducers/selectors/settings";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
 import { useWindows } from "../../../../windowManager";
 import CommentContent from "../../../comment/CommentContent";
 import type { ActionMetadata, ActivityComment, ActivityType } from "../types";
@@ -34,10 +33,10 @@ const CommentActivity = ({
 }) => {
     const { t } = useTranslation();
     const { confirm } = useWindows();
-    const processName = useSelector(getProcessName);
+    const processName = useAppSelector(getProcessName);
     const dispatch = useAppDispatch();
-    const loggedUser = useSelector(getLoggedUser);
-    const { write } = useSelector(getCapabilities);
+    const loggedUser = useAppSelector(getLoggedUser);
+    const { write } = useAppSelector(getCapabilities);
 
     switch (activityAction.id) {
         case "delete_comment": {
@@ -101,7 +100,7 @@ interface Props {
 }
 
 export const ActivityItemComment = ({ comment, searchQuery, activityActions, scenarioActivityId, activityType }: Props) => {
-    const commentSettings = useSelector(getCommentSettings);
+    const commentSettings = useAppSelector(getCommentSettings);
     const [isMultiline, setIsMultiline] = useState(false);
     const { isActivityHovered } = useActivityItemInfo();
 

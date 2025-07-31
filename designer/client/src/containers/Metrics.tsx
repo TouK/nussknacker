@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import type { ProcessName } from "src/components/Process/types";
 
 import HttpService from "../http/HttpService";
 import { getMetricsSettings } from "../reducers/selectors/settings";
+import { useAppSelector } from "../store/configureStore";
 import { CustomTabWrapper } from "./CustomTabPage";
 
 function useMetricsUrl(processName?: ProcessName): string {
@@ -19,7 +19,7 @@ function useMetricsUrl(processName?: ProcessName): string {
         }
     }, [processName]);
 
-    const settings = useSelector(getMetricsSettings);
+    const settings = useAppSelector(getMetricsSettings);
     return useMemo(() => {
         const dashboard = settings.scenarioTypeToDashboard?.[processingType] || settings.defaultDashboard;
         const scenarioName = processName || "All";

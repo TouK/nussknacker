@@ -5,12 +5,12 @@ import { debounce } from "@mui/material/utils";
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
 import type { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
 import HttpService from "../../../../../../http/HttpService";
 import { getScenario } from "../../../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../../../store/configureStore";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import { NodeInput } from "../../../../../FormElements";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
@@ -38,7 +38,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     showValidation,
     readOnly,
 }: Props) => {
-    const scenario = useSelector(getScenario);
+    const scenario = useAppSelector(getScenario);
     const theme = useTheme();
     const { menuOption } = selectStyled(theme);
     const [options, setOptions] = useState<ProcessDefinitionDataDictOption[]>([]);

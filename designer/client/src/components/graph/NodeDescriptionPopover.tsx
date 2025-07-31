@@ -4,9 +4,9 @@ import type { dia } from "jointjs";
 import type { MutableRefObject } from "react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { getScenarioGraph } from "../../reducers/selectors/graph";
+import { useAppSelector } from "../../store/configureStore";
 import type { Graph } from "./Graph";
 import { getNodeData } from "./Graph";
 import { isStickyNoteElement } from "./GraphPartialsInTS";
@@ -127,7 +127,7 @@ function withFallback(anchorEl: PopoverProps["anchorEl"]) {
 export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
     const { t } = useTranslation();
     const { graphRef, enterTimeout = 800, leaveTimeout = 200 } = props;
-    const scenarioGraph = useSelector(getScenarioGraph);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
     const [open, setOpen] = useState(false);
     const [[description, anchorEl], setData] = useState<[string, PopoverProps["anchorEl"]]>([null, null]);
     const lastTarget = useRef<Element | null>(null);

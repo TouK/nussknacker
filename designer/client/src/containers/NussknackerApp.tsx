@@ -3,13 +3,13 @@ import { isEmpty } from "lodash";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import React from "react";
 import { DndProvider } from "react-dnd-multi-backend";
-import { useSelector } from "react-redux";
 import { Outlet } from "react-router-dom";
 
 import { AiAssistantButton } from "../components/aiAssistant/components/AiAssistantButton";
 import { MenuBar } from "../components/MenuBar";
 import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
+import { useAppSelector } from "../store/configureStore";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
 import { useRegisterTrackingEvents } from "./event-tracking";
@@ -18,7 +18,7 @@ import { Notifications } from "./Notifications";
 import { useAnonymousStatistics } from "./useAnonymousStatistics";
 
 export function NussknackerApp() {
-    const loggedUser = useSelector(getLoggedUser);
+    const loggedUser = useAppSelector(getLoggedUser);
 
     useAnonymousStatistics();
     useRegisterTrackingEvents();

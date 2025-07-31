@@ -1,9 +1,9 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
 import { hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/configureStore";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
@@ -24,8 +24,8 @@ export function useOpenProperties() {
 function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { disabled, type } = props;
-    const propertiesErrors = useSelector(hasPropertiesErrors);
-    const errors = useSelector(hasError);
+    const propertiesErrors = useAppSelector(hasPropertiesErrors);
+    const errors = useAppSelector(hasError);
 
     const openProperties = useOpenProperties();
 

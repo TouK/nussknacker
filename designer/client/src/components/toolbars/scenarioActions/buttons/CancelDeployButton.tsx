@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
@@ -8,7 +7,7 @@ import { useUserSettings } from "../../../../common/userSettings";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
@@ -32,10 +31,10 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const { disabled, type, title } = props;
-    const cancelPossible = useSelector(isCancelPossible);
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
-    const capabilities = useSelector(getCapabilities);
+    const cancelPossible = useAppSelector(isCancelPossible);
+    const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
+    const capabilities = useAppSelector(getCapabilities);
     const available = !disabled && cancelPossible && capabilities.deploy;
 
     const [isCancelCallProcessing, setIsCancelCallProcessing] = useState(false);

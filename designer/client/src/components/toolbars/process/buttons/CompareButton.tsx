@@ -1,9 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/compare.svg";
 import { hasOneVersion } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/configureStore";
 import { useWindows } from "../../../../windowManager";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -13,7 +13,7 @@ type Props = ToolbarButtonProps;
 
 function CompareButton(props: Props): JSX.Element {
     const { disabled, type } = props;
-    const isSingleVersion = useSelector(hasOneVersion);
+    const isSingleVersion = useAppSelector(hasOneVersion);
     const available = !disabled && !isSingleVersion;
     const { t } = useTranslation();
     const { open } = useWindows();

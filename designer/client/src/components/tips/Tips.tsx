@@ -1,7 +1,6 @@
 import i18next from "i18next";
 import React, { useCallback } from "react";
 import { Scrollbars } from "react-custom-scrollbars";
-import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import ProcessUtils from "../../common/ProcessUtils";
@@ -9,6 +8,7 @@ import { VisibleDataType } from "../../reducers/graph";
 import { getVisibleDataType } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
+import { useAppSelector } from "../../store/configureStore";
 import type { NodeType } from "../../types";
 import { useWindows } from "../../windowManager";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";
@@ -20,7 +20,7 @@ import Warnings from "./Warnings";
 
 export default function Tips(props: ToolbarPanelProps): JSX.Element {
     const { openNodeWindow } = useWindows();
-    const scenario = useSelector(getScenario);
+    const scenario = useAppSelector(getScenario);
 
     const showDetails = useCallback(
         (event: React.MouseEvent, node: NodeType) => {
@@ -30,8 +30,8 @@ export default function Tips(props: ToolbarPanelProps): JSX.Element {
         [openNodeWindow, scenario],
     );
 
-    const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
-    const visibleDataType = useSelector(getVisibleDataType);
+    const { isToolTipsHighlighted: isHighlighted } = useAppSelector(getUi);
+    const visibleDataType = useAppSelector(getVisibleDataType);
     const { errors, warnings } = ProcessUtils.getValidationResult(scenario);
 
     return (

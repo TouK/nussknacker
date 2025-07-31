@@ -1,6 +1,5 @@
 import { GlobalStyles } from "@mui/material";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useSelector } from "react-redux";
 
 import { useUserSettings } from "../../common/userSettings";
 import { useGraph } from "../../components/graph/GraphContext";
@@ -11,6 +10,7 @@ import {
     getLiveDataNextUpdate,
     getNodeTransitionResults,
 } from "../../reducers/selectors/getLiveData";
+import { useAppSelector } from "../../store/configureStore";
 
 const CLASS_NAME = "live-data";
 const PULSE_KEYFRAMES: Keyframe[] = [
@@ -30,16 +30,16 @@ export function LiveDataThroughputs() {
 
     const [settings] = useUserSettings();
     const showAnimations = settings["scenario.showLiveDataAnimations"];
-    const isWorking = useSelector(getIsLiveDataWorking);
+    const isWorking = useAppSelector(getIsLiveDataWorking);
     const enabled = showAnimations && isWorking;
 
     useEffect(() => {
         graphGetter()?.processGraphPaper.el.classList.toggle(CLASS_NAME, enabled);
     }, [graphGetter, enabled]);
 
-    const transitionResults = useSelector(getNodeTransitionResults);
-    const nextIn = useSelector(getLiveDataNextUpdate);
-    const last = useSelector(getLiveDataLastUpdate);
+    const transitionResults = useAppSelector(getNodeTransitionResults);
+    const nextIn = useAppSelector(getLiveDataNextUpdate);
+    const last = useAppSelector(getLiveDataLastUpdate);
 
     const flatEvents = useMemo(() => {
         if (!enabled) return [];

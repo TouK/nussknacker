@@ -1,9 +1,9 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { useSelector } from "react-redux";
 import { jest } from "@jest/globals";
+import { renderHook, waitFor } from "@testing-library/react";
+import { AxiosResponse } from "axios";
 import { useAnonymousStatistics } from "../src/containers/useAnonymousStatistics";
 import httpService from "../src/http/HttpService";
-import { AxiosResponse } from "axios";
+import { useAppSelector } from "../src/store/configureStore";
 
 jest.mock("react-redux");
 jest.mock("../src/http/HttpService");
@@ -14,7 +14,7 @@ jest.mock("rooks", () => ({
 }));
 
 const mockFetchStatisticUrls = httpService.fetchStatisticUsage as jest.MockedFunction<typeof httpService.fetchStatisticUsage>;
-const mockUserSelector = useSelector as jest.MockedFunction<typeof useSelector>;
+const mockUserSelector = useAppSelector as jest.MockedFunction<typeof useAppSelector>;
 
 describe("useAnonymousStatistics", () => {
     beforeEach(() => {

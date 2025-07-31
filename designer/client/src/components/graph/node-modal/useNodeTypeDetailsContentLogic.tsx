@@ -1,12 +1,11 @@
 import { get, identity, isEqual } from "lodash";
 import React, { type SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { useSelector } from "react-redux";
 
 import { nodeValidationDynamicParametersLoaded, nodeValidationDynamicParametersLoading, validateNodeData } from "../../../actions/nk";
 import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
 import type { Edge, NodeType, Parameter } from "../../../types";
 import { ParamFieldLabel } from "./FieldLabel";
 import type { NodeState } from "./node/useNodeState";
@@ -40,7 +39,7 @@ export function useNodeAdjust(
     node: NodeType,
     onChange: NodeState["onChange"],
 ): [adjustedNode: typeof node, adjustedOnChange: typeof onChange] {
-    const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
+    const getParameterDefinitions = useAppSelector(getDynamicParameterDefinitions);
 
     const adjustNode = useCallback(
         (node: NodeType) => {
@@ -71,16 +70,16 @@ export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsConten
     const dispatch = useAppDispatch();
     const isEditMode = !!onChange;
 
-    const processDefinitionData = useSelector(getProcessDefinitionData);
-    const findAvailableVariables = useSelector(getFindAvailableVariables);
-    const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
-    const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables);
-    const processName = useSelector(getProcessName);
-    const processProperties = useSelector(getProcessProperties);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
+    const getParameterDefinitions = useAppSelector(getDynamicParameterDefinitions);
+    const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
+    const processName = useAppSelector(getProcessName);
+    const processProperties = useAppSelector(getProcessProperties);
     const [settings] = useUserSettings();
     const autoApply = settings["node.autoApply"];
 
-    const variableTypes = useSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
+    const variableTypes = useAppSelector((s: RootState) => getFindAvailableVariables(s)?.(node.id), isEqual);
 
     const setEditedNode = useCallback((n: SetStateAction<NodeType>) => onChange?.(n, identity), [onChange]);
     const setEditedEdges = useCallback((e: SetStateAction<Edge[]>) => onChange?.(identity, e), [onChange]);

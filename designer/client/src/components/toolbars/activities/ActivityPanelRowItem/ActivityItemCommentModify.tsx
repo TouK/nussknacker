@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
-import { useSelector } from "react-redux";
 
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
+import { useAppSelector } from "../../../../store/configureStore";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ActionMetadata, ActivityComment, ActivityType, ModifyActivityCommentMeta } from "../types";
 import { StyledActionIcon } from "./StyledActionIcon";
@@ -23,7 +23,7 @@ export const ActivityItemCommentModify = ({
     confirmButtonText,
     ...props
 }: Props) => {
-    const featuresSettings = useSelector(getFeatureSettings);
+    const featuresSettings = useAppSelector(getFeatureSettings);
     const { open } = useWindows();
 
     const handleOpenModifyComment = useCallback(() => {
