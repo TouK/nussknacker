@@ -8,7 +8,11 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingRe
 
 import java.time.temporal.ChronoUnit
 
-class ParameterTypeEditorDeterminer(val typ: TypingResult, globalParametersConfig: GlobalParametersConfig) {
+class ParameterTypeEditorDeterminer(
+    typ: TypingResult,
+    isLazyParameter: Boolean,
+    globalParametersConfig: GlobalParametersConfig
+) {
 
   def determine(): NonEmptyList[ParameterEditor] = {
     Option(typ)
@@ -18,7 +22,7 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult, globalParametersConfi
       .map(_.klass)
       .collect {
         case klazz if klazz.isEnum =>
-          withSpelEditorAsFallback(
+          withSpelEditorAsFallbackForLazyParameter(
             FixedValuesParameterEditor(
               possibleValues = klazz.getEnumConstants.toList.map(ParameterTypeEditorDeterminer.extractEnumValue(klazz))
             )
@@ -26,36 +30,40 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult, globalParametersConfi
         case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
           globalParametersConfig.editorsForStringType
         case `LocalDateTimeClass` =>
-          withSpelEditorAsFallback(
+          withSpelEditorAsFallbackForLazyParameter(
             DateTimeParameterEditor
           )
         case `LocalTimeClass` =>
-          withSpelEditorAsFallback(
+          withSpelEditorAsFallbackForLazyParameter(
             TimeParameterEditor
           )
         case `LocalDateClass` =>
-          withSpelEditorAsFallback(
+          withSpelEditorAsFallbackForLazyParameter(
             DateParameterEditor
           )
         case `DurationClass` =>
-          withSpelEditorAsFallback(
+          withSpelEditorAsFallbackForLazyParameter(
             DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))
           )
         case `PeriodClass` =>
-          withSpelEditorAsFallback(
+          withSpelEditorAsFallbackForLazyParameter(
             PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS))
           )
         // we use class name to avoid introducing dependency on cronutils in interpreter
         case klazz if klazz.getName == "com.cronutils.model.Cron" =>
-          withSpelEditorAsFallback(
+          withSpelEditorAsFallbackForLazyParameter(
             CronParameterEditor
           )
       }
       .getOrElse(NonEmptyList.one(SpelParameterEditor))
   }
 
-  private def withSpelEditorAsFallback(editor: ParameterEditor) =
-    NonEmptyList.of(editor, SpelParameterEditor)
+  private def withSpelEditorAsFallbackForLazyParameter(editor: ParameterEditor) =
+    if (isLazyParameter) {
+      NonEmptyList.of(editor, SpelParameterEditor)
+    } else {
+      NonEmptyList.one(editor)
+    }
 
 }
 

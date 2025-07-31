@@ -423,8 +423,11 @@ class GenericTransformationValidationSpec
       Parameter
         .optional[CharSequence](ParameterName("optionalParameter"))
         .copy(
-          editors =
-            new ParameterTypeEditorDeterminer(Typed[CharSequence], GlobalParametersConfig.default).determine().toList,
+          editors = new ParameterTypeEditorDeterminer(
+            Typed[CharSequence],
+            isLazyParameter = false,
+            GlobalParametersConfig.default
+          ).determine().toList,
           defaultValue = Some("".spelTemplate)
         )
     )
