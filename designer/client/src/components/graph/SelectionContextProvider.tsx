@@ -2,7 +2,7 @@ import { min } from "lodash";
 import type { PropsWithChildren, ReactElement } from "react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { useDebounceFn } from "rooks";
 
@@ -26,6 +26,7 @@ import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHi
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
+import { useAppDispatch } from "../../store/configureStore";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
@@ -115,7 +116,7 @@ export const useSelectionActions = (): UserActions => {
 };
 
 function useUndoRedoActions(disabled?: boolean) {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [past, future] = useSelector(getHistoryCounts);
     return useMemo(() => {
         return {
@@ -130,7 +131,7 @@ export default function SelectionContextProvider(
         pastePosition: () => { x: number; y: number };
     }>,
 ): ReactElement {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
     const selectionState = useSelector(getSelectionState);

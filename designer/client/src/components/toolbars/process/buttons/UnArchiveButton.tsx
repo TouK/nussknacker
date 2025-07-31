@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
@@ -8,6 +8,7 @@ import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
 import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../../store/configureStore";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
@@ -18,7 +19,7 @@ function UnArchiveButton({ disabled, type }: ToolbarButtonProps) {
     const available = !disabled || !archived;
     const { t } = useTranslation();
     const { confirm } = useWindows();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const onClick = useCallback(
         () =>

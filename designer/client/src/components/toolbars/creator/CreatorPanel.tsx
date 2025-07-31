@@ -3,13 +3,14 @@ import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import { useAppDispatch } from "../../../store/configureStore";
 import { RemoteComponent } from "../../RemoteComponent";
 import { SearchIcon } from "../../table/SearchFilter";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
@@ -40,7 +41,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
     const [filter, setFilter] = useState("");
     const clearFilter = useCallback(() => setFilter(""), []);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [settings] = useUserSettings();
     const isCloud = useSelector(isCloudInstance);
     useEffect(() => {

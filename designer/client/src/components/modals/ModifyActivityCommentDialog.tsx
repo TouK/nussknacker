@@ -3,11 +3,12 @@ import { FormHelperText, Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 import httpService from "../../http/HttpService";
 import { getProcessName } from "../../reducers/selectors/graph";
+import { useAppDispatch } from "../../store/configureStore";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import CommentInput from "../comment/CommentInput";
@@ -18,7 +19,7 @@ const ModifyActivityCommentDialog = (props: WindowContentProps<number, ModifyAct
     const [comment, setState] = useState(meta.existingComment);
     const { t } = useTranslation();
     const processName = useSelector(getProcessName);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [validationError, setValidationError] = useState("");
 
     const confirmAction = useCallback(async () => {

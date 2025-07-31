@@ -1,11 +1,12 @@
 import { cx } from "@emotion/css";
 import { Box, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import TreeView from "react-treeview";
 
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
+import { useAppDispatch } from "../../../store/configureStore";
 import type { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 
@@ -35,7 +36,7 @@ interface Props {
 
 export function ToolboxComponentGroup(props: Props): JSX.Element {
     const { componentGroup, highlights = [], flatten, addGroupLabelElement, addTreeElement } = props;
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const closedComponentGroups = useSelector(getClosedComponentGroups);
     const { name } = componentGroup;
 

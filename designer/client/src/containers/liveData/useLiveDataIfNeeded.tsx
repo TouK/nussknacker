@@ -1,14 +1,15 @@
 import { useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { Initiator, startLiveData, stopLiveData } from "../../actions/nk/liveData";
 import { useUserSettings } from "../../common/userSettings";
 import { VisibleDataType } from "../../reducers/graph";
 import { getHasPauseReasons, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getHasOpenedNodeWindows } from "../../reducers/selectors/getWindowsIdMapping";
+import { useAppDispatch } from "../../store/configureStore";
 
 export function useLiveDataIfNeeded() {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const visibleDataType = useSelector(getVisibleDataType);
     useEffect(() => {

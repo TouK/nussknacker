@@ -5,13 +5,14 @@ import { debounce, isEqual } from "lodash";
 import { set } from "lodash/fp";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { editProperties } from "../../actions/nk";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService";
 import type { RootState } from "../../reducers";
 import { getProperties, getScenario } from "../../reducers/selectors/graph";
+import { useAppDispatch } from "../../store/configureStore";
 import type { NodeValidationError, PropertiesType } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
@@ -42,7 +43,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
     const isEditMode = !useSelector((s: RootState) => getReadOnly(s, false));
 
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const globalPropertiesErrors = useSelector(getPropertiesErrors);
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);

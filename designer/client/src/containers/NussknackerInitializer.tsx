@@ -1,14 +1,15 @@
 import type { PropsWithChildren } from "react";
 import React, { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { assignUser } from "../actions/nk";
 import HttpService from "../http/HttpService";
 import { getAuthenticationSettings } from "../reducers/selectors/settings";
+import { useAppDispatch } from "../store/configureStore";
 import { AuthInitializer } from "./Auth";
 
 function NussknackerInitializer({ children }: PropsWithChildren<unknown>): JSX.Element {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const onAuth = useCallback(
         () =>

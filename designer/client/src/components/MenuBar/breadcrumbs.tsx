@@ -3,13 +3,14 @@ import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import { LoadingButton } from "@mui/lab";
 import { Box, Breadcrumbs as MuiBreadcrumbs, Menu, MenuItem, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 
 import { EnvironmentTag } from "../../containers/EnvironmentTag";
 import { ScenariosBasePath } from "../../containers/paths";
 import { fetchScenarios, getActiveScenariosNames } from "../../reducers/scenarios";
 import { getProcessName } from "../../reducers/selectors/graph";
+import { useAppDispatch } from "../../store/configureStore";
 
 export const Breadcrumbs = () => {
     const scenarioName = useSelector(getProcessName);
@@ -17,7 +18,7 @@ export const Breadcrumbs = () => {
 
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);

@@ -2,7 +2,7 @@ import { g } from "jointjs";
 import { mapValues } from "lodash";
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
 import { useDrop } from "react-dnd";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { bindActionCreators } from "redux";
 
 import {
@@ -25,6 +25,7 @@ import { createUniqueName } from "../../reducers/graph/utils";
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
 import { getLayout, getProcessCounts, getScenario } from "../../reducers/selectors/graph";
 import type { Capabilities } from "../../reducers/selectors/other";
+import { useAppDispatch } from "../../store/configureStore";
 import type { NodeType } from "../../types";
 import { DndTypes } from "../DndTypes";
 import type { Scenario } from "../Process/types";
@@ -77,7 +78,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
         }),
     });
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const actions = useMemo(
         () =>
             bindActionCreators(

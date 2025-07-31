@@ -1,13 +1,14 @@
 import { CloudOff } from "@mui/icons-material";
 import { alpha, Box, Fade, Stack, Typography } from "@mui/material";
 import type { MouseEvent } from "react";
-import React, { useCallback, useEffect, useMemo, useState, memo } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { getPauseReasons } from "../../../../reducers/selectors/getLiveData";
+import { useAppDispatch } from "../../../../store/configureStore";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";
@@ -97,7 +98,7 @@ export const VariableContextTree = memo(function ValuesContextTree({
     const isContextHighlighted = useNewlyAddedContexts(availableContexts);
 
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     useEffect(() => {
         const isEmpty = transitionNodesIds.length < 1;
