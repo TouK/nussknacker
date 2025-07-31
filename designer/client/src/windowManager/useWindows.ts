@@ -2,7 +2,6 @@ import type { WindowId, WindowType } from "@touk/window-manager";
 import { useWindowManager } from "@touk/window-manager";
 import { defaults } from "lodash";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import type { DefaultRootState } from "react-redux";
 import { useSelector } from "react-redux";
 
 import { useUserSettings } from "../common/userSettings";
@@ -38,7 +37,7 @@ const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
     }, [isWindowOpen]);
 };
 
-function useSelectorRef<S = DefaultRootState, T = unknown>(selector: (state: S) => T) {
+function useSelectorRef<S, T>(selector: (state: S) => T) {
     const selected = useSelector(selector);
     const result = useRef(selected);
     useLayoutEffect(() => {
