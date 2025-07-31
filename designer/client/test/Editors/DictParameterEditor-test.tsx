@@ -1,13 +1,13 @@
-import * as React from "react";
+import { jest } from "@jest/globals";
+import { configureStore } from "@reduxjs/toolkit";
 
 import { render, screen } from "@testing-library/react";
-import { jest } from "@jest/globals";
-import { mockFormatter, mockFieldErrors, mockValueChange } from "./helpers";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
-import { DictParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DictParameterEditor";
+import * as React from "react";
 import { Provider } from "react-redux";
-import configureMockStore from "redux-mock-store/lib";
+import { DictParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DictParameterEditor";
 import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
@@ -16,10 +16,12 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-const mockStore = configureMockStore();
-
-const store = mockStore({
-    graphReducer: { present: { scenario: {} } },
+const store = configureStore({
+    reducer: (state) => state,
+    preloadedState: {
+        graphReducer: { present: { scenario: {} } },
+    },
+    devTools: false,
 });
 
 const ComponentWrapper = ({ children }) => (

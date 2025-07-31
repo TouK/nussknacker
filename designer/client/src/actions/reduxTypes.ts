@@ -1,5 +1,4 @@
-import type { AnyAction, Reducer as ReduxReducer } from "redux";
-import type { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
+import type { AnyAction, Reducer as ReduxReducer, ThunkAction as TA, ThunkDispatch as TD } from "@reduxjs/toolkit";
 
 import type { RootState } from "../reducers";
 import type { CloudDataActions } from "../reducers/cloudData";
