@@ -6,9 +6,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingRes
 object MethodTypeInfo {
 
   def fromList(lst: List[Parameter], varArgs: Boolean, result: TypingResult): MethodTypeInfo = (varArgs, lst) match {
-    case (true, noVarArgParameters :+ Parameter(paramName, TypedClass(ArrayClass, varArgType :: Nil))) =>
+    case (true, noVarArgParameters :+ Parameter(paramName, TypedClass(`ArrayClass`, varArgType :: Nil))) =>
       MethodTypeInfo(noVarArgParameters, Some(Parameter(paramName, varArgType)), result)
-    case (true, _ :+ Parameter(_, TypedClass(ArrayClass, _))) =>
+    case (true, _ :+ Parameter(_, TypedClass(`ArrayClass`, _))) =>
       throw new AssertionError("Array must have one type parameter")
     case (true, _ :+ Parameter(_, _)) =>
       throw new AssertionError("VarArg must have type of array")

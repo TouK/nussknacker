@@ -145,8 +145,8 @@ private[engine] object TypeConversionHandler {
     (from, to) match {
       // Generic type parameters are checked in AssignabilityDeterminer
       case (
-            TypedClass(ArrayClass, genericParam :: Nil),
-            TypedClass(ListClass | CollectionClass, _)
+            TypedClass(`ArrayClass`, genericParam :: Nil),
+            TypedClass(`ListClass` | `CollectionClass`, _)
           ) =>
         Some(Typed.genericTypeClass(ListClass, genericParam :: Nil))
       case _ =>

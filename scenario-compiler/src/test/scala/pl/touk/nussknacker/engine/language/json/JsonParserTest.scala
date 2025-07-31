@@ -179,7 +179,7 @@ class JsonParserTest extends AnyFunSuite with Matchers {
     val compiledExpression = parser.parse("\"2025-01-01\"", ValidationContext.empty, Typed[LocalDate]).validValue
     compiledExpression.returnType.withoutValue shouldBe Typed[LocalDate]
 
-    parser.parse("\"illegal-date\"", ValidationContext.empty, Typed[LocalDate]).invalidValue shouldBe List(
+    parser.parse("\"illegal-date\"", ValidationContext.empty, Typed[LocalDate]).invalidValue shouldBe NonEmptyList.of(
       JsonDecodingError("DecodingFailure at : Text 'illegal-date' could not be parsed at index 0")
     )
   }
