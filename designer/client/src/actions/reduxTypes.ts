@@ -1,4 +1,4 @@
-import type { AnyAction, Reducer as ReduxReducer, ThunkAction as TA, ThunkDispatch as TD } from "@reduxjs/toolkit";
+import type { AnyAction, Reducer as ReduxReducer, ThunkAction as TA } from "@reduxjs/toolkit";
 
 import type { RootState } from "../reducers";
 import type { CloudDataActions } from "../reducers/cloudData";
@@ -46,5 +46,4 @@ export type Action = UntypedAction | TypedAction;
 type State = RootState;
 
 export type ThunkAction<R = void, S = State> = TA<R, S, undefined, Action>;
-export type ThunkDispatch<S = State> = TD<S, undefined, Action>;
 export type Reducer<S> = ReduxReducer<S, Action>;
