@@ -17,6 +17,7 @@ import {
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
+import type { Action } from "../../actions/reduxTypes";
 import { readText, writeText } from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
@@ -120,8 +121,8 @@ function useUndoRedoActions(disabled?: boolean) {
     const [past, future] = useSelector(getHistoryCounts);
     return useMemo(() => {
         return {
-            undo: past <= 0 || disabled ? null : () => dispatch(UndoActionCreators.undo()),
-            redo: future <= 0 || disabled ? null : () => dispatch(UndoActionCreators.redo()),
+            undo: past <= 0 || disabled ? null : () => dispatch(UndoActionCreators.undo() as Action),
+            redo: future <= 0 || disabled ? null : () => dispatch(UndoActionCreators.redo() as Action),
         };
     }, [past, disabled, future, dispatch]);
 }

@@ -1,10 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
 import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
+import type { Store } from "redux";
 import { persistStore } from "redux-persist";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
+import type { ThunkMiddleware } from "redux-thunk";
+import { thunk } from "redux-thunk";
 
 import type { Action } from "../actions/reduxTypes";
+import type { RootState } from "../reducers";
 import { rootReducer } from "../reducers";
 import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
@@ -20,7 +24,8 @@ const actionsBlacklist: Action["type"][] = [
 export const store = configureStore({
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(
+        getDefaultMiddleware({ thunk: false }).concat(
+            thunk as ThunkMiddleware<RootState, Action>,
             createStateSyncMiddleware({
                 whitelist: [
                     "TOGGLE_SETTINGS",
@@ -48,7 +53,7 @@ export const store = configureStore({
     },
 });
 
-export const persistor = persistStore(store);
+export const persistor = persistStore(store as Store);
 initMessageListener(store);
 
 if (module.hot) {

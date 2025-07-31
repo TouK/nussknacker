@@ -134,15 +134,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
-        case "PROCESS_VERSIONS_LOADED": {
-            return {
-                ...state,
-                scenario: {
-                    ...state.scenario,
-                    history: action.history,
-                },
-            };
-        }
         case "TEST_RESULTS_FAILED": {
             return {
                 ...state,

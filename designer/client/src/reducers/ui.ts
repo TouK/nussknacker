@@ -36,4 +36,4 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
     }
 };
 
-export const reducer = mergeReducers<UiState>(uiReducer);
+export const reducer = uiReducer;
