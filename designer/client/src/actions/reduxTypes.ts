@@ -1,4 +1,4 @@
-import type { AnyAction, Reducer as ReduxReducer, ThunkAction as TA } from "@reduxjs/toolkit";
+import type { Reducer as ReduxReducer, ThunkAction as TA } from "@reduxjs/toolkit";
 
 import type { RootState } from "../reducers";
 import type { CloudDataActions } from "../reducers/cloudData";
@@ -6,7 +6,15 @@ import type { SquashHistoryActions } from "../reducers/graph/historySquash";
 import type { ProcessActivityActions } from "../reducers/processActivity";
 import type { ScenariosActions } from "../reducers/scenarios";
 import type { ActionTypes } from "./actionTypes";
-import type { CountsActions, NodeActions, NodeDetailsActions, PropertiesActions, ScenarioActions, SelectionActions } from "./nk";
+import type {
+    CountsActions,
+    NodeActions,
+    NodeDetailsActions,
+    PropertiesActions,
+    ScenarioActions,
+    SelectionActions,
+    UpdateTestCapabilitiesAction,
+} from "./nk";
 import type { TestsActions } from "./nk/displayTestResults";
 import type { LiveDataActions } from "./nk/liveData";
 import type { NotificationActions } from "./nk/notifications";
@@ -24,6 +32,7 @@ type TypedAction =
     | NodeActions
     | NodeDetailsActions
     | NotificationActions
+    | ProcessActivityActions
     | PropertiesActions
     | ScenarioActions
     | ScenariosActions
@@ -34,10 +43,10 @@ type TypedAction =
     | ToolbarActions
     | UiActions
     | UpdateScenarioActivitiesAction
-    | ProcessActivityActions
+    | UpdateTestCapabilitiesAction
     | UserSettingsActions;
 
-interface UntypedAction extends AnyAction {
+interface UntypedAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;
 }
 
