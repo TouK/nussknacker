@@ -27,7 +27,7 @@ object JsonParser extends ExpressionParser {
       decodeJson(expectedType, json).map { decodedJson =>
         val typ = Typed.fromInstance(decodedJson)
         TypedExpression(
-          CompiledJsonExpression(jsonString, decodedJson),
+          CompiledJsonExpression(jsonString, json),
           ExpressionTypingInfo(typ)
         )
       }
@@ -51,13 +51,13 @@ object JsonParser extends ExpressionParser {
       .toValidatedNel
   }
 
-  private case class CompiledJsonExpression(originalJsonString: String, decodedJson: Any) extends CompiledExpression {
+  private case class CompiledJsonExpression(originalJsonString: String, json: Json) extends CompiledExpression {
 
     override def language: Language = languageId
 
     override def original: String = originalJsonString
 
-    override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = decodedJson.asInstanceOf[T]
+    override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = json.asInstanceOf[T]
   }
 
   private[json] case class JsonDecodingError(override val message: String) extends ExpressionParseError

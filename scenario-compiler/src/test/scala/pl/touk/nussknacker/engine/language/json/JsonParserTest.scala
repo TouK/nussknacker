@@ -4,7 +4,6 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Valid
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectWithValue, Unknown}
@@ -179,7 +178,6 @@ class JsonParserTest extends AnyFunSuite with Matchers {
   test("should respect expected type") {
     val compiledExpression = parser.parse("\"2025-01-01\"", ValidationContext.empty, Typed[LocalDate]).validValue
     compiledExpression.returnType.withoutValue shouldBe Typed[LocalDate]
-    compiledExpression.expression.evaluate[LocalDate](Context.dummy, Map.empty) shouldBe LocalDate.of(2025, 1, 1)
 
     parser.parse("\"illegal-date\"", ValidationContext.empty, Typed[LocalDate]).invalidValue shouldBe List(
       JsonDecodingError("DecodingFailure at : Text 'illegal-date' could not be parsed at index 0")

@@ -46,7 +46,7 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
        |  {
        |    "typ": "ExpressionParserCompilationError",
        |    "message": "Bad expression type, expected: List[String], found: Long(0)",
-       |    "description": "There is problem with expression in field Some(elements) - it could not be parsed.",
+       |    "description": "There is problem with expression in field [elements] - it could not be parsed.",
        |    "fieldName": "elements",
        |    "errorType": "SaveAllowed",
        |    "details": null
