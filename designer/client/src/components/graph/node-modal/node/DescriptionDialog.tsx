@@ -4,10 +4,11 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import { DefaultComponents } from "@touk/window-manager";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { editProperties } from "../../../../actions/nk";
 import { getScenario } from "../../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../../store/configureStore";
 import type { NodeType } from "../../../../types";
 import type { WindowKind } from "../../../../windowManager";
 import { WindowContent } from "../../../../windowManager";
@@ -26,7 +27,7 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
     const { t } = useTranslation();
     const { editMode, close } = props;
     const readOnly = useSelector(getReadOnly);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const scenario = useSelector(getScenario);
     const { currentProperties, editedProperties, handleSetEditedProperties, isTouched } = usePropertiesState();
 

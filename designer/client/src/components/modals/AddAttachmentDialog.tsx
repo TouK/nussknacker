@@ -3,11 +3,12 @@ import { Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 import httpService from "../../http/HttpService";
-import { getProcessVersionId, getProcessName } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { useAppDispatch } from "../../store/configureStore";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import type { Attachment } from "../processAttach/AddAttachment";
@@ -19,7 +20,7 @@ const AddAttachmentDialog = (props: WindowContentProps) => {
     const { t } = useTranslation();
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const confirmAction = useCallback(async () => {
         const attachmentPromises = attachments.map((attachment) =>

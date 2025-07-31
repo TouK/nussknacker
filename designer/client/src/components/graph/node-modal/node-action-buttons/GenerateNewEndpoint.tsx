@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { validateNodeData } from "../../../../actions/nk";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../../store/configureStore";
 import type { NodeType } from "../../../../types";
 import { getFindAvailableBranchVariables, getFindAvailableVariables } from "../NodeDetailsContent/selectors";
 import { StyledLoadingButton } from "./StyledLoadingButton";
@@ -16,7 +17,7 @@ interface Props {
 export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props) => {
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const scenarioName = useSelector(getProcessName);
     const scenarioGraph = useSelector(getScenarioGraph);
 

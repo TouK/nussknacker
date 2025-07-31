@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { displayTestCapabilities } from "../../../actions/nk";
 import { TestCapabilityStatus } from "../../../common/TestResultUtils";
@@ -10,10 +10,11 @@ import {
     isLatestProcessVersion,
     isProcessRenamed,
 } from "../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../store/configureStore";
 
 // TODO: fetch TestCapabilities and TestFormParameters in chain to avoid stupid errors
 export function useAdhocTestingAvailability(disabled: boolean) {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
     const testCapabilities = useSelector(getTestCapabilities);

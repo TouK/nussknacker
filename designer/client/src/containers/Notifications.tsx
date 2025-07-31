@@ -3,7 +3,7 @@ import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
 import i18next from "i18next";
 import React, { useCallback, useEffect } from "react";
 import { default as ReactNotifications } from "react-notification-system-redux";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { bindActionCreators } from "redux";
 
 import { fetchProcessDefinition, loadProcessState } from "../actions/nk";
@@ -15,6 +15,7 @@ import Notification from "../components/notifications/Notification";
 import HttpService from "../http/HttpService";
 import { getProcessingType, getProcessName, getProcessVersionId, isFragment } from "../reducers/selectors/graph";
 import { getBackendNotifications, getNotifications } from "../reducers/selectors/other";
+import { useAppDispatch } from "../store/configureStore";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import { useInterval } from "./Interval";
 
@@ -105,7 +106,7 @@ const prepareNotifications =
 
 export function Notifications(): JSX.Element {
     const reactNotifications = useSelector(getNotifications);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { handleChangeConnectionError } = useChangeConnectionError();
 
     useEffect(() => HttpService.setNotificationActions(bindActionCreators(NotificationActions, dispatch)));

@@ -1,11 +1,12 @@
 import { get, identity, isEqual } from "lodash";
 import React, { type SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
-import { nodeValidationDynamicParametersLoading, nodeValidationDynamicParametersLoaded, validateNodeData } from "../../../actions/nk";
+import { nodeValidationDynamicParametersLoaded, nodeValidationDynamicParametersLoading, validateNodeData } from "../../../actions/nk";
 import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
+import { useAppDispatch } from "../../../store/configureStore";
 import type { Edge, NodeType, Parameter } from "../../../types";
 import { ParamFieldLabel } from "./FieldLabel";
 import type { NodeState } from "./node/useNodeState";
@@ -67,7 +68,7 @@ export function useNodeAdjust(
 
 export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
     const { onChange, node, edges, showValidation } = props;
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const isEditMode = !!onChange;
 
     const processDefinitionData = useSelector(getProcessDefinitionData);

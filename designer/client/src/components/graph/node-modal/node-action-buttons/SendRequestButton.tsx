@@ -1,11 +1,12 @@
-import { Alert, Box, Collapse } from "@mui/material";
-import React, { useCallback, useState } from "react";
+import { Box } from "@mui/material";
+import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { setTestData } from "../../../../actions/nk/displayTestResults";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName } from "../../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../../store/configureStore";
 import type { NodeType } from "../../../../types";
 import { useSourceParameters } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { InfoTooltip } from "../editors/InfoTooltip";
@@ -21,7 +22,7 @@ interface Props {
 export const SendRequestButton = ({ disabled, node, expression, infoTooltip }: Props) => {
     const { sourceId, sourceParameters } = useSourceParameters();
     const scenarioName = useSelector(getProcessName);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
     const handleSendHttpRequest = useCallback(async () => {

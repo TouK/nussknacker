@@ -1,6 +1,6 @@
 import { Box, CircularProgress, styled } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import AutoSizer from "react-virtualized-auto-sizer";
 import type { Align } from "react-window";
 import { VariableSizeList } from "react-window";
@@ -9,6 +9,7 @@ import { getScenarioActivities, updateScenarioActivities } from "../../../action
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getVisibleActivities } from "../../../reducers/selectors/activities";
 import { getProcessName } from "../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../store/configureStore";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
@@ -76,7 +77,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const scenarioName = useSelector(getProcessName);
     const uiActivities = useSelector(getVisibleActivities);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const setRowHeight = useCallback((index: number, height: number) => {
         if (listRef.current) {

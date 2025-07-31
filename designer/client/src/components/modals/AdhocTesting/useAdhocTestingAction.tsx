@@ -1,9 +1,10 @@
 import { head } from "lodash";
 import { useCallback, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
 import { getProcessingType, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../store/configureStore";
 import type { UIParameter } from "../../../types";
 import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
 import type { AdhocTestingParameters } from "./AdhocTestingDialog";
@@ -67,7 +68,7 @@ export function useAdhocTestingAction(): AdhocTestingParameters {
 
     const initialValues = useMemo(() => storedValues || paramsListToRecord(parameters), [parameters, storedValues]);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const onConfirmAction = useCallback(
         (parameterExpressions: ActionValues) => {

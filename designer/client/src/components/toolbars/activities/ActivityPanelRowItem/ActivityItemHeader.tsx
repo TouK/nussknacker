@@ -3,7 +3,7 @@ import { Button, styled, Typography } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { displayScenarioVersion } from "../../../../actions/nk";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
@@ -13,6 +13,7 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId, getScenario, isPristine } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
+import { useAppDispatch } from "../../../../store/configureStore";
 import { useWindows } from "../../../../windowManager";
 import { InfoTooltip } from "../../../graph/node-modal/editors/InfoTooltip";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
@@ -72,7 +73,7 @@ const HeaderActivity = ({
     const processName = useSelector(getProcessName);
     const currentScenarioVersionId = useSelector(getProcessVersionId);
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const loggedUser = useSelector(getLoggedUser);
     const { write } = useSelector(getCapabilities);
 
@@ -192,7 +193,7 @@ const WithOpenVersion = ({
     const nothingToSave = useSelector(isPristine);
     const scenario = useSelector(getScenario);
     const { name } = scenario || {};
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { confirm } = useWindows();
 
     const doChangeVersion = useCallback(

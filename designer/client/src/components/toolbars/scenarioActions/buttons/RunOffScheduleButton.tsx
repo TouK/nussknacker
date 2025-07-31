@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
@@ -14,6 +14,7 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getProcessState } from "../../../../reducers/selectors/scenarioState";
+import { useAppDispatch } from "../../../../store/configureStore";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
@@ -25,7 +26,7 @@ import type { ToolbarButtonProps } from "../../types";
 
 export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { disabled, type, titleOverride } = props;
     const scenarioState = useSelector((state: RootState) => getProcessState(state));
     const validationResultPresent = useSelector(isValidationResultPresent);

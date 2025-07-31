@@ -1,9 +1,10 @@
 import { Link, styled, Typography } from "@mui/material";
 import React, { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { updateSearchQuery } from "../actions/nk/scenarioActivities";
 import { getProcessVersionId, getRunningVersion, isCurrentVersionDeployed, isLatestProcessVersion } from "../reducers/selectors/graph";
+import { useAppDispatch } from "../store/configureStore";
 import { predefinedQueries } from "./toolbars/activities/useActivitiesSearch";
 
 const Span = styled("span")({});
@@ -11,7 +12,7 @@ const Span = styled("span")({});
 export function RunningVersion() {
     const runningVersion = useSelector(getRunningVersion);
     const currentVersionDeployed = useSelector(isCurrentVersionDeployed);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const handleGoToRunningVersion = useCallback(() => {
         const element = document.querySelector('[data-rfd-drag-handle-draggable-id="activities-panel"]');

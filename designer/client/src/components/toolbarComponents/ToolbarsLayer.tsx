@@ -2,13 +2,14 @@ import { Box, styled } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";
+import { useAppDispatch } from "../../store/configureStore";
 import { WindowKind } from "../../windowManager";
 import { SidePanel } from "../sidePanels/SidePanel";
 import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
@@ -69,7 +70,7 @@ function useShowFloatingToolbar() {
 }
 
 const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { toolbars, configId, children, externalLayerWrapper: ExternalLayerWrapper = React.Fragment } = props;
 
     useEffect(() => {

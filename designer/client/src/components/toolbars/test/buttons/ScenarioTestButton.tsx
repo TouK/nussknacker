@@ -1,7 +1,7 @@
 import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { updateTestType } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
@@ -13,6 +13,7 @@ import {
     isLatestProcessVersion,
 } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
+import { useAppDispatch } from "../../../../store/configureStore";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
@@ -85,7 +86,7 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
 
     const hasPendingChanges = useSelector(getHasPendingChanges);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const openDialog = useCallback(
         (preset?: Preset) => {
             if (preset?.value === RERUN_PREVIOUS) {

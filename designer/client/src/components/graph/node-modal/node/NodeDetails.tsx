@@ -4,7 +4,7 @@ import type { DefaultContentProps } from "@touk/window-manager/cjs/components/wi
 import type { HeaderButtonCloseProps } from "@touk/window-manager/cjs/components/window/header/HeaderButtonClose";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import urljoin from "url-join";
 
 import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk";
@@ -14,6 +14,7 @@ import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
+import { useAppDispatch } from "../../../../store/configureStore";
 import type { Edge, NodeType } from "../../../../types";
 import type { WindowKind } from "../../../../windowManager";
 import { WindowContent } from "../../../../windowManager";
@@ -154,7 +155,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
             : { HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} /> };
     }, [settings, portalRef, PortalWrapper, editStateRef]);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     useEffect(() => {
         dispatch(nodeDetailsOpened(node.id, data.id));
         return () => {

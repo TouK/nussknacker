@@ -1,6 +1,6 @@
 import { FormControl } from "@mui/material";
 import React, { useCallback, useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
@@ -8,6 +8,7 @@ import { createUniqueName } from "../../../reducers/graph/utils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getNodes } from "../../../reducers/selectors/graph";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import { useAppDispatch } from "../../../store/configureStore";
 import { editors } from "./editors/expression/Editor";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
@@ -33,7 +34,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
             .filter((c) => componentsNamesToSelect.includes(c.componentId));
     }, [componentsNamesToSelect, processDefinitionData.componentGroups]);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const isCloud = useSelector(isCloudInstance);
     useEffect(() => {
         if (isCloud && processDefinitionData) {
