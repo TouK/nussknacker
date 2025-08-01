@@ -20,24 +20,24 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario(); // layout alignment
         takeGraphScreenshot(); // take screenshot of whole graph
 
-        cy.openNodeWindow("My first variable declaration").find('[title="Name"]').click(); // click of remove cursor flickering effect
+        cy.openNodeWindow("My first variable declaration");
         takeWindowScreenshot(); // take screenshot of node window
 
         cy.visitNewProcess(seed, "docsBasicComponentsVariable#1"); // load new scenario
-        cy.openNodeWindow("only financial ops").find('[title="Name"]').click(); // click of remove cursor flickering effect
+        cy.openNodeWindow("only financial ops");
         takeWindowScreenshot(); // take screenshot of node window
     });
 
     it("basic components - recordVariable", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsRecordVariable#0");
         cy.layoutScenario();
-        cy.openNodeWindow("node label goes here").find('[title="Name"]').click();
+        cy.openNodeWindow("node label goes here");
         takeWindowScreenshot();
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
             .click();
 
-        cy.openNodeWindow("variable").find('[title="Name"]').click();
+        cy.openNodeWindow("variable");
         takeWindowScreenshot();
     });
 
@@ -50,7 +50,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.openNodeWindow("conditional filter").find('[title="Name"]').click();
+        cy.openNodeWindow("conditional filter");
         takeWindowScreenshot();
     });
 
@@ -62,7 +62,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.get("[title='toggle right panel']").click();
         takeGraphScreenshot();
 
-        cy.openNodeWindow("choice").find('[title="Name"]').click();
+        cy.openNodeWindow("choice");
         takeWindowScreenshot();
     });
 
@@ -75,7 +75,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("basic components - foreach", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsForEach#0");
         cy.layoutScenario();
-        cy.openNodeWindow("for-each").find('[title="Name"]').click();
+        cy.openNodeWindow("for-each");
         takeWindowScreenshot();
     });
 
@@ -86,7 +86,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.openNodeWindow("union").find('[title="Name"]').click();
+        cy.openNodeWindow("union");
         takeWindowScreenshot();
     });
 
@@ -96,7 +96,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.openNodeWindow("single-side-join").find('[title="Name"]').click();
+        cy.openNodeWindow("single-side-join");
         takeWindowScreenshot();
     });
 
@@ -104,7 +104,7 @@ describe("Auto Screenshot Change Docs -", () => {
         //skip
         cy.visitNewProcess(seed, "docsAggregatesFullOuterJoin#0");
         cy.layoutScenario();
-        cy.openNodeWindow("full-outer-join").find('[title="Name"]').click();
+        cy.openNodeWindow("full-outer-join");
         takeWindowScreenshot();
     });
 
@@ -121,18 +121,14 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.viewport(1920, 1080);
         cy.visitNewProcess(seed, "docsFragmentsInputs#0");
         cy.layoutScenario();
-        cy.openNodeWindow("input").as("nodeWindow");
-
-        cy.get("@nodeWindow").find('[title="Name"]').click();
+        cy.openNodeWindow("input");
         takeWindowScreenshot();
 
         cy.get('[title="Options"]').eq(0).click(); // open parameter1 options
-        cy.get("@nodeWindow").find('[title="Name"]').click();
         takeWindowScreenshot();
 
         cy.get('[title="Options"]').eq(0).click(); // close parameter1 options
         cy.get('[title="Options"]').eq(1).click(); // open parameter2 options
-        cy.get("@nodeWindow").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
 
