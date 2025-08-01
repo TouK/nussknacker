@@ -128,7 +128,6 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_SCENARIO_CANCEL",
           "CLICK_SCENARIO_ARCHIVE_TOGGLE",
           "CLICK_SCENARIO_UNARCHIVE",
-          "CLICK_SCENARIO_CUSTOM_ACTION",
           "CLICK_SCENARIO_CUSTOM_LINK",
           "CLICK_SCENARIO_TEST",
           "CLICK_SCENARIO_ACTIVITIES_ADD_ATTACHMENT",

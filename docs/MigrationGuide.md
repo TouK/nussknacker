@@ -199,9 +199,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       type: "flinkStreaming"
       scheduling {
         enabled: true
-        processingType: streaming,
+        processingType: streaming
         jarsDir: ./storage/jars
-        legacyDb: { <OPTIONAL config of the custom db data source> },
       }
       restUrl: "http://jobmanager:8081"
     }

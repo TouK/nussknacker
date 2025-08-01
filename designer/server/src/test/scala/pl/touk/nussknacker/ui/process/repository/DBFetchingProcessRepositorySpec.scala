@@ -26,8 +26,10 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
 }
 import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -43,7 +45,7 @@ class DBFetchingProcessRepositorySpec
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
-  private val activities = DbScenarioActivityRepository.create(testDbRef, clock)
+  private val activityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
 
   private val scenarioLabelsRepository = new ScenarioLabelsRepository(testDbRef)
 
@@ -51,7 +53,7 @@ class DBFetchingProcessRepositorySpec
     new DBProcessRepository(
       testDbRef,
       clock,
-      activities,
+      activityRepository,
       scenarioLabelsRepository,
       mapProcessingTypeDataProvider("Streaming" -> 0)
     ) {
@@ -157,7 +159,7 @@ class DBFetchingProcessRepositorySpec
 
     val comments = fetching
       .fetchProcessId(newName)
-      .flatMap(v => dbioRunner.run(activities.findActivity(v.get).map(_.comments)))
+      .flatMap(v => dbioRunner.run(activityRepository.findActivity(v.get).map(_.comments)))
       .futureValue
 
     atLeast(1, comments) should matchPattern {
@@ -185,7 +187,7 @@ class DBFetchingProcessRepositorySpec
       processId <- fetching
         .fetchProcessId(newName)
         .map(_.getOrElse(throw new IllegalStateException("Could not find process id")))
-      scenarioActivities <- dbioRunner.run(activities.findActivities(processId))
+      scenarioActivities <- dbioRunner.run(activityRepository.findActivities(processId))
     } yield (processId, scenarioActivities)).futureValue
 
     scenarioActivities.size shouldBe 2
@@ -322,6 +324,59 @@ class DBFetchingProcessRepositorySpec
         ComponentId(ComponentType.Source, "source")  -> List("source1"),
         ComponentId(ComponentType.Sink, "otherSink") -> List("sink1"),
       )
+    )
+  }
+
+  // The PerformedScheduledExecution activity is not tested in integration tests, so a unit tests for database read/write is added here.
+  // (the scheduling mechanism is tested in an isolated way, using mocks, in package pl.touk.nussknacker.ui.process.periodic package
+  test("save and read ScenarioActivity.PerformedScheduledExecution") {
+    val processName = ProcessName("proc1")
+    val newScenario = ScenarioBuilder
+      .streaming(processName.value)
+      .source("source1", "source")
+      .emptySink("sink1", "sink")
+
+    val processId = saveProcess(newScenario).get.processId
+
+    val scenarioActivityId = ScenarioActivityId.random
+    val now                = Instant.now()
+    val nowPlusSecond      = Instant.now().plusSeconds(1)
+
+    dbioRunner
+      .run(
+        activityRepository.addActivity(
+          ScenarioActivity.PerformedScheduledExecution(
+            scenarioId = ScenarioId(processId.value),
+            scenarioActivityId = scenarioActivityId,
+            user = user.scenarioUser,
+            date = now,
+            scenarioVersionId = Some(ScenarioVersionId(1)),
+            scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
+            dateFinished = nowPlusSecond,
+            scheduleName = "schedule1",
+            createdAt = now,
+            nextRetryAt = None,
+            retriesLeft = None,
+          )
+        )
+      )
+      .futureValue
+
+    val activities = dbioRunner.run(activityRepository.findActivities(processId)).futureValue
+
+    activities.size shouldBe 2
+    activities(1) shouldBe ScenarioActivity.PerformedScheduledExecution(
+      scenarioId = ScenarioId(processId.value),
+      scenarioActivityId = scenarioActivityId,
+      user = user.scenarioUser,
+      date = activities(1).date,
+      scenarioVersionId = Some(ScenarioVersionId(1)),
+      scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
+      dateFinished = nowPlusSecond.truncatedTo(ChronoUnit.MICROS),
+      scheduleName = "schedule1",
+      createdAt = now,
+      nextRetryAt = None,
+      retriesLeft = None,
     )
   }
 

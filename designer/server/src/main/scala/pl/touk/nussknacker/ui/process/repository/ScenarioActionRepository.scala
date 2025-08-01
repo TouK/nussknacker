@@ -282,8 +282,6 @@ class DbScenarioActionRepository private (override protected val dbRef: DbRef)(
         ScenarioActivityType.ScenarioNameChanged
       case ScenarioActionName.RunOffSchedule =>
         ScenarioActivityType.PerformedSingleExecution
-      case otherCustomName =>
-        ScenarioActivityType.CustomAction(otherCustomName.value)
     }
     val entity = ScenarioActivityEntityData(
       id = -1,
@@ -542,8 +540,8 @@ class DbScenarioActionReadOnlyRepository(
         None
       case ScenarioActivityType.AutomaticUpdate =>
         None
-      case ScenarioActivityType.CustomAction(name) =>
-        Some(ScenarioActionName(name))
+      case ScenarioActivityType.UnknownActivityType(_) =>
+        None
     }
   }
 
@@ -567,19 +565,9 @@ class DbScenarioActionReadOnlyRepository(
         ScenarioActivityType.ScenarioPaused
       case ScenarioActionName.Rename =>
         ScenarioActivityType.ScenarioNameChanged
-      case otherCustomAction =>
-        ScenarioActivityType.CustomAction(otherCustomAction.value)
+      case ScenarioActionName.RunOffSchedule =>
+        ScenarioActivityType.PerformedSingleExecution
     }
-  }
-
-}
-
-object DbScenarioActionReadOnlyRepository {
-
-  def create(dbRef: DbRef)(
-      implicit executionContext: ExecutionContext,
-  ): ScenarioActionReadOnlyRepository = {
-    new DbScenarioActionReadOnlyRepository(dbRef)
   }
 
 }

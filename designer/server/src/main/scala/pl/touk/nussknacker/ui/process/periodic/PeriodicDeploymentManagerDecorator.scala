@@ -5,11 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{
-  MandatoryParameterValidator,
-  SpelTemplateParameterEditor,
-  StaticStringParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StaticStringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, NoSchedulingSupport, SchedulingSupported}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   EmptyScheduledProcessListenerFactory,
@@ -17,7 +13,6 @@ import pl.touk.nussknacker.engine.api.deployment.scheduler.services.{
   SchedulePropertyExtractorFactory
 }
 import pl.touk.nussknacker.ui.process.periodic.cron.{CronParameterValidator, CronSchedulePropertyExtractor}
-import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
 import pl.touk.nussknacker.ui.process.repository.SlickPeriodicProcessesRepository
 
 import java.time.Clock
@@ -104,25 +99,13 @@ object PeriodicDeploymentManagerDecorator extends LazyLogging {
       schedulingSupported.customAdditionalDeploymentDataProvider
         .getOrElse(DefaultAdditionalDeploymentDataProvider)
 
-    val periodicProcessesRepository = schedulingConfig.legacyDb match {
-      case None =>
-        new SlickPeriodicProcessesRepository(
-          schedulingConfig.processingType,
-          schedulingDeps.dbRef.db,
-          schedulingDeps.dbRef.profile,
-          clock,
-          schedulingDeps.fetchingProcessRepository
-        )
-      case Some(customDbConfig) =>
-        val (db, profile) = LegacyDbInitializer.init(customDbConfig)
-        new SlickLegacyPeriodicProcessesRepository(
-          schedulingConfig.processingType,
-          db,
-          profile,
-          clock,
-          schedulingDeps.fetchingProcessRepository
-        )
-    }
+    val periodicProcessesRepository = new SlickPeriodicProcessesRepository(
+      schedulingConfig.processingType,
+      schedulingDeps.dbRef.db,
+      schedulingDeps.dbRef.profile,
+      clock,
+      schedulingDeps.fetchingProcessRepository
+    )
 
     PeriodicDeploymentManager(
       delegate = underlying,

@@ -39,15 +39,6 @@ trait DeploymentManager extends AutoCloseable {
     Future.failed(new NotImplementedError())
 }
 
-trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
-
-  def managerSpecificScenarioActivities(
-      processIdWithName: ProcessIdWithName,
-      after: Option[Instant],
-  ): Future[List[ScenarioActivity]]
-
-}
-
 sealed trait DeploymentsStatusesQueryForAllScenariosSupport
 
 trait DeploymentsStatusesQueryForAllScenariosSupported extends DeploymentsStatusesQueryForAllScenariosSupport {

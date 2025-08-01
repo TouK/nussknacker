@@ -4129,7 +4129,7 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
                       - name: status
-                        value: Run now execution finished
+                        value: Data processing started
                       - name: started
                         value: '2024-01-17 14:21:17'
                       - name: finished
@@ -4148,7 +4148,7 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
                       - name: status
-                        value: Run now execution finished
+                        value: Data processing started
                       - name: started
                         value: '2024-01-17 14:21:17'
                       - name: finished
@@ -4160,7 +4160,7 @@ paths:
                       scenarioVersionId: 1
                       additionalFields:
                       - name: status
-                        value: Scheduled execution finished
+                        value: Data processing finished
                       - name: created
                         value: '2024-01-17 13:21:17'
                       - name: started
@@ -4198,21 +4198,6 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields: []
                       type: AUTOMATIC_UPDATE
-                    - id: 33509d37-7657-4229-940f-b5736c82fb13
-                      user: some user
-                      date: '2024-01-17T14:21:17Z'
-                      scenarioVersionId: 1
-                      comment:
-                        content:
-                          value: Execute special execution of scenario
-                          status: AVAILABLE
-                        lastModifiedBy: some user
-                        lastModifiedAt: '2024-01-17T14:21:17Z'
-                      additionalFields:
-                      - name: actionName
-                        value: special_execution
-                      overrideIcon: /assets/states/deploy-running-animated.svg
-                      type: CUSTOM_ACTION
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
@@ -4383,7 +4368,7 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Run now scheduling
+                      displayableName: Run now
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4398,10 +4383,6 @@ paths:
                       icon: /assets/activities/automaticUpdate.svg
                       supportedActions:
                       - compare
-                    - type: CUSTOM_ACTION
-                      displayableName: Custom action
-                      icon: /assets/activities/customAction.svg
-                      supportedActions: []
                     actions:
                     - id: compare
                       displayableName: Compare
@@ -4511,7 +4492,7 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Run now scheduling
+                      displayableName: Run now
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4526,10 +4507,6 @@ paths:
                       icon: /assets/activities/automaticUpdate.svg
                       supportedActions:
                       - compare
-                    - type: CUSTOM_ACTION
-                      displayableName: Custom action
-                      icon: /assets/activities/customAction.svg
-                      supportedActions: []
                     actions:
                     - id: compare
                       displayableName: Compare
@@ -7259,7 +7236,6 @@ components:
           - PERFORMED_SINGLE_EXECUTION
           - PERFORMED_SCHEDULED_EXECUTION
           - AUTOMATIC_UPDATE
-          - CUSTOM_ACTION
     ScenarioActivityActionMetadata:
       title: ScenarioActivityActionMetadata
       type: object
@@ -7600,7 +7576,6 @@ components:
       - CLICK_SCENARIO_CANCEL
       - CLICK_SCENARIO_ARCHIVE_TOGGLE
       - CLICK_SCENARIO_UNARCHIVE
-      - CLICK_SCENARIO_CUSTOM_ACTION
       - CLICK_SCENARIO_CUSTOM_LINK
       - DOUBLE_CLICK_RANGE_SELECT_NODES
       - KEYBOARD_AND_CLICK_RANGE_SELECT_NODES

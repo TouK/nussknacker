@@ -171,7 +171,6 @@ object StatisticsApiEndpoints {
       case object ClickScenarioCancel                     extends StatisticName { override val shortName = "f_csc"    }
       case object ClickScenarioArchiveToggle              extends StatisticName { override val shortName = "f_csat"   }
       case object ClickScenarioUnarchive                  extends StatisticName { override val shortName = "f_csu"    }
-      case object ClickScenarioCustomAction               extends StatisticName { override val shortName = "f_csca"   }
       case object ClickScenarioCustomLink                 extends StatisticName { override val shortName = "f_cscl"   }
       case object DoubleClickRangeSelectNodes             extends StatisticName { override val shortName = "f_dcrsn"  }
       case object KeyboardAndClickRangeSelectNodes        extends StatisticName { override val shortName = "f_kacrsn" }
