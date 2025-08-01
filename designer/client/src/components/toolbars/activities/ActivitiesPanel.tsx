@@ -95,7 +95,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         [dispatch],
     );
 
-    const handleScrollToItem = useCallback((index: number, align: Align) => listRef.current.scrollToItem(index, align), []);
+    const handleScrollToItem = useCallback((index: number, align: Align) => listRef.current?.scrollToItem(index, align), []);
 
     const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = useActivitiesSearch({
         activities: uiActivities,
@@ -107,7 +107,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         dispatch(
             updateScenarioActivities((prevState) => {
                 const { uiActivities, buttonPosition } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence, "collapse");
-                listRef.current.scrollToItem(buttonPosition - 2);
+                listRef.current?.scrollToItem(buttonPosition - 2);
                 return uiActivities;
             }),
         );
