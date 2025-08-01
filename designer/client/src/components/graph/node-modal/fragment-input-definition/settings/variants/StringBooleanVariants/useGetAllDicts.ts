@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 
 import httpService from "../../../../../../../http/HttpService";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../../../../store/configureStore";
 import type { ReturnedType } from "../../../../../../../types";
 import type { Option } from "../../../FieldsSelect";
 
@@ -11,7 +11,7 @@ interface Props {
 }
 export const useGetAllDicts = ({ typ }: Props) => {
     const [processDefinitionDicts, setProcessDefinitionDicts] = useState<Option[]>([]);
-    const processingType = useSelector(getProcessingType);
+    const processingType = useAppSelector(getProcessingType);
 
     useEffect(() => {
         httpService.fetchAllProcessDefinitionDataDicts(processingType, typ.refClazzName).then((response) => {

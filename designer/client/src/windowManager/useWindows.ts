@@ -2,7 +2,6 @@ import type { WindowId, WindowType } from "@touk/window-manager";
 import { useWindowManager } from "@touk/window-manager";
 import { defaults } from "lodash";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { useSelector } from "react-redux";
 
 import { useUserSettings } from "../common/userSettings";
 import { StickyNoteType } from "../components/graph/utils/stickyNotesUtils";
@@ -11,6 +10,8 @@ import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import type { Scenario } from "../components/Process/types";
 import { getWindowsIdMapping } from "../reducers/selectors/getWindowsIdMapping";
 import type { NodeType } from "../types";
+import type { AppState} from "./../store/configureStore";
+import { useAppSelector } from "./../store/configureStore";
 import { WindowKind } from "./WindowKind";
 
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
@@ -37,8 +38,8 @@ const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
     }, [isWindowOpen]);
 };
 
-function useSelectorRef<S, T>(selector: (state: S) => T) {
-    const selected = useSelector(selector);
+function useAppSelectorRef<T>(selector: (state: AppState) => T) {
+    const selected = useAppSelector(selector);
     const result = useRef(selected);
     useLayoutEffect(() => {
         result.current = selected;
@@ -79,7 +80,7 @@ export function useWindows(parent?: WindowId) {
         [forceDisableModals, _open],
     );
 
-    const nodeWindowIdMap = useSelectorRef(getWindowsIdMapping);
+    const nodeWindowIdMap = useAppSelectorRef(getWindowsIdMapping);
 
     const openNodeWindow = useCallback(
         (node: NodeType, scenario: Scenario, readonly?: boolean) => {
