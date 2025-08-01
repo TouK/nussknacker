@@ -134,7 +134,7 @@ sealed trait DeploymentRelatedActivity extends ScenarioActivity {
   def result: DeploymentResult
 }
 
-sealed trait BatchDeploymentRelatedActivity extends DeploymentRelatedActivity
+sealed trait SchedulingRelatedActivity extends DeploymentRelatedActivity
 
 sealed trait DeploymentResult {
   def dateFinished: Instant
@@ -303,7 +303,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
       result: DeploymentResult,
-  ) extends BatchDeploymentRelatedActivity
+  ) extends SchedulingRelatedActivity
 
   final case class PerformedScheduledExecution(
       scenarioId: ScenarioId,
@@ -317,7 +317,7 @@ object ScenarioActivity {
       createdAt: Instant,
       nextRetryAt: Option[Instant],
       retriesLeft: Option[Int],
-  ) extends BatchDeploymentRelatedActivity {
+  ) extends SchedulingRelatedActivity {
 
     override def result: DeploymentResult = scheduledExecutionStatus match {
       case ScheduledExecutionStatus.Finished                => DeploymentResult.Success(dateFinished)
@@ -338,18 +338,5 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       changes: String,
   ) extends ScenarioActivity
-
-  // Other
-
-  final case class CustomAction(
-      scenarioId: ScenarioId,
-      scenarioActivityId: ScenarioActivityId,
-      user: ScenarioUser,
-      date: Instant,
-      scenarioVersionId: Option[ScenarioVersionId],
-      actionName: String,
-      comment: ScenarioComment,
-      result: DeploymentResult,
-  ) extends DeploymentRelatedActivity
 
 }

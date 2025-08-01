@@ -16,8 +16,7 @@ export type ActivityType =
     | "OUTGOING_MIGRATION"
     | "PERFORMED_SINGLE_EXECUTION"
     | "PERFORMED_SCHEDULED_EXECUTION"
-    | "AUTOMATIC_UPDATE"
-    | "CUSTOM_ACTION";
+    | "AUTOMATIC_UPDATE";
 
 export enum ActivityTypesRelatedToExecutions {
     ScenarioDeployed = "SCENARIO_DEPLOYED",

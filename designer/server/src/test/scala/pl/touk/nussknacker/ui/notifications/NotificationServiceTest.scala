@@ -89,7 +89,6 @@ class NotificationServiceTest
   )
 
   private val scenarioActivityService = new FetchScenarioActivityService(
-    deploymentManagerDispatcher = dmDispatcher,
     scenarioActivityRepository = scenarioActivityRepository,
     fetchingProcessRepository = processRepository,
     dbioActionRunner = dbioRunner

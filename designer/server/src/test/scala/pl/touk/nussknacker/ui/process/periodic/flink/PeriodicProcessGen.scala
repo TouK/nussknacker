@@ -17,7 +17,7 @@ object PeriodicProcessGen {
     PeriodicProcess(
       id = PeriodicProcessId(42),
       deploymentData = DeploymentWithRuntimeParams(
-        processId = Some(ProcessId(1)),
+        processId = ProcessId(1),
         processName = ProcessName(""),
         versionId = VersionId.initialVersionId,
         runtimeParams = RuntimeParams(Map("jarFileName" -> "jar-file-name.jar"))

@@ -4,7 +4,6 @@ import com.cronutils.builder.CronBuilder
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.field.expression.FieldExpressionFactory.{on, questionMark}
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import org.scalatest.LoneElement._
@@ -32,7 +31,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.newWriteProcessReposito
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicScenarioStatus
 import pl.touk.nussknacker.ui.process.periodic.flink.{DeploymentManagerStub, ScheduledExecutionPerformerStub}
-import pl.touk.nussknacker.ui.process.periodic.legacy.db.{LegacyDbInitializer, SlickLegacyPeriodicProcessesRepository}
+import pl.touk.nussknacker.ui.process.periodic.flink.db.InMemScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.periodic.model._
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
@@ -48,7 +47,6 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 
 //Integration test with both in-memory hsql and postgres from test containers
 class PeriodicProcessServiceIntegrationTest
@@ -87,48 +85,9 @@ class PeriodicProcessServiceIntegrationTest
   def withFixture(
       deploymentRetryConfig: DeploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig(),
-      maxFetchedPeriodicScenarioActivities: Option[Int] = None,
   )(testCode: Fixture => Any): Unit = {
 
     val fetchingProcessRepository = TestFactory.newFutureFetchingScenarioRepository(testDbRef)
-
-    val postgresConfig = ConfigFactory.parseMap(
-      Map(
-        "user"     -> container.username,
-        "password" -> container.password,
-        "url"      -> container.jdbcUrl,
-        "driver"   -> "org.postgresql.Driver",
-        "schema"   -> UUID.randomUUID().toString
-      ).asJava
-    )
-
-    val hsqlConfig = ConfigFactory.parseMap(
-      Map(
-        "url"      -> s"jdbc:hsqldb:mem:periodic-${UUID.randomUUID().toString};sql.syntax_ora=true",
-        "user"     -> "SA",
-        "password" -> "",
-        "schema"   -> UUID.randomUUID().toString
-      ).asJava
-    )
-
-    def runWithLegacyRepository(dbConfig: Config): Unit = {
-      val (db, profile) = LegacyDbInitializer.init(dbConfig)
-      val creator = (processingType: String, currentTime: Instant) =>
-        new SlickLegacyPeriodicProcessesRepository(
-          processingType,
-          db,
-          profile,
-          fixedClock(currentTime),
-          fetchingProcessRepository,
-        )
-      try {
-        testCode(
-          new Fixture(creator, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
-        )
-      } finally {
-        db.close()
-      }
-    }
 
     def runTestCodeWithNuDb(): Unit = {
       val creator = (processingType: String, currentTime: Instant) =>
@@ -140,17 +99,11 @@ class PeriodicProcessServiceIntegrationTest
           fetchingProcessRepository,
         )
       testCode(
-        new Fixture(creator, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
+        new Fixture(creator, deploymentRetryConfig, executionConfig)
       )
     }
 
     def testHeader(str: String) = "\n\n" + "#" * 100 + s"\n##### $str\n" + "#" * 100 + "\n"
-    logger.info(testHeader("Running test with legacy hsql-based repository"))
-    runWithLegacyRepository(hsqlConfig)
-    cleanDB()
-    logger.info(testHeader("Running test with legacy postgres-based repository"))
-    runWithLegacyRepository(postgresConfig)
-    cleanDB()
     logger.info(testHeader("Running test with Nu database"))
     runTestCodeWithNuDb()
     cleanDB()
@@ -160,9 +113,9 @@ class PeriodicProcessServiceIntegrationTest
       periodicProcessesRepositoryCreator: (String, Instant) => PeriodicProcessesRepository,
       deploymentRetryConfig: DeploymentRetryConfig,
       executionConfig: PeriodicExecutionConfig,
-      maxFetchedPeriodicScenarioActivities: Option[Int],
   ) {
     val delegateDeploymentManagerStub   = new DeploymentManagerStub
+    val scenarioActivityRepository      = new InMemScenarioActivityRepository
     val scheduledExecutionPerformerStub = new ScheduledExecutionPerformerStub
     val events                          = new ArrayBuffer[ScheduledProcessEvent]()
     var failListener                    = false
@@ -175,6 +128,7 @@ class PeriodicProcessServiceIntegrationTest
         delegateDeploymentManager = delegateDeploymentManagerStub,
         scheduledExecutionPerformer = scheduledExecutionPerformerStub,
         periodicProcessesRepository = periodicProcessesRepositoryCreator(processingType, currentTime),
+        scenarioActivityRepository = scenarioActivityRepository,
         periodicProcessListener = new ScheduledProcessListener {
 
           override def onScheduledProcessEvent: PartialFunction[ScheduledProcessEvent, Unit] = {
@@ -186,7 +140,6 @@ class PeriodicProcessServiceIntegrationTest
         additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
         deploymentRetryConfig = deploymentRetryConfig,
         executionConfig = executionConfig,
-        maxFetchedPeriodicScenarioActivities = maxFetchedPeriodicScenarioActivities,
         processConfigEnricher = ProcessConfigEnricher.identity,
         clock = fixedClock(currentTime),
         new ProcessingTypeActionServiceStub,
@@ -321,7 +274,7 @@ class PeriodicProcessServiceIntegrationTest
     //       and state of deployment
     inactiveStates.firstScheduleData.latestDeployments.head.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val activities = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
     val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
@@ -441,9 +394,10 @@ class PeriodicProcessServiceIntegrationTest
     service.deploy(toBeRetried).futureValue
     service.findToBeDeployed.futureValue.toList shouldBe Nil
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val activities = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
     val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
-    val firstActivity       = performedActivities.head
+    val firstActivity       = performedActivities(0)
+    val secondActivity      = performedActivities(1)
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
@@ -453,10 +407,23 @@ class PeriodicProcessServiceIntegrationTest
         scenarioVersionId = Some(ScenarioVersionId(1)),
         dateFinished = firstActivity.dateFinished,
         scheduleName = "[default]",
-        scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentFailed,
+        scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
         createdAt = firstActivity.createdAt,
+        retriesLeft = Some(1),
+        nextRetryAt = Some(firstActivity.date),
+      ),
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = secondActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = secondActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = secondActivity.dateFinished,
+        scheduleName = "[default]",
+        scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentFailed,
+        createdAt = secondActivity.createdAt,
         retriesLeft = None,
-        nextRetryAt = None
+        nextRetryAt = None,
       ),
     )
   }
@@ -526,7 +493,7 @@ class PeriodicProcessServiceIntegrationTest
     service.deactivate(processName).futureValue
     service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val activities = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
     activities shouldBe empty
   }
 
@@ -584,7 +551,7 @@ class PeriodicProcessServiceIntegrationTest
     toDeployAfterFinish.head.scheduleName.value.value shouldBe secondSchedule
 
     val firstActivity = eventually {
-      val result = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+      val result = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
       result should not be empty
       result.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     }
@@ -605,17 +572,15 @@ class PeriodicProcessServiceIntegrationTest
   }
 
   it should "handle multiple one time schedules" in withFixture() { f =>
-    handleMultipleOneTimeSchedules(f)
-    def service           = f.periodicProcessService(startTime)
-    val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
+    val processIdWithName = handleMultipleOneTimeSchedules(f)
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val activities = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
     val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
     val schedule1Activity   = performedActivities.find(_.scheduleName == "schedule1").get
     val schedule2Activity   = performedActivities.find(_.scheduleName == "schedule2").get
     activities should contain theSameElementsAs List(
       ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
+        scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = schedule1Activity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = schedule1Activity.date,
@@ -628,7 +593,7 @@ class PeriodicProcessServiceIntegrationTest
         nextRetryAt = None
       ),
       ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
+        scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = schedule2Activity.scenarioActivityId,
         user = ScenarioUser(None, UserName("Nussknacker"), None, None),
         date = schedule2Activity.date,
@@ -643,33 +608,7 @@ class PeriodicProcessServiceIntegrationTest
     )
   }
 
-  it should "handle multiple one time schedules and return only latest activities" in withFixture(
-    maxFetchedPeriodicScenarioActivities = Some(1)
-  ) { f =>
-    handleMultipleOneTimeSchedules(f)
-    def service           = f.periodicProcessService(startTime)
-    val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
-
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = firstActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = firstActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
-        scheduleName = "schedule2",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      ),
-    )
-  }
-
-  private def handleMultipleOneTimeSchedules(f: Fixture) = {
+  private def handleMultipleOneTimeSchedules(f: Fixture): ProcessIdWithName = {
     var currentTime            = startTime
     def service                = f.periodicProcessService(currentTime)
     val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
@@ -775,6 +714,7 @@ class PeriodicProcessServiceIntegrationTest
       .futureValue
     inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
+    processIdWithName
   }
 
   it should "handle failed event handler" in withFixture() { f =>
@@ -852,9 +792,10 @@ class PeriodicProcessServiceIntegrationTest
     val stateAfterHandleFinished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterHandleFinished.latestDeploymentForSingleSchedule.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val activities = f.scenarioActivityRepository.getActivities.filter(_.scenarioId.value == processIdWithName.id.value)
     val performedActivities = activities.map(_.asInstanceOf[ScenarioActivity.PerformedScheduledExecution])
-    val firstActivity       = performedActivities.head
+    val firstActivity       = performedActivities(0)
+    val secondActivity      = performedActivities(1)
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
@@ -864,8 +805,21 @@ class PeriodicProcessServiceIntegrationTest
         scenarioVersionId = Some(ScenarioVersionId(1)),
         dateFinished = firstActivity.dateFinished,
         scheduleName = "[default]",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
+        scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentFailed,
         createdAt = firstActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = secondActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = secondActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = secondActivity.dateFinished,
+        scheduleName = "[default]",
+        scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
+        createdAt = secondActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),

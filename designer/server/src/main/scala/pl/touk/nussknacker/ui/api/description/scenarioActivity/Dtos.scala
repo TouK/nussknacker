@@ -240,7 +240,7 @@ object Dtos {
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
-      private val displayableName: String             = "Run now scheduling"
+      private val displayableName: String             = "Run now"
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
       override def icon: String                       = "/assets/activities/deployed.svg"
@@ -261,14 +261,6 @@ object Dtos {
       override def displayableNameForFragment: String = displayableName
       override def icon: String                       = "/assets/activities/automaticUpdate.svg"
       override def supportedActions: List[String]     = List("compare")
-    }
-
-    case object CustomAction extends ScenarioActivityType {
-      private val displayableName: String             = "Custom action"
-      override def displayableNameForScenario: String = displayableName
-      override def displayableNameForFragment: String = displayableName
-      override def icon: String                       = "/assets/activities/customAction.svg"
-      override def supportedActions: List[String]     = List.empty
     }
 
     override def values: immutable.IndexedSeq[ScenarioActivityType] = findValues
@@ -686,7 +678,7 @@ object Dtos {
         dateFinished: Instant,
         errorMessage: Option[String],
     )(implicit zoneId: ZoneId): ScenarioActivity = {
-      val humanReadableStatus = "Run now execution finished"
+      val humanReadableStatus = "Data processing started"
       ScenarioActivity(
         id = id,
         `type` = ScenarioActivityType.PerformedSingleExecution,
@@ -716,8 +708,8 @@ object Dtos {
         retriesLeft: Option[Int],
     )(implicit zoneId: ZoneId): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
-        case ScheduledExecutionStatus.Finished                => "Scheduled execution finished"
-        case ScheduledExecutionStatus.Failed                  => "Scheduled execution failed"
+        case ScheduledExecutionStatus.Finished                => "Data processing finished"
+        case ScheduledExecutionStatus.Failed                  => "Data processing failed"
         case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
         case ScheduledExecutionStatus.DeploymentFailed        => "Deployment failed"
       }
@@ -763,30 +755,6 @@ object Dtos {
       ),
       attachment = None,
       additionalFields = List.empty,
-    )
-
-    def forCustomAction(
-        id: UUID,
-        user: String,
-        date: Instant,
-        scenarioVersionId: Option[Long],
-        comment: ScenarioActivityComment,
-        actionName: String,
-        customIcon: Option[String],
-        errorMessage: Option[String],
-    ): ScenarioActivity = ScenarioActivity(
-      id = id,
-      `type` = ScenarioActivityType.CustomAction,
-      user = user,
-      date = date,
-      scenarioVersionId = scenarioVersionId,
-      comment = Some(comment),
-      attachment = None,
-      additionalFields = List(
-        Some(AdditionalField("actionName", actionName)),
-        errorMessage.map(e => AdditionalField("errorMessage", e)),
-      ).flatten,
-      overrideIcon = customIcon,
     )
 
   }

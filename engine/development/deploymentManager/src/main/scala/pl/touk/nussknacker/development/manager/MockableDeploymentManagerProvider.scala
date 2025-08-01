@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.minicluster.scenariotesting.FlinkMiniClusterScenarioTestRunner
@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
-import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -65,8 +64,7 @@ object MockableDeploymentManagerProvider {
   )(
       implicit executionContext: ExecutionContext,
       ioRuntime: IORuntime
-  ) extends DeploymentManager
-      with ManagerSpecificScenarioActivitiesStoredByManager {
+  ) extends DeploymentManager {
 
     private lazy val (miniClusterWithServicesOpt, testRunnerOpt) = {
       Functor[Option].unzip(modelDataProviderOpt.map { modelDataProvider =>
@@ -157,12 +155,6 @@ object MockableDeploymentManagerProvider {
       configurator.liveDataPreviewSupport.get()
     }
 
-    override def managerSpecificScenarioActivities(
-        processIdWithName: ProcessIdWithName,
-        after: Option[Instant],
-    ): Future[List[ScenarioActivity]] =
-      Future.successful(configurator.managerSpecificScenarioActivities.get())
-
     override def scenarioCompilationDependenciesResource: Resource[SyncIO, EngineScenarioCompilationDependencies] =
       Resource.pure(EngineScenarioCompilationDependencies.empty)
 
@@ -180,8 +172,6 @@ object MockableDeploymentManagerProvider {
       new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
     private[MockableDeploymentManagerProvider] val deploymentResults =
       new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
-    private[MockableDeploymentManagerProvider] val managerSpecificScenarioActivities =
-      new AtomicReference[List[ScenarioActivity]](List.empty)
     private[MockableDeploymentManagerProvider] val liveDataPreviewSupport =
       new AtomicReference[LiveDataPreviewSupport](NoLiveDataPreviewSupport)
 
@@ -197,10 +187,6 @@ object MockableDeploymentManagerProvider {
       testResults.set(scenarioTestResults)
     }
 
-    def configureManagerSpecificScenarioActivities(scenarioActivities: List[ScenarioActivity]): Unit = {
-      managerSpecificScenarioActivities.set(scenarioActivities)
-    }
-
     def configureLiveDataPreviewSupport(support: LiveDataPreviewSupport): Unit = {
       liveDataPreviewSupport.set(support)
     }
@@ -209,7 +195,6 @@ object MockableDeploymentManagerProvider {
       scenarioStatuses.set(Map.empty)
       deploymentResults.set(Map.empty)
       testResults.set(Map.empty)
-      managerSpecificScenarioActivities.set(List.empty)
       liveDataPreviewSupport.set(NoLiveDataPreviewSupport)
     }
 
