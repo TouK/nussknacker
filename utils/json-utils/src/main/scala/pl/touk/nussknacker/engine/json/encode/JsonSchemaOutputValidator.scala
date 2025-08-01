@@ -6,6 +6,7 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
 import org.everit.json.schema.{EmptySchema, NumberSchema, ObjectSchema, ReferenceSchema, Schema, ValidationException}
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
@@ -50,8 +51,6 @@ object JsonSchemaOutputValidator {
 
   }
 
-  private val BigDecimalClass = classOf[java.math.BigDecimal]
-  private val NumberClass     = classOf[java.lang.Number]
 }
 
 // root schema is a container for eventual ref schemas - in particular it can be the same schema as outputSchema

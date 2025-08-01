@@ -59,7 +59,7 @@ case class FragmentParameterValidator(classDefinitions: ClassDefinitionSet) {
       refClazz: FragmentClazzRef,
       paramName: ParameterName,
       nodeIds: Set[String]
-  ): ValidatedNel[PartSubGraphCompilationError, List[ParameterEditor]] = {
+  ): ValidatedNel[PartSubGraphCompilationError, NonEmptyList[ParameterEditor]] = {
     validateValueEditorSupportedType(valueEditor, refClazz, paramName, nodeIds)
       .andThen(_ =>
         ValueEditorValidator.validateAndGetEditor(

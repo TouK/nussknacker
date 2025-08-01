@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api.testing
 
 import com.typesafe.config.{Config, ConfigFactory}
-import io.circe.syntax.EncoderOps
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -11,8 +10,6 @@ import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.ScenarioTestData
-import pl.touk.nussknacker.ui.api.description.scenarioTesting.Dtos.Validate.ScenarioTestValidationRequest
 import sttp.client3.Response
 
 trait EventGeneratorSourceTestingApiHttpServiceSpec
@@ -46,12 +43,6 @@ trait EventGeneratorSourceTestingApiHttpServiceSpec
       .emptySink("end", "dead-end")
 
   protected def filteringExpression: Expression
-
-  override protected def parametersProvidedForDryRun: String =
-    ScenarioTestValidationRequest(
-      testData = ScenarioTestData.WithParameters(validParameters),
-      scenarioGraph = exampleScenario.toScenarioGraph
-    ).asJson.toString()
 
   override protected def validParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map.empty)

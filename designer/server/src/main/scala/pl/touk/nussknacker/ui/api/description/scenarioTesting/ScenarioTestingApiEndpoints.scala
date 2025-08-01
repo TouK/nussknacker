@@ -163,7 +163,7 @@ class ScenarioTestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends 
                       NodeValidationError(
                         "ExpressionParserCompilationError",
                         "Bad expression type, expected: Boolean, found: Long(5)",
-                        "There is problem with expression in field Some(condition) - it could not be parsed.",
+                        "There is problem with expression in field [condition] - it could not be parsed.",
                         Some("condition"),
                         NodeValidationErrorType.SaveAllowed,
                         details = None

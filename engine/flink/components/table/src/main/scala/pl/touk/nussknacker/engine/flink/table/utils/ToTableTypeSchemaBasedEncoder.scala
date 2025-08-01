@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.table.utils
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 import org.springframework.util.NumberUtils
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses.{ArrayClass, ListClass, MapClass}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
@@ -13,13 +14,7 @@ import scala.reflect.ClassTag
 
 object ToTableTypeSchemaBasedEncoder {
 
-  private val javaMapClass = classOf[java.util.Map[_, _]]
-
-  private val rowClass = classOf[Row]
-
-  private val listClass = classOf[java.util.List[_]]
-
-  private val arrayClass = classOf[Array[AnyRef]]
+  private val RowClass = classOf[Row]
 
   def encode(value: Any, targetType: LogicalType): Any = {
     val alignedValue = (value, targetType) match {
@@ -86,7 +81,7 @@ object ToTableTypeSchemaBasedEncoder {
             .canBeLooselyAssignedTo(Typed[Number]) && typ.canBeLooselyAssignedTo(targetType.toTypingResult) =>
         targetType.toTypingResult
       case (recordType: TypedObjectTypingResult, rowType: RowType)
-          if Set[Class[_]](javaMapClass, rowClass).contains(recordType.runtimeObjType.klass) =>
+          if Set[Class[_]](MapClass, RowClass).contains(recordType.runtimeObjType.klass) =>
         val fields = rowType.getFields.asScala.map { field =>
           val alignedFieldType = {
             recordType.fields
@@ -98,22 +93,22 @@ object ToTableTypeSchemaBasedEncoder {
           field.getName -> alignedFieldType
         }
         Typed.record(fields, Typed.typedClass[Row])
-      case (TypedObjectTypingResult(_, TypedClass(`javaMapClass`, keyType :: valueType :: Nil), _), mapType: MapType) =>
+      case (TypedObjectTypingResult(_, TypedClass(`MapClass`, keyType :: valueType :: Nil), _), mapType: MapType) =>
         alignMapType(keyType, valueType, mapType)
-      case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil), mapType: MapType) =>
+      case (TypedClass(`MapClass`, keyType :: valueType :: Nil), mapType: MapType) =>
         alignMapType(keyType, valueType, mapType)
       case (
-            TypedObjectTypingResult(_, TypedClass(`javaMapClass`, keyType :: valueType :: Nil), _),
+            TypedObjectTypingResult(_, TypedClass(`MapClass`, keyType :: valueType :: Nil), _),
             multisetType: MultisetType
           ) if valueType.canBeLooselyAssignedTo(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
-      case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil), multisetType: MultisetType)
+      case (TypedClass(`MapClass`, keyType :: valueType :: Nil), multisetType: MultisetType)
           if valueType.canBeLooselyAssignedTo(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
-      case (TypedClass(`arrayClass`, elementType :: Nil), arrayType: ArrayType) =>
-        Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
-      case (TypedClass(`listClass`, elementType :: Nil), arrayType: ArrayType) =>
-        Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
+      case (TypedClass(`ArrayClass`, elementType :: Nil), arrayType: ArrayType) =>
+        Typed.genericTypeClass(ArrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
+      case (TypedClass(`ListClass`, elementType :: Nil), arrayType: ArrayType) =>
+        Typed.genericTypeClass(ArrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
       case (other, _) =>
         // We fallback to input typing result - some conversions could be done by Flink
         other

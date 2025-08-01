@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 
 import cats.data.NonEmptyList
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-import java.lang
 import scala.util.Try
 
 /**
@@ -14,6 +14,9 @@ import scala.util.Try
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
 trait NumberTypesPromotionStrategy extends Serializable {
+
+  private val AllNumbers: Seq[Class[_]] =
+    StandardTypesClasses.FloatingPointNumbersOrderedFromWidestToNarrowest ++ StandardTypesClasses.DecimalNumbersOrderedFromWidestToNarrowest
 
   private val cachedPromotionResults: Map[(Class[_], Class[_]), ReturnedType] =
     (for {
@@ -50,7 +53,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
   final def promoteClasses(left: Class[_], right: Class[_]): ReturnedType = {
     val boxedLeft  = ClassUtils.primitiveToWrapper(left)
     val boxedRight = ClassUtils.primitiveToWrapper(right)
-    if (!classOf[Number].isAssignableFrom(boxedLeft) || !classOf[Number].isAssignableFrom(boxedRight))
+    if (!NumberClass.isAssignableFrom(boxedLeft) || !NumberClass.isAssignableFrom(boxedRight))
       throw new IllegalArgumentException(s"One of promoted classes is not a number: $boxedLeft, $boxedRight")
     cachedPromotionResults.getOrElse((boxedLeft, boxedRight), promoteClassesInternal(boxedLeft, boxedRight))
   }
@@ -67,34 +70,12 @@ trait ReturningSingleClassPromotionStrategy extends NumberTypesPromotionStrategy
 
 object NumberTypesPromotionStrategy {
 
-  // The order is important for determining promoted type (it is from widest to narrowest type)
-  private val FloatingNumbers: Seq[Class[_]] = IndexedSeq(
-    classOf[java.math.BigDecimal],
-    classOf[java.lang.Double],
-    classOf[java.lang.Float]
-  )
-
-  def isFloatingNumber(clazz: Class[_]): Boolean = FloatingNumbers.contains(clazz)
-
-  // The order is important for determining promoted type (it is from widest to narrowest type)
-  val DecimalNumbers: Seq[Class[_]] = IndexedSeq(
-    classOf[java.math.BigInteger],
-    classOf[java.lang.Long],
-    classOf[java.lang.Integer],
-    classOf[java.lang.Short],
-    classOf[java.lang.Byte]
-  )
-
-  private val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
-
-  def isDecimalNumber(clazz: Class[_]): Boolean = DecimalNumbers.contains(clazz)
-
   // See org.springframework.expression.spel.ast.OpPlus and so on for details
   object ForMathOperation extends BaseToCommonWidestTypePromotionStrategy {
 
     override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
-      if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short]) {
-        Typed.typedClass(classOf[lang.Integer])
+      if (firstDecimal == ByteClass || firstDecimal == ShortClass) {
+        Typed.typedClass(IntegerClass)
       } else {
         Typed.typedClass(firstDecimal)
       }
@@ -107,18 +88,16 @@ object NumberTypesPromotionStrategy {
   object ForLargeNumbersOperation extends BaseToCommonWidestTypePromotionStrategy {
 
     override protected def handleFloatingType(firstFloating: Class[_]): TypedClass = {
-      if (firstFloating == classOf[lang.Float]) {
-        Typed.typedClass(classOf[Double])
+      if (firstFloating == FloatClass) {
+        Typed.typedClass(DoubleClass)
       } else {
         Typed.typedClass(firstFloating)
       }
     }
 
     override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
-      if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short] || firstDecimal == classOf[
-          lang.Integer
-        ]) {
-        Typed.typedClass(classOf[Long])
+      if (firstDecimal == ByteClass || firstDecimal == ShortClass || firstDecimal == IntegerClass) {
+        Typed.typedClass(LongClass)
       } else {
         Typed.typedClass(firstDecimal)
       }
@@ -129,18 +108,18 @@ object NumberTypesPromotionStrategy {
   object ForLargeFloatingNumbersOperation extends BaseToCommonWidestTypePromotionStrategy {
 
     override protected def handleFloatingType(firstFloating: Class[_]): TypedClass = {
-      if (firstFloating == classOf[java.math.BigDecimal]) {
-        Typed.typedClass(classOf[java.math.BigDecimal])
+      if (firstFloating == BigDecimalClass) {
+        Typed.typedClass(BigDecimalClass)
       } else {
-        Typed.typedClass(classOf[Double])
+        Typed.typedClass(DoubleClass)
       }
     }
 
     override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
-      if (firstDecimal == classOf[java.math.BigInteger]) {
-        Typed.typedClass(classOf[java.math.BigDecimal])
+      if (firstDecimal == BigIntegerClass) {
+        Typed.typedClass(BigDecimalClass)
       } else {
-        Typed.typedClass(classOf[Double])
+        Typed.typedClass(DoubleClass)
       }
     }
 
@@ -152,14 +131,21 @@ object NumberTypesPromotionStrategy {
 
     override def promoteClassesInternal(left: Class[_], right: Class[_]): TypedClass = {
       val both = List(left, right)
-      if (both.forall(FloatingNumbers.contains)) {
-        val firstFloating = both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head
+      if (both.forall(StandardTypesClasses.isFloatingPointNumber)) {
+        val firstFloating =
+          both.map(n => FloatingPointNumbersOrderedFromWidestToNarrowest.indexOf(n) -> n).sortBy(_._1).map(_._2).head
         handleFloatingType(firstFloating)
-      } else if (both.forall(DecimalNumbers.contains)) {
-        val firstDecimal = both.map(n => DecimalNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head
+      } else if (both.forall(StandardTypesClasses.isDecimalNumber)) {
+        val firstDecimal =
+          both
+            .map(n => StandardTypesClasses.DecimalNumbersOrderedFromWidestToNarrowest.indexOf(n) -> n)
+            .sortBy(_._1)
+            .map(_._2)
+            .head
         handleDecimalType(firstDecimal)
-      } else if (both.exists(DecimalNumbers.contains) && both.exists(FloatingNumbers.contains)) {
-        val floating = both.find(FloatingNumbers.contains).get
+      } else if (both
+          .exists(StandardTypesClasses.isDecimalNumber) && both.exists(StandardTypesClasses.isFloatingPointNumber)) {
+        val floating = both.find(StandardTypesClasses.isFloatingPointNumber).get
         handleFloatingType(floating)
       } else { // unknown Number
         Typed.typedClass[Number]
@@ -178,19 +164,19 @@ object NumberTypesPromotionStrategy {
     override type ReturnedType = TypingResult
 
     override def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult = {
-      if (left == classOf[java.math.BigDecimal]) {
+      if (left == BigDecimalClass) {
         Typed[java.math.BigDecimal]
-      } else if (left == classOf[java.math.BigInteger]) {
+      } else if (left == BigIntegerClass) {
         Typed[java.math.BigInteger]
-      } else if (left == classOf[java.lang.Double] || right == classOf[java.lang.Double] ||
-        left == classOf[java.lang.Float] || right == classOf[java.lang.Float]) {
+      } else if (left == DoubleClass || right == DoubleClass ||
+        left == FloatClass || right == FloatClass) {
         Typed[Double]
-      } else if (left == classOf[java.lang.Long] || right == classOf[java.lang.Long]) {
+      } else if (left == LongClass || right == LongClass) {
         Typed[Long]
       } else {
         // This is the only place where we return union. The runtime type depends on whether there was overflow or not.
         // We should consider using just the Number here
-        Typed(Typed[java.lang.Integer], Typed[Long])
+        Typed(Typed[Integer], Typed[Long])
       }
     }
 

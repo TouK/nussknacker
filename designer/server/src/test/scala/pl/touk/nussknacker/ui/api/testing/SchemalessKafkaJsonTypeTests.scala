@@ -133,19 +133,13 @@ class SchemalessKafkaJsonTypeTests
   override protected val invalidParameters: TestSourceParameters =
     TestSourceParameters(exampleScenarioSourceId, Map(inputParamName -> Expression.json(invalidJson)))
 
-  override protected val parametersProvidedForDryRun: String =
-    ScenarioTestValidationRequest(
-      testData = ScenarioTestData.WithParameters(validParameters),
-      scenarioGraph = exampleScenario.toScenarioGraph
-    ).asJson.toString()
-
   override protected val expectedValidationErrorsOnInvalidParametersJson: String =
     s"""
        |[
        |  {
        |    "typ": "ExpressionParserCompilationError",
        |    "message": "expected } or , got 'a0.00}...'",
-       |    "description": "There is problem with expression in field Some(Input) - it could not be parsed.",
+       |    "description": "There is problem with expression in field [Input] - it could not be parsed.",
        |    "fieldName": "Input",
        |    "errorType": "SaveAllowed",
        |    "details": {"start":{"column":44,"row":2},"end":{"column":45,"row":2},"type":"CoordinatesBasedTextRange"}

@@ -1,15 +1,20 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 
 import java.time.temporal.ChronoUnit
 
-class ParameterTypeEditorDeterminer(val typ: TypingResult, globalParametersConfig: GlobalParametersConfig)
-    extends ParameterEditorDeterminer {
+class ParameterTypeEditorDeterminer(
+    typ: TypingResult,
+    isLazyParameter: Boolean,
+    globalParametersConfig: GlobalParametersConfig
+) {
 
-  override def determine(): List[ParameterEditor] = {
+  def determine(): NonEmptyList[ParameterEditor] = {
     Option(typ)
       .collect { case s: SingleTypingResult =>
         s.runtimeObjType
@@ -17,48 +22,48 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult, globalParametersConfi
       .map(_.klass)
       .collect {
         case klazz if klazz.isEnum =>
-          List(
+          withSpelEditorAsFallbackForLazyParameter(
             FixedValuesParameterEditor(
               possibleValues = klazz.getEnumConstants.toList.map(ParameterTypeEditorDeterminer.extractEnumValue(klazz))
-            ),
-            SpelParameterEditor
+            )
           )
         case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
-          globalParametersConfig.editorsForStringType.toList
-        case klazz if klazz == classOf[java.time.LocalDateTime] =>
-          List(
-            DateTimeParameterEditor,
-            SpelParameterEditor,
+          globalParametersConfig.editorsForStringType
+        case `LocalDateTimeClass` =>
+          withSpelEditorAsFallbackForLazyParameter(
+            DateTimeParameterEditor
           )
-        case klazz if klazz == classOf[java.time.LocalTime] =>
-          List(
-            TimeParameterEditor,
-            SpelParameterEditor
+        case `LocalTimeClass` =>
+          withSpelEditorAsFallbackForLazyParameter(
+            TimeParameterEditor
           )
-        case klazz if klazz == classOf[java.time.LocalDate] =>
-          List(
-            DateParameterEditor,
-            SpelParameterEditor
+        case `LocalDateClass` =>
+          withSpelEditorAsFallbackForLazyParameter(
+            DateParameterEditor
           )
-        case klazz if klazz == classOf[java.time.Duration] =>
-          List(
-            DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
-            SpelParameterEditor
+        case `DurationClass` =>
+          withSpelEditorAsFallbackForLazyParameter(
+            DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))
           )
-        case klazz if klazz == classOf[java.time.Period] =>
-          List(
-            PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
-            SpelParameterEditor
+        case `PeriodClass` =>
+          withSpelEditorAsFallbackForLazyParameter(
+            PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS))
           )
         // we use class name to avoid introducing dependency on cronutils in interpreter
         case klazz if klazz.getName == "com.cronutils.model.Cron" =>
-          List(
-            CronParameterEditor,
-            SpelParameterEditor
+          withSpelEditorAsFallbackForLazyParameter(
+            CronParameterEditor
           )
       }
-      .getOrElse(List(SpelParameterEditor))
+      .getOrElse(NonEmptyList.one(SpelParameterEditor))
   }
+
+  private def withSpelEditorAsFallbackForLazyParameter(editor: ParameterEditor) =
+    if (isLazyParameter) {
+      NonEmptyList.of(editor, SpelParameterEditor)
+    } else {
+      NonEmptyList.one(editor)
+    }
 
 }
 

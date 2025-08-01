@@ -1576,8 +1576,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         defaultValue = Some("0".spel),
         changesCanReloadParameters = true
       ),
-    Parameter[Any](ParameterName("a")).copy(editors = List(SpelParameterEditor)),
-    Parameter[Any](ParameterName("b")).copy(editors = List(SpelParameterEditor))
+    Parameter[Any](ParameterName("a")).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
+    Parameter[Any](ParameterName("b")).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel))
   )
 
   private def validate(

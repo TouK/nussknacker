@@ -1,59 +1,37 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelConfig.GlobalParametersConfig
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.parameter.{
-  ParameterValueInput,
-  ValueInputWithDictEditor,
-  ValueInputWithFixedValuesProvided
-}
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
-import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
 object EditorExtractor {
-
-  def extract(valueInput: ParameterValueInput): List[ParameterEditor] = {
-    val innerEditor = valueInput match {
-      case ValueInputWithFixedValuesProvided(fixedValuesList, _) =>
-        FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
-      case ValueInputWithDictEditor(dictId, _) =>
-        DictParameterEditor(dictId)
-    }
-
-    if (valueInput.allowOtherValue)
-      List(
-        innerEditor,
-        SpelParameterEditor,
-      )
-    else
-      List(innerEditor)
-  }
 
   def extract(
       param: ParameterData,
       parameterConfig: ParameterConfig,
       globalParametersConfig: GlobalParametersConfig
-  ): List[ParameterEditor] = {
+  ): NonEmptyList[ParameterEditor] = {
     parameterConfig.editors
-      .getOrElse(Nil)
-      .orElseIfEmpty(extractFromAnnotation(param))
-      .orElseIfEmpty(extractFromAnnotations(param))
-      .orElseIfEmpty(new ParameterTypeEditorDeterminer(param.typing, globalParametersConfig).determine())
+      .flatMap(NonEmptyList.fromList)
+      .orElse(extractFromAnnotation(param))
+      .orElse(extractFromAnnotations(param))
+      .getOrElse(
+        new ParameterTypeEditorDeterminer(param.typing, param.isLazyParameter, globalParametersConfig).determine()
+      )
   }
 
-  private def extractFromAnnotation(param: ParameterData): List[ParameterEditor] =
+  private def extractFromAnnotation(param: ParameterData): Option[NonEmptyList[ParameterEditor]] =
     param
       .getAnnotation[Editor]
-      .map(editor => List(parameterEditor(editor)))
-      .getOrElse(Nil)
+      .map(editor => NonEmptyList.one(parameterEditor(editor)))
 
-  private def extractFromAnnotations(param: ParameterData): List[ParameterEditor] =
+  private def extractFromAnnotations(param: ParameterData): Option[NonEmptyList[ParameterEditor]] =
     param
       .getAnnotation[Editors]
-      .map(_.value().map(parameterEditor).toList)
-      .getOrElse(Nil)
+      .flatMap(editors => NonEmptyList.fromList(editors.value().map(parameterEditor).toList))
 
   private def parameterEditor(editor: Editor): ParameterEditor = {
     editor.`type`() match {

@@ -242,7 +242,7 @@ class NodesApiHttpServiceBusinessSpec
              |    {
              |      "typ": "ExpressionParserCompilationError",
              |      "message": "Bad expression type, expected: Boolean, found: String",
-             |      "description": "There is problem with expression in field Some($$expression) - it could not be parsed.",
+             |      "description": "There is problem with expression in field [$$expression] - it could not be parsed.",
              |      "fieldName": "$$expression",
              |      "errorType": "SaveAllowed",
              |      "details": {
@@ -395,7 +395,7 @@ class NodesApiHttpServiceBusinessSpec
              |    {
              |      "typ": "ExpressionParserCompilationError",
              |      "message": "Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
-             |      "description": "There is problem with expression in field Some(Value) - it could not be parsed.",
+             |      "description": "There is problem with expression in field [Value] - it could not be parsed.",
              |      "fieldName": "Value",
              |      "errorType": "SaveAllowed",
              |      "details": {
@@ -821,7 +821,7 @@ class NodesApiHttpServiceBusinessSpec
              |  "validationErrors": [ {
              |    "typ": "ExpressionParserCompilationError",
              |    "message": "Bad expression type, expected: Boolean, found: Long(5)",
-             |    "description": "There is problem with expression in field Some(condition) - it could not be parsed.",
+             |    "description": "There is problem with expression in field [condition] - it could not be parsed.",
              |    "fieldName": "condition",
              |    "errorType": "SaveAllowed",
              |    "details": {

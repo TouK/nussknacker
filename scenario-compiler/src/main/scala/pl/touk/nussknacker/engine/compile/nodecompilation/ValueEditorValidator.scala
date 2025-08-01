@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{invalidNel, Valid}
-import cats.data.ValidatedNel
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -30,7 +30,7 @@ object ValueEditorValidator {
       initialValue: Option[FixedExpressionValue],
       paramName: ParameterName,
       nodeIds: Set[String]
-  ): ValidatedNel[PartSubGraphCompilationError, List[ParameterEditor]] = {
+  ): ValidatedNel[PartSubGraphCompilationError, NonEmptyList[ParameterEditor]] = {
     val validatedInnerEditor = valueEditor match {
       case ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue) =>
         validateFixedValuesList(fixedValuesList, allowOtherValue, initialValue, paramName, nodeIds)
@@ -42,9 +42,9 @@ object ValueEditorValidator {
 
     validatedInnerEditor.map { innerEditor =>
       if (valueEditor.allowOtherValue)
-        List(innerEditor, SpelParameterEditor)
+        NonEmptyList.of(innerEditor, SpelParameterEditor)
       else
-        List(innerEditor)
+        NonEmptyList.of(innerEditor)
     }
   }
 

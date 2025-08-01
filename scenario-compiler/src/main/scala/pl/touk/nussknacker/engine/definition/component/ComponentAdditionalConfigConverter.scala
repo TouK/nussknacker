@@ -44,19 +44,21 @@ object ComponentAdditionalConfigConverter {
         case ParameterInitialValue.AnyValue(expression)   => expression
         case ParameterInitialValue.FixedValue(expression) => Expression.spel(expression.expression)
       },
-      editors = paramAdditionalConfig.valueEditor.flatMap(editor =>
-        ValueEditorValidator
-          .validateAndGetEditor(
-            valueEditor = editor,
-            initialValue = paramAdditionalConfig.initialValue.flatMap {
-              case _: ParameterInitialValue.AnyValue            => None
-              case ParameterInitialValue.FixedValue(expression) => Some(expression)
-            },
-            paramName = paramName,
-            nodeIds = Set.empty
-          )
-          .toOption
-      ),
+      editors = paramAdditionalConfig.valueEditor
+        .flatMap(editor =>
+          ValueEditorValidator
+            .validateAndGetEditor(
+              valueEditor = editor,
+              initialValue = paramAdditionalConfig.initialValue.flatMap {
+                case _: ParameterInitialValue.AnyValue            => None
+                case ParameterInitialValue.FixedValue(expression) => Some(expression)
+              },
+              paramName = paramName,
+              nodeIds = Set.empty
+            )
+            .toOption
+        )
+        .map(_.toList),
       validators = if (validators.nonEmpty) Some(validators) else None,
       label = None,
       hintText = paramAdditionalConfig.hintText,

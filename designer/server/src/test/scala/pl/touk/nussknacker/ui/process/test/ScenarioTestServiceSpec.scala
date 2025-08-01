@@ -14,13 +14,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDependencies
 import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.{
-  ScenarioTestCommonFormatJsonRecord,
-  ScenarioTestSourceSpecificFormatJsonRecord,
-  TestData,
-  TestRecord,
-  TestRecordParser
-}
+import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{
@@ -37,7 +31,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
-import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatSerDe
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ScenarioTestServiceSpec

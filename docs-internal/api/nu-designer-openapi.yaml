@@ -1608,7 +1608,7 @@ paths:
                     validationErrors:
                     - typ: ExpressionParserCompilationError
                       message: 'Bad expression type, expected: Boolean, found: String'
-                      description: There is problem with expression in field Some($expression)
+                      description: There is problem with expression in field [($expression)]
                         - it could not be parsed.
                       fieldName: $expression
                       errorType: SaveAllowed
@@ -1908,7 +1908,7 @@ paths:
                     validationErrors:
                     - typ: ExpressionParserCompilationError
                       message: 'Bad expression type, expected: Boolean, found: Long(5)'
-                      description: There is problem with expression in field Some(condition)
+                      description: There is problem with expression in field [condition]
                         - it could not be parsed.
                       fieldName: condition
                       errorType: SaveAllowed
@@ -5153,7 +5153,7 @@ paths:
                     validationErrors:
                     - typ: ExpressionParserCompilationError
                       message: 'Bad expression type, expected: Boolean, found: Long(5)'
-                      description: There is problem with expression in field Some(condition)
+                      description: There is problem with expression in field [condition]
                         - it could not be parsed.
                       fieldName: condition
                       errorType: SaveAllowed

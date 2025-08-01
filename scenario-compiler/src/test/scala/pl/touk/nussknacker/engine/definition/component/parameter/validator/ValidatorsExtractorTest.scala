@@ -211,7 +211,8 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
       parameterConfig: ParameterConfig = ParameterConfig.empty,
       globalParametersConfig: GlobalParametersConfig = GlobalParametersConfig.default
   ) = {
-    val parameterData   = ParameterData(rawJavaParam, ClassDefinitionExtractor.extractParameterType(rawJavaParam))
+    val parameterData =
+      ParameterData(rawJavaParam, ClassDefinitionExtractor.extractParameterType(rawJavaParam), isLazyParameter = false)
     val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig)
     ValidatorExtractorParameters(
       parameterData,
