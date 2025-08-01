@@ -18,6 +18,7 @@ describe("Creator toolbar", () => {
     });
 
     it("should allow collapse (persist) and filtering", () => {
+        cy.contains(/^Creator panel.*sources/i).should("exist");
         cy.contains(/^sources$/i).click();
         cy.contains(/^base$/i).click();
         cy.contains(/^custom$/i).click();
@@ -27,11 +28,13 @@ describe("Creator toolbar", () => {
         cy.contains(/^sinks$/i).click();
         cy.contains(/^Misc$/i).click();
         cy.reload();
-        cy.contains(/^Creator panel.*sources/i).matchImage();
+
         cy.contains(/^Creator panel.*sources/i)
-            .find("input")
-            .type("var");
-        cy.contains(/^Creator panel.*sources/i).matchImage();
+            .should("exist")
+            .as("toolbar");
+        cy.get("@toolbar").matchImage();
+        cy.get("@toolbar").find("input").type("var");
+        cy.get("@toolbar").matchImage();
     });
 
     it("should display tooltip when tool is truncated", () => {
