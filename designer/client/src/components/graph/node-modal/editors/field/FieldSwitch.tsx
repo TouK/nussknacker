@@ -89,10 +89,10 @@ export const FieldSwitch = ({ availableEditors, onValueChange, expressionObj, ch
 
     const [selectedEditorType, setSelectedEditorType] = useState<Editor["type"]>(
         () =>
-            availableEditors.find((editor) => {
+            availableEditors.find((editor: Editor) => {
                 const editorParameters = editorsParameters[editor.type];
 
-                return editorParameters?.language === expressionObj.language;
+                return editorParameters?.language === expressionObj.language && allowsSwitch(editor);
             })?.type,
     );
 
