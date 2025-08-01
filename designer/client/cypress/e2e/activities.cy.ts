@@ -40,7 +40,7 @@ describe("Activities", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
