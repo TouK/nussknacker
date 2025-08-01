@@ -25,6 +25,7 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
 class FragmentScenarioTestingApiHttpServiceSpec
     extends AnyFreeSpecLike
@@ -71,58 +72,60 @@ class FragmentScenarioTestingApiHttpServiceSpec
       val fragment = exampleFragment(fragmentFixedParameter)
       val expectedTestParameters =
         s"""[
-           |    {
-           |        "sourceId": "fragment",
-           |        "parameters": [
-           |            {
-           |                "name": "paramFixedString",
-           |                "typ": {
-           |                    "display": "String",
-           |                    "type": "TypedClass",
-           |                    "refClazzName": "java.lang.String",
-           |                    "params": [
-           |
-           |                    ]
-           |                },
-           |                "editors": [{
-           |                    "possibleValues": [
-           |                        {
-           |                            "expression": "",
-           |                            "label": ""
-           |                        },
-           |                        {
-           |                            "expression": "'uno'",
-           |                            "label": "uno"
-           |                        },
-           |                        {
-           |                            "expression": "'due'",
-           |                            "label": "due"
-           |                        }
-           |                    ],
-           |                    "type": "FixedValuesParameterEditor"
-           |                }],
-           |                "defaultValue": {
-           |                    "language": "spel",
-           |                    "expression": "'uno'"
-           |                },
-           |                "additionalVariables": {
-           |
-           |                },
-           |                "variablesToHide": [
-           |
-           |                ],
-           |                "branchParam": false,
-           |                "hintText": null,
-           |                "label": "paramFixedString",
-           |                "requiredParam": false,
-           |                "category": "Standard",
-           |                "changesCanReloadParameters": false,
-           |                "nonImportantForExecution": false
+           |  {
+           |    "sourceId": "fragment",
+           |    "parameters": [
+           |      {
+           |        "name": "$InputVariablesParameterName",
+           |        "typ": {
+           |          "display": "Record{paramFixedString: String}",
+           |          "type": "TypedObjectTypingResult",
+           |          "fields": {
+           |            "paramFixedString": {
+           |              "display": "String",
+           |              "type": "TypedClass",
+           |              "refClazzName": "java.lang.String",
+           |              "params": []
            |            }
-           |        ]
-           |    }
-           |]
-           |""".stripMargin
+           |          },
+           |          "refClazzName": "java.util.Map",
+           |          "params": [
+           |            {
+           |              "display": "String",
+           |              "type": "TypedClass",
+           |              "refClazzName": "java.lang.String",
+           |              "params": []
+           |            },
+           |            {
+           |              "display": "String",
+           |              "type": "TypedClass",
+           |              "refClazzName": "java.lang.String",
+           |              "params": []
+           |            }
+           |          ]
+           |        },
+           |        "editors": [
+           |          {
+           |            "type": "JsonParameterEditor"
+           |          }
+           |        ],
+           |        "defaultValue": {
+           |          "language": "json",
+           |          "expression": "{\\n  \\"paramFixedString\\" : \\"\\"\\n}"
+           |        },
+           |        "additionalVariables": {},
+           |        "variablesToHide": [],
+           |        "branchParam": false,
+           |        "hintText": null,
+           |        "label": "$InputVariablesParameterName",
+           |        "requiredParam": true,
+           |        "category": "Standard",
+           |        "changesCanReloadParameters": false,
+           |        "nonImportantForExecution": false
+           |      }
+           |    ]
+           |  }
+           |]""".stripMargin
       given()
         .applicationState {
           createSavedScenario(fragment)
@@ -151,53 +154,64 @@ class FragmentScenarioTestingApiHttpServiceSpec
         )
     }
 
-    "Generate parameters with simplified (single) editor for fragment with raw string parameter" in {
+    "Generate parameters for fragment with raw string parameter" in {
       val fragment = exampleFragment(fragmentRawStringParameter)
       val expectedTestParameters =
         s"""[
-           |    {
-           |        "sourceId": "fragment",
-           |        "parameters": [
-           |            {
-           |                "name": "paramRawString",
-           |                "typ": {
-           |                    "display": "String",
-           |                    "type": "TypedClass",
-           |                    "refClazzName": "java.lang.String",
-           |                    "params": [
-           |
-           |                    ]
-           |                },
-           |                "editors": [
-           |                    {
-           |                        "type": "SpelTemplateParameterEditor"
-           |                    },
-           |                    {
-           |                        "type": "SpelParameterEditor"
-           |                    }
-           |                ],
-           |                "defaultValue": {
-           |                    "language": "spelTemplate",
-           |                    "expression": ""
-           |                },
-           |                "additionalVariables": {
-           |
-           |                },
-           |                "variablesToHide": [
-           |
-           |                ],
-           |                "branchParam": false,
-           |                "hintText": null,
-           |                "label": "paramRawString",
-           |                "requiredParam": false,
-           |                "category": "Standard",
-           |                "changesCanReloadParameters": false,
-           |                "nonImportantForExecution": false
+           |  {
+           |    "sourceId": "fragment",
+           |    "parameters": [
+           |      {
+           |        "name": "$InputVariablesParameterName",
+           |        "typ": {
+           |          "display": "Record{paramRawString: String}",
+           |          "type": "TypedObjectTypingResult",
+           |          "fields": {
+           |            "paramRawString": {
+           |              "display": "String",
+           |              "type": "TypedClass",
+           |              "refClazzName": "java.lang.String",
+           |              "params": []
            |            }
-           |        ]
-           |    }
-           |]
-           |""".stripMargin
+           |          },
+           |          "refClazzName": "java.util.Map",
+           |          "params": [
+           |            {
+           |              "display": "String",
+           |              "type": "TypedClass",
+           |              "refClazzName": "java.lang.String",
+           |              "params": []
+           |            },
+           |            {
+           |              "display": "String",
+           |              "type": "TypedClass",
+           |              "refClazzName": "java.lang.String",
+           |              "params": []
+           |            }
+           |          ]
+           |        },
+           |        "editors": [
+           |          {
+           |            "type": "JsonParameterEditor"
+           |          }
+           |        ],
+           |        "defaultValue": {
+           |          "language": "json",
+           |          "expression": "{\\n  \\"paramRawString\\" : \\"\\"\\n}"
+           |        },
+           |        "additionalVariables": {},
+           |        "variablesToHide": [],
+           |        "branchParam": false,
+           |        "hintText": null,
+           |        "label": "$InputVariablesParameterName",
+           |        "requiredParam": true,
+           |        "category": "Standard",
+           |        "changesCanReloadParameters": false,
+           |        "nonImportantForExecution": false
+           |      }
+           |    ]
+           |  }
+           |]""".stripMargin
       given()
         .applicationState {
           createSavedScenario(fragment)

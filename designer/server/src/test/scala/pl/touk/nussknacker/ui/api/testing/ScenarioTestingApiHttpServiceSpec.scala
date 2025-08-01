@@ -247,7 +247,7 @@ trait ScenarioTestingApiHttpServiceSpec
       shouldValidateParametersProperly()
     }
 
-    "return errors on missing source" in {
+    "return OK even if non-existing source component was used" in {
       val missingSourceId = "missing source"
       val scenarioWithMissingSource: CanonicalProcess =
         ScenarioBuilder
@@ -264,18 +264,27 @@ trait ScenarioTestingApiHttpServiceSpec
         .jsonBody(
           ScenarioTestValidationRequest(
             testData = ScenarioTestData.WithParameters(
-              TestSourceParameters(missingSourceId, Map(ParameterName("a parameter") -> "{'123'}".spel))
+              TestSourceParameters(
+                missingSourceId,
+                Map(
+                  ParameterName("Input variables") ->
+                    """{
+                  |  "input": 123
+                  |}""".stripMargin.jsonTemplate
+                )
+              )
             ),
             scenarioGraph = scenarioWithMissingSource.toScenarioGraph
           ).asJson.toString()
         )
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${scenarioWithMissingSource.name}/validate")
         .Then()
-        .statusCode(400)
-        .equalsPlainBody(
-          """Scenario is invalid.
-            |Node errors:
-            |  missing source: Missing source: missing source""".stripMargin
+        .statusCode(200)
+        .equalsJsonBody(
+          """{
+            |    "validationErrors": [],
+            |    "validationPerformed": true
+            |}""".stripMargin
         )
     }
   }

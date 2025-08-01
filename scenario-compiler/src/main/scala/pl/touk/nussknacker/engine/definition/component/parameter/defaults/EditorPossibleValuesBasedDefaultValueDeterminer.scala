@@ -27,8 +27,6 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
   }
 
   private def defaultForEditor(firstEditor: ParameterEditor): Option[Expression] = firstEditor match {
-    case JsonParameterEditor                              => Some(Expression.json("{}"))
-    case JsonTemplateParameterEditor                      => Some(Expression.jsonTemplate("{}"))
     case SpelTemplateParameterEditor | SqlParameterEditor => Some(Expression.spelTemplate(""))
     case TabularTypedDataEditor => Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
     case _: DictParameterEditor => Some(Expression(Language.DictKeyWithLabel, ""))
@@ -37,15 +35,17 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
         _: FixedValuesWithRadioParameterEditor =>
       None
     // These are handled in TypeRelatedParameterValueDeterminer
-    case SpelParameterEditor        => None
-    case _: DurationParameterEditor => None
-    case _: PeriodParameterEditor   => None
-    case CronParameterEditor        => None
-    case DateParameterEditor        => None
-    case TimeParameterEditor        => None
-    case DateTimeParameterEditor    => None
-    case BoolParameterEditor        => None
-    case TextareaParameterEditor    => None
+    case SpelParameterEditor         => None
+    case JsonParameterEditor         => None
+    case JsonTemplateParameterEditor => None
+    case _: DurationParameterEditor  => None
+    case _: PeriodParameterEditor    => None
+    case CronParameterEditor         => None
+    case DateParameterEditor         => None
+    case TimeParameterEditor         => None
+    case DateTimeParameterEditor     => None
+    case BoolParameterEditor         => None
+    case TextareaParameterEditor     => None
   }
 
 }
