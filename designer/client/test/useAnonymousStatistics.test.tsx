@@ -3,7 +3,8 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { AxiosResponse } from "axios";
 import { useAnonymousStatistics } from "../src/containers/useAnonymousStatistics";
 import httpService from "../src/http/HttpService";
-import { useAppSelector } from "../src/store/configureStore";
+
+import { useAppSelector } from "../src/store/storeHelpers";
 
 jest.mock("react-redux");
 jest.mock("../src/http/HttpService");

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { hideRunProcessDetails } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/hide.svg";
 import { getIsTestingMode } from "../../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 

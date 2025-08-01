@@ -9,7 +9,7 @@ import {
     isLatestProcessVersion,
     isProcessRenamed,
 } from "../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 
 // TODO: fetch TestCapabilities and TestFormParameters in chain to avoid stupid errors
 export function useAdhocTestingAvailability(disabled: boolean) {

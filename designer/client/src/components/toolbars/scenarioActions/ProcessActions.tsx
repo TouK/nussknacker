@@ -2,7 +2,7 @@ import i18next from "i18next";
 import React, { memo } from "react";
 
 import { getScenario } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";

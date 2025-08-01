@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import Icon from "../../../../assets/img/toolbarButtons/archive.svg";
 import DialogMessages from "../../../../common/DialogMessages";
 import { getProcessName, isArchivePossible } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";

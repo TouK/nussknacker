@@ -1,7 +1,7 @@
 import { isEmpty, isEqual } from "lodash";
 import React, { useMemo } from "react";
 
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
 import { EdgeKind } from "../../../types";
 import { DescriptionField } from "./DescriptionField";

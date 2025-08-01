@@ -28,7 +28,7 @@ import {
     isPristine,
 } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
-import { useAppDispatch, useAppSelector } from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";

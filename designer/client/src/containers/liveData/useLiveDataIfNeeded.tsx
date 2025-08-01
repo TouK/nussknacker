@@ -5,7 +5,7 @@ import { useUserSettings } from "../../common/userSettings";
 import { VisibleDataType } from "../../reducers/graph";
 import { getHasPauseReasons, getVisibleDataType, isReadyForLiveData } from "../../reducers/selectors/getLiveData";
 import { getHasOpenedNodeWindows } from "../../reducers/selectors/getWindowsIdMapping";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
 export function useLiveDataIfNeeded() {
     const dispatch = useAppDispatch();

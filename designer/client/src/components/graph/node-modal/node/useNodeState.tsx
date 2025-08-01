@@ -7,7 +7,7 @@ import { editNode, nodeValidationDynamicParametersLoaded } from "../../../../act
 import { PendingPromise } from "../../../../common/PendingPromise";
 import { useUserSettings } from "../../../../common/userSettings";
 import { getScenario } from "../../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge, NodeType } from "../../../../types";
 import type { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";

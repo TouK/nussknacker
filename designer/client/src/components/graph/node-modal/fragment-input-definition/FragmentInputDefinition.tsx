@@ -4,7 +4,7 @@ import React, { useCallback, useMemo } from "react";
 
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import { FieldsSelect } from "./FieldsSelect";

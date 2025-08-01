@@ -13,7 +13,7 @@ import {
     getScenarioLabels,
     isProcessRenamed,
 } from "../../../reducers/selectors/graph";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch } from "../../../store/storeHelpers";
 
 export const useSaveScenario = () => {
     const location = useLocation();

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useDebouncedValue } from "rooks";
 
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeOrPropertiesType } from "../../../types";
 import { MarkdownStyled } from "./MarkdownStyled";
 import { getProcessName } from "./NodeDetailsContent/selectors";

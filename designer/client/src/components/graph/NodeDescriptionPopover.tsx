@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { Graph } from "./Graph";
 import { getNodeData } from "./Graph";
 import { isStickyNoteElement } from "./GraphPartialsInTS";

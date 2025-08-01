@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { validateAdhocTestParameters } from "../../../actions/nk/adhocTesting";
 import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeValidationError } from "../../../types";
 import type { AdhocTestingParameters } from "./AdhocTestingDialog";
 import type { ActionValues } from "./AdhocTestingFormContext";

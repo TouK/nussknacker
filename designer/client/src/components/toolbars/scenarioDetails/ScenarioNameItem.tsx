@@ -6,7 +6,7 @@ import RequestResponseIcon from "../../../assets/img/request-response.svg";
 import StreamingIcon from "../../../assets/img/streaming.svg";
 import { ProcessingMode } from "../../../http/HttpService";
 import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { ScenarioVersion } from "../../ScenarioVersion";
 import { getProcessingModeVariantName } from "./getProcessingModeVariantName";
 import { PanelScenarioDetailsIcon, ProcessName, ProcessRename } from "./ScenarioDetailsComponents";

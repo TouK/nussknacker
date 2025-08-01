@@ -5,7 +5,7 @@ import { useIntervalWhen } from "rooks";
 import Icon from "../../../../assets/img/toolbarButtons/counts.svg";
 import { getProcessCountsRefresh, isFragment } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";

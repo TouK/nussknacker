@@ -3,7 +3,7 @@ import { Typography } from "@mui/material";
 import React from "react";
 
 import { hasWarnings } from "../../reducers/selectors/graph";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import { IconWithLabel } from "../tips/IconWithLabel";
 
 function ProcessDialogWarnings(): JSX.Element {

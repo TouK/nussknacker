@@ -6,7 +6,7 @@ import { toggleToolbar } from "../../../actions/nk/toolbars";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import type { RootState } from "../../../reducers";
 import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { SIDEBAR_WIDTH } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
 import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../../common/error-boundary";

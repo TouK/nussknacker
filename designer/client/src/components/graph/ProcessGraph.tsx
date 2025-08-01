@@ -24,7 +24,7 @@ import { createUniqueName } from "../../reducers/graph/utils";
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
 import { getLayout, getProcessCounts, getScenario } from "../../reducers/selectors/graph";
 import type { Capabilities } from "../../reducers/selectors/other";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { NodeType } from "../../types";
 import { DndTypes } from "../DndTypes";
 import type { Scenario } from "../Process/types";

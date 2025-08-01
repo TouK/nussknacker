@@ -1,7 +1,7 @@
 import React from "react";
 
 import { isArchived } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { ToolbarButtonProps } from "../../types";
 import ArchiveButton from "../buttons/ArchiveButton";
 import UnArchiveButton from "../buttons/UnArchiveButton";

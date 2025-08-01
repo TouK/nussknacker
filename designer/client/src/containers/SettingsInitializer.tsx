@@ -7,7 +7,7 @@ import { useUserSettings } from "../common/userSettings";
 import LoaderSpinner from "../components/spinner/Spinner";
 import HttpService from "../http/HttpService";
 import type { UserSettings } from "../reducers/userSettings";
-import { useAppDispatch } from "../store/configureStore";
+import { useAppDispatch } from "../store/storeHelpers";
 
 export function SettingsProvider({ children }: PropsWithChildren<unknown>): JSX.Element {
     const [data, setData] = useState<SettingsData>(null);

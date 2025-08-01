@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, VariableTypes } from "../../../types";
 import { EdgeKind } from "../../../types";
 import NodeUtils from "../NodeUtils";

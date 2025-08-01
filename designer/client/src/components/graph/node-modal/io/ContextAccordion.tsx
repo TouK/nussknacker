@@ -4,7 +4,7 @@ import type { PropsWithChildren } from "react";
 import React, { memo, useLayoutEffect, useRef } from "react";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch } from "../../../../store/storeHelpers";
 import { ContextTitle } from "./ContextTitle";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 

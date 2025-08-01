@@ -7,7 +7,7 @@ import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
 import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";

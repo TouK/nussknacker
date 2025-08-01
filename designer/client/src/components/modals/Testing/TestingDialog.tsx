@@ -4,7 +4,7 @@ import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { setPerformedTestType } from "../../../actions/nk/displayTestResults";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";

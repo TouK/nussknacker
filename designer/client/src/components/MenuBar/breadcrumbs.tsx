@@ -9,7 +9,7 @@ import { EnvironmentTag } from "../../containers/EnvironmentTag";
 import { ScenariosBasePath } from "../../containers/paths";
 import { fetchScenarios, getActiveScenariosNames } from "../../reducers/scenarios";
 import { getProcessName } from "../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
 export const Breadcrumbs = () => {
     const scenarioName = useAppSelector(getProcessName);

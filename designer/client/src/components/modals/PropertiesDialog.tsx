@@ -11,7 +11,7 @@ import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService";
 import type { RootState } from "../../reducers";
 import { getProperties, getScenario } from "../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { NodeValidationError, PropertiesType } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";

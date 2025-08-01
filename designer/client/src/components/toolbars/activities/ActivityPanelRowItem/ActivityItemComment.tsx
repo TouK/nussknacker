@@ -10,7 +10,7 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getFeatureSettings, getLoggedUser } from "../../../../reducers/selectors/settings";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";
 import CommentContent from "../../../comment/CommentContent";
 import type { ActionMetadata, ActivityComment, ActivityType } from "../types";

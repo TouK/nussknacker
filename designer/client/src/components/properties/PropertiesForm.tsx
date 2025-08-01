@@ -3,7 +3,7 @@ import type { ComponentProps } from "react";
 import React, { useMemo } from "react";
 
 import HttpService from "../../http/HttpService";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { NodeValidationError, PropertiesType } from "../../types";
 import { DescriptionField } from "../graph/node-modal/DescriptionField";
 import { FieldType } from "../graph/node-modal/editors/field/Field";

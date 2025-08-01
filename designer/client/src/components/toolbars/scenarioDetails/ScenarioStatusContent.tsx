@@ -2,7 +2,7 @@ import React, { memo, type PropsWithChildren } from "react";
 
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getLoggedUser } from "../../../reducers/selectors/settings";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { ScenarioState } from "../scenarioActions/ScenarioState";
 import { PanelScenarioDetails, ScenarioDetailsItemWrapper } from "./ScenarioDetailsComponents";
 import { ScenarioLabels } from "./ScenarioLabels";

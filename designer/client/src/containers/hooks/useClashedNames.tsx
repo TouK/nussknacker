@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
 export function useClashedNames(shouldDownload = true): string[] {
     const dispatch = useAppDispatch();

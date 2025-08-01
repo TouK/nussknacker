@@ -1,7 +1,7 @@
 import { useDocumentEventListener } from "rooks";
 
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { useAppSelector } from "./../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import { useEventTracking } from "./use-event-tracking";
 
 export const enum EventTrackingType {

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import ButtonUpload from "../../assets/img/icons/buttonUpload.svg";
 import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import { NodeInput } from "../FormElements";
 import { AddAttachmentsWrapper, AttachmentButton, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
 

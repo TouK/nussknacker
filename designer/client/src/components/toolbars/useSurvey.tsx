@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import type { SurveySettings } from "../../actions/nk";
 import { useUserSettings } from "../../common/userSettings";
 import { getSurveySettings } from "../../reducers/selectors/settings";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 
 export function useSurvey(): [SurveySettings | false, () => void] {
     const survey = useAppSelector(getSurveySettings);

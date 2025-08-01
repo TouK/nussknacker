@@ -8,7 +8,7 @@ import { VisibleDataType } from "../../reducers/graph";
 import { getVisibleDataType } from "../../reducers/selectors/getLiveData";
 import { getScenario } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { NodeType } from "../../types";
 import { useWindows } from "../../windowManager";
 import type { ToolbarPanelProps } from "../toolbarComponents/ButtonsToolbar";

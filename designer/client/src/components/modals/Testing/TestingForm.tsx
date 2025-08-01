@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
 import { updateTestType } from "../../../actions/nk/displayTestResults";
-import { useAppDispatch } from "../../../store/configureStore";
+import { useAppDispatch } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { CustomRadio } from "../../customRadio/CustomRadio";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";

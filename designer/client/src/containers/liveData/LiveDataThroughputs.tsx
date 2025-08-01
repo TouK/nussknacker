@@ -10,7 +10,7 @@ import {
     getLiveDataNextUpdate,
     getNodeTransitionResults,
 } from "../../reducers/selectors/getLiveData";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 
 const CLASS_NAME = "live-data";
 const PULSE_KEYFRAMES: Keyframe[] = [

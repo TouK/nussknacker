@@ -14,7 +14,7 @@ import Notification from "../components/notifications/Notification";
 import HttpService from "../http/HttpService";
 import { getProcessingType, getProcessName, getProcessVersionId, isFragment } from "../reducers/selectors/graph";
 import { getBackendNotifications, getNotifications } from "../reducers/selectors/other";
-import { useAppDispatch, useAppSelector } from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import { useInterval } from "./Interval";
 

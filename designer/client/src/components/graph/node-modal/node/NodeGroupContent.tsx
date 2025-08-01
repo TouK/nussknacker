@@ -3,7 +3,7 @@ import { isEqual } from "lodash";
 import React, { memo } from "react";
 
 import type { RootState } from "../../../../reducers";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge, NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
 import { NodeDetailsContent } from "../NodeDetailsContent";

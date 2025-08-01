@@ -7,7 +7,7 @@ import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { VisibleDataType } from "../../../../reducers/graph";
 import { getVisibleDataType } from "../../../../reducers/selectors/getLiveData";
 import { getProcessName } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { getShadow } from "../../graphStyledWrapper";
 import { RelatedNodes } from "./CountsForNodes";
 import type { VariableContextType } from "./VariableContextTree";

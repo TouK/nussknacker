@@ -7,7 +7,7 @@ import { createUniqueName } from "../../../reducers/graph/utils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getNodes } from "../../../reducers/selectors/graph";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { editors } from "./editors/expression/Editor";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";

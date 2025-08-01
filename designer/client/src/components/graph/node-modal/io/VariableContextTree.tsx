@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
 import type { ResultContextJson } from "../../../../http/resultsWithCountsDto";
 import { getPauseReasons } from "../../../../reducers/selectors/getLiveData";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ContextAccordion } from "./ContextAccordion";
 import { ContextTree } from "./ContextTree";
 import { CountsForNodes } from "./CountsForNodes";

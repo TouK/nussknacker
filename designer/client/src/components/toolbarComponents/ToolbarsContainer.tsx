@@ -16,7 +16,7 @@ import React, { createContext, Suspense, useCallback, useContext, useMemo, useRe
 
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { ToolbarsSide } from "../../reducers/toolbars";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { DraggableIdContext, TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
 import { isInInertTree } from "./inertHelpers";

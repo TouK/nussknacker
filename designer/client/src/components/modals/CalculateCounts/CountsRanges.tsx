@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getProcessingType, getProcessName } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { CountsRangesButtons } from "./CountsRangesButtons";
 import { StyledRangesWrapper } from "./CountsStyled";
 import { useActivityHistory } from "./useActivityHistory";

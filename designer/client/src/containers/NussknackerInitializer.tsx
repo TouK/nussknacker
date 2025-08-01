@@ -4,7 +4,7 @@ import React, { useCallback } from "react";
 import { assignUser } from "../actions/nk";
 import HttpService from "../http/HttpService";
 import { getAuthenticationSettings } from "../reducers/selectors/settings";
-import { useAppDispatch, useAppSelector } from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { AuthInitializer } from "./Auth";
 
 function NussknackerInitializer({ children }: PropsWithChildren<unknown>): JSX.Element {

@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, ProcessDefinitionData } from "../../../types";
 import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";
 import { InlineSvg } from "../../SvgDiv";

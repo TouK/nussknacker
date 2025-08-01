@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import Icon from "../../../../assets/img/toolbarButtons/generate-and-test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";

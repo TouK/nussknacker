@@ -9,7 +9,7 @@ import type { RootState } from "../../../reducers";
 import { getConfiguredAdditionalComponents } from "../../../reducers/selectors/configuredAdditionalComponents";
 import { getCreatorType } from "../../../reducers/selectors/getCreator";
 import { getRemoteTenantId, getRemoteWebHost } from "../../../reducers/selectors/isCloudInstance";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, NodeType, NodeValidationError } from "../../../types";
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";

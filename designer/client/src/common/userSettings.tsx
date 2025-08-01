@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 import { setSettings, toggleSettings } from "../actions/nk/userSettings";
 import { getUserSettings } from "../reducers/selectors/userSettings";
 import type { UserSettings } from "../reducers/userSettings";
-import { useAppDispatch, useAppSelector } from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 
 export const useUserSettings: () => [UserSettings, (keys: Array<keyof UserSettings>) => void, (value: UserSettings) => void] = () => {
     const dispatch = useAppDispatch();

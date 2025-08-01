@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { resetToolbars } from "../../../../actions/nk/toolbars";
 import Icon from "../../../../assets/img/toolbarButtons/resetgui.svg";
 import { getToolbarsConfigId } from "../../../../reducers/selectors/toolbars";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";

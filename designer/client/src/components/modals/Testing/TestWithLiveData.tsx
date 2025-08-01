@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { testScenarioWithGeneratedData } from "../../../actions/nk/displayTestResults";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { NodeInput } from "../../FormElements";
 import {
     extendErrors,

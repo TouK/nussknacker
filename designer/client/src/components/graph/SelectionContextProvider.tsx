@@ -26,7 +26,7 @@ import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHi
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
