@@ -1,9 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { render, screen } from "@testing-library/react";
+import "ace-builds/src-noconflict/ace";
 import "ace-builds/src-noconflict/ext-language_tools";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import * as React from "react";
-import "ace-builds/src-noconflict/ace";
 import { DndProvider } from "react-dnd-multi-backend";
 import { Provider } from "react-redux";
 

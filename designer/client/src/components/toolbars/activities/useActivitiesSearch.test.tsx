@@ -1,10 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { renderHook } from "@testing-library/react";
 import React from "react";
+import { Provider } from "react-redux";
 
 // eslint-disable-next-line jest/no-mocks-import
 import { sampleMetadataResponse } from "../../../../__mocks__/fixtures/sampleMetadataResponse";
-import { Provider } from "../../../store/configureStore";
 import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
 import type { ActivitiesResponse } from "./types";
