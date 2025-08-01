@@ -197,9 +197,9 @@ class NodeUtils {
         return `${edge.from}-${edge.to}`;
     };
 
-    noInputNodeTypes = ["Source", "FragmentInputDefinition"];
+    noInputNodeTypes = ["Source", "FragmentInputDefinition", "StickyNoteNode"];
 
-    noOutputNodeTypes = ["Sink", "FragmentOutputDefinition"];
+    noOutputNodeTypes = ["Sink", "FragmentOutputDefinition", "StickyNoteNode"];
 
     //TODO: methods below should be based on backend data, e.g. Fragment can have outputs or not - based on individual fragment...
     hasInputs = (node: NodeType): boolean => {

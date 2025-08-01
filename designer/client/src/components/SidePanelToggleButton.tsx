@@ -2,7 +2,8 @@ import { Fade, IconButton, styled } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { PanelSide } from "../actions/nk";
+import type { PanelSide } from "../actions/nk/ui/panelSide";
+import { isLeft } from "../actions/nk/ui/panelSide";
 import LeftIcon from "../assets/img/arrows/arrow-left.svg";
 import RightIcon from "../assets/img/arrows/arrow-right.svg";
 import { useSidePanel } from "./sidePanels/SidePanelsContext";
@@ -22,8 +23,8 @@ type Props = {
 export function SidePanelToggleButton({ type, ...props }: Props) {
     const { t } = useTranslation();
     const { isOpened, switchVisible, toggleCollapse } = useSidePanel(type);
-    const left = type === PanelSide.Left ? isOpened : !isOpened;
-    const title = type === PanelSide.Left ? t("panel.toggle.left", "toggle left panel") : t("panel.toggle.right", "toggle right panel");
+    const left = isLeft(type) ? isOpened : !isOpened;
+    const title = isLeft(type) ? t("panel.toggle.left", "toggle left panel") : t("panel.toggle.right", "toggle right panel");
 
     return (
         <Fade in={switchVisible}>

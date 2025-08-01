@@ -28,21 +28,10 @@ describe("Compare versions", () => {
         cy.contains(/^fragments$/)
             .should("exist")
             .scrollIntoView();
-        cy.contains("fragment_xxx-test-process")
-            .last()
-            .should("be.visible")
-            .move({ x, y, position: "right", force: true })
-            .drag("#nk-graph-main", { x, y, position: "right", force: true });
+        cy.contains("fragment_xxx-test-process").last().should("be.visible").drag("#nk-graph-main", { target: { x, y } });
 
         // Connect Existing node to the fragment
-        cy.get(`[model-id="boundedSource"] circle`).trigger("mousedown");
-        cy.get("#nk-graph-main")
-            .trigger("mousemove", x, y, {
-                clientX: x,
-                clientY: y,
-                moveThreshold: 5,
-            })
-            .trigger("mouseup", { force: true });
+        cy.get(`[model-id="boundedSource"] [port="Out"]`).dndTo(`[model-id^="e2e"][model-id$="fragment_xxx-test-process"] [port="In"]`);
 
         // Change fragment param and save changes
         cy.get("[model-id^=e2e][model-id$=fragment_xxx-test-process]").should("be.visible").trigger("dblclick");

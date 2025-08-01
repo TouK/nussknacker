@@ -1,3 +1,4 @@
+import type { dia } from "jointjs";
 import { g } from "jointjs";
 import { mapValues } from "lodash";
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
@@ -12,6 +13,7 @@ import {
     nodeAdded,
     nodesConnected,
     nodesDisconnected,
+    nodesWithEdgesAdded,
     replaceNode,
     resetSelection,
     stickyNoteSetErrors,
@@ -33,12 +35,20 @@ import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import type { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
 import NodeUtils from "./NodeUtils";
-import { setLinksHovered } from "./utils/dragHelpers";
+import { setDraggedOver } from "./utils/dragHelpers";
 
-export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(function ProcessGraph(
-    { capabilities },
-    forwardedRef,
-): JSX.Element {
+export type ElementDropResult = {
+    item: NodeType;
+    clientOffset: g.PlainPoint;
+    paper: dia.Paper;
+};
+
+export const ProcessGraph = forwardRef<
+    Graph,
+    {
+        capabilities: Capabilities;
+    }
+>(function ProcessGraph({ capabilities }, forwardedRef): JSX.Element {
     const scenario = useAppSelector(getScenario);
     const processCounts = useAppSelector(getProcessCounts);
     const layout = useAppSelector(getLayout);
@@ -48,13 +58,19 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
 
     const [{ isDraggingOver }, connectDropTarget] = useDrop({
         accept: DndTypes.ELEMENT,
-        drop: (item: NodeType, monitor) => {
+        drop: (item: NodeType, monitor): ElementDropResult => {
             const clientOffset = monitor.getClientOffset();
-            const relOffset = graph.current.processGraphPaper.clientToLocalPoint(clientOffset);
+            const paper = graph.current.processGraphPaper;
+            const relOffset = paper.clientToLocalPoint(clientOffset);
             // to make node horizontally aligned
             const nodeInputRelOffset = relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
             graph.current.addNode(item, mapValues(nodeInputRelOffset, Math.round));
-            setLinksHovered(graph.current.graph);
+            setDraggedOver(graph.current.graph);
+            return {
+                paper,
+                item,
+                clientOffset,
+            };
         },
         hover: (item: NodeType, monitor) => {
             const node = item;
@@ -63,13 +79,17 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             if (canInjectNode) {
                 const clientOffset = monitor.getClientOffset();
                 const point = graph.current.processGraphPaper.clientToLocalPoint(clientOffset);
-                const rect = new g.Rect({ ...point, width: 0, height: 0 })
+                const rect = new g.Rect({
+                    ...point,
+                    width: 0,
+                    height: 0,
+                })
                     .inflate(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH / 2, RECT_HEIGHT / 2)
                     .offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-                setLinksHovered(graph.current.graph, rect, null, item);
+                setDraggedOver(graph.current.graph, rect, null, item);
             } else {
-                setLinksHovered(graph.current.graph);
+                setDraggedOver(graph.current.graph);
             }
         },
         collect: (monitor) => ({
@@ -89,6 +109,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
                     editNode,
                     replaceNode,
                     nodeAdded,
+                    nodesWithEdgesAdded,
                     stickyNoteUpdated,
                     stickyNoteSetErrors,
                     resetSelection,

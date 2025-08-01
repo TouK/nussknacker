@@ -116,12 +116,12 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
 
         dispatch({
             type: "NODES_DISCONNECTED",
-            from: from.id,
-            to: to.id,
+            from: from?.id,
+            to: to?.id,
         });
 
         const inputs = NodeUtils.nodeInputs(middle.id, scenarioGraph);
-        if (NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
+        if (from && NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
                 fromNode: from,
@@ -132,7 +132,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
         }
 
         const outputs = NodeUtils.nodeOutputs(middle.id, scenarioGraph);
-        if (NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
+        if (to && NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
                 fromNode: middle,
@@ -193,12 +193,12 @@ export function stickyNoteSetErrors(stickyNoteErrors: Record<string, NodeValidat
     };
 }
 
-export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[]): ThunkAction {
+export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[], isCopy = true): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
         const processDefinitionData = getProcessDefinitionData(state);
         const scenarioGraph = getScenarioGraph(state);
-        const { nodes, layout, idMapping } = prepareNewNodesWithLayout(scenarioGraph.nodes, nodesWithPositions, true);
+        const { nodes, layout, idMapping } = prepareNewNodesWithLayout(scenarioGraph.nodes, nodesWithPositions, isCopy);
 
         batchGroupBy.startOrContinue();
         dispatch({

@@ -8,6 +8,7 @@ import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProces
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
+import { RECT_HEIGHT } from "../components/graph/EspNode/esp";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
 import { usePortal } from "../components/graph/node-modal/io/usePortal";
@@ -16,6 +17,7 @@ import SelectionContextProvider from "../components/graph/SelectionContextProvid
 import type { Scenario } from "../components/Process/types";
 import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
+import { Overlay } from "../components/toolbarComponents/Overlay";
 import Toolbars from "../components/toolbars/Toolbars";
 import { getProcessDefinitionData } from "../reducers/selectors/getProcessDefinitionData";
 import {
@@ -30,12 +32,14 @@ import {
 import { getCapabilities } from "../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { useWindows } from "../windowManager";
+import { AddComponentsButtons } from "./AddComponentsButtons";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
 import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
 import { GraphPage } from "./Page";
+import { PanToNodes } from "./PanToNodes";
 import { VisualizationBasePath } from "./paths";
 import { ScenarioDescription } from "./ScenarioDescription";
 
@@ -165,14 +169,12 @@ function Visualization() {
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
-        const { x, y } = paper?.getArea()?.center() || {
-            x: 300,
-            y: 100,
-        };
-        return {
-            x: Math.floor(x),
-            y: Math.floor(y),
-        };
+        return (
+            paper?.getContentArea()?.topRight().offset(RECT_HEIGHT).snapToGrid(1, 1) || {
+                x: 300,
+                y: 100,
+            }
+        );
     }, [getGraphInstance]);
 
     useEffect(() => {
@@ -213,10 +215,14 @@ function Visualization() {
 
                 <GraphProvider graph={getGraphInstance}>
                     <LiveDataThroughputs />
+                    <PanToNodes />
                     <SelectionContextProvider pastePosition={getPastePosition}>
                         <BindKeyboardShortcuts disabled={windows.length > 0} />
                         <Toolbars isReady={dataResolved} externalLayerWrapper={Portal}>
-                            <ScenarioDescription />
+                            <Overlay gridArea="left" gridRow="top">
+                                <ScenarioDescription />
+                            </Overlay>
+                            <AddComponentsButtons />
                         </Toolbars>
                     </SelectionContextProvider>
                 </GraphProvider>

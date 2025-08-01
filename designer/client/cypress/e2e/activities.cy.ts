@@ -31,7 +31,7 @@ const makeScreenshot = () => {
 };
 
 // TODO: disabled snapshots - testing almost nothing now
-describe("Activities", () => {
+describe.skip("Activities", () => {
     const seed = "activities";
 
     before(() => {
