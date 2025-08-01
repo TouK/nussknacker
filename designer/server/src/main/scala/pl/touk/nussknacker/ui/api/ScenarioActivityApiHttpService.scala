@@ -247,22 +247,16 @@ class ScenarioActivityApiHttpService(
     EitherT.right {
       for {
         activities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
-        //  We allow to limit the number of scheduling-related activities by setting max number in Nu config:
-        maxFetchedPeriodicScenarioActivities <- dmDispatcher.deploymentManager(processIdWithName).map {
-          case Some(manager: PeriodicDeploymentManager) => manager.maxFetchedPeriodicScenarioActivities
-          case _                                        => None
-        }
         schedulingRelatedAndOtherActivities = activities.partition {
           case _: SchedulingRelatedActivity => true
           case _                            => false
         }
-        schedulingRelatedActivities = schedulingRelatedAndOtherActivities._1
-        limitedSchedulingRelated = maxFetchedPeriodicScenarioActivities match {
-          case Some(limit) => schedulingRelatedActivities.take(limit)
-          case None        => schedulingRelatedActivities
-        }
+        schedulingRelatedActivities <- limitNumberOfSchedulingRelatedActivities(
+          processIdWithName,
+          schedulingRelatedAndOtherActivities._1
+        )
         otherActivities   = schedulingRelatedAndOtherActivities._2
-        limitedActivities = limitedSchedulingRelated ++ otherActivities
+        limitedActivities = schedulingRelatedActivities ++ otherActivities
         //  The API endpoint returning scenario activities does not yet have support for filtering. We made a decision to:
         //  - for activities not related to deployments:            always display them on FE
         //  - for activities related to scheduled deployments:      always display them on FE
@@ -278,6 +272,27 @@ class ScenarioActivityApiHttpService(
         }
         sortedResult = successfulActivities.map(toDto).sortBy(_.date)
       } yield sortedResult
+    }
+  }
+
+  private def limitNumberOfSchedulingRelatedActivities(
+      processIdWithName: ProcessIdWithName,
+      schedulingRelatedActivities: List[ScenarioActivity]
+  )(implicit loggedUser: LoggedUser): Future[List[ScenarioActivity]] = {
+    if (schedulingRelatedActivities.nonEmpty) {
+      for {
+        deploymentManager <- dmDispatcher.deploymentManager(processIdWithName)
+        limit = deploymentManager match {
+          case Some(manager: PeriodicDeploymentManager) => manager.maxFetchedPeriodicScenarioActivities
+          case _                                        => None
+        }
+        limited = limit match {
+          case Some(limit) => schedulingRelatedActivities.take(limit)
+          case None        => schedulingRelatedActivities
+        }
+      } yield limited
+    } else {
+      Future.successful(List.empty)
     }
   }
 

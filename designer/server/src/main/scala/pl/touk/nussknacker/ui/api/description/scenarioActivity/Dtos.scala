@@ -240,7 +240,7 @@ object Dtos {
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
-      private val displayableName: String             = "Run now execution triggered"
+      private val displayableName: String             = "Run now"
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
       override def icon: String                       = "/assets/activities/deployed.svg"
@@ -678,7 +678,7 @@ object Dtos {
         dateFinished: Instant,
         errorMessage: Option[String],
     )(implicit zoneId: ZoneId): ScenarioActivity = {
-      val humanReadableStatus = "Run now execution triggered"
+      val humanReadableStatus = "Data processing started"
       ScenarioActivity(
         id = id,
         `type` = ScenarioActivityType.PerformedSingleExecution,
@@ -708,8 +708,8 @@ object Dtos {
         retriesLeft: Option[Int],
     )(implicit zoneId: ZoneId): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
-        case ScheduledExecutionStatus.Finished                => "Scheduled execution finished"
-        case ScheduledExecutionStatus.Failed                  => "Scheduled execution failed"
+        case ScheduledExecutionStatus.Finished                => "Data processing finished"
+        case ScheduledExecutionStatus.Failed                  => "Data processing failed"
         case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
         case ScheduledExecutionStatus.DeploymentFailed        => "Deployment failed"
       }
