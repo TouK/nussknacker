@@ -94,10 +94,7 @@ class GenericTransformationValidationSpec
     validator.validate(process, isFragment = false)
   }
 
-  private val expectedGenericParameters =
-    prepareExpectedGenericParameters(lastParameterChangesCanReloadParameters = false)
-
-  private def prepareExpectedGenericParameters(lastParameterChangesCanReloadParameters: Boolean) = List(
+  private val expectedGenericParameters = List(
     Parameter[String](ParameterName("par1"))
       .copy(
         editors = List(
@@ -117,12 +114,7 @@ class GenericTransformationValidationSpec
       ),
     Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
     Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
-    Parameter(ParameterName("val3"), Unknown)
-      .copy(
-        editors = List(SpelParameterEditor),
-        defaultValue = Some("".spel),
-        changesCanReloadParameters = lastParameterChangesCanReloadParameters
-      )
+    Parameter(ParameterName("val3"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel))
   )
 
   test("should validate happy path") {
@@ -245,11 +237,7 @@ class GenericTransformationValidationSpec
         .emptySink("end", "dummySink")
     )
 
-    // For the failure case, we don't know if parameters returned during the last step before the failure,
-    // was the last one, so we can't clear lastParameterChangesCanReloadParameters value
-    val expectedGenericParametersForExceptionDuringValidation =
-      prepareExpectedGenericParameters(lastParameterChangesCanReloadParameters = true)
-    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParametersForExceptionDuringValidation
+    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
   }
 
   test("should dependent parameter in sink") {

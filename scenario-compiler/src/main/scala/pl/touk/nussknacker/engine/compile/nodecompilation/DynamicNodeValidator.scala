@@ -120,6 +120,10 @@ class DynamicNodeValidator(
         )
       }
 
+      // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
+      def revertChangesCanReloadParametersForLastParameter(parameters: List[Parameter]) =
+        parameters.transformLast(_.copy(changesCanReloadParameters = false))
+
       Try(definition.lift.apply(transformationStep)) match {
         case Success(None) =>
           returnUnmatchedFallback
@@ -129,9 +133,9 @@ class DynamicNodeValidator(
             case component.FinalResults(finalContext, errors, state) =>
               // we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
               val allErrors = (errorsCombined ++ errors).distinct
-              // We assume that the last parameter in the last step can't reload parameters so we revert original value of this property
-              val finalParametersDefinition =
-                evaluatedNodeParametersSoFar.map(_._1).transformLast(_.copy(changesCanReloadParameters = false))
+              val finalParametersDefinition = revertChangesCanReloadParametersForLastParameter(
+                evaluatedNodeParametersSoFar.map(_._1)
+              )
               Valid(
                 TransformationResult(
                   allErrors,
@@ -188,7 +192,7 @@ class DynamicNodeValidator(
           Valid(
             TransformationResult(
               errors ++ fallbackResult.errors,
-              evaluatedNodeParametersSoFar.map(_._1),
+              revertChangesCanReloadParametersForLastParameter(evaluatedNodeParametersSoFar.map(_._1)),
               fallbackResult.finalContext,
               fallbackResult.state,
               nodeParameters
