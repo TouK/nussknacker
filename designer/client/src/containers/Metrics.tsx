@@ -4,7 +4,7 @@ import type { ProcessName } from "src/components/Process/types";
 
 import HttpService from "../http/HttpService";
 import { getMetricsSettings } from "../reducers/selectors/settings";
-import { useAppSelector } from "../store/configureStore";
+import { useAppSelector } from "../store/storeHelpers";
 import { CustomTabWrapper } from "./CustomTabPage";
 
 function useMetricsUrl(processName?: ProcessName): string {

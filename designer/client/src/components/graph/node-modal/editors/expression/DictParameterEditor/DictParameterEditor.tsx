@@ -10,7 +10,7 @@ import { tryParseOrNull } from "../../../../../../common/JsonUtils";
 import type { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
 import HttpService from "../../../../../../http/HttpService";
 import { getScenario } from "../../../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../../../store/configureStore";
+import { useAppSelector } from "../../../../../../store/storeHelpers";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import { NodeInput } from "../../../../../FormElements";
 import ValidationLabels from "../../../../../modals/ValidationLabels";

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { editProperties } from "../../../../actions/nk";
 import { getScenario } from "../../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types";
 import type { WindowKind } from "../../../../windowManager";
 import { WindowContent } from "../../../../windowManager";

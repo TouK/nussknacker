@@ -10,7 +10,7 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
 import { blendLighten } from "../../containers/theme/helpers";
 import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import { TabElement } from "./TabElement";
 import { useStateWithRevertTimeout } from "./useStateWithRevertTimeout";
 

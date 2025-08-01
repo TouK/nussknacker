@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { setTestData } from "../../../../actions/nk/displayTestResults";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName } from "../../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types";
 import { useSourceParameters } from "../../../modals/AdhocTesting/useAdhocTestingAction";
 import { InfoTooltip } from "../editors/InfoTooltip";

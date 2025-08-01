@@ -13,7 +13,7 @@ import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge, NodeType } from "../../../../types";
 import type { WindowKind } from "../../../../windowManager";
 import { WindowContent } from "../../../../windowManager";

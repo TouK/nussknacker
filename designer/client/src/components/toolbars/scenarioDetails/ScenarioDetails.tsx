@@ -5,7 +5,7 @@ import type { RootState } from "../../../reducers";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { getLoggedUser } from "../../../reducers/selectors/settings";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";

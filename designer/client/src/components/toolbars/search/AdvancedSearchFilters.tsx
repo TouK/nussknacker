@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getScenario } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import NodeUtils from "../../graph/NodeUtils";
 import { SearchLabel } from "../../sidePanels/SearchLabel";
 import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";

@@ -20,7 +20,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import ProcessUtils from "../../../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../../../reducers/selectors/getProcessDefinitionData";
-import { useAppSelector } from "../../../../../../store/configureStore";
+import { useAppSelector } from "../../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
 import type { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";

@@ -2,7 +2,7 @@ import { isEmpty } from "lodash";
 import React, { useMemo, useState } from "react";
 
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeOrPropertiesType, NodeType, NodeValidationError } from "../../../types";
 import Field, { FieldType } from "./editors/field/Field";
 import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";

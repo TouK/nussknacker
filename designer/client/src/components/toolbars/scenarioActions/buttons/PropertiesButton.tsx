@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
 import { hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";

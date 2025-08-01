@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import NuIcon from "../../../assets/img/nussknacker-logo-icon.svg";
 import { blendDarken } from "../../../containers/theme/helpers";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../windowManager";
 
 function convertViewportUnitToPixels(unitString: string): number {

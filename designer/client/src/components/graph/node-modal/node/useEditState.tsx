@@ -4,7 +4,7 @@ import { createSelector } from "reselect";
 
 import type { RootState } from "../../../../reducers";
 import { getUi } from "../../../../reducers/selectors/ui";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { EditState } from "./useNodeState";
 
 const getPendingChanges = createSelector(getUi, ({ pendingChanges }) => pendingChanges);

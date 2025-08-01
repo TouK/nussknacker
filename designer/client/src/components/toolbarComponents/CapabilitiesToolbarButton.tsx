@@ -1,7 +1,7 @@
 import React from "react";
 
 import { getCapabilities } from "../../reducers/selectors/other";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { ToolbarButtonProps } from "./toolbarButtons";
 import { ToolbarButton } from "./toolbarButtons";
 

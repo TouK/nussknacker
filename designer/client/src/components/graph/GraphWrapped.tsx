@@ -8,7 +8,7 @@ import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDef
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser } from "../../reducers/selectors/settings";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import { useWindows } from "../../windowManager";
 import { Graph } from "./Graph";
 import { GraphStyledWrapper } from "./graphStyledWrapper";

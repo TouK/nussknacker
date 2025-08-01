@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { zoomOut } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/zoom-out.svg";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";

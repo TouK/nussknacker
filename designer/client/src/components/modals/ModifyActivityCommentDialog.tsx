@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 import httpService from "../../http/HttpService";
 import { getProcessName } from "../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import CommentInput from "../comment/CommentInput";

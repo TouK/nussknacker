@@ -5,7 +5,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from "re
 import { useArrayState } from "rooks";
 import { v4 as uuid4 } from "uuid";
 
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { FieldsRow } from "../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";

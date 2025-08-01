@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 
 import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
 import { getProcessingType, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types";
 import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
 import type { AdhocTestingParameters } from "./AdhocTestingDialog";

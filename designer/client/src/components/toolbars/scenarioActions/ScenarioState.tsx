@@ -6,7 +6,7 @@ import { SwitchTransition } from "react-transition-group";
 import { formatDateTime } from "../../../common/DateUtils";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";

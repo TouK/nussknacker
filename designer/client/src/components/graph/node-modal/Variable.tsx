@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import type { RootState } from "../../../reducers";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
 import EditableEditor from "./editors/EditableEditor";

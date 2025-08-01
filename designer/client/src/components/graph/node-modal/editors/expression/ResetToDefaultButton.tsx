@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { SyntaxHighlighter } from "../../../../../common/SyntaxHighlighter";
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/configureStore";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { ExpressionObj } from "./types";
 
 interface Props {

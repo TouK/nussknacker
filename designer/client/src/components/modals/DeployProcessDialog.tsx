@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../http/HttpService";
 import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { WindowKind } from "../../windowManager";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";

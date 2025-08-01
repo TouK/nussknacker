@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import Icon from "../../../../assets/img/toolbarButtons/redo.svg";
 import { getHistoryCounts } from "../../../../reducers/selectors/getHistory";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import type { ToolbarButtonProps } from "../../types";
 import { CounterToolbarButton } from "./CounterToolbarButton";

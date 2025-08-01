@@ -8,7 +8,7 @@ import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { WindowKind } from "../../windowManager";
 import { SidePanel } from "../sidePanels/SidePanel";
 import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";

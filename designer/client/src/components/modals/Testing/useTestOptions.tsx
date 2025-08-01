@@ -5,7 +5,7 @@ import DryRunTestingIcon from "../../../assets/img/icons/test-dry-run.svg";
 import GenerateAndTestIcon from "../../../assets/img/icons/test-using-live-data.svg";
 import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { CustomRadioProps } from "../../customRadio/CustomRadio";
 
 export enum TestType {

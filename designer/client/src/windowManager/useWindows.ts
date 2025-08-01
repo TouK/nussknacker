@@ -9,9 +9,9 @@ import type { ConfirmDialogData } from "../components/modals/GenericConfirmDialo
 import type { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import type { Scenario } from "../components/Process/types";
 import { getWindowsIdMapping } from "../reducers/selectors/getWindowsIdMapping";
+import type { AppState} from "../store/storeHelpers";
+import { useAppSelector } from "../store/storeHelpers";
 import type { NodeType } from "../types";
-import type { AppState} from "./../store/configureStore";
-import { useAppSelector } from "./../store/configureStore";
 import { WindowKind } from "./WindowKind";
 
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {

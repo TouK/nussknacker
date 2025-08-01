@@ -8,9 +8,8 @@ import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService";
 import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
-import { useAppDispatch } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";
-import { useAppSelector } from "./../../../../store/configureStore";
 
 export const useArchiveHelper = (processName: string) => {
     const dispatch = useAppDispatch();

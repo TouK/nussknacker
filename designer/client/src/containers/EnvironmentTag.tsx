@@ -3,7 +3,7 @@ import { styled, Typography } from "@mui/material";
 import React from "react";
 
 import { getEnvironmentAlert } from "../reducers/selectors/settings";
-import { useAppSelector } from "../store/configureStore";
+import { useAppSelector } from "../store/storeHelpers";
 
 // TODO: get rid of 'indicator-', maybe rename to "warn", "prod" etc.
 export enum EnvironmentTagColor {

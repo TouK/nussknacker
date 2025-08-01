@@ -8,7 +8,7 @@ import { getScenarioActivities, updateScenarioActivities } from "../../../action
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getVisibleActivities } from "../../../reducers/selectors/activities";
 import { getProcessName } from "../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";

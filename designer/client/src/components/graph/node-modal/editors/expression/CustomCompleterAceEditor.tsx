@@ -6,7 +6,7 @@ import React, { useCallback, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
-import { useAppSelector } from "../../../../../store/configureStore";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";

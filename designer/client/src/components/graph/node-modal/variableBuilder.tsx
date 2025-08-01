@@ -2,7 +2,7 @@ import { isEqual } from "lodash";
 import React from "react";
 
 import type { RootState } from "../../../reducers";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, NodeValidationError, VariableTypes } from "../../../types";
 import MapVariable from "./MapVariable";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";

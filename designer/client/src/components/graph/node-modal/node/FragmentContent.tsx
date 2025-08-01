@@ -6,7 +6,7 @@ import HttpService from "../../../../http/HttpService";
 import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCounts } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { FragmentNodeType } from "../../../../types";
 import { DialogErrorFallbackComponent, ErrorBoundary } from "../../../common/error-boundary";
 import type { Scenario } from "../../../Process/types";

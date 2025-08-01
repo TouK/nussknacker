@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 
 import { ensureArray } from "../../../common/arrayUtils";
 import { getScenario } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, NodeType } from "../../../types";
 import NodeUtils from "../../graph/NodeUtils";
-import { useAppSelector } from "./../../../store/configureStore";
 import type { SearchQuery } from "./SearchResults";
 
 type SelectorResult = { expression: string } | string;

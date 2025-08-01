@@ -2,7 +2,7 @@ import type { WindowType } from "@touk/window-manager";
 import React from "react";
 
 import { getTestParameters } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import type { TestingData } from "./TestingDialog";
 import { TestWithLiveDataForm } from "./TestWithLiveData";

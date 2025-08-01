@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { Graph } from "./Graph";
 import NodeUtils from "./NodeUtils";
 import { Events } from "./types";

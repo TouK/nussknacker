@@ -3,7 +3,7 @@ import React, { createContext, useContext, useMemo, useState } from "react";
 
 import { PanelSide } from "../../actions/nk";
 import { panelsState } from "../../reducers/selectors/panel";
-import { useAppDispatch, useAppSelector } from "../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
 const SideContext = createContext<PanelSide>(null);
 

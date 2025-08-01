@@ -1,6 +1,6 @@
 import React, { useContext, useMemo } from "react";
 
-import { useAppSelector } from "../../../../../store/configureStore";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { NodeRow, NodeValue } from "../../node";
 import { getFindAvailableVariables } from "../../NodeDetailsContent/selectors";

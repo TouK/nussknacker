@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { isDeploymentActivity } from "../../../reducers/selectors/activities";
 import { getIsRunningOrScheduled } from "../../../reducers/selectors/scenarioState";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIActivity } from "./ActivitiesPanel";
 import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";

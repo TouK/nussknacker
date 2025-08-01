@@ -3,7 +3,7 @@ import { useMemo } from "react";
 
 import { getToolbarsConfig } from "../../reducers/selectors/toolbars";
 import type { ToolbarsSide } from "../../reducers/toolbars";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { Toolbar } from "../toolbarComponents/toolbar";
 import { toolbarSelector } from "./ToolbarSelector";
 import type { ToolbarConfig, ToolbarsConfig } from "./types";

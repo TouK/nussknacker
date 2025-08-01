@@ -3,7 +3,7 @@ import React, { useCallback } from "react";
 
 import { updateSearchQuery } from "../actions/nk/scenarioActivities";
 import { getProcessVersionId, getRunningVersion, isCurrentVersionDeployed, isLatestProcessVersion } from "../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { predefinedQueries } from "./toolbars/activities/useActivitiesSearch";
 
 const Span = styled("span")({});

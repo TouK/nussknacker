@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Navigate } from "react-router-dom";
 
 import { getTabs } from "../reducers/selectors/settings";
-import { useAppSelector } from "../store/configureStore";
+import { useAppSelector } from "../store/storeHelpers";
 import type { BaseTab } from "./DynamicTab";
 import { DynamicTab } from "./DynamicTab";
 import { Page } from "./Page";

@@ -11,7 +11,7 @@ import {
     getLiveDataNextUpdate,
     isReadyForLiveData,
 } from "../../../../reducers/selectors/getLiveData";
-import { useAppDispatch, useAppSelector } from "../../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 

@@ -5,7 +5,7 @@ import { nodeValidationDynamicParametersLoaded, nodeValidationDynamicParametersL
 import { useUserSettings } from "../../../common/userSettings";
 import type { RootState } from "../../../reducers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, NodeType, Parameter } from "../../../types";
 import { ParamFieldLabel } from "./FieldLabel";
 import type { NodeState } from "./node/useNodeState";

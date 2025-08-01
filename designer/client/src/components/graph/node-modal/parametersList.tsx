@@ -2,7 +2,7 @@ import { Box, Skeleton } from "@mui/material";
 import { isEqual } from "lodash";
 import React, { Fragment } from "react";
 
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Parameter } from "../../../types";
 import { getDynamicParametersChanged } from "./NodeDetailsContent/selectors";
 import type { ParameterExpressionFieldProps } from "./ParameterExpressionField";

@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import type { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
 import HttpService from "../../../../../../../http/HttpService";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../../../../store/configureStore";
+import { useAppSelector } from "../../../../../../../store/storeHelpers";
 import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
 import { SpelEditor } from "../../../../editors/expression/SpelEditor";

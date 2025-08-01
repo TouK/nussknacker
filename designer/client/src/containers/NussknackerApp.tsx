@@ -9,7 +9,7 @@ import { AiAssistantButton } from "../components/aiAssistant/components/AiAssist
 import { MenuBar } from "../components/MenuBar";
 import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
-import { useAppSelector } from "../store/configureStore";
+import { useAppSelector } from "../store/storeHelpers";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
 import { useRegisterTrackingEvents } from "./event-tracking";

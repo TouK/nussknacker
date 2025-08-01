@@ -5,7 +5,7 @@ import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId, getScenarioGraph } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 

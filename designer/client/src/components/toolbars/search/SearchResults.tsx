@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { resetSelection } from "../../../actions/nk";
 import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
-import { useAppDispatch, useAppSelector } from "../../../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types";
 import { useWindows } from "../../../windowManager";
 import { useGraph } from "../../graph/GraphContext";

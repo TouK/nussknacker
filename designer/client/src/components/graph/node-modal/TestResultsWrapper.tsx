@@ -5,7 +5,7 @@ import type { StateForSelectTestResults } from "../../../common/TestResultUtils"
 import TestResultUtils from "../../../common/TestResultUtils";
 import { useUserSettings } from "../../../common/userSettings";
 import { getTestResults } from "../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../store/configureStore";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeId } from "../../../types";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import TestErrors from "./tests/TestErrors";

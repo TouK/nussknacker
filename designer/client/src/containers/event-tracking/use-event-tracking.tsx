@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 
 import httpService from "../../http/HttpService";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { useAppSelector } from "../../store/configureStore";
+import { useAppSelector } from "../../store/storeHelpers";
 import { getEventStatisticName } from "./helpers";
 import type { EventTrackingSelectorType, EventTrackingType } from "./use-register-tracking-events";
 

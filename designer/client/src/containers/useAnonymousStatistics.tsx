@@ -4,7 +4,7 @@ import { useLocalstorageState } from "rooks";
 
 import httpService from "../http/HttpService";
 import { getFeatureSettings } from "../reducers/selectors/settings";
-import { useAppSelector } from "../store/configureStore";
+import { useAppSelector } from "../store/storeHelpers";
 
 const getLockReleaseDate = (createdAt: number | null, statisticLockReleaseTime: number) =>
     moment(createdAt).add(statisticLockReleaseTime, "minute");

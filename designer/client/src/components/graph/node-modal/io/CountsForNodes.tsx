@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import React from "react";
 
 import { getScenarioGraph } from "../../../../reducers/selectors/graph";
-import { useAppSelector } from "../../../../store/configureStore";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import NodeUtils from "../../NodeUtils";
 
 const NULL_OUTPUT_NAME = "Void";

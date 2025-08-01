@@ -5,8 +5,8 @@ import type { Annotation } from "react-ace/types";
 import { v4 as uuid4 } from "uuid";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { FieldError } from "../Validators";
-import { useAppSelector } from "./../../../../../store/configureStore";
 
 export function useAceEditorRangeMessages(fieldErrors: FieldError[]) {
     const userSettings = useAppSelector(getUserSettings);
