@@ -107,10 +107,22 @@ class GenericTransformationValidationSpec
         defaultValue = Some("".spelTemplate)
       ),
     Parameter[Long](ParameterName("lazyPar1"))
-      .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
-    Parameter(ParameterName("val1"), Unknown),
-    Parameter(ParameterName("val2"), Unknown),
-    Parameter(ParameterName("val3"), Unknown).copy(changesCanReloadParameters = lastParameterChangesCanReloadParameters)
+      .copy(
+        isLazyParameter = true,
+        defaultValue = Some("0".spel),
+        editors = List(
+          SpelParameterEditor,
+        ),
+        changesCanReloadParameters = true,
+      ),
+    Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
+    Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
+    Parameter(ParameterName("val3"), Unknown)
+      .copy(
+        editors = List(SpelParameterEditor),
+        defaultValue = Some("".spel),
+        changesCanReloadParameters = lastParameterChangesCanReloadParameters
+      )
   )
 
   test("should validate happy path") {
@@ -265,9 +277,14 @@ class GenericTransformationValidationSpec
           defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1"))
-        .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
-      Parameter(ParameterName("val1"), Unknown),
-      Parameter(ParameterName("val2"), Unknown)
+        .copy(
+          isLazyParameter = true,
+          editors = List(SpelParameterEditor),
+          defaultValue = Some("0".spel),
+          changesCanReloadParameters = true
+        ),
+      Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
+      Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel))
     )
   }
 
@@ -332,9 +349,14 @@ class GenericTransformationValidationSpec
           defaultValue = Some("".spelTemplate)
         ),
       Parameter[Long](ParameterName("lazyPar1"))
-        .copy(isLazyParameter = true, defaultValue = Some("0".spel), changesCanReloadParameters = true),
-      Parameter(ParameterName("val1"), Unknown),
-      Parameter(ParameterName("val2"), Unknown)
+        .copy(
+          isLazyParameter = true,
+          editors = List(SpelParameterEditor),
+          defaultValue = Some("0".spel),
+          changesCanReloadParameters = true
+        ),
+      Parameter(ParameterName("val1"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel)),
+      Parameter(ParameterName("val2"), Unknown).copy(editors = List(SpelParameterEditor), defaultValue = Some("".spel))
     )
   }
 
@@ -405,7 +427,11 @@ class GenericTransformationValidationSpec
       Parameter
         .optional[CharSequence](ParameterName("optionalParameter"))
         .copy(
-          editors = new ParameterTypeEditorDeterminer(Typed[CharSequence], GlobalParametersConfig.default).determine(),
+          editors = new ParameterTypeEditorDeterminer(
+            Typed[CharSequence],
+            isLazyParameter = false,
+            GlobalParametersConfig.default
+          ).determine().toList,
           defaultValue = Some("".spelTemplate)
         )
     )

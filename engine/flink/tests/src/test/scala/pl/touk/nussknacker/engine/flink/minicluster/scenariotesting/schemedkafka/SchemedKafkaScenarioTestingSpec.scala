@@ -14,7 +14,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestSourceSpecificFormatJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.classloader.ModelClassLoader
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
@@ -144,7 +144,7 @@ class SchemedKafkaScenarioTestingSpec
         _.add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa")))
       )
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
-    val scenarioTestData = ScenarioTestData(ScenarioTestJsonRecord("start", testRecordJson, timestamp = None) :: Nil)
+    val scenarioTestData = ScenarioTestData(ScenarioTestSourceSpecificFormatJsonRecord("start", testRecordJson, timestamp = None) :: Nil)
 
     val results = testRunner.runTests(process, scenarioTestData).futureValue
 

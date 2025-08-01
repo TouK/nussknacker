@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
+import pl.touk.nussknacker.engine.api.livedata.{DataRecord, DataRecords, LiveDataProvider}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
@@ -29,17 +30,16 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   TimestampWatermarkHandler
 }
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
+import pl.touk.nussknacker.engine.util.TimestampUtils
 
-import java.{util => jul}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
+import java.util
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
-// TODO: add testing capabilities
 object EventGeneratorSourceFactory
     extends EventGeneratorSourceFactory(
       new StandardTimestampWatermarkHandler[ValueWithContext[AnyRef]](
@@ -69,6 +69,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       // TODO: @DefaultValue(1) instead of nullable
       @ParamName("count")
       @Nullable
+      @DefaultValue("1")
       @Min(1)
       @ParameterCategory(`type` = ParameterCategoryType.ADVANCED)
       nullableCount: Integer,
@@ -89,6 +90,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       with FlinkSourceTestSupport[AnyRef]
       with TestDataGenerator
       with TestWithParametersSupport[AnyRef]
+      with LiveDataProvider
       with LazyLogging {
 
       // The stream is created in the following way:
@@ -102,6 +104,7 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStream[Context] = {
+        // Without this local variable, flatMap function is not serializable
         val count = Option(nullableCount).map(_.toInt).getOrElse(1)
         val streamOfRaw =
           env
@@ -148,6 +151,17 @@ class EventGeneratorSourceFactory(customTimestampAssigner: TimestampWatermarkHan
       }
 
       override val returnType: typing.TypingResult = value.returnType
+
+      override def fetchLiveData(maxNumberOfRecords: Int): DataRecords = {
+        val records = List.fill(maxNumberOfRecords)(generateSample())
+        DataRecords(records.map { record =>
+          val timestamp = MapAscendingTimestampExtractor.default.extractTimestampFromRecord(record)
+          DataRecord(
+            variables = Map(VariableConstants.InputVariableName -> record),
+            timestamp = timestamp
+          )
+        })
+      }
 
       override def generateTestData(size: Int): TestData = {
         val samples = List.fill(size)(encodeValueUnsafe(generateSample()))
@@ -203,16 +217,20 @@ class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
 class MapAscendingTimestampExtractor(timestampField: String)
     extends SerializableTimestampAssigner[ValueWithContext[AnyRef]] {
 
-  override def extractTimestamp(element: ValueWithContext[AnyRef], recordTimestamp: Long): Long = {
-    element.value match {
-      case m: jul.Map[String @unchecked, AnyRef @unchecked] =>
-        m.asScala
-          .get(timestampField)
-          .map(value => supportedTypeToMillis(value, timestampField))
-          .getOrElse(System.currentTimeMillis())
-      case _ =>
-        System.currentTimeMillis()
-    }
+  override def extractTimestamp(valueWithContext: ValueWithContext[AnyRef], recordTimestamp: Long): Long = {
+    val value = valueWithContext.value
+    extractTimestampFromRecord(value) getOrElse System.currentTimeMillis()
+  }
+
+  def extractTimestampFromRecord(value: AnyRef): Option[Long] = {
+    for {
+      javaMap <- value match {
+        case m: util.Map[String @unchecked, AnyRef @unchecked] => Some(m)
+        case _                                                 => None
+      }
+      timestampFieldValue <- javaMap.asScala.get(timestampField)
+      timestampMillis     <- TimestampUtils.supportedTypeToMillis.lift(timestampFieldValue)
+    } yield timestampMillis
   }
 
 }
@@ -223,4 +241,7 @@ class ContextWithInputVariable extends MapFunction[ValueWithContext[AnyRef], Con
 
 object MapAscendingTimestampExtractor {
   val DefaultTimestampField = "timestamp"
+
+  val default = new MapAscendingTimestampExtractor(DefaultTimestampField)
+
 }

@@ -5,6 +5,7 @@ import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetT
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{
@@ -45,34 +46,37 @@ import scala.jdk.CollectionConverters._
  */
 class TypingResultAwareTypeInformationDetection extends TypeInformationDetection {
 
-  def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
-    val variables = forType(
-      Typed.record(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
-    )
-      .asInstanceOf[TypeInformation[Map[String, Any]]]
+  override def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
+    val variables = forVariables(validationContext.localVariables)
     val parentCtx = validationContext.parent.map(forContext)
 
     ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
-  def forType[T](typingResult: TypingResult): TypeInformation[T] = {
+  override def forVariables(variables: Map[String, TypingResult]): TypeInformation[Map[String, Any]] = {
+    forType(
+      Typed.record(variables, Typed.typedClass[Map[String, AnyRef]])
+    ).asInstanceOf[TypeInformation[Map[String, Any]]]
+  }
+
+  override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case FlinkBelow119AdditionalTypeInfo(typeInfo) => typeInfo
-      case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
+      case TypedClass(`ListClass`, elementType :: Nil) =>
         new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
-      case TypedClass(klass, Nil) if klass == classOf[ZonedDateTime]                => ZonedDateTimeTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[OffsetDateTime]               => OffsetDateTimeTypeInformation
-      case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass)        => ZoneIdTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[Duration]                     => DurationTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[Period]                       => PeriodTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[Charset]                      => CharsetTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[Currency]                     => CurrencyTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[Locale]                       => LocaleTypeInformation
-      case TypedClass(klass, Nil) if klass == classOf[UUID]                         => UUIDTypeInformation
-      case TypedClass(klass, elementType :: Nil) if klass == classOf[Array[AnyRef]] =>
+      case TypedClass(`ZonedDateTimeClass`, Nil)                             => ZonedDateTimeTypeInformation
+      case TypedClass(`OffsetDateTimeClass`, Nil)                            => OffsetDateTimeTypeInformation
+      case TypedClass(klass, Nil) if classOf[ZoneId].isAssignableFrom(klass) => ZoneIdTypeInformation
+      case TypedClass(`DurationClass`, Nil)                                  => DurationTypeInformation
+      case TypedClass(`PeriodClass`, Nil)                                    => PeriodTypeInformation
+      case TypedClass(`CharsetClass`, Nil)                                   => CharsetTypeInformation
+      case TypedClass(`CurrencyClass`, Nil)                                  => CurrencyTypeInformation
+      case TypedClass(`LocaleClass`, Nil)                                    => LocaleTypeInformation
+      case TypedClass(`UUIDClass`, Nil)                                      => UUIDTypeInformation
+      case TypedClass(`ArrayClass`, elementType :: Nil)                      =>
         // We have to use OBJECT_ARRAY even for numeric types, because ARRAY<INT> is represented as Integer[] which can't be handled by IntPrimitiveArraySerializer
         Types.OBJECT_ARRAY(forType[AnyRef](elementType))
-      case TypedClass(klass, keyType :: valueType :: Nil) if klass == classOf[java.util.Map[_, _]] =>
+      case TypedClass(`MapClass`, keyType :: valueType :: Nil) =>
         new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](keyType), forType[AnyRef](valueType))
       case TypedMultiset(elementType) =>
         new MultisetTypeInfo[AnyRef](forType[AnyRef](elementType))
@@ -81,8 +85,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
         // Warning: RowTypeInfo is fields order sensitive
         new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
-      case a: TypedObjectTypingResult
-          if classOf[java.util.Map[String @unchecked, _]].isAssignableFrom(a.runtimeObjType.klass) =>
+      case a: TypedObjectTypingResult if MapClass.isAssignableFrom(a.runtimeObjType.klass) =>
         createJavaMapTypeInformation(a)
       // We generally don't use scala Maps in our runtime, but it is useful for some internal type infos: TODO move it somewhere else
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Map[String, _]] =>
@@ -127,7 +130,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
   private def createJavaMapTypeInformation(typingResult: TypedObjectTypingResult) =
     TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
 
-  def forValueWithContext[T](
+  override def forValueWithContext[T](
       validationContext: ValidationContext,
       value: TypeInformation[T]
   ): TypeInformation[ValueWithContext[T]] = {

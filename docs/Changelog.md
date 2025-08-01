@@ -119,7 +119,6 @@ description: Stay informed with detailed changelogs covering new features, impro
   * Added a list of editors to the UIParameter.
 * [#7616](https://github.com/TouK/nussknacker/pull/7616) (K8s DM) Fix for: k8s object name sanitizing strategy sometimes generated invalid object names, in other cases, 
   it generated names with unnecessary characters appended
-* [#7615](https://github.com/TouK/nussknacker/pull/7615) Updated Flink dependency to 1.19.2
 * [#7648](https://github.com/TouK/nussknacker/pull/7648) Strip namespace from topic name in `inputMeta` context variable
 * [#7649](https://github.com/TouK/nussknacker/pull/7649) Renamed 'sticky note' component label to 'Sticky Note' and assigned it to the 'Misc' component group
 * Added test capabilities for Event Generator source
@@ -258,6 +257,26 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8366](https://github.com/TouK/nussknacker/pull/8366) Spring and SpEL upgraded 5.2.23.RELEASE -> 6.2.9.
   * [Safe navigation operator ?.](https://docs.spring.io/spring-framework/reference/core/expressions/language-ref/operator-safe-navigation.html)
     is supported for collections, maps and strings.
+* [#8375](https://github.com/TouK/nussknacker/pull/8375) Explicit definition of expression language for default parameter values in component configuration
+  * Default value expressions must now explicitly define the expression language using the language field. 
+  * If no language is specified, the expression will be interpreted as a SPeL expression by default.
+  ```hocon
+     componentsUiConfig {
+       enricher {
+         params {
+           param1 {
+             defaultValue: {
+               expression: "default value 1"
+               language: "spelTemplate"
+             }
+           }
+           param2 {
+             defaultValue: "'default value 2'" // This syntax will be interpreted as a SpEL expression
+           }
+         }
+       }
+     }
+  ```
 
 ## 1.18
 

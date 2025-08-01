@@ -37,11 +37,11 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
         )
       }
 
-      override protected def createSourceStream[T](
-          list: List[T],
+      override protected def createSourceStream(
+          list: List[Any],
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
-      ): DataStreamSource[T] = {
+      ): DataStreamSource[Any] = {
         val offsetOpt =
           flinkNodeContext.componentUseContext.deploymentData
             .flatMap(_.get(OFFSET_PARAMETER_NAME.value))

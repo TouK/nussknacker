@@ -41,7 +41,7 @@ var SpelHighlightRules = function() {
             token: "keyword",
             regex: "%"
         }, {
-            token: "variable",
+            token: "method",
             regex: "\\.[a-z0-9-_]+"
         }, {
             token: "string",

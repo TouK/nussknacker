@@ -43,7 +43,7 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
       .map(_.expression)
       .andThen { spelTemplateExpression =>
         typeDeterminer
-          .expressionResultType(spelTemplateExpression, validationContext)
+          .expressionResultType(spelTemplateExpression, validationContext, expectedType)
           .map(toJsonTemplateExpression(originalJsonString, spelTemplateExpression, _))
       }
       .andThen(validateExpectedType)

@@ -47,7 +47,12 @@ trait WithAdHocTestsLogic {
       }
       .when()
       .basicAuthAllPermUser()
-      .jsonBody(parametersProvidedForDryRun)
+      .jsonBody(
+        ScenarioTestValidationRequest(
+          testData = ScenarioTestData.WithParameters(validParameters),
+          scenarioGraph = exampleScenario.toScenarioGraph
+        ).asJson.toString()
+      )
       .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
       .Then()
       .statusCode(200)
@@ -94,8 +99,6 @@ trait WithAdHocTestsLogic {
   protected def exampleScenario: CanonicalProcess
 
   protected def validParameters: TestSourceParameters
-
-  protected def parametersProvidedForDryRun: String
 
   protected def expectedTestParametersJson: String
 

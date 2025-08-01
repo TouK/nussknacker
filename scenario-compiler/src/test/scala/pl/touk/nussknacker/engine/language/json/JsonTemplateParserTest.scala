@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.language.json
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Valid
-import io.circe.Json
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,33 +11,21 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
-import pl.touk.nussknacker.engine.language.json.JsonParser.JsonParseError
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
+import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.JsonParseError
 import pl.touk.nussknacker.engine.language.json.JsonTemplateParser.JsonTemplateDecodingException
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.time.{
-  Duration,
-  Instant,
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-  OffsetDateTime,
-  Period,
-  ZonedDateTime,
-  ZoneId,
-  ZoneOffset
-}
+import java.time._
 import java.util
 import java.util.{Currency, Locale, UUID}
 import scala.jdk.CollectionConverters._
-import scala.reflect.runtime.universe._
 
 class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues with TableDrivenPropertyChecks {
 
@@ -87,7 +74,6 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     forAll(
       Table(
         ("Data sample", "Typing result"),
-        ("", Typed.json),
         ("{}", Typed.record(List())),
         ("123", Typed.typedClass[Integer]),
         ("[]", Typed.genericTypeClass[java.util.List[_]](List(Typed.json))),
@@ -150,7 +136,9 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         ),
       )
     ) { (dataSample: String, typingResult: TypingResult) =>
-      parse[Any](dataSample, validationContextWithVariables).map(_.returnType) shouldBe Valid(typingResult)
+      parse(dataSample, expectedType = Unknown, validationContextWithVariables).map(_.returnType) shouldBe Valid(
+        typingResult
+      )
     }
   }
 
@@ -163,7 +151,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
          |  "amount": #{ #amount }
          |}""".stripMargin
 
-    val mapResult = parse[Any](dataSample, validationContextWithVariables).validValue.expression
+    val mapResult = parse(dataSample, expectedType = Unknown, validationContextWithVariables).validValue.expression
       .evaluate[Any](evaluationContextWithVariables, Map.empty)
 
     mapResult shouldBe Map(
@@ -179,7 +167,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
                          |  "products": [
                          |}""".stripMargin
 
-    val parsingErrors = parse[String](invalidJson).invalidValue
+    val parsingErrors = parse(invalidJson, expectedType = Typed[String]).invalidValue
 
     parsingErrors shouldBe NonEmptyList.of(
       JsonParseError(
@@ -195,7 +183,8 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         |  "field1": #{ #field1Value }
         |}""".stripMargin
     val validationContext = validationContextWithDefaultHelpers.withVariableUnsafe("field1Value", Typed.json)
-    val typedExpression = parse[Any](jsonWithExpressionPlaceholderInUnquotedlogicalValue, validationContext).validValue
+    val typedExpression =
+      parse(jsonWithExpressionPlaceholderInUnquotedlogicalValue, expectedType = Unknown, validationContext).validValue
     typedExpression.typingInfo.typingResult shouldBe Typed.record(Seq("field1" -> Typed.json))
 
     forAll(
@@ -221,7 +210,8 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         |  #{ #listElement }
         |]""".stripMargin
     val validationContext = validationContextWithDefaultHelpers.withVariableUnsafe("listElement", Typed.json)
-    val typedExpression   = parse[Any](jsonWithExpressionPlaceholderInList, validationContext).validValue
+    val typedExpression =
+      parse(jsonWithExpressionPlaceholderInList, expectedType = Unknown, validationContext).validValue
     typedExpression.typingInfo.typingResult shouldBe Typed.genericTypeClass(
       classOf[java.util.List[_]],
       List(Typed.json)
@@ -294,7 +284,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       )
     ) { (logicalValue, expectedTypeForQuotedField, expectedStringValueInJson) =>
       val validationContext = prepareValidationContext(logicalValue)
-      val typedExpression   = parse[Any](jsonTemplate, validationContext).validValue
+      val typedExpression   = parse(jsonTemplate, expectedType = Unknown, validationContext).validValue
       typedExpression.typingInfo.typingResult shouldBe Typed.record(
         Seq(
           "quotedField"                                -> expectedTypeForQuotedField,
@@ -315,10 +305,11 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
       ).asJava
     }
 
-    val compiledExpressionForUnquotedField = parse[Any](
+    val compiledExpressionForUnquotedField = parse(
       """{
         |  "unquotedField": #{ #logicalValue }
         |}""".stripMargin,
+      expectedType = Unknown,
       prepareValidationContext(Instant.ofEpochMilli(123L))
     ).validValue
     a[JsonTemplateDecodingException] shouldBe thrownBy {
@@ -330,6 +321,36 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
     }
   }
 
+  test("should allow to use literal strings in places where logical types are expected") {
+    forAll(
+      Table(
+        ("literalString", "givenType", "expectedLogicalValue"),
+        ("1970-01-01T00:00:00.123Z", Typed[Instant], Instant.ofEpochMilli(123L)),
+        ("2025-01-01T00:00:00Z", Typed[OffsetDateTime], OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)),
+        ("2025-01-01T00:00:00Z", Typed[ZonedDateTime], ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)),
+        ("2025-01-01T00:00:00", Typed[LocalDateTime], LocalDateTime.of(2025, 1, 1, 0, 0, 0, 0)),
+        ("2025-01-01", Typed[LocalDate], LocalDate.of(2025, 1, 1)),
+        ("12:01:00", Typed[LocalTime], LocalTime.of(12, 1)),
+        ("P30D", Typed[Period], Period.ofDays(30)),
+        ("PT12H", Typed[Duration], Duration.ofHours(12)),
+        ("+01:00", Typed[ZoneOffset], ZoneOffset.of("+01:00")),
+        ("Europe/Warsaw", Typed[ZoneId], ZoneId.of("Europe/Warsaw")),
+        ("en", Typed[Locale], Locale.ENGLISH),
+        ("UTF-8", Typed[Charset], StandardCharsets.UTF_8),
+        ("USD", Typed[Currency], Currency.getInstance("USD")),
+        ("38a727ce-44d6-43ef-85b8-1fdde02108cf", Typed[UUID], UUID.fromString("38a727ce-44d6-43ef-85b8-1fdde02108cf")),
+      )
+    ) { (literalString, givenType, expectedLogicalValue) =>
+      val jsonTemplate = s""""$literalString""""
+
+      val typedExpression = parse(jsonTemplate, expectedType = givenType, ValidationContext.empty).validValue
+      typedExpression.typingInfo.typingResult shouldBe givenType
+
+      val evaluationResult = typedExpression.expression.evaluate[Any](Context.dummy, globals = defaultHelpers)
+      evaluationResult shouldBe expectedLogicalValue
+    }
+  }
+
   test("should allow to use string elements and other type elements in the list with unknown type") {
     val jsonWithExpressionPlaceholderInList =
       """[
@@ -337,7 +358,8 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         |]""".stripMargin
     val validationContext = validationContextWithDefaultHelpers
       .withVariableUnsafe("listElement", Typed.json)
-    val typedExpression = parse[Any](jsonWithExpressionPlaceholderInList, validationContext).validValue
+    val typedExpression =
+      parse(jsonWithExpressionPlaceholderInList, expectedType = Unknown, validationContext).validValue
     typedExpression.typingInfo.typingResult shouldBe Typed.genericTypeClass(
       classOf[java.util.List[_]],
       List(Typed.json)
@@ -373,7 +395,7 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         |}""".stripMargin
 
     val validationContext = validationContextWithDefaultHelpers.withVariableUnsafe("condition", Typed[Boolean])
-    val typedExpression   = parse[Any](jsonWithTemplatingLogic, validationContext).validValue
+    val typedExpression   = parse(jsonWithTemplatingLogic, expectedType = Unknown, validationContext).validValue
     typedExpression.typingInfo.typingResult shouldBe Typed.json
 
     def evaluate(condition: Boolean) = {
@@ -396,15 +418,16 @@ class JsonTemplateParserTest extends AnyFunSuite with Matchers with EitherValues
         |}""".stripMargin
 
     val validationContext = validationContextWithDefaultHelpers.withVariableUnsafe("condition", Typed[Boolean])
-    val typedExpression   = parse[Any](jsonWithTemplatingLogic, validationContext).validValue
+    val typedExpression   = parse(jsonWithTemplatingLogic, expectedType = Unknown, validationContext).validValue
     typedExpression.typingInfo.typingResult shouldBe Typed.json
   }
 
-  private def parse[T: TypeTag](
+  private def parse(
       jsonString: String,
+      expectedType: TypingResult,
       ctx: ValidationContext = validationContextWithDefaultHelpers,
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
-    sut.parse(jsonString, ctx, Typed.fromDetailedType[T])
+    sut.parse(jsonString, ctx, expectedType)
   }
 
   // This is a copy of ConversionUtils. We can't use it directly, because it would cause a cycle in module dependencies

@@ -18,14 +18,18 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ComponentUseContext.LiveRuntime
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   DynamicNodeValidator,
   SingleInputNodeInputValidationContext,
   TransformationResult
 }
+import pl.touk.nussknacker.engine.definition.component.NodeCompilationDependencies
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, PaymentV1}
@@ -58,19 +62,20 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     val modelData = LocalModelData(ConfigFactory.empty(), List.empty)
     val validator = DynamicNodeValidator(modelData)
     val metaData  = MetaData("processId", StreamMetaData())
-
-    val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
-    implicit val scenarioCompilationDependencies: ScenarioCompilationDependencies =
-      new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty)
-    val paramsList = params.toList.map(p => NodeParameter(p._1, p._2))
+    val jobData   = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
+    val nodeCompilationDependencies = new NodeCompilationDependencies(
+      scenarioCompilationDependencies =
+        new ScenarioCompilationDependencies(jobData, EngineScenarioCompilationDependencies.empty),
+      nodeData = Source("id", SourceRef("typ", params.toList.map(p => NodeParameter(p._1, p._2)))),
+      componentUseContext = LiveRuntime(None),
+      inputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
+    )
     validator
       .validateNode(
-        universalSinkFactory,
-        paramsList,
-        Nil,
-        Some(VariableConstants.InputVariableName),
-        Map.empty,
-        SingleInputNodeInputValidationContext(ValidationContext.empty)
+        compilationDependencies = nodeCompilationDependencies,
+        component = universalSinkFactory,
+        parametersConfig = Map.empty,
+        nodeInputValidationContext = SingleInputNodeInputValidationContext(ValidationContext.empty)
       )
       .toOption
       .get

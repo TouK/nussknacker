@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.context
 
 import cats.Applicative
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
@@ -167,6 +167,10 @@ object ProcessCompilationError {
   }
 
   case class MissingParameters(params: Set[ParameterName], nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
+  case class DuplicatedParameters(params: Set[ParameterName], nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -430,9 +434,17 @@ object ProcessCompilationError {
     override def nodeIds: Set[String] = Set()
   }
 
-  final case class CannotCreateObjectError(message: String, nodeId: String)
+  final case class CannotCreateObjectError(message: String, nodeId: String, cause: Option[Throwable])
       extends ProcessCompilationError
       with InASingleNode
+
+  object CannotCreateObjectError {
+
+    def apply(message: String, nodeId: String) = new CannotCreateObjectError(message, nodeId, cause = None)
+
+    def apply(cause: Throwable, nodeId: String) =
+      new CannotCreateObjectError(cause.getMessage, nodeId, cause = Some(cause))
+  }
 
   final case class ScenarioNameValidationError(message: String, description: String)
       extends ProcessCompilationError
@@ -469,3 +481,6 @@ object ProcessCompilationError {
   final case class IllegalCharactersId(illegalCharacterHumanReadable: String) extends IdErrorType
 
 }
+
+final case class ScenarioCompilationErrors(errors: List[ProcessCompilationError])
+    extends Exception(errors.mkString("Compilation errors: ", ", ", ""))

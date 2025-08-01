@@ -63,10 +63,13 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       Nil,
       fragmentResolver
     )
-    result.asInstanceOf[ValidationPerformed].errors.distinct shouldBe CannotCreateObjectError(
-      "AdditionalVariableWithFixedValue should not be used with LazyParameters",
-      "sid"
-    ) :: Nil
+    result.asInstanceOf[ValidationPerformed].errors.distinct should matchPattern {
+      case CannotCreateObjectError(
+            "AdditionalVariableWithFixedValue should not be used with LazyParameters",
+            "sid",
+            _
+          ) :: Nil =>
+    }
 
   }
 

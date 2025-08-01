@@ -8,28 +8,36 @@ import cats.syntax.either._
 import cats.syntax.list._
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
+import io.circe.{DecodingFailure, Json}
 import pl.touk.nussknacker.engine.{ModelData, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ScenarioCompilationErrors}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator, TestWithParametersSupport}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.process.{Source, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.test.{
+  ScenarioTestCommonFormatJsonRecord,
+  ScenarioTestData,
+  ScenarioTestSourceSpecificFormatJsonRecord
+}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, CanonicalProcessConverter}
 import pl.touk.nussknacker.engine.definition.action.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
+import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder
+import pl.touk.nussknacker.engine.testmode.CommonTestDataFormatVariablesDecoder.TestRecordVariablesDecodingError
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ListUtil
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
+import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import shapeless.syntax.typeable.typeableOps
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,9 +54,12 @@ class ScenarioTestService(
 
   private val commonModelDataInfoProvider = new CommonModelDataInfoProvider(modelData)
 
+  private val testDataFormatHandler = TestDataFormatHandler(testDataSettings.testDataFormat, modelData)
+
   private val preliminaryScenarioRecordsSerDe = new PreliminaryScenarioRecordsSerDe(
     serializedContentMaxLength = testDataSettings.testDataMaxLength,
-    maxRecordsCount = testDataSettings.maxSamplesCount
+    maxRecordsCount = testDataSettings.maxSamplesCount,
+    testDataFormatSerDe = testDataFormatHandler.serDe
   )
 
   def getTestingCapabilities(
@@ -57,7 +68,7 @@ class ScenarioTestService(
   ): Either[TestingCapabilitiesError, TestingCapabilities] = {
     val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
     val jobData   = JobData(canonical.metaData, processVersion)
-    val sources   = commonModelDataInfoProvider.collectAllSources(canonical)
+    val sources   = canonical.collectAllSources
 
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
@@ -89,8 +100,8 @@ class ScenarioTestService(
 
   private def getTestingCapabilitiesForCompiledSource(compiledSource: Source): TestingCapabilities = {
     TestingCapabilities(
-      canBeTested = compiledSource.isInstanceOf[SourceTestSupport[_]],
-      canFetchLiveData = compiledSource.isInstanceOf[TestDataGenerator],
+      canBeTested = testDataFormatHandler.canBeTested(compiledSource),
+      canFetchLiveData = testDataFormatHandler.canFetchLiveData(compiledSource),
       canTestWithForm = compiledSource.isInstanceOf[TestWithParametersSupport[_]]
     )
   }
@@ -102,7 +113,7 @@ class ScenarioTestService(
   )(implicit user: LoggedUser): Either[ParametersDefinitionError, Map[NodeId, List[Parameter]]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     val jobData   = JobData(canonical.metaData, processVersion)
-    val sources   = commonModelDataInfoProvider.collectAllSources(canonical)
+    val sources   = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
       for {
         compiledSourcesById <-
@@ -157,8 +168,7 @@ class ScenarioTestService(
       for {
         _ <- validateRecordsCount(maxNumberOfRecords)(FetchLiveDataError.TooManyRecordsRequestedError)
 
-        compiledSources <- commonModelDataInfoProvider
-          .collectAllSources(canonical)
+        compiledSources <- canonical.collectAllSources
           .map(compileSource)
           .sequence
           .leftMap[FetchLiveDataError](FetchLiveDataError.SourcesCompilationError)
@@ -166,7 +176,7 @@ class ScenarioTestService(
 
         fetchedLiveDataForSources = compiledSources
           .flatMap { case (sourceId, compiledSource) =>
-            fetchLiveData(sourceId, compiledSource, maxNumberOfRecords)
+            testDataFormatHandler.fetchLiveData(sourceId, compiledSource, maxNumberOfRecords).toOption
           }
 
         fetchedLiveDataForSourcesNel <- fetchedLiveDataForSources.toNel.toRight(
@@ -207,8 +217,9 @@ class ScenarioTestService(
 
         (_, compiledSource) = compiledSourceWithId
 
-        fetchedLiveData <- fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
-          .toRight(FetchLiveDataError.LiveDataFetchingNotSupportedError)
+        fetchedLiveData <- testDataFormatHandler
+          .fetchLiveData(nodeId, compiledSource, maxNumberOfRecords)
+          .leftMap(_ => FetchLiveDataError.LiveDataFetchingNotSupportedError)
 
         fetchedLiveDataNel <- NonEmptyList
           .fromList(fetchedLiveData)
@@ -237,18 +248,24 @@ class ScenarioTestService(
       .map(nodeId -> _)
   }
 
-  private def fetchLiveData(
-      sourceId: NodeId,
-      compiledSource: Source,
-      maxNumberOfRecords: Int
-  ): Option[List[PreliminaryScenarioRecord]] = {
-    compiledSource.cast[TestDataGenerator].map { testDataGenerator =>
-      val sourceTestRecords = modelData.withModelClassloaderAsContextClassLoader {
-        testDataGenerator.generateTestData(maxNumberOfRecords).testRecords
-      }
-      sourceTestRecords
-        .map(testRecord => PreliminaryScenarioRecord(sourceId.id, testRecord.json, testRecord.timestamp))
-    }
+  def performTest(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+      parameterTestData: TestSourceParameters,
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    (for {
+      testResults <- EitherT(
+        performTestWithDeserializedRecords(
+          processVersion,
+          canonical,
+          ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
+        )
+      )
+
+      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
+    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def performTest(
@@ -272,16 +289,67 @@ class ScenarioTestService(
 
       scenarioTestData <- EitherT.fromEither[Future](prepareTestData(preliminaryScenarioTestRecords, canonical))
 
-      testResults <- EitherT.liftF(
-        testExecutorService.testProcess(
-          processVersion,
-          canonical,
-          scenarioTestData,
-        )
+      testResults <- EitherT(
+        performTestWithDeserializedRecords(processVersion, canonical, scenarioTestData)
       )
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
     } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
+  }
+
+  private def performTestWithDeserializedRecords(
+      processVersion: ProcessVersion,
+      canonical: CanonicalProcess,
+      scenarioTestData: ScenarioTestData
+  )(implicit ec: ExecutionContext, user: LoggedUser) = {
+    testExecutorService
+      .testProcess(
+        processVersion,
+        canonical,
+        scenarioTestData,
+      )
+      .map(Right[PerformTestError, TestResults[Json]])
+      .recoverWith[Either[PerformTestError, TestResults[Json]]] {
+        // Lite engine
+        case decodingError: TestRecordVariablesDecodingError =>
+          Future.successful(Left(toPerformTestError(decodingError)))
+        // Flink engine
+        case scenarioCompilationErrors: ScenarioCompilationErrors =>
+          scenarioCompilationErrors.errors
+            // TODO: Redesign StubbedFlinkProcessCompilerDataFactory to remove error nesting
+            .collectFirst { case CannotCreateObjectError(_, _, Some(decodingError: TestRecordVariablesDecodingError)) =>
+              Future.successful(Left(toPerformTestError(decodingError)))
+            }
+            .getOrElse {
+              throw scenarioCompilationErrors
+            }
+      }
+  }
+
+  private def toPerformTestError(decodingError: TestRecordVariablesDecodingError): PerformTestError = {
+    decodingError match {
+      case CommonTestDataFormatVariablesDecoder
+            .UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex) =>
+        PerformTestError.UnexpectedVariableInTestRecordError(variableName, sourceId, testRecordIndex)
+      case CommonTestDataFormatVariablesDecoder
+            .TestRecordVariableDecodingError(
+              variableName,
+              variableType,
+              encodedVariable,
+              cause,
+              sourceId,
+              testRecordIndex,
+            ) =>
+        PerformTestError
+          .TestRecordVariableDecodingError(
+            variableName,
+            variableType,
+            encodedVariable,
+            cause,
+            sourceId,
+            testRecordIndex
+          )
+    }
   }
 
   private[test] def prepareTestData(
@@ -290,35 +358,20 @@ class ScenarioTestService(
   ): Either[PerformTestError, ScenarioTestData] = {
     import cats.implicits._
 
-    val allScenarioSourceIds = commonModelDataInfoProvider.collectAllSources(scenario).map(_.id).toSet
+    val allScenarioSourceIds = scenario.collectAllSources.map(_.id).toSet
     preliminaryScenarioRecords.records.zipWithIndex
       .map {
-        case (PreliminaryScenarioRecord(sourceId, record, timestamp), _) if allScenarioSourceIds.contains(sourceId) =>
-          Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
-        case (PreliminaryScenarioRecord(sourceId, _, _), recordIdx) =>
-          Left(PerformTestError.MissingSourceError(NodeId(sourceId), recordIdx))
+        case (SourceSpecificFormatPreliminaryScenarioRecord(sourceId, record, timestamp), _)
+            if allScenarioSourceIds.contains(sourceId) =>
+          Right(ScenarioTestSourceSpecificFormatJsonRecord(sourceId, record, timestamp))
+        case (CommonFormatPreliminaryScenarioRecord(sourceId, variables, timestamp), _)
+            if allScenarioSourceIds.contains(sourceId) =>
+          Right(ScenarioTestCommonFormatJsonRecord(NodeId(sourceId), variables, timestamp))
+        case (record, recordIdx) =>
+          Left(PerformTestError.MissingSourceError(NodeId(record.sourceId), recordIdx))
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
-  }
-
-  def performTest(
-      scenarioGraph: ScenarioGraph,
-      processVersion: ProcessVersion,
-      isFragment: Boolean,
-      parameterTestData: TestSourceParameters,
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
-    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
-    (for {
-      testResults <- EitherT.liftF(
-        testExecutorService.testProcess(
-          processVersion,
-          canonical,
-          ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
-        )
-      )
-      _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
-    } yield ResultsWithCounts(Instant.now(), testResults, computeCounts(canonical, isFragment, testResults))).value
   }
 
   def resultsWithCounts(
@@ -438,6 +491,19 @@ object ScenarioTestService {
   object PerformTestError {
     final case class DeserializationError(cause: PreliminaryScenarioRecordsSerDe.DeserializationError)
         extends PerformTestError
+
+    final case class UnexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId, testRecordIndex: Int)
+        extends PerformTestError
+
+    final case class TestRecordVariableDecodingError(
+        variableName: String,
+        variableType: TypingResult,
+        encodedVariable: Json,
+        cause: DecodingFailure,
+        sourceId: NodeId,
+        testRecordIndex: Int,
+    ) extends PerformTestError
+
     final case class MissingSourceError(sourceId: NodeId, recordIndex: Int)                extends PerformTestError
     final case class TestResultsSizeExceededError(approxSizeInBytes: Long, maxBytes: Long) extends PerformTestError
   }

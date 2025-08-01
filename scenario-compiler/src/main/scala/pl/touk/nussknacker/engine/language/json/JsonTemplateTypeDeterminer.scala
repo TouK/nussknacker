@@ -1,47 +1,35 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{validNel, Invalid, Valid}
+import cats.data.ValidatedNel
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
+import io.circe.{parser, HCursor, Json, ParsingFailure}
+import io.circe.Decoder.Result
 import org.springframework.expression.{Expression => SpringExpression}
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.json.decoders.FromJsonSimpleDecoder
-import pl.touk.nussknacker.engine.api.typed.FromInstanceTypeDeterminer
+import pl.touk.nussknacker.engine.api.json.decoders.{FromJsonSimpleDecoder, FromJsonTypingResultBasedDecoder}
+import pl.touk.nussknacker.engine.api.typed.{FromInstanceTypeDeterminer, StandardTypesClasses}
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.component.parameter.defaults.TypeValueDeterminer
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
-import pl.touk.nussknacker.engine.language.json.JsonParser.CompiledJsonExpression
+import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.ParsingFailureExt
 import pl.touk.nussknacker.engine.language.json.JsonTemplateTypeDeterminer._
 import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelExpressionParser, SpelExpressionRepr}
-import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
+import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.math.{BigDecimal => JBigDecimal}
-import java.nio.charset.Charset
-import java.time.{
-  Duration,
-  Instant,
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-  OffsetDateTime,
-  Period,
-  ZonedDateTime,
-  ZoneId,
-  ZoneOffset
-}
-import java.util.{Currency, Locale, UUID}
 import scala.collection.immutable.ListMap
 
 private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser) extends LazyLogging {
 
   def expressionResultType(
       spelTemplateExpression: CompiledExpression,
-      validationContext: ValidationContext
+      validationContext: ValidationContext,
+      expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypingResult] = {
     // We convert spel template to json with placholders, because it is a convenient representation for typing.
     // Another option could be preparation of our own AST mixing Json AST and SpEL AST
@@ -52,17 +40,12 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
             s"Expression [${spelTemplateExpression.original}] was transformed to json with placeholders filled [$jsonWithPlaceholdersFilled] for the expression typing purpose"
           )
           // This step may generate a wrong error position because we fill placeholders but it not a problem because we abandon validation result
-          JsonParser
-            .parse(jsonWithPlaceholdersFilled, validationContext, Unknown)
-            .fold(
-              handleJsonWithPlaceholdersFilledParseError(spelExpression, _),
-              typedJsonExpression =>
-                Valid(
-                  computeTypeForJsonWithPlaceholdersFilled(
-                    typedJsonExpression.expression.asInstanceOf[CompiledJsonExpression].json
-                  )
-                )
-            )
+          parser.parse(jsonWithPlaceholdersFilled) match {
+            case Left(err) =>
+              handleJsonWithPlaceholdersFilledParseError(spelExpression, err)
+            case Right(json) =>
+              Valid(computeTypeForJsonWithPlaceholdersFilled(json, expectedType))
+          }
         }
     }
   }
@@ -115,11 +98,11 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
 
   private def handleJsonWithPlaceholdersFilledParseError(
       spelExpression: SpringExpression,
-      errors: NonEmptyList[ExpressionParseError]
+      error: ParsingFailure
   ) = {
     def abandonErrors() = {
       logger.debug(
-        s"Found validation errors [${errors.toList.mkString(", ")}] during json with placeholders validation. " +
+        s"Found paring error [${error.getMessage()}] during json with placeholders validation. " +
           s"We can't be sure that they are real errors, so we be ignore them and return ${Typed.json} type instead"
       )
       Valid(Typed.json)
@@ -127,7 +110,7 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
 
     spelExpression match {
       // No placeholder filled - we can return errors
-      case _: LiteralExpression => Invalid(errors)
+      case _: LiteralExpression => Invalid(error.toExpressionParseError).toValidatedNel
       // When any expression was used, we have to be loose, json-structure-based types are only a hint for further validation.
       // In general, we should allow every templating logic
       case _: CompositeStringExpression =>
@@ -141,8 +124,14 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
     }
   }
 
-  private def computeTypeForJsonWithPlaceholdersFilled(validJsonWithPlaceholdersFilled: Json) = {
-    val obj = FromJsonSimpleDecoder.jsonToAny(validJsonWithPlaceholdersFilled)
+  private def computeTypeForJsonWithPlaceholdersFilled(
+      validJsonWithPlaceholdersFilled: Json,
+      expectedType: TypingResult
+  ) = {
+    val obj = JsonTypingResultBasedDecoderWithFallbackToSimple.decodeWithFallback(
+      expectedType,
+      validJsonWithPlaceholdersFilled.hcursor
+    )
     JsonTemplateFromInstanceTypeDeterminer.fromInstance(obj)
   }
 
@@ -167,31 +156,45 @@ private object JsonTemplateTypeDeterminer {
   // This value will be typed as an unknown json
   private val specialMarkerForUnknownTypes = JBigDecimal.valueOf(0.6568369117280021)
 
-  private val specialMarkersForLogicalTypes = List[(JBigDecimal, TypedClass)](
-    JBigDecimal.valueOf(0.6568369117280022) -> Typed.typedClass[Instant],
-    JBigDecimal.valueOf(0.6568369117280023) -> Typed.typedClass[OffsetDateTime],
-    JBigDecimal.valueOf(0.6568369117280024) -> Typed.typedClass[ZonedDateTime],
-    JBigDecimal.valueOf(0.6568369117280025) -> Typed.typedClass[LocalDateTime],
-    JBigDecimal.valueOf(0.6568369117280026) -> Typed.typedClass[LocalDate],
-    JBigDecimal.valueOf(0.6568369117280027) -> Typed.typedClass[LocalTime],
-    JBigDecimal.valueOf(0.6568369117280028) -> Typed.typedClass[Duration],
-    JBigDecimal.valueOf(0.6568369117280031) -> Typed.typedClass[Period],
-    JBigDecimal.valueOf(0.6568369117280032) -> Typed.typedClass[ZoneOffset],
-    JBigDecimal.valueOf(0.6568369117280033) -> Typed.typedClass[ZoneId],
-    JBigDecimal.valueOf(0.6568369117280034) -> Typed.typedClass[Currency],
-    JBigDecimal.valueOf(0.6568369117280035) -> Typed.typedClass[Locale],
-    JBigDecimal.valueOf(0.6568369117280036) -> Typed.typedClass[UUID],
-    JBigDecimal.valueOf(0.6568369117280037) -> Typed.typedClass[Charset],
-  ).map { case (key, value) => key.toString -> value } toMapCheckingDuplicates
+  private val specialMarkersForLogicalTypes = List[(JBigDecimal, Class[_])](
+    JBigDecimal.valueOf(0.6568369117280022) -> StandardTypesClasses.InstantClass,
+    JBigDecimal.valueOf(0.6568369117280023) -> StandardTypesClasses.OffsetDateTimeClass,
+    JBigDecimal.valueOf(0.6568369117280024) -> StandardTypesClasses.ZonedDateTimeClass,
+    JBigDecimal.valueOf(0.6568369117280025) -> StandardTypesClasses.LocalDateTimeClass,
+    JBigDecimal.valueOf(0.6568369117280026) -> StandardTypesClasses.LocalDateClass,
+    JBigDecimal.valueOf(0.6568369117280027) -> StandardTypesClasses.LocalTimeClass,
+    JBigDecimal.valueOf(0.6568369117280028) -> StandardTypesClasses.DurationClass,
+    JBigDecimal.valueOf(0.6568369117280031) -> StandardTypesClasses.PeriodClass,
+    JBigDecimal.valueOf(0.6568369117280032) -> StandardTypesClasses.ZoneOffsetClass,
+    JBigDecimal.valueOf(0.6568369117280033) -> StandardTypesClasses.ZoneIdClass,
+    JBigDecimal.valueOf(0.6568369117280034) -> StandardTypesClasses.CurrencyClass,
+    JBigDecimal.valueOf(0.6568369117280035) -> StandardTypesClasses.LocaleClass,
+    JBigDecimal.valueOf(0.6568369117280036) -> StandardTypesClasses.UUIDClass,
+    JBigDecimal.valueOf(0.6568369117280037) -> StandardTypesClasses.CharsetClass,
+  ).map { case (key, value) => key.toString -> Typed.typedClass(value) }.toMapCheckingDuplicatesUnsafe
 
   private object TypeMarkedUsingSpecialMarker {
     private val specialMarkersForLogicalTypesSwapped =
-      specialMarkersForLogicalTypes.toList.map(_.swap).toMapCheckingDuplicates
+      specialMarkersForLogicalTypes.toList.map(_.swap).toMapCheckingDuplicatesUnsafe
 
     def unapply(typ: TypedClass): Option[String] = specialMarkersForLogicalTypesSwapped.get(typ)
   }
 
   private final case class UnparsedSpelExpression(value: String) extends AnyVal
+
+  // It is better to use FromJsonTypingResultBasedDecoder than just FromJsonSimpleDecoder because it
+  // produces a correct logical types for literal values.
+  // However, we have to do fallback to simple type because values placed in placeholders don't match given type
+  private object JsonTypingResultBasedDecoderWithFallbackToSimple extends FromJsonTypingResultBasedDecoder {
+
+    def decodeWithFallback(typ: TypingResult, cursor: HCursor): Any = {
+      decodeValue(typ, cursor)
+        .fold(err => throw new IllegalStateException("Fail-safe decoder returned error", err), identity)
+    }
+
+    override def decodeValue(typ: TypingResult, cursor: HCursor): Result[Any] =
+      Right(super.decodeValue(typ, cursor).getOrElse(FromJsonSimpleDecoder.jsonToAny(cursor.value)))
+  }
 
   private object JsonTemplateFromInstanceTypeDeterminer extends FromInstanceTypeDeterminer {
 
@@ -212,7 +215,7 @@ private object JsonTemplateTypeDeterminer {
 
     def toValuePlacedInPlaceholder: Json = typ.withoutValue match {
       // lists
-      case TypedClass(clazz, param :: Nil) if TypeValueDeterminer.isList(clazz) =>
+      case TypedClass(`ListClass` | `ArrayClass`, param :: Nil) =>
         Json.fromValues(List(param.toValuePlacedInPlaceholder))
       // maps
       case TypedObjectTypingResult(fields, _, _) =>
@@ -220,13 +223,13 @@ private object JsonTemplateTypeDeterminer {
           fieldName -> fieldValue.toValuePlacedInPlaceholder
         })
       // primitive types
-      case TypedClass(clazz, _) if TypeValueDeterminer.isIntegerNumber(clazz) =>
+      case TypedClass(clazz, _) if StandardTypesClasses.isDecimalNumber(clazz) =>
         Json.fromInt(placeholderValueForIntegerNumber)
-      case TypedClass(clazz, _) if TypeValueDeterminer.isFloatingPointNumber(clazz) =>
+      case TypedClass(clazz, _) if StandardTypesClasses.isFloatingPointNumber(clazz) =>
         Json.fromDoubleOrNull(placeholderValueForFloatingPointNumber)
-      case TypedClass(clazz, _) if TypeValueDeterminer.isBoolean(clazz) => Json.fromBoolean(placeholderValueForBoolean)
+      case TypedClass(BooleanClass, _) => Json.fromBoolean(placeholderValueForBoolean)
       // strings and templating logic
-      case TypedClass(clazz, _) if TypeValueDeterminer.isString(clazz) =>
+      case TypedClass(StringClass, _) =>
         Json.fromString(placeholderValueForStringAndTemplatingLogic)
       // logical types
       case TypeMarkedUsingSpecialMarker(specialMarkerValue) =>

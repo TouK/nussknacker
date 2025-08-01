@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.Id
-import cats.data.{Writer, WriterT}
+import cats.data.{NonEmptyList, Writer, WriterT}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
@@ -77,7 +77,7 @@ class FragmentParametersDefinitionExtractor(
   )(
       implicit nodeId: NodeId
   ): Writer[List[PartSubGraphCompilationError], Parameter] = {
-    val parameterData = ParameterData(typ, Nil)
+    val parameterData = ParameterData(typ, annotations = Nil, isLazyParameter = true)
 
     val (extractedEditors, validationErrors) = fragmentParameter.valueEditor
       .map(editor =>
@@ -89,7 +89,7 @@ class FragmentParametersDefinitionExtractor(
           nodeIds = Set(nodeId.id)
         ) match {
           case Valid(editors) => (editors, List.empty)
-          case Invalid(e)     => (Nil, e.toList)
+          case Invalid(e)     => (NonEmptyList.one(SpelParameterEditor), e.toList)
         }
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty, globalParametersConfig), List.empty))
@@ -101,7 +101,7 @@ class FragmentParametersDefinitionExtractor(
     val validators = validationExpressionValidator ++ ValidatorsExtractor
       .extract(
         ValidatorExtractorParameters(
-          ParameterData(typ, Nil),
+          ParameterData(typ, annotations = Nil, isLazyParameter = true),
           !fragmentParameter.required,
           ParameterConfig.empty,
           extractedEditors
@@ -111,7 +111,7 @@ class FragmentParametersDefinitionExtractor(
     val param = Parameter
       .optional(fragmentParameter.name, typ)
       .copy(
-        editors = extractedEditors,
+        editors = extractedEditors.toList,
         validators = validators.toList,
         defaultValue = fragmentParameter.initialValue
           .map(initialValue =>

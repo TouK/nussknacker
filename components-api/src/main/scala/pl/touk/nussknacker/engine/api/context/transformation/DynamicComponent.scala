@@ -66,7 +66,7 @@ sealed trait DynamicComponent[T] extends Component {
       ex: Throwable
   )(implicit nodeId: NodeId): FinalResults = {
     val fallback = fallbackFinalResult(step, inputContext, outputVariable)
-    fallback.copy(errors = fallback.errors :+ CannotCreateObjectError(ex.getMessage, nodeId.id))
+    fallback.copy(errors = fallback.errors :+ CannotCreateObjectError(ex, nodeId.id))
   }
 
   protected def fallbackFinalResult(

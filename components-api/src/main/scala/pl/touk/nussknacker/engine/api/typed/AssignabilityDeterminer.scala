@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.ConversionNecessaryForTypeAssignment
   NoConvertionIsNeeded
 }
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -22,10 +23,6 @@ import pl.touk.nussknacker.engine.api.typed.typing._
  * are allowed ( Int -> Long). For other types it should work the same as a loose conversion.
  */
 private[engine] object AssignabilityDeterminer {
-
-  private val javaMapClass       = classOf[java.util.Map[_, _]]
-  private val javaListClass      = classOf[java.util.List[_]]
-  private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
 
   def typeAfterPotentialConversion(givenType: TypingResult, targetType: TypingResult)(
       implicit conversionStrategy: NonEmptyConversionStrategy
@@ -157,13 +154,13 @@ private[engine] object AssignabilityDeterminer {
 
       (givenClass, targetCandidate, conversionStrategy) match {
         case (TypedClass(_, givenElementParam :: Nil), TypedClass(targetClass, targetParam :: Nil), _)
-            if javaListClass.isAssignableFrom(targetClass) || arrayOfAnyRefClass.isAssignableFrom(targetClass) =>
+            if ListClass.isAssignableFrom(targetClass) || ArrayClass.isAssignableFrom(targetClass) =>
           isAssignable(givenElementParam, targetParam)
         case (
               TypedClass(_, givenKeyParam :: givenValueParam :: Nil),
               TypedClass(targetClass, targetKeyParam :: targetValueParam :: Nil),
               _
-            ) if javaMapClass.isAssignableFrom(targetClass) =>
+            ) if MapClass.isAssignableFrom(targetClass) =>
           // Map's key generic param is invariant. We can't just check givenKeyParam == targetKeyParam because of Unknown type which is a kind of wildcard
           condNel(
             isAssignable(givenKeyParam, targetKeyParam).isValid &&

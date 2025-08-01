@@ -242,7 +242,7 @@ class NodesApiHttpServiceBusinessSpec
              |    {
              |      "typ": "ExpressionParserCompilationError",
              |      "message": "Bad expression type, expected: Boolean, found: String",
-             |      "description": "There is problem with expression in field Some($$expression) - it could not be parsed.",
+             |      "description": "There is problem with expression in field [$$expression] - it could not be parsed.",
              |      "fieldName": "$$expression",
              |      "errorType": "SaveAllowed",
              |      "details": {
@@ -395,7 +395,7 @@ class NodesApiHttpServiceBusinessSpec
              |    {
              |      "typ": "ExpressionParserCompilationError",
              |      "message": "Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
-             |      "description": "There is problem with expression in field Some(Value) - it could not be parsed.",
+             |      "description": "There is problem with expression in field [Value] - it could not be parsed.",
              |      "fieldName": "Value",
              |      "errorType": "SaveAllowed",
              |      "details": {
@@ -821,7 +821,7 @@ class NodesApiHttpServiceBusinessSpec
              |  "validationErrors": [ {
              |    "typ": "ExpressionParserCompilationError",
              |    "message": "Bad expression type, expected: Boolean, found: Long(5)",
-             |    "description": "There is problem with expression in field Some(condition) - it could not be parsed.",
+             |    "description": "There is problem with expression in field [condition] - it could not be parsed.",
              |    "fieldName": "condition",
              |    "errorType": "SaveAllowed",
              |    "details": {
@@ -1010,13 +1010,13 @@ class NodesApiHttpServiceBusinessSpec
              |    "id": "$sourceTestingScenarioSourceId",
              |    "type": "Source",
              |    "ref": {
-             |      "typ": "genericSourceWithCustomVariables",
+             |      "typ": "event-generator",
              |      "parameters": [
              |        {
-             |          "name": "elements",
+             |          "name": "value",
              |          "expression": {
-             |            "language": "spel",
-             |            "expression": "{'test'}"
+             |            "language": "jsonTemplate",
+             |            "expression": "{\\"value\\": \\"test-#{ #DATE.now.toEpochMilli }\\", \\"timestamp\\": 123}"
              |          }
              |        }
              |      ]
@@ -1027,17 +1027,21 @@ class NodesApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/nodes/${sourceTestingScenario.name}/records?limit=10")
         .Then()
         .statusCode(200)
-        .equalsPlainBody(
-          """{"sourceId":"sourceId","record":"test-0"}
-            |{"sourceId":"sourceId","record":"test-1"}
-            |{"sourceId":"sourceId","record":"test-2"}
-            |{"sourceId":"sourceId","record":"test-3"}
-            |{"sourceId":"sourceId","record":"test-4"}
-            |{"sourceId":"sourceId","record":"test-5"}
-            |{"sourceId":"sourceId","record":"test-6"}
-            |{"sourceId":"sourceId","record":"test-7"}
-            |{"sourceId":"sourceId","record":"test-8"}
-            |{"sourceId":"sourceId","record":"test-9"}""".stripMargin
+        .body(
+          matchJsonWithRegexValues(
+            s"""[
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123},
+               |  {"sourceId":"sourceId","variables":{"input":{"value":"test-\\\\d+","timestamp":123}},"timestamp":123}
+               |]""".stripMargin
+          )
         )
     }
 
@@ -1179,14 +1183,7 @@ class NodesApiHttpServiceBusinessSpec
        |        }
        |    },
        |    "branchVariableTypes": {},
-       |    "variableTypes": {
-       |        "input": {
-       |            "display": "CsvRecord",
-       |            "type": "TypedClass",
-       |            "refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.CsvRecord",
-       |            "params": []
-       |        }
-       |    }
+       |    "variableTypes": {}
        |}""".stripMargin
 
   private lazy val exampleParametersValidationRequestBody =
@@ -1243,7 +1240,7 @@ class NodesApiHttpServiceBusinessSpec
 
   private lazy val sourceTestingScenario = ScenarioBuilder
     .streaming("source_testing_scenario")
-    .source(sourceTestingScenarioSourceId, "genericSourceWithCustomVariables", "elements" -> "{'test'}".spel)
+    .source(sourceTestingScenarioSourceId, "genericSourceWithCustomTestingSupport", "elements" -> "{'test'}".spel)
     .emptySink("sinkId", "barSink")
 
 }

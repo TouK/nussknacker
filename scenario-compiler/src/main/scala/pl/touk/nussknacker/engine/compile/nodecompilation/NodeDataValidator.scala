@@ -90,24 +90,24 @@ class NodeDataValidator(modelData: ModelData) {
         case a: Join =>
           toValidationResponse(
             compiler.compileCustomNodeObject(
-              a,
-              branchCtxs,
-              ending = false
+              data = a,
+              ctx = branchCtxs,
+              customNodeIsEndingNode = None
             )
           )
         case a: CustomNode =>
           toValidationResponse(
             compiler.compileCustomNodeObject(
-              a,
-              validationContext,
-              ending = false
+              data = a,
+              ctx = validationContext,
+              customNodeIsEndingNode = None
             )
           )
         case a: SourceNodeData => toValidationResponse(compiler.compileSource(a))
         case a: Sink           => toValidationResponse(compiler.compileSink(a, validationContext))
         case a: Enricher =>
           toValidationResponse(
-            compiler.compileEnricher(a, validationContext, outputVar = OutputVar.enricher(a.output))
+            compiler.compileEnricher(a, validationContext)
           )
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
         case a: Filter =>

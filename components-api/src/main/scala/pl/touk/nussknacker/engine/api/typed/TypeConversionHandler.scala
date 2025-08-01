@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.api.typed
 import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
 import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.{Loose, Strict}
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.Default.superTypeOfTypes
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.util.AssignabilityUtil
 
@@ -22,11 +22,7 @@ import scala.util.Try
   */
 private[engine] object TypeConversionHandler {
 
-  private val javaListClass            = classOf[java.util.List[_]]
-  private val javaCollectionClass      = classOf[java.util.Collection[_]]
-  private val javaMapClass             = classOf[java.util.Map[_, _]]
-  private val arrayOfAnyRefClass       = classOf[Array[AnyRef]]
-  private val mapConvertableClassNames = List("org.apache.avro.generic.IndexedRecord", "org.apache.flink.types.Row")
+  private val mapConvertableClassNames = List(AvroIndexedRecordClassName, FlinkTableApiRowClassName)
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -36,7 +32,7 @@ private[engine] object TypeConversionHandler {
     */
   // TODO: Add feature flag: strictBigDecimalChecking (default false?)
   private val ConversionFromClassesForDecimals =
-    NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
+    StandardTypesClasses.DecimalNumbersOrderedFromWidestToNarrowest.toSet + BigDecimalClass
 
   case class StringConversion[T: ClassTag](convert: String => T) {
 
@@ -117,10 +113,10 @@ private[engine] object TypeConversionHandler {
     val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(to)
 
     // We can't check precision here so we need to be loose here
-    if (NumberTypesPromotionStrategy
-        .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
-      ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
-    } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
+    if (StandardTypesClasses
+        .isFloatingPointNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == BigDecimalClass) {
+      ClassUtils.isAssignable(boxedGivenClass, NumberClass, true)
+    } else if (StandardTypesClasses.isDecimalNumber(boxedSuperclassCandidate)) {
       ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
     } else {
       false
@@ -149,10 +145,10 @@ private[engine] object TypeConversionHandler {
     (from, to) match {
       // Generic type parameters are checked in AssignabilityDeterminer
       case (
-            TypedClass(`arrayOfAnyRefClass`, genericParam :: Nil),
-            TypedClass(`javaListClass` | `javaCollectionClass`, _)
+            TypedClass(`ArrayClass`, genericParam :: Nil),
+            TypedClass(`ListClass` | `CollectionClass`, _)
           ) =>
-        Some(Typed.genericTypeClass(javaListClass, genericParam :: Nil))
+        Some(Typed.genericTypeClass(ListClass, genericParam :: Nil))
       case _ =>
         None
     }
@@ -167,7 +163,7 @@ private[engine] object TypeConversionHandler {
     (from.withoutValue, to) match {
       case (
             TypedObjectTypingResult(fromFields, TypedClass(fromRuntimeObjClass, _), _),
-            TypedClass(`javaMapClass`, mapKeyParam :: mapValueParam :: Nil)
+            TypedClass(MapClass, mapKeyParam :: mapValueParam :: Nil)
           ) =>
         lazy val indexedRecordValueType = superTypeOfTypes(fromFields.values)
 
@@ -178,7 +174,7 @@ private[engine] object TypeConversionHandler {
             AssignabilityDeterminer.isAssignable(Typed[String], mapKeyParam).isValid &&
             AssignabilityDeterminer.isAssignable(indexedRecordValueType, mapValueParam).isValid
         )(
-          Typed.record(fromFields, Typed.genericTypeClass(javaMapClass, Typed[String] :: indexedRecordValueType :: Nil))
+          Typed.record(fromFields, Typed.genericTypeClass(MapClass, Typed[String] :: indexedRecordValueType :: Nil))
         )
       case _ => None
     }

@@ -10,7 +10,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ScenarioCompilationDependencies}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
@@ -25,8 +24,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
+  CustomComponentSpecificData,
+  NodeCompilationDependencies
 }
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.ComponentImplementationSpecificInvocationContext
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
@@ -1328,9 +1329,15 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         base.components.copy(
           base.components.components.map {
             case component if component.componentType == ComponentType.Source =>
-              component.withImplementationInvoker((_: Params, _: Option[String], _: Seq[AnyRef]) => {
-                throw new RuntimeException("You passed incorrect parameter, cannot proceed")
-              })
+              component.withImplementationInvoker(
+                (
+                    _: Params,
+                    _: NodeCompilationDependencies,
+                    _: Option[ComponentImplementationSpecificInvocationContext]
+                ) => {
+                  throw new RuntimeException("You passed incorrect parameter, cannot proceed")
+                }
+              )
             case other => other
           }
         )
@@ -1345,7 +1352,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     validate(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
       case Invalid(
-            NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1"), Nil)
+            NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1", _), Nil)
           ) =>
     }
 
@@ -1438,6 +1445,26 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         CustomNodeError("service-2", "Service is invalid", None),
       )
     )
+  }
+
+  test("should detect duplicated parameters in node") {
+    val processWithLocalVarInEagerParam =
+      ScenarioBuilder
+        .streaming("process1")
+        .source("id1", "source")
+        .customNode(
+          "custom",
+          "outVar",
+          "withParamsTransformer",
+          "par1" -> "#input.toString()".spel,
+          "par1" -> "''".spel,
+          "par2" -> "#input.toString()".spel,
+          "par2" -> "''".spel
+        )
+        .emptySink("id2", "sink")
+
+    validate(processWithLocalVarInEagerParam, baseDefinition).result shouldBe
+      Invalid(NonEmptyList.of(DuplicatedParameters(Set(ParameterName("par1"), ParameterName("par2")), "custom")))
   }
 
   test("not allows local variables in eager custom node parameter") {

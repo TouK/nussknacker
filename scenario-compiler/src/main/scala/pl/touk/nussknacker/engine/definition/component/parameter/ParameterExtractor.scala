@@ -44,7 +44,7 @@ object ParameterExtractor {
     val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(
       paramTypeWithUnwrappedLazy
     )
-    val parameterData = ParameterData(p, paramType)
+    val parameterData = ParameterData(p, paramType, isLazyParameter)
     val isOptional    = OptionalDeterminer.isOptional(parameterData, isScalaOptionParameter, isJavaOptionalParameter)
 
     val editors = EditorExtractor.extract(parameterData, parameterConfig, globalParametersConfig)
@@ -61,7 +61,7 @@ object ParameterExtractor {
     Parameter(
       name = name,
       typ = paramType,
-      editors = editors,
+      editors = editors.toList,
       validators = validators,
       defaultValue = defaultValue,
       additionalVariables = additionalVariables(p, isLazyParameter),

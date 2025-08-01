@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.Hidden
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.supertype.{
   NumberTypesPromotionStrategy,
   ReturningSingleClassPromotionStrategy
@@ -134,9 +135,9 @@ trait MathUtils {
   @Hidden
   def divideWithDefaultBigDecimalScale(n1: Number, n2: Number): Number = {
     if (n1.isInstanceOf[java.math.BigDecimal] || n2.isInstanceOf[java.math.BigDecimal]) {
-      (BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.math.BigDecimal]))
+      (BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n1, BigDecimalClass))
         /
-          BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.math.BigDecimal]))).bigDecimal
+          BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n2, BigDecimalClass))).bigDecimal
     } else {
       divide(n1, n2)
     }
@@ -240,45 +241,45 @@ trait MathUtils {
       handler: SameNumericTypeHandler[R]
   )(implicit promotionStrategy: ReturningSingleClassPromotionStrategy): R = {
     val promotedClass = promotionStrategy.promoteClasses(n1.getClass, n2.getClass).klass
-    if (promotedClass == classOf[java.lang.Byte]) {
+    if (promotedClass == ByteClass) {
       handler.onBytes(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Byte]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Byte])
+        SpringNumberUtils.convertNumberToTargetClass(n1, ByteClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, ByteClass)
       )
-    } else if (promotedClass == classOf[java.lang.Short]) {
+    } else if (promotedClass == ShortClass) {
       handler.onShorts(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Short]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Short])
+        SpringNumberUtils.convertNumberToTargetClass(n1, ShortClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, ShortClass)
       )
-    } else if (promotedClass == classOf[java.lang.Integer]) {
+    } else if (promotedClass == IntegerClass) {
       handler.onInts(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Integer]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Integer])
+        SpringNumberUtils.convertNumberToTargetClass(n1, IntegerClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, IntegerClass)
       )
-    } else if (promotedClass == classOf[java.lang.Long]) {
+    } else if (promotedClass == LongClass) {
       handler.onLongs(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Long]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Long])
+        SpringNumberUtils.convertNumberToTargetClass(n1, LongClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, LongClass)
       )
-    } else if (promotedClass == classOf[java.math.BigInteger]) {
+    } else if (promotedClass == BigIntegerClass) {
       handler.onBigIntegers(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.math.BigInteger]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.math.BigInteger])
+        SpringNumberUtils.convertNumberToTargetClass(n1, BigIntegerClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, BigIntegerClass)
       )
-    } else if (promotedClass == classOf[java.lang.Float]) {
+    } else if (promotedClass == FloatClass) {
       handler.onFloats(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Float]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Float])
+        SpringNumberUtils.convertNumberToTargetClass(n1, FloatClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, FloatClass)
       )
-    } else if (promotedClass == classOf[java.lang.Double]) {
+    } else if (promotedClass == DoubleClass) {
       handler.onDoubles(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Double]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Double])
+        SpringNumberUtils.convertNumberToTargetClass(n1, DoubleClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, DoubleClass)
       )
-    } else if (promotedClass == classOf[java.math.BigDecimal]) {
+    } else if (promotedClass == BigDecimalClass) {
       handler.onBigDecimals(
-        SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.math.BigDecimal]),
-        SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.math.BigDecimal])
+        SpringNumberUtils.convertNumberToTargetClass(n1, BigDecimalClass),
+        SpringNumberUtils.convertNumberToTargetClass(n2, BigDecimalClass)
       )
     } else {
       throw new IllegalStateException(

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.data.NonEmptyList
 import cats.data.Validated.{invalidNel, Valid}
 import org.scalatest.Inspectors.forAll
 import org.scalatest.funsuite.AnyFunSuite
@@ -17,8 +18,9 @@ import pl.touk.nussknacker.engine.api.parameter.{
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.permittedTypesForEditors
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentClazzRef
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
+class FragmentParameterValidatorTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("should be valid when validating with permitted types for value input with dict editor") {
     forAll(permittedTypesForEditors) { fragmentParameterType: FragmentClazzRef =>
@@ -31,7 +33,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
           paramName = ParameterName("someParamName"),
           nodeIds = Set("someNodeId")
         )
-        result shouldBe Valid(List(DictParameterEditor(dictId)))
+        result.validValue shouldBe NonEmptyList.one(DictParameterEditor(dictId))
       }
     }
   }
@@ -47,10 +49,8 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
           paramName = ParameterName("someParamName"),
           nodeIds = Set("someNodeId")
         )
-        result shouldBe Valid(
-          List(
-            FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
-          )
+        result.validValue shouldBe NonEmptyList.one(
+          FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
         )
       }
     }

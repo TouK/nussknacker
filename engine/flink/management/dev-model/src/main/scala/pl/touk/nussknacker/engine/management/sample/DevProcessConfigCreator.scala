@@ -16,11 +16,12 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{ReturningClassInstanceSource, ReturningTestCaseClass}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.management.sample.dict._
-import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord}
+import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
@@ -40,6 +41,7 @@ import pl.touk.nussknacker.engine.util.functions.{
 }
 
 import java.time.LocalDateTime
+import java.util.{List => JList}
 import scala.annotation.nowarn
 
 object DevProcessConfigCreator {
@@ -91,11 +93,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "boundedSourceWithOffset" -> all(BoundedSourceWithOffset),
       "oneSource"               -> categories(SourceFactory.noParamUnboundedStreamFactory[String](new OneSource)),
       "communicationSource"     -> categories(DynamicParametersSource),
-      "csv-source"              -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new CsvSource)),
-      "csv-source-lite" -> categories(SourceFactory.noParamUnboundedStreamFactory[CsvRecord](new LiteCsvSource(_))),
-      "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
-      "sql-source"                       -> categories(SqlSource),
-      "classInstanceSource"              -> all(new ReturningClassInstanceSource)
+      "csv-source"      -> categories(SourceFactory.noParamUnboundedStreamFactory[Array[String]](new CsvSource)),
+      "csv-source-lite" -> categories(SourceFactory.noParamUnboundedStreamFactory[JList[String]](new LiteCsvSource(_))),
+      "genericSourceWithCustomTestingSupport" -> categories(GenericSourceWithCustomTestingSupport),
+      "sql-source"                            -> categories(SqlSource),
+      "classInstanceSource"                   -> all(new ReturningClassInstanceSource)
     )
   }
 
@@ -150,7 +152,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           ComponentConfig.zero.copy(
             params = Some(
               Map(
-                ParameterName("bar") -> ParameterConfig(Some("barValueFromProviderCode"), None, None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(
+                  defaultValue = Some(Expression.spelTemplate("barValueFromProviderCode")),
+                  editors = None,
+                  validators = None,
+                  label = None,
+                  hintText = None,
+                  category = None
+                )
               )
             )
           )

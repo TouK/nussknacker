@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
@@ -9,6 +9,12 @@ import scala.language.higherKinds
 import scala.util.{Failure, Success}
 
 object Implicits {
+
+  implicit class RichScalaListMap[K <: Any, V <: Any](m: ListMap[K, V]) {
+
+    def mapValuesNow[VV](f: V => VV): ListMap[K, VV] = m.map { case (k, v) => k -> f(v) }
+
+  }
 
   implicit class RichScalaMap[K <: Any, V <: Any](m: Map[K, V]) {
 
@@ -29,13 +35,24 @@ object Implicits {
     def toGroupedMapSafe: ListMap[K, NonEmptyList[V]] =
       toGroupedMap.map { case (k, v) => k -> NonEmptyList.fromListUnsafe(v) }
 
-    def toMapCheckingDuplicates: Map[K, V] = {
+    def toMapCheckingDuplicates: ValidatedNel[K, Map[K, V]] = {
       val moreThanOneValueForKey = seq.toGroupedMap.filter(_._2.size > 1)
-      if (moreThanOneValueForKey.nonEmpty)
-        throw new IllegalStateException(
-          s"Found keys with more than one for value [${moreThanOneValueForKey.mkString(", ")}] during translating Seq to Map"
+      Validated.cond(
+        moreThanOneValueForKey.isEmpty,
+        seq.toMap,
+        NonEmptyList.fromListUnsafe(moreThanOneValueForKey.keys.toList)
+      )
+    }
+
+    def toMapCheckingDuplicatesUnsafe: Map[K, V] = {
+      toMapCheckingDuplicates
+        .fold(
+          duplicatedKeys =>
+            throw new IllegalStateException(
+              s"Found keys with more than one value for ${duplicatedKeys.toList.mkString(", ")} during translating Seq to Map"
+            ),
+          identity
         )
-      seq.toMap
     }
 
   }
@@ -81,11 +98,6 @@ object Implicits {
       }
 
       accumulator(list, f, Nil)
-    }
-
-    def orElseIfEmpty(default: => List[T]): List[T] = list match {
-      case Nil => default
-      case _   => list
     }
 
     def transformLast(f: T => T): List[T] = {

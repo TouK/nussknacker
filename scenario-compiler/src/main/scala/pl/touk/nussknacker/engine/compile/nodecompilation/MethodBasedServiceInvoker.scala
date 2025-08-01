@@ -2,18 +2,19 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.OutputVar
 import pl.touk.nussknacker.engine.api.process.ComponentUseContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  NodeCompilationDependencies
+}
+import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker.LazyServiceInvocationContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
 private[nodecompilation] class MethodBasedServiceInvoker(
-    metaData: MetaData,
-    nodeId: NodeId,
-    outputVariableNameOpt: Option[OutputVar],
     componentDefinition: ComponentDefinitionWithImplementation,
+    nodeCompilationContext: NodeCompilationDependencies,
     parametersProvider: Context => Params
 ) extends ServiceInvoker
     with LazyLogging {
@@ -25,9 +26,9 @@ private[nodecompilation] class MethodBasedServiceInvoker(
   ): Future[AnyRef] = {
     componentDefinition.implementationInvoker
       .invokeMethod(
-        parametersProvider(context),
-        outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
-        additional = Seq(ec, collector, metaData, nodeId, context, context.id, componentUseContext)
+        params = parametersProvider(context),
+        compilationDependencies = nodeCompilationContext,
+        invocationContext = Some(LazyServiceInvocationContext(ec, collector, context))
       )
       .asInstanceOf[Future[AnyRef]]
   }

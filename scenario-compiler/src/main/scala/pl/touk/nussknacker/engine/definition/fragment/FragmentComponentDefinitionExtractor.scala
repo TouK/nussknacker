@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId
 }
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.{
@@ -43,7 +44,7 @@ class FragmentComponentDefinitionExtractor(
 
       FragmentComponentDefinition(
         name = fragment.name.value,
-        implementationInvoker = ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
+        implementationInvoker = ComponentImplementationInvoker.dummyImplementationInvoker[Source],
         parameters = parameters,
         outputNames = outputNames,
         docsUrl = fragmentSpecificData.docsUrl,

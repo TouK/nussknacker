@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
@@ -14,5 +15,5 @@ case class DefaultValueDeterminerParameters(
     isOptional: Boolean,
     parameterConfig: ParameterConfig,
     // Order matters for default value
-    determinedEditors: List[ParameterEditor]
+    determinedEditors: NonEmptyList[ParameterEditor]
 )

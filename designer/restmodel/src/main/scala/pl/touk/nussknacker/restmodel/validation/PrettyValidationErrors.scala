@@ -31,7 +31,7 @@ object PrettyValidationErrors {
         node(
           message = message,
           description =
-            s"There is problem with expression in field ${paramName.map(_.value)} - it could not be parsed.",
+            s"There is problem with expression in field [${paramName.map(_.value).getOrElse("<missing>")}] - it could not be parsed.",
           paramName = paramName,
           details = details
         )
@@ -122,7 +122,11 @@ object PrettyValidationErrors {
           message = s"Node parameters not filled: ${params.mkString(", ")}",
           description = s"Please fill missing node parameters: : ${params.mkString(", ")}"
         )
-
+      case DuplicatedParameters(params, _) =>
+        node(
+          message = s"Node parameters duplicated: ${params.mkString(", ")}",
+          description = s"Please remove duplicated node parameters: : ${params.mkString(", ")}"
+        )
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
       // exceptions below should not really happen (unless services change and process becomes invalid)
@@ -161,7 +165,7 @@ object PrettyValidationErrors {
       case InvalidFragment(id, nodeId) => node("Invalid fragment", s"Node $nodeId uses fragment $id which is invalid")
       case FatalUnknownError(message) =>
         node("Unknown, fatal validation error", s"Fatal error: $message, please check configuration")
-      case CannotCreateObjectError(message, nodeId) =>
+      case CannotCreateObjectError(message, nodeId, _) =>
         node(s"Could not create $nodeId: $message", s"Could not create $nodeId: $message")
       case UnresolvedFragment(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
       case FragmentOutputNotDefined(id, _) => node(s"Output $id not defined", "Please check fragment definition")

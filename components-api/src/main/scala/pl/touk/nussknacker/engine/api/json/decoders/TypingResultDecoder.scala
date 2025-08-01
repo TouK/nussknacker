@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import io.circe._
 import pl.touk.nussknacker.engine.api.json.TypingType
 import pl.touk.nussknacker.engine.api.json.TypingType.{typeField, TypingType}
+import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.DisplayStrategy.{DefaultDisplayStrategy, JsonDisplayStrategy}
 
@@ -54,7 +55,11 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
-    value      <- FromJsonTypingResultBasedDecoder.decodeValue(valueClass, obj.downField("value"))
+    valueCursor <- {
+      val cursor = obj.downField("value")
+      cursor.as[Json].map(_ => cursor.asInstanceOf[HCursor])
+    }
+    value <- FromJsonTypingResultBasedDecoder.decodeValue(valueClass, valueCursor)
   } yield TypedObjectWithValue(valueClass, value)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
@@ -109,9 +114,9 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   }
 
   private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {
-    if (name == Typed.KlassForArrays.getName) {
+    if (name == StandardTypesClasses.ArrayClass.getName) {
       // loading of array class causes Failed to load class [Ljava.lang.Object; with [Ljava.lang.Object;
-      Right(Typed.KlassForArrays)
+      Right(StandardTypesClasses.ArrayClass)
     } else {
       Try(loadClass(name)) match {
         case Success(value) => Right(value)
