@@ -44,7 +44,7 @@ SELECT 'PERFORMED_SCHEDULED_EXECUTION',
                to_char(ssd.created_at AT TIME ZONE (SELECT zone_id FROM jvm_timezone), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
                'nextRetryAt', CASE
                                   WHEN ssd.next_retry_at IS NULL THEN NULL
-                                  ELSE to_char(ssd.next_retry_at AT TIME ZONE (SELECT zone_id FROM mgw_jvm_timezone),
+                                  ELSE to_char(ssd.next_retry_at AT TIME ZONE (SELECT zone_id FROM jvm_timezone),
                                                'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END,
                'retriesLeft', CASE WHEN ssd.next_retry_at IS NULL THEN NULL ELSE ssd.retries_left::text END
                          )) ::text
@@ -52,4 +52,5 @@ FROM scheduled_scenario_deployments ssd
          JOIN scheduled_scenarios ss ON ss.id = ssd.periodic_process_id
 WHERE ssd.status IN ('Finished', 'Failed', 'RetryingDeploy', 'FailedOnDeploy');
 
+-- Drop the temporary jvm_timezone table, that is created by 068 migration, and then used in this migration
 DROP TABLE jvm_timezone;
