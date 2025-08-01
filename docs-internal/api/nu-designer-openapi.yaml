@@ -4129,7 +4129,7 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
                       - name: status
-                        value: Run now execution triggered
+                        value: Data processing started
                       - name: started
                         value: '2024-01-17 14:21:17'
                       - name: finished
@@ -4148,7 +4148,7 @@ paths:
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
                       - name: status
-                        value: Run now execution triggered
+                        value: Data processing started
                       - name: started
                         value: '2024-01-17 14:21:17'
                       - name: finished
@@ -4160,7 +4160,7 @@ paths:
                       scenarioVersionId: 1
                       additionalFields:
                       - name: status
-                        value: Scheduled execution finished
+                        value: Data processing finished
                       - name: created
                         value: '2024-01-17 13:21:17'
                       - name: started
@@ -4368,7 +4368,7 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Run now execution triggered
+                      displayableName: Run now
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
@@ -4492,7 +4492,7 @@ paths:
                       icon: /assets/activities/migration.svg
                       supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
-                      displayableName: Run now execution triggered
+                      displayableName: Run now
                       icon: /assets/activities/deployed.svg
                       supportedActions:
                       - delete_comment
