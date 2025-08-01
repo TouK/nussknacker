@@ -1,7 +1,7 @@
-import { useSelector } from "react-redux";
 import { useDocumentEventListener } from "rooks";
 
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { useAppSelector } from "./../../store/configureStore";
 import { useEventTracking } from "./use-event-tracking";
 
 export const enum EventTrackingType {
@@ -134,7 +134,7 @@ export type EventTrackingSelectorType =
 
 export const useRegisterTrackingEvents = () => {
     const { trackEvent, trackEventWithDebounce } = useEventTracking();
-    const featuresSettings = useSelector(getFeatureSettings);
+    const featuresSettings = useAppSelector(getFeatureSettings);
     const isEnabledForStatisticsEvent = (eventName: keyof DocumentEventMap) =>
         featuresSettings.usageStatisticsReports.enabled ? eventName : undefined;
 

@@ -1,13 +1,13 @@
 import { init as initApm } from "@elastic/apm-rum";
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
 
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { useBuildInfo } from "../BuildInfoProvider";
+import { useAppSelector } from "./../../store/configureStore";
 
 export const useErrorRegister = () => {
     const buildInfo = useBuildInfo();
-    const featuresSettings = useSelector(getFeatureSettings);
+    const featuresSettings = useAppSelector(getFeatureSettings);
     const areErrorReportsEnabled = featuresSettings.usageStatisticsReports.errorReportsEnabled;
     const environment = featuresSettings.usageStatisticsReports.fingerprint;
 
