@@ -2,10 +2,10 @@ import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
 import { get } from "lodash";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 import { useArrayState } from "rooks";
 import { v4 as uuid4 } from "uuid";
 
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { FieldsRow } from "../fragment-input-definition/FieldsRow";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
@@ -70,7 +70,7 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
         [data, dataControls],
     );
 
-    const findAvailableVariables = useSelector(getFindAvailableVariables);
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
 
     const errors = showValidation ? fieldErrors : [];

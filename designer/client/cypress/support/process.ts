@@ -242,9 +242,14 @@ function importTestProcess(name: string, fixture = "testProcess") {
 
 function getTestProcesses(filter?: string) {
     const url = `/api/processes`;
-    return cy
-        .request({ url })
-        .then(({ body }) => body.filter(({ name }) => name.includes(filter || Cypress.env("processName"))).map(({ name }) => name));
+    return cy.request({ url }).then(({ body }) => {
+        const filtered = body.filter(({ name }) => {
+            if (!name.startsWith(Cypress.env("processNamePrefix"))) return false;
+            if (filter?.length) return name.includes(filter);
+            return true;
+        });
+        return filtered.map(({ name }) => name);
+    });
 }
 
 function deleteAllTestProcesses({ filter, force }: { filter?: string; force?: boolean }) {

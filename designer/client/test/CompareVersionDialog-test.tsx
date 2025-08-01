@@ -1,15 +1,14 @@
+import { jest } from "@jest/globals";
+import { configureStore } from "@reduxjs/toolkit";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import MockAdapter from "axios-mock-adapter";
 import React from "react";
+import { Provider } from "react-redux";
+import api from "../src/api";
 
 import CompareVersionsDialog from "../src/components/modals/CompareVersionsDialog";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { jest } from "@jest/globals";
-import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
-import configureMockStore from "redux-mock-store/lib";
-import thunk from "redux-thunk";
-import { Provider } from "react-redux";
 import { ProcessVersionType } from "../src/components/Process/types";
-import MockAdapter from "axios-mock-adapter";
-import api from "../src/api";
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 const mock = new MockAdapter(api);
 
@@ -29,38 +28,41 @@ jest.mock("../src/components/graph/node-modal/NodeDetailsContent", () => ({
     NodeDetailsContent: ({ children }) => <div>{children}</div>,
 }));
 
-const mockStore = configureMockStore([thunk]);
-const graphReducer = {
-    present: {
-        scenario: {
-            name: "proc1",
-            processVersionId: 4,
-            history: [
-                {
-                    processVersionId: 35,
-                    createDate: "2024-05-31",
-                    user: "admin",
-                    modelVersion: 4,
-                    actions: [],
-                },
-                {
-                    processVersionId: 34,
-                    createDate: "2024-05-31",
-                    user: "admin",
-                    modelVersion: 4,
-                    actions: [],
-                },
-            ],
+const preloadedState = {
+    graphReducer: {
+        present: {
+            scenario: {
+                name: "proc1",
+                processVersionId: 4,
+                history: [
+                    {
+                        processVersionId: 35,
+                        createDate: "2024-05-31",
+                        user: "admin",
+                        modelVersion: 4,
+                        actions: [],
+                    },
+                    {
+                        processVersionId: 34,
+                        createDate: "2024-05-31",
+                        user: "admin",
+                        modelVersion: 4,
+                        actions: [],
+                    },
+                ],
+            },
         },
     },
+    settings: { featuresSettings: { remoteEnvironment: { targetEnvironmentId: "remote environment" } } },
 };
 
-const store = mockStore({
-    graphReducer,
-    settings: { featuresSettings: { remoteEnvironment: { targetEnvironmentId: "remote environment" } } },
+const store = configureStore({
+    reducer: (state) => state,
+    preloadedState,
+    devTools: false,
 });
 
-const scenario = graphReducer.present.scenario;
+const scenario = preloadedState.graphReducer.present.scenario;
 
 const DOWN_ARROW = { keyCode: 40 };
 

@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../actions/nk";
@@ -14,11 +13,12 @@ import {
     getScenarioLabels,
     isProcessRenamed,
 } from "../../../reducers/selectors/graph";
+import { useAppDispatch } from "../../../store/storeHelpers";
 
 export const useSaveScenario = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const saveScenario = useCallback(
         (comment = ""): ThunkAction => {

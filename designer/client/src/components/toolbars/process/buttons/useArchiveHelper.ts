@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
@@ -9,14 +8,15 @@ import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService";
 import { isPristine } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";
 
 export const useArchiveHelper = (processName: string) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { confirm } = useWindows();
-    const nothingToSave = useSelector(isPristine);
-    const { redirectAfterArchive } = useSelector(getFeatureSettings);
+    const nothingToSave = useAppSelector(isPristine);
+    const { redirectAfterArchive } = useAppSelector(getFeatureSettings);
 
     const archive = useCallback(async () => {
         return HttpService.archiveProcess(processName).then(async () => {

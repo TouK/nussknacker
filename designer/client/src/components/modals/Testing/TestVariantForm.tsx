@@ -1,8 +1,8 @@
 import type { WindowType } from "@touk/window-manager";
 import React from "react";
-import { useSelector } from "react-redux";
 
 import { getTestParameters } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import type { TestingData } from "./TestingDialog";
 import { TestWithLiveDataForm } from "./TestWithLiveData";
@@ -17,7 +17,7 @@ interface TestVariantFormProps {
 }
 
 export function TestVariantForm({ testType, testingData, closeDialog }: TestVariantFormProps): JSX.Element {
-    const testParameters = useSelector(getTestParameters);
+    const testParameters = useAppSelector(getTestParameters);
     const sourcesFound = testParameters.length;
 
     switch (testType) {

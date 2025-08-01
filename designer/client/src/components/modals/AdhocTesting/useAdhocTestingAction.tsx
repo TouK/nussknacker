@@ -1,9 +1,9 @@
 import { head } from "lodash";
 import { useCallback, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
 import { getProcessingType, getTestData, getTestParameters } from "../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { UIParameter } from "../../../types";
 import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
 import type { AdhocTestingParameters } from "./AdhocTestingDialog";
@@ -24,8 +24,8 @@ export function paramsListToRecord(parameters: UIParameter[]): ActionValues {
 }
 
 export function useSourceParameters() {
-    const testFormParameters = useSelector(getTestParameters);
-    const testData = useSelector(getTestData);
+    const testFormParameters = useAppSelector(getTestParameters);
+    const testData = useAppSelector(getTestData);
 
     //For now, we select first source and don't provide way to change it
     //Add support for multiple sources in next iteration (?)
@@ -60,14 +60,14 @@ export function useAdhocTestingAction(): AdhocTestingParameters {
 
     const parameters = useMemo<UIParameter[]>(() => sourceParameters[sourceId]?.parameters || [], [sourceId, sourceParameters]);
 
-    const findAvailableVariables = useSelector(getFindAvailableVariables);
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const variableTypes = useMemo(() => findAvailableVariables?.(sourceId), [findAvailableVariables, sourceId]);
 
-    const processingType = useSelector(getProcessingType);
+    const processingType = useAppSelector(getProcessingType);
 
     const initialValues = useMemo(() => storedValues || paramsListToRecord(parameters), [parameters, storedValues]);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const onConfirmAction = useCallback(
         (parameterExpressions: ActionValues) => {

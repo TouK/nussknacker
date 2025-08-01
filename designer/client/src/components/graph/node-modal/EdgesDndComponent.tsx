@@ -1,8 +1,8 @@
 import { defaultsDeep } from "lodash";
-import React, { useCallback, useMemo, useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, NodeValidationError, VariableTypes } from "../../../types";
 import { EdgeKind } from "../../../types";
 import { DndItems } from "../../common/dndItems/DndItems";
@@ -66,7 +66,7 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 
 export function EdgesDndComponent(props: Props): JSX.Element {
     const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
-    const process = useSelector(getScenarioGraph);
+    const process = useAppSelector(getScenarioGraph);
     const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => {
         const edges1 = value || process.edges.filter(({ from }) => from === nodeId);
         return edges1.map((edge) => withFakeId({ ...edge }));

@@ -1,17 +1,17 @@
 import type { dia } from "jointjs";
 import type React from "react";
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
 
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../reducers/selectors/graph";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { Graph } from "./Graph";
 import NodeUtils from "./NodeUtils";
 import { Events } from "./types";
 
 export function usePortMagnetToggle(graphRef: React.MutableRefObject<Graph>) {
-    const scenarioGraph = useSelector(getScenarioGraph);
-    const processDefinitionData = useSelector(getProcessDefinitionData);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
     useEffect(() => {
         const graph = graphRef.current;
         const callback = (cellView: dia.CellView) => {

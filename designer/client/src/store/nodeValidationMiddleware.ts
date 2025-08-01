@@ -1,13 +1,15 @@
+import type { ThunkDispatch as TD } from "@reduxjs/toolkit";
 import { debounce } from "lodash";
 import type { Middleware } from "redux";
 import { ActionTypes as UndoActionTypes } from "redux-undo";
 
-import type { Action, ThunkDispatch } from "../actions/reduxTypes";
+import type { Action } from "../actions/reduxTypes";
 import HttpService from "../http/HttpService";
 import type { RootState } from "../reducers";
 import { getProcessName, getScenarioGraph, getUnsavedOrCurrentName } from "../reducers/selectors/graph";
 
 type ActionType = Action["type"];
+type ThunkDispatch<S = RootState> = TD<S, undefined, Action>;
 
 const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => RootState) => {
     const state = getState();
@@ -19,17 +21,14 @@ const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => Roo
     );
 }, 500);
 
-export function nodeValidationMiddleware(
-    validatedActions: ActionType[] = [],
-    ignoredActions: ActionType[] = [],
-): Middleware<void, RootState, ThunkDispatch> {
+export const nodeValidationMiddleware = (validatedActions: ActionType[] = [], ignoredActions: ActionType[] = []): Middleware => {
     const ignore = ["VALIDATION_RESULT", UndoActionTypes.CLEAR_HISTORY, ...ignoredActions];
     const validate = [...Object.values(UndoActionTypes), ...validatedActions];
     const shouldValidate = (action: ActionType) => !ignore.includes(action) && validate.includes(action);
 
     return ({ dispatch, getState }) =>
         (next) =>
-        (action) => {
+        (action: Action) => {
             const result = next(action);
 
             if (shouldValidate(action.type)) {
@@ -38,4 +37,4 @@ export function nodeValidationMiddleware(
 
             return result;
         };
-}
+};

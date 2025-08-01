@@ -1,9 +1,9 @@
 import type { PropsWithChildren } from "react";
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { PanelSide } from "../../actions/nk";
 import { panelsState } from "../../reducers/selectors/panel";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
 const SideContext = createContext<PanelSide>(null);
 
@@ -21,8 +21,8 @@ type SideState = {
 const SidePanelsContext = createContext<Record<PanelSide, SideState>>(null);
 
 function useSideState(configId: string, side: PanelSide) {
-    const dispatch = useDispatch();
-    const state = useSelector(panelsState);
+    const dispatch = useAppDispatch();
+    const state = useAppSelector(panelsState);
     const [fullSize, setFullSize] = useState(true);
 
     return useMemo(

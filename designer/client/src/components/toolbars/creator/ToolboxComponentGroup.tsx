@@ -1,11 +1,11 @@
 import { cx } from "@emotion/css";
 import { Box, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import TreeView from "react-treeview";
 
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 
@@ -35,15 +35,15 @@ interface Props {
 
 export function ToolboxComponentGroup(props: Props): JSX.Element {
     const { componentGroup, highlights = [], flatten, addGroupLabelElement, addTreeElement } = props;
-    const dispatch = useDispatch();
-    const closedComponentGroups = useSelector(getClosedComponentGroups);
+    const dispatch = useAppDispatch();
+    const closedComponentGroups = useAppSelector(getClosedComponentGroups);
     const { name } = componentGroup;
 
     const isEmpty = useMemo(() => isEmptyComponentGroup(componentGroup), [componentGroup]);
 
     const highlighted = useMemo(() => highlights?.length > 0, [highlights?.length]);
     const [forceCollapsed, toggleForceCollapsed] = useStateToggleWithReset(!highlighted);
-    const configId = useSelector(getToolbarsConfigId);
+    const configId = useAppSelector(getToolbarsConfigId);
 
     const toggle = useCallback(() => {
         if (!isEmpty) {

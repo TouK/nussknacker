@@ -5,13 +5,13 @@ import { debounce, isEqual } from "lodash";
 import { set } from "lodash/fp";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { editProperties } from "../../actions/nk";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import HttpService from "../../http/HttpService";
 import type { RootState } from "../../reducers";
 import { getProperties, getScenario } from "../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import type { NodeValidationError, PropertiesType } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
@@ -23,7 +23,7 @@ import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal
 import { PropertiesForm } from "../properties";
 
 export const usePropertiesState = () => {
-    const currentProperties = useSelector(getProperties);
+    const currentProperties = useAppSelector(getProperties);
     const [editedProperties, setEditedProperties] = useState<PropertiesType>(currentProperties);
     const isTouched = useMemo(() => !isEqual(currentProperties, editedProperties), [currentProperties, editedProperties]);
 
@@ -39,15 +39,15 @@ export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(
 }));
 
 const PropertiesDialog = ({ ...props }: WindowContentProps) => {
-    const isEditMode = !useSelector((s: RootState) => getReadOnly(s, false));
+    const isEditMode = !useAppSelector((s: RootState) => getReadOnly(s, false));
 
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
-    const globalPropertiesErrors = useSelector(getPropertiesErrors);
-    const scenarioProperties = useSelector(getScenarioPropertiesConfig);
-    const scenario = useSelector(getScenario);
-    const scenarioName = useSelector(getProcessName);
+    const globalPropertiesErrors = useAppSelector(getPropertiesErrors);
+    const scenarioProperties = useAppSelector(getScenarioPropertiesConfig);
+    const scenario = useAppSelector(getScenario);
+    const scenarioName = useAppSelector(getProcessName);
 
     const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
     const { editedProperties, handleSetEditedProperties } = usePropertiesState();

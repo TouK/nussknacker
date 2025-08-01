@@ -1,9 +1,9 @@
 import { css } from "@emotion/css";
 import { isEqual } from "lodash";
 import React, { memo } from "react";
-import { useSelector } from "react-redux";
 
 import type { RootState } from "../../../../reducers";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge, NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
 import { NodeDetailsContent } from "../NodeDetailsContent";
@@ -20,7 +20,7 @@ export interface NodeGroupContentProps {
 }
 
 export const NodeGroupContent = memo(function NodeGroupContent({ node, edges, onChange }: NodeGroupContentProps): JSX.Element {
-    const errors = useSelector((state: RootState) => {
+    const errors = useAppSelector((state: RootState) => {
         return getNodeErrors(state, node.id);
     }, isEqual);
 

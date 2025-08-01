@@ -2,14 +2,14 @@ import type { Ace } from "ace-builds";
 import { useCallback, useMemo } from "react";
 import type { IMarker } from "react-ace/lib/types";
 import type { Annotation } from "react-ace/types";
-import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import type { FieldError } from "../Validators";
 
 export function useAceEditorRangeMessages(fieldErrors: FieldError[]) {
-    const userSettings = useSelector(getUserSettings);
+    const userSettings = useAppSelector(getUserSettings);
     const showRangeMessages = userSettings["editor.showRangeMessages"];
 
     const annotations: Annotation[] = useMemo(() => {

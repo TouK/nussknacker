@@ -1,7 +1,8 @@
-import type { NotificationsState } from "react-notification-system-redux";
+import type { NotificationsReducer, NotificationsState} from "react-notification-system-redux";
 import { reducer as notifications } from "react-notification-system-redux";
 import { combineReducers } from "redux";
 
+import type { Action } from "../actions/reduxTypes";
 import type { ProcessStateType } from "../components/Process/types";
 import { reducer as cloudData } from "./cloudData";
 import type { GraphStateWithHistory } from "./graph";
@@ -27,7 +28,7 @@ import { reducer as ui } from "./ui";
 import type { UserSettings } from "./userSettings";
 import { userSettings } from "./userSettings";
 
-export const reducer = combineReducers<RootState>({
+export const rootReducer = combineReducers({
     httpErrorHandler,
     graphReducer,
     liveData,
@@ -35,7 +36,7 @@ export const reducer = combineReducers<RootState>({
     ui,
     processActivity,
     backendNotifications,
-    notifications,
+    notifications: notifications as NotificationsReducer<Action>,
     toolbars,
     userSettings,
     nodeDetails,
@@ -63,4 +64,4 @@ export type RootState = {
     nodeWindowIdMap: ReturnType<typeof nodeWindowIdMap>;
 };
 
-export default reducer;
+export default rootReducer;

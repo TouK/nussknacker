@@ -4,7 +4,6 @@ import type { DefaultContentProps } from "@touk/window-manager/cjs/components/wi
 import type { HeaderButtonCloseProps } from "@touk/window-manager/cjs/components/window/header/HeaderButtonClose";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 import urljoin from "url-join";
 
 import { nodeDetailsClosed, nodeDetailsOpened } from "../../../../actions/nk";
@@ -14,6 +13,7 @@ import { BASE_PATH } from "../../../../config";
 import type { RootState } from "../../../../reducers";
 import { removeHistorySnapshot, takeHistorySnapshot } from "../../../../reducers/graph/historySquash";
 import { getCreatorType } from "../../../../reducers/selectors/getCreator";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { Edge, NodeType } from "../../../../types";
 import type { WindowKind } from "../../../../windowManager";
 import { WindowContent } from "../../../../windowManager";
@@ -116,7 +116,7 @@ const CloseButton = ({ closeDialog, editStateRef }: HeaderButtonCloseProps & { e
 function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const { t } = useTranslation();
     const { close, data } = props;
-    const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
+    const readOnly = useAppSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
     const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit, editState, editStateRef } = useNodeState(data.meta);
     const { cancel, apply } = useNodeDetailsButtons({ editedNode, outputEdges, performNodeEdit, close, readOnly });
@@ -154,7 +154,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
             : { HeaderButtonClose: (props) => <CloseButton {...props} editStateRef={editStateRef} /> };
     }, [settings, portalRef, PortalWrapper, editStateRef]);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     useEffect(() => {
         dispatch(nodeDetailsOpened(node.id, data.id));
         return () => {

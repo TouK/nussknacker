@@ -1,13 +1,13 @@
 import { Insights, Lock, NearbyError as Warning } from "@mui/icons-material";
-import { alpha, Stack, styled, Typography } from "@mui/material";
+import { alpha, Stack, Typography } from "@mui/material";
 import Moment from "moment/moment";
 import React, { useMemo } from "react";
-import { useSelector } from "react-redux";
 
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
 import { VisibleDataType } from "../../../../reducers/graph";
 import { getVisibleDataType } from "../../../../reducers/selectors/getLiveData";
 import { getProcessName } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { getShadow } from "../../graphStyledWrapper";
 import { RelatedNodes } from "./CountsForNodes";
 import type { VariableContextType } from "./VariableContextTree";
@@ -20,8 +20,8 @@ type ContextTitleProps = {
 };
 
 export function ContextTitle({ context, showNodes, reversed, locked }: ContextTitleProps) {
-    const scenarioName = useSelector(getProcessName);
-    const visibleDataType = useSelector(getVisibleDataType);
+    const scenarioName = useAppSelector(getProcessName);
+    const visibleDataType = useAppSelector(getVisibleDataType);
     const label = useMemo(() => context.id.replace(new RegExp(`^${scenarioName}-`), ""), [context.id, scenarioName]);
 
     return (

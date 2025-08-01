@@ -3,10 +3,10 @@ import { IconButton } from "@mui/material";
 import type { WindowType } from "@touk/window-manager";
 import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import type { Scenario } from "../components/Process/types";
 import { getProperties, getScenario, getScenarioDescription } from "../reducers/selectors/graph";
+import { useAppSelector } from "../store/storeHelpers";
 import type { NodeOrPropertiesType } from "../types";
 import { useWindows, WindowKind } from "../windowManager";
 
@@ -74,9 +74,9 @@ export function useOpenDescription() {
 }
 
 export const ScenarioDescription = () => {
-    const [description, showDescription] = useSelector(getScenarioDescription);
-    const scenario = useSelector(getScenario);
-    const processProperties = useSelector(getProperties);
+    const [description, showDescription] = useAppSelector(getScenarioDescription);
+    const scenario = useAppSelector(getScenario);
+    const processProperties = useAppSelector(getProperties);
 
     const openDescription = useOpenDescription();
 
