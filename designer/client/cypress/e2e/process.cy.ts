@@ -340,7 +340,7 @@ describe("Process", () => {
         cy.layoutScenario();
 
         cy.contains("button", "Test").should("be.enabled").click();
-        cy.get("[data-testid=window]").should("be.visible").find("#ace-editor").type("10");
+        cy.get("[data-testid=window]").should("be.visible").find("#ace-editor").type(`{selectAll}{backspace}{{}"input": 10}`);
         cy.get("[data-testid=window]")
             .contains(/^test$/i)
             .should("be.enabled")
