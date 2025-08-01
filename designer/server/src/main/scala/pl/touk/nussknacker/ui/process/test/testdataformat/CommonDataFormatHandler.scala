@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler.
   MissingInputVariablesParameter
 }
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatSerDe.DeserializationError
-import shapeless.syntax.typeable.typeableOps
 
 class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandler {
 
@@ -79,6 +78,8 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
     } yield List(singleInputVariablesParameter)
   }
 
+  // Handling of test data as parameters is left for the backward compatibility reasons. Eventually,
+  // we should always communicate through test data in the json format
   override def convertToTestData(
       sourceId: String,
       parameterExpressions: Map[ParameterName, Expression]
@@ -100,6 +101,7 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
         .as[Map[String, Json]]
         .leftMap(_.message)
         .leftMap(InputVariablesExpressionDecodingError)
+      // Timestamp handling is supported only during testing using test data in the json format
       singleRecord = ScenarioTestCommonFormatJsonRecord(NodeId(sourceId), validVariablesMap, timestamp = None)
     } yield ScenarioTestData(List(singleRecord))
   }
@@ -107,7 +109,7 @@ class CommonDataFormatHandler(modelData: ModelData) extends TestDataFormatHandle
 }
 
 object CommonDataFormatHandler {
-  val InputVariablesParameterName = ParameterName("Input variables")
+  val InputVariablesParameterName: ParameterName = ParameterName("Input variables")
 }
 
 object CommonDataFormatSerDe extends TestDataFormatSerDe {

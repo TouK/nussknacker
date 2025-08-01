@@ -53,26 +53,25 @@ class ManagementApiHttpServiceBusinessSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(s"""{
-            | "testData": {
-            |   "type": "WITH_PARAMETERS",
-            |   "sourceParameters": {
-            |     "sourceId": "1",
-            |     "parameterExpressions": {
-            |       "$InputVariablesParameterName": {
-        |             "language": "json",
-        |             "expression": "{\\"input\\": 123}"
-            |       }
-            |     }
-            |   }
-            | },
-            | "scenarioGraph": ${exampleScenario.toScenarioGraph.asJson.spaces2}
-            |}""".stripMargin)
+             | "testData": {
+             |   "type": "WITH_PARAMETERS",
+             |   "sourceParameters": {
+             |     "sourceId": "1",
+             |     "parameterExpressions": {
+             |       "$InputVariablesParameterName": {
+             |         "language": "json",
+             |         "expression": "{\\"input\\": 123}"
+             |       }
+             |     }
+             |   }
+             | },
+             | "scenarioGraph": ${exampleScenario.toScenarioGraph.asJson.spaces2}
+             |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .matchJsonWithRegexValuesBody(
-          s"""
-             |{
+          s"""{
              |  "timestamp": "${regexes.zuluDateRegex}",
              |  "results": {
              |    "nodeResults": {},
@@ -94,8 +93,7 @@ class ManagementApiHttpServiceBusinessSpec
              |      "fragmentCounts": {}
              |    }
              |  }
-             |}
-             |""".stripMargin
+             |}""".stripMargin
         )
     }
   }
