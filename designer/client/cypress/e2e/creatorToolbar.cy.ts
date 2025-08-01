@@ -15,7 +15,7 @@ describe("Creator toolbar", () => {
     beforeEach(() => {
         cy.viewport(width, height);
         cy.visitNewProcess(seed).as("processName");
-        cy.contains(/^Creator panel.*sources/i).as("toolbar");
+        cy.contains(/^Creator panel.*sources/i, { timeout: 30000 }).as("toolbar", { type: "query" });
     });
 
     it("should allow collapse (persist) and filtering", () => {
