@@ -5,8 +5,8 @@ import TreeView from "react-treeview";
 
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
+import type { ComponentGroup, NodeType } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
-import type { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
@@ -31,10 +31,17 @@ interface Props {
     flatten?: boolean;
     addTreeElement?: React.ReactElement | null;
     addGroupLabelElement?: React.ReactElement | null;
+    onSelect?: (item?: NodeType) => void;
 }
 
-export function ToolboxComponentGroup(props: Props): JSX.Element {
-    const { componentGroup, highlights = [], flatten, addGroupLabelElement, addTreeElement } = props;
+export function ToolboxComponentGroup({
+    addGroupLabelElement,
+    addTreeElement,
+    componentGroup,
+    flatten,
+    highlights = [],
+    onSelect,
+}: Props): JSX.Element {
     const dispatch = useAppDispatch();
     const closedComponentGroups = useAppSelector(getClosedComponentGroups);
     const { name } = componentGroup;
@@ -80,9 +87,13 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
                     key={component.componentId}
                     highlights={highlights}
                     disabled={component.disabled ? component.disabled() : false}
+                    onClick={onSelect}
+                    onDragEnd={(item, monitor) => {
+                        if (monitor.didDrop()) onSelect();
+                    }}
                 />
             )),
-        [highlights, componentGroup.components],
+        [componentGroup.components, highlights, onSelect],
     );
 
     const collapsed = useMemo(

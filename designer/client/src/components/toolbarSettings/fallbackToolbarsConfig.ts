@@ -17,7 +17,7 @@ export function fallbackToolbarsConfig(isFragment: boolean, isArchived: boolean)
     ]);
 
     return {
-        id: "a7334f9b-87aa-43d4-82ce-a9ac9dd3e5dc",
+        id: "fallbackConfig",
         [ToolbarsSide.RightTop]: [
             {
                 id: "process-info-panel",

@@ -1,17 +1,18 @@
+import type { PropsOf } from "@emotion/react";
 import { Box, styled } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useMemo } from "react";
 
-import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
+import { PanelSide } from "../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { WindowKind } from "../../windowManager";
 import { SidePanel } from "../sidePanels/SidePanel";
-import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
+import { SidePanelsContextProvider, useSidePanel } from "../sidePanels/SidePanelsContext";
 import { SidePanelToggleButton } from "../SidePanelToggleButton";
 import { useSurvey } from "../toolbars/useSurvey";
 import { DragAndDropContainer } from "./DragAndDropContainer";
@@ -104,10 +105,10 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
             </ExternalLayerWrapper>
 
             <SidePanelsContextProvider configId={configId}>
-                <OverlayGrid9>
+                <OverlayGrid9 sx={{ overflow: "hidden" }}>
                     <Box gridArea="left" component={SidePanel} side={PanelSide.Left}>
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.LeftTop} />
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.LeftBottom} />
+                        <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.LeftTop} />
+                        <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.LeftBottom} />
                     </Box>
 
                     <StyledToolbarsContainer
@@ -121,9 +122,9 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     />
 
                     <OverlayGrid9 gridArea="body" m={0.5}>
-                        <Overlay gridArea="top/left / top/right" position="relative">
+                        <OverlayGrid9 gridRow="top/span 2" gridColumn="left/right" position="relative">
                             {children}
-                        </Overlay>
+                        </OverlayGrid9>
                         <Box component={SidePanelToggleButton} type={PanelSide.Left} gridArea="bottom/left" />
                         <Box component={SidePanelToggleButton} type={PanelSide.Right} gridArea="bottom/right" />
                     </OverlayGrid9>
@@ -135,8 +136,16 @@ const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
                     />
 
                     <Box gridArea="right" component={SidePanel} side={PanelSide.Right}>
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.RightTop} />
-                        <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.RightBottom} />
+                        <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.RightTop} />
+                        <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.RightBottom} />
+                    </Box>
+                </OverlayGrid9>
+                <OverlayGrid9>
+                    <Box gridArea="left" component={SidePanel} side={PanelSide.LeftDynamic}>
+                        <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.LeftDynamic} />
+                    </Box>
+                    <Box gridArea="right" component={SidePanel} side={PanelSide.RightDynamic}>
+                        <SideToolbars availableToolbars={availableToolbars} side={ToolbarsSide.RightDynamic} />
                     </Box>
                 </OverlayGrid9>
             </SidePanelsContextProvider>
@@ -156,6 +165,9 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
         case ToolbarsSide.LeftBottom:
         case ToolbarsSide.RightBottom:
             return { paddingTop: padding, paddingBottom: padding };
+        case ToolbarsSide.LeftDynamic:
+        case ToolbarsSide.RightDynamic:
+            return { paddingTop: padding, paddingBottom: padding, justifyContent: "flex-start" };
         default:
             return {
                 padding: theme.spacing(0.5),
@@ -172,5 +184,10 @@ const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
             };
     }
 });
+
+const SideToolbars = (props: PropsOf<typeof StyledToolbarsContainer>) => {
+    const { isOpened } = useSidePanel();
+    return <StyledToolbarsContainer {...props} disableDnd={!isOpened || props.disableDnd} />;
+};
 
 export default ToolbarsLayer;

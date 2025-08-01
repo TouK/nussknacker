@@ -335,12 +335,28 @@ function dragNode(
         y: number;
     },
 ) {
-    cy.getNode(name).should("be.visible").trigger("mousedown", "center").trigger("mousemove", x, y, {
-        moveThreshold: 5,
-        force: true,
-        clientX: x,
-        clientY: y,
-    });
+    cy.getNode(name)
+        .should("be.visible")
+        .trigger("mousedown", "center")
+        // add some user-like noise
+        .trigger("mousemove", x - 10, y - 10, {
+            moveThreshold: 5,
+            force: true,
+            clientX: x - 10,
+            clientY: y - 10,
+        })
+        .trigger("mousemove", x + 10, y + 10, {
+            moveThreshold: 5,
+            force: true,
+            clientX: x + 10,
+            clientY: y + 10,
+        })
+        .trigger("mousemove", x, y, {
+            moveThreshold: 5,
+            force: true,
+            clientX: x,
+            clientY: y,
+        });
     cy.get("body").trigger("mouseup");
     return cy.getNode(name);
 }

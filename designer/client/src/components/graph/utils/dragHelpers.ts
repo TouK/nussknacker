@@ -5,10 +5,9 @@ import { getNodeData } from "../Graph";
 import { isModelElement } from "../GraphPartialsInTS";
 import { rafThrottle } from "../rafThrottle";
 
-export function getLinkNodes(link: dia.Link): { sourceNode: NodeType; targetNode: NodeType } {
-    const { graph } = link;
-    const source = graph.getCell(link.getSourceElement()?.id);
-    const target = graph.getCell(link.getTargetElement()?.id);
+export function getLinkNodes(link: dia.Link, graph = link.graph): { sourceNode: NodeType; targetNode: NodeType } {
+    const source = graph.getCell(link.source()?.id);
+    const target = graph.getCell(link.target()?.id);
 
     return {
         sourceNode: getNodeData(source),
@@ -41,15 +40,15 @@ function getDraggedOver(cell: dia.Cell) {
     return cell.get(`draggedOver`);
 }
 
-export function filterDragHovered(links: dia.Cell[] = []): dia.Cell[] {
-    return links.filter((cell) => getDraggedOver(cell)).sort((a, b) => getDraggedOver(b) - getDraggedOver(a));
+export function filterDragHovered(cells: dia.Cell[] = []): dia.Cell[] {
+    return cells.filter((cell) => getDraggedOver(cell)).sort((a, b) => getDraggedOver(b) - getDraggedOver(a));
 }
 
-function getArea(el: g.Rect): number {
+function getArea(el?: g.Rect): number {
     return !el ? 0 : Math.max(1, el.width) * Math.max(1, el.height);
 }
 
-export const setLinksHovered = rafThrottle((graph: dia.Graph, rect?: g.Rect, cell?: dia.Cell, nodeData?: NodeType): void => {
+export const setDraggedOver = rafThrottle((graph: dia.Graph, rect?: g.Rect, cell?: dia.Cell, nodeData?: NodeType): void => {
     graph
         .getCells()
         .filter((c) => c !== cell)

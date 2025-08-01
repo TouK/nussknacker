@@ -109,7 +109,14 @@ const DroppableContainer = styled("div")({
 });
 
 const isHorizontal = (side) =>
-    ![ToolbarsSide.LeftBottom, ToolbarsSide.LeftTop, ToolbarsSide.RightBottom, ToolbarsSide.RightTop].includes(side);
+    ![
+        ToolbarsSide.LeftBottom,
+        ToolbarsSide.LeftTop,
+        ToolbarsSide.RightBottom,
+        ToolbarsSide.RightTop,
+        ToolbarsSide.LeftDynamic,
+        ToolbarsSide.RightDynamic,
+    ].includes(side);
 
 const CloneWrapper = (
     props: PropsWithChildren<{

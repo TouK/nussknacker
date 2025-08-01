@@ -1,20 +1,28 @@
 import type { ModuleUrl } from "@touk/federated-component";
 import { isEmpty } from "lodash";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 
+import { isDynamic } from "../../../actions/nk/ui/panelSide";
 import { useUserSettings } from "../../../common/userSettings";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { NodeCreationHandler } from "../../../containers/NodeCreationHandler";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import type { NodeType } from "../../../types";
 import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { RemoteComponent } from "../../RemoteComponent";
+import { useSidePanel } from "../../sidePanels/SidePanelsContext";
 import { SearchIcon } from "../../table/SearchFilter";
+import type { Focusable } from "../../themed/InputWithIcon";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import type { OpenNodeSelectorParams } from "./globalEventBus";
+import { globalEventBus } from "./globalEventBus";
+import type { ToolBoxProps } from "./ToolBox";
 import ToolBox from "./ToolBox";
 
 type CreatorPanelProps = ToolbarPanelProps & {
@@ -37,8 +45,9 @@ const AddGroupElement = <P extends NonNullable<{ url: ModuleUrl; componentGroup:
 
 export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps): JSX.Element {
     const { t } = useTranslation();
-    const [filter, setFilter] = useState("");
-    const clearFilter = useCallback(() => setFilter(""), []);
+    const [filters, setFilters] = useState<ToolBoxProps["filters"]>([]);
+    const [textFilter, setTextFilter] = useState("");
+    const clearFilter = useCallback(() => setTextFilter(""), []);
 
     const dispatch = useAppDispatch();
     const [settings] = useUserSettings();
@@ -48,22 +57,57 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             dispatch(getAdditionalComponents());
         }
     }, [dispatch, isCloud, settings]);
+    const searchRef = useRef<Focusable>();
+
+    const { isOpened, toggleCollapse, side } = useSidePanel();
+
+    const dataRef = useRef<OpenNodeSelectorParams>();
+    useEffect(() => {
+        return globalEventBus.on("openNodeSelector", (data) => {
+            if (data.side !== side) return;
+            dataRef.current = data;
+            setFilters(data.filters || []);
+            setTextFilter("");
+            if (!isOpened) {
+                toggleCollapse();
+            }
+            setTimeout(() => {
+                searchRef.current?.focus();
+            }, 500);
+        });
+    }, [side, isOpened, toggleCollapse]);
 
     const { componentGroups } = useAppSelector(getProcessDefinitionData);
 
+    const closeHandler = useCallback(
+        (node?: NodeType) => {
+            const data = {
+                side,
+                node,
+                onPoint: dataRef.current?.fromPoint,
+                edge: dataRef.current?.withEdge,
+            };
+            dispatch({ type: "CLOSE_NODE_SELECTOR", data });
+            globalEventBus.emit("closeNodeSelector", data);
+        },
+        [dispatch, side],
+    );
+
     return (
-        <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")}>
+        <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")} onExpand={() => searchRef.current?.focus()}>
             <SearchInputWithIcon
-                onChange={setFilter}
+                ref={searchRef}
+                onChange={setTextFilter}
                 onClear={clearFilter}
-                value={filter}
+                value={textFilter}
                 placeholder={t("panels.creator.filter.placeholder", "type here to filter...")}
                 {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsInScenario })}
             >
-                <SearchIcon isEmpty={isEmpty(filter)} />
+                <SearchIcon isEmpty={isEmpty(textFilter)} />
             </SearchInputWithIcon>
             <ToolBox
-                filter={filter}
+                textFilter={textFilter}
+                filters={filters}
                 data={componentGroups}
                 addGroupLabelElement={({ name }) => (
                     <AddGroupElement
@@ -84,7 +128,11 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                         {...props}
                     />
                 )}
+                onSelect={(item) => {
+                    closeHandler(item);
+                }}
             />
+            {isDynamic(side) ? <NodeCreationHandler panelSide={side} /> : null}
         </ToolbarWrapper>
     );
 }

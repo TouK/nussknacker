@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import type { Dictionary } from "lodash";
 import { concat, defaultsDeep, isEqual, partition, sortBy } from "lodash";
 import type { StateWithHistory } from "redux-undo";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction } from "redux-undo";
@@ -8,7 +9,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { addStickyNotesToNodes, StickyNoteType } from "../../components/graph/utils/stickyNotesUtils";
 import type { Scenario } from "../../components/Process/types";
-import type { ValidationResult } from "../../types";
+import type { Edge, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { fromMeta, nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
 import { batchGroupBy } from "./batchGroupBy";
@@ -59,7 +60,38 @@ export function updateValidationResult(state: GraphState, action: { validationRe
     };
 }
 
+// fix added/pasted edges port names after fixing duplicated node names
+function adjustEdges(
+    addedNodes: NodeType[],
+    addedEdges: Edge[],
+    currentNodes: NodeType[],
+    currentEdges: Edge[],
+    processDefinitionData: ProcessDefinitionData,
+    idMapping: Dictionary<string>,
+): Edge[] {
+    if (addedEdges.length < 1) return currentEdges;
+    const nodes = [...currentNodes, ...addedNodes];
+
+    const getId = (rawId: string) => {
+        // one "to be connected" node
+        if (addedNodes.length === 1 && addedEdges.length === 1) {
+            return rawId || addedNodes[0].id;
+        }
+        return idMapping[rawId] || rawId;
+    };
+
+    return addedEdges.reduce((adjustedEdges, { edgeType, from, to }) => {
+        const fromNode = nodes.find(({ id }) => id === getId(from));
+        const toNode = nodes.find(({ id }) => id === getId(to));
+        const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, adjustedEdges);
+        const newEdge = createEdge(fromNode, toNode, edgeType, currentNodeEdges, processDefinitionData);
+        return adjustedEdges.concat(newEdge);
+    }, currentEdges);
+}
+
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
+    const currentNodes = state.scenario.scenarioGraph.nodes;
+    const currentEdges = state.scenario.scenarioGraph.edges;
     switch (action.type) {
         case "PROCESS_FETCH":
         case "PROCESS_LOADING": {
@@ -75,7 +107,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
-            const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
+            const oldNodeIds = sortBy(currentNodes.map((n) => n.id));
             const scenarioWithStickyNotes: Scenario = addStickyNotesToNodes(action.scenario);
             const newNodeids = sortBy(scenarioWithStickyNotes.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
@@ -215,7 +247,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     ...state.scenario,
                     scenarioGraph: {
                         ...state.scenario.scenarioGraph,
-                        nodes: state.scenario.scenarioGraph.nodes.map((n) =>
+                        nodes: currentNodes.map((n) =>
                             action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges),
                         ),
                         edges: newEdges,
@@ -224,14 +256,14 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "NODES_DISCONNECTED": {
-            const nodesToSet = adjustBranchParametersAfterDisconnect(state.scenario.scenarioGraph.nodes, [action]);
+            const nodesToSet = adjustBranchParametersAfterDisconnect(currentNodes, [action]);
             return {
                 ...state,
                 scenario: {
                     ...state.scenario,
                     scenarioGraph: {
                         ...state.scenario.scenarioGraph,
-                        edges: state.scenario.scenarioGraph.edges
+                        edges: currentEdges
                             .map((e) => (e.from === action.from && e.to === action.to ? { ...e, to: "" } : e))
                             .filter(Boolean),
                         nodes: nodesToSet,
@@ -291,25 +323,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;
-
-            const edgesWithValidIds = edges.map((edge) => ({
-                ...edge,
-                from: idMapping[edge.from],
-                to: idMapping[edge.to],
-            }));
-
-            const adjustedEdges = edgesWithValidIds.reduce((edges, edge) => {
-                const fromNode = nodes.find((n) => n.id === edge.from);
-                const toNode = nodes.find((n) => n.id === edge.to);
-                const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
-                const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, processDefinitionData);
-                return edges.concat(newEdge);
-            }, state.scenario.scenarioGraph.edges);
-
             return addNodesWithLayout(state, {
                 nodes,
                 layout,
-                edges: adjustedEdges,
+                edges: adjustEdges(nodes, edges, currentNodes, currentEdges, processDefinitionData, idMapping),
             });
         }
         case "VALIDATION_RESULT": {

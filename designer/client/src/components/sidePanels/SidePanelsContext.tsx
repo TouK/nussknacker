@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useRef, useState } from "react";
 
-import { PanelSide } from "../../actions/nk";
+import { PanelSide } from "../../actions/nk/ui/panelSide";
 import { panelsState } from "../../reducers/selectors/panel";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
@@ -12,22 +12,29 @@ export function SideContextProvider({ side, children }: PropsWithChildren<{ side
 }
 
 type SideState = {
+    side: PanelSide;
     isOpened: boolean;
+    isCovered?: boolean;
     toggleCollapse: () => void;
     toggleFullSize: (fullSize: boolean) => void;
     switchVisible: boolean;
+    ref: React.MutableRefObject<HTMLDivElement>;
 };
 
 const SidePanelsContext = createContext<Record<PanelSide, SideState>>(null);
 
-function useSideState(configId: string, side: PanelSide) {
+function useSideState(configId: string, side: PanelSide): SideState {
     const dispatch = useAppDispatch();
     const state = useAppSelector(panelsState);
     const [fullSize, setFullSize] = useState(true);
+    const ref = useRef<HTMLDivElement>();
 
     return useMemo(
         () => ({
+            side,
             isOpened: state[side],
+            isCovered:
+                (side === PanelSide.Left && state[PanelSide.LeftDynamic]) || (side === PanelSide.Right && state[PanelSide.RightDynamic]),
             switchVisible: !state[side] || fullSize,
             toggleCollapse: () => {
                 dispatch({
@@ -37,6 +44,7 @@ function useSideState(configId: string, side: PanelSide) {
                 });
             },
             toggleFullSize: setFullSize,
+            ref,
         }),
         [configId, dispatch, fullSize, side, state],
     );
@@ -45,13 +53,17 @@ function useSideState(configId: string, side: PanelSide) {
 export function SidePanelsContextProvider({ configId, children }: PropsWithChildren<{ configId: string }>) {
     const leftState = useSideState(configId, PanelSide.Left);
     const rightState = useSideState(configId, PanelSide.Right);
+    const leftDynamicState = useSideState(configId, PanelSide.LeftDynamic);
+    const rightDynamicState = useSideState(configId, PanelSide.RightDynamic);
 
     const value = useMemo(
         () => ({
             [PanelSide.Left]: leftState,
             [PanelSide.Right]: rightState,
+            [PanelSide.LeftDynamic]: leftDynamicState,
+            [PanelSide.RightDynamic]: rightDynamicState,
         }),
-        [leftState, rightState],
+        [leftDynamicState, leftState, rightDynamicState, rightState],
     );
 
     return <SidePanelsContext.Provider value={value}>{children}</SidePanelsContext.Provider>;
@@ -62,12 +74,12 @@ export function useSidePanel(side?: PanelSide) {
     const sideContext = useContext(SideContext);
 
     if (!panelsContext) {
-        throw new Error(`${useSidePanel.name} was used outside of ${SidePanelsContext.displayName} provider`);
+        throw new Error(`${useSidePanel.name} was used outside of SidePanelsContext provider`);
     }
 
     if (side) return panelsContext[side];
 
     if (sideContext) return panelsContext[sideContext];
 
-    throw new Error(`${useSidePanel.name} was used outside of ${SideContext.displayName} provider`);
+    throw new Error(`${useSidePanel.name} was used outside of SideContext provider`);
 }
