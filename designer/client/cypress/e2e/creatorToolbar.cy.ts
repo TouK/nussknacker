@@ -15,7 +15,6 @@ describe("Creator toolbar", () => {
     beforeEach(() => {
         cy.viewport(width, height);
         cy.visitNewProcess(seed).as("processName");
-        cy.contains(/^Creator panel.*sources/i, { timeout: 30000 }).as("toolbar", { type: "query" });
     });
 
     it("should allow collapse (persist) and filtering", () => {
@@ -28,9 +27,11 @@ describe("Creator toolbar", () => {
         cy.contains(/^sinks$/i).click();
         cy.contains(/^Misc$/i).click();
         cy.reload();
-        cy.get("@toolbar").matchImage();
-        cy.get("@toolbar").find("input").type("var");
-        cy.get("@toolbar").matchImage();
+        cy.contains(/^Creator panel.*sources/i).matchImage();
+        cy.contains(/^Creator panel.*sources/i)
+            .find("input")
+            .type("var");
+        cy.contains(/^Creator panel.*sources/i).matchImage();
     });
 
     it("should display tooltip when tool is truncated", () => {
