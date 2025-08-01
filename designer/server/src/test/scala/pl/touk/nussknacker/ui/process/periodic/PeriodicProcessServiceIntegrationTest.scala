@@ -439,7 +439,8 @@ class PeriodicProcessServiceIntegrationTest
     val scheduleMinute5  = "scheduleMinute5"
     val scheduleMinute10 = "scheduleMinute10"
 
-    val processIdWithName = f.prepareProcess(processName).dbioActionValues
+    val processIdWithName       = f.prepareProcess(processName).dbioActionValues
+    val secondProcessIdWithName = f.prepareProcess(ProcessName("second")).dbioActionValues
 
     service
       .schedule(
@@ -464,7 +465,14 @@ class PeriodicProcessServiceIntegrationTest
             scheduleMinute10 -> CronScheduleProperty("0 1 * * * ?")
           )
         ),
-        ProcessVersion.empty.copy(processName = ProcessName("other")),
+        ProcessVersion(
+          VersionId(1),
+          secondProcessIdWithName.name,
+          secondProcessIdWithName.id,
+          List.empty,
+          "testUser",
+          None
+        ),
         sampleProcess,
         randomProcessActionId,
       )
