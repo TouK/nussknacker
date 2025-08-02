@@ -11,8 +11,9 @@ import { NodeCreationHandler } from "../../../containers/NodeCreationHandler";
 import { getAdditionalComponents } from "../../../reducers/cloudData";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import type { ActionOfType } from "../../../store/storeHelpers";
+import { addListenerTyped, useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types";
-import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { RemoteComponent } from "../../RemoteComponent";
 import { useSidePanel } from "../../sidePanels/SidePanelsContext";
 import { SearchIcon } from "../../table/SearchFilter";
@@ -20,8 +21,7 @@ import type { Focusable } from "../../themed/InputWithIcon";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import type { OpenNodeSelectorParams } from "./globalEventBus";
-import { globalEventBus } from "./globalEventBus";
+import { selectComponent } from "./nodeSelectorActions";
 import type { ToolBoxProps } from "./ToolBox";
 import ToolBox from "./ToolBox";
 
@@ -61,34 +61,32 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
 
     const { isOpened, toggleCollapse, side } = useSidePanel();
 
-    const dataRef = useRef<OpenNodeSelectorParams>();
-    useEffect(() => {
-        return globalEventBus.on("openNodeSelector", (data) => {
-            if (data.side !== side) return;
-            dataRef.current = data;
-            setFilters(data.filters || []);
-            setTextFilter("");
-            if (!isOpened) {
-                toggleCollapse();
-            }
-            setTimeout(() => {
-                searchRef.current?.focus();
-            }, 500);
-        });
-    }, [side, isOpened, toggleCollapse]);
+    const lastActionRef = useRef<ActionOfType<"OPEN_NODE_SELECTOR">>();
+    useEffect(
+        () =>
+            dispatch(
+                addListenerTyped("OPEN_NODE_SELECTOR", (action) => {
+                    const { data } = action;
+                    if (data.side !== side) return;
+                    lastActionRef.current = action;
+                    setFilters(data.filters || []);
+                    setTextFilter("");
+                    if (!isOpened) {
+                        toggleCollapse();
+                    }
+                    setTimeout(() => {
+                        searchRef.current?.focus();
+                    }, 500);
+                }),
+            ),
+        [dispatch, isOpened, side, toggleCollapse],
+    );
 
     const { componentGroups } = useAppSelector(getProcessDefinitionData);
 
     const closeHandler = useCallback(
         (node?: NodeType) => {
-            const data = {
-                side,
-                node,
-                onPoint: dataRef.current?.fromPoint,
-                edge: dataRef.current?.withEdge,
-            };
-            dispatch({ type: "CLOSE_NODE_SELECTOR", data });
-            globalEventBus.emit("closeNodeSelector", data);
+            dispatch(selectComponent(side, node, lastActionRef.current?.data.fromPoint, lastActionRef.current?.data.withEdge));
         },
         [dispatch, side],
     );

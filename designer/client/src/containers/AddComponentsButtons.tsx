@@ -7,7 +7,6 @@ import { PanelSide } from "../actions/nk/ui/panelSide";
 import { RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/esp";
 import { useGraph } from "../components/graph/GraphContext";
 import { Overlay } from "../components/toolbarComponents/Overlay";
-import { globalEventBus } from "../components/toolbars/creator/globalEventBus";
 import { ComponentFilter } from "../components/toolbars/creator/ToolBox";
 import { getScenario } from "../reducers/selectors/graph";
 import { getToolbarsConfig } from "../reducers/selectors/toolbars";
@@ -26,13 +25,15 @@ function OpenButton({ sourceOnly }: { sourceOnly?: boolean }) {
             onClick={() => {
                 const paper = graphGetter().processGraphPaper;
                 const center = paper.clientToLocalPoint(graphGetter().viewport.center());
-                const data = {
-                    side: PanelSide.RightDynamic,
-                    filters: sourceOnly ? [ComponentFilter.sourcesOnly] : [],
-                    fromPoint: center.offset(RECT_WIDTH * -0.5, RECT_HEIGHT * -0.5),
-                };
-                dispatch({ type: "OPEN_NODE_SELECTOR", data });
-                globalEventBus.emit("openNodeSelector", data);
+
+                dispatch({
+                    type: "OPEN_NODE_SELECTOR",
+                    data: {
+                        side: PanelSide.RightDynamic,
+                        filters: sourceOnly ? [ComponentFilter.sourcesOnly] : [],
+                        fromPoint: center.offset(RECT_WIDTH * -0.5, RECT_HEIGHT * -0.5),
+                    },
+                });
             }}
             disableFocusRipple
             color="inherit"

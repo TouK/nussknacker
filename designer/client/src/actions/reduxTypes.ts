@@ -1,6 +1,6 @@
 import type { Reducer as ReduxReducer, ThunkAction as TA } from "@reduxjs/toolkit";
 
-import type { TempGlobalActions } from "../components/toolbars/creator/globalEventBus";
+import type { NodeSelectorActions } from "../components/toolbars/creator/nodeSelectorActions";
 import type { RootState } from "../reducers";
 import type { CloudDataActions } from "../reducers/cloudData";
 import type { SquashHistoryActions } from "../reducers/graph/historySquash";
@@ -26,13 +26,13 @@ import type { UserSettingsActions } from "./nk/userSettings";
 import type { SettingsActions } from "./settingsActions";
 
 type TypedAction =
-    | TempGlobalActions
     | CloudDataActions
     | CountsActions
     | GetScenarioActivitiesAction
     | LiveDataActions
     | NodeActions
     | NodeDetailsActions
+    | NodeSelectorActions
     | NotificationActions
     | ProcessActivityActions
     | PropertiesActions

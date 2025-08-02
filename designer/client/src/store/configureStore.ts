@@ -1,5 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
-import { configureStore } from "@reduxjs/toolkit";
+import type { ThunkDispatch } from "@reduxjs/toolkit";
+import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
 import type { Store } from "redux";
 import { persistStore } from "redux-persist";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
@@ -20,6 +21,8 @@ const actionsBlacklist: Action["type"][] = [
     "DISPLAY_LIVE_DATA",
 ];
 
+const listenerMiddleware = createListenerMiddleware<RootState, ThunkDispatch<RootState, unknown, Action>>();
+
 export const store = configureStore({
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
@@ -27,7 +30,7 @@ export const store = configureStore({
             serializableCheck: false, // we still have non fixed antipatterns
             thunk: false, // need to disable and provide own, typed thunk
         })
-            .prepend(thunk as ThunkMiddleware<RootState, Action>)
+            .prepend(listenerMiddleware.middleware, thunk as ThunkMiddleware<RootState, Action>)
             .concat(
                 createStateSyncMiddleware({
                     whitelist: [

@@ -8,10 +8,9 @@ import type { PanelSide } from "../actions/nk/ui/panelSide";
 import { portSize, RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/esp";
 import { useGraph } from "../components/graph/GraphContext";
 import { useSidePanel } from "../components/sidePanels/SidePanelsContext";
-import { globalEventBus } from "../components/toolbars/creator/globalEventBus";
-import { ComponentFilter } from "../components/toolbars/creator/ToolBox";
+import { closeNodeSelector, openNodeSelector } from "../components/toolbars/creator/nodeSelectorActions";
 import { useOutsideInteraction } from "../components/toolbars/creator/useOutsideInteraction";
-import { useAppDispatch } from "../store/storeHelpers";
+import { addListenerTyped, addOnceListenerTyped, useAppDispatch } from "../store/storeHelpers";
 
 const adjustPoint = (paper: dia.Paper, plainPoint: g.PlainPoint): g.Point => {
     const rect = new g.Rect(plainPoint.x, plainPoint.y, RECT_WIDTH, RECT_HEIGHT);
@@ -35,12 +34,13 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
         paper.on(
             "blank:contextmenu",
             (event, x, y) => {
-                const data = {
-                    side: panelSide,
-                    fromPoint: new g.Point(x, y).offset(RECT_WIDTH * -0.5),
-                };
-                dispatch({ type: "OPEN_NODE_SELECTOR", data });
-                globalEventBus.emit("openNodeSelector", data);
+                dispatch({
+                    type: "OPEN_NODE_SELECTOR",
+                    data: {
+                        side: panelSide,
+                        fromPoint: new g.Point(x, y).offset(RECT_WIDTH * -0.5),
+                    },
+                });
             },
             context,
         );
@@ -76,18 +76,13 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
                 }
 
                 const edgeData = link.prop("edgeData");
-                const data = {
-                    side: panelSide,
-                    fromPoint: position,
-                    filters: [isLinkReversed ? ComponentFilter.removeNoOutputs : ComponentFilter.removeNoInputs],
-                    withEdge: { ...edgeData, from, to },
-                };
-                dispatch({ type: "OPEN_NODE_SELECTOR", data });
-                globalEventBus.emit("openNodeSelector", data);
 
-                globalEventBus.once("closeNodeSelector", () => {
-                    link.remove();
-                });
+                dispatch(openNodeSelector(panelSide, position, isLinkReversed, edgeData, from, to));
+                dispatch(
+                    addOnceListenerTyped("CLOSE_NODE_SELECTOR", () => {
+                        link.remove();
+                    }),
+                );
             },
             context,
         );
@@ -99,34 +94,43 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
 
     const { isOpened, toggleCollapse, ref } = useSidePanel(panelSide);
 
-    useEffect(() => {
-        return globalEventBus.on("closeNodeSelector", ({ node, onPoint, side, edge }) => {
-            if (side !== panelSide) return;
-            toggleCollapse();
+    useEffect(
+        () =>
+            dispatch(
+                addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, onPoint, side, edge } }, api) => {
+                    if (side !== panelSide) return;
+                    toggleCollapse();
 
-            if (!node) return;
+                    if (!node) return;
 
-            const graph = graphGetter();
-            const paper = graph.processGraphPaper;
+                    const graph = graphGetter();
+                    const paper = graph.processGraphPaper;
 
-            const position: g.Point = adjustPoint(paper, onPoint);
+                    const position: g.Point = adjustPoint(paper, onPoint);
 
-            if (graph.isFragmentCreator(node)) {
-                return graph.createFragment(position, edge);
-            }
+                    if (graph.isFragmentCreator(node)) {
+                        return graph.createFragment(position, edge);
+                    }
 
-            dispatch(nodesWithEdgesAdded([{ node, position }], [edge].filter(Boolean), false));
-        });
-    }, [dispatch, graphGetter, panelSide, toggleCollapse]);
+                    api.dispatch(
+                        nodesWithEdgesAdded(
+                            [
+                                {
+                                    node,
+                                    position,
+                                },
+                            ],
+                            [edge].filter(Boolean),
+                            false,
+                        ),
+                    );
+                }),
+            ),
+        [dispatch, graphGetter, panelSide, toggleCollapse],
+    );
 
-    const justClose = () => {
-        const data = { side: panelSide };
-        dispatch({ type: "CLOSE_NODE_SELECTOR", data });
-        globalEventBus.emit("closeNodeSelector", data);
-    };
-
-    useOutsideInteraction(ref, justClose, isOpened);
-    useKey("Escape", justClose, { when: isOpened });
+    useOutsideInteraction(ref, () => dispatch(closeNodeSelector(panelSide)), isOpened);
+    useKey("Escape", () => dispatch(closeNodeSelector(panelSide)), { when: isOpened });
 
     return null;
 }
