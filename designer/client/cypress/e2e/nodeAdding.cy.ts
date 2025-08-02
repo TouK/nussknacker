@@ -69,7 +69,5 @@ describe("Node adding", () => {
             .should("exist")
             .click({ force: true });
         cy.get("@graph").matchImage();
-        cy.wait(2500);
-        cy.log("done");
     });
 });
