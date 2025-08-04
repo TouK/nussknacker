@@ -4131,9 +4131,11 @@ paths:
                       - name: status
                         value: Data processing started
                       - name: started
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       - name: finished
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       - name: errorMessage
                         value: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
@@ -4150,9 +4152,11 @@ paths:
                       - name: status
                         value: Data processing started
                       - name: started
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       - name: finished
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4162,11 +4166,14 @@ paths:
                       - name: status
                         value: Data processing finished
                       - name: created
-                        value: '2024-01-17 13:21:17'
+                        value: '2024-01-17T13:21:17Z'
+                        isDate: true
                       - name: started
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       - name: finished
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4176,15 +4183,19 @@ paths:
                       - name: status
                         value: Deployment will be retried
                       - name: created
-                        value: '2024-01-17 13:21:17'
+                        value: '2024-01-17T13:21:17Z'
+                        isDate: true
                       - name: started
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       - name: finished
-                        value: '2024-01-17 14:21:17'
+                        value: '2024-01-17T14:21:17Z'
+                        isDate: true
                       - name: retriesLeft
                         value: '1'
                       - name: nextRetryAt
-                        value: '2024-01-17 15:21:17'
+                        value: '2024-01-17T15:21:17Z'
+                        isDate: true
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
@@ -5225,6 +5236,10 @@ components:
           type: string
         value:
           type: string
+        isDate:
+          type:
+          - boolean
+          - 'null'
     AdditionalInfo:
       title: AdditionalInfo
       oneOf:
