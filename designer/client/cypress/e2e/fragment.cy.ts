@@ -31,8 +31,7 @@ describe("Fragment", () => {
         it("should allow adding input parameters", () => {
             cy.visitNewFragment(seed, "fragment");
 
-            cy.getNode("input").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").should("be.visible").as("window");
+            cy.openNodeWindow("input").as("window");
 
             // Provide String Any Value inputMode
             const nameValueStringAnyValue = "name_value_string_any_value";

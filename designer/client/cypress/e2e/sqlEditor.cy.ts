@@ -7,12 +7,12 @@ describe("Sql editor", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed });
     });
 
     it("should display colorfull sql code", () => {
         cy.visitNewProcess(seed, "withSqlEditor");
-        cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick");
+        cy.getNode("sql-source").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible");
         cy.get("#ace-editor").should("have.class", "tokenizer-working");
         cy.get("#ace-editor").should("not.have.class", "tokenizer-working");
@@ -24,8 +24,8 @@ describe("Sql editor", () => {
         cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "withSqlEditor2");
 
-        cy.wrap(["sql-source", "sql-source2", "sql-source3"]).each((name) => {
-            cy.get(`[model-id=${name}]`).should("be.visible").trigger("dblclick");
+        cy.wrap(["sql-source", "sql-source2", "sql-source3"]).each((name: string) => {
+            cy.getNode(name).should("be.visible").trigger("dblclick");
             cy.get("#ace-editor").should("have.class", "tokenizer-working");
             cy.get("#ace-editor").should("not.have.class", "tokenizer-working");
             cy.get("#ace-editor").parent().matchImage({ maxDiffThreshold });

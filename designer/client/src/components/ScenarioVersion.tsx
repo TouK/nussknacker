@@ -37,7 +37,7 @@ export function RunningVersion() {
             }}
             variant="body2"
         >
-            {/* eslint-disable-next-line i18next/no-literal-string */}v{runningVersion}
+            {`v${runningVersion}`}
         </Typography>
     );
 }
