@@ -38,8 +38,7 @@ import { prepareSvg } from "./svg-export/prepareSvg";
 import type { GraphProps } from "./types";
 import { Events } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
-import { canInjectNode as graphUtilsCanInjectNode } from "./utils/graphUtils";
-import { handleGraphEvent } from "./utils/graphUtils";
+import { canInjectNode as graphUtilsCanInjectNode, handleGraphEvent } from "./utils/graphUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";
 
 function clamp(number: number, max: number) {
@@ -455,7 +454,7 @@ export class Graph extends React.Component<Props> {
     }
 
     componentDidUpdate(prevProps: Props): void {
-        if (!isEmpty(this.props.processCounts)) {
+        if (!isEmpty(this.props.processCounts) || !isEmpty(prevProps.processCounts)) {
             this.updateNodesCounts();
         }
         if (this.props.isFragment !== true && prevProps.isFragment !== true) {
