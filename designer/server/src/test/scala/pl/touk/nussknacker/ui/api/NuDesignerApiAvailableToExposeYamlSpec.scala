@@ -17,7 +17,6 @@ import sttp.tapir.{auth, Endpoint, EndpointInput}
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 
 import java.lang.reflect.{Method, Modifier}
-import java.time.{ZoneId, ZoneOffset}
 import scala.concurrent.Await
 import scala.util.Try
 
@@ -221,10 +220,9 @@ object NuDesignerApiAvailableToExpose {
           clazz.getConstructor(
             classOf[EndpointInput[PassedAuthCredentials]],
             classOf[TapirStreamEndpointProvider],
-            classOf[ZoneId]
           )
         )
-          .map(_.newInstance(basicAuth, streamEndpointProvider, ZoneOffset.UTC))
+          .map(_.newInstance(basicAuth, streamEndpointProvider))
       }
       .getOrElse(
         throw new IllegalStateException(
