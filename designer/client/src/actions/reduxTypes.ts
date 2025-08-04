@@ -25,7 +25,7 @@ import type { UiActions } from "./nk/ui/uiActions";
 import type { UserSettingsActions } from "./nk/userSettings";
 import type { SettingsActions } from "./settingsActions";
 
-type TypedAction =
+export type TypedAction =
     | CloudDataActions
     | CountsActions
     | GetScenarioActivitiesAction
@@ -48,7 +48,7 @@ type TypedAction =
     | UpdateTestCapabilitiesAction
     | UserSettingsActions;
 
-interface UntypedAction {
+export interface UntypedAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;
 }
 
