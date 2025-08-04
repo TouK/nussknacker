@@ -10,5 +10,5 @@ object ContentTypes extends Enumeration {
 
 object ContentTypesSchemas {
   val schemaForJson: OpenAPIJsonSchema  = OpenAPIJsonSchema("{}")
-  val schemaForPlain: OpenAPIJsonSchema = OpenAPIJsonSchema("{}")
+  val schemaForPlain: OpenAPIJsonSchema = OpenAPIJsonSchema("true")
 }
