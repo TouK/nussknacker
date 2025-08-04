@@ -48,9 +48,7 @@ export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
                 },
             })}
         >
-            <Typography component={"span"} fontWeight={500} lineHeight={"inherit"} variant={"body2"}>
-                {title}
-            </Typography>
+            <span>{title}</span>
         </MuiLoadingButton>
     );
 };
