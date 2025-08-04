@@ -1,10 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/generate-and-test.svg";
 import { TestCapabilityStatus } from "../../../../common/TestResultUtils";
 import { getTestCapabilities, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
@@ -14,8 +14,8 @@ type Props = ToolbarButtonProps;
 function GenerateAndTestButton(props: Props) {
     const { disabled, type } = props;
     const { t } = useTranslation();
-    const testCapabilities = useSelector(getTestCapabilities);
-    const processIsLatestVersion = useSelector(isLatestProcessVersion);
+    const testCapabilities = useAppSelector(getTestCapabilities);
+    const processIsLatestVersion = useAppSelector(isLatestProcessVersion);
     const available = !disabled && processIsLatestVersion && testCapabilities?.testWithLiveData.status === TestCapabilityStatus.AVAILABLE;
     const { open } = useWindows();
 

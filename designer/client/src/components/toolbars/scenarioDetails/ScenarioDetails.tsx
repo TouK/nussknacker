@@ -1,11 +1,11 @@
 import i18next from "i18next";
 import React, { memo } from "react";
-import { useSelector } from "react-redux";
 
 import type { RootState } from "../../../reducers";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { getLoggedUser } from "../../../reducers/selectors/settings";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { ToolbarPanelProps } from "../../toolbarComponents/ButtonsToolbar";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
@@ -15,9 +15,9 @@ import { ScenarioLabels } from "./ScenarioLabels";
 import { ScenarioNameItem } from "./ScenarioNameItem";
 
 const ScenarioDetails = memo(function ScenarioDetails(props: ToolbarPanelProps) {
-    const scenario = useSelector((state: RootState) => getScenario(state));
-    const processState = useSelector((state: RootState) => getProcessState(state));
-    const loggedUser = useSelector((state: RootState) => getLoggedUser(state));
+    const scenario = useAppSelector((state: RootState) => getScenario(state));
+    const processState = useAppSelector((state: RootState) => getProcessState(state));
+    const loggedUser = useAppSelector((state: RootState) => getLoggedUser(state));
 
     return (
         <ToolbarWrapper {...props} title={i18next.t("panels.scenarioDetails.title", "Scenario details")}>

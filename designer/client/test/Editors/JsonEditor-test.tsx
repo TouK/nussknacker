@@ -1,18 +1,20 @@
-import * as React from "react";
-import "ace-builds/src-noconflict/ace";
+import { configureStore } from "@reduxjs/toolkit";
 
 import { render, screen } from "@testing-library/react";
+import * as React from "react";
+import "ace-builds/src-noconflict/ace";
+import { Provider } from "react-redux";
 import { JsonEditor } from "../../src/components/graph/node-modal/editors/expression/JsonEditor";
 import "ace-builds/src-noconflict/ext-language_tools";
-import { mockFieldErrors, mockValueChange } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
-import { Provider } from "react-redux";
-import configureMockStore from "redux-mock-store/lib";
-import thunk from "redux-thunk";
+import { mockFieldErrors, mockValueChange } from "./helpers";
 
-const mockStore = configureMockStore([thunk]);
-const store = mockStore({
-    settings: { featuresSettings: { remoteEnvironment: { targetEnvironmentId: "remote environment" } } },
+const store = configureStore({
+    reducer: (state) => state,
+    preloadedState: {
+        settings: { featuresSettings: { remoteEnvironment: { targetEnvironmentId: "remote environment" } } },
+    },
+    devTools: false,
 });
 
 describe("JSON Editor", () => {

@@ -153,6 +153,7 @@ Cypress.Commands.overwrite<"matchImage", "element">(
         originalFn($el, options);
         cy.wait(200);
         showInputCaret($el);
+        cy.wait(500);
     },
 );
 

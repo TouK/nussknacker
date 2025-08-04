@@ -1,8 +1,7 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { renderHook } from "@testing-library/react";
 import React from "react";
 import { Provider } from "react-redux";
-import configureMockStore from "redux-mock-store/lib";
-import thunk from "redux-thunk";
 
 // eslint-disable-next-line jest/no-mocks-import
 import { sampleMetadataResponse } from "../../../../__mocks__/fixtures/sampleMetadataResponse";
@@ -121,14 +120,18 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
 
 const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadata(sampleActivitiesResponse, sampleMetadataResponse));
 
-const mockStore = configureMockStore([thunk]);
-
 const createStoreWithQuery = (query) => {
-    return mockStore({
+    const preloadedState = {
         processActivity: {
             searchQuery: query, // Set the search query directly in the state
             activities: mockedActivities,
         },
+    };
+
+    return configureStore({
+        reducer: (state) => state,
+        preloadedState,
+        devTools: false,
     });
 };
 

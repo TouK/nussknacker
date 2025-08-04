@@ -1,16 +1,16 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/undo.svg";
 import { getHistoryCounts } from "../../../../reducers/selectors/getHistory";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import type { ToolbarButtonProps } from "../../types";
 import { CounterToolbarButton } from "./CounterToolbarButton";
 
 function UndoButton(props: ToolbarButtonProps): JSX.Element {
     const { undo } = useSelectionActions();
-    const [past] = useSelector(getHistoryCounts);
+    const [past] = useAppSelector(getHistoryCounts);
     const { t } = useTranslation();
     const { disabled, type } = props;
     const available = !disabled && undo;

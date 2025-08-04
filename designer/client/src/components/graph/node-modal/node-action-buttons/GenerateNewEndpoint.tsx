@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { validateNodeData } from "../../../../actions/nk";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { NodeType } from "../../../../types";
 import { getFindAvailableBranchVariables, getFindAvailableVariables } from "../NodeDetailsContent/selectors";
 import { StyledLoadingButton } from "./StyledLoadingButton";
@@ -16,12 +16,12 @@ interface Props {
 export const GenerateNewEndpoint = ({ node, handleNewEndpointGenerated }: Props) => {
     const { t } = useTranslation();
 
-    const dispatch = useDispatch();
-    const scenarioName = useSelector(getProcessName);
-    const scenarioGraph = useSelector(getScenarioGraph);
+    const dispatch = useAppDispatch();
+    const scenarioName = useAppSelector(getProcessName);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
 
-    const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables);
-    const findAvailableVariables = useSelector(getFindAvailableVariables);
+    const getBranchVariableTypes = useAppSelector(getFindAvailableBranchVariables);
+    const findAvailableVariables = useAppSelector(getFindAvailableVariables);
     const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
 
     const handleSendHttpRequest = useCallback(async () => {

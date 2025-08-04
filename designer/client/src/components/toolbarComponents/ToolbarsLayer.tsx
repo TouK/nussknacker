@@ -2,13 +2,13 @@ import { Box, styled } from "@mui/material";
 import { useWindowManager } from "@touk/window-manager";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { PanelSide } from "../../actions/nk";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { useUserSettings } from "../../common/userSettings";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { ToolbarsSide } from "../../reducers/toolbars";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { WindowKind } from "../../windowManager";
 import { SidePanel } from "../sidePanels/SidePanel";
 import { SidePanelsContextProvider } from "../sidePanels/SidePanelsContext";
@@ -22,7 +22,7 @@ import type { Toolbar } from "./toolbar";
 import { DRAGGABLE_LIST_CLASSNAME, ToolbarsContainer } from "./ToolbarsContainer";
 
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
-    const { editFrontend } = useSelector(getCapabilities);
+    const { editFrontend } = useAppSelector(getCapabilities);
     const [showSurvey] = useSurvey();
     const [userSettings] = useUserSettings();
 
@@ -69,7 +69,7 @@ function useShowFloatingToolbar() {
 }
 
 const ToolbarsLayer = (props: ToolbarsLayerProps): JSX.Element => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { toolbars, configId, children, externalLayerWrapper: ExternalLayerWrapper = React.Fragment } = props;
 
     useEffect(() => {

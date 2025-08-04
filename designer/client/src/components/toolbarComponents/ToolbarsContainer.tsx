@@ -13,10 +13,10 @@ import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { alpha, styled } from "@mui/material";
 import type { CSSProperties, PropsWithChildren } from "react";
 import React, { createContext, Suspense, useCallback, useContext, useMemo, useRef } from "react";
-import { useSelector } from "react-redux";
 
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { ToolbarsSide } from "../../reducers/toolbars";
+import { useAppSelector } from "../../store/storeHelpers";
 import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { DraggableIdContext, TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
 import { isInInertTree } from "./inertHelpers";
@@ -127,7 +127,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
     const { side, availableToolbars, className, disableDnd } = props;
 
     const selector = useMemo(() => getOrderForPosition(side), [side]);
-    const order = useSelector(selector);
+    const order = useAppSelector(selector);
 
     const ordered = useMemo(
         () => availableToolbars.filter(({ id }) => order.includes(id)).sort(sortByIdsFrom(order)),

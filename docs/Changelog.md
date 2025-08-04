@@ -211,7 +211,7 @@ description: Stay informed with detailed changelogs covering new features, impro
 * [#8116](https://github.com/TouK/nussknacker/pull/8116) Improved Kafka metadata caching: common cache and caching topics when schemaless topics are enabled
 * [#8123](https://github.com/TouK/nussknacker/pull/8123) For now on, it is possible to deploy and save a scenario at the same time.
 * [#8228](https://github.com/TouK/nussknacker/pull/8228) Fixed sorting by scenario status name in component usages view.
-* [#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink dependency to 1.20.2
+* [#7615](https://github.com/TouK/nussknacker/pull/7615)[#7137](https://github.com/TouK/nussknacker/pull/7137)[#8317](https://github.com/TouK/nussknacker/pull/8317) Updated Flink dependency to 1.20.2
 * [#8239](https://github.com/TouK/nussknacker/pull/8239) Added a DB reference to the set of services that can be invoked from inside the `CustomHttpServiceProvider` implementation
 * [#8242](https://github.com/TouK/nussknacker/pull/8242) Toolbar buttons can be disabled and their tooltip can be customized based on user roles
     * Example of button configuration, using new settings:
@@ -277,6 +277,17 @@ description: Stay informed with detailed changelogs covering new features, impro
        }
      }
   ```
+* [#8352](https://github.com/TouK/nussknacker/pull/8352) Updated dependencies:
+  * Caffeine Cache 3.1.8 -> 3.2.1
+  * Cats Effect 3.5.4 -> 3.5.7
+  * Cats 2.12.0 -> 2.13.0
+  * Circe 0.14.10 -> 0.14.14
+  * HikariCP 6.2.1 -> 6.3.1
+  * Jackson 2.17.2 -> 2.18.2
+  * Netty 4.1.119.Final -> 4.1.123.Final
+  * PostgreSQL JDBC driver 42.7.4 -> 42.7.7
+  * sttp 3.9.8 -> 3.11.0
+  * Tapir 1.11.7 -> 1.11.12
 
 ## 1.18
 

@@ -2,7 +2,6 @@ import { min } from "lodash";
 import type { PropsWithChildren, ReactElement } from "react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { useDebounceFn } from "rooks";
 
@@ -17,6 +16,7 @@ import {
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
+import type { Action } from "../../actions/reduxTypes";
 import { readText, writeText } from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
@@ -26,6 +26,7 @@ import { getGraphLocked, getHistoryCounts } from "../../reducers/selectors/getHi
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import NodeUtils from "./NodeUtils";
 
 const hasTextSelection = () => !!window.getSelection().toString();
@@ -44,7 +45,7 @@ interface UserActions {
 }
 
 function useClipboardParse() {
-    const processDefinitionData = useSelector(getProcessDefinitionData);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
     return useCallback(
         (text) => {
             const selection = tryParseOrNull(text);
@@ -115,12 +116,12 @@ export const useSelectionActions = (): UserActions => {
 };
 
 function useUndoRedoActions(disabled?: boolean) {
-    const dispatch = useDispatch();
-    const [past, future] = useSelector(getHistoryCounts);
+    const dispatch = useAppDispatch();
+    const [past, future] = useAppSelector(getHistoryCounts);
     return useMemo(() => {
         return {
-            undo: past <= 0 || disabled ? null : () => dispatch(UndoActionCreators.undo()),
-            redo: future <= 0 || disabled ? null : () => dispatch(UndoActionCreators.redo()),
+            undo: past <= 0 || disabled ? null : () => dispatch(UndoActionCreators.undo() as Action),
+            redo: future <= 0 || disabled ? null : () => dispatch(UndoActionCreators.redo() as Action),
         };
     }, [past, disabled, future, dispatch]);
 }
@@ -130,13 +131,13 @@ export default function SelectionContextProvider(
         pastePosition: () => { x: number; y: number };
     }>,
 ): ReactElement {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { t } = useTranslation();
 
-    const selectionState = useSelector(getSelectionState);
-    const capabilities = useSelector(getCapabilities);
-    const selection = useSelector(getSelection);
-    const canModifySelected = useSelector(canModifySelectedNodes);
+    const selectionState = useAppSelector(getSelectionState);
+    const capabilities = useAppSelector(getCapabilities);
+    const selection = useAppSelector(getSelection);
+    const canModifySelected = useAppSelector(canModifySelectedNodes);
 
     const [hasSelection, setHasSelection] = useState(hasTextSelection);
 
@@ -224,7 +225,7 @@ export default function SelectionContextProvider(
 
     const canAccessClipboard = useClipboardPermission();
 
-    const graphLocked = useSelector(getGraphLocked);
+    const graphLocked = useAppSelector(getGraphLocked);
     const undoRedoActions = useUndoRedoActions(graphLocked);
     const userActions: UserActions = useMemo(
         () => ({

@@ -1,9 +1,9 @@
 import { FormControl } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/getProcessDefinitionData";
+import { useAppSelector } from "../../../../../../../store/storeHelpers";
 import type { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import Input from "../../../../editors/field/Input";
@@ -34,7 +34,7 @@ export default function ValidationFields({
     typ,
 }: ValidationFields) {
     const { t } = useTranslation();
-    const definitionData = useSelector(getProcessDefinitionData);
+    const definitionData = useAppSelector(getProcessDefinitionData);
 
     const validationExpressionFieldName: FieldName = `$param.${name}.$validationExpression`;
 

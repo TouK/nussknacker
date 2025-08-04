@@ -130,7 +130,7 @@ const resetReducer: Reducer<ToolbarsState> = (state, action) => {
     return action.type === "RESET_TOOLBARS" ? { ...state, collapsed: {}, positions: {} } : state;
 };
 
-const combinedReducers = combineReducers<ToolbarsState>({
+const combinedReducers = combineReducers({
     collapsed,
     positions,
     componentGroupToolbox,
@@ -159,7 +159,7 @@ const reducer: Reducer<ToolbarsStates> = (state = {}, action) => {
     }
 };
 
-export const toolbars = persistReducer(
+export const toolbars: Reducer<ToolbarsStates> = persistReducer(
     {
         key: `toolbars`,
         blacklist: [`currentConfigId`],

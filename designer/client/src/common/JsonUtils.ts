@@ -1,7 +1,6 @@
 import type { IFlattened } from "flattenizer";
 import { flatten } from "flattenizer";
 import { isEqual, isObject, mapKeys, transform } from "lodash";
-import type { DeepPartial } from "redux";
 
 export function tryParseOrNull<T = any>(input: string): T | null {
     try {
@@ -25,6 +24,10 @@ export function flattenObj<T>(obj: T): IFlattened<T> {
         return key;
     });
 }
+
+type DeepPartial<T> = {
+    [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};
 
 export function objectDiff<O, B>(object: O, base: B): DeepPartial<O> {
     return transform<any, any>(object, (result, value, key) => {

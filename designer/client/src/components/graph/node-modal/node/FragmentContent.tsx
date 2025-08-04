@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
 
 import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
 import { getFragmentNodesPrefix, useModalDetailsIfNeeded } from "../../../../containers/hooks/useModalDetailsIfNeeded";
@@ -7,15 +6,16 @@ import HttpService from "../../../../http/HttpService";
 import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/getProcessDefinitionData";
 import { getProcessCounts } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import type { FragmentNodeType } from "../../../../types";
-import { ErrorBoundary, DialogErrorFallbackComponent } from "../../../common/error-boundary";
+import { DialogErrorFallbackComponent, ErrorBoundary } from "../../../common/error-boundary";
 import type { Scenario } from "../../../Process/types";
 import { FragmentGraphPreview } from "../../fragmentGraph";
 import NodeUtils from "../../NodeUtils";
 
 export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNodeType }): JSX.Element {
-    const processCounts = useSelector(getProcessCounts);
-    const processDefinitionData = useSelector(getProcessDefinitionData);
+    const processCounts = useAppSelector(getProcessCounts);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
     const [fragmentContent, setFragmentContent] = useState<Scenario>(null);
     const { openFragmentNodes } = useModalDetailsIfNeeded();

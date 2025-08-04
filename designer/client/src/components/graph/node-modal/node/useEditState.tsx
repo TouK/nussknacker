@@ -1,10 +1,10 @@
 import type { MutableRefObject } from "react";
 import { useCallback, useEffect, useId, useImperativeHandle, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
 
 import type { RootState } from "../../../../reducers";
 import { getUi } from "../../../../reducers/selectors/ui";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import type { EditState } from "./useNodeState";
 
 const getPendingChanges = createSelector(getUi, ({ pendingChanges }) => pendingChanges);
@@ -14,10 +14,10 @@ export const getHasPendingChanges = createSelector(
 );
 
 export function useEditState(): [EditState, (value?: EditState) => void, MutableRefObject<EditState>] {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const id = useId();
 
-    const editState = useSelector((state: RootState) => getPendingChanges(state)[id]);
+    const editState = useAppSelector((state: RootState) => getPendingChanges(state)[id]);
     const editStateRef = useRef<EditState>();
 
     const setState = useCallback(

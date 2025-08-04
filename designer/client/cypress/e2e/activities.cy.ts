@@ -40,7 +40,7 @@ describe("Activities", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
@@ -127,8 +127,8 @@ describe("Activities", () => {
         });
 
         cy.deployScenario();
+        cy.get('[aria-label="tool:Deployment"]').should("exist");
         cy.get('[data-testid="runningVersion"]').click();
-        cy.get('[aria-selected="true"]').find('[aria-label="tool:Deployment"]').should("be.visible");
-        cy.cancelScenario();
+        cy.get('[aria-selected="true"] [aria-label="tool:Deployment"]').should("be.visible");
     });
 });

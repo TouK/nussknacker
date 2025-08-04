@@ -3,11 +3,11 @@ import { Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 import httpService from "../../http/HttpService";
-import { getProcessVersionId, getProcessName } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import type { Attachment } from "../processAttach/AddAttachment";
@@ -17,9 +17,9 @@ import { AttachmentEl } from "../processAttach/AttachmentEl";
 const AddAttachmentDialog = (props: WindowContentProps) => {
     const [attachments, setAttachment] = useState<Attachment[]>([]);
     const { t } = useTranslation();
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
-    const dispatch = useDispatch();
+    const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
+    const dispatch = useAppDispatch();
 
     const confirmAction = useCallback(async () => {
         const attachmentPromises = attachments.map((attachment) =>

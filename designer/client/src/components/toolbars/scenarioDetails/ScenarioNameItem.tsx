@@ -1,20 +1,20 @@
 import { Stack, Typography } from "@mui/material";
 import React from "react";
-import { useSelector } from "react-redux";
 
 import BatchIcon from "../../../assets/img/batch.svg";
 import RequestResponseIcon from "../../../assets/img/request-response.svg";
 import StreamingIcon from "../../../assets/img/streaming.svg";
 import { ProcessingMode } from "../../../http/HttpService";
 import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { ScenarioVersion } from "../../ScenarioVersion";
 import { getProcessingModeVariantName } from "./getProcessingModeVariantName";
 import { PanelScenarioDetailsIcon, ProcessName, ProcessRename } from "./ScenarioDetailsComponents";
 
 export function ScenarioNameItem() {
-    const scenario = useSelector(getScenario);
-    const isRenamePending = useSelector(isProcessRenamed);
-    const unsavedNewName = useSelector(getProcessUnsavedNewName);
+    const scenario = useAppSelector(getScenario);
+    const isRenamePending = useAppSelector(isProcessRenamed);
+    const unsavedNewName = useAppSelector(getProcessUnsavedNewName);
     const ProcessingModeIcon =
         scenario.processingMode === ProcessingMode.streaming
             ? StreamingIcon

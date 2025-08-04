@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import DryRunTestingIcon from "../../../assets/img/icons/test-dry-run.svg";
 import GenerateAndTestIcon from "../../../assets/img/icons/test-using-live-data.svg";
 import { TestCapabilityStatus } from "../../../common/TestResultUtils";
 import { getTestCapabilities, getTestType } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { CustomRadioProps } from "../../customRadio/CustomRadio";
 
 export enum TestType {
@@ -23,8 +23,8 @@ export const useTestOptions = (): {
     testType: TestType;
 } => {
     const { t } = useTranslation();
-    const testCapabilities = useSelector(getTestCapabilities);
-    const storedTestType = useSelector(getTestType);
+    const testCapabilities = useAppSelector(getTestCapabilities);
+    const storedTestType = useAppSelector(getTestType);
 
     const options: TestingOption[] = useMemo(
         () => [

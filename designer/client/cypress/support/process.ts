@@ -242,9 +242,14 @@ function importTestProcess(name: string, fixture = "testProcess") {
 
 function getTestProcesses(filter?: string) {
     const url = `/api/processes`;
-    return cy
-        .request({ url })
-        .then(({ body }) => body.filter(({ name }) => name.includes(filter || Cypress.env("processName"))).map(({ name }) => name));
+    return cy.request({ url }).then(({ body }) => {
+        const filtered = body.filter(({ name }) => {
+            if (!name.startsWith(Cypress.env("processNamePrefix"))) return false;
+            if (filter?.length) return name.includes(filter);
+            return true;
+        });
+        return filtered.map(({ name }) => name);
+    });
 }
 
 function deleteAllTestProcesses({ filter, force }: { filter?: string; force?: boolean }) {
@@ -310,11 +315,14 @@ function openNodeWindow(nameOrAlias: string, end?: boolean) {
     cy.intercept("POST", "/api/nodes/*/additionalInfo").as("additionalInfo");
     cy.intercept("POST", "/api/nodes/*/validation").as("nodeValidation");
 
+    cy.get("[data-testid=window]").should("be.visible").as("nodeWindow");
+    cy.get("[data-testid=window]").find('button[name="close"]').should("be.visible");
+
     cy.wait(["@additionalInfo", "@nodeValidation"], { timeout: 10000 }).each((res) => {
         cy.wrap(res).its("response.statusCode").should("eq", 200);
     });
 
-    return cy.get("[data-testid=window]").should("be.visible");
+    return cy.get("[data-testid=window]");
 }
 
 function dragNode(

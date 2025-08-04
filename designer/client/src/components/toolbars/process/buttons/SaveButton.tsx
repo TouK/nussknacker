@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import Icon from "../../../../assets/img/toolbarButtons/save.svg";
 import { useUserSettings } from "../../../../common/userSettings";
@@ -13,6 +12,7 @@ import {
     isSaveDisabled,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { useSaveScenario } from "../../../modals/saveScenario/useSaveScenario";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -34,14 +34,14 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const { handleSaveScenarioAction } = useSaveScenario();
     const { t } = useTranslation();
     const { disabled, type, title: tooltip } = props;
-    const capabilities = useSelector(getCapabilities);
-    const saveDisabled = useSelector(isSaveDisabled);
+    const capabilities = useAppSelector(getCapabilities);
+    const saveDisabled = useAppSelector(isSaveDisabled);
     const [isSaveProcessing, setIsSaveProcessing] = useState(false);
 
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
-    const unsavedNewName = useSelector(getProcessUnsavedNewName);
-    const isRenamed = useSelector(isProcessRenamed);
+    const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
+    const unsavedNewName = useAppSelector(getProcessUnsavedNewName);
+    const isRenamed = useAppSelector(isProcessRenamed);
     const title = isRenamed
         ? t("saveProcess.renameTitle", "Save scenario as {{name}}", { name: unsavedNewName })
         : t("saveProcess.title", "Save scenario {{name}}", { name: processName });

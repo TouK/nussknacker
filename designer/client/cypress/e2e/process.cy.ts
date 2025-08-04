@@ -5,9 +5,9 @@ describe("Process", () => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
-    // after(() => {
-    //     cy.deleteAllTestProcesses({ filter: seed, force: true });
-    // });
+    after(() => {
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
+    });
 
     beforeEach(() => {
         cy.mockWindowDate();
@@ -182,20 +182,17 @@ describe("Process", () => {
         });
 
         it("should display some node details in modal", () => {
-            cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("Dynamicservice").should("be.visible");
+            cy.openNodeWindow("dynamicService").contains("Dynamicservice").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("Boundedsource").should("be.visible");
+            cy.openNodeWindow("boundedSource").contains("Boundedsource").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
-            cy.get("[data-testid=window]").contains("Sendsms").should("be.visible");
+            cy.openNodeWindow("sendSms").contains("Sendsms").should("be.visible");
             cy.get("[data-testid=window]").should("be.visible").matchImage();
         });
     });
@@ -262,7 +259,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}");
+        cy.getNode("dead-end(true)").click().type("{backspace}");
         cy.wait("@validation");
 
         cy.getNode("filter")
@@ -345,9 +342,7 @@ describe("Process", () => {
             .contains(/^test$/i)
             .should("be.enabled")
             .click();
-        cy.getNode("request").dblclick();
-
-        cy.get("[data-testid=window]").matchImage();
+        cy.openNodeWindow("request").matchImage();
         cy.get("[data-testid=window]")
             .should("contain.text", "Test case")
             .then(($win) => {

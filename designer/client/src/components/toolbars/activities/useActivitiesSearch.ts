@@ -1,7 +1,6 @@
 import { produce } from "immer";
 import { get, uniq } from "lodash";
 import { useCallback, useLayoutEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import type { Align } from "react-window";
 import { useFreshRef } from "rooks";
 
@@ -9,6 +8,7 @@ import { updateSearchQuery } from "../../../actions/nk/scenarioActivities";
 import type { NestedKeyOf } from "../../../reducers/graph/lodashWrappers";
 import { getRunningVersion } from "../../../reducers/selectors/graph";
 import { getSearchQuery } from "../../../reducers/selectors/processActivities";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { Activity, UIActivity } from "./ActivitiesPanel";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
 import type { ActivityAdditionalFields } from "./types";
@@ -27,10 +27,10 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
 
-    const searchQuery = useSelector(getSearchQuery);
-    const runningVersion = useSelector(getRunningVersion);
+    const searchQuery = useAppSelector(getSearchQuery);
+    const runningVersion = useAppSelector(getRunningVersion);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const handleSetFoundResults = useCallback((activities: UIActivity[]) => {
         const uniqueFoundResults = uniq(activities).map((activity) => activity.uiGeneratedId);
