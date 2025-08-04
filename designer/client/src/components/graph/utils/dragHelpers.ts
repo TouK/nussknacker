@@ -53,11 +53,12 @@ export const setDraggedOver = rafThrottle((graph: dia.Graph, rect?: g.Rect, cell
         .getCells()
         .filter((c) => c !== cell)
         .forEach((c) => {
-            if (!rect) return;
-            if (!c.isLink() && !replaceAllowed(c, nodeData || getNodeData(cell))) return;
-
-            const box = c.getBBox();
-            const coverRatio = getArea(box.intersect(rect)) / getArea(box);
+            const dropAllowed = c.isLink() || replaceAllowed(c, nodeData || getNodeData(cell));
+            let coverRatio = 0;
+            if (rect && dropAllowed) {
+                const box = c.getBBox();
+                coverRatio = getArea(box.intersect(rect)) / getArea(box);
+            }
             c.set(`draggedOver`, coverRatio);
         });
 });
