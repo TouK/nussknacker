@@ -277,13 +277,13 @@ description: Stay informed with detailed changelogs covering new features, impro
        }
      }
   ```
-* [#8352](https://github.com/TouK/nussknacker/pull/8352) Updated dependencies:
+* [#8352](https://github.com/TouK/nussknacker/pull/8352)[#8449](https://github.com/TouK/nussknacker/pull/8449) Updated dependencies:
   * Caffeine Cache 3.1.8 -> 3.2.1
   * Cats Effect 3.5.4 -> 3.5.7
   * Cats 2.12.0 -> 2.13.0
   * Circe 0.14.10 -> 0.14.14
   * HikariCP 6.2.1 -> 6.3.1
-  * Jackson 2.17.2 -> 2.18.2
+  * Jackson 2.17.2 -> 2.18.4
   * Netty 4.1.119.Final -> 4.1.123.Final
   * PostgreSQL JDBC driver 42.7.4 -> 42.7.7
   * sttp 3.9.8 -> 3.11.0
