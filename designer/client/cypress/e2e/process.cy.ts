@@ -123,7 +123,7 @@ describe("Process", () => {
     describe("with data", () => {
         const screenshotOptions: Cypress.MatchImageOptions = {
             screenshotConfig: {
-                blackout: ["> div > :not(#nk-graph-main) > div"],
+                blackout: ["[data-testid=SidePanel]"],
             },
         };
 
@@ -298,7 +298,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it.skip("should validate process on nodes paste", () => {
+    it("should validate process on nodes paste", () => {
         cy.visitNewProcess(seed, "filter");
         cy.viewport(1500, 800);
         cy.layoutScenario();
