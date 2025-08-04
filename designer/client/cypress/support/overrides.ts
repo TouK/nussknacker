@@ -79,16 +79,16 @@ const originalCaretColorName = "data-original-caret-color";
 const originalCaretDisplayName = "data-original-caret-display";
 
 const hideInputCaret = ($el: JQueryWithSelector) => {
-    cy.get("input, textarea, select")
-        .should("have.length.gte", 0)
+    cy.get("input, textarea, select", { log: false })
+        .should("have.length.gte", 0, { log: false })
         .each(($input) => {
             const originalCaretColor = $el.css("caret-color");
             $el.attr(originalCaretColorName, originalCaretColor);
             $input.css("caret-color", "transparent");
         });
 
-    cy.get(".ace_cursor")
-        .should("have.length.gte", 0)
+    cy.get(".ace_cursor", { log: false })
+        .should("have.length.gte", 0, { log: false })
         .each(($input) => {
             const originalCaretDisplay = $el.css("display");
             $el.attr(originalCaretDisplayName, originalCaretDisplay);
@@ -97,15 +97,15 @@ const hideInputCaret = ($el: JQueryWithSelector) => {
 };
 
 const showInputCaret = ($el: JQueryWithSelector) => {
-    cy.get("input, textarea, select")
-        .should("have.length.gte", 0)
+    cy.get("input, textarea, select", { log: false })
+        .should("have.length.gte", 0, { log: false })
         .each(($input) => {
             const originalCaretColor = $el.attr(originalCaretColorName);
             $input.css("caret-color", originalCaretColor);
         });
 
-    cy.get(".ace_cursor")
-        .should("have.length.gte", 0)
+    cy.get(".ace_cursor", { log: false })
+        .should("have.length.gte", 0, { log: false })
         .each(($input) => {
             const originalCaretDisplay = $el.attr(originalCaretDisplayName);
             $input.css("display", originalCaretDisplay);
