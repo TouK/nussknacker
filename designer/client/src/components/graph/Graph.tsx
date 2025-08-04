@@ -741,6 +741,7 @@ export class Graph extends React.Component<Props> {
                 const cleanup = this.bindMoveWithEdge(cellView);
 
                 cellView.once(Events.CELL_POINTERUP, () => {
+                    setDraggedOver(this.graph);
                     model.off(null, null, context);
                     cleanup();
                 });
