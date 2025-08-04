@@ -5,7 +5,8 @@ import type { PropsWithChildren } from "react";
 import React, { useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
 
-import { PanelSide } from "../../actions/nk";
+import type { PanelSide } from "../../actions/nk/ui/panelSide";
+import { isDynamic, isLeft, isRight } from "../../actions/nk/ui/panelSide";
 import { blendDarken } from "../../containers/theme/helpers";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
@@ -21,8 +22,8 @@ const trackStyleProps = (side: PanelSide) => ({
     top: TOOLBARS_GAP - SCROLL_THUMB_SIZE / 3,
     bottom: TOOLBARS_GAP - SCROLL_THUMB_SIZE / 3,
     height: CLEAN_STYLE,
-    right: side === PanelSide.Left ? 0 : null,
-    left: side === PanelSide.Right ? 0 : null,
+    right: isLeft(side) ? 0 : null,
+    left: isRight(side) ? 0 : null,
 });
 
 const thumbYStyleProps = (theme: Theme) => ({
@@ -33,13 +34,13 @@ const thumbYStyleProps = (theme: Theme) => ({
 
 const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
 
-const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({ theme }) => ({
+const ScrollbarsWrapper = styled("div")(({ opaque }: { opaque: boolean }) => ({ theme }) => ({
     minHeight: "100%",
     display: "flex",
     transition: "all .25s",
     overflow: "hidden",
-    background: isScrollPossible && blendDarken(theme.palette.common.white, 0.75),
-    pointerEvents: isScrollPossible ? "auto" : "inherit",
+    background: opaque && blendDarken(theme.palette.common.white, 0.75),
+    pointerEvents: opaque ? "auto" : "inherit",
 }));
 
 interface ScrollbarsExtended {
@@ -69,7 +70,7 @@ export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWith
             scrollerProps={{ style: { marginRight: -SCROLLBAR_WIDTH } }}
             onUpdate={({ scrollYPossible }) => setScrollPossible(scrollYPossible)}
         >
-            <ScrollbarsWrapper isScrollPossible={isScrollPossible}>{children}</ScrollbarsWrapper>
+            <ScrollbarsWrapper opaque={isScrollPossible && !isDynamic(side)}>{children}</ScrollbarsWrapper>
         </Scrollbars>
     );
 }

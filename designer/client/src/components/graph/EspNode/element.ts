@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
 import type { Theme } from "@mui/material";
 import { blend } from "@mui/system";
-import type { attributes, dia, shapes } from "jointjs";
-import { after, cloneDeepWith, isEmpty, toString } from "lodash";
+import type { attributes, shapes } from "jointjs";
+import { cloneDeepWith, isEmpty, toString } from "lodash";
 import millify from "millify";
 
 import { blendLighten, getNodeBorderColor } from "../../../containers/theme/helpers";
@@ -10,10 +10,7 @@ import type { NodeCounts, ProcessCounts } from "../../../http/resultsWithCountsD
 import type { UserSettings } from "../../../reducers/userSettings";
 import type { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
-import { isConnected, isModelElement } from "../GraphPartialsInTS";
 import NodeUtils from "../NodeUtils";
-import { Events } from "../types";
-import { setLinksHovered } from "../utils/dragHelpers";
 import { EspNodeShape } from "./esp";
 
 const maxLineLength = 24;
@@ -167,23 +164,6 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
         };
 
         const ThemedEspNodeShape = EspNodeShape(theme, node);
-        const element = new ThemedEspNodeShape(attributes);
-
-        element.once(Events.ADD, (e: dia.Element) => {
-            // add event listeners after element setup
-            setTimeout(() => {
-                e.on(
-                    Events.CHANGE_POSITION,
-                    // avoid calling on init
-                    after(2, (el: dia.Element) => {
-                        if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
-                            setLinksHovered(el.graph, el.getBBox(), el);
-                        }
-                    }),
-                );
-            });
-        });
-
-        return element;
+        return new ThemedEspNodeShape(attributes);
     };
 }

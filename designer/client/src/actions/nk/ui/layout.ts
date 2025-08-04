@@ -2,6 +2,7 @@ import { getLayout } from "../../../reducers/selectors/layout";
 import type { NodeId } from "../../../types";
 import type { ThunkAction } from "../../reduxTypes";
 import type { WithConfigId } from "../toolbars";
+import type { PanelSide } from "./panelSide";
 
 export type Position = {
     x: number;
@@ -17,11 +18,6 @@ export type LayoutChangedAction = {
     layout: Layout;
     type: "LAYOUT_CHANGED";
 };
-
-export const enum PanelSide {
-    Right = "RIGHT",
-    Left = "LEFT",
-}
 
 type TogglePanelAction = {
     type: "TOGGLE_PANEL";
