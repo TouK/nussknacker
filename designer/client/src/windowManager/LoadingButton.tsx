@@ -1,4 +1,5 @@
 import { LoadingButton as MuiLoadingButton } from "@mui/lab";
+import { Typography } from "@mui/material";
 import type { FooterButtonProps } from "@touk/window-manager/cjs/components/window/footer/FooterButton";
 import React, { useCallback, useState } from "react";
 
@@ -47,7 +48,7 @@ export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
                 },
             })}
         >
-            {title}
+            <Typography>{title}</Typography>
         </MuiLoadingButton>
     );
 };
