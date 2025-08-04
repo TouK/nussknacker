@@ -15,8 +15,7 @@ describe("Nodes advanced section", () => {
     });
 
     it("should display and expand advanced section", () => {
-        cy.getNode("Log").dblclick();
-        cy.get("[data-testid=window]").should("be.visible");
+        cy.openNodeWindow("Log").should("be.visible");
 
         cy.contains("Advanced parameters").should("be.visible").click();
         // a click on the window header is on a purpose because we don't want to have a focus on the expandable section
