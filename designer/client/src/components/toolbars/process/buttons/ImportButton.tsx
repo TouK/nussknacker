@@ -1,10 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { importFiles } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/import.svg";
 import { getProcessName } from "../../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
@@ -13,8 +13,8 @@ type Props = ToolbarButtonProps;
 function ImportButton(props: Props) {
     const { disabled, type } = props;
     const { t } = useTranslation();
-    const dispatch = useDispatch();
-    const processName = useSelector(getProcessName);
+    const dispatch = useAppDispatch();
+    const processName = useAppSelector(getProcessName);
 
     return (
         <CapabilitiesToolbarButton

@@ -54,7 +54,7 @@ class FlinkScheduledExecutionPerformer(
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
       DeploymentWithRuntimeParams(
-        processId = Some(processVersion.processId),
+        processId = processVersion.processId,
         processName = processVersion.processName,
         versionId = processVersion.versionId,
         runtimeParams = RuntimeParams(Map(jarFileNameRuntimeParam -> jarFileName))

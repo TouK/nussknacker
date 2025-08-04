@@ -1,5 +1,5 @@
 import { isEqual } from "lodash";
-import { createSelectorCreator, defaultMemoize } from "reselect";
+import { createSelectorCreator, lruMemoize as defaultMemoize } from "reselect";
 
 import type { RootState } from "../../../../reducers";
 

@@ -15,10 +15,10 @@ describe("Creator toolbar", () => {
     beforeEach(() => {
         cy.viewport(width, height);
         cy.visitNewProcess(seed).as("processName");
-        cy.contains(/^Creator panel.*sources/i).as("toolbar");
     });
 
     it("should allow collapse (persist) and filtering", () => {
+        cy.contains(/^Creator panel.*sources/i).should("exist");
         cy.contains(/^sources$/i).click();
         cy.contains(/^base$/i).click();
         cy.contains(/^custom$/i).click();
@@ -28,6 +28,10 @@ describe("Creator toolbar", () => {
         cy.contains(/^sinks$/i).click();
         cy.contains(/^Misc$/i).click();
         cy.reload();
+
+        cy.contains(/^Creator panel.*sources/i)
+            .should("exist")
+            .as("toolbar");
         cy.get("@toolbar").matchImage();
         cy.get("@toolbar").find("input").type("var");
         cy.get("@toolbar").matchImage();

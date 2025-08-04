@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.api.definition.EngineScenarioCompilationDepend
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.scheduler.model.{ScheduleProperty => ApiScheduleProperty}
 import pl.touk.nussknacker.engine.api.deployment.scheduler.services._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.ui.process.periodic.Utils._
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
@@ -42,11 +42,11 @@ object PeriodicDeploymentManager {
       delegate,
       scheduledExecutionPerformer,
       periodicProcessesRepository,
+      schedulingDependencies.schedulingScenarioActivitiesRepository,
       listener,
       additionalDeploymentDataProvider,
       schedulingConfig.deploymentRetry,
       schedulingConfig.executionConfig,
-      schedulingConfig.maxFetchedPeriodicScenarioActivities,
       processConfigEnricher,
       clock,
       schedulingDependencies.actionService,
@@ -75,6 +75,7 @@ object PeriodicDeploymentManager {
     }
     new PeriodicDeploymentManager(
       delegate,
+      schedulingConfig.maxFetchedPeriodicScenarioActivities,
       service,
       periodicProcessesRepository,
       schedulePropertyExtractorFactory(originalConfig),
@@ -86,13 +87,13 @@ object PeriodicDeploymentManager {
 
 class PeriodicDeploymentManager private[periodic] (
     val delegate: DeploymentManager,
+    val maxFetchedPeriodicScenarioActivities: Option[Int],
     service: PeriodicProcessService,
     periodicProcessesRepository: PeriodicProcessesRepository,
     schedulePropertyExtractor: SchedulePropertyExtractor,
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
-    with ManagerSpecificScenarioActivitiesStoredByManager
     with LazyLogging {
 
   import periodicProcessesRepository._
@@ -215,27 +216,6 @@ class PeriodicDeploymentManager private[periodic] (
   //      its statuses synchronization mechanism (see PeriodicProcessService.synchronizeDeploymentsStates)
   //      We should move periodic mechanism to the core and reuse new synchronization mechanism also in this case.
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
-
-  // TODO: NU-1772
-  //  In the current implementation:
-  //    - PeriodicDeploymentManager is a kind of plugin, and it has its own data source (separate db)
-  //    - PeriodicDeploymentManager returns (by implementing ManagerSpecificScenarioActivitiesStoredByManager) custom ScenarioActivities, that are associated with operations performed internally by the manager
-  //  Why is it not the ideal solution:
-  //    - we have different data sources for ScenarioActivities, and merging data from two sources may be problematic, e.g. when paginating results
-  //  How can it be redesigned:
-  //    - we could do it using the ManagerSpecificScenarioActivitiesStoredByNussknacker instead
-  //    - that way, Nu would provide hooks, that would allow the manager to save and modify its custom activities in the Nu database
-  //    - only the Nussknacker database would then be used, as single source of Scenario Activities
-  //  Why not implemented that way in the first place?
-  //    - we have to migrate information about old periodic deployments, or decide that we don't need it
-  //    - we have to modify the logic of the PeriodicDeploymentManager
-  //    - we may need to refactor PeriodicDeploymentManager data source first
-
-  override def managerSpecificScenarioActivities(
-      processIdWithName: ProcessIdWithName,
-      after: Option[Instant],
-  ): Future[List[ScenarioActivity]] =
-    service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, after)
 
   private def actionInstantBatch(command: DMRunOffScheduleCommand): Future[RunOffScheduleResult] = {
     val processName           = command.processVersion.processName

@@ -40,7 +40,7 @@ describe("Activities", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
@@ -105,12 +105,12 @@ describe("Activities", () => {
 
         // modify comment
         cy.intercept("/api/processes/*/activity/comment/*").as("editComment");
-        cy.get("[data-testid=activity-row-3]").as("editCommentRow").trigger("mouseover");
-        cy.get("@editCommentRow").find("[data-testid=edit-comment-icon]").click();
+        cy.get("[data-testid=activity-row-3]").as("editCommentRow").realHover();
+        cy.get("@editCommentRow").get("[data-testid=edit-comment-icon]").should("be.visible").click({ force: true });
         cy.get("[data-testid=window]").find("textarea").eq(0).type(" new comment");
-        cy.get("[data-testid=window]").find("button").contains(/^Edit/i).click();
+        cy.get("[data-testid=window]").find("button").contains(/^Edit/i).realClick();
         cy.wait("@editComment");
-        cy.get("@editCommentRow").contains("test comment new comment").should("be.visible");
+        cy.get("[data-testid=activity-row-3]").contains("test comment new comment").should("be.visible");
     });
 
     it("should select and scroll to running version when running version in scenario actions click", () => {
@@ -127,8 +127,8 @@ describe("Activities", () => {
         });
 
         cy.deployScenario();
+        cy.get('[aria-label="tool:Deployment"]').should("exist");
         cy.get('[data-testid="runningVersion"]').click();
-        cy.get('[aria-selected="true"]').find('[aria-label="tool:Deployment"]').should("be.visible");
-        cy.cancelScenario();
+        cy.get('[aria-selected="true"] [aria-label="tool:Deployment"]').should("be.visible");
     });
 });

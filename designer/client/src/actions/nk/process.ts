@@ -1,14 +1,15 @@
 import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 
+import type { TestCapabilities } from "../../common/TestResultUtils";
 import type { PredefinedActionName, ProcessName, ProcessStateType, ProcessVersionId, Scenario } from "../../components/Process/types";
 import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { memoizeByArgsWithTTL } from "../../helpers/memoizeByArgsWithTTL";
 import { getProcessDefinitionData } from "../../reducers/selectors/getProcessDefinitionData";
 import type { ProcessDefinitionData, ScenarioGraph } from "../../types";
-import type { ThunkAction } from "../reduxTypes";
+import type { Action, ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
-import { Initiator, stopLiveData } from "./liveData";
+import { stopLiveData } from "./liveData";
 
 export type ScenarioActions =
     | { type: "PENDING_SCENARIO_ACTION"; action: PredefinedActionName }
@@ -59,6 +60,8 @@ const getTestCapabilities = memoizeByArgsWithTTL((processName: ProcessName, scen
     return HttpService.getTestCapabilities(processName, scenarioGraph);
 }, 1000);
 
+export type UpdateTestCapabilitiesAction = { type: "UPDATE_TEST_CAPABILITIES"; capabilities: TestCapabilities };
+
 export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph): ThunkAction {
     return (dispatch) => {
         if (getTestCapabilities.isCached(processName, scenarioGraph)) return;
@@ -85,7 +88,7 @@ export function displayScenarioVersion(processName: ProcessName, versionId: Proc
 
 export function clearProcess(): ThunkAction {
     return (dispatch) => {
-        dispatch(UndoActionCreators.clearHistory());
+        dispatch(UndoActionCreators.clearHistory() as Action);
         dispatch({ type: "CLEAR_PROCESS" });
     };
 }

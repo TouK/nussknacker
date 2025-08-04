@@ -1,6 +1,6 @@
 import { nodeAdded, nodesWithEdgesAdded } from "../src/actions/nk";
 import NodeUtils from "../src/components/graph/NodeUtils";
-import reducer from "../src/reducers/index";
+import rootReducer from "../src/reducers/index";
 
 const baseProcessState = {
     name: "DEFGH",
@@ -98,14 +98,14 @@ const baseProcessState = {
     state: {},
 };
 
-const baseState = reducer(
+const baseState = rootReducer(
     {},
     {
         type: "@@INIT",
     },
 );
 
-const baseStateWithProcess = reducer(baseState, {
+const baseStateWithProcess = rootReducer(baseState, {
     type: "DISPLAY_PROCESS",
     scenario: baseProcessState,
 });
@@ -118,7 +118,7 @@ const reduceAll = (actions) => {
         if (typeof action === "function") {
             action(dispatch, getState);
         } else {
-            currentState = reducer(currentState, action);
+            currentState = rootReducer(currentState, action);
         }
     };
 

@@ -1,7 +1,6 @@
 import { alpha } from "@mui/material";
 import React, { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { updateTestType } from "../../../../actions/nk/displayTestResults";
 import TestingIcon from "../../../../assets/img/toolbarButtons/test.svg";
@@ -13,6 +12,7 @@ import {
     isLatestProcessVersion,
 } from "../../../../reducers/selectors/graph";
 import { ToolbarsSide } from "../../../../reducers/toolbars";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { getHasPendingChanges } from "../../../graph/node-modal/node/useEditState";
 import { useAdhocTestingAvailability } from "../../../modals/AdhocTesting/useAdhocTestingAvailability";
@@ -65,8 +65,8 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
         return [...options, retest];
     }, [t, testingState.action, testingState.options]);
 
-    const performedTestType = useSelector(getPerformedTestType);
-    const isLoading = useSelector(getTestResultsLoading);
+    const performedTestType = useAppSelector(getPerformedTestType);
+    const isLoading = useAppSelector(getTestResultsLoading);
 
     const preset = useMemo(() => {
         return presets.find((p) => p.value === performedTestType);
@@ -76,16 +76,16 @@ function ScenarioTestButton(props: PropsOfButton<CustomButtonTypes.scenarioTest>
     const adhocTestIsAvailable = useAdhocTestingAvailability(disabled);
 
     // Availability of live data testing
-    const testCapabilities = useSelector(getTestCapabilities);
-    const processIsLatestVersion = useSelector(isLatestProcessVersion);
+    const testCapabilities = useAppSelector(getTestCapabilities);
+    const processIsLatestVersion = useAppSelector(isLatestProcessVersion);
     const testFromLiveDataIsAvailable =
         !disabled && processIsLatestVersion && testCapabilities?.testWithLiveData.status === TestCapabilityStatus.AVAILABLE;
 
     const atLeastOneTypeOfTestIsAvailable = adhocTestIsAvailable || testFromLiveDataIsAvailable;
 
-    const hasPendingChanges = useSelector(getHasPendingChanges);
+    const hasPendingChanges = useAppSelector(getHasPendingChanges);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const openDialog = useCallback(
         (preset?: Preset) => {
             if (preset?.value === RERUN_PREVIOUS) {

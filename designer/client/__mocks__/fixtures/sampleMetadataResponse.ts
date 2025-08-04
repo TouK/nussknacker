@@ -98,12 +98,6 @@ export const sampleMetadataResponse: ActivityMetadataResponse = {
             icon: "/assets/states/success.svg",
             supportedActions: ["compare"],
         },
-        {
-            type: "CUSTOM_ACTION",
-            displayableName: "Custom action",
-            icon: "/assets/states/success.svg",
-            supportedActions: [],
-        },
     ],
     actions: [
         {

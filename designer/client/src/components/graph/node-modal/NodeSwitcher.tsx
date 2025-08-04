@@ -1,6 +1,5 @@
 import { FormControl } from "@mui/material";
 import React, { useCallback, useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getConfiguredAdditionalComponents } from "../../../reducers/cloudData";
@@ -8,6 +7,7 @@ import { createUniqueName } from "../../../reducers/graph/utils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getNodes } from "../../../reducers/selectors/graph";
 import { isCloudInstance } from "../../../reducers/selectors/isCloudInstance";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { editors } from "./editors/expression/Editor";
 import type { ExpressionObj } from "./editors/expression/types";
 import { EditorType, ExpressionLang } from "./editors/expression/types";
@@ -25,7 +25,7 @@ type NodeSwitcherProps = NodeGroupContentProps & {
 const creatorFakeId = "$NEW";
 
 export function NodeSwitcher({ node: editedNode, onChange, edges, componentsNamesToSelect, creatorType, onCreate }: NodeSwitcherProps) {
-    const processDefinitionData = useSelector(getProcessDefinitionData);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
     const componentsToSelect = useMemo(() => {
         return processDefinitionData.componentGroups
@@ -33,8 +33,8 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
             .filter((c) => componentsNamesToSelect.includes(c.componentId));
     }, [componentsNamesToSelect, processDefinitionData.componentGroups]);
 
-    const dispatch = useDispatch();
-    const isCloud = useSelector(isCloudInstance);
+    const dispatch = useAppDispatch();
+    const isCloud = useAppSelector(isCloudInstance);
     useEffect(() => {
         if (isCloud && processDefinitionData) {
             dispatch(getConfiguredAdditionalComponents());
@@ -43,7 +43,7 @@ export function NodeSwitcher({ node: editedNode, onChange, edges, componentsName
 
     const Editor = editors[EditorType.FIXED_VALUES_PARAMETER_EDITOR];
 
-    const nodes = useSelector(getNodes);
+    const nodes = useAppSelector(getNodes);
 
     const onSelected = useCallback(
         (id: string) => {

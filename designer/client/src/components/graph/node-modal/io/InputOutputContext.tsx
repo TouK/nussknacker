@@ -1,11 +1,10 @@
 import type { PropsWithChildren } from "react";
-import { memo, useReducer } from "react";
-import React, { createContext, useCallback, useContext, useMemo } from "react";
-import { useSelector } from "react-redux";
+import React, { createContext, memo, useCallback, useContext, useMemo, useReducer } from "react";
 
 import TestResultUtils from "../../../../common/TestResultUtils";
 import type { NodeTransitionResult } from "../../../../http/resultsWithCountsDto";
 import { getScenarioGraph, getTestResults } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import NodeUtils from "../../NodeUtils";
 import type { VariableContextType } from "./VariableContextTree";
 
@@ -71,8 +70,8 @@ export const InputOutputContextProvider = memo(function InputOutputContextProvid
 }: PropsWithChildren<{
     nodeId: string;
 }>) {
-    const scenario = useSelector(getScenarioGraph);
-    const testResults = useSelector(getTestResults);
+    const scenario = useAppSelector(getScenarioGraph);
+    const testResults = useAppSelector(getTestResults);
 
     const [state, dispatch] = useReducer(reducer, initialState);
 

@@ -19,6 +19,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 }
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.periodic.PeriodicDeploymentManager
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
@@ -39,14 +41,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
+    dmDispatcher: DeploymentManagerDispatcher,
     fetchScenarioActivityService: FetchScenarioActivityService,
     scenarioActivityRepository: ScenarioActivityRepository,
+    dbioActionRunner: DBIOActionRunner,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     attachmentService: ScenarioAttachmentService,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     streamEndpointProvider: TapirStreamEndpointProvider,
-    dbioActionRunner: DBIOActionRunner,
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with LazyLogging {
@@ -243,13 +246,23 @@ class ScenarioActivityApiHttpService(
   )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
     EitherT.right {
       for {
-        combinedActivities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
+        activities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
+        schedulingRelatedAndOtherActivities = activities.partition {
+          case _: SchedulingRelatedActivity => true
+          case _                            => false
+        }
+        schedulingRelatedActivities <- limitNumberOfSchedulingRelatedActivities(
+          processIdWithName,
+          schedulingRelatedAndOtherActivities._1
+        )
+        otherActivities   = schedulingRelatedAndOtherActivities._2
+        limitedActivities = schedulingRelatedActivities ++ otherActivities
         //  The API endpoint returning scenario activities does not yet have support for filtering. We made a decision to:
-        //  - for activities not related to deployments:        always display them on FE
-        //  - for activities related to batch deployments:      always display them on FE
-        //  - for activities related to non-batch deployments:  display on FE only those, that represent successful operations
-        combinedSuccessfulActivities = combinedActivities.filter {
-          case _: BatchDeploymentRelatedActivity => true
+        //  - for activities not related to deployments:            always display them on FE
+        //  - for activities related to scheduled deployments:      always display them on FE
+        //  - for activities related to non-scheduled deployments:  display on FE only those, that represent successful operations
+        successfulActivities = limitedActivities.filter {
+          case _: SchedulingRelatedActivity => true
           case activity: DeploymentRelatedActivity =>
             activity.result match {
               case _: DeploymentResult.Success => true
@@ -257,8 +270,29 @@ class ScenarioActivityApiHttpService(
             }
           case _ => true
         }
-        sortedResult = combinedSuccessfulActivities.map(toDto).toList.sortBy(_.date)
+        sortedResult = successfulActivities.map(toDto).sortBy(_.date)
       } yield sortedResult
+    }
+  }
+
+  private def limitNumberOfSchedulingRelatedActivities(
+      processIdWithName: ProcessIdWithName,
+      schedulingRelatedActivities: List[ScenarioActivity]
+  )(implicit loggedUser: LoggedUser): Future[List[ScenarioActivity]] = {
+    if (schedulingRelatedActivities.nonEmpty) {
+      for {
+        deploymentManager <- dmDispatcher.deploymentManager(processIdWithName)
+        limit = deploymentManager match {
+          case Some(manager: PeriodicDeploymentManager) => manager.maxFetchedPeriodicScenarioActivities
+          case _                                        => None
+        }
+        limited = limit match {
+          case Some(limit) => schedulingRelatedActivities.take(limit)
+          case None        => schedulingRelatedActivities
+        }
+      } yield limited
+    } else {
+      Future.successful(List.empty)
     }
   }
 
@@ -486,29 +520,6 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           changes = changes,
-        )
-      case ScenarioActivity.CustomAction(
-            _,
-            scenarioActivityId,
-            user,
-            date,
-            scenarioVersionId,
-            actionName,
-            comment,
-            result,
-          ) =>
-        Dtos.ScenarioActivity.forCustomAction(
-          id = scenarioActivityId.value,
-          user = user.name.value,
-          date = date,
-          scenarioVersionId = scenarioVersionId.map(_.value),
-          actionName = actionName,
-          comment = toDto(comment),
-          customIcon = None,
-          errorMessage = result match {
-            case DeploymentResult.Success(_)               => None
-            case DeploymentResult.Failure(_, errorMessage) => errorMessage
-          },
         )
     }
   }

@@ -1,9 +1,9 @@
 import loadable from "@loadable/component";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { getTestParameters, getTestResultsLoading } from "../../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { AdhocTestingData, AdhocTestingViewParams } from "../../../modals/AdhocTesting/AdhocTestingDialog";
 import { useAdhocTestingAction } from "../../../modals/AdhocTesting/useAdhocTestingAction";
@@ -27,8 +27,8 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
 
     const isAvailable = useAdhocTestingAvailability(disabled);
 
-    const testParameters = useSelector(getTestParameters);
-    const isLoading = useSelector(getTestResultsLoading);
+    const testParameters = useAppSelector(getTestParameters);
+    const isLoading = useAppSelector(getTestResultsLoading);
     const sourcesFound = testParameters.length;
 
     const multipleSourcesTest = useCallback(() => {

@@ -1,10 +1,10 @@
 import type { CSSProperties } from "react";
 import React, { memo, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { isDeploymentActivity } from "../../../reducers/selectors/activities";
 import { getIsRunningOrScheduled } from "../../../reducers/selectors/scenarioState";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { UIActivity } from "./ActivitiesPanel";
 import { ActivityItem, DateItem, ToggleButtonItem } from "./ActivityPanelRowItem";
 import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRows, handleHideRows, activities, searchQuery }: Props) => {
-    const isRunning = useSelector(getIsRunningOrScheduled);
+    const isRunning = useAppSelector(getIsRunningOrScheduled);
 
     const { t } = useTranslation();
     const rowRef = useRef<HTMLDivElement>(null);

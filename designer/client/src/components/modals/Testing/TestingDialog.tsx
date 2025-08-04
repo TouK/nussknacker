@@ -2,9 +2,9 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import type { ElementType, ReactElement } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
 
 import { setPerformedTestType } from "../../../actions/nk/displayTestResults";
+import { useAppDispatch } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { WindowContent } from "../../../windowManager";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
@@ -40,7 +40,7 @@ function TestingDialog(props: WindowContentProps<WindowKind, TestingData>): Reac
         kind,
     } = data;
     const { isValid, action, testType } = useTestingContext();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [

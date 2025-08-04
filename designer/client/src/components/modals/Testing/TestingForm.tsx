@@ -2,9 +2,9 @@ import { Box, FormGroup, FormLabel, Link, Typography } from "@mui/material";
 import type { WindowType } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
 
 import { updateTestType } from "../../../actions/nk/displayTestResults";
+import { useAppDispatch } from "../../../store/storeHelpers";
 import type { WindowKind } from "../../../windowManager";
 import { CustomRadio } from "../../customRadio/CustomRadio";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
@@ -24,7 +24,7 @@ interface TestingFormProps {
 
 export function TestingForm({ testingData, closeDialog }: TestingFormProps): JSX.Element {
     const { t } = useTranslation();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const { options, testType } = useTestingContext();
 

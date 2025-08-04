@@ -24,7 +24,9 @@ export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getSavedScenario = createSelector(getHistoryPast, getScenario, (past, scenario): Scenario => past?.[0]?.scenario || scenario);
 
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
-    memoizeOptions: { equalityCheck: isEqual, resultEqualityCheck: isEqual },
+    memoizeOptions: {
+        resultEqualityCheck: isEqual,
+    },
 });
 
 export const getNodes = createSelector(getScenarioGraph, (g) => g.nodes);

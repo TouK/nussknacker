@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import enumeratum._
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import pl.touk.nussknacker.engine.api.component.StaticParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
 import java.util.UUID
+import scala.collection.immutable
 
 // TODO: NU-1772
 //  - should be eventually replaced with pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
@@ -68,44 +69,34 @@ object ProcessActionState extends Enumeration {
   val FinishedStates: Set[ProcessActionState] = Set(Finished, ExecutionFinished)
 }
 
-final case class ScenarioActionName(value: String) extends AnyVal {
+sealed abstract class ScenarioActionName(override val entryName: String) extends EnumEntry {
+  def value: String             = entryName
   override def toString: String = value
 }
 
-object ScenarioActionName {
+object ScenarioActionName extends Enum[ScenarioActionName] {
 
-  implicit val encoder: Encoder[ScenarioActionName] = deriveUnwrappedEncoder
-  implicit val decoder: Decoder[ScenarioActionName] = deriveUnwrappedDecoder
+  implicit val encoder: Encoder[ScenarioActionName] = Encoder.encodeString.contramap(_.value)
+  implicit val decoder: Decoder[ScenarioActionName] =
+    Decoder.decodeString.emap(ScenarioActionName.withNameEither(_).left.map(_.getMessage()))
 
   implicit val keyEncoder: KeyEncoder[ScenarioActionName] = KeyEncoder.encodeKeyString.contramap(_.value)
-  implicit val keyDecoder: KeyDecoder[ScenarioActionName] = KeyDecoder.decodeKeyString.map(ScenarioActionName(_))
+  implicit val keyDecoder: KeyDecoder[ScenarioActionName] = KeyDecoder.decodeKeyString.map(ScenarioActionName.withName)
 
-  val Deploy: ScenarioActionName    = ScenarioActionName("DEPLOY")
-  val Redeploy: ScenarioActionName  = ScenarioActionName("REDEPLOY")
-  val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
-  val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
-  val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
-  // TODO remove unused action
-  val Pause: ScenarioActionName  = ScenarioActionName("PAUSE") // TODO: To implement in future..
-  val Rename: ScenarioActionName = ScenarioActionName("RENAME")
-  // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.
-  //       In the future it can be changed to better name, according to convention, but that would require database migration
-  //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
-  val RunOffSchedule: ScenarioActionName = ScenarioActionName("run now")
+  case object Deploy         extends ScenarioActionName("DEPLOY")
+  case object Redeploy       extends ScenarioActionName("REDEPLOY")
+  case object Cancel         extends ScenarioActionName("CANCEL")
+  case object Archive        extends ScenarioActionName("ARCHIVE")
+  case object UnArchive      extends ScenarioActionName("UNARCHIVE")
+  case object Pause          extends ScenarioActionName("PAUSE") // TODO: remove unused action or implement in future..
+  case object Rename         extends ScenarioActionName("RENAME")
+  case object RunOffSchedule extends ScenarioActionName("RUN_OFF_SCHEDULE")
 
   val DefaultActions: Set[ScenarioActionName] = Set.empty
 
   val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Redeploy)
 
-  def serialize(name: ScenarioActionName): String = name match {
-    case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"
-    case other                             => other.value
-  }
-
-  def deserialize(str: String): ScenarioActionName = str match {
-    case "RUN_OFF_SCHEDULE" => ScenarioActionName.RunOffSchedule
-    case other              => ScenarioActionName(other)
-  }
+  override def values: immutable.IndexedSeq[ScenarioActionName] = findValues
 
 }
 

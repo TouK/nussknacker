@@ -1,8 +1,8 @@
 import React, { useCallback } from "react";
-import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 
 import type { RootState } from "../../../reducers";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Field } from "../../../types";
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
@@ -19,7 +19,7 @@ function FragmentOutputDefinition<F extends Field>(props: Props<F>): JSX.Element
     const { node, ...mapProps } = passProps;
     const readOnly = !isEditMode;
 
-    const expressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id));
+    const expressionType = useAppSelector((state: RootState) => getNodeExpressionType(state)(node.id));
 
     const addField = useCallback(
         (namespace: string, field) => {

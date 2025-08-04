@@ -138,8 +138,10 @@ object TapirHttpServiceFactory {
 
     val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
       authManager = authManager,
+      dmDispatcher = dmDispatcher,
       fetchScenarioActivityService = fetchScenarioActivityService,
       scenarioActivityRepository = scenarioActivityRepository,
+      dbioActionRunner = dbioRunner,
       scenarioService = processService,
       scenarioAuthorizer = processAuthorizer,
       new ScenarioAttachmentService(
@@ -149,7 +151,6 @@ object TapirHttpServiceFactory {
       ),
       designerConfig.deploymentCommentSettings,
       new PekkoHttpBasedTapirStreamEndpointProvider(),
-      dbioRunner,
     )
     val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
       authManager = authManager,

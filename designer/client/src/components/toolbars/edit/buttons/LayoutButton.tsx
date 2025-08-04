@@ -3,13 +3,13 @@ import { useTranslation } from "react-i18next";
 
 import { layout } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/layout.svg";
-import { useThunkDispatch } from "../../../../store/configureStore";
+import { useAppDispatch } from "../../../../store/storeHelpers";
 import { useGraph } from "../../../graph/GraphContext";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
 
 function LayoutButton(props: ToolbarButtonProps) {
-    const dispatch = useThunkDispatch();
+    const dispatch = useAppDispatch();
     const { t } = useTranslation();
     const graphGetter = useGraph();
     const { disabled, type } = props;

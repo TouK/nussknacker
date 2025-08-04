@@ -2,9 +2,9 @@ import { ExpandMore } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { memo, useLayoutEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
 
 import { Initiator, startLiveData, stopLiveData } from "../../../../actions/nk/liveData";
+import { useAppDispatch } from "../../../../store/storeHelpers";
 import { ContextTitle } from "./ContextTitle";
 import type { Direction, VariableContextType } from "./VariableContextTree";
 
@@ -28,7 +28,7 @@ export const ContextAccordion = memo(function ContextAccordion({
     showNodes?: boolean;
     newlyAdded: boolean;
 }>) {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const accordionRef = useRef<HTMLDivElement>(null);
 
     useLayoutEffect(() => {

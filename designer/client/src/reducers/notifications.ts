@@ -23,4 +23,4 @@ const reducer: Reducer<BackendNotificationState> = (state: BackendNotificationSt
     }
 };
 
-export const backendNotifications = persistReducer({ key: `notifications`, storage }, reducer);
+export const backendNotifications: Reducer<BackendNotificationState> = persistReducer({ key: `notifications`, storage }, reducer);

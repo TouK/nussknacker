@@ -134,15 +134,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
-        case "PROCESS_VERSIONS_LOADED": {
-            return {
-                ...state,
-                scenario: {
-                    ...state.scenario,
-                    history: action.history,
-                },
-            };
-        }
         case "TEST_RESULTS_FAILED": {
             return {
                 ...state,
@@ -419,11 +410,11 @@ export const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(stat
 const undoableReducer = undoable<GraphState, Action>(reducer, {
     ignoreInitialState: true,
     clearHistoryType: [UndoActionTypes.CLEAR_HISTORY, "PROCESS_FETCH"],
-    groupBy: batchGroupBy.init(),
+    groupBy: batchGroupBy.init,
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
     }, excludeAction(["LIVE_DATA_START", "LIVE_DATA_STARTED", "LIVE_DATA_STOP", "DISPLAY_LIVE_DATA", "FETCH_LIVE_DATA", "VALIDATION_RESULT", "STICKY_NOTE_SET_ERRORS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS", "MARK_BACKEND_NOTIFICATION_READ", "GET_SCENARIOS", "SCENARIOS_FETCHED"])),
-});
+}) as Reducer<StateWithHistory<GraphState>>;
 
 // apply only undoable changes for undo actions
 const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action) => {

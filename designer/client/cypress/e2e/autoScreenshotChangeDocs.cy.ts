@@ -20,28 +20,24 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario(); // layout alignment
         takeGraphScreenshot(); // take screenshot of whole graph
 
-        cy.get('[model-id="My first variable declaration"]').dblclick(); // click on node
-        cy.get("[data-testid=window]").find('[title="Name"]').click(); // click of remove cursor flickering effect
+        cy.openNodeWindow("My first variable declaration");
         takeWindowScreenshot(); // take screenshot of node window
 
         cy.visitNewProcess(seed, "docsBasicComponentsVariable#1"); // load new scenario
-        cy.get('[model-id="only financial ops"]').dblclick(); // click on node
-        cy.get("[data-testid=window]").find('[title="Name"]').click(); // click of remove cursor flickering effect
+        cy.openNodeWindow("only financial ops");
         takeWindowScreenshot(); // take screenshot of node window
     });
 
     it("basic components - recordVariable", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsRecordVariable#0");
         cy.layoutScenario();
-        cy.get('[model-id="node label goes here"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("node label goes here");
         takeWindowScreenshot();
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
             .click();
 
-        cy.get('[model-id="variable"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("variable");
         takeWindowScreenshot();
     });
 
@@ -54,8 +50,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.get('[model-id="conditional filter"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("conditional filter");
         takeWindowScreenshot();
     });
 
@@ -67,8 +62,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.get("[title='toggle right panel']").click();
         takeGraphScreenshot();
 
-        cy.get('[model-id="choice"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("choice");
         takeWindowScreenshot();
     });
 
@@ -81,8 +75,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("basic components - foreach", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsForEach#0");
         cy.layoutScenario();
-        cy.get('[model-id="for-each"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("for-each");
         takeWindowScreenshot();
     });
 
@@ -93,8 +86,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.get('[model-id="union"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("union");
         takeWindowScreenshot();
     });
 
@@ -104,8 +96,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         takeGraphScreenshot();
 
-        cy.get('[model-id="single-side-join"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("single-side-join");
         takeWindowScreenshot();
     });
 
@@ -113,8 +104,7 @@ describe("Auto Screenshot Change Docs -", () => {
         //skip
         cy.visitNewProcess(seed, "docsAggregatesFullOuterJoin#0");
         cy.layoutScenario();
-        cy.get('[model-id="full-outer-join"]').dblclick();
-        cy.get("[data-testid=window]").find('[title="Name"]').click();
+        cy.openNodeWindow("full-outer-join");
         takeWindowScreenshot();
     });
 
@@ -131,18 +121,14 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.viewport(1920, 1080);
         cy.visitNewProcess(seed, "docsFragmentsInputs#0");
         cy.layoutScenario();
-        cy.openNodeWindow("input").as("nodeWindow");
-
-        cy.get("@nodeWindow").find('[title="Name"]').click();
+        cy.openNodeWindow("input");
         takeWindowScreenshot();
 
         cy.get('[title="Options"]').eq(0).click(); // open parameter1 options
-        cy.get("@nodeWindow").find('[title="Name"]').click();
         takeWindowScreenshot();
 
         cy.get('[title="Options"]').eq(0).click(); // close parameter1 options
         cy.get('[title="Options"]').eq(1).click(); // open parameter2 options
-        cy.get("@nodeWindow").find('[title="Name"]').click();
         takeWindowScreenshot();
     });
 

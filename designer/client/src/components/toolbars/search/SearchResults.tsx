@@ -1,9 +1,9 @@
 import { MenuItem, MenuList } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { resetSelection } from "../../../actions/nk";
 import { getScenario, getSelectionState } from "../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType } from "../../../types";
 import { useWindows } from "../../../windowManager";
 import { useGraph } from "../../graph/GraphContext";
@@ -31,9 +31,9 @@ export function SearchResults({ filterRawText }: { filterRawText?: string }) {
 
     const graphGetter = useGraph();
     const { openNodeWindow } = useWindows();
-    const selectionState = useSelector(getSelectionState);
-    const scenario = useSelector(getScenario);
-    const dispatch = useDispatch();
+    const selectionState = useAppSelector(getSelectionState);
+    const scenario = useAppSelector(getScenario);
+    const dispatch = useAppDispatch();
 
     const isNodeSelected = useCallback((node: NodeType) => selectionState.includes(node.id), [selectionState]);
     const selectOrOpen = useCallback(
