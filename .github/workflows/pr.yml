@@ -152,7 +152,7 @@ jobs:
       - name: Build FE submodules
         run: |
           cd designer
-          cp -r client/.federated-types/nussknackerUi submodules/types/@remote
+          cp --parents -r client/.federated-types/nussknackerUi submodules/types/@remote
           cd submodules
           npm run build
       - name: Tar fe artifacts
