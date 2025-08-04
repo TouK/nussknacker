@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Scenario
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.definition.{EngineScenarioCompilationDependencies, Parameter}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{Source, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.{
   ScenarioTestCommonFormatJsonRecord,
   ScenarioTestData,
@@ -34,6 +34,7 @@ import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService._
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.ExpressionsToTestDataConversionError
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatHandler
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -102,7 +103,7 @@ class ScenarioTestService(
     TestingCapabilities(
       canBeTested = testDataFormatHandler.canBeTested(compiledSource),
       canFetchLiveData = testDataFormatHandler.canFetchLiveData(compiledSource),
-      canTestWithForm = compiledSource.isInstanceOf[TestWithParametersSupport[_]]
+      canTestWithForm = testDataFormatHandler.canTestWithForm(compiledSource)
     )
   }
 
@@ -115,43 +116,23 @@ class ScenarioTestService(
     val jobData   = JobData(canonical.metaData, processVersion)
     val sources   = canonical.collectAllSources
     withScenarioCompilationDependencies(jobData) { implicit scenarioCompilationDependencies =>
-      for {
-        compiledSourcesById <-
-          sources.map(compileSource).sequence.leftMap(ParametersDefinitionError.SourcesCompilationError).toEither
-
-        parametersBySourceId <- compiledSourcesById.map { case (sourceId, compiledSource) =>
-          getTestParametersWithDefaults(sourceId, compiledSource).map(sourceId -> _)
-        }.sequence
-      } yield parametersBySourceId.toMap
+      val compiledSourcesById =
+        sources.map(source => NodeId(source.id) -> commonModelDataInfoProvider.compileSourceNode(source))
+      compiledSourcesById
+        .map { case (sourceId, sourceCompilationResult) =>
+          testDataFormatHandler.getTestParametersDefinition(sourceId, sourceCompilationResult).map { parameters =>
+            val enrichedParameters = StandardParameterEnrichment.enrichParameterDefinitions(
+              original = parameters,
+              parametersConfig = Map.empty,
+              globalParametersConfig = modelData.modelConfig.globalParametersConfig
+            )
+            sourceId -> enrichedParameters
+          }
+        }
+        .sequence
+        .map(_.toMap)
     }
-  }
 
-  private def getTestParametersWithDefaults(
-      sourceId: NodeId,
-      compiledSource: Source,
-  ): Either[ParametersDefinitionError, List[Parameter]] = {
-    getTestParameters(sourceId, compiledSource)
-      .map(
-        StandardParameterEnrichment.enrichParameterDefinitions(
-          _,
-          Map.empty,
-          modelData.modelConfig.globalParametersConfig
-        )
-      )
-  }
-
-  // Currently we rely on the assumption that client always call scenarioTesting / {scenarioName} / parameters endpoint
-  // only when scenarioTesting / {scenarioName} / capabilities endpoint returns canTestWithForm = true. Because of that
-  // for non happy-path cases we throw NotSupportedBySource and causes error notification on FE
-  // TODO: This assumption is wrong. Every endpoint should be treated separately.
-  private def getTestParameters(
-      sourceId: NodeId,
-      compiledSource: Source,
-  ): Either[ParametersDefinitionError, List[Parameter]] = {
-    compiledSource match {
-      case s: TestWithParametersSupport[_] => Right(s.testParametersDefinition)
-      case _ => Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(sourceId))
-    }
   }
 
   def fetchSourcesLiveData(
@@ -242,6 +223,7 @@ class ScenarioTestService(
     val nodeId = NodeId(source.id)
     commonModelDataInfoProvider
       .compileSourceNode(source)
+      .compiledObject
       .leftMap { compilationErrors =>
         NonEmptyList.one(nodeId -> compilationErrors)
       }
@@ -256,12 +238,17 @@ class ScenarioTestService(
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[PerformTestError, ResultsWithCounts]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     (for {
+      testData <- EitherT.fromEither[Future][PerformTestError, ScenarioTestData](
+        testDataFormatHandler
+          .convertToTestData(
+            parameterTestData.sourceId,
+            parameterTestData.parameterExpressions
+          )
+          .leftMap(ExpressionsToTestDataConversionError)
+      )
+
       testResults <- EitherT(
-        performTestWithDeserializedRecords(
-          processVersion,
-          canonical,
-          ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
-        )
+        performTestWithDeserializedRecords(processVersion, canonical, testData)
       )
 
       _ <- EitherT.fromEither[Future](validateTestResultsAreNotTooBig(testResults))
@@ -491,6 +478,10 @@ object ScenarioTestService {
   object PerformTestError {
     final case class DeserializationError(cause: PreliminaryScenarioRecordsSerDe.DeserializationError)
         extends PerformTestError
+
+    final case class ExpressionsToTestDataConversionError(
+        cause: TestDataFormatHandler.ExpressionsToTestDataConversionError
+    ) extends PerformTestError
 
     final case class UnexpectedVariableInTestRecordError(variableName: String, sourceId: NodeId, testRecordIndex: Int)
         extends PerformTestError

@@ -1,11 +1,11 @@
 import { Box } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { CopyIconButton, useCopyClipboard } from "../../../common/copyToClipboard";
 import { useUserSettings } from "../../../common/userSettings";
 import { getIsRunning } from "../../../reducers/selectors/scenarioState";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { GenerateNewEndpoint } from "./node-action-buttons/GenerateNewEndpoint";
 import { SendRequestButton } from "./node-action-buttons/SendRequestButton";
@@ -25,7 +25,7 @@ export const ParametersListField = (props: Props) => {
         [getListFieldPath],
     );
 
-    const isRunning = useSelector(getIsRunning);
+    const isRunning = useAppSelector(getIsRunning);
     const { t } = useTranslation();
     const [isCopied, copy] = useCopyClipboard();
     const [settings] = useUserSettings();

@@ -31,6 +31,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.api.{TestDataFormat, TestDataSettings}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.PerformTestError.MissingSourceError
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService.TestingCapabilitiesError.NoSourcesError
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ScenarioTestServiceSpec
@@ -119,11 +120,18 @@ class ScenarioTestServiceSpec
     val scenario = createScenarioWithSingleSource()
     forAll(allFormats) { format =>
       val capabilities =
-        prepareScenarioTestService(format).getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+        prepareScenarioTestService(format)
+          .getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+          .rightValue
 
-      capabilities shouldBe Right(
-        TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
-      )
+      capabilities.canBeTested shouldBe true
+      capabilities.canFetchLiveData shouldBe true
+      format match {
+        case TestDataFormat.SourceSpecific =>
+          capabilities.canTestWithForm shouldBe false
+        case TestDataFormat.CommonFormat =>
+          capabilities.canTestWithForm shouldBe true
+      }
     }
   }
 
@@ -148,18 +156,17 @@ class ScenarioTestServiceSpec
   }
 
   test(
-    "should detect capabilities for common format: every source canBeTested but only implementing LiveDataProvider canFetchLiveData"
+    "should detect capabilities for common format: every source canBeTested and canTestWithForm but only implementing LiveDataProvider canFetchLiveData"
   ) {
     val scenario = createScenarioWithSingleSource("genericSourceNoSupport")
     val capabilities =
       commonFormatTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
 
     capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = false)
+      TestingCapabilities(canBeTested = true, canFetchLiveData = false, canTestWithForm = true)
     )
   }
 
-  // TODO: provide implementation and test for common format
   test("should detect capabilities: can test form") {
     val scenario = createScenarioWithSingleSource("genericSourceWithTestParameters")
     val capabilities =
@@ -170,14 +177,22 @@ class ScenarioTestServiceSpec
     )
   }
 
-  // TODO: provide implementation and test for common format
   test("should detect capabilities for fragment with valid input") {
     val scenario = createSimpleFragment()
-    val capabilities =
-      sourceSpecificFormatTestService.getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
-    capabilities shouldBe Right(
-      TestingCapabilities(canBeTested = false, canFetchLiveData = false, canTestWithForm = true)
-    )
+    forAll(allFormats) { format =>
+      val capabilities =
+        prepareScenarioTestService(format)
+          .getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+          .rightValue
+      capabilities.canFetchLiveData shouldBe false
+      capabilities.canTestWithForm shouldBe true
+      format match {
+        case TestDataFormat.SourceSpecific =>
+          capabilities.canBeTested shouldBe false
+        case TestDataFormat.CommonFormat =>
+          capabilities.canBeTested shouldBe true
+      }
+    }
   }
 
   test("should detect capabilities for scenario with multiple sources: at least one supports generating and testing") {
@@ -194,11 +209,12 @@ class ScenarioTestServiceSpec
 
     forAll(allFormats) { format =>
       val capabilities =
-        prepareScenarioTestService(format).getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+        prepareScenarioTestService(format)
+          .getTestingCapabilities(scenario.toScenarioGraph, processVersionFor(scenario))
+          .rightValue
 
-      capabilities shouldBe Right(
-        TestingCapabilities(canBeTested = true, canFetchLiveData = true, canTestWithForm = false)
-      )
+      capabilities.canBeTested shouldBe true
+      capabilities.canFetchLiveData shouldBe true
     }
   }
 
@@ -566,7 +582,6 @@ class ScenarioTestServiceSpec
     }
   }
 
-  // TODO: provide implementation and test for common format
   test("should get test parameters with defaults for source-specific format") {
     val scenarioWithMultipleParams = ScenarioBuilder
       .streaming("single source scenario")
@@ -579,18 +594,35 @@ class ScenarioTestServiceSpec
       .emptySink("end", "dead-end")
     val processVersion = processVersionFor(scenarioWithMultipleParams)
 
-    val result = sourceSpecificFormatTestService
-      .validateAndGetTestParametersDefinition(
-        scenarioWithMultipleParams.toScenarioGraph,
-        processVersion,
-        isFragment = false
-      )
-      .rightValue
+    forAll(allFormats) { format =>
+      val testService = prepareScenarioTestService(format)
 
-    result.getOrElse(NodeId("source1"), Nil).find(_.name.value == "par1").value.defaultValue shouldBe Some(
-      "".spelTemplate
-    )
-    result.getOrElse(NodeId("source1"), Nil).find(_.name.value == "a").value.defaultValue shouldBe Some("0".spel)
+      val result = testService
+        .validateAndGetTestParametersDefinition(
+          scenarioWithMultipleParams.toScenarioGraph,
+          processVersion,
+          isFragment = false
+        )
+        .rightValue
+
+      result.keySet shouldBe Set(NodeId("source1"))
+      val parametersForSource1 = result.get(NodeId("source1")).value
+
+      format match {
+        case TestDataFormat.SourceSpecific =>
+          parametersForSource1.map(_.name.value) shouldBe List("par1", "lazyPar1", "a")
+          parametersForSource1.find(_.name.value == "par1").value.defaultValue.value shouldBe "".spelTemplate
+          parametersForSource1.find(_.name.value == "a").value.defaultValue.value shouldBe "0".spel
+        case TestDataFormat.CommonFormat =>
+          parametersForSource1.map(_.name) shouldBe List(InputVariablesParameterName)
+          parametersForSource1.find(_.name == InputVariablesParameterName).value.defaultValue.value shouldBe
+            """{
+              |  "otherNameThanInput" : {
+              |    "a" : 42
+              |  }
+              |}""".stripMargin.jsonExpression
+      }
+    }
   }
 
   private def prepareScenarioTestService(testDataFormat: TestDataFormat.Value): ScenarioTestService =

@@ -18,6 +18,7 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 
 import java.util.UUID
 
@@ -52,30 +53,25 @@ class ManagementApiHttpServiceBusinessSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(s"""{
-            | "testData": {
-            |   "type": "WITH_PARAMETERS",
-            |   "sourceParameters": {
-            |     "sourceId": "1",
-            |     "parameterExpressions": {
-            |       "param1": {
-            |         "language": "spel",
-            |         "expression": "1"
-            |       },
-            |       "param2": {
-            |         "language": "spel",
-            |         "expression": "test"
-            |       }
-            |     }
-            |   }
-            | },
-            | "scenarioGraph": ${exampleScenario.toScenarioGraph.asJson.spaces2}
-            |}""".stripMargin)
+             | "testData": {
+             |   "type": "WITH_PARAMETERS",
+             |   "sourceParameters": {
+             |     "sourceId": "1",
+             |     "parameterExpressions": {
+             |       "$InputVariablesParameterName": {
+             |         "language": "json",
+             |         "expression": "{\\"input\\": 123}"
+             |       }
+             |     }
+             |   }
+             | },
+             | "scenarioGraph": ${exampleScenario.toScenarioGraph.asJson.spaces2}
+             |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${exampleScenario.name}/performTest")
         .Then()
         .statusCode(200)
         .matchJsonWithRegexValuesBody(
-          s"""
-             |{
+          s"""{
              |  "timestamp": "${regexes.zuluDateRegex}",
              |  "results": {
              |    "nodeResults": {},
@@ -97,8 +93,7 @@ class ManagementApiHttpServiceBusinessSpec
              |      "fragmentCounts": {}
              |    }
              |  }
-             |}
-             |""".stripMargin
+             |}""".stripMargin
         )
     }
   }

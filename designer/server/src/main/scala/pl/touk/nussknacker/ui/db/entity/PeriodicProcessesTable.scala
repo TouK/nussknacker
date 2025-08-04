@@ -51,7 +51,7 @@ trait PeriodicProcessesTableFactory extends BaseEntityFactory {
 
     def id: Rep[PeriodicProcessId] = column[PeriodicProcessId]("id", O.PrimaryKey, O.AutoInc)
 
-    def processId: Rep[Option[ProcessId]] = column[Option[ProcessId]]("process_id")
+    def processId: Rep[ProcessId] = column[ProcessId]("process_id")
 
     def processName: Rep[ProcessName] = column[ProcessName]("process_name", NotNull)
 
@@ -127,7 +127,7 @@ trait PeriodicProcessEntity {
 
   def id: PeriodicProcessId
 
-  def processId: Option[ProcessId]
+  def processId: ProcessId
 
   def processName: ProcessName
 
@@ -149,7 +149,7 @@ trait PeriodicProcessEntity {
 
 case class PeriodicProcessEntityWithDeploymentDetails(
     id: PeriodicProcessId,
-    processId: Option[ProcessId],
+    processId: ProcessId,
     processName: ProcessName,
     processVersionId: VersionId,
     processingType: String,
@@ -164,7 +164,7 @@ case class PeriodicProcessEntityWithDeploymentDetails(
 
 case class PeriodicProcessEntityWithoutDeploymentDetails(
     id: PeriodicProcessId,
-    processId: Option[ProcessId],
+    processId: ProcessId,
     processName: ProcessName,
     processVersionId: VersionId,
     processingType: String,

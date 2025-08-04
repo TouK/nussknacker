@@ -1,5 +1,5 @@
 import { isEqual } from "lodash";
-import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
+import { createSelector, createSelectorCreator, lruMemoize as defaultMemoize } from "reselect";
 
 import ProcessUtils from "../../../../common/ProcessUtils";
 import type { RootState } from "../../../../reducers";

@@ -15,11 +15,11 @@ import i18next from "i18next";
 import { debounce } from "lodash";
 import React, { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { editScenarioLabels } from "../../../actions/nk";
 import HttpService from "../../../http/HttpService";
 import { getScenarioLabels, getScenarioLabelsErrors } from "../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../store/storeHelpers";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
 import type { ScenarioLabelValidationError } from "../../Labels/types";
 import { useDelayedEnterAction } from "./useDelayedEnterAction";
@@ -129,9 +129,9 @@ interface Props {
 export const ScenarioLabels = ({ readOnly }: Props) => {
     const { t } = useTranslation();
     const autocompleteRef = useRef<HTMLInputElement | null>(null);
-    const scenarioLabels = useSelector(getScenarioLabels);
+    const scenarioLabels = useAppSelector(getScenarioLabels);
     const scenarioLabelOptions: LabelOption[] = useMemo(() => scenarioLabels.map(toLabelOption), [scenarioLabels]);
-    const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
+    const initialScenarioLabelOptionsErrors = useAppSelector(getScenarioLabelsErrors).filter((error) =>
         scenarioLabelOptions.some((option) => toLabelValue(option) === error.label),
     );
     const [labelOptionsErrors, setLabelOptionsErrors] = useState<ScenarioLabelValidationError[]>(initialScenarioLabelOptionsErrors);
@@ -139,7 +139,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
 
     const theme = useTheme();
     const { menuOption } = selectStyled(theme);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const [isFetching, setIsFetching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);

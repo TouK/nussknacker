@@ -4,10 +4,10 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import { isEmpty } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { NodeInput } from "../FormElements";
@@ -25,8 +25,8 @@ import ValidationLabels from "./ValidationLabels";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
-    const dispatch = useDispatch();
-    const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
+    const dispatch = useAppDispatch();
+    const maxSize = useAppSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ testSampleSize }, setState] = useState({
         testSampleSize: "10",

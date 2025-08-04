@@ -3,11 +3,11 @@ import { FormHelperText, Typography } from "@mui/material";
 import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../http/HttpService";
 import { getProcessName, getProcessVersionId, getScenarioGraphSource } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { WindowKind } from "../../windowManager";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
@@ -34,13 +34,13 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const {
         meta: { action, displayWarnings },
     } = props.data;
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
+    const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
-    const featureSettings = useSelector(getFeatureSettings);
+    const featureSettings = useAppSelector(getFeatureSettings);
     const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
-    const scenarioGraphSource: ScenarioGraphSource = useSelector(getScenarioGraphSource);
+    const scenarioGraphSource: ScenarioGraphSource = useAppSelector(getScenarioGraphSource);
 
     const confirmAction = useCallback(async () => {
         const response = await action(processName, processVersionId, comment, null, scenarioGraphSource);

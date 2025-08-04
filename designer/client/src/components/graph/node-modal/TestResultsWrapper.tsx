@@ -1,11 +1,11 @@
 import type { PropsWithChildren } from "react";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 
 import type { StateForSelectTestResults } from "../../../common/TestResultUtils";
 import TestResultUtils from "../../../common/TestResultUtils";
 import { useUserSettings } from "../../../common/userSettings";
 import { getTestResults } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeId } from "../../../types";
 import { useInputOutputContext } from "./io/InputOutputContext";
 import TestErrors from "./tests/TestErrors";
@@ -30,7 +30,7 @@ export function TestResultsWrapper({
     nodeId: NodeId;
     showTestResults?: boolean;
 }>): JSX.Element {
-    const results = useSelector(getTestResults);
+    const results = useAppSelector(getTestResults);
     const nodeResults = useMemo(() => {
         if (showTestResults) {
             return TestResultUtils.resultsForNode(results, nodeId);

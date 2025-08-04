@@ -335,8 +335,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           ),
           None,
         )
-      case _: ScenarioActivity.CustomAction =>
-        None
     }
   }
 
@@ -623,7 +621,10 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           )
         )
       case activity: ScenarioActivity.PerformedSingleExecution =>
-        createEntity(scenarioActivity)()
+        createEntity(scenarioActivity)(
+          comment = comment(activity.comment),
+          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
+        )
       case activity: ScenarioActivity.PerformedScheduledExecution =>
         createEntity(scenarioActivity)(
           additionalProperties = AdditionalProperties(
@@ -643,11 +644,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
               "description" -> activity.changes,
             )
           )
-        )
-      case activity: ScenarioActivity.CustomAction =>
-        createEntity(scenarioActivity)(
-          comment = comment(activity.comment),
-          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
         )
     }
   }
@@ -951,22 +947,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           scenarioVersionId = entity.scenarioVersion,
           changes = description,
         )).map((entity.id, _))
-
-      case ScenarioActivityType.CustomAction(actionName) =>
-        (for {
-          comment <- commentFromEntity(entity)
-          result  <- resultFromEntity(entity)
-        } yield ScenarioActivity
-          .CustomAction(
-            scenarioId = scenarioIdFromEntity(entity),
-            scenarioActivityId = entity.activityId,
-            user = userFromEntity(entity),
-            date = entity.createdAt.toInstant,
-            scenarioVersionId = entity.scenarioVersion,
-            actionName = actionName,
-            comment = comment,
-            result = result,
-          )).map((entity.id, _))
+      case ScenarioActivityType.UnknownActivityType(unknownType) =>
+        Left(s"Unknown activity type: $unknownType")
     }
   }
 

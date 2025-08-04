@@ -1,7 +1,7 @@
 import { isEmpty, isEqual } from "lodash";
 import React, { useMemo } from "react";
-import { useSelector } from "react-redux";
 
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
 import { EdgeKind } from "../../../types";
 import { DescriptionField } from "./DescriptionField";
@@ -61,7 +61,7 @@ export function Switch({
     );
     const [, isCompareView] = useDiffMark();
 
-    const getExpressionType = useSelector(getNodeExpressionType);
+    const getExpressionType = useAppSelector(getNodeExpressionType);
     const nodeExpressionType = useMemo(() => getExpressionType(node.id), [getExpressionType, node.id]);
     const edgeTypes = useMemo(() => {
         return [

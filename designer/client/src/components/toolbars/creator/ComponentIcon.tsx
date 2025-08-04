@@ -1,10 +1,10 @@
 import { memoize } from "lodash";
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { useSelector } from "react-redux";
 
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, ProcessDefinitionData } from "../../../types";
 import { StickyNoteType } from "../../graph/utils/stickyNotesUtils";
 import { InlineSvg } from "../../SvgDiv";
@@ -41,7 +41,7 @@ export function getComponentIconSrc(node: NodeType, { components }: ProcessDefin
 
 export function useComponentIcon(node: NodeType) {
     const [src, setSrc] = useState<string>(null);
-    const processDefinition = useSelector(getProcessDefinitionData);
+    const processDefinition = useAppSelector(getProcessDefinitionData);
 
     useEffect(() => {
         setSrc(getComponentIconSrc(node, processDefinition));

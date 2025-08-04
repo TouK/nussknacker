@@ -1,10 +1,8 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { disableToolTipsHighlight, enableToolTipsHighlight, fetchProcessToDisplay, loadProcessState } from "../../../../actions/nk";
 import notificationActions from "../../../../actions/notificationActions";
-import type { ThunkDispatch } from "../../../../actions/reduxTypes";
 import Icon from "../../../../assets/img/toolbarButtons/redeploy.svg";
 import { useUserSettings } from "../../../../common/userSettings";
 import type { NodesDeploymentData, ScenarioGraphSource } from "../../../../http/HttpService";
@@ -16,11 +14,11 @@ import {
     hasError,
     isRedeployPossible,
     isRedeployVisible,
-    isSaveDisabled,
     isValidationResultPresent,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getIsRedeploying } from "../../../../reducers/selectors/scenarioState";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import type { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
@@ -42,17 +40,16 @@ export default function RedeployButton(props: ToolbarButtonProps) {
     const [settings] = useUserSettings();
     const allowQuickRedeploy = settings["scenario.allowQuickDeploy"];
 
-    const dispatch: ThunkDispatch = useDispatch();
-    const isVisible = useSelector(isRedeployVisible);
-    const isPossible = useSelector(isRedeployPossible);
-    const saveDisabled = useSelector(isSaveDisabled);
-    const hasErrors = useSelector(hasError);
-    const validationResultPresent = useSelector(isValidationResultPresent);
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
-    const capabilities = useSelector(getCapabilities);
-    const isRedeploying = useSelector(getIsRedeploying);
-    const scenarioGraphSource = useSelector(getScenarioGraphSource);
+    const dispatch = useAppDispatch();
+    const isVisible = useAppSelector(isRedeployVisible);
+    const isPossible = useAppSelector(isRedeployPossible);
+    const hasErrors = useAppSelector(hasError);
+    const validationResultPresent = useAppSelector(isValidationResultPresent);
+    const processName = useAppSelector(getProcessName);
+    const processVersionId = useAppSelector(getProcessVersionId);
+    const capabilities = useAppSelector(getCapabilities);
+    const isRedeploying = useAppSelector(getIsRedeploying);
+    const scenarioGraphSource = useAppSelector(getScenarioGraphSource);
 
     const { disabled, type, titleOverride } = props;
 

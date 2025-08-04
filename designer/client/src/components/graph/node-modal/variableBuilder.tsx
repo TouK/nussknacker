@@ -1,8 +1,8 @@
 import { isEqual } from "lodash";
 import React from "react";
-import { useSelector } from "react-redux";
 
 import type { RootState } from "../../../reducers";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { NodeType, NodeValidationError, VariableTypes } from "../../../types";
 import MapVariable from "./MapVariable";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
@@ -29,7 +29,7 @@ export function VariableBuilder({
     showValidation?: boolean;
     variableTypes?: VariableTypes;
 }): JSX.Element {
-    const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id), isEqual);
+    const nodeExpressionType = useAppSelector((state: RootState) => getNodeExpressionType(state)(node.id), isEqual);
     return (
         <MapVariable
             renderFieldLabel={renderFieldLabel}

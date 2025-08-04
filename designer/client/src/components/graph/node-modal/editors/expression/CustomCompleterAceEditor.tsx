@@ -4,9 +4,9 @@ import { isEmpty } from "lodash";
 import type { ReactNode } from "react";
 import React, { useCallback, useState } from "react";
 import type ReactAce from "react-ace/lib/ace";
-import { useSelector } from "react-redux";
 
 import { getUserSettings } from "../../../../../reducers/selectors/userSettings";
+import { useAppSelector } from "../../../../../store/storeHelpers";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { nodeInputCss } from "../../../../NodeInput";
 import { nodeInput, nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
@@ -41,7 +41,7 @@ export type CustomCompleterAceEditorProps = {
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): JSX.Element {
     const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
-    const userSettings = useSelector(getUserSettings);
+    const userSettings = useAppSelector(getUserSettings);
 
     const showLines = Boolean(userSettings[`editor.${props.inputProps.language}.showLines`]);
 

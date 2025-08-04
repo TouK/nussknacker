@@ -1,7 +1,6 @@
 import { isEmpty } from "lodash";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
@@ -9,6 +8,7 @@ import DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import type { ToolbarButtonProps } from "../../types";
@@ -17,12 +17,12 @@ type Props = ToolbarButtonProps;
 
 function MigrateButton(props: Props) {
     const { disabled, type } = props;
-    const processName = useSelector(getProcessName);
-    const versionId = useSelector(getProcessVersionId);
-    const featuresSettings = useSelector(getFeatureSettings);
-    const migrationPossible = useSelector(isMigrationPossible);
-    const targetEnvironmentId = useSelector(getTargetEnvironmentId);
-    const dispatch = useDispatch();
+    const processName = useAppSelector(getProcessName);
+    const versionId = useAppSelector(getProcessVersionId);
+    const featuresSettings = useAppSelector(getFeatureSettings);
+    const migrationPossible = useAppSelector(isMigrationPossible);
+    const targetEnvironmentId = useAppSelector(getTargetEnvironmentId);
+    const dispatch = useAppDispatch();
 
     const available = !disabled && migrationPossible;
     const { t } = useTranslation();

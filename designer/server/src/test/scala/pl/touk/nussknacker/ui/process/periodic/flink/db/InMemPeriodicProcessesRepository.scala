@@ -40,6 +40,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   def addActiveProcess(
+      processId: ProcessId,
       processName: ProcessName,
       deploymentStatus: PeriodicProcessDeploymentStatus,
       scheduleProperty: SingleScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
@@ -49,7 +50,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       runAt: LocalDateTime = LocalDateTime.now(),
       deployedAt: Option[LocalDateTime] = None
   ): PeriodicProcessDeploymentId = {
-    val periodicProcessId = addOnlyProcess(processName, scheduleProperty, processingType, processActionId)
+    val periodicProcessId = addOnlyProcess(processId, processName, scheduleProperty, processingType, processActionId)
     addOnlyDeployment(
       periodicProcessId,
       deploymentStatus,
@@ -60,6 +61,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   }
 
   def addOnlyProcess(
+      processId: ProcessId,
       processName: ProcessName,
       scheduleProperty: ScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
       processingType: String = processingType,
@@ -68,7 +70,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     val id = PeriodicProcessId(ProcessIdSequence.incrementAndGet())
     val entity = TestPeriodicProcessEntity(
       id = id,
-      processId = None,
+      processId = processId,
       processName = processName,
       processVersionId = VersionId.initialVersionId,
       processingType = processingType,
@@ -374,7 +376,7 @@ object InMemPeriodicProcessesRepository {
 
   final case class TestPeriodicProcessEntity(
       id: PeriodicProcessId,
-      processId: Option[ProcessId],
+      processId: ProcessId,
       processName: ProcessName,
       processVersionId: VersionId,
       processingType: String,

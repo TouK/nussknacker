@@ -3,7 +3,6 @@ import { Button, styled, Typography } from "@mui/material";
 import type { PropsWithChildren } from "react";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { displayScenarioVersion } from "../../../../actions/nk";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
@@ -13,6 +12,7 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName, getProcessVersionId, getScenario, isPristine } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { useWindows } from "../../../../windowManager";
 import { InfoTooltip } from "../../../graph/node-modal/editors/InfoTooltip";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
@@ -69,12 +69,12 @@ const HeaderActivity = ({
     activityType: ActivityType;
 }) => {
     const { open, confirm } = useWindows();
-    const processName = useSelector(getProcessName);
-    const currentScenarioVersionId = useSelector(getProcessVersionId);
+    const processName = useAppSelector(getProcessName);
+    const currentScenarioVersionId = useAppSelector(getProcessVersionId);
     const { t } = useTranslation();
-    const dispatch = useDispatch();
-    const loggedUser = useSelector(getLoggedUser);
-    const { write } = useSelector(getCapabilities);
+    const dispatch = useAppDispatch();
+    const loggedUser = useAppSelector(getLoggedUser);
+    const { write } = useAppSelector(getCapabilities);
 
     switch (activityAction.id) {
         case "compare": {
@@ -189,10 +189,10 @@ const WithOpenVersion = ({
     isFound: boolean;
     activityType: ActivityType;
 }>) => {
-    const nothingToSave = useSelector(isPristine);
-    const scenario = useSelector(getScenario);
+    const nothingToSave = useAppSelector(isPristine);
+    const scenario = useAppSelector(getScenario);
     const { name } = scenario || {};
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { confirm } = useWindows();
 
     const doChangeVersion = useCallback(
@@ -238,7 +238,7 @@ const WithOpenVersion = ({
 };
 
 const ActivityItemHeader = ({ activity, isDeploymentActive, isFound, isActiveFound, searchQuery }: Props) => {
-    const scenario = useSelector(getScenario);
+    const scenario = useAppSelector(getScenario);
     const { processVersionId } = scenario || {};
     const { t } = useTranslation();
 

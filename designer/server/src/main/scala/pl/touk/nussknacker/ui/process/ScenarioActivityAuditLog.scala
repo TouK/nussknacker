@@ -146,8 +146,6 @@ object ScenarioActivityAuditLog {
       s"ScenarioPaused(comment=${stringify(comment)},result=${stringify(result)})"
     case ScenarioActivity.ScenarioCanceled(_, _, _, _, _, comment, result) =>
       s"ScenarioCanceled(comment=${stringify(comment)},result=${stringify(result)})"
-    case ScenarioActivity.CustomAction(_, _, _, _, _, actionName, comment, result) =>
-      s"CustomAction(action=$actionName,comment=${stringify(comment)},result=${stringify(result)})"
     case ScenarioActivity.PerformedSingleExecution(_, _, _, _, _, comment, result) =>
       s"PerformedSingleExecution(comment=${stringify(comment)},result=${stringify(result)})"
     case ScenarioActivity.PerformedScheduledExecution(_, _, _, _, _, status, _, scheduleName, _, _, _) =>

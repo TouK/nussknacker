@@ -1,13 +1,13 @@
 import { useCallback, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { setSettings, toggleSettings } from "../actions/nk/userSettings";
 import { getUserSettings } from "../reducers/selectors/userSettings";
 import type { UserSettings } from "../reducers/userSettings";
+import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 
 export const useUserSettings: () => [UserSettings, (keys: Array<keyof UserSettings>) => void, (value: UserSettings) => void] = () => {
-    const dispatch = useDispatch();
-    const current = useSelector(getUserSettings);
+    const dispatch = useAppDispatch();
+    const current = useAppSelector(getUserSettings);
 
     const toggle = useCallback(
         (keys: Array<keyof UserSettings>) => {

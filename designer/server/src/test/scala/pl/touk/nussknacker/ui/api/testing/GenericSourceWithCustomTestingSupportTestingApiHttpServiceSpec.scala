@@ -2,13 +2,13 @@ package pl.touk.nussknacker.ui.api.testing
 
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.process.test.testdataformat.CommonDataFormatHandler.InputVariablesParameterName
 import sttp.client3.Response
 
 class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
@@ -35,10 +35,16 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
        |]""".stripMargin
 
   override protected def validParameters: TestSourceParameters =
-    TestSourceParameters(exampleScenarioSourceId, Map(ParameterName("elements") -> "{'123'}".spel))
+    TestSourceParameters(
+      exampleScenarioSourceId,
+      Map(InputVariablesParameterName -> """{"input": "foobar"}""".jsonExpression)
+    )
 
   override protected def invalidParameters: TestSourceParameters =
-    TestSourceParameters(exampleScenarioSourceId, Map(ParameterName("elements") -> "0L".spel))
+    TestSourceParameters(
+      exampleScenarioSourceId,
+      Map(InputVariablesParameterName -> """{"input": 123}""".jsonExpression)
+    )
 
   override protected def expectedValidationErrorsOnInvalidParametersJson: String =
     s"""
@@ -54,18 +60,31 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
        |]""".stripMargin
 
   override protected def expectedTestParametersJson: String = {
-    s"""
-       |[
+    s"""[
        |  {
        |    "sourceId": "$exampleScenarioSourceId",
        |    "parameters": [
        |      {
-       |        "name": "elements",
+       |        "name": "$InputVariablesParameterName",
        |        "typ": {
-       |          "display": "List[String]",
-       |          "type": "TypedClass",
-       |          "refClazzName": "java.util.List",
+       |          "display": "Record{input: String}",
+       |          "type": "TypedObjectTypingResult",
+       |          "fields": {
+       |            "input": {
+       |              "display": "String",
+       |              "type": "TypedClass",
+       |              "refClazzName": "java.lang.String",
+       |              "params": []
+       |            }
+       |          },
+       |          "refClazzName": "java.util.Map",
        |          "params": [
+       |            {
+       |              "display": "String",
+       |              "type": "TypedClass",
+       |              "refClazzName": "java.lang.String",
+       |              "params": []
+       |            },
        |            {
        |              "display": "String",
        |              "type": "TypedClass",
@@ -76,18 +95,18 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
        |        },
        |        "editors": [
        |          {
-       |            "type": "SpelParameterEditor"
+       |            "type": "JsonParameterEditor"
        |          }
        |        ],
        |        "defaultValue": {
-       |          "language":"spel",
-       |          "expression":"{}"
+       |          "language": "json",
+       |          "expression": "{\\n  \\"input\\" : \\"\\"\\n}"
        |        },
        |        "additionalVariables": {},
        |        "variablesToHide": [],
        |        "branchParam": false,
        |        "hintText": null,
-       |        "label": "elements",
+       |        "label": "$InputVariablesParameterName",
        |        "requiredParam": true,
        |        "category": "Standard",
        |        "changesCanReloadParameters": false,
@@ -95,8 +114,7 @@ class GenericSourceWithCustomTestingSupportTestingApiHttpServiceSpec
        |      }
        |    ]
        |  }
-       |]
-       |""".stripMargin
+       |]""".stripMargin
   }
 
   override protected def verifyTestFromFileWithCorrectTestDataResponse(response: Response[String]): Assertion = {

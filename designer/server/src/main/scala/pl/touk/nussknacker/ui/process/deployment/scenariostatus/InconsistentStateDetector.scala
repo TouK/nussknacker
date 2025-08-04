@@ -23,14 +23,16 @@ class InconsistentStateDetector extends LazyLogging {
     val status: StateStatus = (doExtractAtMostOneStatus(deploymentStatuses), lastStateAction) match {
       case (Left(deploymentStatus), _) => deploymentStatus.status
       case (Right(None), lastAction)
-          if Set(ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(
+          if Set[ScenarioActionName](ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(
             lastAction.actionName
           ) && lastAction.state == ProcessActionState.ExecutionFinished =>
         // Some engines like Flink have jobs retention. Because of that we restore finished status
         SimpleStateStatus.Finished(lastAction.processVersionId)
       case (Right(Some(deploymentStatus)), _) if shouldAlwaysReturnStatus(deploymentStatus) => deploymentStatus.status
       case (Right(deploymentStatusOpt), lastAction)
-          if Set(ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(lastAction.actionName) =>
+          if Set[ScenarioActionName](ScenarioActionName.Deploy, ScenarioActionName.Redeploy).contains(
+            lastAction.actionName
+          ) =>
         handleLastActionDeployOrRedeploy(deploymentStatusOpt, lastAction)
       case (Right(Some(deploymentStatus)), _) if isFollowingDeployStatus(deploymentStatus) =>
         handleFollowingDeployEngineSideStatus(deploymentStatus, lastStateAction)

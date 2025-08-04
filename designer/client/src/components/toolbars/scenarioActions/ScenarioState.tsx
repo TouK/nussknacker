@@ -1,12 +1,12 @@
 import { Stack, Typography } from "@mui/material";
 import i18next from "i18next";
 import React, { useCallback } from "react";
-import { useSelector } from "react-redux";
 import { SwitchTransition } from "react-transition-group";
 
 import { formatDateTime } from "../../../common/DateUtils";
 import { getScenario } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { useAppSelector } from "../../../store/storeHelpers";
 import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
@@ -15,8 +15,8 @@ import { isStatusRunning } from "../../Process/types";
 import { RunningVersion } from "../../ScenarioVersion";
 
 export function ScenarioState() {
-    const scenario = useSelector(getScenario);
-    const processState = useSelector(getProcessState);
+    const scenario = useAppSelector(getScenario);
+    const processState = useAppSelector(getProcessState);
     const runningDescription = useCallback((statusRunning: StatusRunning) => {
         return (
             <Stack>

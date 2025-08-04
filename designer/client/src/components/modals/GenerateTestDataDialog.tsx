@@ -4,11 +4,11 @@ import type { WindowButtonProps, WindowContentProps } from "@touk/window-manager
 import { isEmpty } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import HttpService from "../../http/HttpService";
 import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { useAppSelector } from "../../store/storeHelpers";
 import { PromptContent } from "../../windowManager";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { NodeInput } from "../FormElements";
@@ -26,9 +26,9 @@ import ValidationLabels from "./ValidationLabels";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
-    const processName = useSelector(getProcessName);
-    const scenarioGraph = useSelector(getScenarioGraph);
-    const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
+    const processName = useAppSelector(getProcessName);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
+    const maxSize = useAppSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ testSampleSize }, setState] = useState({
         //TODO: current validators work well only for string values

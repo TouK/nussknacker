@@ -1,17 +1,17 @@
 import { Link, styled, Typography } from "@mui/material";
 import React, { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { updateSearchQuery } from "../actions/nk/scenarioActivities";
 import { getProcessVersionId, getRunningVersion, isCurrentVersionDeployed, isLatestProcessVersion } from "../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../store/storeHelpers";
 import { predefinedQueries } from "./toolbars/activities/useActivitiesSearch";
 
 const Span = styled("span")({});
 
 export function RunningVersion() {
-    const runningVersion = useSelector(getRunningVersion);
-    const currentVersionDeployed = useSelector(isCurrentVersionDeployed);
-    const dispatch = useDispatch();
+    const runningVersion = useAppSelector(getRunningVersion);
+    const currentVersionDeployed = useAppSelector(isCurrentVersionDeployed);
+    const dispatch = useAppDispatch();
 
     const handleGoToRunningVersion = useCallback(() => {
         const element = document.querySelector('[data-rfd-drag-handle-draggable-id="activities-panel"]');
@@ -43,8 +43,8 @@ export function RunningVersion() {
 }
 
 export function ScenarioVersion() {
-    const currentVersionId = useSelector(getProcessVersionId);
-    const isLatestVersion = useSelector(isLatestProcessVersion);
+    const currentVersionId = useAppSelector(getProcessVersionId);
+    const isLatestVersion = useAppSelector(isLatestProcessVersion);
     if (isLatestVersion || !currentVersionId) return null;
 
     return (

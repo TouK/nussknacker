@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
+import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
 
 export function useClashedNames(shouldDownload = true): string[] {
-    const dispatch = useDispatch();
-    const clashedNames = useSelector(getScenariosNames);
+    const dispatch = useAppDispatch();
+    const clashedNames = useAppSelector(getScenariosNames);
 
     useEffect(() => {
         if (shouldDownload) {

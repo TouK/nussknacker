@@ -1,17 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 
 import { hideRunProcessDetails } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/hide.svg";
 import { getIsTestingMode } from "../../../../reducers/selectors/graph";
+import { useAppDispatch, useAppSelector } from "../../../../store/storeHelpers";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import type { ToolbarButtonProps } from "../../types";
 
 function HideButton(props: ToolbarButtonProps) {
     const { disabled, type } = props;
-    const dispatch = useDispatch();
-    const isTestingMode = useSelector(getIsTestingMode);
+    const dispatch = useAppDispatch();
+    const isTestingMode = useAppSelector(getIsTestingMode);
     const { t } = useTranslation();
     return (
         <ToolbarButton

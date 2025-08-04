@@ -1,9 +1,9 @@
 import { flatMap, uniqBy } from "lodash";
 import { useMemo } from "react";
-import { useSelector } from "react-redux";
 
 import { getToolbarsConfig } from "../../reducers/selectors/toolbars";
 import type { ToolbarsSide } from "../../reducers/toolbars";
+import { useAppSelector } from "../../store/storeHelpers";
 import type { Toolbar } from "../toolbarComponents/toolbar";
 import { toolbarSelector } from "./ToolbarSelector";
 import type { ToolbarConfig, ToolbarsConfig } from "./types";
@@ -22,7 +22,7 @@ const parseCollection = (collection: ToolbarsConfig): Toolbar[] =>
     );
 
 export function useToolbarConfig(): [Toolbar[], string] {
-    const config = useSelector(getToolbarsConfig);
+    const config = useAppSelector(getToolbarsConfig);
     return useMemo(() => {
         const { id, ...toolbarsCollection } = config;
         return [parseCollection(toolbarsCollection), id];

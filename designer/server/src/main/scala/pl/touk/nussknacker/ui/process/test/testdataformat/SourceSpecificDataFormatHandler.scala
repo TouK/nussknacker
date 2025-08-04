@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.ui.process.test.testdataformat
 
+import cats.data.NonEmptyList
 import cats.implicits.{toBifunctorOps, toTraverseOps}
 import io.circe.parser
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator}
-import pl.touk.nussknacker.ui.process.test.{
-  PreliminaryScenarioRecord,
-  PreliminaryScenarioRecords,
-  SerializedScenarioRecordsContent,
-  SourceSpecificFormatPreliminaryScenarioRecord
-}
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.ui.process.test._
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService.ParametersDefinitionError
 import pl.touk.nussknacker.ui.process.test.testdataformat.TestDataFormatSerDe.DeserializationError
 import shapeless.syntax.typeable.typeableOps
 
@@ -22,6 +24,9 @@ class SourceSpecificDataFormatHandler(modelData: ModelData) extends TestDataForm
   override def canFetchLiveData(compiledSource: Source): Boolean = compiledSource.isInstanceOf[TestDataGenerator]
 
   override def canBeTested(compiledSource: Source): Boolean = compiledSource.isInstanceOf[SourceTestSupport[_]]
+
+  override def canTestWithForm(compiledSource: Source): Boolean =
+    compiledSource.isInstanceOf[TestWithParametersSupport[_]]
 
   override def fetchLiveData(
       sourceId: NodeId,
@@ -45,6 +50,35 @@ class SourceSpecificDataFormatHandler(modelData: ModelData) extends TestDataForm
       }
       .getOrElse(Left(TestDataFormatHandler.LiveDataFetchingNotSupportedError))
   }
+
+  override def getTestParametersDefinition(
+      sourceId: NodeId,
+      sourceCompilationResult: NodeCompilationResult[Source]
+  ): Either[ScenarioTestService.ParametersDefinitionError, List[Parameter]] = {
+    for {
+      compiledSource <- sourceCompilationResult.compiledObject.toEither.leftMap(errors =>
+        ParametersDefinitionError.SourcesCompilationError(NonEmptyList.one(sourceId -> errors))
+      )
+      testParameters <- getTestParameters(sourceId, compiledSource)
+    } yield testParameters
+  }
+
+  private def getTestParameters(
+      sourceId: NodeId,
+      compiledSource: Source,
+  ): Either[ParametersDefinitionError, List[Parameter]] = {
+    compiledSource match {
+      case s: TestWithParametersSupport[_] => Right(s.testParametersDefinition)
+      case _ => Left(ParametersDefinitionError.TestingWithCustomInputNotSupportedError(sourceId))
+    }
+  }
+
+  override def convertToTestData(
+      sourceId: String,
+      parameterExpressions: Map[ParameterName, Expression]
+  ): Either[TestDataFormatHandler.ExpressionsToTestDataConversionError, ScenarioTestData] = Right(
+    ScenarioTestData(sourceId, parameterExpressions)
+  )
 
 }
 

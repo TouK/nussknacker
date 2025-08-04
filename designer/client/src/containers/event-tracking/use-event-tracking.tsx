@@ -1,16 +1,16 @@
 import { debounce } from "lodash";
 import { useCallback, useMemo } from "react";
-import { useSelector } from "react-redux";
 
 import httpService from "../../http/HttpService";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { useAppSelector } from "../../store/storeHelpers";
 import { getEventStatisticName } from "./helpers";
 import type { EventTrackingSelectorType, EventTrackingType } from "./use-register-tracking-events";
 
 export type TrackEventParams = { selector: EventTrackingSelectorType; event: EventTrackingType };
 
 export const useEventTracking = () => {
-    const featuresSettings = useSelector(getFeatureSettings);
+    const featuresSettings = useAppSelector(getFeatureSettings);
     const areStatisticsEnabled = featuresSettings.usageStatisticsReports.enabled;
 
     const trackEvent = useCallback(

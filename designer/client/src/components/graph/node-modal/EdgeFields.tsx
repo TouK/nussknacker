@@ -2,10 +2,10 @@ import { css, cx } from "@emotion/css";
 import { uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
+import { useAppSelector } from "../../../store/storeHelpers";
 import type { Edge, VariableTypes } from "../../../types";
 import { EdgeKind } from "../../../types";
 import NodeUtils from "../NodeUtils";
@@ -34,8 +34,8 @@ interface Props {
 export function EdgeFields(props: Props): JSX.Element {
     const { t } = useTranslation();
     const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
-    const scenarioGraph = useSelector(getScenarioGraph);
-    const processDefinitionData = useSelector(getProcessDefinitionData);
+    const scenarioGraph = useAppSelector(getScenarioGraph);
+    const processDefinitionData = useAppSelector(getProcessDefinitionData);
 
     const [edge, setEdge] = useState(value);
 

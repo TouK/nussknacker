@@ -1,29 +1,34 @@
 /* eslint-disable i18next/no-literal-string */
-import { useDispatch } from "react-redux";
-import { applyMiddleware, createStore } from "redux";
-import { composeWithDevTools } from "redux-devtools-extension";
+import { configureStore } from "@reduxjs/toolkit";
+import type { Store } from "redux";
 import { persistStore } from "redux-persist";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
-import thunk from "redux-thunk";
+import type { ThunkMiddleware } from "redux-thunk";
+import { thunk } from "redux-thunk";
 
-import type { Action, ThunkDispatch } from "../actions/reduxTypes";
-import { reducer } from "../reducers";
+import type { Action } from "../actions/reduxTypes";
+import type { RootState } from "../reducers";
+import { rootReducer } from "../reducers";
 import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
-export default function configureStore() {
-    // avoid polluting devtools with frequent refresh actions
-    const actionsBlacklist: Action["type"][] = [
-        "PROCESS_STATE_LOADED",
-        "UPDATE_BACKEND_NOTIFICATIONS",
-        "SET_PENDING_CHANGES",
-        "FETCH_LIVE_DATA",
-        "DISPLAY_LIVE_DATA",
-    ];
-    const store = createStore(
-        reducer,
-        composeWithDevTools({ actionsBlacklist: ["RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION", ...actionsBlacklist] })(
-            applyMiddleware(
-                thunk,
+// avoid polluting devtools with frequent refresh actions
+const actionsBlacklist: Action["type"][] = [
+    "PROCESS_STATE_LOADED",
+    "UPDATE_BACKEND_NOTIFICATIONS",
+    "SET_PENDING_CHANGES",
+    "FETCH_LIVE_DATA",
+    "DISPLAY_LIVE_DATA",
+];
+
+export const store = configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            serializableCheck: false, // we still have non fixed antipatterns
+            thunk: false, // need to disable and provide own, typed thunk
+        })
+            .prepend(thunk as ThunkMiddleware<RootState, Action>)
+            .concat(
                 createStateSyncMiddleware({
                     whitelist: [
                         "TOGGLE_SETTINGS",
@@ -46,22 +51,18 @@ export default function configureStore() {
                     "STICKY_NOTE_UPDATED",
                 ]),
             ),
-        ),
-    );
-    const persistor = persistStore(store);
-    initMessageListener(store);
+    devTools: {
+        actionsDenylist: ["RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION", ...actionsBlacklist],
+    },
+});
 
-    if (module.hot) {
-        module.hot.accept("../reducers", () => {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const nextReducer = require("../reducers").reducer;
-            store.replaceReducer(nextReducer);
-        });
-    }
+export const persistor = persistStore(store as Store);
+initMessageListener(store);
 
-    return { store, persistor };
-}
-
-export function useThunkDispatch() {
-    return useDispatch<ThunkDispatch>();
+if (module.hot) {
+    module.hot.accept("../reducers", () => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const nextReducer = require("../reducers").reducer;
+        store.replaceReducer(nextReducer);
+    });
 }

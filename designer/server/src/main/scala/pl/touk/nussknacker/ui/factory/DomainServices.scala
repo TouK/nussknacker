@@ -36,7 +36,11 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationScheduler,
   DeploymentsStatusesSynchronizer
 }
-import pl.touk.nussknacker.ui.process.periodic.{DefaultProcessingTypeActionService, SchedulingDependencies}
+import pl.touk.nussknacker.ui.process.periodic.{
+  DefaultProcessingTypeActionService,
+  DefaultSchedulingScenarioActivitiesRepository,
+  SchedulingDependencies
+}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.{
   DeploymentManagersLoader,
@@ -130,6 +134,7 @@ object DomainServices extends LazyLogging {
         actionRepository,
         scenarioLabelsRepository
       )
+      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
       deploymentData <- DeploymentManagersLoader.load(
         alreadyLoadedConfig.processingTypeConfigs(),
         deploymentManagersClassLoader,
@@ -141,6 +146,8 @@ object DomainServices extends LazyLogging {
             infrastructureServices,
             actionServiceSupplier,
             futureProcessRepository,
+            scenarioActivityRepository,
+            dbioRunner,
             additionalUIConfigProvider,
             _
           )
@@ -156,14 +163,13 @@ object DomainServices extends LazyLogging {
             )
           )
         )(_.close())
-      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
+
       dmDispatcher =
         new DeploymentManagerDispatcher(
           deploymentDataProvider.mapValues(_.validDeploymentManagerOrStub),
           futureProcessRepository
         )
       fetchScenarioActivityService = new FetchScenarioActivityService(
-        dmDispatcher,
         scenarioActivityRepository,
         futureProcessRepository,
         dbioRunner,
@@ -419,15 +425,22 @@ object DomainServices extends LazyLogging {
       infrastructureServices: InfrastructureServices,
       actionServiceProvider: Supplier[ActionService],
       fetchingProcessRepository: FetchingProcessRepository[Future],
+      scenarioActivityRepository: ScenarioActivityRepository,
+      dbioActionRunner: DBIOActionRunner,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       processingType: ProcessingType
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+    val schedulingScenarioActivitiesRepository = new DefaultSchedulingScenarioActivitiesRepository(
+      activitiesRepository = scenarioActivityRepository,
+      dbioActionRunner = dbioActionRunner
+    )
     new SchedulingDependencies(
       infrastructureServices.dbRef,
       new DefaultProcessingTypeActionService(processingType, actionServiceProvider),
       fetchingProcessRepository,
-      additionalConfigsFromProvider
+      schedulingScenarioActivitiesRepository,
+      additionalConfigsFromProvider,
     )
   }
 
