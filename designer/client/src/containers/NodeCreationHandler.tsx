@@ -12,10 +12,22 @@ import { closeNodeSelector, openNodeSelector } from "../components/toolbars/crea
 import { useOutsideInteraction } from "../components/toolbars/creator/useOutsideInteraction";
 import { addListenerTyped, addOnceListenerTyped, useAppDispatch } from "../store/storeHelpers";
 
-const adjustPoint = (paper: dia.Paper, plainPoint: g.PlainPoint): g.Point => {
+export function findCellsInArea(paper: dia.Paper, area: g.Rect): dia.Cell[] {
+    const model = paper.model;
+    const links = model.getLinks().filter((link) => {
+        const view = paper.findViewByModel(link);
+        if (!view) return false;
+        const pathBBox = view.getBBox();
+        return paper.clientToLocalRect(pathBBox).intersect(area);
+    });
+    const elements = model.findModelsInArea(area);
+    return [...elements, ...links];
+}
+
+export const findFreeSpaceForNode = (paper: dia.Paper, plainPoint: g.PlainPoint): g.Point => {
     const rect = new g.Rect(plainPoint.x, plainPoint.y, RECT_WIDTH, RECT_HEIGHT);
-    if (paper.findViewsInArea(rect.clone().inflate(10)).length > 0) {
-        return adjustPoint(paper, rect.offset(RECT_HEIGHT).topLeft());
+    if (findCellsInArea(paper, rect.clone().inflate(10)).length > 0) {
+        return findFreeSpaceForNode(paper, rect.offset(RECT_HEIGHT).topLeft());
     }
     return rect.topLeft().snapToGrid(1, 1);
 };
@@ -106,7 +118,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
                     const graph = graphGetter();
                     const paper = graph.processGraphPaper;
 
-                    const position: g.Point = adjustPoint(paper, onPoint);
+                    const position: g.Point = findFreeSpaceForNode(paper, onPoint);
 
                     if (graph.isFragmentCreator(node)) {
                         return graph.createFragment(position, edge);

@@ -23,7 +23,15 @@ import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import { getNeighbors } from "./getNeighbors";
-import { applyCellChanges, calcLayout, createPaper, isModelElement, isModelOrStickyNote, isStickyNoteElement } from "./GraphPartialsInTS";
+import {
+    applyCellChanges,
+    calcLayout,
+    createPaper,
+    isConnected,
+    isModelElement,
+    isModelOrStickyNote,
+    isStickyNoteElement,
+} from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
@@ -114,8 +122,6 @@ export class Graph extends React.Component<Props> {
     graph: dia.Graph;
     processGraphPaper: dia.Paper;
     highlightHoveredLink = rafThrottle((forceDisable?: boolean) => {
-        this.processGraphPaper.freeze();
-
         const cells = this.graph.getCells();
         cells.forEach((l) => this.#unhighlightCell(l, dragHovered));
         this.lastHoveredCell = null;
@@ -127,8 +133,6 @@ export class Graph extends React.Component<Props> {
                 this.lastHoveredCell = active.toBack();
             }
         }
-
-        this.processGraphPaper.unfreeze();
     });
     private panAndZoom: PanZoomPlugin;
     fit = debounce((cellsToFit?: dia.Cell[]): void => {
@@ -710,19 +714,34 @@ export class Graph extends React.Component<Props> {
             //trigger new custom event on finished cell move
             .on(Events.CELL_POINTERDOWN, (cellView: dia.CellView) => {
                 const { model, paper } = cellView;
+                const context = {};
 
-                const moveCallback = () => {
-                    cellView.once(Events.CELL_POINTERUP, () => {
-                        cellView.trigger(Events.CELL_MOVED, cellView);
-                        paper.trigger(Events.CELL_MOVED, cellView);
-                    });
-                };
+                model.once(
+                    Events.CHANGE_POSITION,
+                    () => {
+                        cellView.once(Events.CELL_POINTERUP, () => {
+                            cellView.trigger(Events.CELL_MOVED, cellView);
+                            paper.trigger(Events.CELL_MOVED, cellView);
+                        });
+                    },
+                    context,
+                );
 
-                model.once(Events.CHANGE_POSITION, moveCallback);
+                // pointerDown initiated move only
+                model.on(
+                    Events.CHANGE_POSITION,
+                    (el: dia.Element) => {
+                        if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
+                            setDraggedOver(el.graph, el.getBBox(), el);
+                        }
+                    },
+                    context,
+                );
+
                 const cleanup = this.bindMoveWithEdge(cellView);
 
                 cellView.once(Events.CELL_POINTERUP, () => {
-                    model.off(Events.CHANGE_POSITION, moveCallback);
+                    model.off(null, null, context);
                     cleanup();
                 });
             })

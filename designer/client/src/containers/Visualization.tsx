@@ -8,7 +8,6 @@ import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProces
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
-import { RECT_HEIGHT } from "../components/graph/EspNode/esp";
 import type { Graph } from "../components/graph/Graph";
 import { GraphProvider } from "../components/graph/GraphContext";
 import { usePortal } from "../components/graph/node-modal/io/usePortal";
@@ -38,6 +37,7 @@ import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
 import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
+import { findFreeSpaceForNode } from "./NodeCreationHandler";
 import { GraphPage } from "./Page";
 import { PanToNodes } from "./PanToNodes";
 import { VisualizationBasePath } from "./paths";
@@ -169,12 +169,8 @@ function Visualization() {
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
-        return (
-            paper?.getContentArea()?.topRight().offset(RECT_HEIGHT).snapToGrid(1, 1) || {
-                x: 300,
-                y: 100,
-            }
-        );
+        const point = paper?.getContentArea()?.topLeft().snapToGrid(1, 1) || { x: 0, y: 0 };
+        return findFreeSpaceForNode(paper, point);
     }, [getGraphInstance]);
 
     useEffect(() => {
