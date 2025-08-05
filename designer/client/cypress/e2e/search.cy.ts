@@ -61,7 +61,7 @@ describe("Search Panel View", { testIsolation: false }, () => {
 
             cy.contains(/^submit$/i).click();
 
-            cy.get("input[data-selector='NODES_IN_SCENARIO']").should("have.value", "type:(sink,dynamicSe) se");
+            cy.get("input[data-selector='NODES_IN_SCENARIO']").should("have.value", "type:(dynamicSe,sink) se");
 
             cy.contains("dynamicService");
             cy.contains("sendSms");
@@ -80,7 +80,7 @@ describe("Search Panel View", { testIsolation: false }, () => {
 
             cy.get("input[data-selector='NODES_IN_SCENARIO']").should(
                 "have.value",
-                "type:(sink,enricher) name:(bounded,dynamic,send,enricher)",
+                "name:(bounded,dynamic,enricher,send) type:(enricher,sink)",
             );
 
             cy.contains("enricher");

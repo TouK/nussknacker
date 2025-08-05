@@ -197,13 +197,22 @@ export function searchQueryToString(query: SearchQuery): string {
 
     const formattedParts = Object.entries(query)
         .filter(([key]) => key !== "plainQuery")
+        .sort(([a], [b]) => a.localeCompare(b))
         .map(([key, value]) => {
-            if (Array.isArray(value) && value.length > 0 && value[0] !== null && value[0] !== "") {
-                return `${key}:(${value})`;
-            } else if (typeof value === "string" && value.length > 0) {
-                return `${key}:(${[value]})`;
-            }
-            return []; // Skip undefined or invalid values
+            const serializedValue = ensureArray(value)
+                .filter((v) => v?.length)
+                .flatMap((v) =>
+                    !v
+                        ? []
+                        : v
+                              .split(",")
+                              .map((v) => v.trim())
+                              .filter((v) => v?.length),
+                )
+                .sort((a, b) => a.localeCompare(b))
+                .join(",");
+            if (!serializedValue?.length) return null;
+            return `${key}:(${serializedValue})`;
         })
         .filter(Boolean) // Remove null values
         .join(" "); // Join the formatted parts with a space
