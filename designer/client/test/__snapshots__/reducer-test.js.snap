@@ -9,7 +9,7 @@ exports[`Nodes added should add multiple nodes with unique id 1`] = `
     },
   },
   "id": "kafka-transaction (copy 1)",
-  "output": "kafka_transaction_copy_1_output",
+  "output": "output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -35,7 +35,7 @@ exports[`Nodes added should add multiple nodes with unique id 2`] = `
     },
   },
   "id": "kafka-transaction (copy 2)",
-  "output": "kafka_transaction_copy_2_output",
+  "output": "output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -61,7 +61,7 @@ exports[`Nodes added should add multiple nodes with unique id 3`] = `
     },
   },
   "id": "filter (copy 2)",
-  "output": "filter_copy_2_output",
+  "output": "output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -87,7 +87,7 @@ exports[`Nodes added should add nodes with edges 1`] = `
     },
   },
   "id": "newNode",
-  "output": "new_node_output",
+  "output": "output",
   "service": {
     "id": "paramService",
     "parameters": [
@@ -113,7 +113,7 @@ exports[`Nodes added should add nodes with edges 2`] = `
     },
   },
   "id": "kafka-transaction (copy 1)",
-  "output": "kafka_transaction_copy_1_output",
+  "output": "output",
   "service": {
     "id": "paramService",
     "parameters": [
