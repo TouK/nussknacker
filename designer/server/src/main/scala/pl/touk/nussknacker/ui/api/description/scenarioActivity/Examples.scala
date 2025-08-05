@@ -41,7 +41,7 @@ object Examples {
     )
   )
 
-  def scenarioActivities(implicit zoneId: ZoneId): Example[ScenarioActivities] = Example.of(
+  val scenarioActivities: Example[ScenarioActivities] = Example.of(
     summary = Some("Display scenario actions"),
     value = ScenarioActivities(
       activities = List(
