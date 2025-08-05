@@ -8,6 +8,7 @@ import io.circe
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -22,8 +23,7 @@ import sttp.tapir.derevo.schema
 import sttp.tapir.generic.Configuration
 
 import java.io.InputStream
-import java.time.{Instant, ZoneId}
-import java.time.format.DateTimeFormatter
+import java.time.Instant
 import java.util.UUID
 import scala.collection.immutable
 
@@ -384,11 +384,17 @@ object Dtos {
       Schema.derived[ScenarioActivity]
     }
 
-    @derive(encoder, decoder, schema)
+    @derive(decoder, schema)
     final case class AdditionalField(
         name: String,
-        value: String
+        value: String,
+        isDate: Option[Boolean] = None,
     )
+
+    object AdditionalField {
+      implicit val droppingNullsEncoder: Encoder[AdditionalField] =
+        deriveEncoder[AdditionalField].mapJson(_.dropNullValues)
+    }
 
     def forScenarioCreated(
         id: UUID,
@@ -677,7 +683,7 @@ object Dtos {
         comment: ScenarioActivityComment,
         dateFinished: Instant,
         errorMessage: Option[String],
-    )(implicit zoneId: ZoneId): ScenarioActivity = {
+    ): ScenarioActivity = {
       val humanReadableStatus = "Data processing started"
       ScenarioActivity(
         id = id,
@@ -689,8 +695,8 @@ object Dtos {
         attachment = None,
         additionalFields = List(
           Some(AdditionalField("status", humanReadableStatus)),
-          Some(AdditionalField("started", format(date))),
-          Some(AdditionalField("finished", format(dateFinished))),
+          Some(AdditionalField("started", format(date), isDate = Some(true))),
+          Some(AdditionalField("finished", format(dateFinished), isDate = Some(true))),
           errorMessage.map(e => AdditionalField("errorMessage", e)),
         ).flatten
       )
@@ -706,7 +712,7 @@ object Dtos {
         createdAt: Instant,
         nextRetryAt: Option[Instant],
         retriesLeft: Option[Int],
-    )(implicit zoneId: ZoneId): ScenarioActivity = {
+    ): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
         case ScheduledExecutionStatus.Finished                => "Data processing finished"
         case ScheduledExecutionStatus.Failed                  => "Data processing failed"
@@ -723,11 +729,11 @@ object Dtos {
         attachment = None,
         additionalFields = List(
           Some(AdditionalField("status", humanReadableStatus)),
-          Some(AdditionalField("created", format(createdAt))),
-          Some(AdditionalField("started", format(date))),
-          Some(AdditionalField("finished", format(dateFinished))),
+          Some(AdditionalField("created", format(createdAt), isDate = Some(true))),
+          Some(AdditionalField("started", format(date), isDate = Some(true))),
+          Some(AdditionalField("finished", format(dateFinished), isDate = Some(true))),
           retriesLeft.map(rl => AdditionalField("retriesLeft", rl.toString)),
-          nextRetryAt.map(nra => AdditionalField("nextRetryAt", format(nra))),
+          nextRetryAt.map(nra => AdditionalField("nextRetryAt", format(nra), isDate = Some(true))),
         ).flatten
       )
     }
@@ -781,12 +787,6 @@ object Dtos {
   )
 
   final case class AddCommentRequest(scenarioName: ProcessName, versionId: VersionId, commentContent: String)
-
-  final case class DeprecatedEditCommentRequest(
-      scenarioName: ProcessName,
-      commentId: Long,
-      commentContent: String
-  )
 
   final case class EditCommentRequest(
       scenarioName: ProcessName,
@@ -881,10 +881,8 @@ object Dtos {
 
   }
 
-  private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-
-  private def format(instant: Instant)(implicit zoneId: ZoneId): String = {
-    instant.atZone(zoneId).format(dateTimeFormatter)
+  private def format(instant: Instant): String = {
+    instant.toString
   }
 
 }

@@ -12,10 +12,9 @@ import sttp.model.StatusCode._
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
-import java.time.ZoneId
 import java.util.UUID
 
-class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStreamEndpointProvider, zoneId: ZoneId)
+class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStreamEndpointProvider)
     extends BaseEndpointDefinitions {
 
   import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
@@ -85,7 +84,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
-      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities(zoneId))))
+      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
