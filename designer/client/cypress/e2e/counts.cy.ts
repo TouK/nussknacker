@@ -65,6 +65,9 @@ describe("Counts", () => {
         cy.get("[data-testid=window]")
             .contains(/^today$/i)
             .click();
+        cy.get("[data-testid=window]")
+            .contains(/^auto-refresh/i)
+            .click();
         cy.get("[data-testid=window]").contains(/^ok$/i).click();
 
         cy.get("[model-id=dead-end]").should("be.visible").trigger("dblclick");
@@ -80,10 +83,37 @@ describe("Counts", () => {
         cy.get("[data-testid=window]")
             .contains(/^today$/i)
             .click();
+        cy.get("[data-testid=window]")
+            .contains(/^auto-refresh/i)
+            .click();
+
         cy.get("[data-testid=window]").contains(/^ok$/i).click();
 
-        cy.getNode("event-generator")
-            .parent()
-            .matchImage({ screenshotConfig: { padding: 16 } });
+        cy.getNode("event-generator").parent().as("graph");
+
+        cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
+    });
+
+    it("should be cleaned with hide button", () => {
+        const fakeResponse = {
+            periodic: { all: 10, errors: 0, fragmentCounts: {} },
+            "dead-end": { all: 120, errors: 10, fragmentCounts: {} },
+        };
+
+        cy.intercept("GET", "/api/processCounts/*", fakeResponse);
+
+        cy.contains(/^counts$/i).click();
+        cy.get("[data-testid=window]")
+            .contains(/^today$/i)
+            .click();
+        cy.get("[data-testid=window]").contains(/^ok$/i).click();
+
+        cy.getNode("event-generator").parent().as("graph");
+        cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
+
+        cy.contains(/^hide$/i)
+            .should("be.enabled")
+            .click();
+        cy.get("@graph").matchImage({ screenshotConfig: { padding: 16 } });
     });
 });
