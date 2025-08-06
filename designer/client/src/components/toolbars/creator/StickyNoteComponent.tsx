@@ -8,7 +8,7 @@ const noteModel: StickyNoteNodeType = {
     id: "StickyNoteToAdd",
     type: StickyNoteType,
     isDisabled: false,
-    content: "",
+    content: "#### Double click to edit",
     dimensions: dimensions,
     color: STICKY_NOTE_DEFAULT_COLOR,
 };

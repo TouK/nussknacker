@@ -13,10 +13,10 @@ import MarkupNodeJSON = dia.MarkupNodeJSON;
 export const STICKY_NOTE_CONSTRAINTS = {
     MIN_WIDTH: 100,
     MAX_WIDTH: 3000,
-    DEFAULT_WIDTH: 300,
+    DEFAULT_WIDTH: 180,
     MIN_HEIGHT: 100,
     MAX_HEIGHT: 3000,
-    DEFAULT_HEIGHT: 250,
+    DEFAULT_HEIGHT: 130,
 } as const;
 
 export const BORDER_RADIUS = 3;
