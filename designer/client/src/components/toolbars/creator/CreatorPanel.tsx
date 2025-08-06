@@ -126,9 +126,7 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                         {...props}
                     />
                 )}
-                onSelect={(item) => {
-                    closeHandler(item);
-                }}
+                onSelect={closeHandler}
             />
             {isDynamic(side) ? <NodeCreationHandler panelSide={side} /> : null}
         </ToolbarWrapper>
