@@ -1,7 +1,6 @@
 import { Box, lighten } from "@mui/material";
 import type { BoxProps } from "@mui/material/Box/Box";
 import { getLuminance } from "@mui/system/colorManipulator";
-import { cloneDeep } from "lodash";
 import React, { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import "react-treeview/react-treeview.css";
@@ -170,10 +169,8 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
     useKey(
         "Enter",
         (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const { node, label } = groups[0].components[0];
-            props.onSelect({ ...cloneDeep(node), id: label });
+            // const { node, label } = groups[0].components[0];
+            // props.onSelect({ ...cloneDeep(node), id: label });
         },
         {
             when: groups.length === 1 && groups[0].components.length === 1,
