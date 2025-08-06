@@ -5,7 +5,7 @@ import { dia, elementTools } from "jointjs";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import type { StickyNoteNodeType } from "../../../types";
 import { Events } from "../types";
-import { CONTENT_PADDING, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
+import { MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
 
 export type ModelWithTool = {
     model: shapes.devs.Model;
@@ -27,8 +27,9 @@ export function makeStickyNoteElement(theme: Theme): (stickyNote: StickyNoteNode
                 },
                 foreignObject: {
                     width: stickyNote.dimensions.width,
-                    height: stickyNote.dimensions.height - CONTENT_PADDING * 4,
+                    height: stickyNote.dimensions.height,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
+                    y: 0,
                 },
                 border: {
                     stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).light,

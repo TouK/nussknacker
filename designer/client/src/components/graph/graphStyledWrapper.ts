@@ -1,9 +1,10 @@
+import type { CSSOthersObject } from "@emotion/serialize";
 import type { Theme } from "@mui/material";
 import { alpha, css, styled } from "@mui/material";
 import { blend } from "@mui/system";
 import type { CSSProperties } from "react";
 
-import { blendLighten, getNodeBorderColor } from "../../containers/theme/helpers";
+import { blendLighten, getBorderColor, getNodeBorderColor } from "../../containers/theme/helpers";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
     css({
@@ -224,27 +225,24 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
                 paddingRight: "10px",
             },
             ".sticky-note-markdown-editor": {
-                paddingLeft: theme.spacing(1),
-                paddingRight: theme.spacing(1),
-                backgroundColor: alpha(theme.palette.common.white, 0.3),
-                color: theme.palette.common.black,
-                fontFamily: theme.typography.fontFamily,
-                fontSize: theme.typography.body1.fontSize,
+                ...(theme.typography.body2 as CSSOthersObject),
+                backgroundColor: theme.palette.background.paper,
                 resize: "none",
                 width: "100%",
                 height: "100%",
                 borderStyle: "none",
-                borderColor: "Transparent",
                 whiteSpace: "pre-line",
                 overflow: "hidden",
             },
             ".sticky-note-markdown-editor:focus": {
-                outline: "none",
-                boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+                outline: `1px solid ${theme.palette.primary.main}`,
             },
             ".sticky-note-content": {
                 width: "100%",
                 height: "100%",
+            },
+            ".sticky-note-content:has(.sticky-note-markdown-editor:not(:disabled))": {
+                padding: theme.spacing(0.75),
             },
             ".joint-sticky-note-remove-tool > circle": {
                 fill: "#ca344c",
