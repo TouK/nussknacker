@@ -169,7 +169,7 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
 
     useKey(
         "Enter",
-        (event) => {
+        () => {
             const { node, label } = groups[0].components[0];
             props.onSelect({ ...cloneDeep(node), id: label });
         },
