@@ -24,7 +24,7 @@ export function findCellsInArea(paper: dia.Paper, area: g.Rect): dia.Cell[] {
     return [...elements, ...links];
 }
 
-export const findFreeSpaceForNode = (paper: dia.Paper, plainPoint: g.PlainPoint): g.Point => {
+export const findFreeSpaceForNode = (paper: dia.Paper, plainPoint = { x: 0, y: 0 }): g.Point => {
     const rect = new g.Rect(plainPoint.x, plainPoint.y, RECT_WIDTH, RECT_HEIGHT);
     if (findCellsInArea(paper, rect.clone().inflate(10)).length > 0) {
         return findFreeSpaceForNode(paper, rect.offset(RECT_HEIGHT).topLeft());
@@ -116,7 +116,9 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
                     if (!node) return;
 
                     const graph = graphGetter();
-                    const paper = graph.processGraphPaper;
+                    const paper = graph?.processGraphPaper;
+
+                    if (!paper) return;
 
                     const position: g.Point = findFreeSpaceForNode(paper, onPoint);
 
