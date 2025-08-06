@@ -148,6 +148,9 @@ services:
       - 3031:8081
     environment:
       JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
+      KAFKA_ADDRESS: "kafka:9092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      INFLUXDB_URL: "http://influxdb:8086"
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
       interval: 10s
