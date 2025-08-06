@@ -13,6 +13,7 @@ import { MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath } f
 
 const Visualization = loadable(() => import("./Visualization"), { fallback: <LoaderSpinner show={true} /> });
 const ScenariosTab = loadable(() => import("./ScenariosTab"), { fallback: <LoaderSpinner show={true} /> });
+const SettingsView = loadable(() => import("./settings/SettingsView"), { fallback: <LoaderSpinner show={true} /> });
 
 function DefaultRedirect() {
     const rootTab = useTabData("scenarios");
@@ -24,6 +25,7 @@ export default createRoutesFromElements(
     <Route path="/" element={<NussknackerApp />} errorElement={<RouteErrorFallbackComponent />}>
         <Route index element={<DefaultRedirect />} />
         <Route path="/404" element={<NotFound />} />
+        <Route path="/__settings" element={<SettingsView />} />
         <Route errorElement={<RouteErrorFallbackComponent />}>
             <Route path={`${VisualizationBasePath}/:processName`} element={<Visualization />} />
             <Route path={`${VisualizationBasePath}/:processName/:version`} element={<Visualization />} />
