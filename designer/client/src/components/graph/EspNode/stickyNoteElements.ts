@@ -4,7 +4,6 @@ import { dia, elementTools } from "jointjs";
 
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import type { StickyNoteNodeType } from "../../../types";
-import { stickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { Events } from "../types";
 import { CONTENT_PADDING, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
 
@@ -31,13 +30,8 @@ export function makeStickyNoteElement(theme: Theme): (stickyNote: StickyNoteNode
                     height: stickyNote.dimensions.height - CONTENT_PADDING * 4,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
-                icon: {
-                    xlinkHref: stickyNoteIcon(),
-                    opacity: 1,
-                    color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
-                },
                 border: {
-                    stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).dark,
+                    stroke: getStickyNoteBackgroundColor(theme, stickyNote.color).light,
                     strokeWidth: 1,
                 },
             },

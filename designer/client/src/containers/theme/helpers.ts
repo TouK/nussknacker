@@ -23,6 +23,8 @@ export function getStickyNoteBackgroundColor(theme: Theme, color: string) {
     return theme.palette.augmentColor({
         color: {
             main: isValidColor ? color : STICKY_NOTE_DEFAULT_COLOR,
+            dark: blendDarken(isValidColor ? color : STICKY_NOTE_DEFAULT_COLOR, 0.4),
+            light: blendLighten(isValidColor ? color : STICKY_NOTE_DEFAULT_COLOR, 0.4),
         },
     });
 }

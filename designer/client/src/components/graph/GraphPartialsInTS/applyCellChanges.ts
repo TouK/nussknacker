@@ -4,14 +4,17 @@ import type { dia } from "jointjs";
 import { flatMap, groupBy, isEqual } from "lodash";
 import { partition } from "lodash";
 
-import type { ScenarioGraph, ProcessDefinitionData } from "../../../types";
+import type { ScenarioGraph, ProcessDefinitionData, NodeType } from "../../../types";
 import { makeElement, makeLink } from "../EspNode";
+import { STICKY_NOTE_DEFAULT_COLOR } from "../EspNode/stickyNote";
 import type { ModelWithTool } from "../EspNode/stickyNoteElements";
 import { makeStickyNoteElement } from "../EspNode/stickyNoteElements";
 import NodeUtils from "../NodeUtils";
 import { StickyNoteType } from "../utils/stickyNotesUtils";
 import { isEdgeConnected } from "./EdgeUtils";
 import { updateChangedCells } from "./updateChangedCells";
+
+const overrideStickyNoteColorToDefault = (stickyNote: NodeType) => ({ ...stickyNote, color: STICKY_NOTE_DEFAULT_COLOR });
 
 export function applyCellChanges(
     paper: dia.Paper,
@@ -27,7 +30,9 @@ export function applyCellChanges(
     );
 
     const nodeElements = scenarioNodeElements.map(makeElement(processDefinitionData, theme));
-    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNoteElements.map(makeStickyNoteElement(theme));
+    const stickyNotesModelsWithTools: ModelWithTool[] = stickyNoteElements
+        .map(overrideStickyNoteColorToDefault)
+        .map(makeStickyNoteElement(theme));
     const stickyNotesModels = stickyNotesModelsWithTools.map((a) => a.model);
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);

@@ -19,9 +19,8 @@ export const STICKY_NOTE_CONSTRAINTS = {
     DEFAULT_HEIGHT: 130,
 } as const;
 
-export const BORDER_RADIUS = 3;
 export const CONTENT_PADDING = 5;
-export const STICKY_NOTE_DEFAULT_COLOR = "#eae672";
+export const STICKY_NOTE_DEFAULT_COLOR = "#8f7315";
 export const MARKDOWN_EDITOR_NAME = "markdown-editor";
 
 const border: dia.MarkupNodeJSON = {
@@ -33,7 +32,6 @@ const border: dia.MarkupNodeJSON = {
         height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
         strokeWidth: 1,
         fill: "none",
-        rx: BORDER_RADIUS,
     },
 };
 
