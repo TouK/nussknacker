@@ -57,7 +57,6 @@ describe("Node adding", () => {
         cy.contains(/sql source/i).should("be.visible");
         cy.get("@searchInput").wait("500").type("{enter}");
 
-        return;
         cy.get("[title='add source node']").should("not.exist");
         cy.get("[title='add new node']").should("be.visible").click({ force: true });
         cy.contains(/^filter$/i).click();
