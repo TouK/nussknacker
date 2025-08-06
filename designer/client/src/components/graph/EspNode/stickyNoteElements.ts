@@ -6,7 +6,7 @@ import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers"
 import type { StickyNoteNodeType } from "../../../types";
 import { stickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { Events } from "../types";
-import { CONTENT_PADDING, ICON_SIZE, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
+import { CONTENT_PADDING, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
 
 export type ModelWithTool = {
     model: shapes.devs.Model;
@@ -28,7 +28,7 @@ export function makeStickyNoteElement(theme: Theme): (stickyNote: StickyNoteNode
                 },
                 foreignObject: {
                     width: stickyNote.dimensions.width,
-                    height: stickyNote.dimensions.height - ICON_SIZE - CONTENT_PADDING * 4,
+                    height: stickyNote.dimensions.height - CONTENT_PADDING * 4,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
                 icon: {

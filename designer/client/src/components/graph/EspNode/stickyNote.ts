@@ -21,7 +21,6 @@ export const STICKY_NOTE_CONSTRAINTS = {
 
 export const BORDER_RADIUS = 3;
 export const CONTENT_PADDING = 5;
-export const ICON_SIZE = 20;
 export const STICKY_NOTE_DEFAULT_COLOR = "#eae672";
 export const MARKDOWN_EDITOR_NAME = "markdown-editor";
 
@@ -35,18 +34,6 @@ const border: dia.MarkupNodeJSON = {
         strokeWidth: 1,
         fill: "none",
         rx: BORDER_RADIUS,
-    },
-};
-
-const icon: dia.MarkupNodeJSON = {
-    selector: "icon",
-    tagName: "use",
-    attributes: {
-        opacity: 1,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
-        x: ICON_SIZE / 2,
-        y: ICON_SIZE / 2,
     },
 };
 
@@ -138,8 +125,8 @@ const defaults = (theme: Theme) =>
                 },
                 foreignObject: {
                     width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
-                    height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT - ICON_SIZE - CONTENT_PADDING * 4,
-                    y: CONTENT_PADDING * 4 + ICON_SIZE,
+                    height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT - CONTENT_PADDING * 4,
+                    y: CONTENT_PADDING * 4,
                     fill: getBorderColor(theme),
                 },
                 border: {
@@ -153,7 +140,7 @@ const defaults = (theme: Theme) =>
 
 const protoProps = (theme: Theme, stickyNote: StickyNoteNodeType) => {
     return {
-        markup: [body, border, foreignObject(stickyNote), icon],
+        markup: [body, border, foreignObject(stickyNote)],
     };
 };
 

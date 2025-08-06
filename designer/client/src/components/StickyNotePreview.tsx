@@ -3,9 +3,8 @@ import { alpha, useTheme } from "@mui/material";
 import React from "react";
 
 import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
-import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./graph/EspNode/esp";
+import { BORDER_RADIUS } from "./graph/EspNode/esp";
 import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "./graph/EspNode/stickyNote";
-import { PreloadedIcon, stickyNoteIconSrc } from "./toolbars/creator/ComponentIcon";
 
 const PREVIEW_SCALE = 0.9;
 const ACTIVE_ROTATION = 2;
@@ -40,24 +39,5 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
         backgroundColor: getStickyNoteBackgroundColor(theme, STICKY_NOTE_DEFAULT_COLOR).main,
     });
 
-    const imageStyles = css({
-        padding: iconSize / 2 - CONTENT_PADDING / 2,
-        margin: CONTENT_PADDING / 2,
-        borderRadius: BORDER_RADIUS,
-        width: iconBackgroundSize / 2,
-        height: iconBackgroundSize / 2,
-        color: theme.palette.common.black,
-        "> svg": {
-            height: iconSize,
-            width: iconSize,
-        },
-    });
-
-    return (
-        <div className={cx(colors, nodeStyles)}>
-            <div className={cx(imageStyles, colors)}>
-                <PreloadedIcon src={stickyNoteIconSrc} />
-            </div>
-        </div>
-    );
+    return <div className={cx(colors, nodeStyles)}></div>;
 }
