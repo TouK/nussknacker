@@ -967,9 +967,9 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         instant
       case Some(_) =>
         instant
-          .atZone(ZoneId.systemDefault())
-          .toLocalDateTime
           .atZone(ZoneId.of("UTC"))
+          .toLocalDateTime
+          .atZone(ZoneId.systemDefault())
           .toInstant
     }
   }
