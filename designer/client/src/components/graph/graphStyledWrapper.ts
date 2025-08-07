@@ -1,11 +1,11 @@
 import type { CSSOthersObject } from "@emotion/serialize";
 import type { Theme } from "@mui/material";
+import { lighten } from "@mui/material";
 import { alpha, css, styled } from "@mui/material";
 import { blend } from "@mui/system";
 import type { CSSProperties } from "react";
 
 import { blendLighten, getNodeBorderColor } from "../../containers/theme/helpers";
-import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
     css({
@@ -225,6 +225,16 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
                 height: "100%",
                 paddingLeft: "10px",
                 paddingRight: "10px",
+            },
+            ".sticky-note-markdown a": {
+                color: theme.palette.primary.main,
+                "&:hover": {
+                    color: lighten(theme.palette.primary.main, 0.25),
+                },
+                "&:focus": {
+                    color: theme.palette.primary.main,
+                    textDecoration: "none",
+                },
             },
             ".sticky-note-markdown-editor": {
                 ...(theme.typography.body2 as CSSOthersObject),
