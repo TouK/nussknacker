@@ -34,7 +34,7 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
     });
 
     const colors = css({
-        opacity: 0.5,
+        opacity: 0.8,
         borderColor: getBorderColor(theme),
         backgroundColor: getStickyNoteBackgroundColor(theme, STICKY_NOTE_DEFAULT_COLOR).main,
     });
