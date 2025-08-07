@@ -167,14 +167,11 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
         [data, definitionData, filters, textFilters],
     );
 
-    useKey(
-        "Enter",
-        () => {
-            const { node, label } = groups[0].components[0];
-            props.onSelect({ ...cloneDeep(node), id: label });
-        },
-        { when: groups.length === 1 && groups[0].components.length === 1 },
-    );
+    useKey("Enter", () => {
+        if (groups?.length !== 1 || groups[0].components?.length !== 1) return;
+        const { node, label } = groups[0].components[0];
+        props.onSelect({ ...cloneDeep(node), id: label });
+    });
 
     return (
         <StyledToolbox id="toolbox">
