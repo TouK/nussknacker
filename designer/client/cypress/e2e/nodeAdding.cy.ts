@@ -55,8 +55,9 @@ describe("Node adding", () => {
         cy.wait(500);
         cy.get("@searchInput").should("be.focused").type("sql");
         cy.contains(/event generator/i).should("not.exist");
-        cy.contains(/sql source/i).should("be.visible");
-        // .click();
+        cy.contains(/sql source/i)
+            .should("be.visible")
+            .click();
         // cy.wait(500);
         // cy.get("@searchInput").should("be.focused").type("{enter}");
 
