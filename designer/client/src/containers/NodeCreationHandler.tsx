@@ -120,7 +120,7 @@ export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: 
                 const graph = graphGetter();
                 const paper = graph.processGraphPaper;
 
-                const position: g.Point = findFreeSpaceForNode(paper, onPoint);
+                const position: g.Point = findFreeSpaceForNode(paper, point);
 
                 if (graph.isFragmentCreator(node)) {
                     return graph.createFragment(position, edge);

@@ -20,7 +20,7 @@ export type NodeSelectorActions =
           type: "CLOSE_NODE_SELECTOR";
           data: {
               side?: PanelSide;
-              onPoint?: g.PlainPoint;
+              point?: g.PlainPoint;
               node?: NodeType;
               edge?: Edge;
           };
@@ -52,7 +52,7 @@ export const closeNodeSelector = (side: PanelSide): AppAction => ({
     data: { side },
 });
 
-export const selectComponent = (side: PanelSide, node: NodeType, onPoint, edge): AppAction => ({
+export const selectComponent = (side: PanelSide, node: NodeType, point, edge): AppAction => ({
     type: "CLOSE_NODE_SELECTOR",
-    data: { side, node, onPoint, edge },
+    data: { side, node, point, edge },
 });
