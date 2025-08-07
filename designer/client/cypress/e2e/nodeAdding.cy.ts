@@ -55,7 +55,7 @@ describe("Node adding", () => {
         cy.get("@searchInput").should("be.focused").type("sql");
         cy.contains(/event generator/i).should("not.exist");
         cy.contains(/sql source/i).should("be.visible");
-        cy.wait("500");
+        cy.wait(500);
         cy.realPress("{enter}");
 
         cy.get("[title='add source node']").should("not.exist");
