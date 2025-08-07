@@ -109,7 +109,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
     useEffect(
         () =>
             dispatch(
-                addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, onPoint, side, edge } }, api) => {
+                addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, point, side, edge } }, api) => {
                     if (side !== panelSide) return;
                     toggleCollapse();
 
@@ -118,7 +118,7 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
                     const graph = graphGetter();
                     const paper = graph.processGraphPaper;
 
-                    const position: g.Point = findFreeSpaceForNode(paper, onPoint);
+                    const position: g.Point = findFreeSpaceForNode(paper, point);
 
                     if (graph.isFragmentCreator(node)) {
                         return graph.createFragment(position, edge);
