@@ -5,6 +5,7 @@ import { blend } from "@mui/system";
 import type { CSSProperties } from "react";
 
 import { blendLighten, getNodeBorderColor } from "../../containers/theme/helpers";
+import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
     css({
@@ -219,6 +220,7 @@ export const GraphStyledWrapper = styled("div")(({ theme }) => {
                 },
             },
             ".sticky-note-markdown": {
+                ...(theme.typography.body2 as CSSOthersObject),
                 width: "100%",
                 height: "100%",
                 paddingLeft: "10px",
