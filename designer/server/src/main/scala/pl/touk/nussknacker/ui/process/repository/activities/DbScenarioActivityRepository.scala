@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 
 import java.sql.Timestamp
-import java.time.{Clock, Instant}
+import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -920,8 +920,12 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
             ScheduledExecutionStatus.withNameEither(_).left.map(_.getMessage)
           )
           dateFinished <- entity.finishedAt.toRight("Missing finishedAt field").map(_.toInstant)
-          createdAt    <- additionalPropertyFromEntity(entity, "createdAt").map(Instant.parse)
-          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
+          createdAt <- additionalPropertyFromEntity(entity, "createdAt").map(
+            parseInstantWithFallbackForImportedActivities(entity)
+          )
+          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(
+            parseInstantWithFallbackForImportedActivities(entity)
+          )
           retriesLeft = optionalAdditionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntOption)
         } yield ScenarioActivity.PerformedScheduledExecution(
           scenarioId = scenarioIdFromEntity(entity),
@@ -949,6 +953,24 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         )).map((entity.id, _))
       case ScenarioActivityType.UnknownActivityType(unknownType) =>
         Left(s"Unknown activity type: $unknownType")
+    }
+  }
+
+  private def parseInstantWithFallbackForImportedActivities(
+      entity: ScenarioActivityEntityData
+  )(stringValue: String): Instant = {
+    val instant: Instant = Instant.parse(stringValue)
+    // PerformedScheduledExecution activities migrated from scheduled_scenario_deployments table
+    // have invalid createdAt and nextRetryAt values, moved by the time zone offset
+    optionalAdditionalPropertyFromEntity(entity, "imported_deployment_id") match {
+      case None =>
+        instant
+      case Some(_) =>
+        instant
+          .atZone(ZoneId.systemDefault())
+          .toLocalDateTime
+          .atZone(ZoneId.of("UTC"))
+          .toInstant
     }
   }
 
