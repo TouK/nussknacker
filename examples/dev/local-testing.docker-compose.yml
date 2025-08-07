@@ -133,7 +133,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 768M
+          memory: 256M
 
   ### FLINK-related services
 
@@ -141,7 +141,7 @@ services:
     build:
       context: flink/
       args:
-        TOUK_FLINK_VERSION: "1.1.4-flink1.20.2-scala_2.12"
+        FLINK_VERSION: "1.20.2-scala_2.12-java11"
     restart: unless-stopped
     command: jobmanager
     ports:
@@ -159,7 +159,7 @@ services:
     build:
       context: flink/
       args:
-        TOUK_FLINK_VERSION: "1.1.4-flink1.20.2-scala_2.12"
+        FLINK_VERSION: "1.20.2-scala_2.12-java11"
     restart: unless-stopped
     command: taskmanager
     environment:
