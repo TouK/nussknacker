@@ -1,5 +1,5 @@
 import { AddBoxOutlined } from "@mui/icons-material";
-import { Box, Fade, IconButton } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -74,11 +74,11 @@ export const AddComponentsButtons = () => {
                     justifyContent: "center",
                 }}
             >
-                <Fade in={!scenario.scenarioGraph.nodes.length}>
+                {scenario.scenarioGraph.nodes.length ? null : (
                     <Box>
                         <OpenButton sourceOnly />
                     </Box>
-                </Fade>
+                )}
             </Overlay>
         </>
     );
