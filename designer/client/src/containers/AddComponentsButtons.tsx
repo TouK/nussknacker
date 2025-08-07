@@ -74,7 +74,7 @@ export const AddComponentsButtons = () => {
                     justifyContent: "center",
                 }}
             >
-                <Fade in={!scenario.scenarioGraph.nodes.length} unmountOnExit mountOnEnter>
+                <Fade in={!scenario.scenarioGraph.nodes.length}>
                     <Box>
                         <OpenButton sourceOnly />
                     </Box>
