@@ -93,10 +93,10 @@ object ScenarioStatusDto {
   implicit val scenarioActionNameEncoder: Encoder[ScenarioActionName] =
     Encoder.encodeString.contramap(_.entryName)
   implicit val scenarioActionNameDecoder: Decoder[ScenarioActionName] =
-    Decoder.decodeString.map(ScenarioActionName.withName)
+    Decoder.decodeString.map(ScenarioActionName.withNameWithFallback)
 
   implicit val scenarioActionNameKeyDecoder: KeyDecoder[ScenarioActionName] =
-    (key: String) => Some(ScenarioActionName.withName(key))
+    (key: String) => Some(ScenarioActionName.withNameWithFallback(key))
   implicit val scenarioActionNameKeyEncoder: KeyEncoder[ScenarioActionName] = _.entryName
 
 }
