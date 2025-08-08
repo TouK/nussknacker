@@ -284,7 +284,7 @@ class ScenarioActivityApiHttpService(
           case _                                        => None
         }
         limited = limit match {
-          case Some(limit) => schedulingRelatedActivities.take(limit)
+          case Some(limit) => schedulingRelatedActivities.sortBy(_.date).takeRight(limit)
           case None        => schedulingRelatedActivities
         }
       } yield limited
