@@ -78,10 +78,11 @@ object ScenarioActionName extends Enum[ScenarioActionName] {
 
   implicit val encoder: Encoder[ScenarioActionName] = Encoder.encodeString.contramap(_.value)
   implicit val decoder: Decoder[ScenarioActionName] =
-    Decoder.decodeString.emap(ScenarioActionName.withNameEither(_).left.map(_.getMessage()))
+    Decoder.decodeString.emap(ScenarioActionName.withNameEitherWithFallback(_).left.map(_.getMessage()))
 
   implicit val keyEncoder: KeyEncoder[ScenarioActionName] = KeyEncoder.encodeKeyString.contramap(_.value)
-  implicit val keyDecoder: KeyDecoder[ScenarioActionName] = KeyDecoder.decodeKeyString.map(ScenarioActionName.withName)
+  implicit val keyDecoder: KeyDecoder[ScenarioActionName] =
+    KeyDecoder.decodeKeyString.map(ScenarioActionName.withNameWithFallback)
 
   case object Deploy         extends ScenarioActionName("DEPLOY")
   case object Redeploy       extends ScenarioActionName("REDEPLOY")
@@ -97,6 +98,22 @@ object ScenarioActionName extends Enum[ScenarioActionName] {
   val ScenarioStatusActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Redeploy)
 
   override def values: immutable.IndexedSeq[ScenarioActionName] = findValues
+
+  private val legacyRunOffScheduleName = "run now"
+
+  def withNameWithFallback(str: String): ScenarioActionName = {
+    str match {
+      case `legacyRunOffScheduleName` => RunOffSchedule
+      case other                      => withName(other)
+    }
+  }
+
+  def withNameEitherWithFallback(str: String): Either[NoSuchMember[ScenarioActionName], ScenarioActionName] = {
+    str match {
+      case `legacyRunOffScheduleName` => Right(RunOffSchedule)
+      case other                      => withNameEither(other)
+    }
+  }
 
 }
 
