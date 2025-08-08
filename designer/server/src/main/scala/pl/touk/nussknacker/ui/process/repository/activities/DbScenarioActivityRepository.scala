@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 
 import java.sql.Timestamp
-import java.time.{Clock, Instant}
+import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -349,7 +349,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
   private lazy val attachmentInsertQuery =
     attachmentsTable returning attachmentsTable.map(_.id) into ((item, id) => item.copy(id = id))
 
-  private def modifyActivityByActivityId[ERROR](
+  def modifyActivityByActivityId[ERROR](
       activityId: ScenarioActivityId,
       activityDoesNotExistError: ERROR,
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
@@ -473,7 +473,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       lastModifiedByUserName: Option[String] = None,
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
   ): ScenarioActivityEntityData = {
-    val now = Timestamp.from(clock.instant())
+    val date = Timestamp.from(scenarioActivity.date)
     ScenarioActivityEntityData(
       id = -1,
       activityType = scenarioActivity.activityType,
@@ -484,8 +484,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       impersonatedByUserId = scenarioActivity.user.impersonatedByUserId.map(_.value),
       impersonatedByUserName = scenarioActivity.user.impersonatedByUserName.map(_.value),
       lastModifiedByUserName = lastModifiedByUserName,
-      lastModifiedAt = Some(now),
-      createdAt = now,
+      lastModifiedAt = Some(date),
+      createdAt = date,
       scenarioVersion = scenarioActivity.scenarioVersionId,
       comment = comment,
       attachmentId = attachmentId,
@@ -920,8 +920,12 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
             ScheduledExecutionStatus.withNameEither(_).left.map(_.getMessage)
           )
           dateFinished <- entity.finishedAt.toRight("Missing finishedAt field").map(_.toInstant)
-          createdAt    <- additionalPropertyFromEntity(entity, "createdAt").map(Instant.parse)
-          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
+          createdAt <- additionalPropertyFromEntity(entity, "createdAt").map(
+            parseInstantWithFallbackForImportedActivities(entity)
+          )
+          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(
+            parseInstantWithFallbackForImportedActivities(entity)
+          )
           retriesLeft = optionalAdditionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntOption)
         } yield ScenarioActivity.PerformedScheduledExecution(
           scenarioId = scenarioIdFromEntity(entity),
@@ -952,6 +956,24 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     }
   }
 
+  private def parseInstantWithFallbackForImportedActivities(
+      entity: ScenarioActivityEntityData
+  )(stringValue: String): Instant = {
+    val instant: Instant = Instant.parse(stringValue)
+    // PerformedScheduledExecution activities migrated from scheduled_scenario_deployments table
+    // have invalid createdAt and nextRetryAt values, moved by the time zone offset
+    optionalAdditionalPropertyFromEntity(entity, "imported_deployment_id") match {
+      case None =>
+        instant
+      case Some(_) =>
+        instant
+          .atZone(ZoneId.of("UTC"))
+          .toLocalDateTime
+          .atZone(ZoneId.systemDefault())
+          .toInstant
+    }
+  }
+
   private def toDto(attachmentEntityData: AttachmentEntityData): Legacy.Attachment = {
     Legacy.Attachment(
       id = attachmentEntityData.id,
@@ -976,6 +998,12 @@ object DbScenarioActivityRepository {
     new ScenarioActivityRepositoryAuditLogDecorator(
       new DbScenarioActivityRepository(dbRef, clock)
     )
+  }
+
+  def createWithoutAuditDecorator(dbRef: DbRef, clock: Clock)(
+      implicit executionContext: ExecutionContext,
+  ): DbScenarioActivityRepository = {
+    new DbScenarioActivityRepository(dbRef, clock)
   }
 
 }
