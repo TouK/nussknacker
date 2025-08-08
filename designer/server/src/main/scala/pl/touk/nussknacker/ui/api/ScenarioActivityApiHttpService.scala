@@ -244,7 +244,7 @@ class ScenarioActivityApiHttpService(
     EitherT.right {
       for {
         activities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
-        schedulingRelatedAndOtherActivities = activities.sortBy(_.date).partition {
+        schedulingRelatedAndOtherActivities = activities.partition {
           case _: SchedulingRelatedActivity => true
           case _                            => false
         }
@@ -267,7 +267,7 @@ class ScenarioActivityApiHttpService(
             }
           case _ => true
         }
-        sortedResult = successfulActivities.map(toDto)
+        sortedResult = successfulActivities.map(toDto).sortBy(_.date)
       } yield sortedResult
     }
   }
@@ -284,7 +284,7 @@ class ScenarioActivityApiHttpService(
           case _                                        => None
         }
         limited = limit match {
-          case Some(limit) => schedulingRelatedActivities.takeRight(limit)
+          case Some(limit) => schedulingRelatedActivities.sortBy(_.date).takeRight(limit)
           case None        => schedulingRelatedActivities
         }
       } yield limited

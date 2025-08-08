@@ -349,7 +349,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
   private lazy val attachmentInsertQuery =
     attachmentsTable returning attachmentsTable.map(_.id) into ((item, id) => item.copy(id = id))
 
-  private def modifyActivityByActivityId[ERROR](
+  def modifyActivityByActivityId[ERROR](
       activityId: ScenarioActivityId,
       activityDoesNotExistError: ERROR,
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
@@ -473,7 +473,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       lastModifiedByUserName: Option[String] = None,
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
   ): ScenarioActivityEntityData = {
-    val now = Timestamp.from(clock.instant())
+    val date = Timestamp.from(scenarioActivity.date)
     ScenarioActivityEntityData(
       id = -1,
       activityType = scenarioActivity.activityType,
@@ -484,8 +484,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       impersonatedByUserId = scenarioActivity.user.impersonatedByUserId.map(_.value),
       impersonatedByUserName = scenarioActivity.user.impersonatedByUserName.map(_.value),
       lastModifiedByUserName = lastModifiedByUserName,
-      lastModifiedAt = Some(now),
-      createdAt = now,
+      lastModifiedAt = Some(date),
+      createdAt = date,
       scenarioVersion = scenarioActivity.scenarioVersionId,
       comment = comment,
       attachmentId = attachmentId,
@@ -998,6 +998,12 @@ object DbScenarioActivityRepository {
     new ScenarioActivityRepositoryAuditLogDecorator(
       new DbScenarioActivityRepository(dbRef, clock)
     )
+  }
+
+  def createWithoutAuditDecorator(dbRef: DbRef, clock: Clock)(
+      implicit executionContext: ExecutionContext,
+  ): DbScenarioActivityRepository = {
+    new DbScenarioActivityRepository(dbRef, clock)
   }
 
 }
