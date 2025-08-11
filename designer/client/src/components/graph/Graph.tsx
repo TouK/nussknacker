@@ -1,7 +1,7 @@
 import type { Theme } from "@mui/material";
 import { dia, g, shapes } from "jointjs";
 import "jointjs/dist/joint.min.css";
-import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
+import { cloneDeep, debounce, isEmpty, isEqual, keys, without } from "lodash";
 import React from "react";
 import type { UseTranslationResponse } from "react-i18next";
 
@@ -531,22 +531,14 @@ export class Graph extends React.Component<Props> {
 
     changeLayoutIfNeeded = (): void => {
         if (this.props.isFragment === true) return;
-
-        const { layout, dispatch } = this.props;
-
-        const elements = this.graph.getElements().filter(isModelOrStickyNote);
-        const collection = elements.map((el) => ({
-            id: el.id,
-            position: el.position().toJSON(),
-        }));
-
-        const iteratee = (e) => e.id;
-        const newLayout = sortBy(collection, iteratee);
-        const oldLayout = sortBy(layout, iteratee);
-
-        if (!isEqual(oldLayout, newLayout)) {
-            dispatch(layoutChanged(newLayout));
-        }
+        const layout = this.graph
+            .getElements()
+            .filter(isModelOrStickyNote)
+            .map((el) => ({
+                id: el.id.toString(),
+                position: el.position().toJSON(),
+            }));
+        this.props.dispatch(layoutChanged(layout));
     };
 
     hooverHandling(): void {

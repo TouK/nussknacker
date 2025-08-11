@@ -1,8 +1,8 @@
+import { isEqual, sortBy } from "lodash";
+
 import { getLayout } from "../../../reducers/selectors/layout";
 import type { NodeId } from "../../../types";
 import type { ThunkAction } from "../../reduxTypes";
-import type { WithConfigId } from "../toolbars";
-import type { PanelSide } from "./panelSide";
 
 export type Position = {
     x: number;
@@ -13,34 +13,25 @@ export type NodePosition = {
     position: Position;
 };
 export type Layout = NodePosition[];
-export type GraphLayoutFunction = () => void;
-export type LayoutChangedAction = {
-    layout: Layout;
-    type: "LAYOUT_CHANGED";
-};
-
-type TogglePanelAction = {
-    type: "TOGGLE_PANEL";
-    side: PanelSide;
-};
-
-export type PanelActions = WithConfigId<TogglePanelAction>;
+export type LayoutActions = { type: "LAYOUT" } | { type: "LAYOUT_CHANGED"; layout: Layout } | { type: "LAYOUT_RELOADED"; layout: Layout };
 
 export function layoutChanged(layout?: Layout): ThunkAction {
     return (dispatch, getState) => {
-        dispatch({
-            type: "LAYOUT_CHANGED",
-            layout: layout || getLayout(getState()),
-        });
+        const newLayout = sortBy(layout || [], (e) => e.id);
+        const oldLayout = sortBy(getLayout(getState()) || [], (e) => e.id);
+
+        if (newLayout.length < 1 || isEqual(newLayout, oldLayout)) {
+            return dispatch({ type: "LAYOUT_RELOADED", layout: oldLayout });
+        }
+
+        dispatch({ type: "LAYOUT_CHANGED", layout: newLayout });
     };
 }
 
-export function layout(graphLayoutFunction: GraphLayoutFunction): ThunkAction {
+export function layout(graphLayoutFunction: () => void): ThunkAction {
     return (dispatch) => {
         graphLayoutFunction();
 
-        return dispatch({
-            type: "LAYOUT",
-        });
+        return dispatch({ type: "LAYOUT" });
     };
 }
