@@ -101,31 +101,9 @@ class SchemedKafkaScenarioTestingSpec
   }
 
   test("Should pass correct timestamp from test data") {
-    val topic             = UnspecializedTopicName("address")
-    val expectedTimestamp = System.currentTimeMillis()
-    val inputMeta = InputMeta(
-      key = null,
-      topic = topic.name,
-      partition = 0,
-      offset = 1,
-      timestamp = expectedTimestamp,
-      timestampType = TimestampType.CREATE_TIME,
-      headers = Collections.emptyMap(),
-      leaderEpoch = 0
-    )
-    val inputMetaAsJson = Json.fromFields(
-      Map(
-        "key"           -> Json.Null,
-        "topic"         -> Json.fromString(topic.name),
-        "partition"     -> Json.fromInt(0),
-        "offset"        -> Json.fromInt(1),
-        "timestamp"     -> Json.fromLong(expectedTimestamp),
-        "timestampType" -> Json.fromString("CreateTime"),
-        "headers"       -> Json.fromFields(List.empty),
-        "leaderEpoch"   -> Json.fromInt(0)
-      )
-    )
-    val id: Int = registerSchema(topic, Address.schema)
+    val topic          = UnspecializedTopicName("address")
+    val givenTimestamp = System.currentTimeMillis()
+    val id             = registerSchema(topic, Address.schema)
 
     val process = ScenarioBuilder
       .streaming("test")
@@ -138,19 +116,42 @@ class SchemedKafkaScenarioTestingSpec
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
-    val consumerRecord = ToJsonEncoder.default
-      .encodeUnsafe(inputMeta)
-      .mapObject(
-        _.add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa")))
+    val consumerRecordJson =
+      Json.fromFields(
+        Map(
+          "key"           -> Json.Null,
+          "topic"         -> Json.fromString(topic.name),
+          "partition"     -> Json.fromInt(0),
+          "offset"        -> Json.fromInt(1),
+          "timestamp"     -> Json.fromLong(givenTimestamp),
+          "timestampType" -> Json.fromString("CreateTime"),
+          "headers"       -> Json.fromFields(List.empty),
+          "leaderEpoch"   -> Json.fromInt(0),
+          "value"         -> obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))
+        )
       )
-    val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
-    val scenarioTestData = ScenarioTestData(ScenarioTestSourceSpecificFormatJsonRecord("start", testRecordJson, timestamp = None) :: Nil)
+    val testRecordJson =
+      obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecordJson)
+    val scenarioTestData =
+      ScenarioTestData(ScenarioTestSourceSpecificFormatJsonRecord("start", testRecordJson, timestamp = None) :: Nil)
 
     val results = testRunner.runTests(process, scenarioTestData).futureValue
 
     val testResultVars = results.nodeResults("end").head.variables
-    testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
-    testResultVars("inputMeta").hcursor.downField("pretty").focus.value shouldBe inputMetaAsJson
+    testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe givenTimestamp
+    val expectedInputMetaInTestResults = Json.fromFields(
+      Map(
+        "key"           -> Json.Null,
+        "topic"         -> Json.fromString(topic.name),
+        "partition"     -> Json.fromInt(0),
+        "offset"        -> Json.fromInt(1),
+        "timestamp"     -> Json.fromLong(givenTimestamp),
+        "timestampType" -> Json.fromString("CREATE_TIME"),
+        "headers"       -> Json.fromFields(List.empty),
+        "leaderEpoch"   -> Json.fromInt(0)
+      )
+    )
+    testResultVars("inputMeta").hcursor.downField("pretty").focus.value shouldBe expectedInputMetaInTestResults
   }
 
   test("Should pass parameters correctly and use them in scenario test") {
