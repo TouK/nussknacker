@@ -53,12 +53,11 @@ export function deleteSelection(selectionState: string[]): ThunkAction {
         const scenarioGraph = getScenarioGraph(getState());
         const selectedNodes = NodeUtils.getAllNodesById(selectionState, scenarioGraph).map((n) => n.id);
 
-        batchGroupBy.startOrContinue();
+        batchGroupBy.startOrExtend();
         dispatch(deleteNodes(selectedNodes));
         dispatch({
             type: "DELETE_SELECTION",
         });
-        batchGroupBy.end();
     };
 }
 
@@ -68,7 +67,6 @@ const clearTextSelection = () => window.getSelection().removeAllRanges();
 export function toggleSelection(nodeIds: string | string[], quiet?: boolean): ThunkAction {
     return (dispatch) => {
         if (!quiet) {
-            batchGroupBy.end();
             clearTextSelection();
         }
         dispatch({
@@ -81,7 +79,6 @@ export function toggleSelection(nodeIds: string | string[], quiet?: boolean): Th
 export function expandSelection(nodeIds: string | string[], quiet?: boolean): ThunkAction {
     return (dispatch) => {
         if (!quiet) {
-            batchGroupBy.end();
             clearTextSelection();
         }
         dispatch({
@@ -93,7 +90,6 @@ export function expandSelection(nodeIds: string | string[], quiet?: boolean): Th
 
 export function resetSelection(...nodeIds: string[]): ThunkAction {
     return (dispatch) => {
-        batchGroupBy.end();
         clearTextSelection();
         dispatch({
             type: "RESET_SELECTION",

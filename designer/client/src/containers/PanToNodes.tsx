@@ -1,5 +1,4 @@
 import type { dia } from "jointjs";
-import { g } from "jointjs";
 import { fromEvents, stream } from "kefir";
 import { useEffect } from "react";
 
@@ -20,8 +19,8 @@ const frameStream = stream<DOMHighResTimeStamp, unknown>((emitter) => {
     return () => cancelAnimationFrame(frame);
 });
 
-function getCellsBox(paper: dia.Paper, cells: dia.Cell[]) {
-    return cells.reduce((rect, cell) => rect.union(paper.findViewByModel(cell).getBBox()), new g.Rect());
+function getCellsBox(paper: dia.Paper, [entry, ...cells]: dia.Cell[]) {
+    return cells.reduce((rect, cell) => rect.union(paper.findViewByModel(cell).getBBox()), paper.findViewByModel(entry).getBBox());
 }
 
 export function PanToNodes() {
@@ -31,9 +30,10 @@ export function PanToNodes() {
         const instance = graphGetter();
         if (!instance?.graph) return;
         const { graph, viewport, processGraphPaper: paper, fit } = instance;
-        return fromEvents(graph, Events.ADD, (cell: dia.Cell) => cell)
+
+        const addSubscription = fromEvents(graph, Events.ADD, (cell: dia.Cell) => cell)
             .filter(isModelElement)
-            .bufferBy(frameStream.skip(2))
+            .bufferBy(frameStream.skip(5))
             .filter((cells) => cells.length > 0)
             .observe((cells) => {
                 const viewBox = viewport.clone().inflate(viewport.width * -0.2, viewport.height * -0.2);
@@ -42,7 +42,22 @@ export function PanToNodes() {
                     const cellsToFit = cells.flatMap((cell) => getNeighbors(graph, cell, { depth: 2, withSelf: true }));
                     fit(cellsToFit.length > 1 ? cellsToFit : null);
                 }
-            }).unsubscribe;
+            });
+
+        const removeSubscription = fromEvents(graph, Events.REMOVE, (cell: dia.Cell) => cell)
+            .filter(isModelElement)
+            .bufferBy(frameStream.skip(5))
+            .filter((cells) => cells.length > 0)
+            .observe(() => {
+                const viewBox = viewport.clone().inflate(viewport.width * -0.25, viewport.height * -0.25);
+                if (paper.findViewsInArea(paper.clientToLocalRect(viewBox)).length > 0) return;
+                fit();
+            });
+
+        return () => {
+            addSubscription.unsubscribe();
+            removeSubscription.unsubscribe();
+        };
     }, [graphGetter]);
 
     return null;
