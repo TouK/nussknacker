@@ -5,17 +5,25 @@ import { NavLink } from "react-router-dom";
 import type { DynamicTabData } from "../../containers/DynamicTab";
 
 function UnstyledTabElement({ tab, ...props }: { tab: DynamicTabData; className?: string }): JSX.Element {
-    const { id, type, url, title } = tab;
+    const { id, type, url, title, currentLocationInQuery } = tab;
+    const fullUrl =
+        !currentLocationInQuery || !currentLocationInQuery.enabled
+            ? url
+            : (() => {
+                  const enrichedUrl = new URL(url);
+                  enrichedUrl.searchParams.set(currentLocationInQuery.parameterName, window.location.href);
+                  return enrichedUrl.toString();
+              })();
     switch (type) {
         case "Local":
             return (
-                <NavLink to={url} {...props}>
+                <NavLink to={fullUrl} {...props}>
                     {title}
                 </NavLink>
             );
         case "Url":
             return (
-                <a href={url} target={"_blank"} rel="noreferrer" {...props}>
+                <a href={fullUrl} target={"_blank"} rel="noreferrer" {...props}>
                     {title}
                 </a>
             );
