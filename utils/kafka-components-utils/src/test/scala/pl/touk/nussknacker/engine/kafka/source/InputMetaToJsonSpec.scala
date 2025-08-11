@@ -33,7 +33,7 @@ class InputMetaToJsonSpec extends AnyFunSuite with Matchers with TableDrivenProp
         "partition"     -> fromInt(1),
         "offset"        -> fromLong(10),
         "timestamp"     -> fromLong(1000),
-        "timestampType" -> fromString("CreateTime"),
+        "timestampType" -> fromString("CREATE_TIME"),
         "headers"       -> obj("A" -> fromString("B")),
         "leaderEpoch"   -> fromInt(10)
       )

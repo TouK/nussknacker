@@ -374,7 +374,7 @@ class SchemalessKafkaJsonTypeTests
        |        ],
        |        "defaultValue": {
        |          "language": "json",
-       |          "expression": "{\\n  \\"input\\" : {\\n    \\"name\\" : \\"\\"\\n  },\\n  \\"inputMeta\\" : {\\n    \\"key\\" : \\"\\",\\n    \\"topic\\" : \\"\\",\\n    \\"partition\\" : 0,\\n    \\"offset\\" : 0,\\n    \\"timestamp\\" : 0,\\n    \\"timestampType\\" : {\\n      \\n    },\\n    \\"headers\\" : {\\n      \\"field\\" : \\"\\"\\n    },\\n    \\"leaderEpoch\\" : 0\\n  }\\n}"
+       |          "expression": "{\\n  \\"input\\" : {\\n    \\"name\\" : \\"\\"\\n  },\\n  \\"inputMeta\\" : {\\n    \\"key\\" : \\"\\",\\n    \\"topic\\" : \\"\\",\\n    \\"partition\\" : 0,\\n    \\"offset\\" : 0,\\n    \\"timestamp\\" : 0,\\n    \\"timestampType\\" : \\"NO_TIMESTAMP_TYPE\\",\\n    \\"headers\\" : {\\n      \\"field\\" : \\"\\"\\n    },\\n    \\"leaderEpoch\\" : 0\\n  }\\n}"
        |        },
        |        "additionalVariables": {},
        |        "variablesToHide": [],

@@ -88,7 +88,7 @@ private[encoders] trait ToJsonEncoderWithFallback {
     case vals: Iterable[_] =>
       encodeIterable(vals)
     case value: Enum[_] =>
-      fromString(value.toString).validNel
+      fromString(value.name()).validNel
     case value: DisplayJson =>
       value.asJson.validNel
     case value =>
