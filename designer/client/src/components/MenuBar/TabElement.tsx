@@ -6,13 +6,15 @@ import type { DynamicTabData } from "../../containers/DynamicTab";
 
 function UnstyledTabElement({ tab, ...props }: { tab: DynamicTabData; className?: string }): JSX.Element {
     const { id, type, url, title, currentLocationInQuery } = tab;
-    const location = useLocation();
+    const originalLocation = useLocation();
+    const fullOriginalPath = originalLocation.pathname + originalLocation.search + originalLocation.hash;
+    const fullOriginalUrl = window.location.origin + fullOriginalPath;
     const fullUrl =
         !currentLocationInQuery || !currentLocationInQuery.enabled
             ? url
             : (() => {
                   const enrichedUrl = new URL(url);
-                  enrichedUrl.searchParams.set(currentLocationInQuery.parameterName, location.pathname);
+                  enrichedUrl.searchParams.set(currentLocationInQuery.parameterName, fullOriginalUrl);
                   return enrichedUrl.toString();
               })();
     switch (type) {
