@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaListMap, RichTupleList}
 
 object InitialJsonFromTypingResultDeterminer {
@@ -64,8 +65,8 @@ object InitialJsonFromTypingResultDeterminer {
       defaultJsonForDecimalNumber
     case TypedClass(clazz, _) if StandardTypesClasses.isFloatingPointNumber(clazz) =>
       defaultJsonForFloatingPointNumber
-    case TypedClass(clazz, _) if StandardTypesClasses.isFloatingPointNumber(clazz) =>
-      defaultJsonForFloatingPointNumber
+    case TypedClass(clazz, _) if clazz.isEnum && ReflectUtils.javaEnumNames(clazz).nonEmpty =>
+      Json.fromString(ReflectUtils.javaEnumNames(clazz).head)
     case TypedClass(StandardClass(defaultJson), _) => defaultJson
   }
 

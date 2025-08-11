@@ -38,4 +38,11 @@ object ReflectUtils {
     }
   }
 
+  def javaEnumNames(clazz: Class[_]): Array[String] = {
+    if (!clazz.isEnum)
+      throw new IllegalArgumentException(s"Class ${clazz.getName} is not an Enum")
+
+    clazz.asInstanceOf[Class[Enum[_]]].getEnumConstants.map(_.name())
+  }
+
 }
