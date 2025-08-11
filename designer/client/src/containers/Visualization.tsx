@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { clearProcess, expandSelection, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
+import { findFreeSpaceForNode } from "../actions/nk/findFreeSpaceForNode";
 import { useDecodedParams } from "../common/routerUtils";
 import { extractCountParams } from "../common/VisualizationUrl";
 import type { Graph } from "../components/graph/Graph";
@@ -37,7 +38,6 @@ import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { LiveDataThroughputs } from "./liveData/LiveDataThroughputs";
 import { useLiveDataIfNeeded } from "./liveData/useLiveDataIfNeeded";
-import { findFreeSpaceForNode } from "./NodeCreationHandler";
 import { GraphPage } from "./Page";
 import { PanToNodes } from "./PanToNodes";
 import { VisualizationBasePath } from "./paths";
@@ -168,8 +168,9 @@ function Visualization() {
     const nothingToSave = useAppSelector(isPristine);
 
     const getPastePosition = useCallback(() => {
-        const paper = getGraphInstance()?.processGraphPaper;
-        const point = paper?.getContentArea()?.topLeft().snapToGrid(1, 1) || { x: 0, y: 0 };
+        const instance = getGraphInstance();
+        const paper = instance?.processGraphPaper;
+        const point = paper?.clientToLocalRect(instance.viewport).center().snapToGrid(1, 1) || { x: 0, y: 0 };
         return findFreeSpaceForNode(paper, point);
     }, [getGraphInstance]);
 

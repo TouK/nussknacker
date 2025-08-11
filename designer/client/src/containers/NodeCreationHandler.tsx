@@ -1,9 +1,7 @@
-import type { dia } from "jointjs";
 import { g } from "jointjs";
 import { useEffect } from "react";
 import { useKey } from "rooks";
 
-import { nodesWithEdgesAdded } from "../actions/nk";
 import type { PanelSide } from "../actions/nk/ui/panelSide";
 import { portSize, RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/esp";
 import { useGraph } from "../components/graph/GraphContext";
@@ -116,28 +114,6 @@ export function useNodeCreationHandler({ panelSide, when = true }: { panelSide: 
                 toggleCollapse();
 
                 if (!node) return;
-
-                const graph = graphGetter();
-                const paper = graph.processGraphPaper;
-
-                const position: g.Point = findFreeSpaceForNode(paper, point);
-
-                if (graph.isFragmentCreator(node)) {
-                    return graph.createFragment(position, edge);
-                }
-
-                api.dispatch(
-                    nodesWithEdgesAdded(
-                        [
-                            {
-                                node,
-                                position,
-                            },
-                        ],
-                        [edge].filter(Boolean),
-                        false,
-                    ),
-                );
             }),
         );
     }, [dispatch, graphGetter, panelSide, toggleCollapse, when]);

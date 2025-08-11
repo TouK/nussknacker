@@ -47,7 +47,7 @@ class NodeUtils {
         };
     };
 
-    isAvailable = (node: NodeType, processDefinitionData): boolean => {
+    isAvailable = (node: NodeType, processDefinitionData: ProcessDefinitionData): boolean => {
         return ProcessUtils.extractComponentDefinition(node, processDefinitionData.components) != null;
     };
 

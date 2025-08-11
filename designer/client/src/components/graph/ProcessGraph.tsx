@@ -1,9 +1,7 @@
 import type { dia } from "jointjs";
 import { g } from "jointjs";
-import { mapValues } from "lodash";
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { useDrop } from "react-dnd";
-import { bindActionCreators } from "redux";
 
 import {
     editNode,
@@ -28,14 +26,13 @@ import { fetchScenarios, getScenariosNames } from "../../reducers/scenarios";
 import { getLayout, getProcessCounts, getScenario } from "../../reducers/selectors/graph";
 import type { Capabilities } from "../../reducers/selectors/other";
 import { useAppDispatch, useAppSelector } from "../../store/storeHelpers";
-import type { NodeType } from "../../types";
+import type { Edge, NodeType } from "../../types";
 import { DndTypes } from "../DndTypes";
-import type { Scenario } from "../Process/types";
-import { jsonToFileInFormData } from "./createFragment";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import { advancedNoteOffset } from "./EspNode/stickyNote/advancedStickyNoteConfig";
 import { basicNoteOffset } from "./EspNode/stickyNote/basicStickyNoteConfig";
 import type { Graph } from "./Graph";
+import { getNodeData } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
 import NodeUtils from "./NodeUtils";
 import { setDraggedOver } from "./utils/dragHelpers";
@@ -43,9 +40,25 @@ import { StickyNoteType } from "./utils/stickyNotesUtils";
 
 export type ElementDropResult = {
     item: NodeType;
-    clientOffset: g.PlainPoint;
+    offset: g.PlainPoint;
     paper: dia.Paper;
+    currentNode: NodeType | null;
+    currentEdge: Edge | null;
 };
+
+export function getPaperPreviewOffset(paper: dia.Paper, offset: g.PlainPoint): g.Point {
+    return new g.Point()
+        .offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5)
+        .offset(paper.clientToLocalPoint(offset))
+        .snapToGrid(1, 1);
+}
+
+export function getPaperPreviewRect(paper: dia.Paper, offset: g.PlainPoint): g.Rect {
+    return new g.Rect(0, 0, RECT_WIDTH, RECT_HEIGHT)
+        .offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5)
+        .offset(paper.clientToLocalPoint(offset))
+        .snapToGrid(1, 1);
+}
 
 export const ProcessGraph = forwardRef<
     Graph,
@@ -67,19 +80,12 @@ export const ProcessGraph = forwardRef<
         drop: (item: NodeType, monitor): ElementDropResult => {
             const clientOffset = monitor.getClientOffset();
             const paper = graph.current.processGraphPaper;
-            const relOffset = paper.clientToLocalPoint(clientOffset);
-            // to make node horizontally aligned
-            const nodeInputRelOffset =
-                item.type === StickyNoteType
-                    ? relOffset.offset(...Object.values(areAdvancedStickyNotesEnabled ? advancedNoteOffset : basicNoteOffset))
-                    : relOffset.offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
-            graph.current.addNode(item, mapValues(nodeInputRelOffset, Math.round));
+            const offset = getPaperPreviewOffset(paper, clientOffset);
+            const cellBelow = graph.current.lastHoveredCell;
+            const currentNode = getNodeData(cellBelow, scenario.scenarioGraph);
+            const currentEdge = cellBelow?.isLink() ? cellBelow.get("edgeData") : null;
             setDraggedOver(graph.current.graph);
-            return {
-                paper,
-                item,
-                clientOffset,
-            };
+            return { paper, item, offset, currentNode, currentEdge };
         },
         hover: (item: NodeType, monitor) => {
             const node = item;
@@ -87,15 +93,8 @@ export const ProcessGraph = forwardRef<
 
             if (canInjectNode) {
                 const clientOffset = monitor.getClientOffset();
-                const point = graph.current.processGraphPaper.clientToLocalPoint(clientOffset);
-                const rect = new g.Rect({
-                    ...point,
-                    width: 0,
-                    height: 0,
-                })
-                    .inflate(RECT_WIDTH / 2, RECT_HEIGHT / 2)
-                    .offset(RECT_WIDTH / 2, RECT_HEIGHT / 2)
-                    .offset(RECT_WIDTH * -0.8, RECT_HEIGHT * -0.5);
+                const paper = graph.current.processGraphPaper;
+                const rect = getPaperPreviewRect(paper, clientOffset);
                 setDraggedOver(graph.current.graph, rect, null, item);
             } else {
                 setDraggedOver(graph.current.graph);
@@ -107,29 +106,6 @@ export const ProcessGraph = forwardRef<
     });
 
     const dispatch = useAppDispatch();
-    const actions = useMemo(
-        () =>
-            bindActionCreators(
-                {
-                    nodesConnected,
-                    nodesDisconnected,
-                    layoutChanged,
-                    injectNode,
-                    editNode,
-                    replaceNode,
-                    nodeAdded,
-                    nodesWithEdgesAdded,
-                    stickyNoteUpdated,
-                    stickyNoteSetErrors,
-                    resetSelection,
-                    toggleSelection,
-                },
-                dispatch,
-            ),
-        [dispatch],
-    );
-
-    const createFragment = useCallback((callback) => dispatch(createFragmentAction(scenario, callback)), [dispatch, scenario]);
 
     return (
         <GraphWrapped
@@ -142,84 +118,7 @@ export const ProcessGraph = forwardRef<
             scenario={scenario}
             processCounts={processCounts}
             layout={layout}
-            {...actions}
-            createFragment={createFragment}
+            dispatch={dispatch}
         />
     );
 });
-
-const FRAGMENT_TEMPLATE = {
-    metaData: {
-        id: "test-frament",
-        additionalFields: {
-            description: null,
-            properties: {
-                docsUrl: "",
-                componentGroup: "fragments",
-                icon: "/assets/components/FragmentInput.svg",
-            },
-            metaDataType: "FragmentSpecificData",
-            showDescription: false,
-        },
-    },
-    nodes: [
-        {
-            id: "input",
-            parameters: [],
-            additionalFields: {
-                description: null,
-                layoutData: {
-                    x: 0,
-                    y: 0,
-                },
-            },
-            type: "FragmentInputDefinition",
-        },
-        {
-            id: "output",
-            outputName: "output",
-            fields: [],
-            additionalFields: {
-                description: null,
-                layoutData: {
-                    x: 0,
-                    y: 180,
-                },
-            },
-            type: "FragmentOutputDefinition",
-        },
-    ],
-    additionalBranches: [],
-    stickyNotes: [],
-};
-
-function createFragmentAction(scenario: Scenario, callback: (node: NodeType | null) => void): ThunkAction {
-    return async (dispatch, getState) => {
-        await dispatch(fetchScenarios());
-        const scenarios = getScenariosNames(getState());
-        const uniqueName = createUniqueName("empty fragment", scenarios);
-
-        const { processingType, engineSetupName, processCategory, processingMode } = scenario;
-        await HttpService.createProcess({
-            name: uniqueName,
-            isFragment: true,
-            category: processCategory,
-            processingMode: processingMode,
-            engineSetupName: engineSetupName,
-        });
-        const { data } = await HttpService.importProcess(uniqueName, jsonToFileInFormData(FRAGMENT_TEMPLATE));
-        await HttpService.saveProcess(uniqueName, data.scenarioGraph, "import placeholder data", []);
-        const { componentGroups } = await dispatch(fetchProcessDefinition(processingType, false));
-        const component = componentGroups
-            .find((g) => g.name.toLowerCase() === "fragments")
-            ?.components.find((c) => c.componentId === `fragment-${uniqueName}`);
-        callback(
-            component
-                ? {
-                      ...component.node,
-                      id: component.label,
-                  }
-                : null,
-        );
-    };
-}

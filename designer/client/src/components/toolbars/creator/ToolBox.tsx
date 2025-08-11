@@ -13,6 +13,7 @@ import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/getProcessDefinitionData";
 import type { ComponentGroup, NodeType } from "../../../types";
 import NodeUtils from "../../graph/NodeUtils";
+import type { ToolProps } from "./Tool";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
@@ -132,7 +133,9 @@ export type ToolBoxProps = {
     addTreeElement?: (group: ComponentGroup) => React.ReactElement | null;
     addGroupLabelElement?: (group: ComponentGroup) => React.ReactElement | null;
     data: ComponentGroup[];
-    onSelect?: (item: NodeType) => void;
+    toolSelect?: Pick<ToolProps, "onClick" | "onDragEnd"> & {
+        onEnter?: (item: NodeType, event: KeyboardEvent) => void;
+    };
 };
 
 export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxProps): JSX.Element {
@@ -140,7 +143,6 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
     const definitionData = useSelector(getProcessDefinitionData);
 
     const textFilters = useMemo(() => props.textFilter?.toLowerCase().split(/\s/).filter(Boolean), [props.textFilter]);
-
     const groups = useMemo(
         () =>
             data
@@ -169,11 +171,11 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
 
     useKey(
         "Enter",
-        () => {
+        (event) => {
             const { node, label } = groups[0].components[0];
-            props.onSelect({ ...cloneDeep(node), id: label });
+            props.toolSelect.onEnter({ ...cloneDeep(node), id: label }, event);
         },
-        { when: groups.length === 1 && groups[0].components.length === 1 },
+        { when: props.toolSelect?.onEnter && groups.length === 1 && groups[0].components.length === 1 },
     );
 
     return (
@@ -187,7 +189,7 @@ export default function ToolBox({ data = [], filters = [], ...props }: ToolBoxPr
                         flatten={groups.length === 1}
                         addTreeElement={props.addTreeElement?.(componentGroup)}
                         addGroupLabelElement={props.addGroupLabelElement?.(componentGroup)}
-                        onSelect={props.onSelect}
+                        toolSelect={props.toolSelect}
                     />
                 ))
             ) : (
