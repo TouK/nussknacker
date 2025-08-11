@@ -1,17 +1,18 @@
 import { styled } from "@mui/material";
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 import type { DynamicTabData } from "../../containers/DynamicTab";
 
 function UnstyledTabElement({ tab, ...props }: { tab: DynamicTabData; className?: string }): JSX.Element {
     const { id, type, url, title, currentLocationInQuery } = tab;
+    const location = useLocation();
     const fullUrl =
         !currentLocationInQuery || !currentLocationInQuery.enabled
             ? url
             : (() => {
                   const enrichedUrl = new URL(url);
-                  enrichedUrl.searchParams.set(currentLocationInQuery.parameterName, window.location.href);
+                  enrichedUrl.searchParams.set(currentLocationInQuery.parameterName, location.pathname);
                   return enrichedUrl.toString();
               })();
     switch (type) {
