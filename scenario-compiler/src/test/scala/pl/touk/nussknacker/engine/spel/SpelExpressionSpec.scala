@@ -40,16 +40,13 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementVal
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.ExpressionParser.BadTypeExpressionParseError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
   SpelExpressionTypingParseError,
   SpelExpressionUnderlyingParserError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
-  ArgumentTypeError,
-  ExpressionTypeError,
-  GenericFunctionError
-}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{ArgumentTypeError, GenericFunctionError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError.{
   IllegalInvocationError,
   IllegalProjectionSelectionError,
@@ -79,8 +76,8 @@ import java.lang.{
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.nio.charset.{Charset, StandardCharsets}
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time._
+import java.time.chrono.ChronoLocalDate
 import java.util
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import java.util.concurrent.Executors
@@ -1125,7 +1122,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("detect bad type of literal or variable") {
 
     def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _], message: String) =
-      inside(valid) { case Invalid(NonEmptyList(SpelExpressionTypingParseError(error: ExpressionTypeError, _), _)) =>
+      inside(valid) { case Invalid(NonEmptyList(error, _)) =>
         error.message shouldBe message
       }
 
@@ -1637,14 +1634,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should check map values") {
     val parser = expressionParser()
-    val expected = Typed.genericTypeClass[java.util.Map[_, _]](
+    val passedExpected = Typed.genericTypeClass[java.util.Map[_, _]](
       List(Typed[String], Typed.record(Map("additional" -> Typed[String])))
     )
-    inside(parser.parse("""{"aField": {"additional": 1}}""", ValidationContext.empty, expected)) {
-      case Invalid(NonEmptyList(SpelExpressionTypingParseError(e: ExpressionTypeError, _), Nil)) =>
-        e.expected shouldBe expected
+    parser.parse("""{"aField": {"additional": 1}}""", ValidationContext.empty, passedExpected) should matchPattern {
+      case Invalid(NonEmptyList(BadTypeExpressionParseError(`passedExpected`, _), Nil)) =>
     }
-    parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, expected) shouldBe Symbol("valid")
+    parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, passedExpected) shouldBe Symbol(
+      "valid"
+    )
   }
 
   test("should use generic parameters in method return types") {

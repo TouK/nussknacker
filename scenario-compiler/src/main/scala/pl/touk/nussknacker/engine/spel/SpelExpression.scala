@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
@@ -215,7 +216,7 @@ class SpelExpressionEvaluationException(val expression: String, cause: Throwable
 
 class SpelExpressionParser(
     immediateCompileParser: NuSpelExpressionParser,
-    validator: SpelExpressionValidator,
+    typer: Typer,
     dictRegistry: DictRegistry,
     enableSpelForceCompile: Boolean,
     flavour: Flavour,
@@ -235,19 +236,23 @@ class SpelExpressionParser(
     optionalNullExpression.getOrElse {
       parseSpelExpressionUsingImmediateCompileConfiguration(original)
         .andThen { parsed =>
-          validator
-            .validate(parsed, ctx, expectedType, flavour)
-            .map((_, parsed))
+          typer
+            .typeExpression(parsed, ctx)
+            .map((parsed, _))
             .leftMap(_.map(_.toParseError(original)))
         }
-        .map { case (combinedResult, parsed) =>
+        .andThen { case (parsed, collectedTypingResult) =>
+          validateResultTypeIfNeeded(collectedTypingResult, expectedType)
+            .map(_ => (parsed, collectedTypingResult))
+        }
+        .map { case (parsed, collectedTypingResult) =>
           TypedExpression(
             createExpression(
               original = original,
               initiallyParsedExpression = parsed,
               expectedType = expectedType
             ),
-            combinedResult.typingInfo
+            collectedTypingResult.typingInfo
           )
         }
     }
@@ -286,6 +291,17 @@ class SpelExpressionParser(
       }
   }
 
+  private def validateResultTypeIfNeeded(
+      collected: CollectedTypingResult,
+      expectedType: TypingResult,
+  ): ValidatedNel[ExpressionParseError, Unit] = {
+    if (expectedType == Typed[SpelExpressionRepr] || expectedType == Typed[TemplateEvaluationResult]) {
+      Valid(())
+    } else {
+      ExpressionParser.validateResultTypeMatchExpectedType(collected.finalResult.typingResult, expectedType)
+    }
+  }
+
   // SpEL adds:
   // - Expression [<expression>]: prefix - see ExpressionException.toDetailedString
   // - EL1001E: prefix - (error code indicator), see SpelMessage.formatMessage
@@ -318,17 +334,17 @@ class SpelExpressionParser(
   def typingDictLabels =
     new SpelExpressionParser(
       immediateCompileParser,
-      validator.withTyper(_.withDictTyper(new LabelsDictTyper(dictRegistry))),
+      typer.withDictTyper(new LabelsDictTyper(dictRegistry)),
       dictRegistry,
       enableSpelForceCompile,
       flavour,
       prepareEvaluationContext
     )
 
-  def withValidator(modify: SpelExpressionValidator => SpelExpressionValidator): SpelExpressionParser = {
+  def withTyper(modify: Typer => Typer): SpelExpressionParser = {
     new SpelExpressionParser(
       immediateCompileParser,
-      modify(validator),
+      modify(typer),
       dictRegistry,
       enableSpelForceCompile,
       flavour,
@@ -359,18 +375,16 @@ object SpelExpressionParser extends LazyLogging {
       createSpelParserConfiguration(classLoader)
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
-    val validator = new SpelExpressionValidator(
-      Typer.default(
-        classLoader,
-        expressionConfig,
-        new KeysDictTyper(dictRegistry),
-        classDefinitionSet,
-        absentVariableReferenceAllowed = false
-      )
+    val typer = Typer.default(
+      classLoader,
+      expressionConfig,
+      new KeysDictTyper(dictRegistry),
+      classDefinitionSet,
+      absentVariableReferenceAllowed = false
     )
     new SpelExpressionParser(
       immediateCompileParser,
-      validator,
+      typer,
       dictRegistry,
       enableSpelForceCompile,
       flavour,

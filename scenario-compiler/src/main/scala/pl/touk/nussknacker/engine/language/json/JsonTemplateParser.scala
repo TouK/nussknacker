@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.{Validated, ValidatedNel}
+import cats.data.ValidatedNel
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
@@ -39,14 +39,6 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
       validationContext: ValidationContext,
       expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    def validateExpectedType(parsed: TypedExpression) = {
-      Validated.condNel(
-        parsed.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType),
-        parsed,
-        JsonTemplateExpressionTypeError(expectedType, parsed.typingInfo.typingResult)
-      )
-    }
-
     spelTemplateParser
       .parse(originalJsonString, validationContext, Typed[TemplateEvaluationResult])
       .map(_.expression)
@@ -55,7 +47,11 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
           .expressionResultType(spelTemplateExpression, validationContext, expectedType)
           .map(toJsonTemplateExpression(originalJsonString, spelTemplateExpression, _))
       }
-      .andThen(validateExpectedType)
+      .andThen { typedExpression =>
+        ExpressionParser
+          .validateResultTypeMatchExpectedType(typedExpression.typingInfo.typingResult, expectedType)
+          .map(_ => typedExpression)
+      }
   }
 
   private def toJsonTemplateExpression(
@@ -72,13 +68,6 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
 }
 
 object JsonTemplateParser {
-
-  private case class JsonTemplateExpressionTypeError(
-      expected: TypingResult,
-      found: TypingResult
-  ) extends ExpressionParseError {
-    override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
-  }
 
   private class CompiledJsonTemplateExpression(
       originalJsonString: String,

@@ -248,7 +248,7 @@ class NodeCompiler(
           expressionCompiler.withExpressionParsers(expressionParsers =>
             expressionParsers.map {
               case (language, parser: SpelExpressionParser) =>
-                language -> parser.withValidator(v => v.withTyper(t => t.withAbsentVariableReferenceAllowed(true)))
+                language -> parser.withTyper(t => t.withAbsentVariableReferenceAllowed(true))
               case other => other
             }
           )
