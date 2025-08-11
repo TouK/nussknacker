@@ -32,7 +32,9 @@ object TabularDataDefinitionParser extends ExpressionParser {
       ctx: ValidationContext,
       expectedType: typing.TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(original, fromTabularDataToT = createTabularDataDefinitionTypedExpression(_, original, expectedType))
+    handleBlankExpressionAsNullExpression(original).getOrElse {
+      parse(original, fromTabularDataToT = createTabularDataDefinitionTypedExpression(_, original, expectedType))
+    }
   }
 
   private def parse[T](original: String, fromTabularDataToT: TabularTypedData => T) = {

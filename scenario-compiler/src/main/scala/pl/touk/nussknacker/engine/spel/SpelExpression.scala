@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.lang3.StringUtils
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel._
@@ -14,7 +12,6 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -234,14 +231,8 @@ class SpelExpressionParser(
       ctx: ValidationContext,
       expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    if (shouldUseNullExpression(original)) {
-      Valid(
-        TypedExpression(
-          NullExpression(original, flavour),
-          SpelExpressionTypingInfo(Map.empty, typing.TypedNull)
-        )
-      )
-    } else {
+    val optionalNullExpression = if (flavour != Template) handleBlankExpressionAsNullExpression(original) else None
+    optionalNullExpression.getOrElse {
       parseSpelExpressionUsingImmediateCompileConfiguration(original)
         .andThen { parsed =>
           validator
@@ -261,8 +252,6 @@ class SpelExpressionParser(
         }
     }
   }
-
-  private def shouldUseNullExpression(original: String): Boolean = flavour != Template && StringUtils.isBlank(original)
 
   private def parseSpelExpressionUsingImmediateCompileConfiguration(
       original: String

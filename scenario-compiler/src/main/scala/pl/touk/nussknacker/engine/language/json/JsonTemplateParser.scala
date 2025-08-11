@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -28,7 +27,17 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
   override def parse(
       originalJsonString: String,
       validationContext: ValidationContext,
-      expectedType: typing.TypingResult
+      expectedType: TypingResult
+  ): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    handleBlankExpressionAsNullExpression(originalJsonString).getOrElse {
+      parseNonBlankExpression(originalJsonString, validationContext, expectedType)
+    }
+  }
+
+  private def parseNonBlankExpression(
+      originalJsonString: String,
+      validationContext: ValidationContext,
+      expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
     def validateExpectedType(parsed: TypedExpression) = {
       Validated.condNel(
@@ -74,7 +83,7 @@ object JsonTemplateParser {
   private class CompiledJsonTemplateExpression(
       originalJsonString: String,
       compiledSpelTemplateExpression: CompiledExpression,
-      typ: typing.TypingResult
+      typ: TypingResult
   ) extends CompiledExpression {
 
     override def language: Language = Expression.Language.JsonTemplate
