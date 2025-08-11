@@ -1,9 +1,7 @@
-import type { dia } from "jointjs";
 import { g } from "jointjs";
 import { useEffect } from "react";
 import { useKey } from "rooks";
 
-import { nodesWithEdgesAdded } from "../actions/nk";
 import type { PanelSide } from "../actions/nk/ui/panelSide";
 import { portSize, RECT_HEIGHT, RECT_WIDTH } from "../components/graph/EspNode/esp";
 import { useGraph } from "../components/graph/GraphContext";
@@ -11,26 +9,6 @@ import { useSidePanel } from "../components/sidePanels/SidePanelsContext";
 import { closeNodeSelector, openNodeSelector } from "../components/toolbars/creator/nodeSelectorActions";
 import { useOutsideInteraction } from "../components/toolbars/creator/useOutsideInteraction";
 import { addListenerTyped, addOnceListenerTyped, useAppDispatch } from "../store/storeHelpers";
-
-export function findCellsInArea(paper: dia.Paper, area: g.Rect): dia.Cell[] {
-    const model = paper.model;
-    const links = model.getLinks().filter((link) => {
-        const view = paper.findViewByModel(link);
-        if (!view) return false;
-        const pathBBox = view.getBBox();
-        return paper.clientToLocalRect(pathBBox).intersect(area);
-    });
-    const elements = model.findModelsInArea(area);
-    return [...elements, ...links];
-}
-
-export const findFreeSpaceForNode = (paper: dia.Paper, plainPoint: g.PlainPoint): g.Point => {
-    const rect = new g.Rect(plainPoint.x, plainPoint.y, RECT_WIDTH, RECT_HEIGHT);
-    if (findCellsInArea(paper, rect.clone().inflate(10)).length > 0) {
-        return findFreeSpaceForNode(paper, rect.offset(RECT_HEIGHT).topLeft());
-    }
-    return rect.topLeft().snapToGrid(1, 1);
-};
 
 export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
     const dispatch = useAppDispatch();
@@ -110,32 +88,8 @@ export function NodeCreationHandler({ panelSide }: { panelSide: PanelSide }) {
         () =>
             dispatch(
                 addListenerTyped("CLOSE_NODE_SELECTOR", ({ data: { node, point, side, edge } }, api) => {
-                    if (side !== panelSide) return;
-                    toggleCollapse();
-
+                    if (side === panelSide) toggleCollapse();
                     if (!node) return;
-
-                    const graph = graphGetter();
-                    const paper = graph.processGraphPaper;
-
-                    const position: g.Point = findFreeSpaceForNode(paper, point);
-
-                    if (graph.isFragmentCreator(node)) {
-                        return graph.createFragment(position, edge);
-                    }
-
-                    api.dispatch(
-                        nodesWithEdgesAdded(
-                            [
-                                {
-                                    node,
-                                    position,
-                                },
-                            ],
-                            [edge].filter(Boolean),
-                            false,
-                        ),
-                    );
                 }),
             ),
         [dispatch, graphGetter, panelSide, toggleCollapse],

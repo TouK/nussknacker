@@ -5,16 +5,6 @@ import { getNodeData } from "../Graph";
 import { isModelElement } from "../GraphPartialsInTS";
 import { rafThrottle } from "../rafThrottle";
 
-export function getLinkNodes(link: dia.Link, graph = link.graph): { sourceNode: NodeType; targetNode: NodeType } {
-    const source = graph.getCell(link.source()?.id);
-    const target = graph.getCell(link.target()?.id);
-
-    return {
-        sourceNode: getNodeData(source),
-        targetNode: getNodeData(target),
-    };
-}
-
 function replaceAllowed(cell: dia.Cell, node?: NodeType) {
     if (!isModelElement(cell)) return false;
     const { id } = getNodeData(cell);

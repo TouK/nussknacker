@@ -5,7 +5,20 @@ import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lo
 import React from "react";
 import type { UseTranslationResponse } from "react-i18next";
 
-import type { Layout, NodePosition, Position, stickyNoteSetErrors, stickyNoteUpdated } from "../../actions/nk";
+import type { Layout, NodePosition, Position } from "../../actions/nk";
+import {
+    layoutChanged,
+    moveNodeInject,
+    moveNodePlain,
+    moveNodeReplace,
+    nodesConnected,
+    nodesDisconnected,
+    resetSelection,
+    stickyNoteSetErrors,
+    stickyNoteUpdated,
+    toggleSelection,
+} from "../../actions/nk";
+import { findFreeSpaceForNode } from "../../actions/nk/findFreeSpaceForNode";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import type User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
@@ -13,8 +26,6 @@ import type { TrackEventParams } from "../../containers/event-tracking";
 import { EventTrackingSelector, EventTrackingType } from "../../containers/event-tracking";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
-import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
-import { FRAGMENT_TEMPLATE_ID } from "../../reducers/selectors/appendFragmentCreator";
 import type { UserSettings } from "../../reducers/userSettings";
 import type { Edge, NodeId, NodeType, NodeValidationError, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ComponentDragPreview } from "../ComponentDragPreview";
@@ -46,9 +57,8 @@ import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import type { GraphProps } from "./types";
 import { Events } from "./types";
-import { filterDragHovered, getLinkNodes, setDraggedOver } from "./utils/dragHelpers";
-import { canInjectNode as graphUtilsCanInjectNode, handleGraphEvent } from "./utils/graphUtils";
-import { StickyNoteType } from "./utils/stickyNotesUtils";
+import { filterDragHovered, setDraggedOver } from "./utils/dragHelpers";
+import { handleGraphEvent } from "./utils/graphUtils";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -65,8 +75,6 @@ type Props = GraphProps & {
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
     handleStatisticsEvent: (event: TrackEventParams) => void;
-    stickyNoteUpdated?: typeof stickyNoteUpdated;
-    stickyNoteSetErrors?: typeof stickyNoteSetErrors;
 };
 
 export const nuGraphNamespace = {
@@ -148,7 +156,7 @@ export class Graph extends React.Component<Props> {
         left: 0,
         right: 0,
     };
-    private lastHoveredCell: dia.Cell;
+    lastHoveredCell: dia.Cell;
 
     constructor(props: Props) {
         super(props);
@@ -234,7 +242,7 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom = new PanZoomPlugin(this.processGraphPaper, this.viewport);
 
         if (this.props.isFragment !== true && this.props.nodeSelectionEnabled) {
-            const { toggleSelection, resetSelection, handleStatisticsEvent } = this.props;
+            const { dispatch, handleStatisticsEvent } = this.props;
             new RangeSelectPlugin(this.processGraphPaper, this.props.theme);
             this.processGraphPaper
                 .on(RangeSelectEvents.START, (data: RangeSelectStartEventData) => {
@@ -249,14 +257,14 @@ export class Graph extends React.Component<Props> {
                     this.panAndZoom.toggle(true);
                 })
                 .on(RangeSelectEvents.RESET, () => {
-                    resetSelection();
+                    dispatch(resetSelection());
                 })
                 .on(RangeSelectEvents.SELECTED, ({ elements, mode }: RangeSelectedEventData) => {
                     const nodes = elements.filter((el) => isModelOrStickyNote(el)).map(({ id }) => id.toString());
                     if (mode === SelectionMode.toggle) {
-                        toggleSelection(nodes);
+                        dispatch(toggleSelection(nodes));
                     } else {
-                        resetSelection(...nodes);
+                        dispatch(resetSelection(...nodes));
                     }
                 });
         }
@@ -273,23 +281,24 @@ export class Graph extends React.Component<Props> {
         this.graph.on(Events.CELL_RESIZED, (cell: dia.Element) => {
             if (this.props.isFragment === true) return;
             if (isStickyNoteElement(cell)) {
-                this.props.stickyNoteUpdated(cell, null);
+                this.props.dispatch(stickyNoteUpdated(cell, null));
             }
         });
 
         this.graph.on(Events.CELL_CONTENT_UPDATED, (cell: dia.Element, content: string) => {
             if (this.props.isFragment === true) return;
             if (isStickyNoteElement(cell)) {
-                this.props.stickyNoteUpdated(cell, content);
+                this.props.dispatch(stickyNoteUpdated(cell, content));
             }
         });
 
         this.graph.on(Events.ADD, (cell: dia.Element) => {
             if (!isModelElement(cell)) return;
-            //we want to inject node during 'Drag and Drop' from toolbox
-            const cellBelow = this.lastHoveredCell;
-            this.handleInjectBetweenNodes(cell, cellBelow);
-            setDraggedOver(cell.graph);
+            setTimeout(() => {
+                const point = findFreeSpaceForNode(this.processGraphPaper, cell.position(), cell);
+                cell.position(point.x, point.y);
+                this.changeLayoutIfNeeded();
+            }, 0);
         });
 
         this.fit();
@@ -322,53 +331,6 @@ export class Graph extends React.Component<Props> {
         if (this.props.isFragment !== true && this.props.connectDropTarget && instance) {
             this.props.connectDropTarget(instance);
         }
-    };
-
-    addNode(node: NodeType, position: Position): void {
-        if (this.props.isFragment === true) return;
-        if (!this.props.capabilities.editFrontend) return;
-
-        if (this.isFragmentCreator(node)) {
-            return this.createFragment(position);
-        }
-
-        if (!NodeUtils.isAvailable(node, this.props.processDefinitionData)) {
-            return;
-        }
-
-        const cellBelow = this.lastHoveredCell;
-        if (isModelElement(cellBelow) && node.type != StickyNoteType) {
-            const currentNodes = this.props.scenario.scenarioGraph.nodes;
-            const { nodes } = prepareNewNodesWithLayout(
-                currentNodes,
-                [
-                    {
-                        node,
-                        position,
-                    },
-                ],
-                false,
-            );
-            this.handleReplaceNodes(nodes[0], cellBelow);
-        } else {
-            this.props.nodeAdded(node, position);
-        }
-        return;
-    }
-
-    isFragmentCreator = (node: NodeType): boolean => {
-        const { processDefinitionData } = this.props;
-        if (NodeUtils.isAvailable(node, processDefinitionData)) return false;
-        return node.ref.id === FRAGMENT_TEMPLATE_ID;
-    };
-
-    createFragment = (position: Position, edge?: Edge): void => {
-        if (this.props.isFragment === true) return;
-        const { createFragment, nodesWithEdgesAdded } = this.props;
-        return createFragment?.((node) => {
-            if (!node) return;
-            nodesWithEdgesAdded([{ node, position }], [edge].filter(Boolean), false);
-        });
     };
 
     fitToNode = (nodeId: NodeId): void => {
@@ -408,9 +370,9 @@ export class Graph extends React.Component<Props> {
                 }
 
                 if (evt.shiftKey || evt.ctrlKey || evt.metaKey || isTouchEvent(evt)) {
-                    this.props.toggleSelection(nodeDataId);
+                    this.props.dispatch(toggleSelection(nodeDataId));
                 } else {
-                    this.props.resetSelection(nodeDataId);
+                    this.props.dispatch(resetSelection(nodeDataId));
                 }
             }
         };
@@ -435,28 +397,6 @@ export class Graph extends React.Component<Props> {
 
         this.hooverHandling();
     }
-
-    handleInjectBetweenNodes = (cell: shapes.devs.Model, cellBelow?: dia.Cell): void => {
-        if (!cell) return;
-        if (cellBelow?.isLink()) {
-            if (this.props.isFragment === true) return;
-            const { scenario, injectNode, processDefinitionData } = this.props;
-            const nodeData = getNodeData(cell, scenario.scenarioGraph);
-            const { sourceNode, targetNode } = getLinkNodes(cellBelow, cell.graph);
-
-            const canInjectNode = graphUtilsCanInjectNode(
-                scenario.scenarioGraph,
-                sourceNode.id,
-                nodeData?.id,
-                targetNode?.id,
-                processDefinitionData,
-            );
-
-            if (canInjectNode) {
-                injectNode(sourceNode, nodeData, targetNode, cellBelow.attributes.edgeData);
-            }
-        }
-    };
 
     // eslint-disable-next-line react/no-deprecated
     componentWillUpdate(nextProps: Props): void {
@@ -555,7 +495,7 @@ export class Graph extends React.Component<Props> {
 
     disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
         if (this.props.isFragment !== true && this.#graphContainsEdge(from, to)) {
-            this.props.nodesDisconnected(from, to);
+            this.props.dispatch(nodesDisconnected(from, to));
         }
     };
 
@@ -592,26 +532,20 @@ export class Graph extends React.Component<Props> {
     changeLayoutIfNeeded = (): void => {
         if (this.props.isFragment === true) return;
 
-        const { layout, layoutChanged } = this.props;
+        const { layout, dispatch } = this.props;
 
         const elements = this.graph.getElements().filter(isModelOrStickyNote);
-        const collection = elements.map((el) => {
-            const { x, y } = el.get("position");
-            return {
-                id: el.id,
-                position: {
-                    x,
-                    y,
-                },
-            };
-        });
+        const collection = elements.map((el) => ({
+            id: el.id,
+            position: el.position().toJSON(),
+        }));
 
         const iteratee = (e) => e.id;
         const newLayout = sortBy(collection, iteratee);
         const oldLayout = sortBy(layout, iteratee);
 
         if (!isEqual(oldLayout, newLayout)) {
-            layoutChanged(newLayout);
+            dispatch(layoutChanged(newLayout));
         }
     };
 
@@ -748,17 +682,21 @@ export class Graph extends React.Component<Props> {
             })
             //we want to inject node during 'Drag and Drop' from graph paper
             .on(Events.CELL_MOVED, (cellView: dia.CellView) => {
+                if (this.props.isFragment === true) return;
+                const { dispatch, scenario } = this.props;
+                const { scenarioGraph } = scenario;
                 if (isModelElement(cellView.model)) {
-                    const group = batchGroupBy.startOrContinue();
+                    batchGroupBy.startOrExtend();
+                    this.changeLayoutIfNeeded();
+                    const nodeData = getNodeData(cellView.model, scenarioGraph);
                     const cellBelow = this.lastHoveredCell;
                     if (isModelElement(cellBelow)) {
-                        const nodeData = getNodeData(cellView.model, this.props.scenario.scenarioGraph);
-                        this.handleReplaceNodes(nodeData, cellBelow);
+                        dispatch(moveNodeReplace(nodeData, getNodeData(cellBelow, scenarioGraph)));
+                    } else if (cellBelow?.isLink()) {
+                        dispatch(moveNodeInject(nodeData, cellBelow.attributes.edgeData, cellView.model.position()));
                     } else {
-                        this.changeLayoutIfNeeded();
-                        this.handleInjectBetweenNodes(cellView.model, cellBelow);
+                        dispatch(moveNodePlain(nodeData, cellView.model.position()));
                     }
-                    batchGroupBy.end(group);
                 }
                 cellView.model.toFront();
                 if (isStickyNoteElement(cellView.model)) this.changeLayoutIfNeeded();
@@ -772,17 +710,13 @@ export class Graph extends React.Component<Props> {
                 const to = targetView?.model.attributes.nodeData;
 
                 if (from && to) {
-                    isReversed ? this.props.nodesConnected(to, from, type) : this.props.nodesConnected(from, to, type);
+                    const dispatch = this.props.dispatch;
+                    dispatch(isReversed ? nodesConnected(to, from, type) : nodesConnected(from, to, type));
                 }
             })
             .on(Events.LINK_DISCONNECT, ({ model }) => {
                 this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to);
             });
-    }
-    private handleReplaceNodes(nodeData: NodeType, cellBelow: shapes.devs.Model) {
-        if (this.props.isFragment === true) return;
-        const { replaceNode, scenario } = this.props;
-        replaceNode(getNodeData(cellBelow, scenario.scenarioGraph), nodeData);
     }
 
     #highlightNodes = (selectedNodeIds: string[] = [], scenario = this.props.scenario): void => {
@@ -802,20 +736,20 @@ export class Graph extends React.Component<Props> {
         const invalidFragmentNodes = this.#getInvalidFragmentNodes(invalidNodeKeys, scenario.scenarioGraph);
         const invalidNodeIds = [...invalidNodeKeys, ...validationErrors.globalErrors.flatMap((e) => e.nodeIds), ...invalidFragmentNodes];
 
-        if (this.props.stickyNoteSetErrors) {
+        if (this.props.isFragment !== true) {
             const stickyNotes: Record<string, NodeValidationError[]> = elements
                 .filter((n) => isStickyNoteElement(n))
                 .reduce((acc, user) => {
                     acc[user.id.toString()] = validationErrors?.invalidNodes[user.id.toString()] ?? [];
                     return acc;
                 }, {});
-            if (Object.keys(stickyNotes).length > 0) this.props.stickyNoteSetErrors(stickyNotes);
+            if (Object.keys(stickyNotes).length > 0) this.props.dispatch(stickyNoteSetErrors(stickyNotes));
         }
 
         // fast indicator for loose nodes, faster than async validation
         elements.forEach((el) => {
             const nodeId = el.id.toString();
-            if (!invalidNodeIds.includes(nodeId) && el.getPort("In") && !this.graph.getNeighbors(el, { inbound: true }).length) {
+            if (!invalidNodeIds.includes(nodeId) && el.getPort("In") && !el.graph.getNeighbors(el, { inbound: true }).length) {
                 invalidNodeIds.push(nodeId);
             }
         });
@@ -875,7 +809,7 @@ export class Graph extends React.Component<Props> {
     private bindNodeRemove() {
         this.graph.on(Events.REMOVE, (e: dia.Cell) => {
             if (this.props.isFragment !== true && !this.redrawing && e.isLink()) {
-                this.props.nodesDisconnected(e.attributes.source.id, e.attributes.target.id);
+                this.props.dispatch(nodesDisconnected(e.attributes.source.id, e.attributes.target.id));
             }
         });
     }
@@ -885,14 +819,9 @@ export class Graph extends React.Component<Props> {
             Events.CHANGE_POSITION,
             rafThrottle((element: dia.Cell, position: dia.Point, options) => {
                 if (this.redrawing || !isModelOrStickyNote(element)) return;
-                if (options.group) return;
-
-                const movingCells: dia.Cell[] = [element];
                 const nodeId = element.id.toString();
-
                 if (this.props.selectionState?.includes(nodeId)) {
-                    const movedNodes = this.moveSelectedNodesRelatively(nodeId, position);
-                    movingCells.push(...movedNodes);
+                    this.moveSelectedNodesRelatively(nodeId, position);
                 }
             }),
         );
