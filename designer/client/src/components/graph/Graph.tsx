@@ -677,11 +677,11 @@ export class Graph extends React.Component<Props> {
                 if (this.props.isFragment === true) return;
                 const { dispatch, scenario } = this.props;
                 const { scenarioGraph } = scenario;
+                const cellBelow = this.lastHoveredCell;
                 if (isModelElement(cellView.model)) {
                     batchGroupBy.startOrExtend();
                     this.changeLayoutIfNeeded();
                     const nodeData = getNodeData(cellView.model, scenarioGraph);
-                    const cellBelow = this.lastHoveredCell;
                     if (isModelElement(cellBelow)) {
                         dispatch(moveNodeReplace(nodeData, getNodeData(cellBelow, scenarioGraph)));
                     } else if (cellBelow?.isLink()) {

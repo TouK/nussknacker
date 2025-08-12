@@ -20,7 +20,7 @@ function findFreeSpace(
     options: Partial<typeof defaultOptions> = defaultOptions,
 ): g.Point {
     const rect = new g.Rect(plainPoint.x, plainPoint.y, options.width, options.height);
-    if (countCellsInArea(paper, rect.clone().inflate(options.dx / 2), self)) {
+    if (countCellsInArea(paper, rect.clone().inflate(2), self)) {
         return findFreeSpace(paper, rect.offset(options.dx).topLeft(), self, options);
     }
     return rect.topLeft();
