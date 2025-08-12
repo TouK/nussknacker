@@ -25,6 +25,15 @@ export const StickyNoteElementView = dia.ElementView.extend({
         "keydown textarea": "selectAll",
         "focusout .sticky-note-markdown-editor": "onChange",
         "dblclick .sticky-note-content": "showEditor",
+        "mouseover .sticky-note-content": "stopPropagation",
+    },
+
+    render: function () {
+        // eslint-disable-next-line prefer-rest-params
+        dia.ElementView.prototype.render.apply(this, arguments);
+        this.model.toBack();
+
+        return this;
     },
 
     stopPropagation: function (evt) {

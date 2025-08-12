@@ -22,7 +22,6 @@ import type { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import { getNeighbors } from "./getNeighbors";
 import {
     applyCellChanges,
     calcLayout,
@@ -760,8 +759,11 @@ export class Graph extends React.Component<Props> {
                     }
                     batchGroupBy.end(group);
                 }
-                cellView.model.toFront();
-                if (isStickyNoteElement(cellView.model)) this.changeLayoutIfNeeded();
+                if (isStickyNoteElement(cellView.model)) {
+                    this.changeLayoutIfNeeded();
+                } else {
+                    cellView.model.toFront();
+                }
             })
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                 if (this.props.isFragment === true) return;

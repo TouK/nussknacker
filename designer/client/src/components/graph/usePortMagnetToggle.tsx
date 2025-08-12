@@ -16,7 +16,7 @@ export function usePortMagnetToggle(graphRef: React.MutableRefObject<Graph>) {
         const graph = graphRef.current;
         const context = {};
 
-        graph.processGraphPaper.on(
+        graph?.processGraphPaper?.on(
             Events.CELL_MOUSEOVER,
             (cellView) => {
                 const model = cellView.model;
@@ -35,7 +35,7 @@ export function usePortMagnetToggle(graphRef: React.MutableRefObject<Graph>) {
         );
 
         return () => {
-            graph.processGraphPaper.off(null, null, context);
+            graph?.processGraphPaper?.off(null, null, context);
         };
     }, [graphRef, processDefinitionData, scenarioGraph]);
 }

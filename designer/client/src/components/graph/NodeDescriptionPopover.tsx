@@ -66,7 +66,7 @@ const useEnterLeaveEvents = (
         const withView =
             <E extends JQuery.TriggeredEvent<HTMLElement>>(callback: (view: dia.CellView, event: E) => void) =>
             (event: E) => {
-                const view = graph.processGraphPaper.findView(event.target);
+                const view = graph?.processGraphPaper?.findView(event.target);
                 callback(view, event);
             };
 
@@ -101,11 +101,11 @@ const useEnterLeaveEvents = (
 
         const eventsInner = getEvents(true);
         const eventsOuter = getEvents();
-        graph.processGraphPaper.$el.on(eventsInner, innerSelector);
-        graph.processGraphPaper.$el.on(eventsOuter, outerSelector);
+        graph?.processGraphPaper?.$el?.on(eventsInner, innerSelector);
+        graph?.processGraphPaper?.$el?.on(eventsOuter, outerSelector);
         return () => {
-            graph.processGraphPaper.$el.off(eventsInner, innerSelector);
-            graph.processGraphPaper.$el.off(eventsOuter, outerSelector);
+            graph?.processGraphPaper?.$el?.off(eventsInner, innerSelector);
+            graph?.processGraphPaper?.$el?.off(eventsOuter, outerSelector);
         };
     }, [onEnter, graphRef, innerSelector, outerSelector, onLeave]);
 };
@@ -166,9 +166,9 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
     useEffect(() => {
         const graph = graphRef.current;
         const callback = () => setOpen(false);
-        graph.processGraphPaper.on(Events.CELL_POINTERDOWN, callback);
+        graph?.processGraphPaper?.on(Events.CELL_POINTERDOWN, callback);
         return () => {
-            graph.processGraphPaper.off(Events.CELL_POINTERDOWN, callback);
+            graph?.processGraphPaper?.off(Events.CELL_POINTERDOWN, callback);
         };
     }, [graphRef]);
 
