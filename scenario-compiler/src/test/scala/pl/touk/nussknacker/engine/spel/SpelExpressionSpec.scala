@@ -45,7 +45,6 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
   SpelExpressionTypingParseError,
   SpelExpressionUnderlyingParserError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{ArgumentTypeError, GenericFunctionError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError.{
   IllegalInvocationError,
@@ -171,7 +170,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       expr: String,
       context: Context = ctx,
       dictionaries: Map[String, DictDefinition] = Map.empty,
-      flavour: Flavour = Standard,
+      flavour: SpelFlavour = SpelFlavour.Standard,
       strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
       staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
       methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
@@ -194,7 +193,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       expr: String,
       validationCtx: ValidationContext,
       dictionaries: Map[String, DictDefinition] = Map.empty,
-      flavour: Flavour = Standard,
+      flavour: SpelFlavour = SpelFlavour.Standard,
       strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
       staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
       methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
@@ -215,7 +214,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private def expressionParser(
       globalVariableTypes: Seq[TypingResult] = Seq.empty,
       dictionaries: Map[String, DictDefinition] = Map.empty,
-      flavour: Flavour = Standard,
+      flavour: SpelFlavour = SpelFlavour.Standard,
       strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
       staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
       methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
@@ -1240,19 +1239,19 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("parses expression with template context") {
-    parse[String]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
-    parse[String]("alamakota #{444 + #obj.value}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol(
+    parse[String]("alamakota #{444}", ctx, flavour = SpelFlavour.Template) shouldBe Symbol("valid")
+    parse[String]("alamakota #{444 + #obj.value}", ctx, flavour = SpelFlavour.Template) shouldBe Symbol(
       "valid"
     )
-    parse[String]("alamakota #{444 + #nothing}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol(
+    parse[String]("alamakota #{444 + #nothing}", ctx, flavour = SpelFlavour.Template) shouldBe Symbol(
       "invalid"
     )
-    parse[String]("#{'raz'},#{'dwa'}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
-    parse[String]("#{'raz'},#{12345}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
+    parse[String]("#{'raz'},#{'dwa'}", ctx, flavour = SpelFlavour.Template) shouldBe Symbol("valid")
+    parse[String]("#{'raz'},#{12345}", ctx, flavour = SpelFlavour.Template) shouldBe Symbol("valid")
   }
 
   test("return correct error location when parsing expression with template context") {
-    parse[String]("ala #{.}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+    parse[String]("ala #{.}", ctx, flavour = SpelFlavour.Template).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
             "Unexpectedly ran out of input",
             Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
@@ -1261,13 +1260,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("return correct error location when using blank placeholder in template expression") {
-    parse[String]("ala #{}", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+    parse[String]("ala #{}", ctx, flavour = SpelFlavour.Template).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
             "Empty placeholder",
             Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
           ) :: Nil if start == "ala ".length && end == "ala #{}".length =>
     }
-    parse[String]("ala #{  }", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+    parse[String]("ala #{  }", ctx, flavour = SpelFlavour.Template).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
             "Empty placeholder",
             Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
@@ -1276,7 +1275,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("return correct error location when placeholder is not finished correctly in template expression") {
-    parse[String]("ala #{ aaa", ctx, flavour = SpelExpressionParser.Template).invalidValue.toList should matchPattern {
+    parse[String]("ala #{ aaa", ctx, flavour = SpelFlavour.Template).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
             "Placeholder is not finished correctly, missing closing }",
             Some(CoordinatesBasedTextRange(TextCoordinates(start, 0), TextCoordinates(end, 0)))
@@ -1288,7 +1287,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String](
       "ala #{ aaa) }",
       ctx,
-      flavour = SpelExpressionParser.Template
+      flavour = SpelFlavour.Template
     ).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
             "Illegal syntax: closing ')' without an opening '('",
@@ -1298,7 +1297,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String](
       "ala #{ (aaa }",
       ctx,
-      flavour = SpelExpressionParser.Template
+      flavour = SpelFlavour.Template
     ).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
             "Illegal syntax: unclosed '('",
@@ -1308,7 +1307,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String](
       "ala #{ \" }",
       ctx,
-      flavour = SpelExpressionParser.Template
+      flavour = SpelFlavour.Template
     ).invalidValue.toList should matchPattern {
       case SpelExpressionUnderlyingParserError(
             "String literal is not finished correctly, missing closing '\"'",
@@ -1321,7 +1320,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String](
       "#{ #notExisting }",
       ctx,
-      flavour = SpelExpressionParser.Template
+      flavour = SpelFlavour.Template
     ).invalidValue.toList should matchPattern {
       case SpelExpressionTypingParseError(
             _,
@@ -1331,13 +1330,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("evaluates expression with template context") {
-    parse[TemplateEvaluationResult]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
+    parse[TemplateEvaluationResult]("alamakota #{444}", ctx, flavour = SpelFlavour.Template).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
       .renderedTemplate shouldBe "alamakota 444"
     parse[TemplateEvaluationResult](
       "alamakota #{444 + #obj.value} #{#mapValue.foo}",
       ctx,
-      flavour = SpelExpressionParser.Template
+      flavour = SpelFlavour.Template
     ).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
       .renderedTemplate shouldBe "alamakota 446 bar"
@@ -1347,7 +1346,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val expression = parseV[String](
       "some value: #{ #variable }",
       ValidationContext.empty.withVariableUnsafe("variable", Unknown),
-      flavour = SpelExpressionParser.Template
+      flavour = SpelFlavour.Template
     ).validExpression
 
     expression.evaluateSync[String](Context.dummy.withVariable("variable", 1)) shouldBe "some value: 1"
@@ -1356,7 +1355,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("evaluates empty template as empty string") {
-    parse[TemplateEvaluationResult]("", ctx, flavour = SpelExpressionParser.Template).validExpression
+    parse[TemplateEvaluationResult]("", ctx, flavour = SpelFlavour.Template).validExpression
       .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
       .renderedTemplate shouldBe ""
   }
@@ -1782,7 +1781,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         |bar: #{ {1, 2}
         |  .contain }""".stripMargin,
       ctx,
-      flavour = SpelExpressionParser.Template,
+      flavour = SpelFlavour.Template,
     ).invalidValue.toList should matchPattern {
       case SpelExpressionTypingParseError(
             NoPropertyError(_, "contain"),
@@ -2493,7 +2492,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   ) {
     val spelExpression =
       parse[LocalDateTime]("T(java.time.LocalDateTime).now().minusDays(14)", ctx).validValue.expression
-        .asInstanceOf[SpelExpression]
+        .asInstanceOf[CompiledSpelExpression]
 
     val threadPool                                        = Executors.newFixedThreadPool(1000)
     implicit val customExecutionContext: ExecutionContext = ExecutionContext.fromExecutor(threadPool)
@@ -2538,7 +2537,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#{ #mapValue }", "{foo=bar}"),
       )
     ) { (expression, result) =>
-      val parsed = parse[String](expr = expression, flavour = SpelExpressionParser.Template).validValue
+      val parsed = parse[String](expr = expression, flavour = SpelFlavour.Template).validValue
       parsed.evaluateSync[String]() shouldBe result
     }
   }

@@ -1,63 +1,41 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
 import cats.instances.list._
 import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
-import org.springframework.expression.{EvaluationContext, Expression}
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
-import org.springframework.expression.spel.{standard, SpelNode}
 import org.springframework.expression.spel.ast._
+import org.springframework.expression.spel.{SpelNode, standard}
+import org.springframework.expression.{EvaluationContext, Expression}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
-import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
 import pl.touk.nussknacker.engine.api.typed.ConversionStrategy.NoConversion
 import pl.touk.nussknacker.engine.api.typed.StandardTypesClasses._
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
+import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.{AssignabilityDeterminer, ConversionStrategy}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.{IndexBasedTextRange, NullExpression}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Template}
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
-  ArgumentTypeError,
-  PartTypeError,
-  SpelExpressionTypingError,
-  SpelExpressionTypingErrorWithTextRange
-}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SelectionProjectionError.{
-  IllegalProjectionError,
-  IllegalSelectionError,
-  IllegalSelectionTypeError
-}
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.TernaryOperatorError.{
-  InvalidTernaryOperator,
-  TernaryOperatorNotBooleanError
-}
-import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.{
-  ArrayConstructorError,
-  BeanReferenceError,
-  MapWithExpressionKeysError,
-  ModificationError
-}
-import pl.touk.nussknacker.engine.spel.Typer._
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.SelectionProjectionError.{IllegalProjectionError, IllegalSelectionError, IllegalSelectionTypeError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.TernaryOperatorError.{InvalidTernaryOperator, TernaryOperatorNotBooleanError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.UnsupportedOperationError.{ArrayConstructorError, BeanReferenceError, MapWithExpressionKeysError, ModificationError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{ArgumentTypeError, PartTypeError, SpelExpressionTypingError, SpelExpressionTypingErrorWithTextRange}
+import pl.touk.nussknacker.engine.spel.SpelTyper._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.{RichSpelNode, SpelNodeId}
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
-import pl.touk.nussknacker.engine.spel.parser.{
-  CompositeExpressionsWithTextRanges,
-  ExpressionWithTextRange,
-  SingleExpressionWithTextRange
-}
+import pl.touk.nussknacker.engine.spel.parser.{CompositeExpressionsWithTextRanges, ExpressionWithTextRange, SingleExpressionWithTextRange}
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
@@ -66,7 +44,7 @@ import scala.jdk.CollectionConverters._
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
-private[spel] class Typer(
+private[spel] class SpelTyper(
     dictTyper: SpelDictTyper,
     strictMethodsChecking: Boolean,
     staticMethodInvocationsChecking: Boolean,
@@ -92,7 +70,7 @@ private[spel] class Typer(
   def typeExpression(
       expr: ExpressionWithTextRange,
       ctx: ValidationContext,
-      flavour: Flavour
+      flavour: SpelFlavour
   ): ValidatedNel[SpelExpressionTypingErrorWithTextRange, CollectedTypingResult] = {
     val (errors, result) = typeExpressionWithTextRange(expr, ctx, flavour)
     NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(result))
@@ -101,7 +79,7 @@ private[spel] class Typer(
   def typeExpressionWithTextRange(
       expressionWithTextRange: ExpressionWithTextRange,
       ctx: ValidationContext,
-      flavour: Flavour
+      flavour: SpelFlavour
   ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
     expressionWithTextRange match {
       case composite: CompositeExpressionsWithTextRanges =>
@@ -123,7 +101,7 @@ private[spel] class Typer(
       case single: SingleExpressionWithTextRange =>
         val (errors, collectedTypingResult) = doTypeSingleExpression(single.getExpression, ctx, single.getTextRange)
         val collectedTypingResultWithFinalTypingResultAdjustedForTemplates =
-          if (flavour == Template)
+          if (flavour == SpelFlavour.Template)
             collectedTypingResult.withFinalTypingResult(Typed[String])
           else
             collectedTypingResult
@@ -841,7 +819,7 @@ private[spel] class Typer(
   private def valid[T](value: T): TypingR[T] = Writer(List.empty[SpelExpressionTypingErrorWithTextRange], value)
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(
+    new SpelTyper(
       dictTyper,
       strictMethodsChecking = strictMethodsChecking,
       staticMethodInvocationsChecking,
@@ -852,8 +830,8 @@ private[spel] class Typer(
       absentVariableReferenceAllowed
     )
 
-  def withAbsentVariableReferenceAllowed(value: Boolean): Typer =
-    new Typer(
+  def withAbsentVariableReferenceAllowed(value: Boolean): SpelTyper =
+    new SpelTyper(
       dictTyper,
       strictMethodsChecking,
       staticMethodInvocationsChecking,
@@ -866,7 +844,7 @@ private[spel] class Typer(
 
 }
 
-object Typer {
+object SpelTyper {
 
   def default(
       classLoader: ClassLoader,
@@ -874,10 +852,10 @@ object Typer {
       spelDictTyper: SpelDictTyper,
       classDefinitionSet: ClassDefinitionSet,
       absentVariableReferenceAllowed: Boolean
-  ): Typer = {
+  ): SpelTyper = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
 
-    new Typer(
+    new SpelTyper(
       spelDictTyper,
       expressionConfig.strictMethodsChecking,
       expressionConfig.staticMethodInvocationsChecking,

@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.ParsingFailureExt
 import pl.touk.nussknacker.engine.language.json.JsonTemplateTypeDeterminer._
-import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelExpressionParser, SpelExpressionRepr}
+import pl.touk.nussknacker.engine.spel.{CompiledSpelExpression, SpelExpressionParser, SpelExpressionRepr}
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.math.{BigDecimal => JBigDecimal}
@@ -54,11 +54,11 @@ private[json] class JsonTemplateTypeDeterminer(spelParser: SpelExpressionParser)
       compiledExpression: CompiledExpression
   )(handle: SpringExpression => T): T =
     compiledExpression match {
-      case expression: SpelExpression =>
+      case expression: CompiledSpelExpression =>
         handle(expression.parsedSpringExpression)
       case _ =>
         throw new IllegalStateException(
-          s"Invalid compiled expression: ${compiledExpression.getClass.getName}. Expected: ${classOf[SpelExpression].getName}"
+          s"Invalid compiled expression: ${compiledExpression.getClass.getName}. Expected: ${classOf[CompiledSpelExpression].getName}"
         )
     }
 

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, Unknown}
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
-import pl.touk.nussknacker.engine.spel.Typer.SpelCompilationException
+import pl.touk.nussknacker.engine.spel.SpelTyper.SpelCompilationException
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.text.ParseException
