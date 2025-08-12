@@ -49,6 +49,23 @@ import { filterDragHovered, getLinkNodes, setDraggedOver } from "./utils/dragHel
 import { canInjectNode as graphUtilsCanInjectNode, handleGraphEvent } from "./utils/graphUtils";
 import { StickyNoteType } from "./utils/stickyNotesUtils";
 
+/**
+ * WARNING: DO NOT EXTEND OR MODIFY THIS COMPONENT!
+ *
+ * This is an old, legacy **class-based** React component.
+ * We are migrating our codebase to **functional components** with Hooks.
+ *
+ * Any new development should follow the functional + hooks approach.
+ * This file exists only for backward compatibility until full refactor.
+ *
+ * If you need to add features, please:
+ *  1. Create a new functional component instead.
+ *  2. Use modern React best practices (hooks, context, etc.).
+ *  3. Plan for replacing this component entirely.
+ *
+ * ⚠️ Editing this file will only increase technical debt.
+ */
+
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
 }
