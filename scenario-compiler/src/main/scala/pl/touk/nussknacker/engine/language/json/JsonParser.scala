@@ -22,17 +22,24 @@ object JsonParser extends ExpressionParser {
       jsonString: String,
       ctx: ValidationContext,
       expectedType: TypingResult
-  ): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parseJson(jsonString).andThen { json =>
-      decodeJson(expectedType, json).map { decodedJson =>
-        val typ = Typed.fromInstance(decodedJson)
-        TypedExpression(
-          CompiledJsonExpression(jsonString, json),
-          ExpressionTypingInfo(typ)
-        )
-      }
+  ): ValidatedNel[ExpressionParseError, TypedExpression] =
+    handleBlankExpressionAsNullExpression(jsonString).getOrElse {
+      parseJson(jsonString)
+        .andThen { json =>
+          decodeJson(expectedType, json).map { decodedJson =>
+            val typ = Typed.fromInstance(decodedJson)
+            TypedExpression(
+              CompiledJsonExpression(jsonString, json),
+              ExpressionTypingInfo(typ)
+            )
+          }
+        }
+        .andThen { typedExpression =>
+          ExpressionParser
+            .validateResultTypeMatchExpectedType(typedExpression.typingInfo.typingResult, expectedType)
+            .map(_ => typedExpression)
+        }
     }
-  }
 
   private def parseJson(jsonString: String): Validated[NonEmptyList[ExpressionParseError], Json] =
     parser.parse(jsonString) match {

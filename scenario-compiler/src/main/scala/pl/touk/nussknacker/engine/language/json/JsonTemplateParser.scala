@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.language.json
 
-import cats.data.{Validated, ValidatedNel}
+import cats.data.ValidatedNel
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.{Context, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.json.decoders.FromJsonTypingResultBasedDecoder
 import pl.touk.nussknacker.engine.api.json.encoders.ToJsonEncoder
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -28,16 +27,18 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
   override def parse(
       originalJsonString: String,
       validationContext: ValidationContext,
-      expectedType: typing.TypingResult
+      expectedType: TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    def validateExpectedType(parsed: TypedExpression) = {
-      Validated.condNel(
-        parsed.typingInfo.typingResult.canBeLooselyAssignedTo(expectedType),
-        parsed,
-        JsonTemplateExpressionTypeError(expectedType, parsed.typingInfo.typingResult)
-      )
+    handleBlankExpressionAsNullExpression(originalJsonString).getOrElse {
+      parseNonBlankExpression(originalJsonString, validationContext, expectedType)
     }
+  }
 
+  private def parseNonBlankExpression(
+      originalJsonString: String,
+      validationContext: ValidationContext,
+      expectedType: TypingResult
+  ): ValidatedNel[ExpressionParseError, TypedExpression] = {
     spelTemplateParser
       .parse(originalJsonString, validationContext, Typed[TemplateEvaluationResult])
       .map(_.expression)
@@ -46,7 +47,11 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
           .expressionResultType(spelTemplateExpression, validationContext, expectedType)
           .map(toJsonTemplateExpression(originalJsonString, spelTemplateExpression, _))
       }
-      .andThen(validateExpectedType)
+      .andThen { typedExpression =>
+        ExpressionParser
+          .validateResultTypeMatchExpectedType(typedExpression.typingInfo.typingResult, expectedType)
+          .map(_ => typedExpression)
+      }
   }
 
   private def toJsonTemplateExpression(
@@ -64,17 +69,10 @@ class JsonTemplateParser(spelTemplateParser: SpelExpressionParser, spelParser: S
 
 object JsonTemplateParser {
 
-  private case class JsonTemplateExpressionTypeError(
-      expected: TypingResult,
-      found: TypingResult
-  ) extends ExpressionParseError {
-    override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
-  }
-
   private class CompiledJsonTemplateExpression(
       originalJsonString: String,
       compiledSpelTemplateExpression: CompiledExpression,
-      typ: typing.TypingResult
+      typ: TypingResult
   ) extends CompiledExpression {
 
     override def language: Language = Expression.Language.JsonTemplate

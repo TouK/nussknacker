@@ -245,17 +245,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "description": "There is problem with expression in field [$$expression] - it could not be parsed.",
              |      "fieldName": "$$expression",
              |      "errorType": "SaveAllowed",
-             |      "details": {
-             |        "start": {
-             |          "column": 0,
-             |          "row": 0
-             |        },
-             |        "end": {
-             |          "column": 15,
-             |          "row": 0
-             |        },
-             |        "type": "CoordinatesBasedTextRange"
-             |      }
+             |      "details": null
              |    }
              |  ],
              |  "validationPerformed": true
@@ -824,17 +814,7 @@ class NodesApiHttpServiceBusinessSpec
              |    "description": "There is problem with expression in field [condition] - it could not be parsed.",
              |    "fieldName": "condition",
              |    "errorType": "SaveAllowed",
-             |    "details": {
-             |      "start": {
-             |        "column": 0,
-             |        "row": 0
-             |      },
-             |      "end": {
-             |        "column": 13,
-             |        "row": 0
-             |      },
-             |      "type": "CoordinatesBasedTextRange"
-             |    }
+             |    "details": null
              |  } ],
              |  "validationPerformed": true
              |}""".stripMargin)

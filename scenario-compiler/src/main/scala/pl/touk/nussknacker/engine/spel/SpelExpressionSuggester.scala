@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.extension.CastOrConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language.JsonTemplate
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Standard, Template}
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.{RichSpelNode, SpelNodeId}
 import pl.touk.nussknacker.engine.spel.parser.NuSpelExpressionParser
@@ -453,16 +454,17 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
       position: Int,
       validationContext: ValidationContext
   ): Try[Option[NuSpelNode]] = {
-    val rawExpression = language match {
-      case Language.Spel                        => Try(parser.parseExpression(input, null))
-      case Language.SpelTemplate | JsonTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
+    val parsedExpressionAndFlavourTry = language match {
+      case Language.Spel => Try(parser.parseExpression(input, null)).map((_, Standard))
+      case Language.SpelTemplate | JsonTemplate =>
+        Try(parser.parseExpression(input, new TemplateParserContext())).map((_, Template))
       case Language.DictKeyWithLabel | Language.TabularDataDefinition | Language.Json =>
         Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }
-    rawExpression
-      .map { parsedExpressions =>
+    parsedExpressionAndFlavourTry
+      .map { case (parsedExpressions, flavour) =>
         val astTypingResults =
-          typer.typeExpressionWithTextRange(parsedExpressions, validationContext)._2.intermediateResults
+          typer.typeExpressionWithTextRange(parsedExpressions, validationContext, flavour)._2.intermediateResults
         parsedExpressions.findSubexpressionByPosition(position).toScala.flatMap { expressionWithTextRange =>
           expressionWithTextRange.getExpression match {
             case springExpression: SpringSpelExpression =>

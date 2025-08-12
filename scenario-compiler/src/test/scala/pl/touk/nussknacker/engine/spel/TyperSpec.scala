@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementVal
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.IndexBasedTextRange
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Standard, Template}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.MissingObjectError.{
   NoPropertyError,
   NoPropertyTypeError
@@ -219,7 +220,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   ): ValidatedNel[SpelExpressionTypingError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
-    typer.typeExpression(parsed, validationCtx).leftMap(_.map(_.error))
+    typer.typeExpression(parsed, validationCtx, Standard).leftMap(_.map(_.error))
   }
 
   private def typeExpressionForcedType(
@@ -230,7 +231,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   ): ValidatedNel[SpelExpressionTypingError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variablesTypes.toMap)
-    typer.typeExpression(parsed, validationCtx).leftMap(_.map(_.error))
+    typer.typeExpression(parsed, validationCtx, Standard).leftMap(_.map(_.error))
   }
 
   private def typeTemplate(
@@ -241,7 +242,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   ): ValidatedNel[SpelExpressionTypingError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr, new TemplateParserContext())
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
-    typer.typeExpression(parsed, validationCtx).leftMap(_.map(_.error))
+    typer.typeExpression(parsed, validationCtx, Template).leftMap(_.map(_.error))
   }
 
 }

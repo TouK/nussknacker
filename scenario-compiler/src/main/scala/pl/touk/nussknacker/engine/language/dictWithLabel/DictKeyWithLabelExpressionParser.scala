@@ -11,11 +11,9 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypingResult}
-import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 import scala.util.Try
 
@@ -44,20 +42,14 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
       ctx: ValidationContext,
       expectedType: typing.TypingResult
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-    if (keyWithLabel.isBlank)
-      Valid(
-        TypedExpression(
-          NullExpression(keyWithLabel, SpelExpressionParser.Standard),
-          DictKeyWithLabelExpressionTypingInfo("", None, expectedType)
-        )
-      )
-    else
+    handleBlankExpressionAsNullExpression(keyWithLabel).getOrElse {
       parseDictKeyWithLabelExpression(keyWithLabel).map(expr =>
         TypedExpression(
           CompiledDictKeyExpression(expr.key, expectedType),
           DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label, expectedType)
         )
       )
+    }
 
   def parseDictKeyWithLabelExpression(
       keyWithLabelJson: String

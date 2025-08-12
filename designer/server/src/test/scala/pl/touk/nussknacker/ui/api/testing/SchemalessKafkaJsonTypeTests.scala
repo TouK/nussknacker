@@ -82,6 +82,18 @@ class SchemalessKafkaJsonTypeTests
   private val validJson = """|{
                              |  "input": {
                              |    "name": "FooBar"
+                             |  },
+                             |  "inputMeta": {
+                             |    "key" : "",
+                             |    "topic" : "",
+                             |    "partition" : 0,
+                             |    "offset" : 0,
+                             |    "timestamp" : 0,
+                             |    "timestampType" : "NO_TIMESTAMP_TYPE",
+                             |    "headers" : {
+                             |      "field" : ""
+                             |    },
+                             |    "leaderEpoch" : 0
                              |  }
                              |}""".stripMargin
 

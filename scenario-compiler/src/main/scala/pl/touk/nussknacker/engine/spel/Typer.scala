@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.{IndexBasedTextRange, NullExpression}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Template}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingError.{
   ArgumentTypeError,
   PartTypeError,
@@ -58,7 +59,6 @@ import pl.touk.nussknacker.engine.spel.parser.{
   SingleExpressionWithTextRange
 }
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.MathUtils
 
 import scala.annotation.tailrec
@@ -91,15 +91,17 @@ private[spel] class Typer(
 
   def typeExpression(
       expr: ExpressionWithTextRange,
-      ctx: ValidationContext
+      ctx: ValidationContext,
+      flavour: Flavour
   ): ValidatedNel[SpelExpressionTypingErrorWithTextRange, CollectedTypingResult] = {
-    val (errors, result) = typeExpressionWithTextRange(expr, ctx)
+    val (errors, result) = typeExpressionWithTextRange(expr, ctx, flavour)
     NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(result))
   }
 
   def typeExpressionWithTextRange(
       expressionWithTextRange: ExpressionWithTextRange,
-      ctx: ValidationContext
+      ctx: ValidationContext,
+      flavour: Flavour
   ): (List[SpelExpressionTypingErrorWithTextRange], CollectedTypingResult) = {
     expressionWithTextRange match {
       case composite: CompositeExpressionsWithTextRanges =>
@@ -119,7 +121,13 @@ private[spel] class Typer(
           )
         )
       case single: SingleExpressionWithTextRange =>
-        doTypeSingleExpression(single.getExpression, ctx, single.getTextRange)
+        val (errors, collectedTypingResult) = doTypeSingleExpression(single.getExpression, ctx, single.getTextRange)
+        val collectedTypingResultWithFinalTypingResultAdjustedForTemplates =
+          if (flavour == Template)
+            collectedTypingResult.withFinalTypingResult(Typed[String])
+          else
+            collectedTypingResult
+        (errors, collectedTypingResultWithFinalTypingResultAdjustedForTemplates)
     }
   }
 

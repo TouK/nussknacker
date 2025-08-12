@@ -2,11 +2,13 @@ package pl.touk.nussknacker.engine.language.json
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
+import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CoordinatesBasedTextRange, TextCoordinates}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectWithValue, Unknown}
+import pl.touk.nussknacker.engine.expression.parse.ExpressionParser.BadTypeExpressionParseError
 import pl.touk.nussknacker.engine.language.json.JsonParser.JsonDecodingError
 import pl.touk.nussknacker.engine.language.json.JsonParsingFailureToExpressionParseErrorConverter.JsonParseError
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
@@ -14,7 +16,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedT
 import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 
-class JsonParserTest extends AnyFunSuite with Matchers {
+class JsonParserTest extends AnyFunSuite with Matchers with LoneElement {
 
   private val parser = JsonParser
 
@@ -200,6 +202,12 @@ class JsonParserTest extends AnyFunSuite with Matchers {
         Some(CoordinatesBasedTextRange(TextCoordinates(4, 3), TextCoordinates(5, 3)))
       )
     )
+  }
+
+  test("should verify expected type") {
+    val expectedType = Typed.record(Seq("foo" -> Typed[String]))
+    val parsingError = parser.parse("{}", ValidationContext.empty, expectedType).invalidValue.toList.loneElement
+    parsingError shouldBe BadTypeExpressionParseError(expectedType, Typed.record(Seq.empty))
   }
 
   private def parse(jsonString: String) = {

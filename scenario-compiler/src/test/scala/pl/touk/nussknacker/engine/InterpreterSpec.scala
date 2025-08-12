@@ -4,6 +4,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
+import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
@@ -27,6 +28,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
+import pl.touk.nussknacker.engine.api.editor.{Editor, EditorType}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
@@ -47,6 +49,7 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -83,6 +86,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("spelTemplateService", ServiceUsingSpelTemplate),
     ComponentDefinition("spelTemplatePartsService", SpelTemplatePartsService),
     ComponentDefinition("optionTypesService", OptionTypesService),
+    ComponentDefinition("optionTypesDifferentLanguagesService", optionTypesDifferentLanguagesService),
     ComponentDefinition("optionalTypesService", OptionalTypesService),
     ComponentDefinition("nullableTypesService", NullableTypesService),
     ComponentDefinition("mandatoryTypesService", MandatoryTypesService),
@@ -947,6 +951,25 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) should equal(Option.empty)
   }
 
+  test("accept empty expression for option parameter for different languages") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher(
+        "customNode",
+        "rawExpression",
+        "optionTypesDifferentLanguagesService",
+        "json"         -> "".jsonExpression,
+        "jsonTemplate" -> "".jsonTemplate,
+        "dict"         -> Expression(Language.DictKeyWithLabel, ""),
+        "tabularData"  -> Expression(Language.TabularDataDefinition, ""),
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction()) should equal(Option.empty)
+  }
+
   test("accept empty expression for optional parameter") {
     val process = ScenarioBuilder
       .streaming("test")
@@ -1242,6 +1265,19 @@ object InterpreterSpec {
   object OptionTypesService extends Service {
     @MethodToInvoke(returnType = classOf[Option[String]])
     def invoke(@ParamName("expression") expr: Option[String]) = Future.successful(expr)
+  }
+
+  object optionTypesDifferentLanguagesService extends Service {
+
+    @MethodToInvoke(returnType = classOf[Option[Any]])
+    def invoke(
+        @ParamName("json") @Editor(`type` = EditorType.JSON_EDITOR) jsonValue: Option[Json],
+        @ParamName("jsonTemplate") @Editor(`type` = EditorType.JSON_TEMPLATE_EDITOR) jsonTemplateValue: Option[Any],
+        @ParamName("dict") @Editor(`type` = EditorType.DICT_EDITOR) dictValue: Option[Any],
+        @ParamName("tabularData") @Editor(`type` = EditorType.TYPED_TABULAR_DATA_EDITOR) tabularDataValue: Option[Any],
+    ) =
+      Future.successful(jsonValue orElse jsonTemplateValue orElse dictValue orElse tabularDataValue)
+
   }
 
   object OptionalTypesService extends Service {
