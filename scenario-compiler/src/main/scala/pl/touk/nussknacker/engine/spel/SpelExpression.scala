@@ -237,7 +237,7 @@ class SpelExpressionParser(
       parseSpelExpressionUsingImmediateCompileConfiguration(original)
         .andThen { parsed =>
           typer
-            .typeExpression(parsed, ctx)
+            .typeExpression(parsed, ctx, flavour)
             .map((parsed, _))
             .leftMap(_.map(_.toParseError(original)))
         }
